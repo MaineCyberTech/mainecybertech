@@ -1,0 +1,118 @@
+name: E2E
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_call:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    services:
+      supabase-db:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: supabase
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install chromium
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase local
+        run: supabase start
+        env:
+          SUPABASE_DB_HOST: localhost
+          SUPABASE_DB_PORT: 5432
+
+      - name: Sync Supabase env to API
+        run: |
+          API_ENV="apps/api/.env.local"
+          echo "SUPABASE_URL=$(supabase status --output json | jq -r '.api_url')" > $API_ENV
+          echo "SUPABASE_ANON_KEY=$(supabase status --output json | jq -r '.anon_key')" >> $API_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status --output json | jq -r '.service_role_key')" >> $API_ENV
+          echo "CORS_ORIGIN=*" >> $API_ENV
+          echo "LOG_LEVEL=silent" >> $API_ENV
+
+      - name: Build API
+        run: pnpm --filter=api build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Start API server
+        run: |
+          pnpm --filter=api start &
+          sleep 3
+          curl --retry 10 --retry-delay 2 --retry-connrefused http://localhost:4000/health
+        env:
+          NODE_ENV: production
+          SUPABASE_URL: http://127.0.0.1:54321
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgICAgICJpc3MiOiAic3VwYWJhc2UtZGV2byIsICAgICAgImV4cCI6IDE5Mjg2OTQ0MDAsICAgICAgIm5hbWUiOiAiYW5vbiIsICAgICAgImFkbWluIjogdHJ1ZSAgICB9.anonymous-key
+          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZXZpbyIsImV4cCI6MTkyODY5NDQwMCwicm9sZSI6InNlcnZpY2Vfcm9sZSJ9.service-role-key
+          CORS_ORIGIN: "*"
+          LOG_LEVEL: silent
+
+      - name: Build web app
+        run: pnpm --filter=web build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+          NEXT_TELEMETRY_DISABLED: 1
+
+      - name: Start web app
+        run: |
+          pnpm --filter=web start &
+          sleep 5
+          curl --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+          PORT: 3000
+
+      - name: Run Playwright tests
+        run: pnpm --filter=web e2e
+        env:
+          E2E_BASE_URL: http://localhost:3000
+          E2E_ADMIN_EMAIL: superadmin.real@mainecybertech.local
+          E2E_ADMIN_PASSWORD: 1
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7

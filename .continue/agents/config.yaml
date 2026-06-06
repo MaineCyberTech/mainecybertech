@@ -1,0 +1,21 @@
+name: Z1 Extreme Local AI
+version: 1.0.0
+schema: v1
+
+models:
+  # This is the heavy model running in LM Studio for active chat/editing
+  - name: LM Studio (Chat)
+    provider: openai
+    model: AUTODETECT
+    apiBase: http://localhost:1234/v1
+    roles:
+      - chat
+      - edit
+
+  # This is the fast 1.5B model running in Ollama for background autocomplete
+  - name: Qwen 1.5b (Autocomplete)
+    provider: ollama
+    model: qwen2.5-coder:1.5b
+    apiBase: http://localhost:11434
+    roles:
+      - autocomplete

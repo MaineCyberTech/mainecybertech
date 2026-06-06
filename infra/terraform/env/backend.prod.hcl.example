@@ -1,0 +1,6 @@
+# Production backend example
+bucket         = "replace-with-your-prod-terraform-state-bucket"
+key            = "mainecybertech/prod/terraform.tfstate"
+region         = "us-east-1"
+dynamodb_table = "replace-with-your-prod-lock-table"
+encrypt        = true

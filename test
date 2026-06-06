@@ -1,0 +1,303 @@
+# Comprehensive Architecture Analysis — Maine CyberTech Portal
+
+## 1. Code Mechanics & Logic
+
+### Entry Points & Initialization
+
+| Service    | Entry Point                    | Initialization Order                                                                                                                                                                  |
+| ---------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **API**    | `apps/api/src/main.ts:9`       | `dotenv/config` → `getEnv()` (Zod env validation, `process.exit(1)` on failure) → `createApp()` (Express factory) → `app.listen(env.API_PORT)`                                        |
+| **Web**    | `apps/web/app/layout.tsx:26`   | Next.js App Router boots; fonts via `next/font/google`, loads `globals.css`. Route groups diverge at `(public)`, `(portal)`, `(admin)`                                                |
+| **Worker** | `apps/worker/src/main.ts:268`  | `dotenv/config` → `parseEnv()` (inline Zod schema) → `registerTask("ping")` → `registerAllTasks()` (5 more handlers) → `startHealthServer(3001)` → `runWorkerTasks()` (SQS poll loop) |
+| **SDK**    | `packages/sdk/src/index.ts:54` | `MCTClient.create(opts)` → constructs `ApiClient` + 14 domain API instances                                                                                                           |
+
+**Key initialization lifecycle detail:** The API `getEnv()` (line 33-46 of `env.ts`) uses a **module-level cached singleton** (`let _env: Env | null = null`). This means env validation occurs once at module import time, and subsequent calls return the cached result. The worker does the same with `parseEnv()` called at module top level (line 57), but it caches on a module `let env` rather than a getter pattern — this means imports that reference `env` before top-level execution will get `undefined`.
+
+### Core Data Flow
+
+**Authentication Flow:**
+
+```
+Browser → loginAction() → SDK auth.signIn() → POST /api/v1/auth/sign-in
+  → supabase.auth.signInWithPassword() → returns access_token
+  → Sets mct_session cookie (httpOnly, secure in prod, 7-day maxAge)
+
+Browser → GET /portal/dashboard (server component)
+  → getApiClient() reads mct_session cookie → SDK passes as Bearer token
+  → API requireAuth → supabase.auth.getUser(token) → attaches req.authUser
+  → PortalLayout renders (or redirects to /login)
+```
+
+**PKCE Callback Flow** (from Supabase magic link or email redirect):
+
+```
+Browser → /auth/callback?code=... → web forwards raw Cookie header
+  → POST /api/v1/auth/callback { auth_code, cookies }
+  → API extracts `sb-*-auth-token-code-verifier` from cookie
+  → POST ${SUPABASE_URL}/auth/v1/token?grant_type=authorization_code
+  → Calls bootstrap_portal_access RPC (fire-and-forget, errors suppressed)
+  → Returns access_token
+```
+
+**Document Upload Flow:**
+
+```
+Client → POST /api/v1/documents/:id/versions (multipart/form-data)
+  → requireAuth → multer middleware → Supabase storage.upload()
+  → Fetches document metadata → Inserts document_version record
+  → Creates in-app notification → Returns version data
+```
+
+**Worker Task Processing:**
+
+```
+SQS → ReceiveMessage (long poll 20s, concurrency=N)
+  → JSON.parse(body) → taskRegistry.get(type)(payload)
+  → deleteMessage(receiptHandle) ← DELETED EVEN ON FAILURE
+```
+
+### Key Functions & Critical Logic
+
+- **Input sanitizer** (`apps/api/src/middleware/security.ts:56-82`) — Scans body and query params for XSS/SQLi patterns, then HTML-encodes all string values via `sanitizeObject()`. **Major concern**: Regex patterns with `g` flag and `.test()` cause alternating true/false due to `lastIndex` state persistence on the module-scoped regex array (see Critical Observations).
+
+- **Admin authorization** (`apps/api/src/middleware/admin.ts:17-44`) — Two-step query: first fetches all approved memberships for the user, then fetches roles, then checks for `admin`/`super_admin` key. This is an N+1 that could be a single JOIN query.
+
+- **Worker SQS poll** (`apps/worker/src/main.ts:204-225`) — `while (!shuttingDown)` loop with `Promise.allSettled` over concurrent messages. **Critical flaw**: `deleteMessage` is called in the same `async` function as `processMessage` (line 210-214), meaning failures are deleted from the queue. The SQS visibility timeout will NOT cause retries because the message is explicitly deleted.
+
+- **Password reset** (`apps/api/src/routes/auth.ts:227-261`) — Admin-level password override via `supabase.auth.admin.updateUserById()`. Requires `email` + `password` in request body. The email lookup on `profiles` table uses `.single()` which throws if multiple profiles share an email (possible with seeded test data).
+
+### Dependencies Review
+
+| Dependency                         | Coupling Level                               | Risk                                                                     |
+| ---------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------ |
+| `@supabase/supabase-js`            | Deep — used in every API route, worker tasks | Upgrade risk (breaking API changes), but well-tested                     |
+| `@aws-sdk/client-sqs`              | Deep — worker polling core                   | Heavy import (lazy `await import()` mitigates cold start)                |
+| `@sentry/node` / `@sentry/browser` | Shallow — wrapped in init guards             | Safe; graceful degradation when DSN unset                                |
+| `multer`                           | Moderate — document uploads only             | v2.1.1 is non-standard major version bump (latest stable is 1.4.5-lts.1) |
+| `nodemailer`                       | Moderate — email notifications               | Standard, well-maintained                                                |
+| `express-rate-limit`               | Shallow — global middleware                  | Standard                                                                 |
+
+---
+
+## 2. System Architecture
+
+### Design Patterns
+
+| Pattern                   | Where Applied                                                                                  | Consistency                                                                                       |
+| ------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Factory Function**      | `createApp()` in API, `MCTClient.create()` in SDK                                              | ✅ Consistent                                                                                     |
+| **Middleware Chain**      | Express pipeline: helmet → cors → security → rate-limit → request-id → logger → routes → error | ✅ Well-ordered                                                                                   |
+| **Repository/Service**    | `getSupabaseAdmin()` used inline in route handlers                                             | ❌ Inconsistent; DB access is coupled to route handlers rather than abstracted into service layer |
+| **Registry**              | Worker `taskRegistry Map<string, TaskHandler>`                                                 | ✅ Clean separation                                                                               |
+| **Server Actions**        | Web's `loginAction`, `logoutAction`, `submitLead`                                              | ✅ Consistent with Next.js patterns                                                               |
+| **Singleton**             | `_adminClient` (Supabase), `_env` (Env cache)                                                  | ⚠️ No DI container — hard to mock in tests without Jest module mocking                            |
+| **Error as Value**        | Worker `TaskResult { ok, error }`                                                              | ✅ Clean failure modeling                                                                         |
+| **Zod Schema Validation** | API env, route inputs, worker env                                                              | ✅ Consistent across all 3 apps                                                                   |
+
+### Coupling & Cohesion
+
+**Tight Coupling:**
+
+- **Route ↔ Supabase** — Every route handler calls `getSupabaseAdmin()` directly and constructs queries inline. No repository abstraction. This makes changing DB provider or adding caching non-trivial without touching every route file.
+- **API ↔ SDK types** — The `ApiResponse<T>` shape in the API's `types/index.ts` is manually mirrored by the SDK's `client.ts` parsing. There's no shared type package for API contract types, so any change to the response shape must be duplicated.
+- **Worker ↔ process.env** — Task handlers read `process.env.STRIPE_SECRET_KEY` etc. directly instead of using the parsed `env` singleton. The `envSchema` validates at startup but task handlers bypass it for integration secrets.
+
+**Cohesion Assessment:**
+
+- `apps/api/src/app.ts` — Good; single factory function composing all middleware and routes
+- `apps/worker/src/main.ts` — Overloaded; contains env parsing, task registry, SQS consumer, health server, and main entry all in one 274-line file. The `runWorkerTasks()` function alone spans 51 lines with nested error handling.
+- `apps/web/lib/api.ts` — Good; thin wrapper creating SDK client with cookie token provider
+
+### Error Handling & Resilience
+
+- **API error middleware** (`error.ts`) — Proper chain: `AppError` → ZodError → generic 500. Sentry capture on every error. Log levels appropriate (warn for 4xx, error for 5xx).
+- **Worker error handling** — `executeTask()` catches all throws and returns `{ ok: false, error }`. The SQS poll loop uses `Promise.allSettled` so one failing message doesn't block others. **However**, as noted, failed messages are still deleted.
+- **SDK retries** — Exponential backoff with configurable maxRetries (default 3), timeout via AbortController, retryable statuses [429, 502, 503, 504]. The `postFormData` retry logic lacks the AbortError/Timeout retry distinction that `request()` has — it will retry on all errors without distinguishing timeout vs other failures.
+- **Missing circuit breaker** — No circuit breaker pattern anywhere. If Supabase is degraded, every API request will hammer it until timeout.
+
+### Scalability Bottlenecks
+
+1. **Singleton Supabase client** (`services/supabase.ts`) — One HTTP connection pool for the entire API process. Under load spikes, all requests queue behind a single pool. Should use connection pooling with min/max configuration.
+
+2. **Global IP rate limiter** (`app.ts:52`) — 100 requests per 15-minute window (~1 req/9s). This will throttle legitimate multi-tab users. The per-user limiter is after auth, but unauthenticated endpoints (public, health) share this global bucket.
+
+3. **Admin auth query pattern** (`admin.ts:17-44`) — N+1: memberships query → roles query. Both queries are full table scans filtered by `user_id` but could benefit from a composite index on `memberships(user_id, status)`.
+
+4. **Portal layout** (`portal/layout.tsx`) — Every portal page loads user profile, memberships, org details, org list, _and_ unread notification count — 5 sequential API calls before first paint. This is server-side so it blocks HTML streaming.
+
+5. **Worker SQS polling** — Single-threaded poll loop with `while (!shuttingDown)`. If a batch of messages takes longer than the SQS visibility timeout (60s), the same messages will be reprocessed by another poll cycle. The `visibility_timeout_seconds` in `compute.tf:26` is 60s, but `WORKER_TIMEOUT` is 30s — so the worker should complete before timeout. However, the batch processes messages _concurrently_ via `Promise.allSettled`, not sequentially, so the actual wall-clock time is `max(individual message processing time)` rather than `sum`. This is fine, but the comment in `main.ts:123-126` warns about this accurately.
+
+---
+
+## 3. Infrastructure & Deployment Topology
+
+### Containerization & Environment
+
+**Dockerfile Assessment:**
+
+| Aspect         | API                    | Web                    | Worker                 |
+| -------------- | ---------------------- | ---------------------- | ---------------------- |
+| Base image     | `node:20-alpine`       | `node:20-alpine`       | `node:20-alpine`       |
+| Multi-stage    | ✅ 2-stage             | ✅ 3-stage             | ✅ 2-stage             |
+| Prod deps only | ✅ `--prod` flag       | ✅ Standalone output   | ✅ `--prod` flag       |
+| Health check   | ✅ wget :4000/health   | ✅ wget :3000          | ✅ wget :3001/health   |
+| Non-root user  | ❌ Runs as root        | ✅ `adduser nextjs`    | ❌ Runs as root        |
+| .dockerignore  | ❌ Not present at root | ❌ Not present at root | ❌ Not present at root |
+
+**Production concerns:**
+
+- No `.dockerignore` means the entire monorepo (including `node_modules/`, `.git/`, `docs/`) is sent as build context
+- API and Worker run as root in the container — violates least-privilege
+- Web's `outputFileTracingRoot` is set to monorepo root (`"../.."`) in `next.config.mjs:10`, but the Dockerfile's `COPY` only copies specific paths; the tracing root path mapping should be verified for correctness
+
+### Infrastructure-as-Code (Terraform)
+
+**Resource Topology:**
+
+```
+AWS Provider
+├── VPC (10.0.0.0/16, 2 AZs)
+│   ├── Public subnets (10.0.101.0/24, 10.0.102.0/24)
+│   ├── Private subnets (10.0.1.0/24, 10.0.2.0/24)
+│   ├── NAT Gateway (enabled)
+│   └── Internet Gateway (implicit via module)
+├── ALB (public, HTTP:80 → 301 → HTTPS:443)
+│   ├── Target group (HTTP:3001, health: /health, 200-399)
+│   └── Listener (HTTPS, ACM cert, TLS 1.2+1.3)
+├── ECS Cluster
+│   ├── API Service (Fargate, private subnet, ALB-attached)
+│   │   ├── Task def (256 CPU / 512 MB, env + SSM secrets)
+│   │   ├── Autoscaling (CPU 60%, 1-3 tasks)
+│   │   └── SG: ingress from ALB only
+│   └── Worker Service (Fargate, private subnet, no LB)
+│       ├── Task def (256 CPU / 512 MB, env + SSM secrets)
+│       ├── Autoscaling (CPU 60%, 1-3 tasks)
+│       └── SG: egress-only
+├── SQS (FIFO, content-based dedup, visibility 60s)
+│   └── DLQ (maxReceiveCount: 3)
+├── ECR (scan on push, AES256 encryption, MUTABLE tags)
+├── ACM Certificate (DNS validation)
+├── SSM Parameters (~25, under /mainecybertech/${var.environment}/)
+├── CloudWatch Alarms (7: CPU×2, memory×2, ALB 5xx, latency, SQS age)
+├── SNS Topic (email subscription)
+└── IAM (ECS execution role + OIDC provider + GitHub roles)
+
+Supabase Provider
+├── Project (prevent_destroy)
+├── Storage: documents bucket (private, 50MB)
+└── Storage: avatars bucket (public, 2MB)
+
+Vercel Provider
+└── Project (mainecybertech-portal, Next.js, apps/web root)
+    ├── Env var: NEXT_PUBLIC_API_URL
+    └── 4 domains (www + app × prod + test)
+
+Cloudflare Provider
+├── DNS: app.mainecybertech.com CNAME → Vercel
+├── DNS: api.mainecybertech.com CNAME → ALB
+├── DNS: www.mainecybertech.com CNAME → cname.vercel-dns.com
+├── DNS: app.mainecybertech.us CNAME → Vercel
+├── DNS: api.mainecybertech.us CNAME → ALB
+└── DNS: www.mainecybertech.us CNAME → cname.vercel-dns.com
+```
+
+**Notable omissions:**
+
+- No WAF (Web Application Firewall) attached to ALB
+- No VPC Flow Logs configuration
+- No RDS/DB instance (uses Supabase-managed Postgres)
+- No CloudFront CDN in front of the ALB
+- No backup policy for the EBS/EFS (no persistent storage used)
+- No ECR lifecycle policy — images accumulate indefinitely
+
+### CI/CD & Delivery
+
+**Pipeline Architecture:**
+
+```
+Push to main
+  ├── validate.yml (test + lint + typecheck on Node 18,20)
+  ├── e2e.yml (build web, run Playwright)
+  └── supabase-migrations.yml (supabase db push)
+
+API deploy: validate + e2e + migrations → prod-approval → ECR build → ECS force-deploy → wait stable
+Web deploy: validate + e2e + migrations → prod-approval → vercel build --prod → vercel deploy --prebuilt
+Worker deploy: validate + e2e + migrations → prod-approval → ECR build → ECS force-deploy → wait stable
+```
+
+**Concerns:**
+
+- **Docker build context**: API/worker ECR build runs `docker build -f apps/api/Dockerfile .` from repo root. Without `.dockerignore`, the entire monorepo (including node_modules in CI restore cache) is sent to the Docker daemon as context.
+- **ECS stability wait**: 10-minute timeout. The API task definition references `:latest` tag. Since the deployment just force-restarts with the same task definition ARN (but new image), the wait checks that a stable number of tasks pass health checks. This works but the `:latest` tag indirection means rolling back is just a matter of redeploying the old image to `:latest`.
+- **No blue/green deployment**: Uses `deployment_controller { type = "ECS" }` (rolling update) instead of `CODE_DEPLOY` (blue/green). Rolling updates are simpler but can cause brief downtime during task replacement.
+- **Vercel deploy missing env verification**: The web-prod workflow runs `vercel pull` then `vercel build` then `vercel deploy --prebuilt`. There's no explicit verification that `NEXT_PUBLIC_API_URL` is set correctly for the production environment.
+
+---
+
+## 4. Documentation & Knowledge Management
+
+### Accuracy & Drift
+
+| Document                             | Finding                                                                                                                                                                                                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AGENTS.md`                          | ✅ Recent; Phase 4 marketing completion updated. Test count accurate (730). Architecture description matches implementation.                                                                                          |
+| `docs/ENVIRONMENT_VARIABLES.md`      | ⚠️ **Duplicate HEALTH_PORT on line 71-72.** `CORS_ORIGIN` description still says single-origin (not comma-separated, despite code supporting it). Missing `SUPABASE_SERVICE_ROLE_KEY` description updated accurately. |
+| `docs/INDEX.md`                      | ❌ **Massive duplication** — lines 29-48 and 49-76 are identical sets of links. The "Deployment & Operations" section repeats "Architecture & Design" entries.                                                        |
+| `docs/MARKETING_SITE_INTEGRATION.md` | ✅ Updated for Phase 4 completion. aws-www references now described as "removed" / "decommissioned."                                                                                                                  |
+| `docs/GAP_ANALYSIS.md`               | ✅ Appears accurate; references current test counts and known issues.                                                                                                                                                 |
+| `README.md`                          | Not reviewed in detail, but `README.merged.complete.md` at root suggests a doc consolidation in progress.                                                                                                             |
+
+### Coverage Gaps
+
+1. **No API endpoint inventory doc** — No single document listing all routes, their auth requirements, request/response schemas. Developers must grep route files.
+2. **No Supabase schema diagram** — 6 migration files + 5 seed files, but no visual or tabular schema overview. Understanding the `memberships → roles → permissions → overrides` chain requires reading SQL.
+3. **No local-only env template** — `apps/api/.env.example` / `apps/web/.env.example` don't exist. New developers must infer from env.ts and docs.
+4. **No onboarding troubleshooting guide** — Common issues (pnpm install on Windows, Supabase local start failures, EPERM errors) are mentioned in AGENTS.md but not formalized.
+5. **No architecture decision record (ADR)** — Key decisions are scattered across AGENTS.md and markdown docs without structured ADR format.
+
+### Consolidation Opportunities
+
+- `README.md` + `README.merged.complete.md` + `README.dev.md` + `docs/README.dev.md` — At least 4 README files with overlapping content. Should consolidate to root `README.md` (quick start) + `docs/` (detailed).
+- `docs/domain-operations/` — Listed as duplicate/stale in AGENTS.md. Should either integrate or archive.
+- Root-level planning artifacts — `TIER4_DEDUPE_STATUS.txt`, `ARTIFACT_CLEANUP_GUIDE.md`, `COMPLETION_SUMMARY.txt`, `CODEBASE_POLISH_SUMMARY.txt`, `SETUP_REVIEW_ADVICE.md` — No longer referenced; should be archived.
+- `docs/INDEX.md` duplication — Half the file is duplicated content.
+
+### Developer Experience (DX)
+
+**Strengths:**
+
+- `AGENTS.md` is an excellent single-source-of-truth for project context
+- Clear test patterns documented for each package
+- Docker Compose provides one-command local stack
+- PowerShell and bash scripts for common workflows (env sync, reset)
+- `pnpm` workspace with `turbo` for parallel task execution
+
+**Weaknesses:**
+
+- No `.env.example` files — developers must cross-reference `env.ts` and docs
+- `pnpm dev` requires 3 terminal windows (Supabase, API, web) — no single docker-compose up for development (docker-compose builds production images)
+- `supabase:env:sync` script only works on Windows (PowerShell); no cross-platform fallback
+- EPERM symlink issues on Windows are "known" but unresolved
+- Jest watch mode (`test:watch`) has inconsistent support across packages
+
+---
+
+## 5. Critical Observations & Vulnerabilities
+
+| #   | File/Module                                                 | Category       | Description                                                                                                                                                                                                                                           | Remediation                                                                                                                                                                                                          |
+| --- | ----------------------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `apps/api/src/middleware/security.ts:4-20`                  | 🔴 Security    | Regex patterns with `g` flag cause `.test()` to alternate results due to `lastIndex` state persistence. A payload matching a pattern on first call may not match on second call from a different request.                                             | Remove `g` flag from all regex literals in `DANGEROUS_PATTERNS` and `SQL_INJECTION_PATTERNS`, or clone regex per invocation via `new RegExp(pattern.source, "i")`                                                    |
+| 2   | `apps/worker/src/main.ts:210-214`                           | 🔴 Data Loss   | Failed tasks are deleted from SQS before the DLQ can receive them. `deleteMessage()` is called in the same promise chain as `processMessage()`, so any failure (exception or returned `{ ok: false }`) results in message deletion with no retry.     | Split the chain: only call `deleteMessage` when `result.ok === true`. Failed messages will return to the queue via visibility timeout and eventually hit the DLQ after `maxReceiveCount: 3`                          |
+| 3   | `infra/terraform/compute.tf:101,119`                        | 🟡 Security    | ECR repositories have `image_tag_mutability = "MUTABLE"`, allowing tags (including `:latest`) to be overwritten. An attacker with push access can replace a known-good image with a compromised one.                                                  | Set `image_tag_mutability = "IMMUTABLE"` on both ECR repos. Use unique tags (git SHA) for deployments instead of `:latest`                                                                                           |
+| 4   | `apps/api/src/app.ts:52-59`                                 | 🟡 Performance | Global IP rate limiter at 100 req/15min (~1 request per 9 seconds) is extremely restrictive. The per-user limiter after auth adds additional throttling. This will cause failures for legitimate multi-tab users and dashboards that batch-load data. | Increase to at least 300-500 per 15min, or move the global limiter to only cover public/unauthenticated routes. The per-user limiter provides fine-grained control for auth routes                                   |
+| 5   | `apps/api/src/app.ts:48`                                    | 🟡 Performance | `express.json({ limit: "1mb" })` — Body parser rejects anything over 1MB. Document uploads with base64-encoded payloads or large form submissions will hit this limit silently.                                                                       | Increase to `10mb` to match the Next.js server action limit (`bodySizeLimit: "25mb"` in next.config.mjs). Document uploads use multipart (multer) so aren't affected, but form submissions with attachments could be |
+| 6   | `apps/api/src/services/supabase.ts:6-11`                    | 🟡 Resilience  | Singleton Supabase admin client with no connection pool configuration. `createClient()` defaults may not handle production concurrency. No health check or reconnection logic.                                                                        | Configure pool size via `createClient(url, key, { db: { pool: { min: 2, max: 10 } } })`. Consider adding a connection health check wrapper                                                                           |
+| 7   | Multiple Dockerfiles                                        | 🟡 Security    | API and Worker run containers as `root`. Violates container security best practices. Web correctly uses `adduser nextjs` and `USER nextjs`.                                                                                                           | Add `RUN addgroup -S appgroup && adduser -S appuser -G appgroup` then `USER appuser` in API and Worker Dockerfiles                                                                                                   |
+| 8   | Root directory                                              | 🟡 Tech Debt   | No `.dockerignore` in the monorepo root. `docker build` sends the entire monorepo (including `node_modules`, `.git`, 35+ root files) as build context, slowing builds.                                                                                | Create `.dockerignore` with `node_modules/`, `.git/`, `.turbo/`, `docs/`, `scripts/`, `*.md`, `*.txt`                                                                                                                |
+| 9   | Root directory                                              | 🟡 Tech Debt   | 6 stale planning artifacts: `TIER4_DEDUPE_STATUS.txt`, `ARTIFACT_CLEANUP_GUIDE.md`, `COMPLETION_SUMMARY.txt`, `README.merged.complete.md`, `CODEBASE_POLISH_SUMMARY.txt`, `SETUP_REVIEW_ADVICE.md`.                                                   | Archive to a `./archive/` directory or delete                                                                                                                                                                        |
+| 10  | `docs/ENVIRONMENT_VARIABLES.md:71-72`                       | 🟢 Doc Drift   | `HEALTH_PORT` listed twice.                                                                                                                                                                                                                           | Remove duplicate line                                                                                                                                                                                                |
+| 11  | `docs/INDEX.md:49-76`                                       | 🟢 Doc Drift   | Massive duplication — "Deployment & Operations" section repeats all entries from "Architecture & Design" section.                                                                                                                                     | Remove the duplicated block (lines 49-76)                                                                                                                                                                            |
+| 12  | `apps/api/src/middleware/auth.ts:32-33`                     | 🟡 Security    | Cookie parsing splits on `;` and finds the first match for `mct_session=`. If multiple cookies named `mct_session` exist (e.g., from multiple subdomains), the _first_ match wins, which may not be the intended one.                                 | Use a proper cookie parser middleware (`cookie-parser`) for deterministic cookie resolution                                                                                                                          |
+| 13  | `apps/worker/src/tasks/stripe-reconcile.ts:65-69`           | 🟡 Resilience  | Task handler reads `process.env.SUPABASE_URL` and keys directly without validation. If these are missing in the runtime environment, the worker silently creates a broken Supabase client.                                                            | Use the validated `env` singleton from `main.ts` instead of raw `process.env`                                                                                                                                        |
+| 14  | `apps/web/app/(portal)/layout.tsx`                          | 🟡 Performance | Every portal page navigations triggers 5 sequential API calls (user.me, memberships.list, org.get, org.list, unread count) before any content is streamed. The `sentryDsn`-style try/catch swallows errors silently.                                  | Consider streaming layout with suspense boundaries, or batch these into a single `/api/v1/portal/init` compound endpoint to reduce round-trips                                                                       |
+| 15  | `supabase/migrations/5302033_public_interactions.sql:23-27` | 🟡 Security    | `FOR INSERT TO anon WITH CHECK (true)` and `FOR SELECT TO anon USING (true)` allows any bearer of the Supabase anon key to query all submitted interactions (names, emails, messages).                                                                | Remove the SELECT policy for `anon` (the API serves this data, not direct Supabase client access). The INSERT policy is acceptable for the public form                                                               |

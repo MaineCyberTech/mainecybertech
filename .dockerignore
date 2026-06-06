@@ -1,0 +1,47 @@
+# Git
+.git
+.gitattributes
+.gitignore
+
+# Dependencies
+node_modules/
+**/node_modules/
+.pnpm-store/
+.pnpm/
+
+# Build output
+.next/
+dist/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project extras (not needed for Docker builds)
+docs/
+scripts/
+infra/
+supabase/
+sql/
+lib/
+tmp/
+temp/
+docs.tar.gz
+
+# Misc
+*.md
+*.txt
+*.log
+pnpm-debug.log*

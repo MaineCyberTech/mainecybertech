@@ -1,0 +1,54 @@
+name: web-prod-vercel
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "packages/**"
+      - ".github/workflows/web-prod-vercel.yml"
+
+jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+
+  e2e:
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+
+  migrations:
+    uses: ./.github/workflows/supabase-migrations.yml
+    secrets: inherit
+
+  deploy-prod:
+    needs: [validate, e2e, migrations]
+    runs-on: ubuntu-latest
+    environment: prod-approval
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Pull Vercel environment information
+        run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build Vercel artifacts
+        run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy to Vercel production
+        run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

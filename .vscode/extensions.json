@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-typescript-next",
+    "firsttris.vscode-jest-runner",
+    "vitest.explorer",
+    "exodiusstudios.comment-anchors",
+    "dsznajder.es7-react-js-snippets",
+    "editorconfig.editorconfig"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "name": "client-portal",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch",
+    "test:coverage": "turbo run test:coverage",
+    "e2e": "pnpm --filter=web e2e",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write .",
+    "supabase:env:sync": "powershell -ExecutionPolicy Bypass -File ./scripts/sync_supabase_env.auto.v2.ps1 -UseNpx -Framework nextjs -EnvFile .env.local",
+    "dev:autoenv": "powershell -ExecutionPolicy Bypass -File ./scripts/start_project_with_supabase_env.ps1 -UseNpx -Framework nextjs -EnvFile .env.local -Command \"npm run dev\"",
+    "dev:autoenv:vite": "powershell -ExecutionPolicy Bypass -File ./scripts/start_project_with_supabase_env.ps1 -UseNpx -Framework vite -EnvFile .env -Command \"npm run dev\"",
+    "supabase:reset:auto": "powershell -ExecutionPolicy Bypass -File ./scripts/local_dev_reset_and_verify.automated.v2.ps1 -UseNpx"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.60.0",
+    "pino-pretty": "^10.3.1",
+    "prettier": "^3.4.2",
+    "supabase": "^2.101.0",
+    "turbo": "^2.1.3",
+    "typescript": "^5.7.2"
+  }
+}

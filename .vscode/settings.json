@@ -1,0 +1,27 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": ["typescript", "typescriptreact"],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "files.exclude": {
+    "**/.next": true,
+    "**/dist": true,
+    "**/.turbo": true,
+    "**/node_modules": true,
+    "**/coverage": true
+  },
+  "search.exclude": {
+    "**/.next": true,
+    "**/dist": true,
+    "**/.turbo": true,
+    "**/node_modules": true,
+    "**/pnpm-lock.yaml": true,
+    "**/coverage": true
+  },
+  "jest.runMode": "on-demand",
+  "jest.jestCommandLine": "pnpm exec jest"
+}

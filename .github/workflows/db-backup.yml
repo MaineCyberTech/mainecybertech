@@ -1,0 +1,44 @@
+name: Database Backup
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pg_dump
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Run backup script
+        run: pwsh scripts/backup-database.ps1
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          S3_BUCKET: ${{ vars.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
+          RETENTION_DAYS: ${{ vars.BACKUP_RETENTION_DAYS || '30' }}
+
+      - name: Notify on failure
+        if: failure()
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_TITLE: Database Backup Failed
+          SLACK_MESSAGE: "The scheduled database backup workflow has failed for ${{ github.ref }}."
+          SLACK_COLOR: danger

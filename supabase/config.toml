@@ -1,0 +1,11 @@
+project_id = "your-project-id"
+
+[db.seed]
+enabled = true
+sql_paths = [
+  "./seeds/00_local_auth_users.corrected.v2.sql",
+  "./seeds/01_attach_real_users.corrected.v2.sql",
+  "./seeds/02_schema_aligned_seed.sql",
+  "./seeds/03_local_portal_extra_demo_seed.sql",
+  "./seeds/04_test_seed.sql"
+]

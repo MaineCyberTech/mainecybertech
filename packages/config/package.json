@@ -1,0 +1,13 @@
+{
+  "name": "@mct/config",
+  "version": "1.0.0",
+  "private": true,
+  "exports": {
+    "./eslint": "./eslint.js",
+    "./typescript": "./tsconfig.json"
+  },
+  "devDependencies": {
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.2"
+  }
+}

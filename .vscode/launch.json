@@ -1,0 +1,48 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "API (tsx watch)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter=api dev",
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"],
+      "envFile": "${workspaceFolder}/apps/api/.env.local"
+    },
+    {
+      "name": "Web (Next.js)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter=web dev",
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"],
+      "envFile": "${workspaceFolder}/apps/web/.env.local"
+    },
+    {
+      "name": "Worker (tsx watch)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter=worker dev",
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"],
+      "envFile": "${workspaceFolder}/apps/worker/.env.local"
+    },
+    {
+      "name": "API Tests (current file)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter=api test -- --no-coverage --testPathPattern \"${relativeFile}\"",
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Web Tests (current file)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm --filter=web test -- --no-coverage --testPathPattern \"${relativeFile}\"",
+      "cwd": "${workspaceFolder}",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}

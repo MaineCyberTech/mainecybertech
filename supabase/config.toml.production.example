@@ -1,0 +1,76 @@
+# Supabase Production-Hardened Configuration Example
+# Copy to config.toml and review every setting before deploying.
+# This example is tuned for a multi-tenant MSP/client portal with stricter defaults.
+
+[project]
+name = "msp-portal-prod"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public"]
+max_rows = 500
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.pooler]
+enabled = true
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[auth]
+enabled = true
+site_url = "https://portal.example.com"
+additional_redirect_urls = [
+  "https://portal.example.com/auth/callback",
+  "https://admin.example.com/auth/callback"
+]
+jwt_expiry = 3600
+refresh_token_rotation_enabled = true
+security_update_password_require_reauthentication = true
+enable_refresh_token_reuse_detection = true
+enable_signup = false
+
+[auth.email]
+enable_signup = false
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = true
+max_frequency = "1m"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+[storage]
+enabled = true
+file_size_limit = "25MiB"
+
+[realtime]
+enabled = true
+
+[studio]
+enabled = false
+port = 54323
+
+[edge_runtime]
+enabled = true
+
+[analytics]
+enabled = false
+
+# Optional experimental / environment-specific sections may be added as needed.
+# Recommended operational guidance:
+# - Keep public signups disabled for tenant safety.
+# - Prefer invite-only onboarding for admins and client users.
+# - Enforce RLS on every tenant-scoped table.
+# - Use private storage buckets by default and grant access through signed URLs.
+# - Keep JWT lifetime short and rotate refresh tokens.
