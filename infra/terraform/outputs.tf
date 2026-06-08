@@ -214,17 +214,3 @@ output "cloudflare_test_www_fqdn" {
 }
 
 
-output "vercel_www_test_domain" {
-  description = "Vercel www testing domain"
-  value       = vercel_project_domain.www_test.domain
-}
-
-output "vercel_app_prod_domain" {
-  description = "Vercel app production domain"
-  value       = vercel_project_domain.app_prod.domain
-}
-
-output "vercel_app_test_domain" {
-  description = "Vercel app testing domain"
-  value       = vercel_project_domain.app_test.domain
-}
