@@ -1,4 +1,4 @@
-project_id = "your-project-id"
+project_id = "mainecybertech-dev"
 
 [db.seed]
 enabled = true
