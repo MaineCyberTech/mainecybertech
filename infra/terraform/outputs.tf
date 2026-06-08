@@ -213,10 +213,6 @@ output "cloudflare_test_www_fqdn" {
   value       = "${var.cloudflare_test_www_name}.mainecybertech.us"
 }
 
-output "vercel_www_prod_domain" {
-  description = "Vercel www production domain"
-  value       = vercel_project_domain.www_prod.domain
-}
 
 output "vercel_www_test_domain" {
   description = "Vercel www testing domain"
