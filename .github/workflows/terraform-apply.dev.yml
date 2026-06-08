@@ -65,6 +65,30 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
+      - name: Import existing Supabase project
+        run: |
+          PROJECT_NAME="mainecybertech-${ENVIRONMENT}"
+          echo "Looking up Supabase project: $PROJECT_NAME"
+          PROJECT_REF=$(curl -s --connect-timeout 10 --max-time 15 \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            "https://api.supabase.com/v1/projects" \
+            | python3 -c "import sys,json; projs=json.load(sys.stdin); match=[p for p in projs if p['name']=='$PROJECT_NAME']; print(match[0]['id'] if match else '')" 2>/dev/null)
+          if [ -n "$PROJECT_REF" ]; then
+            echo "Importing supabase_project.main_db (ref=$PROJECT_REF)"
+            terraform import -lock=false supabase_project.main_db "$PROJECT_REF" 2>/dev/null || echo "Already in state or import failed"
+          else
+            echo "Project $PROJECT_NAME not found — will be created by apply"
+          fi
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD }}
+          TF_VAR_supabase_anon_key: ${{ secrets.TF_VAR_SUPABASE_ANON_KEY }}
+          TF_VAR_supabase_service_role_key: ${{ secrets.TF_VAR_SUPABASE_SERVICE_ROLE_KEY }}
+          TF_VAR_jwt_secret: ${{ secrets.TF_VAR_JWT_SECRET }}
+          VERCEL_API_TOKEN: ${{ secrets.VERCEL_API_TOKEN }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          ENVIRONMENT: dev
+
       - name: Terraform apply (dev)
         run: terraform apply -auto-approve -lock-timeout=120s -var-file=${{ vars.TF_VAR_FILE }}
         env:
