@@ -25,7 +25,7 @@ export async function requireAdmin(
     }
 
     const adminRole = data.find((row) =>
-      ["admin", "super_admin"].includes(row.roles?.key),
+      ["admin", "super_admin"].includes((row.roles as unknown as { key: string }).key),
     );
 
     if (!adminRole) {
