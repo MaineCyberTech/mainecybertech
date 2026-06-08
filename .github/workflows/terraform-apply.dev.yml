@@ -65,6 +65,34 @@ jobs:
       - name: Terraform validate
         run: terraform validate
 
+      - name: Import existing resources
+        run: |
+          # IAM OIDC provider
+          OIDC_ARN="arn:aws:iam::600696219742:oidc-provider/token.actions.githubusercontent.com"
+          terraform state show aws_iam_openid_connect_provider.github > /dev/null 2>&1 || \
+            terraform import aws_iam_openid_connect_provider.github "$OIDC_ARN" || true
+
+          # Cloudflare DNS records — auto-discover via API
+          ZONE_ID="8818fac5f101d33e556f8d971f1a3381"
+          for RECORD in "app:CNAME" "www:CNAME"; do
+            NAME="${RECORD%%:*}"
+            TYPE="${RECORD##*:}"
+            FQDN="${NAME}.mainecybertech.us"
+            ADDR="cloudflare_dns_record.test_${NAME}"
+            terraform state show "$ADDR" > /dev/null 2>&1 && continue
+            RECORD_ID=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=$TYPE&name=$FQDN" \
+              | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+            if [ -n "$RECORD_ID" ]; then
+              echo "Importing $ADDR (id=$RECORD_ID)"
+              terraform import "$ADDR" "${ZONE_ID}/${RECORD_ID}" || true
+            else
+              echo "No existing record found for $ADDR, will be created by apply"
+            fi
+          done
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
       - name: Terraform apply (dev)
         run: terraform apply -auto-approve -lock-timeout=120s -var-file=${{ vars.TF_VAR_FILE }}
         env:
