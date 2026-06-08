@@ -30,34 +30,29 @@ resource "cloudflare_dns_record" "prod_api" {
 
 data "cloudflare_dns_record" "test_app" {
   zone_id = var.cloudflare_zone_id_test
-  name    = var.cloudflare_test_app_name
-  type    = "CNAME"
+  filter {
+    name = var.cloudflare_test_app_name
+    type = "CNAME"
+  }
 }
 
 data "cloudflare_dns_record" "test_api" {
+  count   = var.cloudflare_test_api_target != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id_test
-  name    = var.cloudflare_test_api_name
-  type    = "CNAME"
+  filter {
+    name = var.cloudflare_test_api_name
+    type = "CNAME"
+  }
 }
 
 data "cloudflare_dns_record" "test_www" {
   zone_id = var.cloudflare_zone_id_test
-  name    = var.cloudflare_test_www_name
-  type    = "CNAME"
+  filter {
+    name = var.cloudflare_test_www_name
+    type = "CNAME"
+  }
 }
 
-resource "cloudflare_dns_record" "test_api" {
-  count   = var.cloudflare_zone_id_test != "" && var.cloudflare_test_api_target != "" ? 1 : 0
-  zone_id = var.cloudflare_zone_id_test
-  name    = var.cloudflare_test_api_name
-  type    = "CNAME"
-  content = var.cloudflare_test_api_target
-  ttl     = 1
-  proxied = var.cloudflare_proxy_api_records
-  comment = "Testing API subdomain for Maine CyberTech"
-}
-
-# www subdomains for marketing site
 resource "cloudflare_dns_record" "prod_www" {
   count   = var.cloudflare_zone_id_prod != "" && var.cloudflare_prod_www_target != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id_prod
@@ -67,15 +62,4 @@ resource "cloudflare_dns_record" "prod_www" {
   ttl     = 1
   proxied = true
   comment = "Production www marketing subdomain for Maine CyberTech"
-}
-
-resource "cloudflare_dns_record" "test_www" {
-  count   = var.cloudflare_zone_id_test != "" && var.cloudflare_test_www_target != "" ? 1 : 0
-  zone_id = var.cloudflare_zone_id_test
-  name    = var.cloudflare_test_www_name
-  type    = "CNAME"
-  content = var.cloudflare_test_www_target
-  ttl     = 1
-  proxied = true
-  comment = "Testing www marketing subdomain for Maine CyberTech"
 }
