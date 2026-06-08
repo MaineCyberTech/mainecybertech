@@ -12,6 +12,7 @@ const spec = {
   },
   servers: [
     { url: "https://api.mainecybertech.com", description: "Production" },
+    { url: "https://api.mainecybertech.us", description: "Dev" },
     { url: "http://localhost:4000", description: "Local development" },
   ],
   security: [{ bearerAuth: [] }],
