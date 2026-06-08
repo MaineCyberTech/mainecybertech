@@ -67,27 +67,24 @@ jobs:
 
       - name: Import existing resources
         run: |
-          # IAM OIDC provider
-          OIDC_ARN="arn:aws:iam::600696219742:oidc-provider/token.actions.githubusercontent.com"
-          terraform state show aws_iam_openid_connect_provider.github > /dev/null 2>&1 || \
-            terraform import aws_iam_openid_connect_provider.github "$OIDC_ARN" || true
+          set +e
+          # IAM OIDC provider (already created manually, ignore if already imported)
+          terraform import -lock=false aws_iam_openid_connect_provider.github \
+            arn:aws:iam::600696219742:oidc-provider/token.actions.githubusercontent.com 2>/dev/null || true
 
-          # Cloudflare DNS records — auto-discover via API
+          # Cloudflare DNS records — look up via API and import if found
           ZONE_ID="8818fac5f101d33e556f8d971f1a3381"
-          for RECORD in "app:CNAME" "www:CNAME"; do
-            NAME="${RECORD%%:*}"
-            TYPE="${RECORD##*:}"
-            FQDN="${NAME}.mainecybertech.us"
-            ADDR="cloudflare_dns_record.test_${NAME}"
-            terraform state show "$ADDR" > /dev/null 2>&1 && continue
-            RECORD_ID=$(curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+          for ENTRY in "test_app:app.mainecybertech.us:CNAME" "test_www:www.mainecybertech.us:CNAME"; do
+            IFS=":" read -r ADDR FQDN TYPE <<< "$ENTRY"
+            RECORD_ID=$(curl -s --connect-timeout 10 --max-time 15 \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
               "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=$TYPE&name=$FQDN" \
-              | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['result'][0]['id'] if d.get('result') else '')" 2>/dev/null)
+              | python3 -c "import sys,json; d=json.load(sys.stdin); r=d.get('result',[]); print(r[0]['id'] if r else '')" 2>/dev/null)
             if [ -n "$RECORD_ID" ]; then
-              echo "Importing $ADDR (id=$RECORD_ID)"
-              terraform import "$ADDR" "${ZONE_ID}/${RECORD_ID}" || true
+              echo "Importing $ADDR (record $RECORD_ID)"
+              terraform import -lock=false "$ADDR" "${ZONE_ID}/${RECORD_ID}" 2>/dev/null || true
             else
-              echo "No existing record found for $ADDR, will be created by apply"
+              echo "No existing record found for $FQDN — will be created by apply"
             fi
           done
         env:
