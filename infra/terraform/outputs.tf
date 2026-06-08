@@ -128,13 +128,13 @@ output "supabase_endpoint" {
 }
 
 output "supabase_documents_bucket" {
-  description = "Name of the Supabase documents storage bucket"
-  value       = supabase_storage_bucket.documents.name
+  description = "Name of the Supabase documents storage bucket (created manually)"
+  value       = "documents"
 }
 
 output "supabase_avatars_bucket" {
-  description = "Name of the Supabase avatars storage bucket"
-  value       = supabase_storage_bucket.avatars.name
+  description = "Name of the Supabase avatars storage bucket (created manually)"
+  value       = "avatars"
 }
 
 # SSM parameters
