@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "exports": {
-    "./eslint": "./eslint.js",
+    "./eslint": "./eslint.mjs",
     "./typescript": "./tsconfig.json"
   },
   "devDependencies": {
