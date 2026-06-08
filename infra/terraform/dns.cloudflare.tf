@@ -28,15 +28,22 @@ resource "cloudflare_dns_record" "prod_api" {
   comment = "Production API subdomain for Maine CyberTech"
 }
 
-resource "cloudflare_dns_record" "test_app" {
-  count   = var.cloudflare_zone_id_test != "" && var.cloudflare_test_app_target != "" ? 1 : 0
+data "cloudflare_dns_record" "test_app" {
   zone_id = var.cloudflare_zone_id_test
   name    = var.cloudflare_test_app_name
   type    = "CNAME"
-  content = var.cloudflare_test_app_target
-  ttl     = 1
-  proxied = var.cloudflare_proxy_app_records
-  comment = "Testing app subdomain for Maine CyberTech"
+}
+
+data "cloudflare_dns_record" "test_api" {
+  zone_id = var.cloudflare_zone_id_test
+  name    = var.cloudflare_test_api_name
+  type    = "CNAME"
+}
+
+data "cloudflare_dns_record" "test_www" {
+  zone_id = var.cloudflare_zone_id_test
+  name    = var.cloudflare_test_www_name
+  type    = "CNAME"
 }
 
 resource "cloudflare_dns_record" "test_api" {
