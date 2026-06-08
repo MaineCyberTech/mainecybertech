@@ -38,3 +38,15 @@ resource "cloudflare_dns_record" "prod_www" {
   proxied = true
   comment = "Production www marketing subdomain for Maine CyberTech"
 }
+
+# Test/dev API record — points to the ALB DNS name
+resource "cloudflare_dns_record" "test_api" {
+  count   = var.cloudflare_zone_id_test != "" ? 1 : 0
+  zone_id = var.cloudflare_zone_id_test
+  name    = var.cloudflare_test_api_name
+  type    = "CNAME"
+  content = aws_lb.api.dns_name
+  ttl     = 1
+  proxied = var.cloudflare_proxy_api_records
+  comment = "Test API subdomain for Maine CyberTech"
+}
