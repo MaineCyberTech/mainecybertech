@@ -173,12 +173,6 @@ output "ssm_sqs_queue_url_arn" {
   value       = aws_ssm_parameter.sqs_queue_url.arn
 }
 
-# Vercel
-output "vercel_project_id" {
-  description = "Vercel project ID"
-  value       = vercel_project.web_app.id
-}
-
 # GitHub OIDC
 output "github_terraform_role_arn" {
   description = "IAM role ARN for GitHub Actions Terraform workflows"
