@@ -28,31 +28,6 @@ resource "cloudflare_dns_record" "prod_api" {
   comment = "Production API subdomain for Maine CyberTech"
 }
 
-data "cloudflare_dns_record" "test_app" {
-  zone_id = var.cloudflare_zone_id_test
-  filter {
-    name = var.cloudflare_test_app_name
-    type = "CNAME"
-  }
-}
-
-data "cloudflare_dns_record" "test_api" {
-  count   = var.cloudflare_test_api_target != "" ? 1 : 0
-  zone_id = var.cloudflare_zone_id_test
-  filter {
-    name = var.cloudflare_test_api_name
-    type = "CNAME"
-  }
-}
-
-data "cloudflare_dns_record" "test_www" {
-  zone_id = var.cloudflare_zone_id_test
-  filter {
-    name = var.cloudflare_test_www_name
-    type = "CNAME"
-  }
-}
-
 resource "cloudflare_dns_record" "prod_www" {
   count   = var.cloudflare_zone_id_prod != "" && var.cloudflare_prod_www_target != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id_prod
