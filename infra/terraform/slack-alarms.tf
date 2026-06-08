@@ -27,7 +27,7 @@ exports.handler = async (event) => {
   const payload = JSON.stringify({
     attachments: [{
       color,
-      title: `${emoji} CloudWatch Alarm: ${alarmName}`,
+      title: `$${emoji} CloudWatch Alarm: $${alarmName}`,
       fields: [
         { title: "State", value: newState, short: true },
         { title: "Region", value: region, short: true },

@@ -19,18 +19,5 @@ resource "supabase_project" "main_db" {
   }
 }
 
-resource "supabase_storage_bucket" "documents" {
-  project_ref = supabase_project.main_db.id
-  name        = "documents"
-  public      = false
-
-  file_size_limit = 52428800
-}
-
-resource "supabase_storage_bucket" "avatars" {
-  project_ref = supabase_project.main_db.id
-  name        = "avatars"
-  public      = true
-
-  file_size_limit = 2097152
-}
+# Storage buckets are created manually via Supabase dashboard/CLI
+# (supabase_storage_bucket resource not supported by provider v1.x)
