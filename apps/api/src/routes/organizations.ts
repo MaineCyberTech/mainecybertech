@@ -282,7 +282,7 @@ router.patch("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
     if (!data) throw new AppError("NOT_FOUND", "Domain not found", 404);
 
     await logAuditEvent({
-      organizationId: req.params.id,
+      organizationId: String(req.params.id),
       actorUserId: req.authUser!.userId,
       action: "organization.domain.update",
       entityType: "organization_domain",
@@ -313,7 +313,7 @@ router.delete(
       if (error) throw new AppError("DB_ERROR", error.message, 500);
 
       await logAuditEvent({
-        organizationId: req.params.id,
+        organizationId: String(req.params.id),
         actorUserId: req.authUser!.userId,
         action: "organization.domain.remove",
         entityType: "organization_domain",
