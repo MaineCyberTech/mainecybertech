@@ -182,12 +182,10 @@ output "vercel_project_id" {
 # GitHub OIDC
 output "github_terraform_role_arn" {
   description = "IAM role ARN for GitHub Actions Terraform workflows"
-  value       = aws_iam_role.github_terraform.arn
+  value       = data.aws_iam_role.github_terraform.arn
 }
-
 output "github_deploy_role_arn" {
-  description = "IAM role ARN for GitHub Actions deployment workflows"
-  value       = aws_iam_role.github_deploy.arn
+  value       = data.aws_iam_role.github_deploy.arn
 }
 
 # Cloudflare DNS
