@@ -22,6 +22,11 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      - name: Create tfvars file
+        run: echo "$TF_VARS_FILE" > env/dev.tfvars
+        env:
+          TF_VARS_FILE: ${{ secrets.TF_VARS_FILE_CONTENT }}
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
