@@ -8,6 +8,11 @@ locals {
   supabase_db_host       = "db.${supabase_project.main_db.id}.supabase.co"
 }
 
+import {
+  to = supabase_project.main_db
+  id = "gigpuknitajakejmyxuk"
+}
+
 resource "supabase_project" "main_db" {
   organization_id   = var.supabase_org_slug
   name              = local.supabase_project_name
