@@ -34,6 +34,24 @@ jobs:
           role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
+      - name: Clear stale terraform lock
+        run: |
+          TABLE="terraform-state-lock-dev"
+          PREFIX="mainecybertech-terraform-state-dev/"
+          LOCKS=$(aws dynamodb scan --table-name "$TABLE" \
+            --filter-expression "begins_with(LockID, :p)" \
+            --expression-attribute-values "{\":p\":{\"S\":\"$PREFIX\"}}" \
+            --query "Items[*].LockID.S" --output text 2>/dev/null || true)
+          if [ -n "$LOCKS" ]; then
+            echo "Removing stale lock(s): $LOCKS"
+            for LOCK in $LOCKS; do
+              aws dynamodb delete-item --table-name "$TABLE" \
+                --key "{\"LockID\":{\"S\":\"$LOCK\"}}" || true
+            done
+          else
+            echo "No stale locks found"
+          fi
+
       - name: Terraform fmt check
         run: terraform fmt -check -recursive
 
