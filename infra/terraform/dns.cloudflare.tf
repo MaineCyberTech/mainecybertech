@@ -7,6 +7,7 @@
 #############################################
 
 resource "cloudflare_dns_record" "prod_app" {
+  count   = var.cloudflare_zone_id_prod != "" && var.cloudflare_prod_app_target != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id_prod
   name    = var.cloudflare_prod_app_name
   type    = "CNAME"
@@ -17,6 +18,7 @@ resource "cloudflare_dns_record" "prod_app" {
 }
 
 resource "cloudflare_dns_record" "prod_api" {
+  count   = var.cloudflare_zone_id_prod != "" && var.cloudflare_prod_api_target != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id_prod
   name    = var.cloudflare_prod_api_name
   type    = "CNAME"
@@ -27,6 +29,7 @@ resource "cloudflare_dns_record" "prod_api" {
 }
 
 resource "cloudflare_dns_record" "test_app" {
+  count   = var.cloudflare_zone_id_test != "" && var.cloudflare_test_app_target != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id_test
   name    = var.cloudflare_test_app_name
   type    = "CNAME"
@@ -37,6 +40,7 @@ resource "cloudflare_dns_record" "test_app" {
 }
 
 resource "cloudflare_dns_record" "test_api" {
+  count   = var.cloudflare_zone_id_test != "" && var.cloudflare_test_api_target != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id_test
   name    = var.cloudflare_test_api_name
   type    = "CNAME"
@@ -48,6 +52,7 @@ resource "cloudflare_dns_record" "test_api" {
 
 # www subdomains for marketing site
 resource "cloudflare_dns_record" "prod_www" {
+  count   = var.cloudflare_zone_id_prod != "" && var.cloudflare_prod_www_target != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id_prod
   name    = var.cloudflare_prod_www_name
   type    = "CNAME"
@@ -58,6 +63,7 @@ resource "cloudflare_dns_record" "prod_www" {
 }
 
 resource "cloudflare_dns_record" "test_www" {
+  count   = var.cloudflare_zone_id_test != "" && var.cloudflare_test_www_target != "" ? 1 : 0
   zone_id = var.cloudflare_zone_id_test
   name    = var.cloudflare_test_www_name
   type    = "CNAME"

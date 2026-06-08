@@ -110,6 +110,10 @@ infra/terraform/lambda/*.zip
 tmp/
 temp/
 
+# Terraform binary (downloaded locally)
+terraform.exe
+terraform
+
 # Local .terraform directories
 
 **/.terraform/*
