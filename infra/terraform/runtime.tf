@@ -393,10 +393,13 @@ resource "aws_appautoscaling_target" "api" {
   count              = var.enable_service_autoscaling ? 1 : 0
   max_capacity       = var.api_autoscaling_max_capacity
   min_capacity       = var.api_autoscaling_min_capacity
-  resource_id        = "service/${var.ecs_cluster_name}/${var.api_service_name}"
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.api.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
-  depends_on         = [aws_iam_service_linked_role.autoscaling]
+  depends_on         = [
+    aws_iam_service_linked_role.autoscaling,
+    aws_ecs_service.api,
+  ]
 }
 
 resource "aws_appautoscaling_policy" "api_cpu" {
