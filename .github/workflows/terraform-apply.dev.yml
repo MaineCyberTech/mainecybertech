@@ -3,10 +3,6 @@ name: terraform-apply-dev
 on:
   push:
     branches: [develop]
-    paths:
-      - "infra/terraform/**"
-      - ".github/workflows/terraform-plan.dev.yml"
-      - ".github/workflows/terraform-apply.dev.yml"
 
 jobs:
   apply-dev:

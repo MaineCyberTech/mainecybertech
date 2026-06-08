@@ -3,10 +3,6 @@ name: terraform-plan-dev
 on:
   pull_request:
     branches: [develop]
-    paths:
-      - "infra/terraform/**"
-      - ".github/workflows/terraform-plan.dev.yml"
-      - ".github/workflows/terraform-apply.dev.yml"
 
 jobs:
   plan-dev:
