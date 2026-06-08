@@ -269,6 +269,7 @@ resource "aws_ecs_task_definition" "api_runtime" {
   cpu                      = var.api_task_cpu
   memory                   = var.api_task_memory
   execution_role_arn       = aws_iam_role.ecs_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([
     {
@@ -302,6 +303,7 @@ resource "aws_ecs_task_definition" "worker_runtime" {
   cpu                      = var.worker_task_cpu
   memory                   = var.worker_task_memory
   execution_role_arn       = aws_iam_role.ecs_execution.arn
+  task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([
     {
