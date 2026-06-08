@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 
 const PAGE_SIZE = 25;
@@ -8,10 +8,13 @@ const PAGE_SIZE = 25;
 type TicketRecord = Record<string, any> & { id: string };
 type OrganizationRecord = { id: string; name?: string | null };
 
+const STATUS_OPTIONS = ["new", "open", "triaged", "in_progress", "waiting_on_client", "resolved", "closed"];
+
 type Props = {
   tickets: TicketRecord[];
   organizations: OrganizationRecord[];
   createTicketAction: (formData: FormData) => Promise<void>;
+  updateTicketStatusAction?: (ticketId: string, status: string) => Promise<void>;
 };
 
 function formatDateTime(value?: string | null) {
@@ -99,33 +102,81 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
-function TicketCard({ ticket, orgMap }: { ticket: TicketRecord; orgMap: Map<string, string> }) {
+function StatusDropdown({ ticketId, currentStatus, onSelect, onClose }: { ticketId: string; currentStatus: string; onSelect: (ticketId: string, status: string) => void; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [onClose]);
+  return (
+    <div ref={ref} className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-white/10 bg-[#0A1118] shadow-2xl py-1">
+      {STATUS_OPTIONS.map((s) => (
+        <button
+          key={s}
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onSelect(ticketId, s); }}
+          className={`block w-full px-3 py-1.5 text-left text-xs transition ${s === currentStatus ? "text-emerald-300 bg-emerald-500/10" : "text-slate-300 hover:bg-white/5"}`}
+        >
+          {s}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function TicketCard({ ticket, orgMap, onStatusChange }: { ticket: TicketRecord; orgMap: Map<string, string>; onStatusChange?: (ticketId: string, status: string) => void }) {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const status = ticketStatus(ticket);
   const priority = ticketPriority(ticket);
+
+  const handleStatusClick = (e: React.MouseEvent) => {
+    if (!onStatusChange) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setDropdownOpen((v) => !v);
+  };
+
+  const handleStatusSelect = (ticketId: string, newStatus: string) => {
+    setDropdownOpen(false);
+    onStatusChange?.(ticketId, newStatus);
+  };
+
   return (
-    <Link key={ticket.id} href={`/admin/tickets/${ticket.id}`} className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
-            {ticket.external_jsm_issue_key ? (
-              <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono text-blue-300">{ticket.external_jsm_issue_key}</span>
-            ) : null}
+    <div className="relative">
+      <Link href={`/admin/tickets/${ticket.id}`} className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
+              {ticket.external_jsm_issue_key ? (
+                <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono text-blue-300">{ticket.external_jsm_issue_key}</span>
+              ) : null}
+            </div>
+            <p className="mt-2 text-sm text-slate-400 line-clamp-2">{ticketDescription(ticket) ?? "No description provided."}</p>
           </div>
-          <p className="mt-2 text-sm text-slate-400 line-clamp-2">{ticketDescription(ticket) ?? "No description provided."}</p>
+          <div className="relative flex flex-wrap items-center gap-2">
+            {onStatusChange ? (
+              <button type="button" onClick={handleStatusClick} className={statusPillClass(status) + " cursor-pointer hover:ring-1 hover:ring-emerald-500/40"}>{status}</button>
+            ) : (
+              <span className={statusPillClass(status)}>{status}</span>
+            )}
+            <span className={priorityPillClass(priority)}>{priority}</span>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className={statusPillClass(status)}>{status}</span>
-          <span className={priorityPillClass(priority)}>{priority}</span>
+        <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
+          <span>Org: {orgMap.get(ticket.organization_id) ?? ticket.organization_id}</span>
+          <span>Category: {ticketCategory(ticket)}</span>
+          <span>Assignee: {assigneeLabel(ticket)}</span>
+          <span title={formatDateTime(ticket.updated_at ?? ticket.created_at)}>Updated {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}</span>
         </div>
-      </div>
-      <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
-        <span>Org: {orgMap.get(ticket.organization_id) ?? ticket.organization_id}</span>
-        <span>Category: {ticketCategory(ticket)}</span>
-        <span>Assignee: {assigneeLabel(ticket)}</span>
-        <span title={formatDateTime(ticket.updated_at ?? ticket.created_at)}>Updated {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}</span>
-      </div>
-    </Link>
+      </Link>
+      {dropdownOpen && onStatusChange ? (
+        <StatusDropdown ticketId={ticket.id} currentStatus={status} onSelect={handleStatusSelect} onClose={() => setDropdownOpen(false)} />
+      ) : null}
+    </div>
   );
 }
 
@@ -138,7 +189,7 @@ function Chip({ children, onRemove }: { children: React.ReactNode; onRemove: () 
   );
 }
 
-export default function AdminTicketCenterClient({ tickets, organizations, createTicketAction }: Props) {
+export default function AdminTicketCenterClient({ tickets, organizations, createTicketAction, updateTicketStatusAction }: Props) {
   const [openModal, setOpenModal] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -262,7 +313,7 @@ export default function AdminTicketCenterClient({ tickets, organizations, create
           <span className="cyber-pill">{filtered.length} of {visibleTickets.length}</span>
         </div>
         <div className="mt-6 space-y-4">
-          {paginated.length > 0 ? paginated.map((ticket) => <TicketCard key={ticket.id} ticket={ticket} orgMap={orgMap} />) : <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">No tickets match your filters.</div>}
+          {paginated.length > 0 ? paginated.map((ticket) => <TicketCard key={ticket.id} ticket={ticket} orgMap={orgMap} onStatusChange={updateTicketStatusAction} />) : <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">No tickets match your filters.</div>}
         </div>
         {hasMore ? (
           <div className="mt-6 text-center">

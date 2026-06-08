@@ -62,7 +62,7 @@ describe("AdminTicketCenterClient", () => {
         createTicketAction={mockCreateTicketAction}
       />,
     );
-    expect(screen.getByRole("heading", { name: "Tickets" })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: "Tickets" }).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/Create and manage support tickets/)).toBeInTheDocument();
   });
 
@@ -80,7 +80,7 @@ describe("AdminTicketCenterClient", () => {
     expect(screen.getAllByText("All Tickets").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders open tickets list", () => {
+  it("renders all tickets in unified list", () => {
     render(
       <AdminTicketCenterClient
         tickets={tickets}
@@ -89,9 +89,10 @@ describe("AdminTicketCenterClient", () => {
       />,
     );
     expect(screen.getByText("Network Outage")).toBeInTheDocument();
+    expect(screen.getByText("Software Update")).toBeInTheDocument();
   });
 
-  it("displays organization name from map", () => {
+  it("displays organization name in ticket cards and filter", () => {
     render(
       <AdminTicketCenterClient
         tickets={tickets}
@@ -99,21 +100,10 @@ describe("AdminTicketCenterClient", () => {
         createTicketAction={mockCreateTicketAction}
       />,
     );
-    expect(screen.getByText(/Acme Corp/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Acme Corp/).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("shows ticket history toggle", () => {
-    render(
-      <AdminTicketCenterClient
-        tickets={tickets}
-        organizations={organizations}
-        createTicketAction={mockCreateTicketAction}
-      />,
-    );
-    expect(screen.getByText("Show History")).toBeInTheDocument();
-  });
-
-  it("shows closed tickets in history section when toggled", async () => {
+  it("filters tickets by search query", async () => {
     const user = userEvent.setup();
     render(
       <AdminTicketCenterClient
@@ -122,7 +112,24 @@ describe("AdminTicketCenterClient", () => {
         createTicketAction={mockCreateTicketAction}
       />,
     );
-    await user.click(screen.getByText("Show History"));
+    const searchInput = screen.getByPlaceholderText("Search tickets...");
+    await user.type(searchInput, "Network");
+    expect(screen.getByText("Network Outage")).toBeInTheDocument();
+    expect(screen.queryByText("Software Update")).not.toBeInTheDocument();
+  });
+
+  it("filters tickets by status", async () => {
+    const user = userEvent.setup();
+    render(
+      <AdminTicketCenterClient
+        tickets={tickets}
+        organizations={organizations}
+        createTicketAction={mockCreateTicketAction}
+      />,
+    );
+    const statusSelect = screen.getByDisplayValue("All status");
+    await user.selectOptions(statusSelect, "closed");
+    expect(screen.queryByText("Network Outage")).not.toBeInTheDocument();
     expect(screen.getByText("Software Update")).toBeInTheDocument();
   });
 

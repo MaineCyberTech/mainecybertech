@@ -42,6 +42,14 @@ export default async function AdminTicketsPage() {
     redirect("/admin/tickets");
   }
 
+  async function updateTicketStatusAction(ticketId: string, status: string) {
+    "use server";
+    await requireAdminAccess();
+    const api = getApiClient();
+    await api.tickets.update(ticketId, { status });
+    revalidatePath("/admin/tickets");
+  }
+
   const [organizations, ticketsResult] = await Promise.all([
     api.organizations.list(),
     api.tickets.list({}),
@@ -56,6 +64,7 @@ export default async function AdminTicketsPage() {
         tickets={tickets as TicketRecord[]}
         organizations={organizations as OrganizationRecord[]}
         createTicketAction={createTicketAction}
+        updateTicketStatusAction={updateTicketStatusAction}
       />
     </div>
   );
