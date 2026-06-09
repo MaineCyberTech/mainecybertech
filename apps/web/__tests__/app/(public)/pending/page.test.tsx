@@ -24,14 +24,14 @@ describe("PendingPage", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders return to login link", async () => {
+  it("renders sign out and return to login button", async () => {
     const { default: PendingPage } = await import(
       "@/app/(public)/pending/page"
     );
     render(<PendingPage />);
 
-    const link = screen.getByRole("link", { name: /return to login/i });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute("href", "/login");
+    const button = screen.getByRole("button", { name: /sign out.*return to login/i });
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveAttribute("type", "submit");
   });
 });

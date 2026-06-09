@@ -2,6 +2,19 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const SESSION_COOKIE = "mct_session";
 
+function isTokenExpired(token: string): boolean {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return true;
+    const payload = JSON.parse(
+      Buffer.from(parts[1], "base64url").toString("utf-8")
+    );
+    return payload.exp ? payload.exp * 1000 < Date.now() : true;
+  } catch {
+    return true;
+  }
+}
+
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const pathname = request.nextUrl.pathname;
@@ -15,7 +28,7 @@ export async function middleware(request: NextRequest) {
   const isPortalRoute =
     pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
 
-  const isAuthenticated = !!token;
+  const isAuthenticated = token ? !isTokenExpired(token) : false;
 
   if (!isAuthenticated && isPortalRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
