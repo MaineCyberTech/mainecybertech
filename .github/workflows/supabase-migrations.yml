@@ -28,7 +28,7 @@ jobs:
           corepack prepare pnpm@10 --activate
 
       - name: Install Supabase CLI
-        run: pnpm add -g supabase
+        run: npm install -g supabase
 
       - name: Link project
         run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
