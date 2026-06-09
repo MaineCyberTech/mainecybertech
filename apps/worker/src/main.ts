@@ -44,6 +44,7 @@ export const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   API_BASE_URL: z.string().url().optional(),
+  HEALTH_PORT: z.coerce.number().default(3001),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -275,7 +276,7 @@ registerAllTasks();
 
 // ============= Main =============
 if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test") {
-  startHealthServer(parseInt(process.env.HEALTH_PORT ?? "3001", 10));
+  startHealthServer(env.HEALTH_PORT);
   runWorkerTasks().catch((error) => {
     logger.error(error, "Worker crashed");
     process.exit(1);

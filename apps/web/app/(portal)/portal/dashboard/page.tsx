@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
+import { logger } from "@/lib/logger";
 import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
@@ -37,7 +38,7 @@ export default async function PortalDashboardPage() {
   try {
     membership = await getApprovedMembership();
   } catch (err) {
-    console.error("Failed to get membership:", err);
+    logger.error({ err }, "Failed to get membership");
   }
 
   if (!membership?.organization_id) {
@@ -71,7 +72,7 @@ export default async function PortalDashboardPage() {
     tickets = (ticketsResult.items ?? []).slice(0, 5);
     documents = (documentsResult.items ?? []).slice(0, 5);
   } catch (err) {
-    console.error("Failed to load dashboard data:", err);
+    logger.error({ err }, "Failed to load dashboard data");
   }
 
   return (

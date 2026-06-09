@@ -21,6 +21,14 @@ export default {
     '!src/**/*.d.ts',
     '!**/*.config.ts',
   ],
+  coverageThreshold: {
+    global: {
+      branches: 50,
+      functions: 50,
+      lines: 50,
+      statements: 50,
+    },
+  },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testPathIgnorePatterns: ['.next', 'node_modules', 'e2e'],
 };

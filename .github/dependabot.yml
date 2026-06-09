@@ -1,0 +1,31 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    groups:
+      dev-dependencies:
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "prettier"
+          - "jest*"
+          - "@jest/*"
+          - "ts-jest"
+          - "tsup"
+          - "turbo"
+          - "typescript"
+      sentry:
+        patterns:
+          - "@sentry/*"
+      pnpm:
+        patterns:
+          - "pnpm"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"

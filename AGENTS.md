@@ -725,6 +725,23 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 
 A comprehensive deep-dive audit was conducted on 2026-06-09 covering all 6 pillars: repository map, code mechanics, system architecture, infrastructure & deployment, documentation drift, and code cleanup. See [`docs/ARCHITECTURAL_ANALYSIS.md`](docs/ARCHITECTURAL_ANALYSIS.md) for the full report with 23 critical observations.
 
+## Additional Gaps & Recommendations (2026-06-10)
+
+Beyond the 23 architectural findings, 10 additional gaps were identified. All resolved in session.
+
+| # | Gap | Priority | Status | Fix |
+|---|-----|----------|--------|-----|
+| 1 | Worker `HEALTH_PORT` bypasses Zod env validation — reads `process.env` directly | High | ✅ | Added `HEALTH_PORT` to `envSchema` (`.default(3001)`) + changed `startHealthServer` call to use `env.HEALTH_PORT` |
+| 2 | No Dependabot config — no automated vulnerability scanning | Medium | ✅ | Created `.github/dependabot.yml` with npm + GHA schedules, grouped deps |
+| 3 | `noUncheckedIndexedAccess` not enabled in base tsconfig — misses real-world undefined bugs | Medium | ✅ | Enabled in `packages/config/tsconfig.json` |
+| 4 | Web Dockerfile missing `HEALTHCHECK` directive | Medium | ✅ | Added `HEALTHCHECK` wget to port 3000 with 30s interval |
+| 5 | Web jest config missing `coverageThreshold` — coverage can degrade silently | Medium | ✅ | Added 50% thresholds to `apps/web/jest.config.mjs` |
+| 6 | No pre-commit hooks (husky/lint-staged) — devs can skip lint/typecheck | Medium | ✅ | Installed husky + lint-staged, added `prepare` script, `.husky/pre-commit`, lint-staged config in root `package.json` |
+| 7 | Terraform env dir has no real configs — only `.example` files, blocks `terraform apply` | High | 🟡 | `dev.tfvars` and `backend.dev.hcl` already exist with real values; `prod.tfvars` still `.example` only (needs real AWS/Cloudflare/Vercel values) |
+| 8 | Terraform prod apply workflow passes fewer secrets than dev — inconsistency | Medium | ✅ | Added `TF_VAR_supabase_anon_key`, `TF_VAR_supabase_service_role_key`, `TF_VAR_jwt_secret` to prod workflow, plus `tfvars` file creation step and lock-timeout |
+| 9 | No load-testing scripts — autoscaling thresholds have no baseline data | Low | ✅ | Created `scripts/load-testing/` with README placeholder |
+| 10 | No structured logging in web server components — uses `console.error` instead of pino | Medium | ✅ | Installed `pino` in web, created `lib/logger.ts` (server-only), migrated `dashboard/page.tsx` console.error calls |
+
 ## Relevant Files
 
 ### Testing
