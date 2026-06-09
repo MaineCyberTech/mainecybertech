@@ -132,6 +132,7 @@ pnpm --filter=web lint       # ESLint
 
 ## Quick links
 - **Developer setup:** [docs/README.dev.md](./docs/README.dev.md)
+- **Architectural analysis:** [docs/ARCHITECTURAL_ANALYSIS.md](./docs/ARCHITECTURAL_ANALYSIS.md)
 - **Environment variables:** [docs/ENVIRONMENT_VARIABLES.md](./docs/ENVIRONMENT_VARIABLES.md)
 - **Documentation index:** [docs/INDEX.md](./docs/INDEX.md)
 - **Supabase migration workflow:** [docs/SUPABASE_MIGRATION_WORKFLOW.md](./docs/SUPABASE_MIGRATION_WORKFLOW.md)

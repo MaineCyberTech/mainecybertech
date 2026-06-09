@@ -721,6 +721,10 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 | 8        | **Inline status change** — click status pill for quick dropdown                                                                 | Small  | Future                                     |
 | 9        | **Wire `@mct/ui` & `@mct/config` into apps**                                                                                    | Medium | Future                                     |
 
+## Architectural Analysis
+
+A comprehensive deep-dive audit was conducted on 2026-06-09 covering all 6 pillars: repository map, code mechanics, system architecture, infrastructure & deployment, documentation drift, and code cleanup. See [`docs/ARCHITECTURAL_ANALYSIS.md`](docs/ARCHITECTURAL_ANALYSIS.md) for the full report with 23 critical observations.
+
 ## Relevant Files
 
 ### Testing

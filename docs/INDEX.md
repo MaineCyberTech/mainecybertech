@@ -24,13 +24,14 @@
 
 | Document                                                                    | Purpose                                                                                                    |
 | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [docs/ANALYSIS_SUMMARY.md](ANALYSIS_SUMMARY.md)                             | Codebase overview and analysis (stale — see AGENTS.md)                                                     |
-| [docs/CODEBASE_MAPPING.md](CODEBASE_MAPPING.md)                             | File-by-file codebase map (stale — see AGENTS.md)                                                          |
+| [archive/stale-docs/ANALYSIS_SUMMARY.md](../archive/stale-docs/ANALYSIS_SUMMARY.md) | Codebase overview and analysis (stale — see AGENTS.md or ARCHITECTURAL_ANALYSIS.md)                       |
+| [archive/stale-docs/CODEBASE_MAPPING.md](../archive/stale-docs/CODEBASE_MAPPING.md) | File-by-file codebase map (stale — see AGENTS.md or ARCHITECTURAL_ANALYSIS.md)                            |
 | [docs/JIRA_JSM_INTEGRATION.md](JIRA_JSM_INTEGRATION.md)                     | Jira/JSM sync, webhooks, schema, status maps, worker tasks                                                 |
 | [docs/BILLING.md](BILLING.md)                                               | Stripe billing, invoices, subscriptions, payments, webhooks                                                |
 | [docs/ORG_BRANDING.md](ORG_BRANDING.md)                                     | Per-org branding: logo upload, colors, custom domains                                                      |
 | [docs/ADMIN_FEATURES.md](ADMIN_FEATURES.md)                                 | Webhook management, role/permission editor, audit export, bulk import, org switcher, Sentry, shared ESLint |
 | [docs/GAP_ANALYSIS.md](GAP_ANALYSIS.md)                                     | Comprehensive gap analysis, known issues, recommendations                                                  |
+| [docs/ARCHITECTURAL_ANALYSIS.md](ARCHITECTURAL_ANALYSIS.md)                 | Deep-dive audit: repository map, code mechanics, architecture, infrastructure, docs drift, cleanup          |
 | [docs/FINAL_OPERATOR_MAP.md](FINAL_OPERATOR_MAP.md)                         | Quick reference for Terraform roots, hostnames, and core infra files                                       |
 | [docs/DEPLOYMENT_OPTIONS_COMPARISON.md](DEPLOYMENT_OPTIONS_COMPARISON.md)   | Cost analysis: Vercel vs AWS vs hybrid                                                                     |
 | [docs/portal_admin_permissions_guide.md](portal_admin_permissions_guide.md) | Permissions, access control, and security flow                                                             |
