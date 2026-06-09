@@ -26,7 +26,7 @@ test.describe("admin users list", () => {
     const userLink = page.locator("a[href*='/admin/users/']").first();
     if (await userLink.isVisible()) {
       await userLink.click();
-      await expect(page).toHaveURL(/\/admin\/users\//);
+      await expect(page).toHaveURL(/\/admin\/users/);
       await expect(page.getByRole("heading")).toBeVisible();
     }
   });

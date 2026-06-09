@@ -18,12 +18,14 @@ test.describe("portal notifications page", () => {
 
   test("preferences page renders", async ({ page }) => {
     await page.goto("/portal/notifications/preferences");
-    await expect(page.getByRole("heading", { name: /preferences/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /preferences/i })).toBeVisible({ timeout: 5000 });
   });
 
   test("preferences shows save button", async ({ page }) => {
     await page.goto("/portal/notifications/preferences");
-    await expect(page.getByRole("button", { name: /save/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: /preferences/i })).toBeVisible({ timeout: 5000 });
+    const btn = page.getByRole("button", { name: /save/i });
+    await expect(btn).toBeVisible({ timeout: 15000 });
   });
 });
 

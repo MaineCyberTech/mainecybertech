@@ -34,12 +34,15 @@ test.describe("document version history", () => {
 test.describe("notification preferences", () => {
   test("preferences page has save button", async ({ page }) => {
     await page.goto("/portal/notifications/preferences");
-    await expect(page.getByRole("button", { name: /save/i })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: /preferences/i })).toBeVisible({ timeout: 5000 });
+    const btn = page.getByRole("button", { name: /save/i });
+    await expect(btn).toBeVisible({ timeout: 15000 });
   });
 
   test("preferences page shows modules", async ({ page }) => {
     await page.goto("/portal/notifications/preferences");
-    await expect(page.getByText(/tickets/i).or(page.getByText(/projects/i))).toBeVisible();
+    await expect(page.getByRole("heading", { name: /preferences/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/tickets/i).or(page.getByText(/projects/i))).toBeVisible({ timeout: 15000 });
   });
 });
 

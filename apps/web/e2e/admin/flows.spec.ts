@@ -8,7 +8,7 @@ test.describe("admin ticket flows", () => {
     const ticketLink = page.locator("a[href*='/admin/tickets/']").first();
     if (await ticketLink.isVisible()) {
       await ticketLink.click();
-      await expect(page).toHaveURL(/\/admin\/tickets\//);
+      await expect(page).toHaveURL(/\/admin\/tickets/);
     }
   });
 

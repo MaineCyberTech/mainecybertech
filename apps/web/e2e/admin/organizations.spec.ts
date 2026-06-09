@@ -60,7 +60,8 @@ test.describe("admin organization detail", () => {
     const orgLink = page.locator("a[href*='/admin/organizations/']").first();
     if (await orgLink.isVisible()) {
       await orgLink.click();
-      await expect(page.getByText(/memberships/i).first()).toBeVisible();
+      await page.waitForURL(/\/admin\/organizations\//, { timeout: 5000 });
+      await expect(page.getByText(/memberships/i).first()).toBeVisible({ timeout: 5000 });
     }
   });
 });
