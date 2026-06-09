@@ -28,7 +28,7 @@ jobs:
           node-version: 20
 
       - name: Pull Vercel environment information
-        run: npx vercel pull --project web --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel pull --project mainecybertech-portal-dev --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to Vercel dev/testing
-        run: npx vercel deploy --project web --token=${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel deploy --project mainecybertech-portal-dev --token=${{ secrets.VERCEL_TOKEN }}
