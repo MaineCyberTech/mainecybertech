@@ -39,6 +39,7 @@ export function createApp(): Express {
 
   const env = getEnv();
   const app = express();
+  app.set("trust proxy", true);
 
   app.use(helmet());
   const allowedOrigins = env.CORS_ORIGIN === "*" ? "*" : env.CORS_ORIGIN.split(",").map(s => s.trim());
