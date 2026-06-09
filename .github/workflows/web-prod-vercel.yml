@@ -47,7 +47,7 @@ jobs:
         run: npx vercel pull --cwd apps/web --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Vercel artifacts
-        run: npx vercel build --cwd apps/web --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: VERCEL=1 npx vercel build --cwd apps/web --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to Vercel production
         run: npx vercel deploy --prebuilt --cwd apps/web --prod --token=${{ secrets.VERCEL_TOKEN }}
