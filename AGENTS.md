@@ -80,6 +80,12 @@ pnpm e2e                     # Playwright E2E
 - API/worker removed `--dts` from tsup build (causes TS2742 in `.pnpm`)
 - `.dockerignore` uses `**/node_modules/` and `.pnpm/` for Windows/pnpm compatibility
 
+### CI workflow pnpm setup
+
+All 9 CI workflows use `corepack enable && corepack prepare pnpm@10 --activate` after `actions/setup-node@v4`.
+Do NOT use `pnpm/action-setup` or `cache: pnpm` on setup-node — `cache: pnpm` tries to find pnpm before
+it's installed, causing "Unable to locate executable file: pnpm."
+
 ### Local development
 
 ```bash
@@ -243,6 +249,10 @@ Key points:
 - Stripe webhook signature: `express.json({ verify })` captures raw body for `stripe.webhooks.constructEvent()`; SDK used only for verification, not for Stripe API calls (billing.ts uses Stripe directly)
 - Client SDK migration: client components use `MCTClient.create()` without `getToken` callback, relying on browser cookies for same-origin auth; server components/actions continue using server-only `lib/api.ts`
 - Zod validation added to 7 mutation endpoints for runtime safety, but relaxed `z.string().min(1)` for UUID params since existing tests use non-UUID values
+- Ticket create API: `created_by` must be set from `req.authUser.userId` in the insert, not left for the DB to fill (NOT NULL constraint)
+- Middleware JWT validation: `middleware.ts` decodes the `mct_session` JWT payload (base64url, no deps) to check `exp` before treating the cookie as valid — prevents redirect loop between `/login` and `/portal/dashboard`
+- `/pending` page uses `logoutAction()` (server action clearing `mct_session` cookie) instead of a plain `<a href="/login">` link — prevents middleware from bouncing authenticated-but-unapproved users back to dashboard
+- CI pnpm setup: all workflows use `corepack enable && corepack prepare pnpm@10 --activate` after setup-node; `cache: pnpm` on setup-node causes "Unable to locate executable file: pnpm" since pnpm isn't in PATH yet
 
 ## Marketing Site Integration Plan
 
@@ -397,6 +407,9 @@ Full codebase audit conducted to identify remaining gaps before pushing to GitHu
 | 17  | **GA/Tawk.to env vars** — extracted to `NEXT_PUBLIC_GA_ID` + `NEXT_PUBLIC_TAWKTO_ID`      | ✅     |
 | 18  | **Admin billing viewer** — per-org billing page at `/admin/organizations/[orgId]/billing` | ✅     |
 | 19  | **Admin document upload** — inline upload on org detail page + server action              | ✅     |
+| 20  | **Ticket create fix** — added `created_by` to insert (previously missing, NOT NULL violation) | ✅     |
+| 21  | **Redirect loop fix** — middleware validates JWT exp; `/pending` uses logoutAction instead of plain link | ✅     |
+| 22  | **CI pnpm setup fix** — replaced `pnpm/action-setup` + `cache: pnpm` with `corepack enable` in all 9 workflows | ✅     |
 
 ## Recommendations & Technical Debt
 
@@ -835,8 +848,11 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 - `apps/web/Dockerfile`, `apps/api/Dockerfile`, `apps/worker/Dockerfile` — multi-stage Dockerfiles
 - `docker-compose.yml` — api + web + worker + e2e services
 - `apps/web/next.config.mjs` — `output: "standalone"`, `outputFileTracingRoot`
-- `.github/workflows/` — 18 workflow files (validation, deploy, terraform, E2E, db backup)
+- `.github/workflows/` — 17 workflow files (validation, deploy, terraform, E2E, db backup)
 - `apps/web/lib/api.ts` uses `import "server-only"` — prevents client bundle contamination
+- `apps/web/middleware.ts` — base64url JWT expiration check before treating cookie as valid session; prevents redirect loop
+- `apps/web/app/(public)/pending/page.tsx` — uses `logoutAction()` instead of plain `/login` link to break redirect loop
+- `apps/api/src/routes/tickets.ts` — `created_by` set from `req.authUser.userId` in ticket insert (was missing, causing NOT NULL violation)
 
 ### Error Tracking
 
