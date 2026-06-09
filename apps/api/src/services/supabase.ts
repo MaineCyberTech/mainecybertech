@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getEnv } from "../config/env";
+import WebSocket from "ws";
 
 let _adminClient: SupabaseClient | null = null;
 
@@ -16,6 +17,9 @@ export function getSupabaseAdmin(): SupabaseClient {
       },
       global: {
         fetch: (...args) => fetch(...args),
+      },
+      realtime: {
+        transport: WebSocket as any,
       },
     });
   }
