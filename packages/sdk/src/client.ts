@@ -82,6 +82,7 @@ export class ApiClient {
           headers,
           body: body ? JSON.stringify(body) : undefined,
           signal: controller.signal,
+          credentials: "include",
         });
 
         clearTimeout(timer);
@@ -191,6 +192,7 @@ export class ApiClient {
           headers,
           body: formData,
           signal: controller.signal,
+          credentials: "include",
         });
 
         clearTimeout(timer);
