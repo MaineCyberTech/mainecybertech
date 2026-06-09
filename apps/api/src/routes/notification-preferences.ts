@@ -25,7 +25,7 @@ router.get("/", async (req, res, next) => {
     const { data, error } = await query;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    res.json(success(data ?? []));
+    res.json(success({ preferences: data ?? [], modules: [...MODULES], channels: [...CHANNELS] }));
   } catch (error) {
     next(error);
   }
