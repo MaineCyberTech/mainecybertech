@@ -31,8 +31,8 @@ export async function GET(request: Request) {
     const response = NextResponse.redirect(`${origin}/portal/dashboard`);
     response.cookies.set(SESSION_COOKIE, json.data.accessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });

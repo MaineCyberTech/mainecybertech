@@ -18,8 +18,8 @@ export async function loginAction(email: string, password: string) {
     const cookieStore = await cookies();
     cookieStore.set(SESSION_COOKIE, result.accessToken, {
       httpOnly: true,
-      secure: true,
-      sameSite: "none",
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });
