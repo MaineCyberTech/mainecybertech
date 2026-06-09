@@ -269,9 +269,9 @@ The prod Terraform workflow:
 ### Web production deployment
 The prod web workflow:
 1. installs dependencies
-2. runs `vercel pull --environment=production`
-3. builds a production Vercel artifact
-4. deploys the prebuilt artifact to Vercel production
+2. runs `vercel pull --project mainecybertech-portal-prod --environment=production`
+3. deploys source to Vercel production via `vercel deploy --project mainecybertech-portal-prod --prod`
+4. Vercel builds from `apps/web/` (project `rootDirectory` setting) using install command from `apps/web/vercel.json`
 
 ### API production deployment
 The prod API workflow:

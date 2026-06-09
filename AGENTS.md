@@ -120,8 +120,8 @@ pnpm --filter=web dev
 | `api-deploy-ecs.dev.yml`     | push develop                     | —                            | Deploy API to ECS dev                    |
 | `worker-deploy-ecs.prod.yml` | push main                        | validate + prod-approval env | Deploy worker to ECS prod                |
 | `worker-deploy-ecs.dev.yml`  | push develop                     | —                            | Deploy worker to ECS dev                 |
-| `web-prod-vercel.yml`        | push main                        | validate + prod-approval env | Deploy web to Vercel production          |
-| `web-dev-vercel.yml`         | push develop                     | —                            | Deploy web to Vercel preview             |
+| `web-prod-vercel.yml`        | push main                        | validate + prod-approval env | Deploy web to Vercel prod (`vercel pull` + `deploy`, `--project mainecybertech-portal-prod`) |
+| `web-dev-vercel.yml`         | push develop                     | —                            | Deploy web to Vercel dev (`vercel pull` + `deploy`, `--project mainecybertech-portal-dev`) |
 | `web-preview.yml`            | PR                               | —                            | Validate web build (no deploy)           |
 | `supabase-migrations.yml`    | push develop+main, workflow_call | env-specific                 | Run `supabase link` + `supabase db push` |
 
@@ -253,6 +253,8 @@ Key points:
 - Middleware JWT validation: `middleware.ts` decodes the `mct_session` JWT payload (base64url, no deps) to check `exp` before treating the cookie as valid — prevents redirect loop between `/login` and `/portal/dashboard`
 - `/pending` page uses `logoutAction()` (server action clearing `mct_session` cookie) instead of a plain `<a href="/login">` link — prevents middleware from bouncing authenticated-but-unapproved users back to dashboard
 - CI pnpm setup: all workflows use `corepack enable && corepack prepare pnpm@10 --activate` after setup-node; `cache: pnpm` on setup-node causes "Unable to locate executable file: pnpm" since pnpm isn't in PATH yet
+- Vercel deploy (web): uses `vercel pull` + `vercel deploy` (no local build, no `--prebuilt`). Deploys from repo root with `--project mainecybertech-portal-{dev,prod}` so the full monorepo (`pnpm-lock.yaml` at root) is uploaded. The project's `rootDirectory: "apps/web"` setting tells Vercel to build from `apps/web/`. Install command is set via `apps/web/vercel.json`: `"installCommand": "pnpm install --frozen-lockfile"`. Previously attempted `--cwd apps/web` (scoped upload, missed lockfile) and `vercel build` + `--prebuilt` (pnpm symlink resolution issues).
+- Notification preferences API: `GET /api/v1/notification-preferences` must return `{ preferences: [...], modules: [...], channels: [...] }` (not raw array) to match the SDK's `NotificationPreferencesResponse` type. Returning a raw array via `success(data ?? [])` causes the client component to crash because `result.preferences` is `undefined`.
 
 ## Marketing Site Integration Plan
 
@@ -848,6 +850,7 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 - `apps/web/Dockerfile`, `apps/api/Dockerfile`, `apps/worker/Dockerfile` — multi-stage Dockerfiles
 - `docker-compose.yml` — api + web + worker + e2e services
 - `apps/web/next.config.mjs` — `output: "standalone"`, `outputFileTracingRoot`
+- `apps/web/vercel.json` — `installCommand: "pnpm install --frozen-lockfile"`, `framework: "nextjs"`
 - `.github/workflows/` — 17 workflow files (validation, deploy, terraform, E2E, db backup)
 - `apps/web/lib/api.ts` uses `import "server-only"` — prevents client bundle contamination
 - `apps/web/middleware.ts` — base64url JWT expiration check before treating cookie as valid session; prevents redirect loop
