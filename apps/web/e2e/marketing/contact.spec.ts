@@ -5,7 +5,7 @@ test.describe("contact page", () => {
     await page.goto("/contact");
     await expect(page.getByRole("heading", { name: /contact us/i })).toBeVisible();
     await expect(page.getByText(/limington, me/i)).toBeVisible();
-    await expect(page.getByText(/(207) 222-7525/i)).toBeVisible();
+    await expect(page.getByText(/\(207\) 222-7525/i)).toBeVisible();
     await expect(page.getByText(/contact@mainecybertech.com/i)).toBeVisible();
   });
 

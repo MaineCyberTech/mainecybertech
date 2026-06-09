@@ -22,7 +22,7 @@ test.describe("portal dashboard", () => {
   });
 
   test("has navigation links", async ({ page }) => {
-    await expect(page.getByRole("link", { name: /documents/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /documents/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Support", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Projects", exact: true })).toBeVisible();
   });

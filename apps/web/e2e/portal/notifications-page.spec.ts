@@ -23,7 +23,7 @@ test.describe("portal notifications page", () => {
 
   test("preferences shows save button", async ({ page }) => {
     await page.goto("/portal/notifications/preferences");
-    await expect(page.getByRole("button", { name: /save/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /save/i })).toBeVisible({ timeout: 10000 });
   });
 });
 

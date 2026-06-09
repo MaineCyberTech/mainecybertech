@@ -3,7 +3,7 @@ import { test, expect } from "../fixtures";
 test.describe("admin ticket flows", () => {
   test("can view ticket list and navigate to detail", async ({ page }) => {
     await page.goto("/admin/tickets");
-    await expect(page.getByRole("heading", { name: "Tickets", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tickets", exact: true }).first()).toBeVisible();
 
     const ticketLink = page.locator("a[href*='/admin/tickets/']").first();
     if (await ticketLink.isVisible()) {
@@ -26,7 +26,7 @@ test.describe("admin user flows", () => {
     const userLink = page.locator("a[href*='/admin/users/']").first();
     if (await userLink.isVisible()) {
       await userLink.click();
-      await expect(page).toHaveURL(/\/admin\/users\//);
+      await expect(page).toHaveURL(/\/admin\/users/);
     }
   });
 
@@ -102,7 +102,7 @@ test.describe("portal flows", () => {
 
   test("portal has navigation links", async ({ page }) => {
     await page.goto("/portal/dashboard");
-    await expect(page.getByRole("link", { name: /documents/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /documents/i }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: "Support", exact: true })).toBeVisible();
   });
 

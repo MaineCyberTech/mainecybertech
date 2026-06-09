@@ -6,7 +6,7 @@ test.describe("admin tickets list", () => {
   });
 
   test("renders tickets heading", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Tickets", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tickets", exact: true }).first()).toBeVisible();
   });
 
   test("shows ticket list or empty state", async ({ page }) => {

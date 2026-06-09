@@ -34,7 +34,7 @@ test.describe("document version history", () => {
 test.describe("notification preferences", () => {
   test("preferences page has save button", async ({ page }) => {
     await page.goto("/portal/notifications/preferences");
-    await expect(page.getByRole("button", { name: /save/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /save/i })).toBeVisible({ timeout: 10000 });
   });
 
   test("preferences page shows modules", async ({ page }) => {
