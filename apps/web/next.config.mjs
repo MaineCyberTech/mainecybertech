@@ -4,10 +4,11 @@ import withBundleAnalyzer from "@next/bundle-analyzer";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const isVercel = !!process.env.VERCEL;
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
-  outputFileTracingRoot: path.join(__dirname, "../.."),
+  ...(isVercel ? {} : { output: "standalone", outputFileTracingRoot: path.join(__dirname, "../..") }),
   experimental: {
     serverActions: {
       bodySizeLimit: "25mb",
