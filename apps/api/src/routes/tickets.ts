@@ -89,6 +89,7 @@ router.post("/", async (req, res, next) => {
         category: parsed.category ?? null,
         source: parsed.source,
         status: "new",
+        created_by: req.authUser!.userId,
         external_jsm_issue_key: parsed.externalJsmIssueKey ?? null,
         labels: parsed.labels ?? null,
         resolution: parsed.resolution ?? null,
