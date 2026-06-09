@@ -1,5 +1,6 @@
 name: web-dev-vercel
 
+# Triggered to test --cwd apps/web fix
 on:
   push:
     branches: [develop]
