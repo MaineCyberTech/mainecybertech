@@ -32,14 +32,8 @@ jobs:
           corepack enable
           corepack prepare pnpm@10 --activate
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Pull Vercel environment information
         run: npx vercel pull --cwd apps/web --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Build Vercel artifacts
-        run: VERCEL=1 npx vercel build --cwd apps/web --token=${{ secrets.VERCEL_TOKEN }}
-
       - name: Deploy to Vercel dev/testing
-        run: npx vercel deploy --prebuilt --cwd apps/web --token=${{ secrets.VERCEL_TOKEN }}
+        run: npx vercel deploy --cwd apps/web --token=${{ secrets.VERCEL_TOKEN }}
