@@ -743,6 +743,7 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 | 22       | **Missing TF_VAR secrets** — added supabase_anon_key, service_role_key, jwt_secret to prod plan workflow                                                                                                                       | Medium   | ✅ Done                                                                          |
 | 23       | **ECS Exec disabled** — `enable_execute_command = false` in prod.tfvars                                                                                                                                                        | Low      | ✅ Done                                                                          |
 | 24       | **Audit log retry** — exponential backoff (3 attempts) with structured logging on final failure                                                                                                                                | Medium   | ✅ Done                                                                          |
+| 25       | **prod.tfvars filled** — Cloudflare zone ID, Vercel targets, ACM cert ARN, alarm email; API target now dynamic from ALB output                                                                                                 | **High** | ✅ Done                                                                          |
 
 ## Architectural Analysis
 
@@ -772,24 +773,24 @@ All 5 top-priority fixes from the audit were applied in a single session:
 
 ### Remaining High-Priority Tasks (from Audit)
 
-| #   | Task                                                                                           | Priority     | Effort | Status     |
-| --- | ---------------------------------------------------------------------------------------------- | ------------ | ------ | ---------- |
-| 6   | Change `CORS_ORIGIN` default from `*` — require explicit config per environment                | **Critical** | 5 min  | ✅ Done    |
-| 7   | Restrict `alb_allowed_cidrs` to Cloudflare IPs in prod                                         | **High**     | 15 min | ✅ Done    |
-| 8   | Add explicit `HttpOnly`/`Secure`/`SameSite` cookie flags to `mct_session`                      | **High**     | 15 min | ✅ Done    |
-| 9   | Add `APP_BASE_URL` env var — decouple notification links from `CORS_ORIGIN`                    | **High**     | 15 min | ✅ Done    |
-| 10  | Fix `security.ts` — import logger from `lib/logger.ts` instead of creating 2nd pino instance   | Medium       | 10 min | ✅ Done    |
-| 11  | Fix `audit.ts` — use `logger.error` instead of `console.error`                                 | Medium       | 10 min | ✅ Done    |
-| 12  | Move `pg` and `supabase-cli` from `dependencies` to `devDependencies` in root `package.json`   | Medium       | 10 min | ✅ Done    |
-| 13  | Add path filters to E2E workflow and Terraform dev workflows                                   | Medium       | 15 min | ✅ Done    |
-| 14  | Gate Terraform prod apply with validate + e2e + migrations + prod-approval                     | **High**     | 30 min | ✅ Done    |
-| 15  | Fill real values in `prod.tfvars`                                                              | **High**     | 30 min | 📋 Planned |
-| 16  | Remove 9 dead code files (~315 lines) — ErrorBoundary, FileDropzone, ConfirmDangerButton, etc. | Low          | 15 min | ✅ Done    |
-| 17  | Archive 6 stale/overlapping domain docs                                                        | Low          | 1 hour | ✅ Done    |
-| 18  | Verify `bootstrap_portal_access` RPC exists in Supabase                                        | Medium       | 30 min | ✅ Done    |
-| 19  | Add ECR lifecycle policy — expire images > 90 days                                             | Medium       | 15 min | ✅ Done    |
-| 20  | Add `APP_BASE_URL` env var to API schema                                                       | Medium       | 15 min | ✅ Done    |
-| 21  | Add retry + alert on audit log failure                                                         | Medium       | 1 day  | ✅ Done    |
+| #   | Task                                                                                           | Priority     | Effort | Status  |
+| --- | ---------------------------------------------------------------------------------------------- | ------------ | ------ | ------- |
+| 6   | Change `CORS_ORIGIN` default from `*` — require explicit config per environment                | **Critical** | 5 min  | ✅ Done |
+| 7   | Restrict `alb_allowed_cidrs` to Cloudflare IPs in prod                                         | **High**     | 15 min | ✅ Done |
+| 8   | Add explicit `HttpOnly`/`Secure`/`SameSite` cookie flags to `mct_session`                      | **High**     | 15 min | ✅ Done |
+| 9   | Add `APP_BASE_URL` env var — decouple notification links from `CORS_ORIGIN`                    | **High**     | 15 min | ✅ Done |
+| 10  | Fix `security.ts` — import logger from `lib/logger.ts` instead of creating 2nd pino instance   | Medium       | 10 min | ✅ Done |
+| 11  | Fix `audit.ts` — use `logger.error` instead of `console.error`                                 | Medium       | 10 min | ✅ Done |
+| 12  | Move `pg` and `supabase-cli` from `dependencies` to `devDependencies` in root `package.json`   | Medium       | 10 min | ✅ Done |
+| 13  | Add path filters to E2E workflow and Terraform dev workflows                                   | Medium       | 15 min | ✅ Done |
+| 14  | Gate Terraform prod apply with validate + e2e + migrations + prod-approval                     | **High**     | 30 min | ✅ Done |
+| 15  | Fill real values in `prod.tfvars`                                                              | **High**     | 30 min | ✅ Done |
+| 16  | Remove 9 dead code files (~315 lines) — ErrorBoundary, FileDropzone, ConfirmDangerButton, etc. | Low          | 15 min | ✅ Done |
+| 17  | Archive 6 stale/overlapping domain docs                                                        | Low          | 1 hour | ✅ Done |
+| 18  | Verify `bootstrap_portal_access` RPC exists in Supabase                                        | Medium       | 30 min | ✅ Done |
+| 19  | Add ECR lifecycle policy — expire images > 90 days                                             | Medium       | 15 min | ✅ Done |
+| 20  | Add `APP_BASE_URL` env var to API schema                                                       | Medium       | 15 min | ✅ Done |
+| 21  | Add retry + alert on audit log failure                                                         | Medium       | 1 day  | ✅ Done |
 
 ## Additional Gaps & Recommendations (2026-06-10)
 

@@ -1,5 +1,4 @@
 # Production configuration
-# !!! MUST FILL — these values are required before deploying to production.
 # For: app.mainecybertech.com and api.mainecybertech.com
 
 aws_region                    = "us-east-1"
@@ -10,14 +9,13 @@ supabase_region               = "us-east-1"
 github_repo                   = "MaineCyberTech/mainecybertech"
 github_repository             = "MaineCyberTech/mainecybertech"
 
-# Production DNS targets — !!! MUST FILL all placeholder values below
-cloudflare_zone_id_prod       = "MUST-FILL-cloudflare-zone-id-for-mainecybertech.com"
+# Cloudflare DNS
+cloudflare_zone_id_prod       = "ca0426eea5a530e57021f5b118715531"
 cloudflare_prod_app_name      = "app"
 cloudflare_prod_api_name      = "api"
-cloudflare_prod_app_target    = "MUST-FILL-vercel-inspect-target-for-app.mainecybertech.com"
-cloudflare_prod_api_target    = "MUST-FILL-production-alb-dns-name"
+cloudflare_prod_app_target    = "1aecffcd89303093.vercel-dns-017.com."
 cloudflare_prod_www_name      = "www"
-cloudflare_prod_www_target    = "MUST-FILL-vercel-inspect-target-for-www.mainecybertech.com"
+cloudflare_prod_www_target    = "1aecffcd89303093.vercel-dns-017.com."
 cloudflare_proxy_app_records  = true
 cloudflare_proxy_api_records  = true
 cloudflare_proxy_www_records  = true
@@ -41,8 +39,8 @@ api_health_check_path         = "/health"
 alb_name                      = "mct-api-alb-prod"
 api_target_group_name         = "mct-api-tg-prod"
 
-# ACM certificate for *.mainecybertech.com — !!! MUST FILL
-acm_certificate_arn           = "MUST-FILL-acm-certificate-arn-for-mainecybertech.com"
+# ACM certificate for *.mainecybertech.com
+acm_certificate_arn           = "arn:aws:acm:us-east-1:600696219742:certificate/69e098d2-4b1f-4965-96ca-939ac90ee3dc"
 
 # Autoscaling
 api_service_desired_count     = 2
@@ -62,6 +60,6 @@ api_task_memory               = "1024"
 worker_task_cpu               = "256"
 worker_task_memory            = "512"
 
-# CloudWatch alarms (prod — !!! MUST FILL)
-alarm_email                   = "MUST-FILL-alert-email@example.com"
+# CloudWatch alarms (prod)
+alarm_email                   = "admin@mainecybertech.com"
 slack_webhook_url             = ""
