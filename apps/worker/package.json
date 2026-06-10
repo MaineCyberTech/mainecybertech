@@ -15,7 +15,7 @@
     "@aws-sdk/client-sqs": "^3.1057.0",
     "@mct/config": "workspace:^",
     "@supabase/supabase-js": "^2.49.1",
-    "dotenv": "^16.4.7",
+    "dotenv": "^17.4.2",
     "nodemailer": "^8.0.10",
     "pino": "^9.5.0",
     "zod": "^3.24.1"
