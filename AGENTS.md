@@ -30,14 +30,14 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status & Patterns
 
-**728 tests, all passing:** API 178, SDK 108, Worker 24, Web 418
+**714 tests, all passing:** API 178, SDK 108, Worker 24, Web 404
 
 | Package | Tests         | Framework                         |
 | ------- | ------------- | --------------------------------- |
 | API     | 178           | Jest + supertest                  |
 | SDK     | 108           | Jest (mocked fetch)               |
 | Worker  | 24            | Jest (env schema + task handlers) |
-| Web     | 418           | Jest + Testing Library            |
+| Web     | 404           | Jest + Testing Library            |
 | E2E     | 24 spec files | Playwright (chromium)             |
 
 ### Test patterns

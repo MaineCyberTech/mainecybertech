@@ -80,11 +80,15 @@ describe("AdminTicketDetailPage", () => {
     expect(screen.getByText((c) => c.includes("Ticket ID: t1"))).toBeInTheDocument();
   });
 
-  it("shows status and priority pills", async () => {
+  it("shows inline status and priority dropdowns with current values", async () => {
     const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
     render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
-    expect(screen.getByText("open")).toBeInTheDocument();
-    expect(screen.getByText("high")).toBeInTheDocument();
+    const statusSelect = screen.getByDisplayValue("open");
+    expect(statusSelect).toBeInTheDocument();
+    expect(statusSelect.tagName).toBe("SELECT");
+    const prioritySelect = screen.getByDisplayValue("high");
+    expect(prioritySelect).toBeInTheDocument();
+    expect(prioritySelect.tagName).toBe("SELECT");
   });
 
   it("shows edit and delete buttons in view mode", async () => {

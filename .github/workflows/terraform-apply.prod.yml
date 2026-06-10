@@ -9,7 +9,11 @@ on:
       - ".github/workflows/terraform-apply.prod.yml"
 
 jobs:
+  validate:
+    uses: ./.github/workflows/validate.yml
+
   apply-prod:
+    needs: [validate]
     runs-on: ubuntu-latest
     environment: prod
     permissions:

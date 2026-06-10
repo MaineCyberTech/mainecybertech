@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
+import { InlineStatusDropdown, InlinePriorityDropdown } from "@/components/admin/InlineStatusDropdown";
 import {
   updateTicketAction,
   addCommentAction,
@@ -148,8 +149,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className={statusClass(status)}>{status}</span>
-          <span className={priorityClass(priority)}>{priority}</span>
+          {editMode ? <><span className={statusClass(status)}>{status}</span><span className={priorityClass(priority)}>{priority}</span></> : <><InlineStatusDropdown ticketId={ticketId} current={status} /><InlinePriorityDropdown ticketId={ticketId} current={priority} /></>}
           {editMode ? <Link href={`/admin/tickets/${ticketId}`} className="cyber-button-secondary">Cancel Edit</Link> : <Link href={`/admin/tickets/${ticketId}?edit=1`} className="cyber-button-secondary">Edit Ticket</Link>}
           <Link href={`/portal/support/${ticketId}`} className="cyber-button-secondary">View in Portal</Link>
           {deleted ? (

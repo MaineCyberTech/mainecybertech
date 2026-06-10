@@ -61,6 +61,20 @@ export async function deleteTicketAction(ticketId: string, formData: FormData) {
   redirect(`/admin/tickets/${ticketId}`);
 }
 
+export async function inlineUpdateAction(ticketId: string, formData: FormData) {
+  await requireAdminAccess();
+  const api = getApiClient();
+  const status = String(formData.get("status") ?? "").trim();
+  const priority = String(formData.get("priority") ?? "").trim();
+  const updates: Record<string, string> = {};
+  if (status) updates.status = status;
+  if (priority) updates.priority = priority;
+  if (Object.keys(updates).length === 0) return;
+  await api.tickets.update(ticketId, updates as any);
+  revalidatePath(`/admin/tickets/${ticketId}`);
+  redirect(`/admin/tickets/${ticketId}`);
+}
+
 export async function restoreTicketAction(ticketId: string) {
   await requireAdminAccess();
   const api = getApiClient();

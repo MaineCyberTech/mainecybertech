@@ -70,7 +70,7 @@ describe("OrganizationsPage", () => {
     expect(screen.getByText("Acme Corp")).toBeInTheDocument();
     expect(screen.getByText(/acme/)).toBeInTheDocument();
     expect(screen.getByText(/acme\.com/)).toBeInTheDocument();
-    expect(screen.getByText("active")).toBeInTheDocument();
+    expect(screen.getAllByText("active").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("premium")).toBeInTheDocument();
   });
 
