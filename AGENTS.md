@@ -742,6 +742,7 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 | 21       | **Cloudflare IP restriction** — `alb_allowed_cidrs` in prod.tfvars                                                                                                                                                             | **High** | ✅ Done                                                                          |
 | 22       | **Missing TF_VAR secrets** — added supabase_anon_key, service_role_key, jwt_secret to prod plan workflow                                                                                                                       | Medium   | ✅ Done                                                                          |
 | 23       | **ECS Exec disabled** — `enable_execute_command = false` in prod.tfvars                                                                                                                                                        | Low      | ✅ Done                                                                          |
+| 24       | **Audit log retry** — exponential backoff (3 attempts) with structured logging on final failure                                                                                                                                | Medium   | ✅ Done                                                                          |
 
 ## Architectural Analysis
 
@@ -788,7 +789,7 @@ All 5 top-priority fixes from the audit were applied in a single session:
 | 18  | Verify `bootstrap_portal_access` RPC exists in Supabase                                        | Medium       | 30 min | ✅ Done    |
 | 19  | Add ECR lifecycle policy — expire images > 90 days                                             | Medium       | 15 min | ✅ Done    |
 | 20  | Add `APP_BASE_URL` env var to API schema                                                       | Medium       | 15 min | ✅ Done    |
-| 21  | Add retry + alert on audit log failure                                                         | Medium       | 1 day  | 📋 Planned |
+| 21  | Add retry + alert on audit log failure                                                         | Medium       | 1 day  | ✅ Done    |
 
 ## Additional Gaps & Recommendations (2026-06-10)
 
