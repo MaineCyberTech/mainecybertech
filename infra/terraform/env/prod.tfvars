@@ -34,6 +34,9 @@ api_service_name              = "mainecybertech-api-service-prod"
 worker_service_name           = "mainecybertech-worker-service-prod"
 api_container_port            = 4000
 
+# Security — restrict to Cloudflare IPs in production
+# alb_allowed_cidrs            = ["173.245.48.0/20", "103.21.244.0/22", ...]
+
 api_health_check_path         = "/health"
 alb_name                      = "mct-api-alb-prod"
 api_target_group_name         = "mct-api-tg-prod"
@@ -50,6 +53,9 @@ worker_autoscaling_min_capacity = 1
 worker_autoscaling_max_capacity = 3
 api_cpu_target_value          = 60
 worker_cpu_target_value       = 60
+
+# ECS Exec should be disabled in production
+# enable_execute_command      = false
 
 # Task sizing
 api_task_cpu                  = "512"

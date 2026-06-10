@@ -134,7 +134,7 @@ variable "api_health_check_path" {
   default     = "/health"
 }
 variable "alb_allowed_cidrs" {
-  description = "CIDR blocks allowed to reach the ALB"
+  description = "CIDR blocks allowed to reach the ALB (restrict to Cloudflare IPs in production: https://www.cloudflare.com/ips/)"
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }
@@ -163,9 +163,9 @@ variable "worker_task_memory" {
   default     = "512"
 }
 variable "enable_execute_command" {
-  description = "Enable ECS Exec on services"
+  description = "Enable ECS Exec on services (set to false in production)"
   type        = bool
-  default     = true
+  default     = false
 }
 variable "api_health_check_grace_period_seconds" {
   description = "Grace period before ECS evaluates ALB health checks"
