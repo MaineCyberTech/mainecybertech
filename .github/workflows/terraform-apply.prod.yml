@@ -12,8 +12,14 @@ jobs:
   validate:
     uses: ./.github/workflows/validate.yml
 
+  e2e:
+    uses: ./.github/workflows/e2e.yml
+
+  supabase-migrations:
+    uses: ./.github/workflows/supabase-migrations.yml
+
   apply-prod:
-    needs: [validate]
+    needs: [validate, e2e, supabase-migrations]
     runs-on: ubuntu-latest
     environment: prod
     permissions:
