@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { AppError } from "../types";
+import { logger } from "../lib/logger";
 
 const DANGEROUS_PATTERNS = [
   /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i,
@@ -34,16 +35,24 @@ function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === "string") {
       sanitized[key] = value
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#x27;");
-    } else if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+        .replace(/</g, "\\u003c")
+        .replace(/>/g, "\\u003e")
+        .replace(/"/g, "\\u0022")
+        .replace(/'/g, "\\u0027");
+    } else if (
+      typeof value === "object" &&
+      value !== null &&
+      !Array.isArray(value)
+    ) {
       sanitized[key] = sanitizeObject(value as Record<string, unknown>);
     } else if (Array.isArray(value)) {
       sanitized[key] = value.map((item) =>
         typeof item === "string"
-          ? item.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;")
+          ? item
+              .replace(/</g, "\\u003c")
+              .replace(/>/g, "\\u003e")
+              .replace(/"/g, "\\u0022")
+              .replace(/'/g, "\\u0027")
           : item,
       );
     } else {
@@ -53,16 +62,31 @@ function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
   return sanitized;
 }
 
-export function inputSanitizer(req: Request, _res: Response, next: NextFunction) {
+export function inputSanitizer(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) {
   if (req.body && typeof req.body === "object") {
     for (const [key, value] of Object.entries(req.body)) {
       if (containsDangerousContent(value)) {
         logger.warn({ key, ip: req.ip, path: req.path }, "Blocked XSS attempt");
-        throw new AppError("VALIDATION", "Input contains potentially dangerous content", 400);
+        throw new AppError(
+          "VALIDATION",
+          "Input contains potentially dangerous content",
+          400,
+        );
       }
       if (containsSqlInjection(value)) {
-        logger.warn({ key, ip: req.ip, path: req.path }, "Blocked SQL injection attempt");
-        throw new AppError("VALIDATION", "Input contains invalid characters", 400);
+        logger.warn(
+          { key, ip: req.ip, path: req.path },
+          "Blocked SQL injection attempt",
+        );
+        throw new AppError(
+          "VALIDATION",
+          "Input contains invalid characters",
+          400,
+        );
       }
     }
 
@@ -72,14 +96,18 @@ export function inputSanitizer(req: Request, _res: Response, next: NextFunction)
   if (req.query && typeof req.query === "object") {
     for (const [key, value] of Object.entries(req.query)) {
       if (containsDangerousContent(value)) {
-        logger.warn({ key, ip: req.ip, path: req.path }, "Blocked XSS in query params");
-        throw new AppError("VALIDATION", "Query parameter contains potentially dangerous content", 400);
+        logger.warn(
+          { key, ip: req.ip, path: req.path },
+          "Blocked XSS in query params",
+        );
+        throw new AppError(
+          "VALIDATION",
+          "Query parameter contains potentially dangerous content",
+          400,
+        );
       }
     }
   }
 
   next();
 }
-
-import pino from "pino";
-const logger = pino({ level: process.env.LOG_LEVEL || "info" });

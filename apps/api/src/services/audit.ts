@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "./supabase";
+import { logger } from "../lib/logger";
 
 type AuditEventInput = {
   organizationId?: string | null;
@@ -24,6 +25,6 @@ export async function logAuditEvent(input: AuditEventInput) {
   });
 
   if (error) {
-    console.error("audit log insert failed", error);
+    logger.error({ err: error }, "audit log insert failed");
   }
 }

@@ -8,8 +8,10 @@ const envSchema = z.object({
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  CORS_ORIGIN: z.string().default("*"),
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
+  CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  LOG_LEVEL: z
+    .enum(["debug", "info", "warn", "error", "silent"])
+    .default("info"),
   JWT_SECRET: z.string().optional(),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
