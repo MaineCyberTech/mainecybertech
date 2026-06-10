@@ -1,6 +1,7 @@
 name: terraform-plan-dev
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [develop]
     paths:

@@ -1,6 +1,7 @@
 name: terraform-plan-prod
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths:

@@ -1,6 +1,7 @@
 name: terraform-apply-prod
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:

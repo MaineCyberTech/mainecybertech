@@ -1,6 +1,7 @@
 name: web-prod-vercel
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:

@@ -1,6 +1,7 @@
 name: terraform-apply-dev
 
 on:
+  workflow_dispatch:
   push:
     branches: [develop]
     paths:

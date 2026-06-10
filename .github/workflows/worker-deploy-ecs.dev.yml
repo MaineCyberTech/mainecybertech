@@ -1,6 +1,7 @@
 name: worker-deploy-ecs-dev
 
 on:
+  workflow_dispatch:
   push:
     branches: [develop]
     paths:

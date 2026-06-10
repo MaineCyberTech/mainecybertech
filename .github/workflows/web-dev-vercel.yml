@@ -1,6 +1,7 @@
 name: web-dev-vercel
 
 on:
+  workflow_dispatch:
   push:
     branches: [develop]
     paths:

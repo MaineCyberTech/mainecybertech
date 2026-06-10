@@ -4,7 +4,7 @@
 
 ## Test Summary
 
-**728 unit tests + 24 E2E spec files — all passing**
+**714 unit tests + 24 E2E spec files — all passing**
 
 | Package | Tests         | Framework              |
 | ------- | ------------- | ---------------------- |
