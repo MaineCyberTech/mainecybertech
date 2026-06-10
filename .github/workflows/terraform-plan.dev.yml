@@ -29,7 +29,7 @@ jobs:
           TF_VARS_FILE: ${{ secrets.TF_VARS_FILE_CONTENT }}
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_TERRAFORM_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
