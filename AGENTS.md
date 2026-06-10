@@ -114,16 +114,16 @@ pnpm --filter=web dev
 
 ### Deployment workflows
 
-| Workflow                     | Trigger                          | Gate                         | Purpose                                  |
-| ---------------------------- | -------------------------------- | ---------------------------- | ---------------------------------------- |
-| `api-deploy-ecs.prod.yml`    | push main                        | validate + prod-approval env | Deploy API to ECS prod                   |
-| `api-deploy-ecs.dev.yml`     | push develop                     | —                            | Deploy API to ECS dev                    |
-| `worker-deploy-ecs.prod.yml` | push main                        | validate + prod-approval env | Deploy worker to ECS prod                |
-| `worker-deploy-ecs.dev.yml`  | push develop                     | —                            | Deploy worker to ECS dev                 |
+| Workflow                     | Trigger                          | Gate                         | Purpose                                                                                      |
+| ---------------------------- | -------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------- |
+| `api-deploy-ecs.prod.yml`    | push main                        | validate + prod-approval env | Deploy API to ECS prod                                                                       |
+| `api-deploy-ecs.dev.yml`     | push develop                     | —                            | Deploy API to ECS dev                                                                        |
+| `worker-deploy-ecs.prod.yml` | push main                        | validate + prod-approval env | Deploy worker to ECS prod                                                                    |
+| `worker-deploy-ecs.dev.yml`  | push develop                     | —                            | Deploy worker to ECS dev                                                                     |
 | `web-prod-vercel.yml`        | push main                        | validate + prod-approval env | Deploy web to Vercel prod (`vercel pull` + `deploy`, `--project mainecybertech-portal-prod`) |
-| `web-dev-vercel.yml`         | push develop                     | —                            | Deploy web to Vercel dev (`vercel pull` + `deploy`, `--project mainecybertech-portal-dev`) |
-| `web-preview.yml`            | PR                               | —                            | Validate web build (no deploy)           |
-| `supabase-migrations.yml`    | push develop+main, workflow_call | env-specific                 | Run `supabase link` + `supabase db push` |
+| `web-dev-vercel.yml`         | push develop                     | —                            | Deploy web to Vercel dev (`vercel pull` + `deploy`, `--project mainecybertech-portal-dev`)   |
+| `web-preview.yml`            | PR                               | —                            | Validate web build (no deploy)                                                               |
+| `supabase-migrations.yml`    | push develop+main, workflow_call | env-specific                 | Run `supabase link` + `supabase db push`                                                     |
 
 ### Production approval gate
 
@@ -255,6 +255,9 @@ Key points:
 - CI pnpm setup: all workflows use `corepack enable && corepack prepare pnpm@10 --activate` after setup-node; `cache: pnpm` on setup-node causes "Unable to locate executable file: pnpm" since pnpm isn't in PATH yet
 - Vercel deploy (web): uses `vercel pull` + `vercel deploy` (no local build, no `--prebuilt`). Deploys from repo root with `--project mainecybertech-portal-{dev,prod}` so the full monorepo (`pnpm-lock.yaml` at root) is uploaded. The project's `rootDirectory: "apps/web"` setting tells Vercel to build from `apps/web/`. Install command is set via `apps/web/vercel.json`: `"installCommand": "pnpm install --frozen-lockfile"`. Previously attempted `--cwd apps/web` (scoped upload, missed lockfile) and `vercel build` + `--prebuilt` (pnpm symlink resolution issues).
 - Notification preferences API: `GET /api/v1/notification-preferences` must return `{ preferences: [...], modules: [...], channels: [...] }` (not raw array) to match the SDK's `NotificationPreferencesResponse` type. Returning a raw array via `success(data ?? [])` causes the client component to crash because `result.preferences` is `undefined`.
+- CSV export for tickets/projects: follows the exact same pattern as `/api/v1/audit/export` — separate GET endpoint with `format=csv|json`, reusable CSV helper, scrollback limit of 10,000 rows, same filter params as the list endpoint. No separate authorization (uses `requireAuth` from parent router).
+- Ticket comment editing 5-min window: enforced server-side (API check against `created_at` + `Date.now()`), not client-side. Prevents stale edits after the window expires. `edited_at` is set to the server's current timestamp, not the client's. The UPDATE RLS policy (`ticket_comments_update_own`) ensures only the comment author can edit their own comments.
+- Activity timeline at `entity_id` level: the existing audit `list` endpoint only supported `entity_type` filtering; `entity_id` was added as an optional filter to enable per-entity audit feeds (used on the ticket detail page). This is a generic filter — any entity type can use it (projects, documents, users).
 
 ## Marketing Site Integration Plan
 
@@ -388,29 +391,29 @@ Full codebase audit conducted to identify remaining gaps before pushing to GitHu
 
 ### Previously Completed
 
-| #   | Feature                                                                                   | Status |
-| --- | ----------------------------------------------------------------------------------------- | ------ |
-| 1   | Worker test leaks — fixed with globalTeardown                                             | ✅     |
-| 2   | SDK test exit — fixed with jest.setup.ts fake timers                                      | ✅     |
-| 3   | `global-error.tsx` — added root error boundary                                            | ✅     |
-| 4   | Favicon — added SVG favicon + metadata                                                    | ✅     |
-| 5   | Bundle analyzer — added `@next/bundle-analyzer`                                           | ✅     |
-| 6   | ESLint warnings — reduced from 18 to 9                                                    | ✅     |
-| 7   | Test count — fixed 733 → 730                                                              | ✅     |
-| 8   | `ENVIRONMENT_VARIABLES.md` — added `HEALTH_PORT`                                          | ✅     |
-| 9   | `docs/INDEX.md` — added missing docs                                                      | ✅     |
-| 10  | `docs/GAP_ANALYSIS.md` — added audit findings                                             | ✅     |
-| 11  | `docs/ENVIRONMENT_VARIABLES.md` — updated                                                 | ✅     |
-| 12  | **Audit logging** — 27 endpoints across 8 files                                           | ✅     |
-| 13  | **Stripe webhook** — signature verification via constructEvent()                          | ✅     |
-| 14  | **SDK migration** — 15 files migrated from raw fetch                                      | ✅     |
-| 15  | **Pre-production findings** — all 38 resolved                                             | ✅     |
-| 16  | **ESLint warnings** — reduced from 7 to 0                                                 | ✅     |
-| 17  | **GA/Tawk.to env vars** — extracted to `NEXT_PUBLIC_GA_ID` + `NEXT_PUBLIC_TAWKTO_ID`      | ✅     |
-| 18  | **Admin billing viewer** — per-org billing page at `/admin/organizations/[orgId]/billing` | ✅     |
-| 19  | **Admin document upload** — inline upload on org detail page + server action              | ✅     |
-| 20  | **Ticket create fix** — added `created_by` to insert (previously missing, NOT NULL violation) | ✅     |
-| 21  | **Redirect loop fix** — middleware validates JWT exp; `/pending` uses logoutAction instead of plain link | ✅     |
+| #   | Feature                                                                                                        | Status |
+| --- | -------------------------------------------------------------------------------------------------------------- | ------ |
+| 1   | Worker test leaks — fixed with globalTeardown                                                                  | ✅     |
+| 2   | SDK test exit — fixed with jest.setup.ts fake timers                                                           | ✅     |
+| 3   | `global-error.tsx` — added root error boundary                                                                 | ✅     |
+| 4   | Favicon — added SVG favicon + metadata                                                                         | ✅     |
+| 5   | Bundle analyzer — added `@next/bundle-analyzer`                                                                | ✅     |
+| 6   | ESLint warnings — reduced from 18 to 9                                                                         | ✅     |
+| 7   | Test count — fixed 733 → 730                                                                                   | ✅     |
+| 8   | `ENVIRONMENT_VARIABLES.md` — added `HEALTH_PORT`                                                               | ✅     |
+| 9   | `docs/INDEX.md` — added missing docs                                                                           | ✅     |
+| 10  | `docs/GAP_ANALYSIS.md` — added audit findings                                                                  | ✅     |
+| 11  | `docs/ENVIRONMENT_VARIABLES.md` — updated                                                                      | ✅     |
+| 12  | **Audit logging** — 27 endpoints across 8 files                                                                | ✅     |
+| 13  | **Stripe webhook** — signature verification via constructEvent()                                               | ✅     |
+| 14  | **SDK migration** — 15 files migrated from raw fetch                                                           | ✅     |
+| 15  | **Pre-production findings** — all 38 resolved                                                                  | ✅     |
+| 16  | **ESLint warnings** — reduced from 7 to 0                                                                      | ✅     |
+| 17  | **GA/Tawk.to env vars** — extracted to `NEXT_PUBLIC_GA_ID` + `NEXT_PUBLIC_TAWKTO_ID`                           | ✅     |
+| 18  | **Admin billing viewer** — per-org billing page at `/admin/organizations/[orgId]/billing`                      | ✅     |
+| 19  | **Admin document upload** — inline upload on org detail page + server action                                   | ✅     |
+| 20  | **Ticket create fix** — added `created_by` to insert (previously missing, NOT NULL violation)                  | ✅     |
+| 21  | **Redirect loop fix** — middleware validates JWT exp; `/pending` uses logoutAction instead of plain link       | ✅     |
 | 22  | **CI pnpm setup fix** — replaced `pnpm/action-setup` + `cache: pnpm` with `corepack enable` in all 9 workflows | ✅     |
 
 ## Recommendations & Technical Debt
@@ -516,31 +519,30 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 | 5   | **View in Portal per document row** — admin document list "Portal" link (table/card/list views) | ✅     |
 | 6   | **Page metadata / titles** — all 35 server component pages have meaningful `<title>` tags       | ✅     |
 | 7   | **Loading skeletons** — `loading.tsx` for admin + portal route groups                           | ✅     |
+| 8   | **Admin org search** — `AdminOrganizationsClient` with text search, status filter, pagination   | ✅     |
+| 9   | **Inline status/priority dropdowns** — click status/priority pill → inline select on ticket     | ✅     |
+| 10  | **Ticket comment editing** — edit button within 5-min window, inline form, audit logging        | ✅     |
+| 11  | **Activity timeline** — audit event feed on admin ticket detail page                            | ✅     |
+| 12  | **Admin dashboard audit feed** — "Recent Audit Activity" panel on admin home                    | ✅     |
+| 13  | **Ticket/project CSV export** — `/export` endpoints + SDK + download buttons                    | ✅     |
 
 #### High Value (Still Open)
 
-| #   | Feature                                                                                    | Effort |
-| --- | ------------------------------------------------------------------------------------------ | ------ |
-| 8   | **Admin billing viewer** — see org invoices/subscriptions/payment history from admin panel | Medium |
-| 9   | **Admin document upload** — upload/edit documents from admin panel                         | Small  |
+| #   | Feature                                                    | Effort |
+| --- | ---------------------------------------------------------- | ------ |
+| -   | _(none — all high-value cross-navigation items completed)_ |        |
 
 #### Medium Value
 
-| #   | Feature                                                                                         | Effort |
-| --- | ----------------------------------------------------------------------------------------------- | ------ |
-| 10  | **Admin list search** — search/filter inputs on admin tickets, users, projects lists            | Small  |
-| 11  | **Inline status change** — click status/priority pill for quick dropdown on admin ticket detail | Small  |
-| 12  | **Error retry buttons** — "Try again" button on error states                                    | Small  |
-| 13  | **Ticket comment editing** — users edit own comments within a short window                      | Small  |
-| 14  | **Activity timeline on ticket detail** — show audit events inline on ticket page                | Small  |
-| 15  | **Document share link** — generate signed/expiring link for external parties                    | Small  |
-| 16  | **Markdown comment support** — lightweight rendering for ticket/project comments                | Small  |
-| 17  | **Email notification test button** — admin "Send Test Email" to verify SMTP config              | Small  |
-| 18  | **Bulk ticket operations** — select and update ticket status/priority in bulk                   | Medium |
-| 19  | **Admin dashboard stats** — show recent activity feed or pending actions summary                | Medium |
-| 20  | **Activity feed on portal** — chronological activity timeline on dashboard                      | Medium |
-| 21  | **Notification audio** — subtle chime on new unread notifications                               | Medium |
-| 22  | **Export tickets/projects to CSV** — same pattern as audit export                               | Medium |
+| #   | Feature                                                                            | Effort | Status |
+| --- | ---------------------------------------------------------------------------------- | ------ | ------ |
+| 12  | **Error retry buttons** — "Try again" button on error states                       | Small  |        |
+| 15  | **Document share link** — generate signed/expiring link for external parties       | Small  |        |
+| 16  | **Markdown comment support** — lightweight rendering for ticket/project comments   | Small  |        |
+| 17  | **Email notification test button** — admin "Send Test Email" to verify SMTP config | Small  |        |
+| 18  | **Bulk ticket operations** — select and update ticket status/priority in bulk      | Medium |        |
+| 20  | **Activity feed on portal** — chronological activity timeline on dashboard         | Medium |        |
+| 21  | **Notification audio** — subtle chime on new unread notifications                  | Medium |        |
 
 ### Admin Features
 
@@ -552,6 +554,12 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 - ✅ View in Portal on ticket detail page (`/portal/support/[ticketId]`)
 - ✅ View in Portal per document row (admin document list portal links)
 - ✅ Admin billing viewer at `/admin/organizations/[orgId]/billing` (invoices, subscriptions, payments)
+- ✅ Admin org search with text search, status filter, pagination (`AdminOrganizationsClient`)
+- ✅ Inline status/priority dropdowns on admin ticket detail (click pill → select)
+- ✅ Ticket comment editing with 5-minute window and audit logging
+- ✅ Activity timeline (audit event feed) on admin ticket detail page
+- ✅ Recent Audit Activity panel on admin dashboard
+- ✅ CSV/JSON export buttons for tickets and projects lists
 
 ### Portal Features
 
@@ -707,40 +715,88 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 
 ### What To Do Next
 
-**All 38 pre-production findings resolved.** **21 codebase review findings identified.** Fix blocking items before GitHub push.
+**All 38 pre-production findings + 21 codebase review findings resolved.** All high-value cross-navigation features completed.
 
-| Priority | Task                                                                                                                            | Effort | Status                                     |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------------------------------ |
-| 1        | **Create real Terraform config files** — `infra/terraform/env/dev.tfvars`, `prod.tfvars`, `backend.dev.hcl`, `backend.prod.hcl` | Small  | ⏳ Needs real AWS/Cloudflare/Vercel values |
-| 2        | **Push to GitHub + deploy dev site**                                                                                            | Small  | ⏳ Blocked by #1                           |
-| 3        | **Fix API `.env.example`** — remove worker-only vars                                                                            | Small  | ✅ Fixed                                   |
-| 4        | **Fix docs** — GAP_ANALYSIS.md, BILLING.md, ENVIRONMENT_VARIABLES.md, INDEX.md                                                  | Small  | ✅ Fixed                                   |
-| 5        | **Archive stale docs** — ANALYSIS_SUMMARY.md, CODEBASE_MAPPING.md to archive/stale-docs/                                        | Medium | ✅ Done                                    |
-| 6        | **Consolidate Terraform READMEs + remove stale zip** — removed 2 extra READMEs, deleted old-archived.zip                        | Small  | ✅ Done                                    |
-| 7        | **Admin list search** — search/filter on admin tickets, users, projects                                                         | Small  | Future                                     |
-| 8        | **Inline status change** — click status pill for quick dropdown                                                                 | Small  | Future                                     |
-| 9        | **Wire `@mct/ui` & `@mct/config` into apps**                                                                                    | Medium | Future                                     |
+| Priority | Task                                                                                                                            | Effort | Status                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------- |
+| 1        | **Create real Terraform config files** — `infra/terraform/env/dev.tfvars`, `prod.tfvars`, `backend.dev.hcl`, `backend.prod.hcl` | Small  | 🟡 `dev.tfvars` + `backend.*.hcl` exist; `prod.tfvars` created with placeholders |
+| 2        | **Push to GitHub + deploy dev site**                                                                                            | Small  | ⏳ Needs real prod Terraform values to fill in                                   |
+| 3        | **Fix API `.env.example`** — remove worker-only vars                                                                            | Small  | ✅ Fixed                                                                         |
+| 4        | **Fix docs** — GAP_ANALYSIS.md, BILLING.md, ENVIRONMENT_VARIABLES.md, INDEX.md                                                  | Small  | ✅ Fixed                                                                         |
+| 5        | **Archive stale docs** — ANALYSIS_SUMMARY.md, CODEBASE_MAPPING.md to archive/stale-docs/                                        | Medium | ✅ Done                                                                          |
+| 6        | **Consolidate Terraform READMEs + remove stale zip** — removed 2 extra READMEs, deleted old-archived.zip                        | Small  | ✅ Done                                                                          |
+| 7        | **Admin list search** — search/filter on admin tickets, users, projects                                                         | Small  | ✅ Org search done; tickets/projects TBD                                         |
+| 8        | **Inline status change** — click status pill for quick dropdown                                                                 | Small  | ✅ Done                                                                          |
+| 9        | **Ticket/project CSV export** — download buttons on admin lists                                                                 | Medium | ✅ Done                                                                          |
+| 10       | **Ticket comment editing** — 5-min edit window with audit logging                                                               | Small  | ✅ Done                                                                          |
+| 11       | **Activity timeline** — audit log feed on ticket detail page                                                                    | Small  | ✅ Done                                                                          |
+| 12       | **Admin dashboard recent activity** — "Recent Audit Activity" panel                                                             | Medium | ✅ Done                                                                          |
+| 13       | **Wire `@mct/ui` & `@mct/config` into apps**                                                                                    | Medium | Future                                                                           |
+| 14       | **prod.tfvars** — create from `.example` template                                                                               | Small  | ✅ Done                                                                          |
 
 ## Architectural Analysis
 
 A comprehensive deep-dive audit was conducted on 2026-06-09 covering all 6 pillars: repository map, code mechanics, system architecture, infrastructure & deployment, documentation drift, and code cleanup. See [`docs/ARCHITECTURAL_ANALYSIS.md`](docs/ARCHITECTURAL_ANALYSIS.md) for the full report with 23 critical observations.
 
+### Full System Audit (2026-06-09)
+
+A complete full-system architecture review and repo health audit was saved to [`docs/FULL_SYSTEM_AUDIT_2026-06-09.md`](docs/FULL_SYSTEM_AUDIT_2026-06-09.md). This 12-section, evidence-based analysis combines findings from:
+
+- Direct codebase inspection (all source files, Terraform, CI/CD, tests, docs)
+- Cross-reference with `docs/ARCHITECTURAL_ANALYSIS.md` (23 findings)
+- Cross-reference with `docs/ARCHITECTURAL_AUDIT_COMPLETE.md` (9 additional findings)
+
+**Total: 25 structured critical observations, 8-item immediate remediation roadmap.**
+
+### Five Critical Fixes Implemented (2026-06-09)
+
+All 5 top-priority fixes from the audit were applied in a single session:
+
+| #   | Fix                                                                                                  | Files Changed                                                     | Effort |
+| --- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------ |
+| 1   | **API port mismatch** — Terraform `3001` → `4000` to match Express                                   | `infra/terraform/variables.tf:107`                                | 5 min  |
+| 2   | **S3 IAM policy** — removed `Resource = ["*"]` wildcard (Supabase Storage handles all file ops)      | `infra/terraform/network.tf:80-95`                                | 15 min |
+| 3   | **Graceful shutdown — API** — added SIGTERM/SIGINT handlers with `server.close()` + 10s forced drain | `apps/api/src/main.ts`                                            | 30 min |
+| 4   | **Graceful shutdown — Worker** — added `inFlightTasks` tracking array + drain loop before exit       | `apps/worker/src/main.ts`                                         | 30 min |
+| 5   | **Remove `:latest` tagging from CI** — SHA-only tagging in all 4 ECS deploy workflows                | 4 workflow files (api-deploy-ecs + worker-deploy-ecs, dev + prod) | 15 min |
+
+### Remaining High-Priority Tasks (from Audit)
+
+| #   | Task                                                                                           | Priority     | Effort | Status     |
+| --- | ---------------------------------------------------------------------------------------------- | ------------ | ------ | ---------- |
+| 6   | Change `CORS_ORIGIN` default from `*` — require explicit config per environment                | **Critical** | 5 min  | 📋 Planned |
+| 7   | Restrict `alb_allowed_cidrs` to Cloudflare IPs in prod                                         | **High**     | 15 min | 📋 Planned |
+| 8   | Add explicit `HttpOnly`/`Secure`/`SameSite` cookie flags to `mct_session`                      | **High**     | 15 min | 📋 Planned |
+| 9   | Add `APP_BASE_URL` env var — decouple notification links from `CORS_ORIGIN`                    | **High**     | 15 min | 📋 Planned |
+| 10  | Fix `security.ts` — import logger from `lib/logger.ts` instead of creating 2nd pino instance   | Medium       | 10 min | 📋 Planned |
+| 11  | Fix `audit.ts` — use `logger.error` instead of `console.error`                                 | Medium       | 10 min | 📋 Planned |
+| 12  | Move `pg` and `supabase-cli` from `dependencies` to `devDependencies` in root `package.json`   | Medium       | 10 min | 📋 Planned |
+| 13  | Add path filters to E2E workflow and Terraform dev workflows                                   | Medium       | 15 min | 📋 Planned |
+| 14  | Gate Terraform prod apply with validate + e2e + migrations + prod-approval                     | **High**     | 30 min | 📋 Planned |
+| 15  | Fill real values in `prod.tfvars`                                                              | **High**     | 30 min | 📋 Planned |
+| 16  | Remove 9 dead code files (~315 lines) — ErrorBoundary, FileDropzone, ConfirmDangerButton, etc. | Low          | 15 min | 📋 Planned |
+| 17  | Archive 6 stale/overlapping domain docs                                                        | Low          | 1 hour | 📋 Planned |
+| 18  | Verify `bootstrap_portal_access` RPC exists in Supabase                                        | Medium       | 30 min | 📋 Planned |
+| 19  | Add ECR lifecycle policy — expire images > 90 days                                             | Medium       | 15 min | 📋 Planned |
+| 20  | Add `APP_BASE_URL` env var to API schema                                                       | Medium       | 15 min | 📋 Planned |
+| 21  | Add retry + alert on audit log failure                                                         | Medium       | 1 day  | 📋 Planned |
+
 ## Additional Gaps & Recommendations (2026-06-10)
 
 Beyond the 23 architectural findings, 10 additional gaps were identified. All resolved in session.
 
-| # | Gap | Priority | Status | Fix |
-|---|-----|----------|--------|-----|
-| 1 | Worker `HEALTH_PORT` bypasses Zod env validation — reads `process.env` directly | High | ✅ | Added `HEALTH_PORT` to `envSchema` (`.default(3001)`) + changed `startHealthServer` call to use `env.HEALTH_PORT` |
-| 2 | No Dependabot config — no automated vulnerability scanning | Medium | ✅ | Created `.github/dependabot.yml` with npm + GHA schedules, grouped deps |
-| 3 | `noUncheckedIndexedAccess` not enabled in base tsconfig — misses real-world undefined bugs | Medium | ✅ | Enabled in `packages/config/tsconfig.json` |
-| 4 | Web Dockerfile missing `HEALTHCHECK` directive | Medium | ✅ | Added `HEALTHCHECK` wget to port 3000 with 30s interval |
-| 5 | Web jest config missing `coverageThreshold` — coverage can degrade silently | Medium | ✅ | Added 50% thresholds to `apps/web/jest.config.mjs` |
-| 6 | No pre-commit hooks (husky/lint-staged) — devs can skip lint/typecheck | Medium | ✅ | Installed husky + lint-staged, added `prepare` script, `.husky/pre-commit`, lint-staged config in root `package.json` |
-| 7 | Terraform env dir has no real configs — only `.example` files, blocks `terraform apply` | High | 🟡 | `dev.tfvars` and `backend.dev.hcl` already exist with real values; `prod.tfvars` still `.example` only (needs real AWS/Cloudflare/Vercel values) |
-| 8 | Terraform prod apply workflow passes fewer secrets than dev — inconsistency | Medium | ✅ | Added `TF_VAR_supabase_anon_key`, `TF_VAR_supabase_service_role_key`, `TF_VAR_jwt_secret` to prod workflow, plus `tfvars` file creation step and lock-timeout |
-| 9 | No load-testing scripts — autoscaling thresholds have no baseline data | Low | ✅ | Created `scripts/load-testing/` with README placeholder |
-| 10 | No structured logging in web server components — uses `console.error` instead of pino | Medium | ✅ | Installed `pino` in web, created `lib/logger.ts` (server-only), migrated `dashboard/page.tsx` console.error calls |
+| #   | Gap                                                                                        | Priority | Status | Fix                                                                                                                                                           |
+| --- | ------------------------------------------------------------------------------------------ | -------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Worker `HEALTH_PORT` bypasses Zod env validation — reads `process.env` directly            | High     | ✅     | Added `HEALTH_PORT` to `envSchema` (`.default(3001)`) + changed `startHealthServer` call to use `env.HEALTH_PORT`                                             |
+| 2   | No Dependabot config — no automated vulnerability scanning                                 | Medium   | ✅     | Created `.github/dependabot.yml` with npm + GHA schedules, grouped deps                                                                                       |
+| 3   | `noUncheckedIndexedAccess` not enabled in base tsconfig — misses real-world undefined bugs | Medium   | ✅     | Enabled in `packages/config/tsconfig.json`                                                                                                                    |
+| 4   | Web Dockerfile missing `HEALTHCHECK` directive                                             | Medium   | ✅     | Added `HEALTHCHECK` wget to port 3000 with 30s interval                                                                                                       |
+| 5   | Web jest config missing `coverageThreshold` — coverage can degrade silently                | Medium   | ✅     | Added 50% thresholds to `apps/web/jest.config.mjs`                                                                                                            |
+| 6   | No pre-commit hooks (husky/lint-staged) — devs can skip lint/typecheck                     | Medium   | ✅     | Installed husky + lint-staged, added `prepare` script, `.husky/pre-commit`, lint-staged config in root `package.json`                                         |
+| 7   | Terraform env dir has no real configs — only `.example` files, blocks `terraform apply`    | High     | 🟡     | `dev.tfvars` and `backend.dev.hcl` already exist with real values; `prod.tfvars` still `.example` only (needs real AWS/Cloudflare/Vercel values)              |
+| 8   | Terraform prod apply workflow passes fewer secrets than dev — inconsistency                | Medium   | ✅     | Added `TF_VAR_supabase_anon_key`, `TF_VAR_supabase_service_role_key`, `TF_VAR_jwt_secret` to prod workflow, plus `tfvars` file creation step and lock-timeout |
+| 9   | No load-testing scripts — autoscaling thresholds have no baseline data                     | Low      | ✅     | Created `scripts/load-testing/` with README placeholder                                                                                                       |
+| 10  | No structured logging in web server components — uses `console.error` instead of pino      | Medium   | ✅     | Installed `pino` in web, created `lib/logger.ts` (server-only), migrated `dashboard/page.tsx` console.error calls                                             |
 
 ## Relevant Files
 
@@ -847,6 +903,9 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `GET /api/v1/roles/:id/permissions` + PUT — role permission management
 - `GET /api/v1/audit/export` — CSV/JSON audit export
 - `POST /api/v1/bulk/invite` — CSV bulk user import
+- `GET /api/v1/tickets/export` — CSV/JSON ticket export
+- `GET /api/v1/projects/export` — CSV/JSON project export
+- `PATCH /api/v1/tickets/:id/comments/:commentId` — edit ticket comment (5-min window)
 
 ### Audit Logging
 
@@ -864,6 +923,7 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `supabase/migrations/5302028_seed_permissions.sql` — seeds 26 permissions + role assignments
 - `supabase/migrations/5302030_add_jira_fields.sql` — Jira/JSM columns on projects, tasks, tickets
 - `supabase/migrations/5302032_webhook_endpoints.sql` — webhook endpoints + deliveries tables
+- `supabase/migrations/5302034_ticket_comment_editing.sql` — `edited_at` column + UPDATE RLS on `ticket_comments`
 - `supabase/seeds/04_test_seed.sql` — comprehensive test seed: Jira/JSM data, branding, webhooks, notifications, permission overrides, document versions
 
 ### Docker & CI

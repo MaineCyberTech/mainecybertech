@@ -104,7 +104,7 @@ variable "worker_service_desired_count" {
 variable "api_container_port" {
   description = "Port exposed by the API container"
   type        = number
-  default     = 3001
+  default     = 4000
 }
 variable "alb_name" {
   description = "Name of the public ALB"

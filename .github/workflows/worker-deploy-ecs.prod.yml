@@ -52,9 +52,7 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
           docker build -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" -f apps/worker/Dockerfile .
-          docker tag "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" "$REGISTRY/$ECR_REPOSITORY:latest"
           docker push "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          docker push "$REGISTRY/$ECR_REPOSITORY:latest"
 
       - name: Force new deployment
         run: |

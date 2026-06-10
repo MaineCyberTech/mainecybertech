@@ -77,22 +77,20 @@ resource "aws_iam_role_policy" "ecs_task_ssm_access" {
   })
 }
 
-resource "aws_iam_role_policy" "ecs_task_s3_access" {
-  role = aws_iam_role.ecs_task.name
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "s3:GetObject",
-        "s3:PutObject",
-        "s3:DeleteObject",
-        "s3:ListBucket",
-      ]
-      Resource = ["*"]
-    }]
-  })
-}
+# S3 access is not needed for ECS tasks — all storage operations go through Supabase Storage,
+# which uses Supabase-managed S3 buckets, not direct AWS S3 API calls.
+# If direct S3 access is needed in the future, restore this policy scoped to specific bucket ARNs.
+# resource "aws_iam_role_policy" "ecs_task_s3_access" {
+#   role = aws_iam_role.ecs_task.name
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect = "Allow"
+#       Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+#       Resource = ["arn:aws:s3:::mainecybertech-*", "arn:aws:s3:::mainecybertech-*/*"]
+#     }]
+#   })
+# }
 
 resource "aws_iam_role_policy_attachment" "ecs_execution_baseline" {
   role       = aws_iam_role.ecs_execution.name

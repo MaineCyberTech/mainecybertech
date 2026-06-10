@@ -6,22 +6,27 @@ import { z } from "zod";
 // ============= Logger =============
 const logger = pino({
   level: process.env.LOG_LEVEL || "info",
-  transport: process.env.NODE_ENV !== "production"
-    ? {
-        target: "pino-pretty",
-        options: {
-          colorize: true,
-          singleLine: false,
-          translateTime: "SYS:standard",
-        },
-      }
-    : undefined,
+  transport:
+    process.env.NODE_ENV !== "production"
+      ? {
+          target: "pino-pretty",
+          options: {
+            colorize: true,
+            singleLine: false,
+            translateTime: "SYS:standard",
+          },
+        }
+      : undefined,
 });
 
 // ============= Environment Validation =============
 export const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
+  NODE_ENV: z
+    .enum(["development", "production", "test"])
+    .default("development"),
+  LOG_LEVEL: z
+    .enum(["debug", "info", "warn", "error", "silent"])
+    .default("info"),
   WORKER_CONCURRENCY: z.coerce.number().default(10),
   WORKER_TIMEOUT: z.coerce.number().default(30000),
   SQS_QUEUE_URL: z.string().optional(),
@@ -75,7 +80,9 @@ export interface TaskResult {
   error?: string;
 }
 
-export type TaskHandler = (payload: Record<string, unknown>) => Promise<TaskResult>;
+export type TaskHandler = (
+  payload: Record<string, unknown>,
+) => Promise<TaskResult>;
 
 const taskRegistry = new Map<string, TaskHandler>();
 
@@ -131,7 +138,8 @@ async function pollSQS(
   maxMessages: number,
   waitTimeSeconds: number,
 ): Promise<SQSMessage[]> {
-  const { SQSClient, ReceiveMessageCommand } = await import("@aws-sdk/client-sqs");
+  const { SQSClient, ReceiveMessageCommand } =
+    await import("@aws-sdk/client-sqs");
   const client = new SQSClient({});
 
   const command = new ReceiveMessageCommand({
@@ -144,8 +152,12 @@ async function pollSQS(
   return (response.Messages ?? []) as SQSMessage[];
 }
 
-async function deleteMessage(queueUrl: string, receiptHandle: string): Promise<void> {
-  const { SQSClient, DeleteMessageCommand } = await import("@aws-sdk/client-sqs");
+async function deleteMessage(
+  queueUrl: string,
+  receiptHandle: string,
+): Promise<void> {
+  const { SQSClient, DeleteMessageCommand } =
+    await import("@aws-sdk/client-sqs");
   const client = new SQSClient({});
 
   await client.send(
@@ -169,15 +181,22 @@ async function processMessage(raw: SQSMessage): Promise<TaskResult> {
   const result = await executeTask(task);
 
   if (result.ok) {
-    logger.info({ type: task.type, messageId: raw.MessageId }, "Task completed");
+    logger.info(
+      { type: task.type, messageId: raw.MessageId },
+      "Task completed",
+    );
   } else {
-    logger.warn({ type: task.type, messageId: raw.MessageId, error: result.error }, "Task failed");
+    logger.warn(
+      { type: task.type, messageId: raw.MessageId, error: result.error },
+      "Task failed",
+    );
   }
 
   return result;
 }
 
 let shuttingDown = false;
+let inFlightTasks: Promise<void>[] = [];
 
 export async function runWorkerTasks(): Promise<void> {
   const queueUrl = env.SQS_QUEUE_URL;
@@ -190,7 +209,9 @@ export async function runWorkerTasks(): Promise<void> {
   );
 
   if (!queueUrl) {
-    logger.warn("SQS_QUEUE_URL not configured â€” worker will idle. Register tasks and provide a queue URL to process messages.");
+    logger.warn(
+      "SQS_QUEUE_URL not configured — worker will idle. Register tasks and provide a queue URL to process messages.",
+    );
     await new Promise(() => {});
     return;
   }
@@ -198,7 +219,7 @@ export async function runWorkerTasks(): Promise<void> {
   const shutdown = (): void => {
     if (shuttingDown) return;
     shuttingDown = true;
-    logger.info("Shutdown signal received â€” finishing current tasks...");
+    logger.info("Shutdown signal received — finishing current tasks...");
   };
 
   process.on("SIGTERM", shutdown);
@@ -210,19 +231,24 @@ export async function runWorkerTasks(): Promise<void> {
 
       if (messages.length === 0) continue;
 
-      const results = await Promise.allSettled(
-        messages.map(async (msg) => {
-          const taskResult = await processMessage(msg);
-          if (taskResult.ok) {
-            await deleteMessage(queueUrl, msg.ReceiptHandle);
-          } else {
-            logger.warn(
-              { messageId: msg.MessageId, error: taskResult.error },
-              "Task failed — message will return to queue for retry",
-            );
-          }
-        }),
-      );
+      const batchTasks = messages.map(async (msg) => {
+        const taskResult = await processMessage(msg);
+        if (taskResult.ok) {
+          await deleteMessage(queueUrl, msg.ReceiptHandle);
+        } else {
+          logger.warn(
+            { messageId: msg.MessageId, error: taskResult.error },
+            "Task failed — message will return to queue for retry",
+          );
+        }
+      });
+
+      inFlightTasks.push(...batchTasks);
+
+      const results = await Promise.allSettled(batchTasks);
+
+      // Clean up completed tasks from inFlightTasks
+      inFlightTasks = inFlightTasks.filter((t) => !batchTasks.includes(t));
 
       for (const result of results) {
         if (result.status === "rejected") {
@@ -230,11 +256,22 @@ export async function runWorkerTasks(): Promise<void> {
         }
       }
     } catch (error) {
-      logger.error({ error }, "Error polling SQS â€” will retry");
+      logger.error({ error }, "Error polling SQS — will retry");
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
 
+  // Drain in-flight tasks before exiting
+  logger.info({ count: inFlightTasks.length }, "Draining in-flight tasks...");
+  const drainResults = await Promise.allSettled(inFlightTasks);
+  for (const result of drainResults) {
+    if (result.status === "rejected") {
+      logger.error(
+        { error: result.reason },
+        "In-flight task failed during drain",
+      );
+    }
+  }
   logger.info("Worker shut down gracefully");
 }
 
@@ -244,13 +281,15 @@ export function startHealthServer(port: number = 3001): void {
     if (req.url === "/health") {
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/json");
-      res.end(JSON.stringify({
-        service: "worker",
-        status: "healthy",
-        uptime: process.uptime(),
-        registeredTasks: getRegisteredTaskTypes(),
-        shuttingDown,
-      }));
+      res.end(
+        JSON.stringify({
+          service: "worker",
+          status: "healthy",
+          uptime: process.uptime(),
+          registeredTasks: getRegisteredTaskTypes(),
+          shuttingDown,
+        }),
+      );
     } else {
       res.statusCode = 404;
       res.setHeader("Content-Type", "application/json");
@@ -275,7 +314,10 @@ import { registerAllTasks } from "./tasks";
 registerAllTasks();
 
 // ============= Main =============
-if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test") {
+if (
+  process.env.JEST_WORKER_ID === undefined &&
+  process.env.NODE_ENV !== "test"
+) {
   startHealthServer(env.HEALTH_PORT);
   runWorkerTasks().catch((error) => {
     logger.error(error, "Worker crashed");
