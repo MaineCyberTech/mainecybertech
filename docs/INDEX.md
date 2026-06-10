@@ -45,7 +45,6 @@
 | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | [docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md](FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md)                               | Operator manual: env model, Terraform, promotion, rollback             |
 | [archive/stale-docs/DEPLOYMENT_PLAN_TERRAFORM_VERCEL.md](../archive/stale-docs/DEPLOYMENT_PLAN_TERRAFORM_VERCEL.md)   | [Archived] 7-phase deployment plan, cost estimates, troubleshooting    |
-| [docs/PRODUCTION_CUTOVER_CHECKLIST.md](PRODUCTION_CUTOVER_CHECKLIST.md)                                               | Day-of production cutover checklist                                    |
 | [docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md](GITHUB_SECRETS_AND_VARIABLES_MATRIX.md)                                 | Required GitHub secrets and variables                                  |
 | [docs/ROLLBACK_PROCEDURES.md](ROLLBACK_PROCEDURES.md)                                                                 | ECS, Vercel, Supabase, Terraform rollback                              |
 | [docs/MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md)                                                         | Monitoring strategy, alerting setup, dashboards                        |
@@ -53,12 +52,6 @@
 | [docs/API_RATE_LIMITING.md](API_RATE_LIMITING.md)                                                                     | Rate limit configuration and behavior (300/15min)                      |
 | [docs/API_VERSIONING.md](API_VERSIONING.md)                                                                           | API versioning strategy                                                |
 | [docs/CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md](CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md)                   | Cloudflare caching and proxy configuration                             |
-| [docs/CLOUDFLARE_VERCEL_DOMAIN_COMPLETION_README.md](CLOUDFLARE_VERCEL_DOMAIN_COMPLETION_README.md)                   | Cloudflare + Vercel domain setup guide                                 |
-| [docs/DOCUMENTATION_INDEX_DOMAIN_COMPLETION.md](DOCUMENTATION_INDEX_DOMAIN_COMPLETION.md)                             | Domain completion documentation index                                  |
-| [docs/ENVIRONMENT_PROVISIONING_AND_PROMOTION.md](ENVIRONMENT_PROVISIONING_AND_PROMOTION.md)                           | Environment provisioning and promotion workflow                        |
 | [docs/PRODUCTION_VS_TESTING_DOMAINS.md](PRODUCTION_VS_TESTING_DOMAINS.md)                                             | Production vs testing domain configuration                             |
-| [docs/VERCEL_DOMAIN_ASSIGNMENT_CHECKLIST.md](VERCEL_DOMAIN_ASSIGNMENT_CHECKLIST.md)                                   | Vercel domain assignment checklist                                     |
 | [archive/stale-docs/README_WORKFLOWS_AND_ENVIRONMENTS.md](../archive/stale-docs/README_WORKFLOWS_AND_ENVIRONMENTS.md) | [Archived] CI/CD workflows and environment reference                   |
-| [docs/ZERO_DOWNTIME_CUTOVER_NOTES.md](ZERO_DOWNTIME_CUTOVER_NOTES.md)                                                 | Zero-downtime cutover procedures                                       |
 | [docs/MARKETING_SITE_INTEGRATION.md](MARKETING_SITE_INTEGRATION.md)                                                   | Marketing site domain route plan — public API, frontend, domain config |
-| [docs/ENVIRONMENT_MATRIX.md](ENVIRONMENT_MATRIX.md)                                                                   | Environment variable matrix across services                            |

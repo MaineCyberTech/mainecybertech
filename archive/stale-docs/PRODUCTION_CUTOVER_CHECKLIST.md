@@ -3,6 +3,7 @@
 Use this as the **deployment-day one-page checklist** for promoting the production environment.
 
 ## Scope
+
 - Production app hostname: `app.mainecybertech.com`
 - Production API hostname: `api.mainecybertech.com`
 - Terraform root: `infra/terraform`
@@ -13,6 +14,7 @@ Use this as the **deployment-day one-page checklist** for promoting the producti
 ---
 
 ## 1) Pre-cutover readiness
+
 - [ ] Confirm all changes were validated in testing/dev first
 - [ ] Confirm the production PR into `main` has been reviewed
 - [ ] Confirm `terraform-plan.prod.yml` completed successfully for the production change set
@@ -25,7 +27,9 @@ Use this as the **deployment-day one-page checklist** for promoting the producti
 ---
 
 ## 2) GitHub production environment checks
+
 ### Required production secrets
+
 - [ ] `AWS_TERRAFORM_ROLE_ARN`
 - [ ] `AWS_DEPLOY_ROLE_ARN`
 - [ ] `CLOUDFLARE_API_TOKEN`
@@ -35,6 +39,7 @@ Use this as the **deployment-day one-page checklist** for promoting the producti
 - [ ] `SUPABASE_ACCESS_TOKEN`
 
 ### Required production variables
+
 - [ ] `AWS_REGION`
 - [ ] `ECS_CLUSTER_NAME`
 - [ ] `API_ECS_SERVICE`
@@ -47,6 +52,7 @@ Use this as the **deployment-day one-page checklist** for promoting the producti
 ---
 
 ## 3) Terraform production apply readiness
+
 - [ ] Confirm `infra/terraform/env/prod.tfvars` exists with real production values
 - [ ] Confirm `infra/terraform/env/backend.prod.hcl` exists with the real production backend configuration
 - [ ] Confirm production Terraform state is isolated from testing/dev state
@@ -54,6 +60,7 @@ Use this as the **deployment-day one-page checklist** for promoting the producti
 - [ ] Confirm planned ECS/ALB changes are understood before apply
 
 ### Recommended operator commands
+
 ```bash
 terraform init -backend-config=env/backend.prod.hcl
 terraform plan -var-file=env/prod.tfvars
@@ -63,6 +70,7 @@ terraform apply -var-file=env/prod.tfvars
 ---
 
 ## 4) Web production cutover checks
+
 - [ ] Confirm `app.mainecybertech.com` is assigned in Vercel
 - [ ] Confirm the exact production Vercel DNS target was inspected and recorded
 - [ ] Confirm the Cloudflare production app record points to the intended Vercel target
@@ -73,6 +81,7 @@ terraform apply -var-file=env/prod.tfvars
 ---
 
 ## 5) API production cutover checks
+
 - [ ] Confirm the production API image was built and pushed successfully
 - [ ] Confirm the production ECS API service rolled successfully
 - [ ] Confirm the production ECS worker service rolled successfully if worker changes were part of release
@@ -84,6 +93,7 @@ terraform apply -var-file=env/prod.tfvars
 ---
 
 ## 6) DNS / domain checks
+
 - [ ] Confirm Cloudflare production app/API records are correct after apply
 - [ ] Confirm no accidental testing/dev domain values were promoted to production
 - [ ] Confirm `app.mainecybertech.com` and `api.mainecybertech.com` resolve to the intended production targets
@@ -91,6 +101,7 @@ terraform apply -var-file=env/prod.tfvars
 ---
 
 ## 7) Post-cutover validation
+
 - [ ] Confirm the web app is reachable and stable
 - [ ] Confirm the API is reachable and stable
 - [ ] Confirm ECS services remain steady after rollout
@@ -101,7 +112,9 @@ terraform apply -var-file=env/prod.tfvars
 ---
 
 ## 8) Rollback triggers
+
 Rollback should be considered immediately if any of the following occur:
+
 - [ ] Production app does not load correctly over HTTPS
 - [ ] Production API health checks fail
 - [ ] ECS service does not stabilize
@@ -109,6 +122,7 @@ Rollback should be considered immediately if any of the following occur:
 - [ ] Critical auth/user journeys fail
 
 ### Rollback actions
+
 - [ ] Revert the production app deployment to the previous known-good Vercel build if needed
 - [ ] Revert the production API/worker deployment to the previous known-good image/task definition state if needed
 - [ ] Revert Cloudflare production DNS records if the wrong production target was applied

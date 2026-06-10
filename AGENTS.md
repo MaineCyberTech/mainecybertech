@@ -371,7 +371,7 @@ Full codebase audit conducted to identify remaining gaps before pushing to GitHu
 | 35  | `extractCodeVerifier` manually parses cookies   | Tech Debt     | Noted  | Low priority — works correctly                            |
 | 36  | SDK return types are `any`                      | Type Safety   | Noted  | Low priority — runtime-safe                               |
 | 37  | SDK internal types not re-exported              | Usability     | ✅     | 11+ types re-exported from index.ts                       |
-| 38  | `bootstrap.ts` is empty TODO stub               | Dead Code     | Noted  | Never imported — no-op                                    |
+| 38  | `bootstrap.ts` is empty TODO stub               | Dead Code     | ✅     | Removed — never imported, no-op                           |
 
 ### Production Readiness Assessment
 
@@ -638,7 +638,7 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 | 35  | extractCodeVerifier manual parse            | Noted  | Works correctly                                                                                                                                    |
 | 36  | SDK return types any                        | Noted  | Runtime-safe                                                                                                                                       |
 | 37  | SDK types not re-exported                   | ✅     | 11+ types re-exported                                                                                                                              |
-| 38  | bootstrap.ts empty stub                     | Noted  | Never imported                                                                                                                                     |
+| 38  | bootstrap.ts empty stub                     | ✅     | File removed — no-op never imported                                                                                                                |
 
 ### Remaining Technical Debt
 
@@ -717,22 +717,26 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 
 **All 38 pre-production findings + 21 codebase review findings resolved.** All high-value cross-navigation features completed.
 
-| Priority | Task                                                                                                                            | Effort | Status                                                                           |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------- |
-| 1        | **Create real Terraform config files** — `infra/terraform/env/dev.tfvars`, `prod.tfvars`, `backend.dev.hcl`, `backend.prod.hcl` | Small  | 🟡 `dev.tfvars` + `backend.*.hcl` exist; `prod.tfvars` created with placeholders |
-| 2        | **Push to GitHub + deploy dev site**                                                                                            | Small  | ⏳ Needs real prod Terraform values to fill in                                   |
-| 3        | **Fix API `.env.example`** — remove worker-only vars                                                                            | Small  | ✅ Fixed                                                                         |
-| 4        | **Fix docs** — GAP_ANALYSIS.md, BILLING.md, ENVIRONMENT_VARIABLES.md, INDEX.md                                                  | Small  | ✅ Fixed                                                                         |
-| 5        | **Archive stale docs** — ANALYSIS_SUMMARY.md, CODEBASE_MAPPING.md to archive/stale-docs/                                        | Medium | ✅ Done                                                                          |
-| 6        | **Consolidate Terraform READMEs + remove stale zip** — removed 2 extra READMEs, deleted old-archived.zip                        | Small  | ✅ Done                                                                          |
-| 7        | **Admin list search** — search/filter on admin tickets, users, projects                                                         | Small  | ✅ Org search done; tickets/projects TBD                                         |
-| 8        | **Inline status change** — click status pill for quick dropdown                                                                 | Small  | ✅ Done                                                                          |
-| 9        | **Ticket/project CSV export** — download buttons on admin lists                                                                 | Medium | ✅ Done                                                                          |
-| 10       | **Ticket comment editing** — 5-min edit window with audit logging                                                               | Small  | ✅ Done                                                                          |
-| 11       | **Activity timeline** — audit log feed on ticket detail page                                                                    | Small  | ✅ Done                                                                          |
-| 12       | **Admin dashboard recent activity** — "Recent Audit Activity" panel                                                             | Medium | ✅ Done                                                                          |
-| 13       | **Wire `@mct/ui` & `@mct/config` into apps**                                                                                    | Medium | Future                                                                           |
-| 14       | **prod.tfvars** — create from `.example` template                                                                               | Small  | ✅ Done                                                                          |
+| Priority | Task                                                                                                                                                                                                                           | Effort | Status                                                                           |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------ | -------------------------------------------------------------------------------- |
+| 1        | **Create real Terraform config files** — `infra/terraform/env/dev.tfvars`, `prod.tfvars`, `backend.dev.hcl`, `backend.prod.hcl`                                                                                                | Small  | 🟡 `dev.tfvars` + `backend.*.hcl` exist; `prod.tfvars` created with placeholders |
+| 2        | **Push to GitHub + deploy dev site**                                                                                                                                                                                           | Small  | ⏳ Needs real prod Terraform values to fill in                                   |
+| 3        | **Fix API `.env.example`** — remove worker-only vars                                                                                                                                                                           | Small  | ✅ Fixed                                                                         |
+| 4        | **Fix docs** — GAP_ANALYSIS.md, BILLING.md, ENVIRONMENT_VARIABLES.md, INDEX.md                                                                                                                                                 | Small  | ✅ Fixed                                                                         |
+| 5        | **Archive stale docs** — ANALYSIS_SUMMARY.md, CODEBASE_MAPPING.md to archive/stale-docs/                                                                                                                                       | Medium | ✅ Done                                                                          |
+| 6        | **Consolidate Terraform READMEs + remove stale zip** — removed 2 extra READMEs, deleted old-archived.zip                                                                                                                       | Small  | ✅ Done                                                                          |
+| 7        | **Admin list search** — search/filter on admin tickets, users, projects                                                                                                                                                        | Small  | ✅ Org search done; tickets/projects TBD                                         |
+| 8        | **Inline status change** — click status pill for quick dropdown                                                                                                                                                                | Small  | ✅ Done                                                                          |
+| 9        | **Ticket/project CSV export** — download buttons on admin lists                                                                                                                                                                | Medium | ✅ Done                                                                          |
+| 10       | **Ticket comment editing** — 5-min edit window with audit logging                                                                                                                                                              | Small  | ✅ Done                                                                          |
+| 11       | **Activity timeline** — audit log feed on ticket detail page                                                                                                                                                                   | Small  | ✅ Done                                                                          |
+| 12       | **Admin dashboard recent activity** — "Recent Audit Activity" panel                                                                                                                                                            | Medium | ✅ Done                                                                          |
+| 13       | **Wire `@mct/ui` & `@mct/config` into apps**                                                                                                                                                                                   | Medium | Future                                                                           |
+| 14       | **prod.tfvars** — create from `.example` template                                                                                                                                                                              | Small  | ✅ Done                                                                          |
+| 15       | **Remove stale infra examples** — `infra/terraform/examples/` removed                                                                                                                                                          | Small  | ✅ Done                                                                          |
+| 16       | **ECR lifecycle policy** — expire untagged images >14d, keep 30 tagged                                                                                                                                                         | Medium | ✅ Done                                                                          |
+| 17       | **Dead code cleanup** — removed `bootstrap.ts`, `.gitkeep`, `template.tsx`; 6 more were already gone                                                                                                                           | Low    | ✅ Done                                                                          |
+| 18       | **Archive 8 stale domain docs** — MERGED_AUDIT_SUMMARY, CLOUDFLARE_VERCEL_DOMAIN, DOCUMENTATION_INDEX, PRODUCTION_CUTOVER, VERCEL_DOMAIN_ASSIGNMENT, ZERO_DOWNTIME_CUTOVER_NOTES, ENVIRONMENT_MATRIX, ENVIRONMENT_PROVISIONING | Low    | ✅ Done                                                                          |
 
 ## Architectural Analysis
 
@@ -764,20 +768,20 @@ All 5 top-priority fixes from the audit were applied in a single session:
 
 | #   | Task                                                                                           | Priority     | Effort | Status     |
 | --- | ---------------------------------------------------------------------------------------------- | ------------ | ------ | ---------- |
-| 6   | Change `CORS_ORIGIN` default from `*` — require explicit config per environment                | **Critical** | 5 min  | 📋 Planned |
+| 6   | Change `CORS_ORIGIN` default from `*` — require explicit config per environment                | **Critical** | 5 min  | ✅ Done    |
 | 7   | Restrict `alb_allowed_cidrs` to Cloudflare IPs in prod                                         | **High**     | 15 min | 📋 Planned |
-| 8   | Add explicit `HttpOnly`/`Secure`/`SameSite` cookie flags to `mct_session`                      | **High**     | 15 min | 📋 Planned |
+| 8   | Add explicit `HttpOnly`/`Secure`/`SameSite` cookie flags to `mct_session`                      | **High**     | 15 min | ✅ Done    |
 | 9   | Add `APP_BASE_URL` env var — decouple notification links from `CORS_ORIGIN`                    | **High**     | 15 min | ✅ Done    |
-| 10  | Fix `security.ts` — import logger from `lib/logger.ts` instead of creating 2nd pino instance   | Medium       | 10 min | 📋 Planned |
-| 11  | Fix `audit.ts` — use `logger.error` instead of `console.error`                                 | Medium       | 10 min | 📋 Planned |
-| 12  | Move `pg` and `supabase-cli` from `dependencies` to `devDependencies` in root `package.json`   | Medium       | 10 min | 📋 Planned |
+| 10  | Fix `security.ts` — import logger from `lib/logger.ts` instead of creating 2nd pino instance   | Medium       | 10 min | ✅ Done    |
+| 11  | Fix `audit.ts` — use `logger.error` instead of `console.error`                                 | Medium       | 10 min | ✅ Done    |
+| 12  | Move `pg` and `supabase-cli` from `dependencies` to `devDependencies` in root `package.json`   | Medium       | 10 min | ✅ Done    |
 | 13  | Add path filters to E2E workflow and Terraform dev workflows                                   | Medium       | 15 min | 📋 Planned |
 | 14  | Gate Terraform prod apply with validate + e2e + migrations + prod-approval                     | **High**     | 30 min | 📋 Planned |
 | 15  | Fill real values in `prod.tfvars`                                                              | **High**     | 30 min | 📋 Planned |
-| 16  | Remove 9 dead code files (~315 lines) — ErrorBoundary, FileDropzone, ConfirmDangerButton, etc. | Low          | 15 min | 📋 Planned |
-| 17  | Archive 6 stale/overlapping domain docs                                                        | Low          | 1 hour | 📋 Planned |
+| 16  | Remove 9 dead code files (~315 lines) — ErrorBoundary, FileDropzone, ConfirmDangerButton, etc. | Low          | 15 min | ✅ Done    |
+| 17  | Archive 6 stale/overlapping domain docs                                                        | Low          | 1 hour | ✅ Done    |
 | 18  | Verify `bootstrap_portal_access` RPC exists in Supabase                                        | Medium       | 30 min | ✅ Done    |
-| 19  | Add ECR lifecycle policy — expire images > 90 days                                             | Medium       | 15 min | 📋 Planned |
+| 19  | Add ECR lifecycle policy — expire images > 90 days                                             | Medium       | 15 min | ✅ Done    |
 | 20  | Add `APP_BASE_URL` env var to API schema                                                       | Medium       | 15 min | ✅ Done    |
 | 21  | Add retry + alert on audit log failure                                                         | Medium       | 1 day  | 📋 Planned |
 
@@ -831,10 +835,8 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 
 - `apps/web/components/portal/PortalDocumentsCenterClient.tsx` — document grid/list/table with search
 - `apps/web/components/portal/DocumentVersionsClient.tsx` — version history on document detail
-- `apps/web/components/portal/ErrorBoundary.tsx` — client-side error boundary
 - `apps/web/components/admin/PermissionsMatrix.tsx` — read-only role/permission matrix display
 - `apps/web/components/admin/ConfirmIntentButton.tsx` — delete confirmation button
-- `apps/web/components/admin/ConfirmDangerButton.tsx` — danger confirmation button
 - `apps/web/components/admin/OrgBrandingForm.tsx` — per-org logo/colors upload
 - `apps/web/components/admin/NewWebhookForm.tsx` — create webhook endpoint form
 - `apps/web/components/admin/WebhookDetailClient.tsx` — webhook edit, test, delivery log
@@ -845,16 +847,13 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `apps/web/components/portal/ProjectCalendarView.tsx` — monthly task calendar
 - `apps/web/components/portal/ProjectTasksWithViews.tsx` — list/timeline/calendar toggle
 - `apps/web/components/DocumentPreview.tsx` — inline file preview (image/PDF/video/audio/text)
-- `apps/web/components/FileDropzone.tsx` — drag-and-drop file upload
 - `apps/web/components/NotificationBell.tsx` — bell icon with badge + dropdown
 - `apps/web/components/NotificationsPageClient.tsx` — paginated notification history with filters
 - `apps/web/components/NotificationPreferencesClient.tsx` — per-module toggle switches
 - `apps/web/components/admin/AdminDocUpload.tsx` — inline document upload form for org detail page
 - `apps/web/components/BillingPageClient.tsx` — billing/invoice/subscription display
-- `apps/web/components/SentryErrorBoundary.tsx` — client-side error boundary with Sentry capture
 - `apps/web/components/portal/OrgSwitcher.tsx` — multi-org dropdown switcher in portal header
 - `apps/web/components/portal/PortalGlobalSearch.tsx` — org-scoped search bar in portal header
-- `apps/web/lib/sentry.ts` — browser Sentry init + error capture utility
 - `apps/web/lib/org-actions.ts` — org switching cookie actions
 - `apps/web/app/(admin)/admin/loading.tsx` — admin route group loading skeleton
 - `apps/web/app/(portal)/portal/loading.tsx` — portal route group loading skeleton
@@ -941,7 +940,7 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 ### Error Tracking
 
 - **API**: `@sentry/node` — initialized in `createApp()`, captures exceptions in `error.ts` middleware
-- **Web**: `@sentry/browser` via `lib/sentry.ts` + `components/SentryErrorBoundary.tsx` (class-based error boundary)
+- **Web**: `@sentry/nextjs` via `instrumentation.ts` — captures unhandled exceptions and route errors
 - Both skip initialization when `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` is unset
 
 ### Shared Config

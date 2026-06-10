@@ -114,6 +114,32 @@ resource "aws_ecr_repository" "api" {
   }
 }
 
+resource "aws_ecr_lifecycle_policy" "api" {
+  repository = aws_ecr_repository.api.name
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Expire untagged images after 14 days"
+      selection = {
+        tagStatus   = "untagged"
+        countType   = "sinceImagePushed"
+        countUnit   = "days"
+        countNumber = 14
+      }
+      action = { type = "expire" }
+    }, {
+      rulePriority = 2
+      description  = "Keep only the last 30 tagged images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 30
+      }
+      action = { type = "expire" }
+    }]
+  })
+}
+
 # Worker ECR Repository
 resource "aws_ecr_repository" "worker" {
   name                 = "mainecybertech-worker"
@@ -131,4 +157,30 @@ resource "aws_ecr_repository" "worker" {
     Name        = "mainecybertech-worker"
     Environment = var.environment
   }
+}
+
+resource "aws_ecr_lifecycle_policy" "worker" {
+  repository = aws_ecr_repository.worker.name
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Expire untagged images after 14 days"
+      selection = {
+        tagStatus   = "untagged"
+        countType   = "sinceImagePushed"
+        countUnit   = "days"
+        countNumber = 14
+      }
+      action = { type = "expire" }
+    }, {
+      rulePriority = 2
+      description  = "Keep only the last 30 tagged images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 30
+      }
+      action = { type = "expire" }
+    }]
+  })
 }

@@ -1,6 +1,7 @@
 # Domain Completion Documentation Index
 
 ## Included Documents
+
 - `CLOUDFLARE_VERCEL_DOMAIN_COMPLETION_README.md`
 - `PRODUCTION_VS_TESTING_DOMAINS.md`
 - `CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md`
@@ -9,6 +10,7 @@
 - `../terraform/cloudflare_domain_targets.auto.tfvars.example`
 
 ## Suggested Read Order
+
 1. `CLOUDFLARE_VERCEL_DOMAIN_COMPLETION_README.md`
 2. `PRODUCTION_VS_TESTING_DOMAINS.md`
 3. `VERCEL_DOMAIN_ASSIGNMENT_CHECKLIST.md`
