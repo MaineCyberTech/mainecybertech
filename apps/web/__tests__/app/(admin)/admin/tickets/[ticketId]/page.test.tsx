@@ -16,10 +16,17 @@ jest.mock("next/cache", () => ({
 const mockTicketsGet = jest.fn();
 const mockOrgsGet = jest.fn();
 const mockTicketsListComments = jest.fn();
+const mockAuditList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    tickets: { get: mockTicketsGet, listComments: mockTicketsListComments, update: jest.fn(), addComment: jest.fn() },
+    tickets: {
+      get: mockTicketsGet,
+      listComments: mockTicketsListComments,
+      update: jest.fn(),
+      addComment: jest.fn(),
+    },
     organizations: { get: mockOrgsGet },
+    audit: { list: mockAuditList },
   }),
 }));
 
@@ -33,7 +40,11 @@ jest.mock("next/link", () => {
 
 jest.mock("@/components/admin/AdminBreadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
-    return <nav data-testid="breadcrumbs">{items.map((i: any) => i.label).join(" > ")}</nav>;
+    return (
+      <nav data-testid="breadcrumbs">
+        {items.map((i: any) => i.label).join(" > ")}
+      </nav>
+    );
   };
 });
 
@@ -44,9 +55,16 @@ jest.mock("@/components/admin/AdminSubnav", () => {
 });
 
 const baseTicket = {
-  id: "t1", title: "Login Issue", subject: "Login Issue", description: "Cannot log in",
-  organization_id: "o1", status: "open", priority: "high", category: "bug",
-  created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+  id: "t1",
+  title: "Login Issue",
+  subject: "Login Issue",
+  description: "Cannot log in",
+  organization_id: "o1",
+  status: "open",
+  priority: "high",
+  category: "bug",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
 };
 
 describe("AdminTicketDetailPage", () => {
@@ -56,33 +74,67 @@ describe("AdminTicketDetailPage", () => {
     mockTicketsGet.mockResolvedValue(baseTicket);
     mockOrgsGet.mockResolvedValue({ id: "o1", name: "Acme Corp" });
     mockTicketsListComments.mockResolvedValue([]);
+    mockAuditList.mockResolvedValue({
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 50,
+    });
   });
 
   it("renders ticket not found error", async () => {
     mockTicketsGet.mockRejectedValue(new Error("not found"));
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "bad" }), searchParams: Promise.resolve({}) }));
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "bad" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     expect(screen.getByText("Ticket not found.")).toBeInTheDocument();
   });
 
   it("renders breadcrumbs and subnav", async () => {
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     expect(screen.getByTestId("breadcrumbs")).toHaveTextContent("Login Issue");
     expect(screen.getByTestId("subnav")).toHaveTextContent("tickets");
   });
 
   it("renders ticket title, org, and ID", async () => {
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     expect(screen.getByText("Login Issue")).toBeInTheDocument();
-    expect(screen.getByText((c) => c.includes("Acme Corp"))).toBeInTheDocument();
-    expect(screen.getByText((c) => c.includes("Ticket ID: t1"))).toBeInTheDocument();
+    expect(
+      screen.getByText((c) => c.includes("Acme Corp")),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText((c) => c.includes("Ticket ID: t1")),
+    ).toBeInTheDocument();
   });
 
   it("shows inline status and priority dropdowns with current values", async () => {
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     const statusSelect = screen.getByDisplayValue("open");
     expect(statusSelect).toBeInTheDocument();
     expect(statusSelect.tagName).toBe("SELECT");
@@ -92,24 +144,42 @@ describe("AdminTicketDetailPage", () => {
   });
 
   it("shows edit and delete buttons in view mode", async () => {
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     expect(screen.getByText("Edit Ticket")).toBeInTheDocument();
     expect(screen.getByText("Delete Ticket")).toBeInTheDocument();
     expect(screen.getByText("Back to Tickets")).toBeInTheDocument();
   });
 
   it("shows ticket details section in view mode", async () => {
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     expect(screen.getByText("Ticket Details")).toBeInTheDocument();
     expect(screen.getByText("bug")).toBeInTheDocument();
     expect(screen.getByText("Cannot log in")).toBeInTheDocument();
   });
 
   it("shows edit form in edit mode", async () => {
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({ edit: "1" }) }));
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({ edit: "1" }),
+      }),
+    );
     expect(screen.getByText("Edit Ticket")).toBeInTheDocument();
     expect(screen.getByText("Save Changes")).toBeInTheDocument();
     expect(screen.getByText("Cancel Edit")).toBeInTheDocument();
@@ -117,64 +187,132 @@ describe("AdminTicketDetailPage", () => {
   });
 
   it("shows delete confirmation in confirmDelete mode", async () => {
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({ confirmDelete: "1" }) }));
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({ confirmDelete: "1" }),
+      }),
+    );
     expect(screen.getByText("Confirm Ticket Deletion")).toBeInTheDocument();
     expect(screen.getByText("Cancel")).toBeInTheDocument();
     expect(screen.getByText("Confirm Delete")).toBeInTheDocument();
   });
 
   it("shows restore button for deleted tickets", async () => {
-    mockTicketsGet.mockResolvedValue({ ...baseTicket, title: "[Deleted] Login Issue", is_deleted: true });
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
+    mockTicketsGet.mockResolvedValue({
+      ...baseTicket,
+      title: "[Deleted] Login Issue",
+      is_deleted: true,
+    });
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     expect(screen.getByText("Restore Ticket")).toBeInTheDocument();
     expect(screen.queryByText("Delete Ticket")).not.toBeInTheDocument();
   });
 
   it("shows comments section with empty state", async () => {
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     expect(screen.getByText("Comments")).toBeInTheDocument();
     expect(screen.getByText("No comments yet.")).toBeInTheDocument();
   });
 
   it("shows comments list with author and internal badge", async () => {
-    mockTicketsListComments.mockResolvedValue([{ id: "c1", body: "Checking this", author_name: "Admin User", is_internal: true, created_at: new Date().toISOString() }]);
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
+    mockTicketsListComments.mockResolvedValue([
+      {
+        id: "c1",
+        body: "Checking this",
+        author_name: "Admin User",
+        is_internal: true,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     expect(screen.getByText("Admin User")).toBeInTheDocument();
     expect(screen.getByText("Internal")).toBeInTheDocument();
     expect(screen.getByText("Checking this")).toBeInTheDocument();
   });
 
   it("shows add comment form", async () => {
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
-    expect(screen.getByPlaceholderText(/Add an admin note/)).toBeInTheDocument();
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
+    expect(
+      screen.getByPlaceholderText(/Add an admin note/),
+    ).toBeInTheDocument();
     expect(screen.getByText("Post Comment")).toBeInTheDocument();
     expect(screen.getByText("Internal only")).toBeInTheDocument();
   });
 
   it("shows org fallback to ID when org not found", async () => {
     mockOrgsGet.mockRejectedValue(new Error("not found"));
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     expect(screen.getByText((c) => c.includes("o1"))).toBeInTheDocument();
   });
 
   it("strips deleted prefix from title display", async () => {
-    mockTicketsGet.mockResolvedValue({ ...baseTicket, title: "[Deleted] Old Issue", is_deleted: true });
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({}) }));
+    mockTicketsGet.mockResolvedValue({
+      ...baseTicket,
+      title: "[Deleted] Old Issue",
+      is_deleted: true,
+    });
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
     expect(screen.getByText("Old Issue")).toBeInTheDocument();
     expect(screen.queryByText("[Deleted] Old Issue")).not.toBeInTheDocument();
   });
 
   it("does not show delete confirm section when ticket is deleted", async () => {
     mockTicketsGet.mockResolvedValue({ ...baseTicket, is_deleted: true });
-    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(await Page({ params: Promise.resolve({ ticketId: "t1" }), searchParams: Promise.resolve({ confirmDelete: "1" }) }));
-    expect(screen.queryByText("Confirm Ticket Deletion")).not.toBeInTheDocument();
+    const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page"))
+      .default;
+    render(
+      await Page({
+        params: Promise.resolve({ ticketId: "t1" }),
+        searchParams: Promise.resolve({ confirmDelete: "1" }),
+      }),
+    );
+    expect(
+      screen.queryByText("Confirm Ticket Deletion"),
+    ).not.toBeInTheDocument();
   });
 });
