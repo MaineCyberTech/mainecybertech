@@ -4,7 +4,12 @@ import type { Ticket, TicketComment, PaginatedResult } from "./types";
 export class TicketsApi {
   constructor(private client: ApiClient) {}
 
-  list(params?: { page?: number; limit?: number; organizationId?: string; status?: string }) {
+  list(params?: {
+    page?: number;
+    limit?: number;
+    organizationId?: string;
+    status?: string;
+  }) {
     const qp: Record<string, string | number | undefined> = {};
     if (params?.page !== undefined) qp.page = params.page;
     if (params?.limit !== undefined) qp.limit = params.limit;
@@ -62,5 +67,28 @@ export class TicketsApi {
       `/api/v1/tickets/${ticketId}/comments`,
       data,
     );
+  }
+
+  updateComment(
+    ticketId: string,
+    commentId: string,
+    data: { body: string; isInternal?: boolean },
+  ) {
+    return this.client.patch<TicketComment>(
+      `/api/v1/tickets/${ticketId}/comments/${commentId}`,
+      data,
+    );
+  }
+
+  exportData(params?: {
+    format?: "csv" | "json";
+    organizationId?: string;
+    status?: string;
+  }) {
+    const qp: Record<string, string | number | undefined> = {};
+    if (params?.format) qp.format = params.format;
+    if (params?.organizationId) qp.organization_id = params.organizationId;
+    if (params?.status) qp.status = params.status;
+    return this.client.get<Blob>(`/api/v1/tickets/export`, qp);
   }
 }

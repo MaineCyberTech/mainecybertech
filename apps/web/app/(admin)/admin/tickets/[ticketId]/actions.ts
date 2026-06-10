@@ -13,7 +13,8 @@ export async function updateTicketAction(ticketId: string, formData: FormData) {
   const category = String(formData.get("category") ?? "").trim();
   const priority = String(formData.get("priority") ?? "normal").trim();
   const status = String(formData.get("status") ?? "new").trim();
-  if (!subject || !description) throw new Error("Title and description are required.");
+  if (!subject || !description)
+    throw new Error("Title and description are required.");
 
   await api.tickets.update(ticketId, {
     title: subject,
@@ -28,7 +29,11 @@ export async function updateTicketAction(ticketId: string, formData: FormData) {
   redirect(`/admin/tickets/${ticketId}`);
 }
 
-export async function addCommentAction(ticketId: string, organizationId: string, formData: FormData) {
+export async function addCommentAction(
+  ticketId: string,
+  organizationId: string,
+  formData: FormData,
+) {
   await requireAdminAccess();
   const api = getApiClient();
   const body = String(formData.get("body") ?? "").trim();
@@ -45,11 +50,28 @@ export async function addCommentAction(ticketId: string, organizationId: string,
   redirect(`/admin/tickets/${ticketId}`);
 }
 
+export async function editCommentAction(
+  ticketId: string,
+  commentId: string,
+  formData: FormData,
+) {
+  await requireAdminAccess();
+  const api = getApiClient();
+  const body = String(formData.get("body") ?? "").trim();
+  if (!body) throw new Error("Comment body is required.");
+
+  await api.tickets.updateComment(ticketId, commentId, { body });
+
+  revalidatePath(`/admin/tickets/${ticketId}`);
+}
+
 export async function deleteTicketAction(ticketId: string, formData: FormData) {
   await requireAdminAccess();
   const confirmation = String(formData.get("confirmation") ?? "").trim();
   if (confirmation !== "DELETE") {
-    throw new Error('To delete this ticket, type DELETE in the confirmation box.');
+    throw new Error(
+      "To delete this ticket, type DELETE in the confirmation box.",
+    );
   }
 
   const api = getApiClient();

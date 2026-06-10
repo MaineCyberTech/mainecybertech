@@ -18,9 +18,7 @@ router.get("/", async (req, res, next) => {
     );
     const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from("audit_logs")
-      .select("*", { count: "exact" });
+    let query = supabase.from("audit_logs").select("*", { count: "exact" });
 
     const actorUserId = req.query.actor_user_id as string | undefined;
     if (actorUserId) query = query.eq("actor_user_id", actorUserId);
@@ -33,6 +31,9 @@ router.get("/", async (req, res, next) => {
 
     const entityType = req.query.entity_type as string | undefined;
     if (entityType) query = query.eq("entity_type", entityType);
+
+    const entityId = req.query.entity_id as string | undefined;
+    if (entityId) query = query.eq("entity_id", entityId);
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })
@@ -65,6 +66,9 @@ router.get("/export", async (req, res, next) => {
     const entityType = req.query.entity_type as string | undefined;
     if (entityType) query = query.eq("entity_type", entityType);
 
+    const entityId = req.query.entity_id as string | undefined;
+    if (entityId) query = query.eq("entity_id", entityId);
+
     const { data, error } = await query
       .order("created_at", { ascending: false })
       .limit(10000);
@@ -75,25 +79,43 @@ router.get("/export", async (req, res, next) => {
 
     if (format === "json") {
       res.setHeader("Content-Type", "application/json");
-      res.setHeader("Content-Disposition", `attachment; filename="audit-export-${Date.now()}.json"`);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="audit-export-${Date.now()}.json"`,
+      );
       res.json(rows);
       return;
     }
 
-    const headers = ["id", "action", "entity_type", "entity_id", "organization_id", "actor_user_id", "actor_type", "metadata", "created_at"];
+    const headers = [
+      "id",
+      "action",
+      "entity_type",
+      "entity_id",
+      "organization_id",
+      "actor_user_id",
+      "actor_type",
+      "metadata",
+      "created_at",
+    ];
     const csvRows = [headers.join(",")];
     for (const row of rows) {
       const vals = headers.map((h) => {
         let v = row[h];
         if (v === null || v === undefined) return "";
         const s = typeof v === "object" ? JSON.stringify(v) : String(v);
-        return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+        return s.includes(",") || s.includes('"') || s.includes("\n")
+          ? `"${s.replace(/"/g, '""')}"`
+          : s;
       });
       csvRows.push(vals.join(","));
     }
 
     res.setHeader("Content-Type", "text/csv");
-    res.setHeader("Content-Disposition", `attachment; filename="audit-export-${Date.now()}.csv"`);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="audit-export-${Date.now()}.csv"`,
+    );
     res.send(csvRows.join("\n"));
   } catch (error) {
     next(error);

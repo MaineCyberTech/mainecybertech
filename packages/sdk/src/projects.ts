@@ -12,7 +12,12 @@ import type {
 export class ProjectsApi {
   constructor(private client: ApiClient) {}
 
-  list(params?: { page?: number; limit?: number; organizationId?: string; status?: string }) {
+  list(params?: {
+    page?: number;
+    limit?: number;
+    organizationId?: string;
+    status?: string;
+  }) {
     const qp: Record<string, string | number | undefined> = {};
     if (params?.page !== undefined) qp.page = params.page;
     if (params?.limit !== undefined) qp.limit = params.limit;
@@ -159,10 +164,18 @@ export class ProjectsApi {
     );
   }
 
-  listTaskComments(projectId: string, params?: { organizationId?: string; isInternal?: boolean; taskIds?: string[] }) {
+  listTaskComments(
+    projectId: string,
+    params?: {
+      organizationId?: string;
+      isInternal?: boolean;
+      taskIds?: string[];
+    },
+  ) {
     const qp: Record<string, string | number | undefined> = {};
     if (params?.organizationId) qp.organization_id = params.organizationId;
-    if (params?.isInternal !== undefined) qp.is_internal = String(params.isInternal);
+    if (params?.isInternal !== undefined)
+      qp.is_internal = String(params.isInternal);
     if (params?.taskIds?.length) qp.task_ids = params.taskIds.join(",");
     return this.client.get<ProjectTaskComment[]>(
       `/api/v1/projects/${projectId}/tasks/comments`,
@@ -170,7 +183,10 @@ export class ProjectsApi {
     );
   }
 
-  listReadStates(projectId: string, params?: { organizationId?: string; taskIds?: string[] }) {
+  listReadStates(
+    projectId: string,
+    params?: { organizationId?: string; taskIds?: string[] },
+  ) {
     const qp: Record<string, string | number | undefined> = {};
     if (params?.organizationId) qp.organization_id = params.organizationId;
     if (params?.taskIds?.length) qp.task_ids = params.taskIds.join(",");
@@ -187,25 +203,49 @@ export class ProjectsApi {
     );
   }
 
-  markTaskRead(projectId: string, taskId: string, data: { organizationId: string }) {
+  markTaskRead(
+    projectId: string,
+    taskId: string,
+    data: { organizationId: string },
+  ) {
     return this.client.post<{ marked: boolean }>(
       `/api/v1/projects/${projectId}/tasks/${taskId}/read`,
       data,
     );
   }
 
-  approveTask(projectId: string, taskId: string, data: { organizationId: string }) {
+  approveTask(
+    projectId: string,
+    taskId: string,
+    data: { organizationId: string },
+  ) {
     return this.client.post<{ approved: boolean }>(
       `/api/v1/projects/${projectId}/tasks/${taskId}/approve`,
       data,
     );
   }
 
-  addPortalTaskComment(projectId: string, taskId: string, data: { organizationId: string; body: string }) {
+  addPortalTaskComment(
+    projectId: string,
+    taskId: string,
+    data: { organizationId: string; body: string },
+  ) {
     return this.client.post<{ added: boolean }>(
       `/api/v1/projects/${projectId}/tasks/${taskId}/portal-comment`,
       data,
     );
+  }
+
+  exportData(params?: {
+    format?: "csv" | "json";
+    organizationId?: string;
+    status?: string;
+  }) {
+    const qp: Record<string, string | number | undefined> = {};
+    if (params?.format) qp.format = params.format;
+    if (params?.organizationId) qp.organization_id = params.organizationId;
+    if (params?.status) qp.status = params.status;
+    return this.client.get<Blob>(`/api/v1/projects/export`, qp);
   }
 
   listUpdates(projectId: string) {

@@ -16,7 +16,15 @@ export const updateTicketSchema = z.object({
   title: z.string().min(1).max(500).optional(),
   description: z.string().max(10000).optional().nullable(),
   status: z
-    .enum(["new", "open", "triaged", "in_progress", "waiting_on_client", "resolved", "closed"])
+    .enum([
+      "new",
+      "open",
+      "triaged",
+      "in_progress",
+      "waiting_on_client",
+      "resolved",
+      "closed",
+    ])
     .optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
   category: z.string().max(100).optional().nullable(),
@@ -30,4 +38,9 @@ export const addTicketCommentSchema = z.object({
   organizationId: z.string().min(1),
   body: z.string().min(1, "Comment body is required").max(10000),
   isInternal: z.boolean().default(false),
+});
+
+export const updateTicketCommentSchema = z.object({
+  body: z.string().min(1, "Comment body is required").max(10000),
+  isInternal: z.boolean().optional(),
 });

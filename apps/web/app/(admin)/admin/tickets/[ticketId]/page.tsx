@@ -3,10 +3,14 @@ import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
-import { InlineStatusDropdown, InlinePriorityDropdown } from "@/components/admin/InlineStatusDropdown";
+import {
+  InlineStatusDropdown,
+  InlinePriorityDropdown,
+} from "@/components/admin/InlineStatusDropdown";
 import {
   updateTicketAction,
   addCommentAction,
+  editCommentAction,
   deleteTicketAction,
   restoreTicketAction,
 } from "./actions";
@@ -18,24 +22,41 @@ export const metadata = { title: "Ticket Details - Admin - Maine CyberTech" };
 const DELETED_PREFIX = "[Deleted] ";
 
 function storedTicketTitle(ticket: any) {
-  return String(ticket?.title ?? ticket?.subject ?? ticket?.name ?? `Ticket ${ticket?.id}`);
+  return String(
+    ticket?.title ?? ticket?.subject ?? ticket?.name ?? `Ticket ${ticket?.id}`,
+  );
 }
 
 function displayTicketTitle(ticket: any) {
   const title = storedTicketTitle(ticket);
-  return title.startsWith(DELETED_PREFIX) ? title.slice(DELETED_PREFIX.length) : title;
+  return title.startsWith(DELETED_PREFIX)
+    ? title.slice(DELETED_PREFIX.length)
+    : title;
 }
 
 function ticketDescription(ticket: any) {
-  return ticket?.description ?? ticket?.details ?? ticket?.body ?? ticket?.message ?? "No description provided.";
+  return (
+    ticket?.description ??
+    ticket?.details ??
+    ticket?.body ??
+    ticket?.message ??
+    "No description provided."
+  );
 }
 
 function ticketCategory(ticket: any) {
-  return ticket?.category ?? ticket?.type ?? ticket?.classification ?? "Uncategorized";
+  return (
+    ticket?.category ??
+    ticket?.type ??
+    ticket?.classification ??
+    "Uncategorized"
+  );
 }
 
 function ticketStatus(ticket: any) {
-  return String(ticket?.status ?? ticket?.state ?? ticket?.ticket_status ?? "new").toLowerCase();
+  return String(
+    ticket?.status ?? ticket?.state ?? ticket?.ticket_status ?? "new",
+  ).toLowerCase();
 }
 
 function ticketPriority(ticket: any) {
@@ -43,7 +64,14 @@ function ticketPriority(ticket: any) {
 }
 
 function isDeletedTicket(ticket: any) {
-  return Boolean(ticket?.is_deleted ?? ticket?.deleted ?? ticket?.deleted_at ?? ticket?.archived_at) || storedTicketTitle(ticket).startsWith(DELETED_PREFIX);
+  return (
+    Boolean(
+      ticket?.is_deleted ??
+      ticket?.deleted ??
+      ticket?.deleted_at ??
+      ticket?.archived_at,
+    ) || storedTicketTitle(ticket).startsWith(DELETED_PREFIX)
+  );
 }
 
 function commentBody(comment: any) {
@@ -55,7 +83,13 @@ function commentInternal(comment: any) {
 }
 
 function commentAuthor(comment: any) {
-  return comment?.author_name ?? comment?.created_by_name ?? comment?.author_email ?? comment?.created_by ?? "Unknown";
+  return (
+    comment?.author_name ??
+    comment?.created_by_name ??
+    comment?.author_email ??
+    comment?.created_by ??
+    "Unknown"
+  );
 }
 
 function formatDateTime(value?: string | null) {
@@ -67,7 +101,10 @@ function formatDateTime(value?: string | null) {
 
 function formatRelativeTime(value?: string | null) {
   if (!value) return "—";
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
+  const seconds = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(value).getTime()) / 1000),
+  );
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -106,12 +143,22 @@ function priorityClass(priority: string) {
   }
 }
 
-type Props = { params: Promise<{ ticketId: string }>; searchParams: Promise<{ edit?: string; confirmDelete?: string }> };
+type Props = {
+  params: Promise<{ ticketId: string }>;
+  searchParams: Promise<{
+    edit?: string;
+    confirmDelete?: string;
+    editComment?: string;
+  }>;
+};
 
-export default async function AdminTicketDetailPage({ params, searchParams }: Props) {
+export default async function AdminTicketDetailPage({
+  params,
+  searchParams,
+}: Props) {
   await requireAdminAccess();
   const { ticketId } = await params;
-  const { edit, confirmDelete } = await searchParams;
+  const { edit, confirmDelete, editComment } = await searchParams;
   const editMode = edit === "1";
   const showDeleteConfirm = confirmDelete === "1";
   const api = getApiClient();
@@ -120,44 +167,106 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
   try {
     ticket = await api.tickets.get(ticketId);
   } catch {
-    return <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">Ticket not found.</div>;
+    return (
+      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
+        Ticket not found.
+      </div>
+    );
   }
 
   const deleted = isDeletedTicket(ticket);
-  const [organization, rawComments] = await Promise.all([
-    api.organizations.get(ticket.organization_id).catch(() => ({ id: ticket.organization_id, name: null })),
+  const [organization, rawComments, auditResult] = await Promise.all([
+    api.organizations
+      .get(ticket.organization_id)
+      .catch(() => ({ id: ticket.organization_id, name: null })),
     api.tickets.listComments(ticketId),
+    api.audit.list({ entityType: "ticket", entityId: ticketId, limit: 50 }),
   ]);
   const comments = rawComments ?? [];
+  const auditLogs = auditResult.items ?? [];
   const status = ticketStatus(ticket);
   const priority = ticketPriority(ticket);
 
   return (
     <div className="space-y-6">
-      <AdminBreadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Tickets", href: "/admin/tickets" }, { label: displayTicketTitle(ticket) }]} />
+      <AdminBreadcrumbs
+        items={[
+          { label: "Admin", href: "/admin" },
+          { label: "Tickets", href: "/admin/tickets" },
+          { label: displayTicketTitle(ticket) },
+        ]}
+      />
       <AdminSubnav current="tickets" />
 
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">{displayTicketTitle(ticket)}</h1>
-          <p className="mt-3 text-slate-300">Organization: {organization?.name ?? ticket.organization_id}</p>
+          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+            {displayTicketTitle(ticket)}
+          </h1>
+          <p className="mt-3 text-slate-300">
+            Organization: {organization?.name ?? ticket.organization_id}
+          </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-500">Ticket ID: {ticket.id}</span>
+            <span className="text-xs text-slate-500">
+              Ticket ID: {ticket.id}
+            </span>
             {ticket.external_jsm_issue_key ? (
-              <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono text-blue-300">{ticket.external_jsm_issue_key}</span>
+              <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono text-blue-300">
+                {ticket.external_jsm_issue_key}
+              </span>
             ) : null}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {editMode ? <><span className={statusClass(status)}>{status}</span><span className={priorityClass(priority)}>{priority}</span></> : <><InlineStatusDropdown ticketId={ticketId} current={status} /><InlinePriorityDropdown ticketId={ticketId} current={priority} /></>}
-          {editMode ? <Link href={`/admin/tickets/${ticketId}`} className="cyber-button-secondary">Cancel Edit</Link> : <Link href={`/admin/tickets/${ticketId}?edit=1`} className="cyber-button-secondary">Edit Ticket</Link>}
-          <Link href={`/portal/support/${ticketId}`} className="cyber-button-secondary">View in Portal</Link>
-          {deleted ? (
-            <form action={restoreTicketAction.bind(null, ticketId)}><button type="submit" className="cyber-button-secondary">Restore Ticket</button></form>
+          {editMode ? (
+            <>
+              <span className={statusClass(status)}>{status}</span>
+              <span className={priorityClass(priority)}>{priority}</span>
+            </>
           ) : (
-            <Link href={`/admin/tickets/${ticketId}?confirmDelete=1`} className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20">Delete Ticket</Link>
+            <>
+              <InlineStatusDropdown ticketId={ticketId} current={status} />
+              <InlinePriorityDropdown ticketId={ticketId} current={priority} />
+            </>
           )}
-          <Link href="/admin/tickets" className="cyber-button-secondary">Back to Tickets</Link>
+          {editMode ? (
+            <Link
+              href={`/admin/tickets/${ticketId}`}
+              className="cyber-button-secondary"
+            >
+              Cancel Edit
+            </Link>
+          ) : (
+            <Link
+              href={`/admin/tickets/${ticketId}?edit=1`}
+              className="cyber-button-secondary"
+            >
+              Edit Ticket
+            </Link>
+          )}
+          <Link
+            href={`/portal/support/${ticketId}`}
+            className="cyber-button-secondary"
+          >
+            View in Portal
+          </Link>
+          {deleted ? (
+            <form action={restoreTicketAction.bind(null, ticketId)}>
+              <button type="submit" className="cyber-button-secondary">
+                Restore Ticket
+              </button>
+            </form>
+          ) : (
+            <Link
+              href={`/admin/tickets/${ticketId}?confirmDelete=1`}
+              className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
+            >
+              Delete Ticket
+            </Link>
+          )}
+          <Link href="/admin/tickets" className="cyber-button-secondary">
+            Back to Tickets
+          </Link>
         </div>
       </div>
 
@@ -165,70 +274,348 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
         <section className="rounded-xl border border-red-500/20 bg-red-500/10 p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h2 className="font-orbitron text-lg uppercase tracking-[0.12em] text-red-200">Confirm Ticket Deletion</h2>
-              <p className="mt-3 max-w-2xl text-sm text-red-100/90">This performs a safer soft-delete so the ticket can be restored later. Type <span className="font-semibold">DELETE</span> below to confirm.</p>
+              <h2 className="font-orbitron text-lg uppercase tracking-[0.12em] text-red-200">
+                Confirm Ticket Deletion
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm text-red-100/90">
+                This performs a safer soft-delete so the ticket can be restored
+                later. Type <span className="font-semibold">DELETE</span> below
+                to confirm.
+              </p>
             </div>
-            <Link href={`/admin/tickets/${ticketId}`} className="cyber-button-secondary">Cancel</Link>
+            <Link
+              href={`/admin/tickets/${ticketId}`}
+              className="cyber-button-secondary"
+            >
+              Cancel
+            </Link>
           </div>
-          <form action={deleteTicketAction.bind(null, ticketId)} className="mt-6 flex flex-col gap-4 md:flex-row md:items-end">
+          <form
+            action={deleteTicketAction.bind(null, ticketId)}
+            className="mt-6 flex flex-col gap-4 md:flex-row md:items-end"
+          >
             <div className="w-full max-w-sm">
               <label className="cyber-label">Type DELETE to confirm</label>
-              <input name="confirmation" className="cyber-input" placeholder="DELETE" required />
+              <input
+                name="confirmation"
+                className="cyber-input"
+                placeholder="DELETE"
+                required
+              />
             </div>
-            <button type="submit" className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20">Confirm Delete</button>
+            <button
+              type="submit"
+              className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
+            >
+              Confirm Delete
+            </button>
           </form>
         </section>
       ) : null}
 
       {editMode ? (
         <section className="cyber-panel">
-          <div className="flex items-center justify-between gap-3"><h2 className="cyber-heading text-lg">Edit Ticket</h2><span className="cyber-pill">Admin</span></div>
-          <form action={updateTicketAction.bind(null, ticketId)} className="mt-6 space-y-4">
-            <div><label className="cyber-label">Title</label><input name="subject" defaultValue={displayTicketTitle(ticket)} className="cyber-input" required /></div>
-            <div className="grid gap-4 md:grid-cols-3">
-              <div><label className="cyber-label">Status</label><select name="status" defaultValue={status} className="cyber-input"><option value="new">new</option><option value="triaged">triaged</option><option value="pending">pending</option><option value="resolved">resolved</option><option value="closed">closed</option></select></div>
-              <div><label className="cyber-label">Priority</label><select name="priority" defaultValue={priority} className="cyber-input"><option value="low">low</option><option value="normal">normal</option><option value="high">high</option><option value="urgent">urgent</option></select></div>
-              <div><label className="cyber-label">Category</label><input name="category" defaultValue={ticketCategory(ticket)} className="cyber-input" /></div>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="cyber-heading text-lg">Edit Ticket</h2>
+            <span className="cyber-pill">Admin</span>
+          </div>
+          <form
+            action={updateTicketAction.bind(null, ticketId)}
+            className="mt-6 space-y-4"
+          >
+            <div>
+              <label className="cyber-label">Title</label>
+              <input
+                name="subject"
+                defaultValue={displayTicketTitle(ticket)}
+                className="cyber-input"
+                required
+              />
             </div>
-            <div><label className="cyber-label">Description</label><textarea name="description" rows={6} className="cyber-input" defaultValue={ticketDescription(ticket)} required /></div>
-            <div><button type="submit" className="cyber-button">Save Changes</button></div>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div>
+                <label className="cyber-label">Status</label>
+                <select
+                  name="status"
+                  defaultValue={status}
+                  className="cyber-input"
+                >
+                  <option value="new">new</option>
+                  <option value="triaged">triaged</option>
+                  <option value="pending">pending</option>
+                  <option value="resolved">resolved</option>
+                  <option value="closed">closed</option>
+                </select>
+              </div>
+              <div>
+                <label className="cyber-label">Priority</label>
+                <select
+                  name="priority"
+                  defaultValue={priority}
+                  className="cyber-input"
+                >
+                  <option value="low">low</option>
+                  <option value="normal">normal</option>
+                  <option value="high">high</option>
+                  <option value="urgent">urgent</option>
+                </select>
+              </div>
+              <div>
+                <label className="cyber-label">Category</label>
+                <input
+                  name="category"
+                  defaultValue={ticketCategory(ticket)}
+                  className="cyber-input"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="cyber-label">Description</label>
+              <textarea
+                name="description"
+                rows={6}
+                className="cyber-input"
+                defaultValue={ticketDescription(ticket)}
+                required
+              />
+            </div>
+            <div>
+              <button type="submit" className="cyber-button">
+                Save Changes
+              </button>
+            </div>
           </form>
         </section>
       ) : (
         <section className="cyber-panel">
-          <div className="flex items-center justify-between gap-3"><h2 className="cyber-heading text-lg">Ticket Details</h2><span className="cyber-pill">View</span></div>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="cyber-heading text-lg">Ticket Details</h2>
+            <span className="cyber-pill">View</span>
+          </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"><p className="text-xs uppercase tracking-[0.12em] text-slate-500">Category</p><p className="mt-2 text-slate-200">{ticketCategory(ticket)}</p></div>
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"><p className="text-xs uppercase tracking-[0.12em] text-slate-500">Updated</p><p className="mt-2 text-slate-200">{formatDateTime(ticket.updated_at ?? ticket.created_at)}</p></div>
+            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                Category
+              </p>
+              <p className="mt-2 text-slate-200">{ticketCategory(ticket)}</p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                Updated
+              </p>
+              <p className="mt-2 text-slate-200">
+                {formatDateTime(ticket.updated_at ?? ticket.created_at)}
+              </p>
+            </div>
             {ticket.labels?.length ? (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"><p className="text-xs uppercase tracking-[0.12em] text-slate-500">Labels</p><p className="mt-2 flex flex-wrap gap-1">{ticket.labels.map((l: string) => <span key={l} className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-slate-300">{l}</span>)}</p></div>
+              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                  Labels
+                </p>
+                <p className="mt-2 flex flex-wrap gap-1">
+                  {ticket.labels.map((l: string) => (
+                    <span
+                      key={l}
+                      className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-slate-300"
+                    >
+                      {l}
+                    </span>
+                  ))}
+                </p>
+              </div>
             ) : null}
             {ticket.resolution ? (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"><p className="text-xs uppercase tracking-[0.12em] text-slate-500">Resolution</p><p className="mt-2 text-slate-200">{ticket.resolution}</p></div>
+              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                  Resolution
+                </p>
+                <p className="mt-2 text-slate-200">{ticket.resolution}</p>
+              </div>
             ) : null}
           </div>
-          <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"><p className="text-xs uppercase tracking-[0.12em] text-slate-500">Description</p><p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">{ticketDescription(ticket)}</p></div>
+          <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
+              Description
+            </p>
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+              {ticketDescription(ticket)}
+            </p>
+          </div>
         </section>
       )}
 
       <section className="cyber-panel">
-        <div className="flex items-center justify-between gap-3"><h2 className="cyber-heading text-lg">Comments</h2><span className="cyber-pill">Total {comments.length}</span></div>
-        <div className="mt-6 space-y-4">
-          {comments.length > 0 ? comments.map((comment: any) => (
-            <div key={comment.id ?? `${comment.created_at}-${commentBody(comment)}`} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-medium text-slate-50">{commentAuthor(comment)}</p>
-                {commentInternal(comment) ? <span className="inline-flex min-h-7 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] leading-none text-amber-300">Internal</span> : null}
-                <span className="text-xs text-slate-500" title={formatDateTime(comment.created_at)}>{formatRelativeTime(comment.created_at)}</span>
-              </div>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">{commentBody(comment)}</p>
-            </div>
-          )) : <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">No comments yet.</div>}
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="cyber-heading text-lg">Comments</h2>
+          <span className="cyber-pill">Total {comments.length}</span>
         </div>
-        <form action={addCommentAction.bind(null, ticketId, ticket.organization_id)} className="mt-6 space-y-4">
-          <div><label className="cyber-label">Add Comment</label><textarea name="body" rows={4} className="cyber-input" placeholder="Add an admin note or client-facing response..." required /></div>
-          <div className="flex flex-wrap items-center gap-3"><label className="inline-flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" name="isInternal" value="true" className="h-4 w-4 rounded border-white/20 bg-transparent" />Internal only</label><button type="submit" className="cyber-button-secondary">Post Comment</button></div>
+        <div className="mt-6 space-y-4">
+          {comments.length > 0 ? (
+            comments.map((comment: any) => {
+              const isEditing = editComment === comment.id;
+              const fiveMinMs = 5 * 60 * 1000;
+              const canEdit =
+                comment.created_at &&
+                Date.now() - new Date(comment.created_at).getTime() < fiveMinMs;
+
+              return (
+                <div
+                  key={
+                    comment.id ??
+                    `${comment.created_at}-${commentBody(comment)}`
+                  }
+                  className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium text-slate-50">
+                        {commentAuthor(comment)}
+                      </p>
+                      {commentInternal(comment) ? (
+                        <span className="inline-flex min-h-7 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] leading-none text-amber-300">
+                          Internal
+                        </span>
+                      ) : null}
+                      <span
+                        className="text-xs text-slate-500"
+                        title={formatDateTime(comment.created_at)}
+                      >
+                        {formatRelativeTime(comment.created_at)}
+                      </span>
+                      {comment.edited_at ? (
+                        <span className="text-xs text-slate-600 italic">
+                          (edited)
+                        </span>
+                      ) : null}
+                    </div>
+                    {canEdit && !isEditing ? (
+                      <a
+                        href={`/admin/tickets/${ticketId}?editComment=${comment.id}`}
+                        className="text-xs text-slate-500 hover:text-slate-300 underline"
+                      >
+                        Edit
+                      </a>
+                    ) : null}
+                    {isEditing ? (
+                      <a
+                        href={`/admin/tickets/${ticketId}`}
+                        className="text-xs text-slate-500 hover:text-slate-300 underline"
+                      >
+                        Cancel
+                      </a>
+                    ) : null}
+                  </div>
+                  {isEditing ? (
+                    <form
+                      action={editCommentAction.bind(
+                        null,
+                        ticketId,
+                        comment.id,
+                      )}
+                      className="mt-3 space-y-3"
+                    >
+                      <textarea
+                        name="body"
+                        rows={3}
+                        className="cyber-input"
+                        defaultValue={commentBody(comment)}
+                        required
+                      />
+                      <button
+                        type="submit"
+                        className="cyber-button-secondary text-xs"
+                      >
+                        Save Edit
+                      </button>
+                    </form>
+                  ) : (
+                    <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+                      {commentBody(comment)}
+                    </p>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+              No comments yet.
+            </div>
+          )}
+        </div>
+        <form
+          action={addCommentAction.bind(null, ticketId, ticket.organization_id)}
+          className="mt-6 space-y-4"
+        >
+          <div>
+            <label className="cyber-label">Add Comment</label>
+            <textarea
+              name="body"
+              rows={4}
+              className="cyber-input"
+              placeholder="Add an admin note or client-facing response..."
+              required
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+              <input
+                type="checkbox"
+                name="isInternal"
+                value="true"
+                className="h-4 w-4 rounded border-white/20 bg-transparent"
+              />
+              Internal only
+            </label>
+            <button type="submit" className="cyber-button-secondary">
+              Post Comment
+            </button>
+          </div>
         </form>
+      </section>
+
+      <section className="cyber-panel">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="cyber-heading text-lg">Activity Timeline</h2>
+          <span className="cyber-pill">{auditLogs.length} events</span>
+        </div>
+        <div className="mt-6 space-y-2">
+          {auditLogs.length > 0 ? (
+            auditLogs.map((log: any) => (
+              <div
+                key={log.id}
+                className="flex items-start gap-3 rounded-lg border border-white/5 bg-[#0A1118]/60 px-4 py-3"
+              >
+                <div className="mt-0.5 h-2 w-2 rounded-full bg-emerald-500/60 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-slate-400">
+                    <span className="font-medium text-slate-300">
+                      {log.action}
+                    </span>
+                    {log.metadata ? (
+                      <span className="ml-2 text-slate-600">
+                        {log.metadata.previousBody
+                          ? "(content edited)"
+                          : Object.keys(log.metadata).length
+                            ? JSON.stringify(log.metadata).slice(0, 80)
+                            : null}
+                      </span>
+                    ) : null}
+                  </p>
+                  <p
+                    className="mt-0.5 text-[11px] text-slate-600"
+                    title={formatDateTime(log.created_at)}
+                  >
+                    {formatRelativeTime(log.created_at)}
+                  </p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+              No activity recorded.
+            </div>
+          )}
+        </div>
       </section>
     </div>
   );

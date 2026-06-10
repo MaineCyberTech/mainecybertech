@@ -11,6 +11,7 @@ export class AuditApi {
     organizationId?: string;
     action?: string;
     entityType?: string;
+    entityId?: string;
   }) {
     const qp: Record<string, string | number | undefined> = {};
     if (params?.page !== undefined) qp.page = params.page;
@@ -19,6 +20,7 @@ export class AuditApi {
     if (params?.organizationId) qp.organization_id = params.organizationId;
     if (params?.action) qp.action = params.action;
     if (params?.entityType) qp.entity_type = params.entityType;
+    if (params?.entityId) qp.entity_id = params.entityId;
     return this.client.get<PaginatedResult<AuditLog>>("/api/v1/audit", qp);
   }
 

@@ -25,7 +25,7 @@ COPY --from=base /app/apps/api/dist ./apps/api/dist
 COPY --from=base /app/apps/api/package.json ./apps/api/package.json
 
 RUN corepack enable && corepack prepare pnpm@10 --activate
-RUN pnpm install --frozen-lockfile --filter=./apps/api --prod
+RUN pnpm install --frozen-lockfile --filter=./apps/api --prod --ignore-scripts
 
 RUN chown -R appuser:appuser /app
 WORKDIR /app/apps/api

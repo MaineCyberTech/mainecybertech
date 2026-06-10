@@ -22,6 +22,74 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 
+router.get("/export", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const format = (req.query.format as string) || "csv";
+
+    let query = supabase.from("projects").select("*");
+
+    const orgId = req.query.organization_id as string | undefined;
+    if (orgId) query = query.eq("organization_id", orgId);
+
+    const statusFilter = req.query.status as string | undefined;
+    if (statusFilter) query = query.eq("status", statusFilter);
+
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(10000);
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    const rows = data ?? [];
+
+    if (format === "json") {
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="projects-export-${Date.now()}.json"`,
+      );
+      res.json(rows);
+      return;
+    }
+
+    const headers = [
+      "id",
+      "organization_id",
+      "name",
+      "description",
+      "status",
+      "priority",
+      "starts_at",
+      "due_at",
+      "external_jira_project_key",
+      "created_at",
+      "updated_at",
+    ];
+    const csvRows = [headers.join(",")];
+    for (const row of rows) {
+      const vals = headers.map((h) => {
+        let v = row[h];
+        if (v === null || v === undefined) return "";
+        const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+        return s.includes(",") || s.includes('"') || s.includes("\n")
+          ? `"${s.replace(/"/g, '""')}"`
+          : s;
+      });
+      csvRows.push(vals.join(","));
+    }
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="projects-export-${Date.now()}.csv"`,
+    );
+    res.send(csvRows.join("\n"));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
@@ -32,9 +100,7 @@ router.get("/", async (req, res, next) => {
     );
     const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from("projects")
-      .select("*", { count: "exact" });
+    let query = supabase.from("projects").select("*", { count: "exact" });
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -105,7 +171,9 @@ router.get("/:id/detail", async (req, res, next) => {
     ] = await Promise.all([
       supabase
         .from("memberships")
-        .select("id, user_id, role_id, status, is_billing_contact, is_security_contact")
+        .select(
+          "id, user_id, role_id, status, is_billing_contact, is_security_contact",
+        )
         .eq("organization_id", orgId)
         .eq("status", "approved"),
       supabase
@@ -127,44 +195,61 @@ router.get("/:id/detail", async (req, res, next) => {
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
     if (tasksError) throw new AppError("DB_ERROR", tasksError.message, 500);
-    if (commentsError) throw new AppError("DB_ERROR", commentsError.message, 500);
+    if (commentsError)
+      throw new AppError("DB_ERROR", commentsError.message, 500);
     if (readsError) throw new AppError("DB_ERROR", readsError.message, 500);
 
-    const memberUserIds = (memberships ?? []).map((m: { user_id: string }) => m.user_id);
+    const memberUserIds = (memberships ?? []).map(
+      (m: { user_id: string }) => m.user_id,
+    );
     const allUserIds = new Set<string>(memberUserIds);
     for (const t of tasks ?? []) {
-      if ((t as { owner_id: string | null }).owner_id) allUserIds.add((t as { owner_id: string | null }).owner_id!);
+      if ((t as { owner_id: string | null }).owner_id)
+        allUserIds.add((t as { owner_id: string | null }).owner_id!);
     }
     for (const c of comments ?? []) {
       allUserIds.add((c as { author_id: string }).author_id);
     }
 
     const userIds = [...allUserIds];
-    const { data: profiles, error: profError } = userIds.length > 0
-      ? await supabase
-          .from("profiles")
-          .select("id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at")
-          .in("id", userIds)
-      : { data: [], error: null };
+    const { data: profiles, error: profError } =
+      userIds.length > 0
+        ? await supabase
+            .from("profiles")
+            .select(
+              "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+            )
+            .in("id", userIds)
+        : { data: [], error: null };
 
     if (profError) throw new AppError("DB_ERROR", profError.message, 500);
 
-    const memberRoleIds = [...new Set((memberships ?? []).map((m: { role_id: string }) => m.role_id))];
-    const { data: roles, error: rolesError } = memberRoleIds.length > 0
-      ? await supabase.from("roles").select("id, key, name").in("id", memberRoleIds)
-      : { data: [], error: null };
+    const memberRoleIds = [
+      ...new Set(
+        (memberships ?? []).map((m: { role_id: string }) => m.role_id),
+      ),
+    ];
+    const { data: roles, error: rolesError } =
+      memberRoleIds.length > 0
+        ? await supabase
+            .from("roles")
+            .select("id, key, name")
+            .in("id", memberRoleIds)
+        : { data: [], error: null };
 
     if (rolesError) throw new AppError("DB_ERROR", rolesError.message, 500);
 
-    res.json(success({
-      project,
-      memberships: memberships ?? [],
-      profiles: profiles ?? [],
-      roles: roles ?? [],
-      tasks: tasks ?? [],
-      comments: comments ?? [],
-      readStates: readStates ?? [],
-    }));
+    res.json(
+      success({
+        project,
+        memberships: memberships ?? [],
+        profiles: profiles ?? [],
+        roles: roles ?? [],
+        tasks: tasks ?? [],
+        comments: comments ?? [],
+        readStates: readStates ?? [],
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -220,7 +305,8 @@ router.patch("/:id", async (req, res, next) => {
     if (parsed.priority !== undefined) updateData.priority = parsed.priority;
     if (parsed.startsAt !== undefined) updateData.starts_at = parsed.startsAt;
     if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
-    if (parsed.externalJiraProjectKey !== undefined) updateData.external_jira_project_key = parsed.externalJiraProjectKey;
+    if (parsed.externalJiraProjectKey !== undefined)
+      updateData.external_jira_project_key = parsed.externalJiraProjectKey;
 
     const { data, error } = await supabase
       .from("projects")
@@ -347,15 +433,21 @@ router.patch("/:id/tasks/:taskId", async (req, res, next) => {
     if (parsed.approvalRequired !== undefined)
       updateData.approval_required = parsed.approvalRequired;
     if (parsed.ownerId !== undefined) updateData.owner_id = parsed.ownerId;
-    if (parsed.approvedBy !== undefined) updateData.approved_by = parsed.approvedBy;
-    if (parsed.approvedAt !== undefined) updateData.approved_at = parsed.approvedAt;
-    if (parsed.externalJiraIssueKey !== undefined) updateData.external_jira_issue_key = parsed.externalJiraIssueKey;
-    if (parsed.issueType !== undefined) updateData.issue_type = parsed.issueType;
+    if (parsed.approvedBy !== undefined)
+      updateData.approved_by = parsed.approvedBy;
+    if (parsed.approvedAt !== undefined)
+      updateData.approved_at = parsed.approvedAt;
+    if (parsed.externalJiraIssueKey !== undefined)
+      updateData.external_jira_issue_key = parsed.externalJiraIssueKey;
+    if (parsed.issueType !== undefined)
+      updateData.issue_type = parsed.issueType;
     if (parsed.priority !== undefined) updateData.priority = parsed.priority;
     if (parsed.labels !== undefined) updateData.labels = parsed.labels;
-    if (parsed.parentTaskId !== undefined) updateData.parent_task_id = parsed.parentTaskId;
+    if (parsed.parentTaskId !== undefined)
+      updateData.parent_task_id = parsed.parentTaskId;
     if (parsed.epicKey !== undefined) updateData.epic_key = parsed.epicKey;
-    if (parsed.resolution !== undefined) updateData.resolution = parsed.resolution;
+    if (parsed.resolution !== undefined)
+      updateData.resolution = parsed.resolution;
     if (parsed.sprint !== undefined) updateData.sprint = parsed.sprint;
 
     const { data, error } = await supabase
@@ -425,11 +517,16 @@ router.get("/:id/tasks/comments", async (req, res, next) => {
 
     const taskIds = req.query.task_ids as string | undefined;
     if (taskIds) {
-      const ids = taskIds.split(",").map((s) => s.trim()).filter(Boolean);
+      const ids = taskIds
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       if (ids.length > 0) query = query.in("task_id", ids);
     }
 
-    const { data, error } = await query.order("created_at", { ascending: true });
+    const { data, error } = await query.order("created_at", {
+      ascending: true,
+    });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
@@ -580,64 +677,71 @@ router.delete("/:id/updates/:updateId", async (req, res, next) => {
   }
 });
 
-router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) => {
-  try {
-    const parsed = updateTaskCommentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+router.patch(
+  "/:id/tasks/:taskId/comments/:commentId",
+  async (req, res, next) => {
+    try {
+      const parsed = updateTaskCommentSchema.parse(req.body);
+      const supabase = getSupabaseAdmin();
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.body !== undefined) updateData.body = parsed.body;
-    if (parsed.isInternal !== undefined) updateData.is_internal = parsed.isInternal;
+      const updateData: Record<string, unknown> = {};
+      if (parsed.body !== undefined) updateData.body = parsed.body;
+      if (parsed.isInternal !== undefined)
+        updateData.is_internal = parsed.isInternal;
 
-    const { data, error } = await supabase
-      .from("project_task_comments")
-      .update(updateData)
-      .eq("id", req.params.commentId)
-      .eq("task_id", req.params.taskId)
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("project_task_comments")
+        .update(updateData)
+        .eq("id", req.params.commentId)
+        .eq("task_id", req.params.taskId)
+        .select()
+        .single();
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Comment not found", 404);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Comment not found", 404);
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "project.task.comment.edit",
-      entityType: "project_task_comment",
-      entityId: String(req.params.commentId),
-      metadata: { taskId: req.params.taskId, projectId: req.params.id },
-    });
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "project.task.comment.edit",
+        entityType: "project_task_comment",
+        entityId: String(req.params.commentId),
+        metadata: { taskId: req.params.taskId, projectId: req.params.id },
+      });
 
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.delete("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) => {
-  try {
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase
-      .from("project_task_comments")
-      .delete()
-      .eq("id", req.params.commentId)
-      .eq("task_id", req.params.taskId);
+router.delete(
+  "/:id/tasks/:taskId/comments/:commentId",
+  async (req, res, next) => {
+    try {
+      const supabase = getSupabaseAdmin();
+      const { error } = await supabase
+        .from("project_task_comments")
+        .delete()
+        .eq("id", req.params.commentId)
+        .eq("task_id", req.params.taskId);
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "project.task.comment.delete",
-      entityType: "project_task_comment",
-      entityId: String(req.params.commentId),
-      metadata: { taskId: req.params.taskId, projectId: req.params.id },
-    });
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "project.task.comment.delete",
+        entityType: "project_task_comment",
+        entityId: String(req.params.commentId),
+        metadata: { taskId: req.params.taskId, projectId: req.params.id },
+      });
 
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/:id/tasks/read-states", async (req, res, next) => {
   try {
@@ -652,7 +756,10 @@ router.get("/:id/tasks/read-states", async (req, res, next) => {
 
     const taskIds = req.query.task_ids as string | undefined;
     if (taskIds) {
-      const ids = taskIds.split(",").map((s) => s.trim()).filter(Boolean);
+      const ids = taskIds
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       if (ids.length > 0) query = query.in("task_id", ids);
     }
 
@@ -698,17 +805,15 @@ router.post("/:id/tasks/:taskId/read", async (req, res, next) => {
     const parsed = markTaskReadSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { error } = await supabase
-      .from("project_task_comment_reads")
-      .upsert(
-        {
-          user_id: req.authUser!.userId,
-          task_id: req.params.taskId,
-          organization_id: parsed.organizationId,
-          last_seen_at: new Date().toISOString(),
-        },
-        { onConflict: "user_id,task_id" }
-      );
+    const { error } = await supabase.from("project_task_comment_reads").upsert(
+      {
+        user_id: req.authUser!.userId,
+        task_id: req.params.taskId,
+        organization_id: parsed.organizationId,
+        last_seen_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,task_id" },
+    );
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

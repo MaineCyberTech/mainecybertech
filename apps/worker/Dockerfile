@@ -25,7 +25,7 @@ COPY --from=base /app/apps/worker/dist ./apps/worker/dist
 COPY --from=base /app/apps/worker/package.json ./apps/worker/package.json
 
 RUN corepack enable && corepack prepare pnpm@10 --activate
-RUN pnpm install --frozen-lockfile --filter=./apps/worker --prod
+RUN pnpm install --frozen-lockfile --filter=./apps/worker --prod --ignore-scripts
 
 RUN chown -R appuser:appuser /app
 WORKDIR /app/apps/worker

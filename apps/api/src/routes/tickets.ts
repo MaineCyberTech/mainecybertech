@@ -8,11 +8,83 @@ import {
   createTicketSchema,
   updateTicketSchema,
   addTicketCommentSchema,
+  updateTicketCommentSchema,
 } from "../validators/ticket";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
+
+router.get("/export", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const format = (req.query.format as string) || "csv";
+
+    let query = supabase.from("tickets").select("*");
+
+    const orgId = req.query.organization_id as string | undefined;
+    if (orgId) query = query.eq("organization_id", orgId);
+
+    const statusFilter = req.query.status as string | undefined;
+    if (statusFilter) query = query.eq("status", statusFilter);
+
+    const { data, error } = await query
+      .order("created_at", { ascending: false })
+      .limit(10000);
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    const rows = data ?? [];
+
+    if (format === "json") {
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="tickets-export-${Date.now()}.json"`,
+      );
+      res.json(rows);
+      return;
+    }
+
+    const headers = [
+      "id",
+      "organization_id",
+      "title",
+      "description",
+      "status",
+      "priority",
+      "category",
+      "source",
+      "assigned_to",
+      "external_jsm_issue_key",
+      "labels",
+      "resolution",
+      "created_at",
+      "updated_at",
+    ];
+    const csvRows = [headers.join(",")];
+    for (const row of rows) {
+      const vals = headers.map((h) => {
+        let v = row[h];
+        if (v === null || v === undefined) return "";
+        const s = typeof v === "object" ? JSON.stringify(v) : String(v);
+        return s.includes(",") || s.includes('"') || s.includes("\n")
+          ? `"${s.replace(/"/g, '""')}"`
+          : s;
+      });
+      csvRows.push(vals.join(","));
+    }
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="tickets-export-${Date.now()}.csv"`,
+    );
+    res.send(csvRows.join("\n"));
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/", async (req, res, next) => {
   try {
@@ -24,9 +96,7 @@ router.get("/", async (req, res, next) => {
     );
     const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from("tickets")
-      .select("*", { count: "exact" });
+    let query = supabase.from("tickets").select("*", { count: "exact" });
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -115,7 +185,9 @@ router.post("/", async (req, res, next) => {
       .eq("role", "admin");
 
     if (adminMembers?.length) {
-      const adminIds = adminMembers.map((m: any) => m.user_id).filter((id: string) => id !== req.authUser!.userId);
+      const adminIds = adminMembers
+        .map((m: any) => m.user_id)
+        .filter((id: string) => id !== req.authUser!.userId);
       if (adminIds.length) {
         const { data: admins } = await supabase
           .from("profiles")
@@ -158,8 +230,7 @@ router.patch("/:id", async (req, res, next) => {
       updateData.assigned_to = parsed.assignedTo;
     if (parsed.externalJsmIssueKey !== undefined)
       updateData.external_jsm_issue_key = parsed.externalJsmIssueKey;
-    if (parsed.labels !== undefined)
-      updateData.labels = parsed.labels;
+    if (parsed.labels !== undefined) updateData.labels = parsed.labels;
     if (parsed.resolution !== undefined)
       updateData.resolution = parsed.resolution;
 
@@ -258,7 +329,9 @@ router.post("/:id/comments", async (req, res, next) => {
       .single();
 
     if (ticket) {
-      const notifyIds = [ticket.submitted_by, ticket.assigned_to].filter(Boolean).filter((id: string) => id !== req.authUser!.userId);
+      const notifyIds = [ticket.submitted_by, ticket.assigned_to]
+        .filter(Boolean)
+        .filter((id: string) => id !== req.authUser!.userId);
       const uniqueIds = [...new Set(notifyIds)];
       if (uniqueIds.length) {
         const { data: profiles } = await supabase
@@ -282,6 +355,62 @@ router.post("/:id/comments", async (req, res, next) => {
     }
 
     res.status(201).json(success(data));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/:id/comments/:commentId", async (req, res, next) => {
+  try {
+    const parsed = updateTicketCommentSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+
+    const { data: existing, error: fetchError } = await supabase
+      .from("ticket_comments")
+      .select("id, author_id, organization_id, body")
+      .eq("id", req.params.commentId)
+      .eq("ticket_id", req.params.id)
+      .single();
+
+    if (fetchError || !existing)
+      throw new AppError("NOT_FOUND", "Comment not found", 404);
+
+    // 5-minute edit window check
+    const { data: comment } = await supabase
+      .from("ticket_comments")
+      .select("created_at")
+      .eq("id", req.params.commentId)
+      .single();
+
+    if (comment) {
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+      if (new Date(comment.created_at) < fiveMinAgo)
+        throw new AppError(
+          "FORBIDDEN",
+          "Comment can only be edited within 5 minutes of posting",
+          403,
+        );
+    }
+
+    const { data, error } = await supabase
+      .from("ticket_comments")
+      .update({ body: parsed.body, edited_at: new Date().toISOString() })
+      .eq("id", req.params.commentId)
+      .select()
+      .single();
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await logAuditEvent({
+      organizationId: existing.organization_id,
+      actorUserId: req.authUser!.userId,
+      action: "ticket.comment.update",
+      entityType: "ticket_comment",
+      entityId: existing.id,
+      metadata: { previousBody: existing.body },
+    });
+
+    res.json(success(data));
   } catch (error) {
     next(error);
   }
