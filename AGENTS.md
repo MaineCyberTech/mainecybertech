@@ -767,7 +767,7 @@ All 5 top-priority fixes from the audit were applied in a single session:
 | 6   | Change `CORS_ORIGIN` default from `*` — require explicit config per environment                | **Critical** | 5 min  | 📋 Planned |
 | 7   | Restrict `alb_allowed_cidrs` to Cloudflare IPs in prod                                         | **High**     | 15 min | 📋 Planned |
 | 8   | Add explicit `HttpOnly`/`Secure`/`SameSite` cookie flags to `mct_session`                      | **High**     | 15 min | 📋 Planned |
-| 9   | Add `APP_BASE_URL` env var — decouple notification links from `CORS_ORIGIN`                    | **High**     | 15 min | 📋 Planned |
+| 9   | Add `APP_BASE_URL` env var — decouple notification links from `CORS_ORIGIN`                    | **High**     | 15 min | ✅ Done    |
 | 10  | Fix `security.ts` — import logger from `lib/logger.ts` instead of creating 2nd pino instance   | Medium       | 10 min | 📋 Planned |
 | 11  | Fix `audit.ts` — use `logger.error` instead of `console.error`                                 | Medium       | 10 min | 📋 Planned |
 | 12  | Move `pg` and `supabase-cli` from `dependencies` to `devDependencies` in root `package.json`   | Medium       | 10 min | 📋 Planned |
@@ -776,9 +776,9 @@ All 5 top-priority fixes from the audit were applied in a single session:
 | 15  | Fill real values in `prod.tfvars`                                                              | **High**     | 30 min | 📋 Planned |
 | 16  | Remove 9 dead code files (~315 lines) — ErrorBoundary, FileDropzone, ConfirmDangerButton, etc. | Low          | 15 min | 📋 Planned |
 | 17  | Archive 6 stale/overlapping domain docs                                                        | Low          | 1 hour | 📋 Planned |
-| 18  | Verify `bootstrap_portal_access` RPC exists in Supabase                                        | Medium       | 30 min | 📋 Planned |
+| 18  | Verify `bootstrap_portal_access` RPC exists in Supabase                                        | Medium       | 30 min | ✅ Done    |
 | 19  | Add ECR lifecycle policy — expire images > 90 days                                             | Medium       | 15 min | 📋 Planned |
-| 20  | Add `APP_BASE_URL` env var to API schema                                                       | Medium       | 15 min | 📋 Planned |
+| 20  | Add `APP_BASE_URL` env var to API schema                                                       | Medium       | 15 min | ✅ Done    |
 | 21  | Add retry + alert on audit log failure                                                         | Medium       | 1 day  | 📋 Planned |
 
 ## Additional Gaps & Recommendations (2026-06-10)

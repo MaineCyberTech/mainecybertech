@@ -9,6 +9,7 @@ const envSchema = z.object({
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  APP_BASE_URL: z.string().url().default("http://localhost:3000"),
   LOG_LEVEL: z
     .enum(["debug", "info", "warn", "error", "silent"])
     .default("info"),
