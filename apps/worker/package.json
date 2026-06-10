@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-sqs": "^3.1057.0",
+    "@aws-sdk/client-sqs": "^3.1065.0",
     "@mct/config": "workspace:^",
     "@supabase/supabase-js": "^2.49.1",
     "dotenv": "^16.4.7",
