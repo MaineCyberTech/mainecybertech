@@ -2,6 +2,9 @@
   "name": "client-portal",
   "private": true,
   "packageManager": "pnpm@10.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",

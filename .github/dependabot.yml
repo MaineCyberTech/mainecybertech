@@ -5,25 +5,26 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
-    open-pull-requests-limit: 10
     groups:
-      dev-dependencies:
-        patterns:
-          - "@types/*"
-          - "eslint*"
-          - "prettier"
-          - "jest*"
-          - "@jest/*"
-          - "ts-jest"
-          - "tsup"
-          - "turbo"
-          - "typescript"
       sentry:
         patterns:
           - "@sentry/*"
-      pnpm:
+      typescript-eslint:
         patterns:
-          - "pnpm"
+          - "@typescript-eslint/*"
+      testing:
+        patterns:
+          - "jest"
+          - "@types/jest"
+          - "ts-jest"
+          - "supertest"
+          - "@types/supertest"
+          - "@testing-library/*"
+      aws-sdk:
+        patterns:
+          - "@aws-sdk/*"
+    open-pull-requests-limit: 10
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
