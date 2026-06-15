@@ -1,4 +1,5 @@
-﻿import "dotenv/config";
+﻿import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
 import * as http from "http";
 import pino from "pino";
 import { z } from "zod";

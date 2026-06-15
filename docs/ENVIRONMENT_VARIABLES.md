@@ -3,6 +3,8 @@
 > All environment variables across all services in the MCT monorepo.
 >
 > See `apps/api/.env.example`, `apps/web/.env.example`, `apps/worker/.env.example` for minimal starter configs.
+>
+> All three apps load **`.env.local`** for local development (API/Worker via explicit `dotenv.config()`, Web via Next.js convention). Docker Compose also references `.env.local` via `env_file`. Run `pwsh scripts/sync_supabase_env.auto.v2.ps1` to populate local Supabase connection values.
 
 ## Web (`apps/web`)
 
