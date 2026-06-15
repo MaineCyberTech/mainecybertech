@@ -11,7 +11,7 @@
 | API     | 178           | Jest + supertest       |
 | SDK     | 108           | Jest (mocked fetch)    |
 | Worker  | 24            | Jest                   |
-| Web     | 418           | Jest + Testing Library |
+| Web     | 404           | Jest + Testing Library |
 | E2E     | 24 spec files | Playwright (chromium)  |
 
 ## Strong Areas
@@ -22,7 +22,7 @@
 | TypeScript       | 4/4 packages clean `tsc --noEmit`                                                                                         |
 | CI/CD validation | All 6 deploy workflows gated (validate + e2e + migrations)                                                                |
 | Seed data        | 5 seed files covering all 25+ tables                                                                                      |
-| Error tracking   | API (`@sentry/node`) + Web (`@sentry/browser` + error boundary)                                                           |
+| Error tracking   | API (`@sentry/node`) + Web (`@sentry/nextjs`)                                                                             |
 | Security         | CORS with credentials, rate limiting (per-user + global), CSP headers, XSS sanitizer, Helmet, Supabase RLS                |
 | Infrastructure   | Terraform (12 files), Docker (3 images), SSM secrets (23 parameters), CloudWatch alarms, autoscaling, Slack notifications |
 | Documentation    | 30+ docs covering all features                                                                                            |
@@ -88,30 +88,21 @@ _Updated after admin layout audit and recent feature work._
 | --- | ----------------------------------------- | --- | ------ |
 | —   | _(all portal high-value items completed)_ |     |        |
 
-### Admin — High Value (Still Open)
-
-| #   | Feature                                                                                      | Why                                                     | Effort |
-| --- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------ |
-| 8   | **Admin billing viewer** — see org invoices, subscriptions, payment history from admin panel | Admins triage billing questions without switching tools | Medium |
-| 9   | **Admin document upload** — upload/edit documents from admin panel (currently portal-only)   | Admin support staff need to attach files                | Small  |
-
 ### Medium Value
 
-| #   | Feature                                                                                                                  | Why                                                                  | Effort |
-| --- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ------ |
-| 8   | **Admin list search** — admin tickets, users, projects lists should have search/filter inputs                            | Admins scroll through potentially hundreds of rows without filtering | Small  |
-| 9   | **Inline status change** — clicking a status/priority pill opens quick dropdown to change it without entering edit mode  | Admin ticket detail requires clicking "Edit" to change status        | Small  |
-| 10  | **Error retry buttons** — error states show a message but no "Try again" button                                          | Users hit dead ends on transient errors                              | Small  |
-| 11  | **Ticket comment editing** — allow users to edit their own comments within a short window                                | Corrects typos, reduces duplicate tickets                            | Small  |
-| 12  | **Admin activity timeline on ticket detail** — show audit events inline instead of requiring navigation to the audit log | Faster triage                                                        | Small  |
-| 13  | **Document share link** — generate a signed/expiring link for external parties                                           | Let clients share docs with non-users                                | Small  |
-| 14  | **Markdown comment support** — ticket/project comments are plain text, add lightweight rendering                         | Improves communication quality                                       | Small  |
-| 15  | **Email notification test button** — admin "Send Test Email" to verify SMTP config                                       | Operational confidence                                               | Small  |
-| 16  | **Bulk ticket operations** — select multiple tickets and change status/priority in bulk                                  | No workflow for mass ticket updates                                  | Medium |
-| 17  | **Admin dashboard stats** — show recent activity feed or pending actions summary                                         | No quick pulse view                                                  | Medium |
-| 18  | **Activity feed on portal** — show recent activity in chronological order on dashboard                                   | Dashboard shows filtered lists, not a timeline                       | Medium |
-| 19  | **Notification audio** — subtle chime when polling finds new unread notifications                                        | No cue when something needs attention                                | Medium |
-| 20  | **Export tickets/projects to CSV** — same pattern as audit export                                                        | Data portability                                                     | Medium |
+| #      | Feature                                                                                                                  | Why                                                                  | Effort     |
+| ------ | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ---------- | ------------ |
+| 8      | **Admin list search** — admin tickets, users, projects lists should have search/filter inputs                            | Admins scroll through potentially hundreds of rows without filtering | Small      |
+| 9      | **Inline status change** — clicking a status/priority pill opens quick dropdown to change it without entering edit mode  | Admin ticket detail requires clicking "Edit" to change status        | Small      |
+| 10     | **Error retry buttons** — error states show a message but no "Try again" button                                          | Users hit dead ends on transient errors                              | Small      |
+| 12     | **Admin activity timeline on ticket detail** — show audit events inline instead of requiring navigation to the audit log | Faster triage                                                        | Small      |
+| 13     | **Document share link** — generate a signed/expiring link for external parties                                           | Let clients share docs with non-users                                | Small      |
+| 14     | **Markdown comment support** — ticket/project comments are plain text, add lightweight rendering                         | Improves communication quality                                       | Small      |
+| 15     | **Email notification test button** — admin "Send Test Email" to verify SMTP config                                       | Operational confidence                                               | Small      |
+| 16     | **Bulk ticket operations** — select multiple tickets and change status/priority in bulk                                  | No workflow for mass ticket updates                                  | Medium     |
+| 18     | **Activity feed on portal** — show recent activity in chronological order on dashboard                                   | Dashboard shows filtered lists, not a timeline                       | Medium     |
+| 19     | **Notification audio** — subtle chime when polling finds new unread notifications                                        | No cue when something needs attention                                | Medium     |
+| ~~20~~ | ~~**Export tickets/projects to CSV** — same pattern as audit export~~                                                    | ~~Data portability~~                                                 | ~~Medium~~ | ✅ **FIXED** |
 
 ## Known Issues
 
@@ -154,21 +145,21 @@ During a comprehensive audit the following were identified and fixed:
 
 ### Technical Debt
 
-| #   | Issue                                                                       | Location                                                 | Impact      | Status             |
-| --- | --------------------------------------------------------------------------- | -------------------------------------------------------- | ----------- | ------------------ |
-| 6   | **9 ESLint warnings** (unused vars, missing deps in hooks, `iconOnly` prop) | `apps/web/`, `apps/api/`, `apps/worker/`                 | Medium      | ✅ Reduced from 18 |
-| 7   | `@mct/ui` & `@mct/config` not wired into apps                               | `apps/*/package.json`                                    | Medium      | Pending            |
-| 8   | ESLint `MODULE_TYPELESS_PACKAGE_JSON` warnings — need `"type": "module"`    | `apps/api`, `apps/web`, `apps/worker`, `packages/config` | Low         | Pending            |
-| 9   | React `iconOnly` prop warning — passed to DOM element                       | `apps/web/components/admin/ProjectTaskListV5.tsx`        | Low         | Pending            |
-| 10  | `pnpm build` (web) fails on Windows EPERM — symlink issue (pre-existing)    | `apps/web/next.config.mjs`                               | Known issue | Known              |
+| #   | Issue                                                                       | Location                                                 | Impact      | Status          |
+| --- | --------------------------------------------------------------------------- | -------------------------------------------------------- | ----------- | --------------- |
+| 6   | **0 ESLint warnings** (unused vars, missing deps in hooks, `iconOnly` prop) | `apps/web/`, `apps/api/`, `apps/worker/`                 | Medium      | ✅ Reduced to 0 |
+| 7   | `@mct/ui` & `@mct/config` not wired into apps                               | `apps/*/package.json`                                    | Medium      | Pending         |
+| 8   | ESLint `MODULE_TYPELESS_PACKAGE_JSON` warnings — need `"type": "module"`    | `apps/api`, `apps/web`, `apps/worker`, `packages/config` | Low         | Pending         |
+| 9   | React `iconOnly` prop warning — passed to DOM element                       | `apps/web/components/admin/ProjectTaskListV5.tsx`        | Low         | Pending         |
+| 10  | `pnpm build` (web) fails on Windows EPERM — symlink issue (pre-existing)    | `apps/web/next.config.mjs`                               | Known issue | Known           |
 
 ### Documentation Gaps
 
-| #   | Issue                                                                                       | File                            | Severity | Status       |
-| --- | ------------------------------------------------------------------------------------------- | ------------------------------- | -------- | ------------ |
-| 11  | ~~Test count discrepancy — AGENTS.md said 733, actual 730~~                                 | `AGENTS.md`                     | Medium   | ✅ **FIXED** |
-| 12  | Duplicate docs in `docs/domain-operations/` overlapping with root `docs/`                   | `docs/domain-operations/`       | Medium   | Pending      |
-| 13  | `README.dev.md` vs `docs/README.dev.md` both exist with overlapping content                 | Root + `docs/`                  | Low      | Pending      |
-| 14  | Historical docs not archived in root                                                        | Root directory                  | Low      | Pending      |
-| 15  | `docs/INDEX.md` missing key docs (ROLLBACK_PROCEDURES, SECRETS_ROTATION, API_RATE_LIMITING) | `docs/INDEX.md`                 | Medium   | ✅ **FIXED** |
-| 16  | `ENVIRONMENT_VARIABLES.md` missing worker vars (`HEALTH_PORT`, `API_BASE_URL`)              | `docs/ENVIRONMENT_VARIABLES.md` | Medium   | ✅ **FIXED** |
+| #   | Issue                                                                                       | File                            | Severity   | Status       |
+| --- | ------------------------------------------------------------------------------------------- | ------------------------------- | ---------- | ------------ |
+| 11  | ~~Test count discrepancy — AGENTS.md said 733, actual 730~~                                 | `AGENTS.md`                     | Medium     | ✅ **FIXED** |
+| 12  | ~~Duplicate docs in `docs/domain-operations/` overlapping with root `docs/`~~               | ~~`docs/domain-operations/`~~   | ~~Medium~~ | ✅ **FIXED** |
+| 13  | ~~`README.dev.md` vs `docs/README.dev.md` both exist with overlapping content~~             | ~~Root + `docs/`~~              | ~~Low~~    | ✅ **FIXED** |
+| 14  | ~~Historical docs not archived in root~~                                                    | ~~Root directory~~              | ~~Low~~    | ✅ **FIXED** |
+| 15  | `docs/INDEX.md` missing key docs (ROLLBACK_PROCEDURES, SECRETS_ROTATION, API_RATE_LIMITING) | `docs/INDEX.md`                 | Medium     | ✅ **FIXED** |
+| 16  | `ENVIRONMENT_VARIABLES.md` missing worker vars (`HEALTH_PORT`, `API_BASE_URL`)              | `docs/ENVIRONMENT_VARIABLES.md` | Medium     | ✅ **FIXED** |

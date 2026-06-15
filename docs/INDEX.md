@@ -22,22 +22,22 @@
 
 ## Architecture & Design
 
-| Document                                                                            | Purpose                                                                                                    |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| [docs/FULL_SYSTEM_AUDIT_2026-06-09.md](FULL_SYSTEM_AUDIT_2026-06-09.md)             | **Full-system architecture review & repo health audit** — 12-section evidence-based analysis (current)     |
-| [docs/ARCHITECTURAL_ANALYSIS.md](ARCHITECTURAL_ANALYSIS.md)                         | Deep-dive audit across 6 pillars with 23 critical observations (current)                                   |
-| [docs/ARCHITECTURAL_AUDIT_COMPLETE.md](ARCHITECTURAL_AUDIT_COMPLETE.md)             | Full architectural & operational audit with remediation roadmap (current)                                  |
-| [archive/stale-docs/ANALYSIS_SUMMARY.md](../archive/stale-docs/ANALYSIS_SUMMARY.md) | Codebase overview and analysis (stale — see FULL_SYSTEM_AUDIT or ARCHITECTURAL_ANALYSIS)                   |
-| [archive/stale-docs/CODEBASE_MAPPING.md](../archive/stale-docs/CODEBASE_MAPPING.md) | File-by-file codebase map (stale — see FULL_SYSTEM_AUDIT or ARCHITECTURAL_ANALYSIS)                        |
-| [docs/JIRA_JSM_INTEGRATION.md](JIRA_JSM_INTEGRATION.md)                             | Jira/JSM sync, webhooks, schema, status maps, worker tasks                                                 |
-| [docs/BILLING.md](BILLING.md)                                                       | Stripe billing, invoices, subscriptions, payments, webhooks                                                |
-| [docs/ORG_BRANDING.md](ORG_BRANDING.md)                                             | Per-org branding: logo upload, colors, custom domains                                                      |
-| [docs/ADMIN_FEATURES.md](ADMIN_FEATURES.md)                                         | Webhook management, role/permission editor, audit export, bulk import, org switcher, Sentry, shared ESLint |
-| [docs/GAP_ANALYSIS.md](GAP_ANALYSIS.md)                                             | Comprehensive gap analysis, known issues, recommendations                                                  |
-| [docs/ARCHITECTURAL_ANALYSIS.md](ARCHITECTURAL_ANALYSIS.md)                         | Deep-dive audit: repository map, code mechanics, architecture, infrastructure, docs drift, cleanup         |
-| [docs/FINAL_OPERATOR_MAP.md](FINAL_OPERATOR_MAP.md)                                 | Quick reference for Terraform roots, hostnames, and core infra files                                       |
-| [docs/DEPLOYMENT_OPTIONS_COMPARISON.md](DEPLOYMENT_OPTIONS_COMPARISON.md)           | Cost analysis: Vercel vs AWS vs hybrid                                                                     |
-| [docs/portal_admin_permissions_guide.md](portal_admin_permissions_guide.md)         | Permissions, access control, and security flow                                                             |
+| Document                                                                              | Purpose                                                                                                    |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| [docs/FULL_SYSTEM_AUDIT_2026-06-09.md](FULL_SYSTEM_AUDIT_2026-06-09.md)               | **Full-system architecture review & repo health audit** — 12-section evidence-based analysis (current)     |
+| [docs/ARCHITECTURAL_ANALYSIS.md](ARCHITECTURAL_ANALYSIS.md)                           | Deep-dive audit across 6 pillars with 23 critical observations (current)                                   |
+| [docs/ARCHITECTURAL_AUDIT_COMPLETE.md](ARCHITECTURAL_AUDIT_COMPLETE.md)               | Full architectural & operational audit with remediation roadmap (current)                                  |
+| [archive/stale-docs/ANALYSIS_SUMMARY.md](../archive/stale-docs/ANALYSIS_SUMMARY.md)   | Codebase overview and analysis (stale — see FULL_SYSTEM_AUDIT or ARCHITECTURAL_ANALYSIS)                   |
+| [archive/stale-docs/CODEBASE_MAPPING.md](../archive/stale-docs/CODEBASE_MAPPING.md)   | File-by-file codebase map (stale — see FULL_SYSTEM_AUDIT or ARCHITECTURAL_ANALYSIS)                        |
+| [docs/JIRA_JSM_INTEGRATION.md](JIRA_JSM_INTEGRATION.md)                               | Jira/JSM sync, webhooks, schema, status maps, worker tasks                                                 |
+| [docs/BILLING.md](BILLING.md)                                                         | Stripe billing, invoices, subscriptions, payments, webhooks                                                |
+| [docs/ORG_BRANDING.md](ORG_BRANDING.md)                                               | Per-org branding: logo upload, colors, custom domains                                                      |
+| [docs/ADMIN_FEATURES.md](ADMIN_FEATURES.md)                                           | Webhook management, role/permission editor, audit export, bulk import, org switcher, Sentry, shared ESLint |
+| [docs/GAP_ANALYSIS.md](GAP_ANALYSIS.md)                                               | Comprehensive gap analysis, known issues, recommendations                                                  |
+| [docs/FINAL_OPERATOR_MAP.md](FINAL_OPERATOR_MAP.md)                                   | Quick reference for Terraform roots, hostnames, and core infra files                                       |
+| [docs/portal_platform_formal_handoff_bundle/](portal_platform_formal_handoff_bundle/) | Formal handoff documentation bundle                                                                        |
+| [docs/DEPLOYMENT_OPTIONS_COMPARISON.md](DEPLOYMENT_OPTIONS_COMPARISON.md)             | Cost analysis: Vercel vs AWS vs hybrid                                                                     |
+| [docs/portal_admin_permissions_guide.md](portal_admin_permissions_guide.md)           | Permissions, access control, and security flow                                                             |
 
 ## Deployment & Operations
 

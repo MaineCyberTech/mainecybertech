@@ -15,9 +15,11 @@ jobs:
 
   e2e:
     uses: ./.github/workflows/e2e.yml
+    secrets: inherit
 
   supabase-migrations:
     uses: ./.github/workflows/supabase-migrations.yml
+    secrets: inherit
 
   apply-prod:
     needs: [validate, e2e, supabase-migrations]

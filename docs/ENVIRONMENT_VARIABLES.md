@@ -45,7 +45,7 @@
 | `JSM_SERVICEDESK_ID`         | No       | —                            | JSM service desk ID                                                              |
 | `JSM_REQUEST_TYPE_ID`        | No       | —                            | JSM request type ID                                                              |
 | `STRIPE_WEBHOOK_SECRET`      | No       | —                            | Stripe webhook signing secret for signature verification                         |
-| `API_BASE_URL`               | No       | —                            | Public API base URL for notification links (in .env.example)                     |
+| —                            | —        | —                            | —                                                                                |
 
 ## Worker (`apps/worker`)
 
@@ -53,7 +53,7 @@
 | --------------------------- | -------- | ---------------------------- | ---------------------------------------------- |
 | `NODE_ENV`                  | No       | `development`                | Node environment                               |
 | `LOG_LEVEL`                 | No       | `info`                       | Logging level                                  |
-| `SUPABASE_URL`              | Yes      | —                            | Supabase project URL                           |
+| `SUPABASE_URL`              | No       | —                            | Supabase project URL (optional for local dev)  |
 | `SUPABASE_ANON_KEY`         | No       | —                            | Supabase publishable/anon key                  |
 | `SUPABASE_SERVICE_ROLE_KEY` | No       | —                            | Supabase service role key (for task DB access) |
 | `WORKER_CONCURRENCY`        | No       | `10`                         | Max concurrent jobs                            |

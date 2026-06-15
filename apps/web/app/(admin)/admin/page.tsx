@@ -102,23 +102,6 @@ export default async function AdminHomePage() {
   ).length;
   const recentAudit = (auditResult.items ?? []).slice(0, 5) as any[];
 
-  function auditBadge(action: string) {
-    if (
-      action.includes("create") ||
-      action.includes("invite") ||
-      action.includes("add")
-    )
-      return "emerald";
-    if (
-      action.includes("update") ||
-      action.includes("replace") ||
-      action.includes("override")
-    )
-      return "amber";
-    if (action.includes("delete") || action.includes("remove")) return "red";
-    return "blue";
-  }
-
   return (
     <div className="space-y-6">
       <AdminBreadcrumbs items={[{ label: "Admin" }]} />

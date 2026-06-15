@@ -49,6 +49,13 @@ Use environment-scoped values wherever possible.
 | `WORKER_ECR_REPOSITORY` | yes | yes  | Worker ECR repository name                |
 | `SUPABASE_PROJECT_REF`  | yes | yes  | Supabase project reference for migrations |
 
+## Repository or environment variables required by database backup workflow
+
+| Variable                | Dev | Prod | Purpose                                                            |
+| ----------------------- | --- | ---- | ------------------------------------------------------------------ |
+| `S3_BACKUP_BUCKET`      | —   | yes  | S3 bucket for database backups (default: `mainecybertech-backups`) |
+| `BACKUP_RETENTION_DAYS` | —   | yes  | Days to retain backups in S3 (default: `30`)                       |
+
 ## SSM Parameter Store Secrets (Terraform-managed)
 
 These secrets are stored in AWS SSM Parameter Store under `/mainecybertech/${environment}/` and injected into ECS task definitions. Set via Terraform variables (leave empty to skip optional integrations).
