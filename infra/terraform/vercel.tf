@@ -21,6 +21,30 @@ resource "vercel_project_environment_variable" "next_public_api_url" {
   target     = ["production", "preview", "development"]
 }
 
+resource "vercel_project_environment_variable" "next_public_sentry_dsn" {
+  count      = var.vercel_sentry_dsn != "" ? 1 : 0
+  project_id = vercel_project.web_app.id
+  key        = "NEXT_PUBLIC_SENTRY_DSN"
+  value      = var.vercel_sentry_dsn
+  target     = ["production", "preview", "development"]
+}
+
+resource "vercel_project_environment_variable" "next_public_ga_id" {
+  count      = var.vercel_ga_id != "" ? 1 : 0
+  project_id = vercel_project.web_app.id
+  key        = "NEXT_PUBLIC_GA_ID"
+  value      = var.vercel_ga_id
+  target     = ["production", "preview", "development"]
+}
+
+resource "vercel_project_environment_variable" "next_public_tawkto_id" {
+  count      = var.vercel_tawkto_id != "" ? 1 : 0
+  project_id = vercel_project.web_app.id
+  key        = "NEXT_PUBLIC_TAWKTO_ID"
+  value      = var.vercel_tawkto_id
+  target     = ["production", "preview", "development"]
+}
+
 resource "vercel_project_domain" "www_prod" {
   project_id = vercel_project.web_app.id
   domain     = "www.mainecybertech.com"

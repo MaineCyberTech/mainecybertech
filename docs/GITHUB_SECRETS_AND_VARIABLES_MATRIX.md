@@ -103,6 +103,16 @@ All optional secrets use `count` in Terraform — when the variable is empty, th
 | `TF_BACKEND_CONFIG` | yes | yes  | Backend config file path, e.g. `env/backend.dev.hcl` or `env/backend.prod.hcl` |
 | `TF_VAR_FILE`       | yes | yes  | Var file path, e.g. `env/dev.tfvars` or `env/prod.tfvars`                      |
 
+## Vercel web app environment variables (set in `.tfvars`)
+
+These are Terraform variables that get injected into the Vercel project. Set them in your `.tfvars` file (stored as the `TF_VARS_FILE_CONTENT` secret):
+
+| Variable            | Dev | Prod     | Purpose                                                   |
+| ------------------- | --- | -------- | --------------------------------------------------------- |
+| `vercel_ga_id`      | yes | yes      | Google Analytics measurement ID (default: `G-1JYZ96P0D9`) |
+| `vercel_tawkto_id`  | yes | yes      | Tawk.to widget ID                                         |
+| `vercel_sentry_dsn` | —   | optional | Sentry DSN for web error tracking (skip if empty)         |
+
 ## Recommended environment-specific values
 
 ### Dev/testing

@@ -447,3 +447,21 @@ variable "api_base_url" {
   default     = ""
 }
 
+# Vercel web app environment variables
+variable "vercel_ga_id" {
+  description = "Google Analytics measurement ID for the web app"
+  type        = string
+  default     = "G-1JYZ96P0D9"
+}
+variable "vercel_tawkto_id" {
+  description = "Tawk.to widget ID for live chat"
+  type        = string
+  default     = "66898d27e1e4f70f24ee3260/1i24kuosn"
+}
+variable "vercel_sentry_dsn" {
+  description = "Sentry DSN for the web app (leave empty to skip)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+

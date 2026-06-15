@@ -16,6 +16,11 @@ cloudflare_prod_api_target    = "replace-with-production-alb-dns-name"
 cloudflare_proxy_app_records  = true
 cloudflare_proxy_api_records  = true
 
+# Vercel web app vars
+vercel_ga_id                  = "G-1JYZ96P0D9"
+vercel_tawkto_id              = "66898d27e1e4f70f24ee3260/1i24kuosn"
+# vercel_sentry_dsn           = "https://key@o123.ingest.sentry.io/project"
+
 # Runtime sizing
 api_service_desired_count      = 2
 worker_service_desired_count   = 1

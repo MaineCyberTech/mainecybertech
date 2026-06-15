@@ -87,6 +87,19 @@
 | `E2E_ADMIN_EMAIL`    | Yes      | —                       | Admin email for login         |
 | `E2E_ADMIN_PASSWORD` | Yes      | —                       | Admin password for login      |
 
+## CI / Vercel (managed via Terraform)
+
+The web app env vars are set on the Vercel project by Terraform (`infra/terraform/vercel.tf`):
+
+| Variable                 | Set Via                 | Default (dev)                        |
+| ------------------------ | ----------------------- | ------------------------------------ |
+| `NEXT_PUBLIC_API_URL`    | `var.api_domain`        | — (required)                         |
+| `NEXT_PUBLIC_SENTRY_DSN` | `var.vercel_sentry_dsn` | `""` (optional, skip if empty)       |
+| `NEXT_PUBLIC_GA_ID`      | `var.vercel_ga_id`      | `G-1JYZ96P0D9`                       |
+| `NEXT_PUBLIC_TAWKTO_ID`  | `var.vercel_tawkto_id`  | `66898d27e1e4f70f24ee3260/1i24kuosn` |
+
+Set these in your `.tfvars` file (which is stored as the `TF_VARS_FILE_CONTENT` GitHub secret).
+
 ## Docker Compose
 
 The `docker-compose.yml` uses `.env.local` files per service:
