@@ -1,7 +1,7 @@
 {
   "name": "client-portal",
   "private": true,
-  "packageManager": "pnpm@10.0.0",
+  "packageManager": "pnpm@10.34.3",
   "engines": {
     "node": ">=18.0.0"
   },
@@ -32,6 +32,11 @@
     "supabase-cli": "^0.0.21",
     "turbo": "^2.1.3",
     "typescript": "^5.7.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@sentry/cli"
+    ]
   },
   "lint-staged": {
     "*.{ts,tsx}": [
