@@ -101,6 +101,12 @@ variable "worker_service_desired_count" {
   type        = number
   default     = 1
 }
+variable "image_tag" {
+  description = "Container image tag for ECS task definitions (default: latest; CI overrides with SHA)"
+  type        = string
+  default     = "latest"
+}
+
 variable "api_container_port" {
   description = "Port exposed by the API container"
   type        = number

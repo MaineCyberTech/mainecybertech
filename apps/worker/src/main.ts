@@ -1,6 +1,7 @@
 ﻿import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 import * as http from "http";
+import * as Sentry from "@sentry/node";
 import pino from "pino";
 import { z } from "zod";
 
@@ -50,6 +51,7 @@ export const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   API_BASE_URL: z.string().url().optional(),
+  SENTRY_DSN: z.string().optional(),
   HEALTH_PORT: z.coerce.number().default(3001),
 });
 
@@ -69,6 +71,16 @@ try {
 }
 
 export { env };
+
+// ============= Sentry =============
+if (env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: env.SENTRY_DSN,
+    environment: env.NODE_ENV,
+    tracesSampleRate: env.NODE_ENV === "production" ? 0.2 : 0.0,
+  });
+  logger.info("Sentry initialized");
+}
 
 // ============= Task Registry =============
 export interface TaskMessage {
@@ -117,6 +129,9 @@ export async function executeTask(message: TaskMessage): Promise<TaskResult> {
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error);
     logger.error({ type: message.type, error: errMsg }, "Task handler threw");
+    Sentry.captureException(error, {
+      extra: { taskType: message.type, payload: message.payload },
+    });
     return { ok: false, error: errMsg };
   }
 }
@@ -258,6 +273,7 @@ export async function runWorkerTasks(): Promise<void> {
       }
     } catch (error) {
       logger.error({ error }, "Error polling SQS — will retry");
+      Sentry.captureException(error, { extra: { phase: "sqs-poll" } });
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   }
@@ -322,6 +338,7 @@ if (
   startHealthServer(env.HEALTH_PORT);
   runWorkerTasks().catch((error) => {
     logger.error(error, "Worker crashed");
+    Sentry.captureException(error, { extra: { phase: "main-loop" } });
     process.exit(1);
   });
 }

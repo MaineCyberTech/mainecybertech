@@ -281,7 +281,7 @@ resource "aws_ecs_task_definition" "api_runtime" {
   container_definitions = jsonencode([
     {
       name      = "api"
-      image     = "${aws_ecr_repository.api.repository_url}:latest"
+      image     = "${aws_ecr_repository.api.repository_url}:${var.image_tag}"
       essential = true
       portMappings = [
         {
@@ -315,7 +315,7 @@ resource "aws_ecs_task_definition" "worker_runtime" {
   container_definitions = jsonencode([
     {
       name        = "worker"
-      image       = "${aws_ecr_repository.worker.repository_url}:latest"
+      image       = "${aws_ecr_repository.worker.repository_url}:${var.image_tag}"
       essential   = true
       environment = local.worker_environment
       secrets     = local.worker_all_secrets

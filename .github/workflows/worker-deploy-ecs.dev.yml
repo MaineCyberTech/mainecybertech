@@ -47,11 +47,31 @@ jobs:
           docker build -t "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" -f apps/worker/Dockerfile .
           docker push "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
 
-      - name: Force new deployment
+      - name: Register task definition and deploy
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         run: |
+          TASK_DEF_FAMILY=$(aws ecs describe-services \
+            --cluster "$ECS_CLUSTER" \
+            --services "$ECS_SERVICE" \
+            --region "$AWS_REGION" \
+            | jq -r '.services[0].taskDefinition' \
+            | cut -d: -f1)
+          aws ecs describe-task-definition \
+            --task-definition "$TASK_DEF_FAMILY" \
+            --region "$AWS_REGION" \
+            | jq '.taskDefinition | {family, containerDefinitions, volumes, cpu, memory, executionRoleArn, taskRoleArn, networkMode, requiresCompatibilities}' \
+            | jq --arg IMAGE "$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
+              '(.containerDefinitions[0].image) = $IMAGE' \
+            > /tmp/task-def.json
+          NEW_TASK_DEF=$(aws ecs register-task-definition \
+            --cli-input-json file:///tmp/task-def.json \
+            --region "$AWS_REGION" \
+            | jq -r '.taskDefinition.taskDefinitionArn')
           aws ecs update-service \
             --cluster "$ECS_CLUSTER" \
             --service "$ECS_SERVICE" \
+            --task-definition "$NEW_TASK_DEF" \
             --force-new-deployment \
             --region "$AWS_REGION"
 
