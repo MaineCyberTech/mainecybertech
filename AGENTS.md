@@ -223,6 +223,7 @@ Key points:
 
 - Web only needs `NEXT_PUBLIC_API_URL` (no Supabase env vars — auth proxies through API)
 - API needs `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `JWT_SECRET`, `CORS_ORIGIN`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+- `JWT_SECRET` is required — used for local JWT verification in `auth.ts` (fast path; falls back to Supabase `getUser` on failure)
 - Worker needs `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `WORKER_CONCURRENCY`, `WORKER_TIMEOUT`
 - E2E needs `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`
 - Local Supabase sync: `pnpm supabase:env:sync` (scripts skip `NEXT_PUBLIC_SUPABASE_*` for nextjs)
@@ -265,39 +266,39 @@ A comprehensive deep-dive architecture review was conducted on 2026-06-16 coveri
 
 ### Overall Assessment: ~7.5/10 — Near production-ready
 
-| Domain             | Score | Key Finding                                    |
-| ------------------ | ----- | ---------------------------------------------- |
-| Architecture       | 8/10  | Clear modular monolith layering                |
-| Code Quality       | 7/10  | Strong patterns, some long handlers            |
-| Security           | 6/10  | Good foundation, critical tenant isolation gap |
-| Testing            | 8/10  | 714 tests, missing load/visual tests           |
-| Infrastructure     | 8/10  | Mature IaC, missing WAF/flow logs              |
-| CI/CD              | 8/10  | Gated deploys, comprehensive workflows         |
-| Documentation      | 9/10  | Exceptional breadth and depth                  |
-| DevOps/Operability | 7/10  | Monitoring exists, no formal runbook           |
-| UI/UX              | 6/10  | Functional, missing empty/error state polish   |
+| Domain             | Score | Key Finding                                     |
+| ------------------ | ----- | ----------------------------------------------- |
+| Architecture       | 8/10  | Clear modular monolith layering                 |
+| Code Quality       | 8/10  | Strong patterns, input sanitizer fixed          |
+| Security           | 7/10  | Tenant isolation + local JWT verification added |
+| Testing            | 8/10  | 714 tests, missing load/visual tests            |
+| Infrastructure     | 8/10  | Mature IaC, missing WAF/flow logs               |
+| CI/CD              | 8/10  | Gated deploys, comprehensive workflows          |
+| Documentation      | 9/10  | Exceptional breadth and depth                   |
+| DevOps/Operability | 8/10  | Monitoring + unhandledRejection handler added   |
+| UI/UX              | 6/10  | Functional, missing empty/error state polish    |
 
 ### Critical Findings (Must Fix Before Production)
 
-| #   | Issue                                                                                                                              | Location                                                        | Fix                                                                |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------ |
-| 1   | **Input sanitizer corrupts data** — `sanitizeObject()` HTML-encodes ALL string fields (passwords, JSON, text) with Unicode escapes | `apps/api/src/middleware/security.ts:33-63`                     | Remove HTML-encoding mutation; keep pattern detection only         |
-| 2   | **No tenant isolation at API layer** — any authenticated user can access any org's records by entity ID                            | All entity routes (tickets, documents, projects, organizations) | Create `requireOrgAccess()` middleware, apply to all entity routes |
-| 3   | **Terraform image tag drift** — task definitions reference `:latest` but CI deploys SHA-tagged images                              | `infra/terraform/runtime.tf:284,318`                            | Use variable for image tag or `data.aws_ecs_image`                 |
+| #   | Issue                                                                                                                              | Location                                                        | Fix                                                                | Status |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------ | ------ |
+| 1   | **Input sanitizer corrupts data** — `sanitizeObject()` HTML-encodes ALL string fields (passwords, JSON, text) with Unicode escapes | `apps/api/src/middleware/security.ts:33-63`                     | Remove HTML-encoding mutation; keep pattern detection only         | ✅     |
+| 2   | **No tenant isolation at API layer** — any authenticated user can access any org's records by entity ID                            | All entity routes (tickets, documents, projects, organizations) | Create `requireOrgAccess()` middleware, apply to all entity routes | ✅     |
+| 3   | **Terraform image tag drift** — task definitions reference `:latest` but CI deploys SHA-tagged images                              | `infra/terraform/runtime.tf:284,318`                            | Use variable for image tag or `data.aws_ecs_image`                 |        |
 
 ### High-Priority Findings
 
-| #   | Issue                                                       | Priority | Effort |
-| --- | ----------------------------------------------------------- | -------- | ------ |
-| 4   | Worker lacks Sentry integration                             | High     | Small  |
-| 5   | API missing `unhandledRejection` handler                    | High     | Small  |
-| 6   | Cookie security flags (HttpOnly/Secure/SameSite) unverified | High     | Small  |
-| 7   | No local JWT verification (every request hits Supabase)     | High     | Small  |
-| 8   | Only 7 of ~27 mutation endpoints have Zod validation        | Medium   | Medium |
-| 9   | No caching layer (every query hits Postgres)                | Medium   | Medium |
-| 10  | No SSE/WebSocket for real-time notifications (30s polling)  | Medium   | Medium |
-| 11  | No empty state components in UI                             | Medium   | Small  |
-| 12  | No error retry buttons on error boundaries                  | Medium   | Small  |
+| #   | Issue                                                       | Priority | Effort | Status |
+| --- | ----------------------------------------------------------- | -------- | ------ | ------ |
+| 4   | Worker lacks Sentry integration                             | High     | Small  |        |
+| 5   | API missing `unhandledRejection` handler                    | High     | Small  | ✅     |
+| 6   | Cookie security flags (HttpOnly/Secure/SameSite) unverified | High     | Small  |        |
+| 7   | No local JWT verification (every request hits Supabase)     | High     | Small  | ✅     |
+| 8   | Only 7 of ~27 mutation endpoints have Zod validation        | Medium   | Medium |        |
+| 9   | No caching layer (every query hits Postgres)                | Medium   | Medium |        |
+| 10  | No SSE/WebSocket for real-time notifications (30s polling)  | Medium   | Medium |        |
+| 11  | No empty state components in UI                             | Medium   | Small  |        |
+| 12  | No error retry buttons on error boundaries                  | Medium   | Small  |        |
 
 See `docs/CODE_REVIEW_2026-06-16.md` for 30 detailed recommendations across 8 categories, the full risk register with 20 items, and a phased 4-stage roadmap.
 
@@ -567,6 +568,10 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 | 11  | **Activity timeline** — audit event feed on admin ticket detail page                            | ✅     |
 | 12  | **Admin dashboard audit feed** — "Recent Audit Activity" panel on admin home                    | ✅     |
 | 13  | **Ticket/project CSV export** — `/export` endpoints + SDK + download buttons                    | ✅     |
+| 14  | **Input sanitizer fix** — removed HTML-encoding mutation, keep pattern detection only           | ✅     |
+| 15  | **Tenant isolation** — `requireOrgAccess()` middleware wired into all 8 entity routers          | ✅     |
+| 16  | **Local JWT verification** — fast path in `auth.ts` via `jsonwebtoken`, falls back to Supabase  | ✅     |
+| 17  | **`unhandledRejection` handler** — added to `main.ts` for crash-safe promise rejection tracking | ✅     |
 
 #### High Value (Still Open)
 
@@ -757,35 +762,18 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 
 ### What To Do Next
 
-**All 38 pre-production findings + 21 codebase review findings resolved.** All high-value cross-navigation features completed.
+**All 38 pre-production findings + 21 codebase review findings resolved.** All high-value cross-navigation features completed. **2 of 3 critical architecture review findings fixed.**
 
-| Priority | Task                                                                                                                                                                                                                           | Effort   | Status                                                                           |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- | -------------------------------------------------------------------------------- |
-| 1        | **Create real Terraform config files** — `infra/terraform/env/dev.tfvars`, `prod.tfvars`, `backend.dev.hcl`, `backend.prod.hcl`                                                                                                | Small    | 🟡 `dev.tfvars` + `backend.*.hcl` exist; `prod.tfvars` created with placeholders |
-| 2        | **Push to GitHub + deploy dev site**                                                                                                                                                                                           | Small    | ⏳ Needs real prod Terraform values to fill in                                   |
-| 3        | **Fix API `.env.example`** — remove worker-only vars                                                                                                                                                                           | Small    | ✅ Fixed                                                                         |
-| 4        | **Fix docs** — GAP_ANALYSIS.md, BILLING.md, ENVIRONMENT_VARIABLES.md, INDEX.md                                                                                                                                                 | Small    | ✅ Fixed                                                                         |
-| 5        | **Archive stale docs** — ANALYSIS_SUMMARY.md, CODEBASE_MAPPING.md to archive/stale-docs/                                                                                                                                       | Medium   | ✅ Done                                                                          |
-| 6        | **Consolidate Terraform READMEs + remove stale zip** — removed 2 extra READMEs, deleted old-archived.zip                                                                                                                       | Small    | ✅ Done                                                                          |
-| 7        | **Admin list search** — search/filter on admin tickets, users, projects                                                                                                                                                        | Small    | ✅ Org search done; tickets/projects TBD                                         |
-| 8        | **Inline status change** — click status pill for quick dropdown                                                                                                                                                                | Small    | ✅ Done                                                                          |
-| 9        | **Ticket/project CSV export** — download buttons on admin lists                                                                                                                                                                | Medium   | ✅ Done                                                                          |
-| 10       | **Ticket comment editing** — 5-min edit window with audit logging                                                                                                                                                              | Small    | ✅ Done                                                                          |
-| 11       | **Activity timeline** — audit log feed on ticket detail page                                                                                                                                                                   | Small    | ✅ Done                                                                          |
-| 12       | **Admin dashboard recent activity** — "Recent Audit Activity" panel                                                                                                                                                            | Medium   | ✅ Done                                                                          |
-| 13       | **Wire `@mct/ui` & `@mct/config` into apps**                                                                                                                                                                                   | Medium   | Future                                                                           |
-| 14       | **prod.tfvars** — create from `.example` template                                                                                                                                                                              | Small    | ✅ Done                                                                          |
-| 15       | **Remove stale infra examples** — `infra/terraform/examples/` removed                                                                                                                                                          | Small    | ✅ Done                                                                          |
-| 16       | **ECR lifecycle policy** — expire untagged images >14d, keep 30 tagged                                                                                                                                                         | Medium   | ✅ Done                                                                          |
-| 17       | **Dead code cleanup** — removed `bootstrap.ts`, `.gitkeep`, `template.tsx`; 6 more were already gone                                                                                                                           | Low      | ✅ Done                                                                          |
-| 18       | **Archive 8 stale domain docs** — MERGED_AUDIT_SUMMARY, CLOUDFLARE_VERCEL_DOMAIN, DOCUMENTATION_INDEX, PRODUCTION_CUTOVER, VERCEL_DOMAIN_ASSIGNMENT, ZERO_DOWNTIME_CUTOVER_NOTES, ENVIRONMENT_MATRIX, ENVIRONMENT_PROVISIONING | Low      | ✅ Done                                                                          |
-| 19       | **Path filters on E2E + Terraform dev workflows** — only trigger on relevant changes                                                                                                                                           | Medium   | ✅ Done                                                                          |
-| 20       | **Gate Terraform prod apply** — requires validate + e2e + supabase-migrations + prod-approval                                                                                                                                  | **High** | ✅ Done                                                                          |
-| 21       | **Cloudflare IP restriction** — `alb_allowed_cidrs` in prod.tfvars                                                                                                                                                             | **High** | ✅ Done                                                                          |
-| 22       | **Missing TF_VAR secrets** — added supabase_anon_key, service_role_key, jwt_secret to prod plan workflow                                                                                                                       | Medium   | ✅ Done                                                                          |
-| 23       | **ECS Exec disabled** — `enable_execute_command = false` in prod.tfvars                                                                                                                                                        | Low      | ✅ Done                                                                          |
-| 24       | **Audit log retry** — exponential backoff (3 attempts) with structured logging on final failure                                                                                                                                | Medium   | ✅ Done                                                                          |
-| 25       | **prod.tfvars filled** — Cloudflare zone ID, Vercel targets, ACM cert ARN, alarm email; API target now dynamic from ALB output                                                                                                 | **High** | ✅ Done                                                                          |
+| Priority | Task                                                                                                                                         | Effort | Status |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------ |
+| 1        | **Terraform image tag drift** — task definitions reference `:latest` but CI deploys SHA-tagged images (`infra/terraform/runtime.tf:284,318`) | Small  |        |
+| 2        | **Worker Sentry integration** — add `@sentry/node` to worker for error tracking                                                              | Small  |        |
+| 3        | **Cookie security flags** — verify `HttpOnly`/`Secure`/`SameSite` on `mct_session` cookie in auth callback                                   | Small  |        |
+| 4        | **Wire `@mct/ui` & `@mct/config` into apps**                                                                                                 | Medium | Future |
+| 5        | **Zod validation** — add to remaining ~20 mutation endpoints (currently only 7 have it)                                                      | Medium |        |
+| 6        | **Empty state components** — add empty state for lists/tables throughout portal and admin                                                    | Small  |        |
+| 7        | **Error retry buttons** — "Try again" button on error boundaries                                                                             | Small  |        |
+| 8        | **Push to GitHub + deploy dev site**                                                                                                         | Small  | ⏳     |
 
 ## Architectural Analysis
 
