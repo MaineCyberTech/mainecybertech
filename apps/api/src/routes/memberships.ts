@@ -4,12 +4,14 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
+import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { updateMembershipSchema } from "../validators/membership";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
+router.use(requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {
@@ -55,11 +57,13 @@ router.get("/mine", async (req, res, next) => {
 
 router.post("/invite", requireAdmin, async (req, res, next) => {
   try {
-    const { organizationId, email, roleId } = z.object({
-      organizationId: z.string().min(1),
-      email: z.string().email(),
-      roleId: z.string().min(1),
-    }).parse(req.body);
+    const { organizationId, email, roleId } = z
+      .object({
+        organizationId: z.string().min(1),
+        email: z.string().email(),
+        roleId: z.string().min(1),
+      })
+      .parse(req.body);
 
     const supabase = getSupabaseAdmin();
 

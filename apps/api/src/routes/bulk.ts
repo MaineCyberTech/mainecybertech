@@ -3,18 +3,26 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
+import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 
 const router: ReturnType<typeof Router> = Router();
-router.use(requireAuth, requireAdmin);
+router.use(requireAuth, requireOrgAccess, requireAdmin);
 
 function parseCSVLine(line: string): string[] {
   const result: string[] = [];
   let current = "";
   let inQuotes = false;
   for (const ch of line) {
-    if (ch === '"') { inQuotes = !inQuotes; continue; }
-    if (ch === "," && !inQuotes) { result.push(current.trim()); current = ""; continue; }
+    if (ch === '"') {
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (ch === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+      continue;
+    }
     current += ch;
   }
   result.push(current.trim());
@@ -30,12 +38,17 @@ router.post("/invite", async (req, res, next) => {
     };
 
     if (!csv || !organizationId || !roleId) {
-      throw new AppError("VALIDATION", "csv, organizationId, and roleId are required", 400);
+      throw new AppError(
+        "VALIDATION",
+        "csv, organizationId, and roleId are required",
+        400,
+      );
     }
 
     const supabase = getSupabaseAdmin();
     const lines = csv.split("\n").filter((l) => l.trim());
-    const results: Array<{ email: string; status: string; message: string }> = [];
+    const results: Array<{ email: string; status: string; message: string }> =
+      [];
 
     for (const line of lines) {
       const cols = parseCSVLine(line);
@@ -43,7 +56,11 @@ router.post("/invite", async (req, res, next) => {
       const fullName = cols[1]?.trim() || email?.split("@")[0] || "User";
 
       if (!email || !email.includes("@")) {
-        results.push({ email: email || "?", status: "error", message: "Invalid email" });
+        results.push({
+          email: email || "?",
+          status: "error",
+          message: "Invalid email",
+        });
         continue;
       }
 
@@ -60,19 +77,34 @@ router.post("/invite", async (req, res, next) => {
           userId = existingProfile.id;
           results.push({ email, status: "exists", message: "User exists" });
         } else {
-          const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
-            email,
-            password: Array.from({ length: 16 }, () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]).join(""),
-            email_confirm: true,
-            user_metadata: { full_name: fullName },
-          });
+          const { data: signUpData, error: signUpError } =
+            await supabase.auth.admin.createUser({
+              email,
+              password: Array.from(
+                { length: 16 },
+                () =>
+                  "abcdefghijklmnopqrstuvwxyz0123456789"[
+                    Math.floor(Math.random() * 36)
+                  ],
+              ).join(""),
+              email_confirm: true,
+              user_metadata: { full_name: fullName },
+            });
 
           if (signUpError || !signUpData.user) {
-            results.push({ email, status: "error", message: signUpError?.message || "Failed to create user" });
+            results.push({
+              email,
+              status: "error",
+              message: signUpError?.message || "Failed to create user",
+            });
             continue;
           }
           userId = signUpData.user.id;
-          results.push({ email, status: "created", message: "Account created" });
+          results.push({
+            email,
+            status: "created",
+            message: "Account created",
+          });
         }
 
         const { data: existingMembership } = await supabase
@@ -83,7 +115,11 @@ router.post("/invite", async (req, res, next) => {
           .maybeSingle();
 
         if (existingMembership) {
-          results.push({ email, status: "skipped", message: `Already has membership (${existingMembership.status})` });
+          results.push({
+            email,
+            status: "skipped",
+            message: `Already has membership (${existingMembership.status})`,
+          });
           continue;
         }
 
@@ -95,9 +131,17 @@ router.post("/invite", async (req, res, next) => {
           invited_by: req.authUser!.userId,
         });
 
-        results.push({ email, status: "invited", message: "Invited to organization" });
+        results.push({
+          email,
+          status: "invited",
+          message: "Invited to organization",
+        });
       } catch (err: any) {
-        results.push({ email, status: "error", message: err?.message || "Unknown error" });
+        results.push({
+          email,
+          status: "error",
+          message: err?.message || "Unknown error",
+        });
       }
     }
 

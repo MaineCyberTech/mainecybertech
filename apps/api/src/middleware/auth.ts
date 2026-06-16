@@ -1,6 +1,9 @@
 import { type Request, type Response, type NextFunction } from "express";
+import jwt from "jsonwebtoken";
 import { getSupabaseAdmin } from "../services/supabase";
+import { getEnv } from "../config/env";
 import { AppError } from "../types";
+import { logger } from "../lib/logger";
 
 declare global {
   namespace Express {
@@ -36,6 +39,29 @@ export async function requireAuth(
         "Missing or invalid authorization header",
         401,
       );
+    }
+
+    const env = getEnv();
+    if (env.JWT_SECRET) {
+      try {
+        const decoded = jwt.verify(token, env.JWT_SECRET) as {
+          sub: string;
+          email?: string;
+          exp?: number;
+        };
+        if (decoded.exp && decoded.exp * 1000 < Date.now()) {
+          throw new AppError("UNAUTHORIZED", "Token expired", 401);
+        }
+        req.authUser = {
+          userId: decoded.sub,
+          email: decoded.email ?? "unknown",
+        };
+        next();
+        return;
+      } catch (err) {
+        if (err instanceof AppError) throw err;
+        logger.warn("Local JWT verification failed, falling back to Supabase");
+      }
     }
 
     const supabase = getSupabaseAdmin();

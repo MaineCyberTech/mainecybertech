@@ -4,8 +4,12 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
+import { requireOrgAccessByParam } from "../middleware/org-access";
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 import { requireAdmin } from "../middleware/admin";
 import {
   createOrganizationSchema,
@@ -41,7 +45,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requireOrgAccessByParam, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
@@ -58,7 +62,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.get("/:id/detail", async (req, res, next) => {
+router.get("/:id/detail", requireOrgAccessByParam, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
 
@@ -81,22 +85,37 @@ router.get("/:id/detail", async (req, res, next) => {
         .eq("organization_id", req.params.id),
       supabase
         .from("memberships")
-        .select("id, user_id, role_id, status, is_billing_contact, is_security_contact, created_at")
+        .select(
+          "id, user_id, role_id, status, is_billing_contact, is_security_contact, created_at",
+        )
         .eq("organization_id", req.params.id),
     ]);
 
     if (domError) throw new AppError("DB_ERROR", domError.message, 500);
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
 
-    const memberUserIds = [...new Set((memberships ?? []).map((m: { user_id: string }) => m.user_id))];
-    const memberRoleIds = [...new Set((memberships ?? []).map((m: { role_id: string }) => m.role_id))];
+    const memberUserIds = [
+      ...new Set(
+        (memberships ?? []).map((m: { user_id: string }) => m.user_id),
+      ),
+    ];
+    const memberRoleIds = [
+      ...new Set(
+        (memberships ?? []).map((m: { role_id: string }) => m.role_id),
+      ),
+    ];
 
     const [
       { data: profiles, error: profError },
       { data: roles, error: rolesError },
     ] = await Promise.all([
       memberUserIds.length > 0
-        ? supabase.from("profiles").select("id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at").in("id", memberUserIds)
+        ? supabase
+            .from("profiles")
+            .select(
+              "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+            )
+            .in("id", memberUserIds)
         : { data: [], error: null },
       memberRoleIds.length > 0
         ? supabase.from("roles").select("id, key, name").in("id", memberRoleIds)
@@ -106,13 +125,15 @@ router.get("/:id/detail", async (req, res, next) => {
     if (profError) throw new AppError("DB_ERROR", profError.message, 500);
     if (rolesError) throw new AppError("DB_ERROR", rolesError.message, 500);
 
-    res.json(success({
-      organization: org,
-      domains: domains ?? [],
-      memberships: memberships ?? [],
-      profiles: profiles ?? [],
-      roles: roles ?? [],
-    }));
+    res.json(
+      success({
+        organization: org,
+        domains: domains ?? [],
+        memberships: memberships ?? [],
+        profiles: profiles ?? [],
+        roles: roles ?? [],
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -163,8 +184,7 @@ router.patch("/:id", requireAdmin, async (req, res, next) => {
       updateData.primary_domain = parsed.primaryDomain;
     if (parsed.supportPlan !== undefined)
       updateData.support_plan = parsed.supportPlan;
-    if (parsed.logoUrl !== undefined)
-      updateData.logo_url = parsed.logoUrl;
+    if (parsed.logoUrl !== undefined) updateData.logo_url = parsed.logoUrl;
     if (parsed.brandColor !== undefined)
       updateData.brand_color = parsed.brandColor;
     if (parsed.accentColor !== undefined)
@@ -219,7 +239,7 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get("/:id/domains", async (req, res, next) => {
+router.get("/:id/domains", requireOrgAccessByParam, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
@@ -331,6 +351,7 @@ router.delete(
 router.post(
   "/:id/logo",
   requireAuth,
+  requireOrgAccessByParam,
   upload.single("logo"),
   async (req, res, next) => {
     try {
@@ -348,9 +369,12 @@ router.post(
           upsert: true,
         });
 
-      if (uploadError) throw new AppError("STORAGE_ERROR", uploadError.message, 500);
+      if (uploadError)
+        throw new AppError("STORAGE_ERROR", uploadError.message, 500);
 
-      const { data: publicUrl } = supabase.storage.from("logos").getPublicUrl(storagePath);
+      const { data: publicUrl } = supabase.storage
+        .from("logos")
+        .getPublicUrl(storagePath);
 
       await supabase
         .from("organizations")

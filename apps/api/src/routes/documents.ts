@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
+import { requireOrgAccess } from "../middleware/org-access";
 import {
   createDocumentSchema,
   updateDocumentSchema,
@@ -11,10 +12,14 @@ import {
   bulkMetadataSchema,
 } from "../validators/document";
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 100 * 1024 * 1024 },
+});
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
+router.use(requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {
@@ -26,9 +31,7 @@ router.get("/", async (req, res, next) => {
     );
     const offset = (page - 1) * limit;
 
-    let query = supabase
-      .from("documents")
-      .select("*", { count: "exact" });
+    let query = supabase.from("documents").select("*", { count: "exact" });
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -132,7 +135,11 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
     const folderPath = String(req.body.folderPath ?? "").trim() || null;
 
     if (!organizationId || !name) {
-      throw new AppError("VALIDATION", "Organization ID and name are required", 400);
+      throw new AppError(
+        "VALIDATION",
+        "Organization ID and name are required",
+        400,
+      );
     }
 
     const supabase = getSupabaseAdmin();
@@ -148,7 +155,11 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
       });
 
     if (uploadError) {
-      throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);
+      throw new AppError(
+        "STORAGE_ERROR",
+        `Upload failed: ${uploadError.message}`,
+        500,
+      );
     }
 
     const documentId = String(req.body.documentId ?? "").trim() || null;
@@ -167,7 +178,9 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
       }
 
       if (current.storage_bucket && current.storage_path) {
-        await supabase.storage.from(current.storage_bucket).remove([current.storage_path]);
+        await supabase.storage
+          .from(current.storage_bucket)
+          .remove([current.storage_path]);
       }
 
       const nextVersion = currentVersion + 1;
@@ -274,16 +287,12 @@ router.patch("/:id", async (req, res, next) => {
       updateData.storage_bucket = parsed.storageBucket;
     if (parsed.storagePath !== undefined)
       updateData.storage_path = parsed.storagePath;
-    if (parsed.mimeType !== undefined)
-      updateData.mime_type = parsed.mimeType;
-    if (parsed.fileName !== undefined)
-      updateData.file_name = parsed.fileName;
-    if (parsed.fileSize !== undefined)
-      updateData.file_size = parsed.fileSize;
+    if (parsed.mimeType !== undefined) updateData.mime_type = parsed.mimeType;
+    if (parsed.fileName !== undefined) updateData.file_name = parsed.fileName;
+    if (parsed.fileSize !== undefined) updateData.file_size = parsed.fileSize;
     if (parsed.currentVersion !== undefined)
       updateData.current_version = parsed.currentVersion;
-    if (parsed.metadata !== undefined)
-      updateData.metadata = parsed.metadata;
+    if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
 
     const { data, error } = await supabase
       .from("documents")
@@ -359,10 +368,13 @@ router.post("/:id/signed-url", async (req, res, next) => {
     if (docError || !doc)
       throw new AppError("NOT_FOUND", "Document not found", 404);
     if (!doc.storage_bucket || !doc.storage_path)
-      throw new AppError("BAD_REQUEST", "Document has no storage reference", 400);
+      throw new AppError(
+        "BAD_REQUEST",
+        "Document has no storage reference",
+        400,
+      );
 
-    const { data: signedUrl, error: urlError } = await supabase
-      .storage
+    const { data: signedUrl, error: urlError } = await supabase.storage
       .from(doc.storage_bucket)
       .createSignedUrl(doc.storage_path, 3600);
 
@@ -431,7 +443,10 @@ router.post("/bulk/metadata", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "document.bulk_metadata",
       entityType: "document",
-      metadata: { documentIds: parsed.documentIds, fields: Object.keys(updateData) },
+      metadata: {
+        documentIds: parsed.documentIds,
+        fields: Object.keys(updateData),
+      },
     });
 
     res.json(success({ updated: parsed.documentIds.length }));
@@ -444,7 +459,10 @@ router.get("/:id/versions", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(req.query.limit as string) || 20),
+    );
     const offset = (page - 1) * limit;
 
     const { data, error, count } = await supabase
@@ -471,7 +489,8 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
       .eq("document_id", req.params.id)
       .single();
 
-    if (error || !data) throw new AppError("NOT_FOUND", "Version not found", 404);
+    if (error || !data)
+      throw new AppError("NOT_FOUND", "Version not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);

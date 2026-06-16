@@ -13,7 +13,7 @@ const envSchema = z.object({
   LOG_LEVEL: z
     .enum(["debug", "info", "warn", "error", "silent"])
     .default("info"),
-  JWT_SECRET: z.string().optional(),
+  JWT_SECRET: z.string().min(1),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
   SMTP_USER: z.string().optional(),

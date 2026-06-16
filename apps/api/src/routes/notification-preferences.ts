@@ -1,13 +1,21 @@
 import { Router } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
+import { requireOrgAccess } from "../middleware/org-access";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
+router.use(requireOrgAccess);
 
-const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
+const MODULES = [
+  "tickets",
+  "projects",
+  "documents",
+  "billing",
+  "system",
+] as const;
 const CHANNELS = ["email", "sms", "in_app"] as const;
 
 router.get("/", async (req, res, next) => {
@@ -25,7 +33,13 @@ router.get("/", async (req, res, next) => {
     const { data, error } = await query;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    res.json(success({ preferences: data ?? [], modules: [...MODULES], channels: [...CHANNELS] }));
+    res.json(
+      success({
+        preferences: data ?? [],
+        modules: [...MODULES],
+        channels: [...CHANNELS],
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -48,10 +62,18 @@ router.put("/", async (req, res, next) => {
 
     for (const pref of preferences) {
       if (!MODULES.includes(pref.moduleKey as any)) {
-        throw new AppError("VALIDATION", `Invalid module: ${pref.moduleKey}`, 400);
+        throw new AppError(
+          "VALIDATION",
+          `Invalid module: ${pref.moduleKey}`,
+          400,
+        );
       }
       if (!CHANNELS.includes(pref.channel as any)) {
-        throw new AppError("VALIDATION", `Invalid channel: ${pref.channel}`, 400);
+        throw new AppError(
+          "VALIDATION",
+          `Invalid channel: ${pref.channel}`,
+          400,
+        );
       }
     }
 
@@ -61,13 +83,16 @@ router.put("/", async (req, res, next) => {
     for (const pref of preferences) {
       const { data, error } = await supabase
         .from("notification_preferences")
-        .upsert({
-          organization_id: organizationId ?? null,
-          user_id: req.authUser!.userId,
-          module_key: pref.moduleKey,
-          channel: pref.channel,
-          enabled: pref.enabled,
-        }, { onConflict: "organization_id,user_id,module_key,channel" })
+        .upsert(
+          {
+            organization_id: organizationId ?? null,
+            user_id: req.authUser!.userId,
+            module_key: pref.moduleKey,
+            channel: pref.channel,
+            enabled: pref.enabled,
+          },
+          { onConflict: "organization_id,user_id,module_key,channel" },
+        )
         .select()
         .single();
 

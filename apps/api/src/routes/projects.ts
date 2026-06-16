@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
+import { requireOrgAccess } from "../middleware/org-access";
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -21,6 +22,7 @@ import {
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
+router.use(requireOrgAccess);
 
 router.get("/export", async (req, res, next) => {
   try {

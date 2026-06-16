@@ -30,38 +30,6 @@ function containsSqlInjection(value: unknown): boolean {
   return SQL_INJECTION_PATTERNS.some((pattern) => pattern.test(value));
 }
 
-function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
-  const sanitized: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(obj)) {
-    if (typeof value === "string") {
-      sanitized[key] = value
-        .replace(/</g, "\\u003c")
-        .replace(/>/g, "\\u003e")
-        .replace(/"/g, "\\u0022")
-        .replace(/'/g, "\\u0027");
-    } else if (
-      typeof value === "object" &&
-      value !== null &&
-      !Array.isArray(value)
-    ) {
-      sanitized[key] = sanitizeObject(value as Record<string, unknown>);
-    } else if (Array.isArray(value)) {
-      sanitized[key] = value.map((item) =>
-        typeof item === "string"
-          ? item
-              .replace(/</g, "\\u003c")
-              .replace(/>/g, "\\u003e")
-              .replace(/"/g, "\\u0022")
-              .replace(/'/g, "\\u0027")
-          : item,
-      );
-    } else {
-      sanitized[key] = value;
-    }
-  }
-  return sanitized;
-}
-
 export function inputSanitizer(
   req: Request,
   _res: Response,
@@ -89,8 +57,6 @@ export function inputSanitizer(
         );
       }
     }
-
-    req.body = sanitizeObject(req.body);
   }
 
   if (req.query && typeof req.query === "object") {
