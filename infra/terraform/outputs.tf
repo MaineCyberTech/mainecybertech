@@ -185,7 +185,7 @@ output "github_terraform_role_arn" {
   value       = data.aws_iam_role.github_terraform.arn
 }
 output "github_deploy_role_arn" {
-  value       = data.aws_iam_role.github_deploy.arn
+  value = data.aws_iam_role.github_deploy.arn
 }
 
 # Cloudflare DNS

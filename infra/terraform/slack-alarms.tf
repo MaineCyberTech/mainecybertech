@@ -67,9 +67,9 @@ resource "aws_iam_role" "slack_notifier" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = { Service = "lambda.amazonaws.com" }
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 
@@ -110,8 +110,8 @@ resource "aws_lambda_permission" "slack_notifier_sns" {
 }
 
 resource "aws_sns_topic_subscription" "slack_notifier" {
-  count      = var.slack_webhook_url != "" ? 1 : 0
-  topic_arn  = aws_sns_topic.alarms.arn
-  protocol   = "lambda"
-  endpoint   = aws_lambda_function.slack_notifier[0].arn
+  count     = var.slack_webhook_url != "" ? 1 : 0
+  topic_arn = aws_sns_topic.alarms.arn
+  protocol  = "lambda"
+  endpoint  = aws_lambda_function.slack_notifier[0].arn
 }

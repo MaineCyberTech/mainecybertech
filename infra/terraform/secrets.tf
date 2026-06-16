@@ -246,3 +246,48 @@ resource "aws_ssm_parameter" "api_base_url" {
   value       = var.api_base_url
   tags        = { Environment = var.environment }
 }
+
+resource "aws_ssm_parameter" "jsm_domain" {
+  count       = var.jsm_domain != "" ? 1 : 0
+  name        = "${local.ssm_prefix}/jsm/domain"
+  description = "JSM domain for API ticket creation"
+  type        = "SecureString"
+  value       = var.jsm_domain
+  tags        = { Environment = var.environment }
+}
+
+resource "aws_ssm_parameter" "jsm_servicedesk_id" {
+  count       = var.jsm_servicedesk_id != "" ? 1 : 0
+  name        = "${local.ssm_prefix}/jsm/servicedesk-id"
+  description = "JSM service desk ID"
+  type        = "String"
+  value       = var.jsm_servicedesk_id
+  tags        = { Environment = var.environment }
+}
+
+resource "aws_ssm_parameter" "jsm_request_type_id" {
+  count       = var.jsm_request_type_id != "" ? 1 : 0
+  name        = "${local.ssm_prefix}/jsm/request-type-id"
+  description = "JSM request type ID"
+  type        = "String"
+  value       = var.jsm_request_type_id
+  tags        = { Environment = var.environment }
+}
+
+resource "aws_ssm_parameter" "public_traffic_webhook_url" {
+  count       = var.public_traffic_webhook_url != "" ? 1 : 0
+  name        = "${local.ssm_prefix}/public/traffic-webhook-url"
+  description = "Webhook URL for public traffic notifications"
+  type        = "SecureString"
+  value       = var.public_traffic_webhook_url
+  tags        = { Environment = var.environment }
+}
+
+resource "aws_ssm_parameter" "public_lead_webhook_url" {
+  count       = var.public_lead_webhook_url != "" ? 1 : 0
+  name        = "${local.ssm_prefix}/public/lead-webhook-url"
+  description = "Webhook URL for public lead submissions"
+  type        = "SecureString"
+  value       = var.public_lead_webhook_url
+  tags        = { Environment = var.environment }
+}

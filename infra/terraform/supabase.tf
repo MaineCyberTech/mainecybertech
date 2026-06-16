@@ -4,8 +4,8 @@
 
 locals {
   supabase_project_name = var.environment == "prod" ? "mainecybertech-production" : "mainecybertech-${var.environment}"
-  supabase_endpoint      = "https://${supabase_project.main_db.id}.supabase.co"
-  supabase_db_host       = "db.${supabase_project.main_db.id}.supabase.co"
+  supabase_endpoint     = "https://${supabase_project.main_db.id}.supabase.co"
+  supabase_db_host      = "db.${supabase_project.main_db.id}.supabase.co"
 }
 
 import {

@@ -23,7 +23,7 @@ resource "aws_sqs_queue" "jobs_queue" {
   name                        = "mainecybertech-jobs.fifo"
   fifo_queue                  = true
   content_based_deduplication = true
-  visibility_timeout_seconds  = 60  # Visibility timeout must be >= max task runtime + buffer
+  visibility_timeout_seconds  = 60 # Visibility timeout must be >= max task runtime + buffer
 
   # Redrive policy: messages with 3+ failures go to DLQ
   redrive_policy = jsonencode({
@@ -127,7 +127,7 @@ resource "aws_ecr_lifecycle_policy" "api" {
         countNumber = 14
       }
       action = { type = "expire" }
-    }, {
+      }, {
       rulePriority = 2
       description  = "Keep only the last 30 tagged images"
       selection = {
@@ -172,7 +172,7 @@ resource "aws_ecr_lifecycle_policy" "worker" {
         countNumber = 14
       }
       action = { type = "expire" }
-    }, {
+      }, {
       rulePriority = 2
       description  = "Keep only the last 30 tagged images"
       selection = {

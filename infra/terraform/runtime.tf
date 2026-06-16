@@ -164,6 +164,13 @@ locals {
     { name = "SMTP_USER", param = aws_ssm_parameter.smtp_user },
     { name = "SMTP_PASS", param = aws_ssm_parameter.smtp_pass },
     { name = "EMAIL_FROM", param = aws_ssm_parameter.email_from },
+    { name = "JSM_DOMAIN", param = aws_ssm_parameter.jsm_domain },
+    { name = "JSM_EMAIL", param = aws_ssm_parameter.jsm_email },
+    { name = "JSM_API_TOKEN", param = aws_ssm_parameter.jsm_api_token },
+    { name = "JSM_SERVICEDESK_ID", param = aws_ssm_parameter.jsm_servicedesk_id },
+    { name = "JSM_REQUEST_TYPE_ID", param = aws_ssm_parameter.jsm_request_type_id },
+    { name = "PUBLIC_TRAFFIC_WEBHOOK_URL", param = aws_ssm_parameter.public_traffic_webhook_url },
+    { name = "PUBLIC_LEAD_WEBHOOK_URL", param = aws_ssm_parameter.public_lead_webhook_url },
   ]
 
   api_all_secrets = concat(
@@ -231,7 +238,7 @@ locals {
 # Allow ECS execution role to read SSM parameters.
 resource "aws_iam_role_policy" "ecs_execution_secrets_access" {
   name = "mainecybertech-ecs-execution-secrets-access"
-  role  = aws_iam_role.ecs_execution.id
+  role = aws_iam_role.ecs_execution.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -307,9 +314,9 @@ resource "aws_ecs_task_definition" "worker_runtime" {
 
   container_definitions = jsonencode([
     {
-      name      = "worker"
-      image     = "${aws_ecr_repository.worker.repository_url}:latest"
-      essential = true
+      name        = "worker"
+      image       = "${aws_ecr_repository.worker.repository_url}:latest"
+      essential   = true
       environment = local.worker_environment
       secrets     = local.worker_all_secrets
       logConfiguration = {
@@ -398,7 +405,7 @@ resource "aws_appautoscaling_target" "api" {
   resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.api.name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
-  depends_on         = [
+  depends_on = [
     aws_iam_service_linked_role.autoscaling,
     aws_ecs_service.api,
   ]

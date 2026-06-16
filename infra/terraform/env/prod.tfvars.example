@@ -35,3 +35,12 @@ worker_autoscaling_min_capacity = 1
 worker_autoscaling_max_capacity = 3
 api_cpu_target_value            = 60
 worker_cpu_target_value         = 60
+
+# JSM integration (for public contact form → JSM ticket)
+# jsm_domain                   = "my-domain.atlassian.net"
+# jsm_servicedesk_id           = "1"
+# jsm_request_type_id          = "1"
+
+# Public webhook endpoints (optional — leave empty to skip)
+# public_traffic_webhook_url   = "https://hooks.slack.com/services/..."
+# public_lead_webhook_url      = "https://hooks.slack.com/services/..."

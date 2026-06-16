@@ -446,6 +446,33 @@ variable "api_base_url" {
   type        = string
   default     = ""
 }
+variable "jsm_domain" {
+  description = "JSM domain for API ticket creation (e.g., my-domain.atlassian.net)"
+  type        = string
+  default     = ""
+}
+variable "jsm_servicedesk_id" {
+  description = "JSM service desk ID for API ticket creation"
+  type        = string
+  default     = ""
+}
+variable "jsm_request_type_id" {
+  description = "JSM request type ID for API ticket creation"
+  type        = string
+  default     = ""
+}
+variable "public_traffic_webhook_url" {
+  description = "Webhook URL for public traffic notifications (leave empty to skip)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+variable "public_lead_webhook_url" {
+  description = "Webhook URL for public lead submissions (leave empty to skip)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
 
 # Vercel web app environment variables
 variable "vercel_ga_id" {

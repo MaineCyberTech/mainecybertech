@@ -259,6 +259,48 @@ Key points:
 - Ticket comment editing 5-min window: enforced server-side (API check against `created_at` + `Date.now()`), not client-side. Prevents stale edits after the window expires. `edited_at` is set to the server's current timestamp, not the client's. The UPDATE RLS policy (`ticket_comments_update_own`) ensures only the comment author can edit their own comments.
 - Activity timeline at `entity_id` level: the existing audit `list` endpoint only supported `entity_type` filtering; `entity_id` was added as an optional filter to enable per-entity audit feeds (used on the ticket detail page). This is a generic filter — any entity type can use it (projects, documents, users).
 
+## Full Architecture & Code Review (2026-06-16) — 30 Findings
+
+A comprehensive deep-dive architecture review was conducted on 2026-06-16 covering all 9 assessment domains. See [`docs/CODE_REVIEW_2026-06-16.md`](docs/CODE_REVIEW_2026-06-16.md) for the full report.
+
+### Overall Assessment: ~7.5/10 — Near production-ready
+
+| Domain             | Score | Key Finding                                    |
+| ------------------ | ----- | ---------------------------------------------- |
+| Architecture       | 8/10  | Clear modular monolith layering                |
+| Code Quality       | 7/10  | Strong patterns, some long handlers            |
+| Security           | 6/10  | Good foundation, critical tenant isolation gap |
+| Testing            | 8/10  | 714 tests, missing load/visual tests           |
+| Infrastructure     | 8/10  | Mature IaC, missing WAF/flow logs              |
+| CI/CD              | 8/10  | Gated deploys, comprehensive workflows         |
+| Documentation      | 9/10  | Exceptional breadth and depth                  |
+| DevOps/Operability | 7/10  | Monitoring exists, no formal runbook           |
+| UI/UX              | 6/10  | Functional, missing empty/error state polish   |
+
+### Critical Findings (Must Fix Before Production)
+
+| #   | Issue                                                                                                                              | Location                                                        | Fix                                                                |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------ |
+| 1   | **Input sanitizer corrupts data** — `sanitizeObject()` HTML-encodes ALL string fields (passwords, JSON, text) with Unicode escapes | `apps/api/src/middleware/security.ts:33-63`                     | Remove HTML-encoding mutation; keep pattern detection only         |
+| 2   | **No tenant isolation at API layer** — any authenticated user can access any org's records by entity ID                            | All entity routes (tickets, documents, projects, organizations) | Create `requireOrgAccess()` middleware, apply to all entity routes |
+| 3   | **Terraform image tag drift** — task definitions reference `:latest` but CI deploys SHA-tagged images                              | `infra/terraform/runtime.tf:284,318`                            | Use variable for image tag or `data.aws_ecs_image`                 |
+
+### High-Priority Findings
+
+| #   | Issue                                                       | Priority | Effort |
+| --- | ----------------------------------------------------------- | -------- | ------ |
+| 4   | Worker lacks Sentry integration                             | High     | Small  |
+| 5   | API missing `unhandledRejection` handler                    | High     | Small  |
+| 6   | Cookie security flags (HttpOnly/Secure/SameSite) unverified | High     | Small  |
+| 7   | No local JWT verification (every request hits Supabase)     | High     | Small  |
+| 8   | Only 7 of ~27 mutation endpoints have Zod validation        | Medium   | Medium |
+| 9   | No caching layer (every query hits Postgres)                | Medium   | Medium |
+| 10  | No SSE/WebSocket for real-time notifications (30s polling)  | Medium   | Medium |
+| 11  | No empty state components in UI                             | Medium   | Small  |
+| 12  | No error retry buttons on error boundaries                  | Medium   | Small  |
+
+See `docs/CODE_REVIEW_2026-06-16.md` for 30 detailed recommendations across 8 categories, the full risk register with 20 items, and a phased 4-stage roadmap.
+
 ## Marketing Site Integration Plan
 
 The marketing site uses a **domain route** — `www.mainecybertech.com` serves marketing (Next.js pages), `app.mainecybertech.com` serves the portal.
@@ -484,15 +526,15 @@ Full codebase audit conducted to identify remaining gaps before pushing to GitHu
 
 ### Medium Value — Future
 
-| #   | Feature                                                   | Priority |
-| --- | --------------------------------------------------------- | -------- | --- |
-| 9   | SSO / OIDC login (SAML/OAuth)                             | Medium   |
-| 10  | Audit export (CSV/JSON)                                   | Medium   |
-| 11  | Bulk user import (CSV invite)                             | Medium   |
-| 12  | API key management (self-serve keys)                      | Medium   |
-| 13  | Role/permission editor UI (edit role-permission mappings) | Medium   |
-| 14  | SLA tracking (ticket response/resolution metrics)         | Medium   |
-| 15  | Health dashboard (API/worker/DB status UI)                | Low      | ✅  |
+| #   | Feature                                                   | Priority | Status |
+| --- | --------------------------------------------------------- | -------- | ------ |
+| 9   | SSO / OIDC login (SAML/OAuth)                             | Medium   |        |
+| 10  | Audit export (CSV/JSON)                                   | Medium   | ✅     |
+| 11  | Bulk user import (CSV invite)                             | Medium   | ✅     |
+| 12  | API key management (self-serve keys)                      | Medium   |        |
+| 13  | Role/permission editor UI (edit role-permission mappings) | Medium   | ✅     |
+| 14  | SLA tracking (ticket response/resolution metrics)         | Medium   |        |
+| 15  | Health dashboard (API/worker/DB status UI)                | Low      | ✅     |
 
 ### Polish — Future
 
@@ -536,13 +578,13 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 
 | #   | Feature                                                                            | Effort | Status |
 | --- | ---------------------------------------------------------------------------------- | ------ | ------ |
-| 12  | **Error retry buttons** — "Try again" button on error states                       | Small  |        |
+| 14  | **Error retry buttons** — "Try again" button on error states                       | Small  |        |
 | 15  | **Document share link** — generate signed/expiring link for external parties       | Small  |        |
 | 16  | **Markdown comment support** — lightweight rendering for ticket/project comments   | Small  |        |
 | 17  | **Email notification test button** — admin "Send Test Email" to verify SMTP config | Small  |        |
 | 18  | **Bulk ticket operations** — select and update ticket status/priority in bulk      | Medium |        |
-| 20  | **Activity feed on portal** — chronological activity timeline on dashboard         | Medium |        |
-| 21  | **Notification audio** — subtle chime on new unread notifications                  | Medium |        |
+| 19  | **Activity feed on portal** — chronological activity timeline on dashboard         | Medium |        |
+| 20  | **Notification audio** — subtle chime on new unread notifications                  | Medium |        |
 
 ### Admin Features
 
@@ -993,6 +1035,7 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `docs/ORG_BRANDING.md` — per-org logo upload, colors, custom domains
 - `docs/ADMIN_FEATURES.md` — webhook management, role editor, audit export, bulk import, org switcher, Sentry, shared config
 - `docs/GAP_ANALYSIS.md` — comprehensive gap analysis, known issues, recommendations
+- `docs/CODE_REVIEW_2026-06-16.md` — full architecture review with 30 recommendations, risk register, and prioritized roadmap
 - `README.dev.md` — developer setup guide, local stack testing (root)
 
 ### Scripts
