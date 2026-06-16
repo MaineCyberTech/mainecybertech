@@ -266,17 +266,17 @@ A comprehensive deep-dive architecture review was conducted on 2026-06-16 coveri
 
 ### Overall Assessment: ~7.5/10 — Near production-ready
 
-| Domain             | Score | Key Finding                                     |
-| ------------------ | ----- | ----------------------------------------------- |
-| Architecture       | 8/10  | Clear modular monolith layering                 |
-| Code Quality       | 8/10  | Strong patterns, input sanitizer fixed          |
-| Security           | 7/10  | Tenant isolation + local JWT verification added |
-| Testing            | 8/10  | 714 tests, missing load/visual tests            |
-| Infrastructure     | 8/10  | Mature IaC, missing WAF/flow logs               |
-| CI/CD              | 8/10  | Gated deploys, comprehensive workflows          |
-| Documentation      | 9/10  | Exceptional breadth and depth                   |
-| DevOps/Operability | 8/10  | Monitoring + unhandledRejection handler added   |
-| UI/UX              | 6/10  | Functional, missing empty/error state polish    |
+| Domain             | Score | Key Finding                                                                |
+| ------------------ | ----- | -------------------------------------------------------------------------- |
+| Architecture       | 8/10  | Clear modular monolith layering                                            |
+| Code Quality       | 8/10  | Strong patterns, input sanitizer fixed                                     |
+| Security           | 7/10  | Tenant isolation + local JWT verification added                            |
+| Testing            | 8/10  | 714 tests, missing load/visual tests                                       |
+| Infrastructure     | 9/10  | Mature IaC, image tag drift fixed                                          |
+| CI/CD              | 8/10  | Gated deploys, comprehensive workflows                                     |
+| Documentation      | 9/10  | Exceptional breadth and depth                                              |
+| DevOps/Operability | 9/10  | Monitoring + Sentry in worker + unhandledRejection + cookie flags verified |
+| UI/UX              | 6/10  | Functional, missing empty/error state polish                               |
 
 ### Critical Findings (Must Fix Before Production)
 
@@ -284,15 +284,15 @@ A comprehensive deep-dive architecture review was conducted on 2026-06-16 coveri
 | --- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------ | ------ |
 | 1   | **Input sanitizer corrupts data** — `sanitizeObject()` HTML-encodes ALL string fields (passwords, JSON, text) with Unicode escapes | `apps/api/src/middleware/security.ts:33-63`                     | Remove HTML-encoding mutation; keep pattern detection only         | ✅     |
 | 2   | **No tenant isolation at API layer** — any authenticated user can access any org's records by entity ID                            | All entity routes (tickets, documents, projects, organizations) | Create `requireOrgAccess()` middleware, apply to all entity routes | ✅     |
-| 3   | **Terraform image tag drift** — task definitions reference `:latest` but CI deploys SHA-tagged images                              | `infra/terraform/runtime.tf:284,318`                            | Use variable for image tag or `data.aws_ecs_image`                 |        |
+| 3   | **Terraform image tag drift** — task definitions reference `:latest` but CI deploys SHA-tagged images                              | `infra/terraform/runtime.tf:284,318`                            | Use variable for image tag or `data.aws_ecs_image`                 | ✅     |
 
 ### High-Priority Findings
 
 | #   | Issue                                                       | Priority | Effort | Status |
 | --- | ----------------------------------------------------------- | -------- | ------ | ------ |
-| 4   | Worker lacks Sentry integration                             | High     | Small  |        |
+| 4   | Worker lacks Sentry integration                             | High     | Small  | ✅     |
 | 5   | API missing `unhandledRejection` handler                    | High     | Small  | ✅     |
-| 6   | Cookie security flags (HttpOnly/Secure/SameSite) unverified | High     | Small  |        |
+| 6   | Cookie security flags (HttpOnly/Secure/SameSite) unverified | High     | Small  | ✅     |
 | 7   | No local JWT verification (every request hits Supabase)     | High     | Small  | ✅     |
 | 8   | Only 7 of ~27 mutation endpoints have Zod validation        | Medium   | Medium |        |
 | 9   | No caching layer (every query hits Postgres)                | Medium   | Medium |        |
@@ -572,6 +572,9 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 | 15  | **Tenant isolation** — `requireOrgAccess()` middleware wired into all 8 entity routers          | ✅     |
 | 16  | **Local JWT verification** — fast path in `auth.ts` via `jsonwebtoken`, falls back to Supabase  | ✅     |
 | 17  | **`unhandledRejection` handler** — added to `main.ts` for crash-safe promise rejection tracking | ✅     |
+| 18  | **Terraform image tag drift** — added `image_tag` variable, CI registers SHA-tagged task defs   | ✅     |
+| 19  | **Worker Sentry integration** — `@sentry/node`, env schema, init, error capturing               | ✅     |
+| 20  | **Cookie security flags** — verified `httpOnly`, `secure`, `sameSite=lax` on `mct_session`      | ✅     |
 
 #### High Value (Still Open)
 
@@ -762,18 +765,15 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 
 ### What To Do Next
 
-**All 38 pre-production findings + 21 codebase review findings resolved.** All high-value cross-navigation features completed. **2 of 3 critical architecture review findings fixed.**
+**All 38 pre-production findings + 21 codebase review findings resolved.** All high-value cross-navigation features completed. **3 of 3 critical architecture review findings fixed.** All high-priority findings resolved. **7 of 12 total findings fixed.**
 
-| Priority | Task                                                                                                                                         | Effort | Status |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------ |
-| 1        | **Terraform image tag drift** — task definitions reference `:latest` but CI deploys SHA-tagged images (`infra/terraform/runtime.tf:284,318`) | Small  |        |
-| 2        | **Worker Sentry integration** — add `@sentry/node` to worker for error tracking                                                              | Small  |        |
-| 3        | **Cookie security flags** — verify `HttpOnly`/`Secure`/`SameSite` on `mct_session` cookie in auth callback                                   | Small  |        |
-| 4        | **Wire `@mct/ui` & `@mct/config` into apps**                                                                                                 | Medium | Future |
-| 5        | **Zod validation** — add to remaining ~20 mutation endpoints (currently only 7 have it)                                                      | Medium |        |
-| 6        | **Empty state components** — add empty state for lists/tables throughout portal and admin                                                    | Small  |        |
-| 7        | **Error retry buttons** — "Try again" button on error boundaries                                                                             | Small  |        |
-| 8        | **Push to GitHub + deploy dev site**                                                                                                         | Small  | ⏳     |
+| Priority | Task                                                                                      | Effort | Status |
+| -------- | ----------------------------------------------------------------------------------------- | ------ | ------ |
+| 1        | **Wire `@mct/ui` & `@mct/config` into apps**                                              | Medium | Future |
+| 2        | **Zod validation** — add to remaining ~20 mutation endpoints (currently only 7 have it)   | Medium |        |
+| 3        | **Empty state components** — add empty state for lists/tables throughout portal and admin | Small  |        |
+| 4        | **Error retry buttons** — "Try again" button on error boundaries                          | Small  |        |
+| 5        | **Push to GitHub + deploy dev site**                                                      | Small  | ⏳     |
 
 ## Architectural Analysis
 
