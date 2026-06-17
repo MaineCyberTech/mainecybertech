@@ -97,7 +97,7 @@ jobs:
           echo "${{ secrets[steps.env.outputs.ssh_key] }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keygen -p -P "${{ secrets[steps.env.outputs.ssh_passphrase] }}" -N "" -f ~/.ssh/id_rsa
-          ssh-keyscan -H "${{ secrets[steps.env.outputs.host] }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "${{ secrets[steps.env.outputs.host] }}" >> ~/.ssh/known_hosts 2>&1 || echo "ssh-keyscan failed (non-fatal)"
 
       - name: Deploy to DigitalOcean
         shell: bash
