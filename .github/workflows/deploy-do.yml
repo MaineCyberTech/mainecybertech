@@ -129,11 +129,8 @@ jobs:
           APP_DOMAIN: ${{ steps.env.outputs.app_domain }}
           API_DOMAIN: ${{ steps.env.outputs.api_domain }}
         run: |
-          ssh root@$HOST << REMOTE_SCRIPT
-          set -euo pipefail
-          cd /opt/mct-portal
-
-          cat > .env << 'ENVEOF'
+          # Write .env file locally (secrets expand from step env vars)
+          cat > /tmp/.env << ENVEOF
           SUPABASE_URL=$SUPABASE_URL
           JWT_SECRET=$JWT_SECRET
           SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
@@ -159,12 +156,31 @@ jobs:
           API_DOMAIN=$API_DOMAIN
           ENVEOF
 
-          IMAGE_TAG=$IMAGE_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose pull api worker web
-          IMAGE_TAG=$IMAGE_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --no-deps api worker web caddy
+          # Write deploy script (quoted heredoc — no local expansion of script body)
+          cat > /tmp/deploy.sh << 'DEPLOYSCRIPT'
+          #!/bin/bash
+          set -euo pipefail
+
+          cd /opt/mct-portal
+
+          cp /tmp/.env /opt/mct-portal/.env
+          chmod 600 .env
+
+          IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose pull api worker web
+          IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose up -d --no-deps api worker web caddy
 
           docker image prune -f
 
           sleep 5
           curl -sf http://localhost:4000/health || echo "WARNING: API health check failed"
           curl -sf http://localhost:3001/health || echo "WARNING: Worker health check failed"
-          REMOTE_SCRIPT
+          DEPLOYSCRIPT
+
+          chmod +x /tmp/deploy.sh
+
+          # Copy files to droplet
+          scp /tmp/.env root@$HOST:/tmp/.env
+          scp /tmp/deploy.sh root@$HOST:/tmp/deploy.sh
+
+          # Execute deploy script with non-secret args
+          ssh root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX"
