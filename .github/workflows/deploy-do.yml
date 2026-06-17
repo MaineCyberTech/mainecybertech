@@ -172,7 +172,12 @@ jobs:
           cd /opt/mct-portal
           cp /tmp/.env /opt/mct-portal/.env
           chmod 600 .env
-          IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose pull api worker web
+          for i in 1 2 3; do
+            echo "--- PULL ATTEMPT $i ---"
+            IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose pull api worker web && break
+            echo "Pull failed (attempt $i), waiting 10s before retry..."
+            sleep 10
+          done
           IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose up -d --no-deps api worker web caddy
           docker image prune -f
           sleep 15
