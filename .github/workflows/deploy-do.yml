@@ -201,5 +201,5 @@ jobs:
           echo "LOGIN_EXIT=$?"
 
           echo "--- EXECUTING DEPLOY ---"
-          ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX" 2>&1
+          ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR -o ServerAliveInterval=60 -o ServerAliveCountMax=10 root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX" 2>&1
           echo "DEPLOY_EXIT=$?"
