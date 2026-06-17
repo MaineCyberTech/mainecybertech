@@ -15,6 +15,8 @@
     "@aws-sdk/client-sqs": "^3.1057.0",
     "@mct/config": "workspace:^",
     "@sentry/node": "^8.0.0",
+    "bullmq": "^5.34.0",
+    "ioredis": "^5.6.0",
     "@supabase/supabase-js": "^2.49.1",
     "dotenv": "^16.4.7",
     "nodemailer": "^8.0.10",

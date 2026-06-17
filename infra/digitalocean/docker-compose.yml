@@ -1,0 +1,191 @@
+name: mct-portal
+
+x-supabase-env: &supabase-env
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  JWT_SECRET: ${JWT_SECRET}
+  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+
+x-app-env: &app-env
+  NODE_ENV: production
+  SUPABASE_URL: http://supabase-kong:8000
+  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+  JWT_SECRET: ${JWT_SECRET}
+  CORS_ORIGIN: https://app.mainecybertech.com
+  APP_BASE_URL: https://app.mainecybertech.com
+
+services:
+  # ===== Supabase Stack =====
+  supabase-db:
+    image: supabase/postgres:15.8.1.020
+    environment:
+      <<: *supabase-env
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "supabase"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  supabase-kong:
+    image: kong:2.8.1
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /etc/kong/kong.yml
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_ADMIN_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_ERROR_LOG: /dev/stderr
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    volumes:
+      - ./kong.yml:/etc/kong/kong.yml
+    ports:
+      - "8000:8000"
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  supabase-auth:
+    image: supabase/gotrue:v2.164.0
+    environment:
+      GOTRUE_API_HOST: "0.0.0.0"
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      GOTRUE_SITE_URL: https://app.mainecybertech.com
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_LOG_LEVEL: warn
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_SMTP_HOST: ${SMTP_HOST}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
+      GOTRUE_SMTP_USER: ${SMTP_USER}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS}
+      GOTRUE_MAILER_FROM: ${EMAIL_FROM:-noreply@mainecybertech.com}
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  supabase-rest:
+    image: postgrest/postgrest:v12.2.0
+    environment:
+      PGRST_DB_URI: postgres://supabase:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      PGRST_DB_SCHEMA: public,storage
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_ROOT_SPEC: home
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_OPENAPI_MODE: disabled
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  supabase-storage:
+    image: supabase/storage-api:v1.11.6
+    environment:
+      ANON_KEY: ${SUPABASE_ANON_KEY}
+      SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      POSTGREST_URL: http://supabase-rest:3000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: postgres://supabase:${POSTGRES_PASSWORD}@supabase-db:5432/postgres
+      FILE_SIZE_LIMIT: 52428800
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: default
+      REGION: auto
+    volumes:
+      - storage-data:/var/lib/storage
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ===== Queue =====
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  # ===== Our Apps =====
+  api:
+    image: ghcr.io/mainecybertech/mct-api:${IMAGE_TAG:-latest}
+    environment:
+      <<: *app-env
+      API_PORT: 4000
+      LOG_LEVEL: info
+      REDIS_URL: redis://redis:6379
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+    depends_on:
+      supabase-kong:
+        condition: service_started
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  worker:
+    image: ghcr.io/mainecybertech/mct-worker:${IMAGE_TAG:-latest}
+    environment:
+      <<: *app-env
+      LOG_LEVEL: info
+      HEALTH_PORT: 3001
+      QUEUE_BACKEND: bullmq
+      REDIS_URL: redis://redis:6379
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      JIRA_BASE_URL: ${JIRA_BASE_URL:-}
+      JIRA_EMAIL: ${JIRA_EMAIL:-}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN:-}
+      JSM_BASE_URL: ${JSM_BASE_URL:-}
+      JSM_EMAIL: ${JSM_EMAIL:-}
+      JSM_API_TOKEN: ${JSM_API_TOKEN:-}
+      M365_TENANT_ID: ${M365_TENANT_ID:-}
+      M365_CLIENT_ID: ${M365_CLIENT_ID:-}
+      M365_CLIENT_SECRET: ${M365_CLIENT_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@mainecybertech.com}
+      API_BASE_URL: https://app.mainecybertech.com
+    depends_on:
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  web:
+    image: ghcr.io/mainecybertech/mct-web:${IMAGE_TAG:-latest}
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://api.mainecybertech.com
+      NEXT_TELEMETRY_DISABLED: 1
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    restart: unless-stopped
+
+  # ===== Reverse Proxy =====
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+      - web
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  storage-data:
+  redis-data:
+  caddy-data:
+  caddy-config:

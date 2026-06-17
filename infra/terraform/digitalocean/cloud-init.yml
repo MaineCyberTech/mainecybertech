@@ -1,0 +1,26 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+
+packages:
+  - docker.io
+  - docker-compose-v2
+  - ufw
+
+runcmd:
+  # Enable Docker
+  - systemctl enable docker
+  - systemctl start docker
+
+  # Create app directory
+  - mkdir -p ${docker_compose_dir}
+  - mkdir -p ${docker_compose_dir}/data/postgres
+  - mkdir -p ${docker_compose_dir}/data/storage
+  - mkdir -p ${docker_compose_dir}/logs
+
+  # Configure UFW
+  - ufw --force enable
+  - ufw allow 22/tcp
+  - ufw allow 80/tcp
+  - ufw allow 443/tcp
+  - ufw allow 2376/tcp comment 'Docker'

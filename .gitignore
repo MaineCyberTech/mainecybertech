@@ -112,7 +112,7 @@ temp/
 
 # Terraform binary (downloaded locally)
 terraform.exe
-terraform
+/terraform
 
 # Local .terraform directories
 

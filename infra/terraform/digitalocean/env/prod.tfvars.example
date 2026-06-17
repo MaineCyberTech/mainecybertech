@@ -1,0 +1,4 @@
+do_token              = "your-do-api-token"
+ssh_fingerprint       = "your-ssh-key-fingerprint"
+cloudflare_api_token  = "your-cloudflare-api-token"
+cloudflare_zone_id    = "your-cloudflare-zone-id"

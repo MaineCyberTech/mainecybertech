@@ -31,6 +31,8 @@ export const envSchema = z.object({
     .default("info"),
   WORKER_CONCURRENCY: z.coerce.number().default(10),
   WORKER_TIMEOUT: z.coerce.number().default(30000),
+  QUEUE_BACKEND: z.enum(["bullmq", "sqs"]).default("bullmq"),
+  REDIS_URL: z.string().default("redis://redis:6379"),
   SQS_QUEUE_URL: z.string().optional(),
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_ANON_KEY: z.string().optional(),
@@ -136,6 +138,71 @@ export async function executeTask(message: TaskMessage): Promise<TaskResult> {
   }
 }
 
+// ============= BullMQ Consumer =============
+import { Worker as BullWorker, type Job } from "bullmq";
+
+let bullWorker: BullWorker | null = null;
+
+export async function runBullMQWorker(): Promise<void> {
+  const connection = { url: env.REDIS_URL };
+  const concurrency = env.WORKER_CONCURRENCY;
+
+  bullWorker = new BullWorker(
+    "mct-tasks",
+    async (job: Job) => {
+      const task = job.data as TaskMessage;
+      logger.info({ type: task.type, jobId: job.id }, "Processing BullMQ job");
+      const result = await executeTask(task);
+      if (!result.ok) {
+        logger.warn(
+          { type: task.type, jobId: job.id, error: result.error },
+          "BullMQ job failed",
+        );
+        throw new Error(result.error);
+      }
+      return result;
+    },
+    {
+      connection,
+      concurrency,
+      lockDuration: env.WORKER_TIMEOUT,
+    },
+  );
+
+  bullWorker.on("failed", (job, error) => {
+    logger.error(
+      { jobId: job?.id, type: job?.data?.type, error: error.message },
+      "BullMQ job failed permanently",
+    );
+    Sentry.captureException(error, {
+      extra: { jobId: job?.id, taskType: job?.data?.type, phase: "bullmq-job" },
+    });
+  });
+
+  bullWorker.on("error", (error) => {
+    logger.error({ error: error.message }, "BullMQ worker error");
+    Sentry.captureException(error, { extra: { phase: "bullmq-worker" } });
+  });
+
+  logger.info(
+    { concurrency, redisUrl: env.REDIS_URL },
+    "BullMQ worker started",
+  );
+
+  // Keep alive until shutdown
+  await new Promise<void>((resolve) => {
+    const shutdown = () => {
+      if (shuttingDown) return;
+      shuttingDown = true;
+      logger.info("Shutdown signal received — closing BullMQ worker...");
+      bullWorker?.close();
+      resolve();
+    };
+    process.on("SIGTERM", shutdown);
+    process.on("SIGINT", shutdown);
+  });
+}
+
 // ============= SQS Consumer =============
 interface SQSMessage {
   MessageId: string;
@@ -215,14 +282,16 @@ let shuttingDown = false;
 let inFlightTasks: Promise<void>[] = [];
 
 export async function runWorkerTasks(): Promise<void> {
+  const backend = env.QUEUE_BACKEND;
+
+  if (backend === "bullmq") {
+    await runBullMQWorker();
+    return;
+  }
+
   const queueUrl = env.SQS_QUEUE_URL;
   const concurrency = env.WORKER_CONCURRENCY;
   const timeout = env.WORKER_TIMEOUT;
-
-  logger.info(
-    { concurrency, timeout, queueUrl: queueUrl ?? "not configured" },
-    "Worker started",
-  );
 
   if (!queueUrl) {
     logger.warn(
