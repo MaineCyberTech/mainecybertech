@@ -3,11 +3,19 @@ import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
 import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
+import nextPlugin from "@next/eslint-plugin-next";
 
 export default [
   ...shared,
   {
-    ignores: [".next/", "node_modules/", ".turbo/", "__tests__/", "e2e/", "playwright-report/"],
+    ignores: [
+      ".next/",
+      "node_modules/",
+      ".turbo/",
+      "__tests__/",
+      "e2e/",
+      "playwright-report/",
+    ],
   },
   {
     files: ["**/*.ts", "**/*.tsx"],
@@ -23,8 +31,11 @@ export default [
       "@typescript-eslint": tsPlugin,
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
+      "@next/next": nextPlugin,
     },
     rules: {
+      ...nextPlugin.configs["recommended"].rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
       "no-console": ["warn", { allow: ["warn", "error"] }],
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
