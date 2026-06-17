@@ -99,6 +99,16 @@ jobs:
           ssh-keygen -p -P "${{ secrets[steps.env.outputs.ssh_passphrase] }}" -N "" -f ~/.ssh/id_rsa
           ssh-keyscan -H "${{ secrets[steps.env.outputs.host] }}" >> ~/.ssh/known_hosts
 
+      - name: SSH diagnostic
+        shell: bash
+        env:
+          HOST: ${{ secrets[steps.env.outputs.host] }}
+        run: |
+          echo "=== Test 1: simple command ==="
+          ssh -o StrictHostKeyChecking=no root@$HOST "echo HELLO_FROM_DROPLET" || echo "EXIT: $?"
+          echo "=== Test 2: verbose ==="
+          ssh -vvv -o StrictHostKeyChecking=no root@$HOST "echo HELLO2" 2>&1 || echo "EXIT: $?"
+
       - name: Deploy to DigitalOcean
         shell: bash
         env:
