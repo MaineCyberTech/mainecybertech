@@ -91,55 +91,80 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets[steps.env.outputs.ssh_key] }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keygen -p -P "${{ secrets[steps.env.outputs.ssh_passphrase] }}" -N "" -f ~/.ssh/id_rsa
+          ssh-keyscan -H "${{ secrets[steps.env.outputs.host] }}" >> ~/.ssh/known_hosts
+
       - name: Deploy to DigitalOcean
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets[steps.env.outputs.host] }}
-          username: root
-          key: ${{ secrets[steps.env.outputs.ssh_key] }}
-          passphrase: ${{ secrets[steps.env.outputs.ssh_passphrase] }}
-          envs: IMAGE_TAG, GHCR_IMAGE_PREFIX
-          script: |
-            set -euo pipefail
-            cd /opt/mct-portal
+        shell: bash
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          GHCR_IMAGE_PREFIX: ${{ steps.env.outputs.ghcr_prefix }}
+          HOST: ${{ secrets[steps.env.outputs.host] }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JSM_BASE_URL: ${{ secrets.JSM_BASE_URL }}
+          JSM_EMAIL: ${{ secrets.JSM_EMAIL }}
+          JSM_API_TOKEN: ${{ secrets.JSM_API_TOKEN }}
+          M365_TENANT_ID: ${{ secrets.M365_TENANT_ID }}
+          M365_CLIENT_ID: ${{ secrets.M365_CLIENT_ID }}
+          M365_CLIENT_SECRET: ${{ secrets.M365_CLIENT_SECRET }}
+          APP_DOMAIN: ${{ steps.env.outputs.app_domain }}
+          API_DOMAIN: ${{ steps.env.outputs.api_domain }}
+        run: |
+          ssh root@$HOST << REMOTE_SCRIPT
+          set -euo pipefail
+          cd /opt/mct-portal
 
-            export GHCR_IMAGE_PREFIX=${{ steps.env.outputs.ghcr_prefix }}
+          cat > .env << 'ENVEOF'
+          SUPABASE_URL=$SUPABASE_URL
+          JWT_SECRET=$JWT_SECRET
+          SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+          SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+          STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY
+          STRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET
+          SENTRY_DSN=$SENTRY_DSN
+          SMTP_HOST=$SMTP_HOST
+          SMTP_PORT=$SMTP_PORT
+          SMTP_USER=$SMTP_USER
+          SMTP_PASS=$SMTP_PASS
+          EMAIL_FROM=$EMAIL_FROM
+          JIRA_BASE_URL=$JIRA_BASE_URL
+          JIRA_EMAIL=$JIRA_EMAIL
+          JIRA_API_TOKEN=$JIRA_API_TOKEN
+          JSM_BASE_URL=$JSM_BASE_URL
+          JSM_EMAIL=$JSM_EMAIL
+          JSM_API_TOKEN=$JSM_API_TOKEN
+          M365_TENANT_ID=$M365_TENANT_ID
+          M365_CLIENT_ID=$M365_CLIENT_ID
+          M365_CLIENT_SECRET=$M365_CLIENT_SECRET
+          APP_DOMAIN=$APP_DOMAIN
+          API_DOMAIN=$API_DOMAIN
+          ENVEOF
 
-            # Write .env from GitHub secrets
-            cat > .env << 'EOF'
-            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
-            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
-            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
-            SMTP_HOST=${{ secrets.SMTP_HOST }}
-            SMTP_PORT=${{ secrets.SMTP_PORT }}
-            SMTP_USER=${{ secrets.SMTP_USER }}
-            SMTP_PASS=${{ secrets.SMTP_PASS }}
-            EMAIL_FROM=${{ secrets.EMAIL_FROM }}
-            JIRA_BASE_URL=${{ secrets.JIRA_BASE_URL }}
-            JIRA_EMAIL=${{ secrets.JIRA_EMAIL }}
-            JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }}
-            JSM_BASE_URL=${{ secrets.JSM_BASE_URL }}
-            JSM_EMAIL=${{ secrets.JSM_EMAIL }}
-            JSM_API_TOKEN=${{ secrets.JSM_API_TOKEN }}
-            M365_TENANT_ID=${{ secrets.M365_TENANT_ID }}
-            M365_CLIENT_ID=${{ secrets.M365_CLIENT_ID }}
-            M365_CLIENT_SECRET=${{ secrets.M365_CLIENT_SECRET }}
-            APP_DOMAIN=${{ steps.env.outputs.app_domain }}
-            API_DOMAIN=${{ steps.env.outputs.api_domain }}
-            EOF
+          IMAGE_TAG=$IMAGE_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose pull api worker web
+          IMAGE_TAG=$IMAGE_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --no-deps api worker web caddy
 
-            # Pull new images and restart
-            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose pull api worker web
-            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --no-deps api worker web caddy
+          docker image prune -f
 
-            # Clean up
-            docker image prune -f
-
-            # Health check
-            sleep 5
-            curl -sf http://localhost:4000/health || echo "WARNING: API health check failed"
-            curl -sf http://localhost:3001/health || echo "WARNING: Worker health check failed"
+          sleep 5
+          curl -sf http://localhost:4000/health || echo "WARNING: API health check failed"
+          curl -sf http://localhost:3001/health || echo "WARNING: Worker health check failed"
+          REMOTE_SCRIPT
