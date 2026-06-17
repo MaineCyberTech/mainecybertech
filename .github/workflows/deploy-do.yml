@@ -175,9 +175,8 @@ jobs:
           IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose pull api worker web
           IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose up -d --no-deps api worker web caddy
           docker image prune -f
-          sleep 5
-          curl -sf http://localhost:4000/health || echo "WARNING: API health check failed"
-          curl -sf http://localhost:3001/health || echo "WARNING: Worker health check failed"
+          sleep 15
+          docker compose ps --format "table {{.Name}}\t{{.Status}}"
           DEPLOYSCRIPT
           chmod +x /tmp/deploy.sh
 
