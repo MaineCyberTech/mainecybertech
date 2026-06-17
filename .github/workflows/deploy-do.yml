@@ -104,6 +104,8 @@ jobs:
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
           GHCR_IMAGE_PREFIX: ${{ steps.env.outputs.ghcr_prefix }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOST: ${{ secrets[steps.env.outputs.host] }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
@@ -194,6 +196,10 @@ jobs:
           echo "--- TRANSFERRING CADDYFILE ---"
           base64 -w0 infra/digitalocean/Caddyfile | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /opt/mct-portal/Caddyfile" 2>&1
           echo "TRANSFER_CADDY_EXIT=$?"
+
+          echo "--- LOGGING INTO GHCR ---"
+          echo "$GHCR_TOKEN" | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "docker login ghcr.io -u $GHCR_USERNAME --password-stdin" 2>&1
+          echo "LOGIN_EXIT=$?"
 
           echo "--- EXECUTING DEPLOY ---"
           ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX" 2>&1
