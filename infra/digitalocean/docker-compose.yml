@@ -19,7 +19,7 @@ services:
 
   # ===== Our Apps =====
   api:
-    image: ghcr.io/mainecybertech/mct-api:${IMAGE_TAG:-latest}
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-api:${IMAGE_TAG:-latest}
     environment:
       <<: *app-env
       API_PORT: 4000
@@ -34,7 +34,7 @@ services:
     restart: unless-stopped
 
   worker:
-    image: ghcr.io/mainecybertech/mct-worker:${IMAGE_TAG:-latest}
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:-latest}
     environment:
       <<: *app-env
       LOG_LEVEL: info
@@ -64,7 +64,7 @@ services:
     restart: unless-stopped
 
   web:
-    image: ghcr.io/mainecybertech/mct-web:${IMAGE_TAG:-latest}
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:-latest}
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: https://api.mainecybertech.com
