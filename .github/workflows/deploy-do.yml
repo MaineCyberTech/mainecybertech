@@ -48,6 +48,7 @@ jobs:
           fi
           echo "host=DO_DROPLET_HOST" >> $GITHUB_OUTPUT
           echo "ssh_key=DO_SSH_PRIVATE_KEY" >> $GITHUB_OUTPUT
+          echo "ssh_passphrase=DO_SSH_PASSPHRASE" >> $GITHUB_OUTPUT
           echo "ghcr_prefix=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
@@ -96,6 +97,7 @@ jobs:
           host: ${{ secrets[steps.env.outputs.host] }}
           username: root
           key: ${{ secrets[steps.env.outputs.ssh_key] }}
+          passphrase: ${{ secrets[steps.env.outputs.ssh_passphrase] }}
           envs: IMAGE_TAG, GHCR_IMAGE_PREFIX
           script: |
             set -euo pipefail
