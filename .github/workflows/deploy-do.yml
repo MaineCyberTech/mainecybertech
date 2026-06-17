@@ -187,6 +187,14 @@ jobs:
           base64 -w0 /tmp/deploy.sh | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /tmp/deploy.sh && chmod +x /tmp/deploy.sh" 2>&1
           echo "TRANSFER_DEPLOY_EXIT=$?"
 
+          echo "--- TRANSFERRING COMPOSE FILE ---"
+          base64 -w0 infra/digitalocean/docker-compose.yml | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /opt/mct-portal/docker-compose.yml" 2>&1
+          echo "TRANSFER_COMPOSE_EXIT=$?"
+
+          echo "--- TRANSFERRING CADDYFILE ---"
+          base64 -w0 infra/digitalocean/Caddyfile | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /opt/mct-portal/Caddyfile" 2>&1
+          echo "TRANSFER_CADDY_EXIT=$?"
+
           echo "--- EXECUTING DEPLOY ---"
           ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX" 2>&1
           echo "DEPLOY_EXIT=$?"
