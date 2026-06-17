@@ -27,6 +27,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    environment:
+      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
 
     steps:
       - name: Checkout
@@ -37,17 +39,15 @@ jobs:
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
             echo "name=prod" >> $GITHUB_OUTPUT
-            echo "host=DO_DROPLET_HOST" >> $GITHUB_OUTPUT
-            echo "ssh_key=DO_SSH_PRIVATE_KEY" >> $GITHUB_OUTPUT
             echo "app_domain=app.mainecybertech.com" >> $GITHUB_OUTPUT
             echo "api_domain=api.mainecybertech.com" >> $GITHUB_OUTPUT
           else
             echo "name=dev" >> $GITHUB_OUTPUT
-            echo "host=DO_DROPLET_HOST_DEV" >> $GITHUB_OUTPUT
-            echo "ssh_key=DO_SSH_PRIVATE_KEY_DEV" >> $GITHUB_OUTPUT
             echo "app_domain=app.mainecybertech.us" >> $GITHUB_OUTPUT
             echo "api_domain=api.mainecybertech.us" >> $GITHUB_OUTPUT
           fi
+          echo "host=DO_DROPLET_HOST" >> $GITHUB_OUTPUT
+          echo "ssh_key=DO_SSH_PRIVATE_KEY" >> $GITHUB_OUTPUT
           echo "ghcr_prefix=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Log in to GHCR
