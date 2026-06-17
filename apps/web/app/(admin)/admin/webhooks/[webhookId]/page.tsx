@@ -1,5 +1,6 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import Link from "next/link";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -21,19 +22,35 @@ export default async function WebhookDetailPage({ params }: Props) {
     webhook = await api.webhooks.get(webhookId);
   } catch {
     return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">Webhook not found.</div>
+      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
+        Webhook not found.
+      </div>
     );
   }
 
   let deliveries: any = { items: [], total: 0 };
-  try { deliveries = await api.webhooks.listDeliveries(webhookId, { limit: 20 }); } catch {}
+  try {
+    deliveries = await api.webhooks.listDeliveries(webhookId, { limit: 20 });
+  } catch {}
 
   return (
     <AdminPageShell
-      breadcrumbs={<AdminBreadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Webhooks", href: "/admin/webhooks" }, { label: webhook.name }]} />}
+      breadcrumbs={
+        <AdminBreadcrumbs
+          items={[
+            { label: "Admin", href: "/admin" },
+            { label: "Webhooks", href: "/admin/webhooks" },
+            { label: webhook.name },
+          ]}
+        />
+      }
       subnav={<AdminSubnav current="webhooks" />}
       title={webhook.name}
-      actions={<a href="/admin/webhooks" className="cyber-button-secondary">Back</a>}
+      actions={
+        <Link href="/admin/webhooks" className="cyber-button-secondary">
+          Back
+        </Link>
+      }
     >
       <WebhookDetailClient
         webhook={webhook}
