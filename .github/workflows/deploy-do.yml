@@ -100,7 +100,7 @@ jobs:
 
             # Write .env from GitHub secrets
             cat > .env << 'EOF'
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
             SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
