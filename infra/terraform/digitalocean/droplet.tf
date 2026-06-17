@@ -14,5 +14,6 @@ resource "digitalocean_droplet" "portal" {
 
   lifecycle {
     prevent_destroy = true
+    ignore_changes  = [user_data]
   }
 }
