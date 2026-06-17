@@ -129,7 +129,14 @@ jobs:
           APP_DOMAIN: ${{ steps.env.outputs.app_domain }}
           API_DOMAIN: ${{ steps.env.outputs.api_domain }}
         run: |
-          # Write .env file locally (secrets expand from step env vars)
+          echo "SSH_TEST_BEGIN"
+          # Minimal SSH test — no stdin redirection
+          SSH_OUTPUT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "echo ALIVE_$(date +%s)" 2>&1)
+          echo "SSH_EXIT=$?"
+          echo "SSH_OUTPUT=$SSH_OUTPUT"
+          echo "SSH_TEST_END"
+
+          echo "--- WRITING .ENV ---"
           cat > /tmp/.env << ENVEOF
           SUPABASE_URL=$SUPABASE_URL
           JWT_SECRET=$JWT_SECRET
@@ -156,31 +163,30 @@ jobs:
           API_DOMAIN=$API_DOMAIN
           ENVEOF
 
-          # Write deploy script (quoted heredoc — no local expansion of script body)
+          echo "--- WRITING DEPLOY.SH ---"
           cat > /tmp/deploy.sh << 'DEPLOYSCRIPT'
           #!/bin/bash
           set -euo pipefail
-
           cd /opt/mct-portal
-
           cp /tmp/.env /opt/mct-portal/.env
           chmod 600 .env
-
           IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose pull api worker web
           IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose up -d --no-deps api worker web caddy
-
           docker image prune -f
-
           sleep 5
           curl -sf http://localhost:4000/health || echo "WARNING: API health check failed"
           curl -sf http://localhost:3001/health || echo "WARNING: Worker health check failed"
           DEPLOYSCRIPT
-
           chmod +x /tmp/deploy.sh
 
-          # Transfer files via SSH stdin (scp is broken on this droplet)
-          ssh -o StrictHostKeyChecking=no root@$HOST "mkdir -p /tmp && base64 -d > /tmp/.env" < <(base64 -w0 /tmp/.env)
-          ssh -o StrictHostKeyChecking=no root@$HOST "base64 -d > /tmp/deploy.sh && chmod +x /tmp/deploy.sh" < <(base64 -w0 /tmp/deploy.sh)
+          echo "--- TRANSFERRING .ENV ---"
+          base64 -w0 /tmp/.env | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /tmp/.env" 2>&1
+          echo "TRANSFER_ENV_EXIT=$?"
 
-          # Execute deploy script with non-secret args
-          ssh -o StrictHostKeyChecking=no root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX"
+          echo "--- TRANSFERRING DEPLOY.SH ---"
+          base64 -w0 /tmp/deploy.sh | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /tmp/deploy.sh && chmod +x /tmp/deploy.sh" 2>&1
+          echo "TRANSFER_DEPLOY_EXIT=$?"
+
+          echo "--- EXECUTING DEPLOY ---"
+          ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX" 2>&1
+          echo "DEPLOY_EXIT=$?"
