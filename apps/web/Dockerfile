@@ -4,7 +4,7 @@ RUN corepack enable && corepack prepare pnpm@10 --activate
 
 # Install deps
 FROM base AS deps
-COPY pnpm-lock.yaml package.json pnpm-workspace.yaml turbo.json ./
+COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages/ ./packages/
 RUN pnpm install --frozen-lockfile

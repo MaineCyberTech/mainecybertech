@@ -6,8 +6,8 @@ x-app-env: &app-env
   SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
   SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
   JWT_SECRET: ${JWT_SECRET}
-  CORS_ORIGIN: https://app.mainecybertech.com
-  APP_BASE_URL: https://app.mainecybertech.com
+  CORS_ORIGIN: https://${APP_DOMAIN:-app.mainecybertech.com}
+  APP_BASE_URL: https://${APP_DOMAIN:-app.mainecybertech.com}
 
 services:
   # ===== Queue =====
@@ -57,7 +57,7 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASS: ${SMTP_PASS:-}
       EMAIL_FROM: ${EMAIL_FROM:-noreply@mainecybertech.com}
-      API_BASE_URL: https://app.mainecybertech.com
+      API_BASE_URL: https://${API_DOMAIN:-api.mainecybertech.com}
     depends_on:
       redis:
         condition: service_started
@@ -67,7 +67,7 @@ services:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:-latest}
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: https://api.mainecybertech.com
+      NEXT_PUBLIC_API_URL: https://${API_DOMAIN:-api.mainecybertech.com}
       NEXT_TELEMETRY_DISABLED: 1
       SENTRY_DSN: ${SENTRY_DSN:-}
     restart: unless-stopped

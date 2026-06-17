@@ -39,10 +39,14 @@ jobs:
             echo "name=prod" >> $GITHUB_OUTPUT
             echo "host=DO_DROPLET_HOST" >> $GITHUB_OUTPUT
             echo "ssh_key=DO_SSH_PRIVATE_KEY" >> $GITHUB_OUTPUT
+            echo "app_domain=app.mainecybertech.com" >> $GITHUB_OUTPUT
+            echo "api_domain=api.mainecybertech.com" >> $GITHUB_OUTPUT
           else
             echo "name=dev" >> $GITHUB_OUTPUT
             echo "host=DO_DROPLET_HOST_DEV" >> $GITHUB_OUTPUT
             echo "ssh_key=DO_SSH_PRIVATE_KEY_DEV" >> $GITHUB_OUTPUT
+            echo "app_domain=app.mainecybertech.us" >> $GITHUB_OUTPUT
+            echo "api_domain=api.mainecybertech.us" >> $GITHUB_OUTPUT
           fi
           echo "ghcr_prefix=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
@@ -122,6 +126,8 @@ jobs:
             M365_TENANT_ID=${{ secrets.M365_TENANT_ID }}
             M365_CLIENT_ID=${{ secrets.M365_CLIENT_ID }}
             M365_CLIENT_SECRET=${{ secrets.M365_CLIENT_SECRET }}
+            APP_DOMAIN=${{ steps.env.outputs.app_domain }}
+            API_DOMAIN=${{ steps.env.outputs.api_domain }}
             EOF
 
             # Pull new images and restart
