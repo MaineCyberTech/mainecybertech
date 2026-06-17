@@ -6,12 +6,12 @@ Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infra
 
 MCT is a **Turborepo monorepo** with 4 packages:
 
-| Service | Entry Point                 | Purpose                                                  |
-| ------- | --------------------------- | -------------------------------------------------------- |
-| API     | `apps/api/src/main.ts`      | Express server on port 4000, Supabase Admin for DB/auth  |
-| Web     | `apps/web/app/layout.tsx`   | Next.js App Router frontend, server components + actions |
-| Worker  | `apps/worker/src/main.ts`   | Background task processor with SQS consumer              |
-| SDK     | `packages/sdk/src/index.ts` | Typed API client factory (`MCTClient.create()`)          |
+| Service | Entry Point                 | Purpose                                                        |
+| ------- | --------------------------- | -------------------------------------------------------------- |
+| API     | `apps/api/src/main.ts`      | Express server on port 4000, Supabase Admin for DB/auth        |
+| Web     | `apps/web/app/layout.tsx`   | Next.js App Router frontend, server components + actions       |
+| Worker  | `apps/worker/src/main.ts`   | Background task processor with BullMQ (default) / SQS fallback |
+| SDK     | `packages/sdk/src/index.ts` | Typed API client factory (`MCTClient.create()`)                |
 
 Plus shared packages: `@mct/ui` (cn utility), `@mct/config` (ESLint/TS configs).
 
@@ -63,14 +63,19 @@ pnpm e2e                     # Playwright E2E
 
 ## Docker & Local Stack
 
-### Docker Compose services
+### Docker Compose services (DigitalOcean production)
 
-| Service | Image                                  | Port | Healthcheck                         |
-| ------- | -------------------------------------- | ---- | ----------------------------------- |
-| api     | built from `apps/api/Dockerfile`       | 4000 | `wget http://localhost:4000/health` |
-| web     | built from `apps/web/Dockerfile`       | 3000 | `wget http://localhost:3000`        |
-| worker  | built from `apps/worker/Dockerfile`    | —    | —                                   |
-| e2e     | `mcr.microsoft.com/playwright:v1.60.0` | —    | —                                   |
+See `infra/digitalocean/docker-compose.yml` — runs on a single DO droplet behind Caddy:
+
+| Service | Image (GHCR)                      | Port   | Notes                    |
+| ------- | --------------------------------- | ------ | ------------------------ |
+| api     | ghcr.io/mainecybertech/mct-api    | 4000   | Express API              |
+| web     | ghcr.io/mainecybertech/mct-web    | 3000   | Next.js standalone       |
+| worker  | ghcr.io/mainecybertech/mct-worker | 3001   | BullMQ consumer (health) |
+| redis   | redis:7-alpine                    | 6379   | BullMQ backend           |
+| caddy   | caddy:2-alpine                    | 80/443 | TLS reverse proxy        |
+
+Supabase is **hosted** (cloud.supabase.com) — not self-hosted in docker-compose. API/Worker connect via `SUPABASE_URL`.
 
 ### Dockerfile notes
 
@@ -82,22 +87,23 @@ pnpm e2e                     # Playwright E2E
 
 ### CI workflow pnpm setup
 
-All 9 CI workflows use `corepack enable && corepack prepare pnpm@10 --activate` after `actions/setup-node@v4`.
+All CI workflows use `corepack enable && corepack prepare pnpm@10 --activate` after `actions/setup-node@v4`.
 Do NOT use `pnpm/action-setup` or `cache: pnpm` on setup-node — `cache: pnpm` tries to find pnpm before
 it's installed, causing "Unable to locate executable file: pnpm."
 
 ### Local development
 
 ```bash
-# Terminal 1: Start local Supabase
-cd supabase && supabase start
-pwsh scripts/sync_supabase_env.auto.v2.ps1 -UseNpx -Framework nextjs -EnvFile .env.local
-
-# Terminal 2: Start API
+# Terminal 1: Start API
 pnpm --filter=api dev
 
-# Terminal 3: Start web
+# Terminal 2: Start web
 pnpm --filter=web dev
+
+# Or run the full production stack locally:
+cd infra/digitalocean
+cp .env.example .env   # fill in hosted Supabase URL + keys
+docker compose up -d
 ```
 
 ## CI/CD
@@ -114,102 +120,41 @@ pnpm --filter=web dev
 
 ### Deployment workflows
 
-| Workflow                     | Trigger                          | Gate                         | Purpose                                                                                      |
-| ---------------------------- | -------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------- |
-| `api-deploy-ecs.prod.yml`    | push main                        | validate + prod-approval env | Deploy API to ECS prod                                                                       |
-| `api-deploy-ecs.dev.yml`     | push develop                     | —                            | Deploy API to ECS dev                                                                        |
-| `worker-deploy-ecs.prod.yml` | push main                        | validate + prod-approval env | Deploy worker to ECS prod                                                                    |
-| `worker-deploy-ecs.dev.yml`  | push develop                     | —                            | Deploy worker to ECS dev                                                                     |
-| `web-prod-vercel.yml`        | push main                        | validate + prod-approval env | Deploy web to Vercel prod (`vercel pull` + `deploy`, `--project mainecybertech-portal-prod`) |
-| `web-dev-vercel.yml`         | push develop                     | —                            | Deploy web to Vercel dev (`vercel pull` + `deploy`, `--project mainecybertech-portal-dev`)   |
-| `web-preview.yml`            | PR                               | —                            | Validate web build (no deploy)                                                               |
-| `supabase-migrations.yml`    | push develop+main, workflow_call | env-specific                 | Run `supabase link` + `supabase db push`                                                     |
-
-### Production approval gate
-
-All production deployments require approval through the `prod-approval` GitHub environment.
-This is configured as a required environment with 1+ reviewers in GitHub Settings.
-Dev deployments use the `dev` environment (no approval required).
-
-### Deployment stability check
-
-All ECS deployments now include `aws ecs wait services-stable` after force-new-deployment,
-with a 10-minute timeout. Failed stabilizations will surface as workflow failures.
-
-### CI/CD gating
-
-Production deploys require passing `validate.yml` (test + lint + typecheck), `e2e.yml` (Playwright),
-and `supabase-migrations.yml` before deploying. Dev deploys require `validate.yml`.
-All 6 deploy workflows (3 prod + 3 dev) are fully gated.
+| Workflow                  | Trigger                          | Gate         | Purpose                                                          |
+| ------------------------- | -------------------------------- | ------------ | ---------------------------------------------------------------- |
+| `deploy-do.yml`           | push main,develop (app paths)    | —            | Build 3 GHCR images + SSH into droplet + `docker compose up -d`  |
+| `terraform-do.yml`        | push main,develop (DO terraform) | —            | Plan/apply DO infrastructure (droplet, firewall, Cloudflare DNS) |
+| `supabase-migrations.yml` | push develop+main, workflow_call | env-specific | Run `supabase link` + `supabase db push`                         |
 
 ### Rollback procedures
 
-See `docs/ROLLBACK_PROCEDURES.md` for detailed rollback instructions for ECS, Vercel, Supabase, and Terraform.
-
-### Terraform workflows
-
-| Workflow                   | Trigger                           | Purpose                 |
-| -------------------------- | --------------------------------- | ----------------------- |
-| `terraform-plan.dev.yml`   | PR into develop (infra/terraform) | Plan dev infra changes  |
-| `terraform-apply.dev.yml`  | push develop (infra/terraform)    | Apply dev infra         |
-| `terraform-plan.prod.yml`  | PR into main (infra/terraform)    | Plan prod infra changes |
-| `terraform-apply.prod.yml` | push main (infra/terraform)       | Apply prod infra        |
+See `docs/ROLLBACK_PROCEDURES.md` for detailed rollback instructions for Docker, Supabase, and Terraform.
 
 ## Infrastructure as Code
 
 ### Terraform structure (`infra/terraform/`)
 
-Providers: AWS (~>5.0), Vercel (~>1.0), Supabase (~>1.0), Cloudflare (~>5.0)
+Providers: DigitalOcean (~>2.0), Cloudflare (~>5.0)
 
-| File                | Purpose                                                                       |
-| ------------------- | ----------------------------------------------------------------------------- |
-| `backend.tf`        | S3 backend: `mainecybertech-terraform-state`, DynamoDB lock                   |
-| `providers.tf`      | AWS, Vercel, Supabase, Cloudflare providers                                   |
-| `variables.tf`      | ~30 variables (environment, regions, keys, ECS sizing, ACM, etc.)             |
-| `network.tf`        | VPC (10.0.0.0/16), 2 AZs, NAT gateway, security groups, ECS execution role    |
-| `compute.tf`        | SQS FIFO queue, ACM cert, ECR repos (scanning + encryption)                   |
-| `runtime.tf`        | ECS cluster, ALB, target groups, Fargate tasks, autoscaling, SSM secrets IAM  |
-| `supabase.tf`       | Supabase project (dev/prod naming), storage buckets (documents, avatars)      |
-| `secrets.tf`        | SSM Parameter Store for API/worker secrets (Supabase keys, JWT, CORS, DB URL) |
-| `vercel.tf`         | Vercel project + `NEXT_PUBLIC_API_URL` env var                                |
-| `dns.cloudflare.tf` | 4 CNAME records (prod + test app/api)                                         |
-| `github-oidc.tf`    | GitHub OIDC provider + IAM roles (terraform, deploy)                          |
-| `outputs.tf`        | 30+ outputs (VPC, ALB, ECR, ECS, SSM ARNs, Supabase, storage buckets, etc.)   |
+AWS Terraform is dormant at `infra/terraform/aws/` (moved during DO migration). DO Terraform at `infra/terraform/digitalocean/`:
 
-State separation: `env/backend.dev.hcl` and `env/backend.prod.hcl` (dev and prod use different S3 keys).
-Environment variable: `environment` (dev/prod) controls resource naming, SSM paths, and Supabase project name.
+| File           | Purpose                                                                     |
+| -------------- | --------------------------------------------------------------------------- |
+| `providers.tf` | DigitalOcean + Cloudflare providers                                         |
+| `variables.tf` | 12 variables (DO token, region, size, SSH key, Cloudflare zone IDs, env)    |
+| `droplet.tf`   | Single droplet (`mct-portal-${environment}`), cloud-init, `prevent_destroy` |
+| `firewall.tf`  | DO firewall: ports 22/80/443/2376, full egress                              |
+| `dns.tf`       | 3 A records per zone (www/app/api), prod→.com, dev→.us, proxied via CF      |
+| `outputs.tf`   | Droplet IP, ID, URN                                                         |
 
-### Supabase in Terraform
-
-- `supabase_project.main_db` — project named `mainecybertech-production` (prod) or `mainecybertech-${var.environment}` (dev)
-- `supabase_storage_bucket.documents` — private, 50MB limit, for uploaded files
-- `supabase_storage_bucket.avatars` — public, 2MB limit, for user avatars
-- `prevent_destroy` lifecycle on project to avoid accidental deletion
-- Endpoint URL computed as `https://${supabase_project.main_db.id}.supabase.co`
-- DB host computed as `db.${supabase_project.main_db.id}.supabase.co`
-
-### Secrets management (SSM Parameter Store)
-
-All secret config is stored in SSM Parameter Store under `/mainecybertech/${var.environment}/` and injected into ECS containers via `secrets`:
-
-| SSM Path                        | Type         | Used by               |
-| ------------------------------- | ------------ | --------------------- |
-| `.../supabase/url`              | String       | API, Worker (env var) |
-| `.../supabase/anon-key`         | SecureString | API, Worker (secret)  |
-| `.../supabase/service-role-key` | SecureString | API (secret)          |
-| `.../api/jwt-secret`            | SecureString | API (secret)          |
-| `.../api/cors-origin`           | String       | API (secret)          |
-| `.../database/url`              | SecureString | API, Worker (secret)  |
-| `.../worker/sqs-queue-url`      | String       | Worker (secret)       |
-
-ECS execution role has explicit `ssm:GetParameter`/`ssm:GetParameters` permissions on all SSM params, plus conditional `secretsmanager:GetSecretValue` for any extra secrets via `api_secret_environment`/`worker_secret_environment`.
+Env configs: `env/dev.tfvars.example`, `env/prod.tfvars.example`; `environment` var controls naming + DNS zone selection.
 
 ### Hostname model
 
-- Production: `www.mainecybertech.com` (Vercel, marketing) + `app.mainecybertech.com` (Vercel, portal) + `api.mainecybertech.com` (AWS ALB, API)
-- Testing: `www.mainecybertech.us` (Vercel, marketing) + `app.mainecybertech.us` (Vercel, portal) + `api.mainecybertech.us` (AWS ALB, API)
-- DNS: Cloudflare for both zones
-- Both domains point to the same Vercel project; Vercel domain routing handles which route group serves which domain
+- Production: `www.mainecybertech.com` (DO, Next.js) + `app.mainecybertech.com` (DO, portal) + `api.mainecybertech.com` (DO, API)
+- Testing: `www.mainecybertech.us` (DO) + `app.mainecybertech.us` (DO) + `api.mainecybertech.us` (DO)
+- DNS: Cloudflare for both zones, all records proxied (orange cloud)
+- All 3 services run on the same DO droplet behind Caddy reverse proxy
 
 ### Required GitHub secrets (7) and variables (8)
 
@@ -259,6 +204,11 @@ Key points:
 - CSV export for tickets/projects: follows the exact same pattern as `/api/v1/audit/export` — separate GET endpoint with `format=csv|json`, reusable CSV helper, scrollback limit of 10,000 rows, same filter params as the list endpoint. No separate authorization (uses `requireAuth` from parent router).
 - Ticket comment editing 5-min window: enforced server-side (API check against `created_at` + `Date.now()`), not client-side. Prevents stale edits after the window expires. `edited_at` is set to the server's current timestamp, not the client's. The UPDATE RLS policy (`ticket_comments_update_own`) ensures only the comment author can edit their own comments.
 - Activity timeline at `entity_id` level: the existing audit `list` endpoint only supported `entity_type` filtering; `entity_id` was added as an optional filter to enable per-entity audit feeds (used on the ticket detail page). This is a generic filter — any entity type can use it (projects, documents, users).
+- **DO migration** — moved from AWS ECS/Vercel to single DigitalOcean droplet behind Caddy. Reduces monthly infra cost from ~$150 to ~$12-24.
+- **BullMQ over SQS** — Redis-backed job queue replaces SQS as the default. Simpler for single-droplet setup; SQS path kept dormant (`QUEUE_BACKEND=sqs`).
+- **GHCR over ECR** — GitHub Container Registry for all images. Tighter GitHub Actions integration, no cross-account auth.
+- **Hosted Supabase** — using cloud.supabase.com (not self-hosted). Avoids managing Postgres, GoTrue, PostgREST, Storage API on the droplet. `SUPABASE_URL` points to the hosted project.
+- **AWS Terraform dormant** — all AWS `.tf` files moved to `infra/terraform/aws/` for potential future re-deployment or `terraform destroy`.
 
 ## Full Architecture & Code Review (2026-06-16) — 30 Findings
 
@@ -553,28 +503,38 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 
 #### Recently Completed
 
-| #   | Feature                                                                                         | Status |
-| --- | ----------------------------------------------------------------------------------------------- | ------ |
-| 1   | **Dashboard quick actions** — "Create Ticket" / "Upload Document" buttons                       | ✅     |
-| 2   | **View in Admin button** — on portal ticket/project/document detail, gated by admin check       | ✅     |
-| 3   | **Bell dropdown → notification preferences** — inline email toggles per module                  | ✅     |
-| 4   | **View in Portal on ticket detail** — admin ticket detail links to `/portal/support/[ticketId]` | ✅     |
-| 5   | **View in Portal per document row** — admin document list "Portal" link (table/card/list views) | ✅     |
-| 6   | **Page metadata / titles** — all 35 server component pages have meaningful `<title>` tags       | ✅     |
-| 7   | **Loading skeletons** — `loading.tsx` for admin + portal route groups                           | ✅     |
-| 8   | **Admin org search** — `AdminOrganizationsClient` with text search, status filter, pagination   | ✅     |
-| 9   | **Inline status/priority dropdowns** — click status/priority pill → inline select on ticket     | ✅     |
-| 10  | **Ticket comment editing** — edit button within 5-min window, inline form, audit logging        | ✅     |
-| 11  | **Activity timeline** — audit event feed on admin ticket detail page                            | ✅     |
-| 12  | **Admin dashboard audit feed** — "Recent Audit Activity" panel on admin home                    | ✅     |
-| 13  | **Ticket/project CSV export** — `/export` endpoints + SDK + download buttons                    | ✅     |
-| 14  | **Input sanitizer fix** — removed HTML-encoding mutation, keep pattern detection only           | ✅     |
-| 15  | **Tenant isolation** — `requireOrgAccess()` middleware wired into all 8 entity routers          | ✅     |
-| 16  | **Local JWT verification** — fast path in `auth.ts` via `jsonwebtoken`, falls back to Supabase  | ✅     |
-| 17  | **`unhandledRejection` handler** — added to `main.ts` for crash-safe promise rejection tracking | ✅     |
-| 18  | **Terraform image tag drift** — added `image_tag` variable, CI registers SHA-tagged task defs   | ✅     |
-| 19  | **Worker Sentry integration** — `@sentry/node`, env schema, init, error capturing               | ✅     |
-| 20  | **Cookie security flags** — verified `httpOnly`, `secure`, `sameSite=lax` on `mct_session`      | ✅     |
+| #   | Feature                                                                                           | Status |
+| --- | ------------------------------------------------------------------------------------------------- | ------ |
+| 1   | **Dashboard quick actions** — "Create Ticket" / "Upload Document" buttons                         | ✅     |
+| 2   | **View in Admin button** — on portal ticket/project/document detail, gated by admin check         | ✅     |
+| 3   | **Bell dropdown → notification preferences** — inline email toggles per module                    | ✅     |
+| 4   | **View in Portal on ticket detail** — admin ticket detail links to `/portal/support/[ticketId]`   | ✅     |
+| 5   | **View in Portal per document row** — admin document list "Portal" link (table/card/list views)   | ✅     |
+| 6   | **Page metadata / titles** — all 35 server component pages have meaningful `<title>` tags         | ✅     |
+| 7   | **Loading skeletons** — `loading.tsx` for admin + portal route groups                             | ✅     |
+| 8   | **Admin org search** — `AdminOrganizationsClient` with text search, status filter, pagination     | ✅     |
+| 9   | **Inline status/priority dropdowns** — click status/priority pill → inline select on ticket       | ✅     |
+| 10  | **Ticket comment editing** — edit button within 5-min window, inline form, audit logging          | ✅     |
+| 11  | **Activity timeline** — audit event feed on admin ticket detail page                              | ✅     |
+| 12  | **Admin dashboard audit feed** — "Recent Audit Activity" panel on admin home                      | ✅     |
+| 13  | **Ticket/project CSV export** — `/export` endpoints + SDK + download buttons                      | ✅     |
+| 14  | **Input sanitizer fix** — removed HTML-encoding mutation, keep pattern detection only             | ✅     |
+| 15  | **Tenant isolation** — `requireOrgAccess()` middleware wired into all 8 entity routers            | ✅     |
+| 16  | **Local JWT verification** — fast path in `auth.ts` via `jsonwebtoken`, falls back to Supabase    | ✅     |
+| 17  | **`unhandledRejection` handler** — added to `main.ts` for crash-safe promise rejection tracking   | ✅     |
+| 18  | **Terraform image tag drift** — added `image_tag` variable, CI registers SHA-tagged task defs     | ✅     |
+| 19  | **Worker Sentry integration** — `@sentry/node`, env schema, init, error capturing                 | ✅     |
+| 20  | **Cookie security flags** — verified `httpOnly`, `secure`, `sameSite=lax` on `mct_session`        | ✅     |
+| 21  | **DO Terraform** — created `infra/terraform/digitalocean/` with droplet, firewall, Cloudflare DNS | ✅     |
+| 22  | **Worker BullMQ** — added `bullmq` + `ioredis`, `runBullMQWorker()`, `QUEUE_BACKEND` env routing  | ✅     |
+| 23  | **DO docker-compose** — full stack with Caddy, Redis, API, Worker, Web (Supabase is hosted)       | ✅     |
+| 24  | **GHCR switch** — all images now pushed to `ghcr.io/mainecybertech/mct-{api,worker,web}`          | ✅     |
+| 25  | **DO deploy workflow** — single `deploy-do.yml` building 3 images + SSH deploy to droplet         | ✅     |
+| 26  | **Terraform workflow** — `terraform-do.yml` for DO infra plan/apply                               | ✅     |
+| 27  | **Cleaned up old workflows** — removed 11 AWS/Vercel deploy and terraform workflows               | ✅     |
+| 28  | **Hosted Supabase** — self-hosted Supabase containers removed from docker-compose, uses cloud API | ✅     |
+| 29  | **DNS by environment** — prod creates `.com` A records, dev creates `.us` A records only          | ✅     |
+| 30  | **Fixed .gitignore** — `terraform` scoped to root-level only to track `infra/terraform/` subdirs  | ✅     |
 
 #### High Value (Still Open)
 
@@ -637,6 +597,13 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 - ✅ Database backup automation schedule (GitHub Actions cron + S3)
 - ✅ Slack alarm notifications via SNS → Lambda → webhook
 - ✅ Sentry error tracking (API @sentry/node + Web @sentry/nextjs)
+- ✅ DigitalOcean droplet with cloud-init (Docker, UFW, data dirs)
+- ✅ DO firewall (ports 22/80/443/2376, full egress)
+- ✅ Cloudflare DNS A records (proxied, www/app/api per zone)
+- ✅ Caddy reverse proxy with automatic TLS (Let's Encrypt)
+- ✅ Redis-backed job queue with BullMQ
+- ✅ GHCR image registry with SHA-tagged immutable images
+- ✅ All 3 apps on same droplet behind Caddy (no Vercel/ECS)
 
 ## Next Steps
 
@@ -765,15 +732,15 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 
 ### What To Do Next
 
-**All 38 pre-production findings + 21 codebase review findings resolved.** All high-value cross-navigation features completed. **3 of 3 critical architecture review findings fixed.** All high-priority findings resolved. **7 of 12 total findings fixed.**
+**All 38 pre-production findings + 21 codebase review findings resolved.** All high-value cross-navigation features completed. **3 of 3 critical architecture review findings fixed.** All high-priority findings resolved. **DO migration complete.**
 
 | Priority | Task                                                                                      | Effort | Status |
 | -------- | ----------------------------------------------------------------------------------------- | ------ | ------ |
-| 1        | **Wire `@mct/ui` & `@mct/config` into apps**                                              | Medium | Future |
-| 2        | **Zod validation** — add to remaining ~20 mutation endpoints (currently only 7 have it)   | Medium |        |
-| 3        | **Empty state components** — add empty state for lists/tables throughout portal and admin | Small  |        |
-| 4        | **Error retry buttons** — "Try again" button on error boundaries                          | Small  |        |
-| 5        | **Push to GitHub + deploy dev site**                                                      | Small  | ⏳     |
+| 1        | **Set up GitHub secrets** (16 required) and trigger first dev deploy                      | Small  | ⏳     |
+| 2        | **Wire `@mct/ui` & `@mct/config` into apps**                                              | Medium | Future |
+| 3        | **Zod validation** — add to remaining ~20 mutation endpoints (currently only 7 have it)   | Medium |        |
+| 4        | **Empty state components** — add empty state for lists/tables throughout portal and admin | Small  |        |
+| 5        | **Error retry buttons** — "Try again" button on error boundaries                          | Small  |        |
 
 ## Architectural Analysis
 
@@ -965,10 +932,11 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 ### Docker & CI
 
 - `apps/web/Dockerfile`, `apps/api/Dockerfile`, `apps/worker/Dockerfile` — multi-stage Dockerfiles
-- `docker-compose.yml` — api + web + worker + e2e services
+- `infra/digitalocean/docker-compose.yml` — DO production stack (Caddy, Redis, API, Worker, Web)
+- `infra/digitalocean/Caddyfile` — TLS reverse proxy config
 - `apps/web/next.config.mjs` — `output: "standalone"`, `outputFileTracingRoot`
-- `apps/web/vercel.json` — `installCommand: "pnpm install --frozen-lockfile"`, `framework: "nextjs"`
-- `.github/workflows/` — 17 workflow files (validation, deploy, terraform, E2E, db backup)
+- `apps/web/vercel.json` — `installCommand: "pnpm install --frozen-lockfile"`, `framework: "nextjs"` (dormant)
+- `.github/workflows/` — 7 workflow files (validation, deploy, DO terraform, E2E)
 - `apps/web/lib/api.ts` uses `import "server-only"` — prevents client bundle contamination
 - `apps/web/middleware.ts` — base64url JWT expiration check before treating cookie as valid session; prevents redirect loop
 - `apps/web/app/(public)/pending/page.tsx` — uses `logoutAction()` instead of plain `/login` link to break redirect loop
@@ -989,9 +957,10 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 
 ### Infrastructure
 
-- `infra/terraform/` — active root with providers, network, compute, runtime, DNS, Vercel, OIDC, Supabase
-- `infra/terraform/env/backend.dev.hcl`, `env/backend.prod.hcl` — state separation configs
-- `infra/terraform/alarms.tf` — CloudWatch metric alarms (CPU, memory, ALB 5xx, SQS age)
+- `infra/terraform/aws/` — dormant AWS infra (moved from root, for `terraform destroy` or reuse)
+- `infra/terraform/digitalocean/` — active DO infra: droplet, firewall, Cloudflare DNS
+- `infra/digitalocean/docker-compose.yml` — full production stack
+- `infra/digitalocean/Caddyfile` — TLS reverse proxy
 - `scripts/sync_supabase_env.auto.v2.ps1` — local Supabase env sync
 
 ### Marketing Frontend (Phase 2)
@@ -1016,7 +985,7 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md` — required secrets/variables
 - `docs/MONITORING_AND_ALERTING.md` — monitoring strategy, alerting setup, dashboards
 - `docs/SECRETS_ROTATION.md` — rotation schedule, procedures, emergency rotation
-- `docs/ROLLBACK_PROCEDURES.md` — ECS, Vercel, Supabase, Terraform rollback
+- `docs/ROLLBACK_PROCEDURES.md` — Docker, Supabase, Terraform rollback
 - `docs/API_VERSIONING.md` — API versioning strategy
 - `docs/JIRA_JSM_INTEGRATION.md` — Jira/JSM sync, webhooks, schema, status maps
 - `docs/BILLING.md` — Stripe billing, invoices, subscriptions, webhooks
