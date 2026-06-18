@@ -56,6 +56,9 @@ jobs:
           SUPABASE_DB_HOST: localhost
           SUPABASE_DB_PORT: 5432
 
+      - name: Apply migrations and seeds
+        run: supabase db reset
+
       - name: Sync Supabase env to API
         run: |
           API_ENV="apps/api/.env.local"
