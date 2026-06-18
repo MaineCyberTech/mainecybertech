@@ -22,32 +22,32 @@
 
 ## API (`apps/api`)
 
-| Variable                     | Required | Default                      | Description                                                                      |
-| ---------------------------- | -------- | ---------------------------- | -------------------------------------------------------------------------------- |
-| `NODE_ENV`                   | No       | `development`                | Node environment                                                                 |
-| `API_PORT`                   | No       | `4000`                       | Port the API server listens on                                                   |
-| `APP_BASE_URL`               | No       | `http://localhost:3000`      | Public-facing base URL for email notification links                              |
-| `SUPABASE_URL`               | Yes      | —                            | Supabase project URL (e.g. `http://127.0.0.1:54321` for local)                   |
-| `SUPABASE_ANON_KEY`          | Yes      | —                            | Supabase publishable/anon key                                                    |
-| `SUPABASE_SERVICE_ROLE_KEY`  | Yes      | —                            | Supabase service role key (admin access)                                         |
-| `JWT_SECRET`                 | No       | —                            | JWT signing secret (optional; Supabase handles JWT by default)                   |
-| `CORS_ORIGIN`                | No       | `http://localhost:3000`      | Allowed CORS origin (e.g. `http://localhost:3000`); comma-separated for multiple |
-| `LOG_LEVEL`                  | No       | `info`                       | Logging level (`debug`, `info`, `warn`, `error`)                                 |
-| `SMTP_HOST`                  | No       | —                            | SMTP host for email sending                                                      |
-| `SMTP_PORT`                  | No       | `587`                        | SMTP port                                                                        |
-| `SMTP_USER`                  | No       | —                            | SMTP username                                                                    |
-| `SMTP_PASS`                  | No       | —                            | SMTP password                                                                    |
-| `EMAIL_FROM`                 | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                 |
-| `SENTRY_DSN`                 | No       | —                            | Sentry DSN for error tracking                                                    |
-| `PUBLIC_TRAFFIC_WEBHOOK_URL` | No       | —                            | Teams webhook URL for visitor notifications (marketing site)                     |
-| `PUBLIC_LEAD_WEBHOOK_URL`    | No       | —                            | Teams webhook URL for new lead notifications (marketing site)                    |
-| `JSM_DOMAIN`                 | No       | —                            | JSM domain for auto-ticket creation from web leads                               |
-| `JSM_EMAIL`                  | No       | —                            | JSM user email for API auth                                                      |
-| `JSM_API_TOKEN`              | No       | —                            | JSM API token                                                                    |
-| `JSM_SERVICEDESK_ID`         | No       | —                            | JSM service desk ID                                                              |
-| `JSM_REQUEST_TYPE_ID`        | No       | —                            | JSM request type ID                                                              |
-| `STRIPE_WEBHOOK_SECRET`      | No       | —                            | Stripe webhook signing secret for signature verification                         |
-| —                            | —        | —                            | —                                                                                |
+| Variable                     | Required | Default                      | Description                                                                           |
+| ---------------------------- | -------- | ---------------------------- | ------------------------------------------------------------------------------------- |
+| `NODE_ENV`                   | No       | `development`                | Node environment                                                                      |
+| `API_PORT`                   | No       | `4000`                       | Port the API server listens on                                                        |
+| `APP_BASE_URL`               | No       | `http://localhost:3000`      | Public-facing base URL for email notification links                                   |
+| `SUPABASE_URL`               | Yes      | —                            | Supabase project URL (e.g. `http://127.0.0.1:54321` for local)                        |
+| `SUPABASE_ANON_KEY`          | Yes      | —                            | Supabase publishable/anon key                                                         |
+| `SUPABASE_SERVICE_ROLE_KEY`  | Yes      | —                            | Supabase service role key (admin access)                                              |
+| `JWT_SECRET`                 | No       | —                            | JWT signing secret (optional; Supabase handles JWT by default)                        |
+| `CORS_ORIGIN`                | No       | `http://localhost:3000`      | Allowed CORS origin; comma-separated for multiple (deploy includes `app.*` + `www.*`) |
+| `LOG_LEVEL`                  | No       | `info`                       | Logging level (`debug`, `info`, `warn`, `error`)                                      |
+| `SMTP_HOST`                  | No       | —                            | SMTP host for email sending                                                           |
+| `SMTP_PORT`                  | No       | `587`                        | SMTP port                                                                             |
+| `SMTP_USER`                  | No       | —                            | SMTP username                                                                         |
+| `SMTP_PASS`                  | No       | —                            | SMTP password                                                                         |
+| `EMAIL_FROM`                 | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                      |
+| `SENTRY_DSN`                 | No       | —                            | Sentry DSN for error tracking                                                         |
+| `PUBLIC_TRAFFIC_WEBHOOK_URL` | No       | —                            | Teams webhook URL for visitor notifications (marketing site)                          |
+| `PUBLIC_LEAD_WEBHOOK_URL`    | No       | —                            | Teams webhook URL for new lead notifications (marketing site)                         |
+| `JSM_DOMAIN`                 | No       | —                            | JSM domain for auto-ticket creation from web leads                                    |
+| `JSM_EMAIL`                  | No       | —                            | JSM user email for API auth                                                           |
+| `JSM_API_TOKEN`              | No       | —                            | JSM API token                                                                         |
+| `JSM_SERVICEDESK_ID`         | No       | —                            | JSM service desk ID                                                                   |
+| `JSM_REQUEST_TYPE_ID`        | No       | —                            | JSM request type ID                                                                   |
+| `STRIPE_WEBHOOK_SECRET`      | No       | —                            | Stripe webhook signing secret for signature verification                              |
+| —                            | —        | —                            | —                                                                                     |
 
 ## Worker (`apps/worker`)
 

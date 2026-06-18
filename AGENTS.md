@@ -84,6 +84,8 @@ Supabase is **hosted** (cloud.supabase.com) — not self-hosted in docker-compos
 - Admin/portal layouts need `export const dynamic = "force-dynamic"` to prevent prerender errors
 - API/worker removed `--dts` from tsup build (causes TS2742 in `.pnpm`)
 - `.dockerignore` uses `**/node_modules/` and `.pnpm/` for Windows/pnpm compatibility
+- Web Dockerfile has `ARG NEXT_PUBLIC_API_URL` — must be passed as build arg for client-side components (inlined at build time)
+- Web builder stage cleans up `.next/cache` to reduce image size
 
 ### CI workflow pnpm setup
 
@@ -172,6 +174,9 @@ Key points:
 - Worker needs `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `WORKER_CONCURRENCY`, `WORKER_TIMEOUT`
 - E2E needs `E2E_BASE_URL`, `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD`
 - Local Supabase sync: `pnpm supabase:env:sync` (scripts skip `NEXT_PUBLIC_SUPABASE_*` for nextjs)
+- API also needs `PUBLIC_TRAFFIC_WEBHOOK_URL` / `PUBLIC_LEAD_WEBHOOK_URL` (Teams webhooks for contact form leads) and `JSM_DOMAIN`, `JSM_EMAIL`, `JSM_API_TOKEN`, `JSM_SERVICEDESK_ID`, `JSM_REQUEST_TYPE_ID` for JSM ticket creation
+- `CORS_ORIGIN` is computed per-environment in deploy workflow (includes both `app.*` and `www.*` origins)
+- `NEXT_PUBLIC_API_URL` at runtime in Docker is `http://api:4000` (Docker internal URL for server-to-server); client components inline the public URL at build time via build arg
 
 ## Key Decisions
 
@@ -209,6 +214,13 @@ Key points:
 - **GHCR over ECR** — GitHub Container Registry for all images. Tighter GitHub Actions integration, no cross-account auth.
 - **Hosted Supabase** — using cloud.supabase.com (not self-hosted). Avoids managing Postgres, GoTrue, PostgREST, Storage API on the droplet. `SUPABASE_URL` points to the hosted project.
 - **AWS Terraform dormant** — all AWS `.tf` files moved to `infra/terraform/aws/` for potential future re-deployment or `terraform destroy`.
+- **Domain routing via middleware** — `app.*` subdomain serves portal (redirects `/` → `/login`, auth routes go to app domain). `www.*` serves marketing. Uses `request.headers.get("host")` not `request.nextUrl.hostname` (Docker proxy hostname is internal container name `web`). `isLocalDev` check skips domain routing on localhost.
+- **NEXT_PUBLIC_API_URL split** — client components get the public API URL (`https://api.mainecybertech.us`) via Docker build arg (inlined at build time). Server actions/routes get the internal Docker URL (`http://api:4000`) via runtime env var. This avoids hairpin NAT loopback for server-to-server calls.
+- **CORS_ORIGIN multi-domain** — computed per-environment in deploy workflow and written to `.env`. Includes both `app.*` and `www.*` origins so the marketing contact form can call the API from `www.*`.
+- **Public_interactions RLS removed** — RLS disabled on the `public_interactions` table (public data, no sensitive fields). An INSERT policy for `anon` and `service_role` added as fallbacks. Fixes 500 error on contact form INIT endpoint.
+- **MarketingHeader absolute URLs** — on the `app.*` domain, nav links (Home, Networks, Contact, etc.) point to absolute `https://www.*` URLs instead of relative paths. Detected via `window.location.hostname` in the client component. "Portal" button stays relative (`/login`) — middleware redirects to app domain.
+- **Deploy: image piping over SSH** — `docker save | gzip | ssh ... gunzip | docker load` bypasses slow GHCR pull on the droplet. Images pulled from GHCR on the GHA runner (fast, same network) then piped directly. Deploy time reduced from ~45 min to ~8 min.
+- **Deploy: targeted image cleanup** — `docker image ls | grep mct- | grep -v $TAG | xargs docker rmi` removes old MCT images before loading new ones (avoids disk full). Builder cache prune moved to post-deploy to prevent SSH timeouts (was taking 18+ min on small droplet). `mkdir -p /opt/mct-portal` ensures compose file directory exists.
 
 ## Full Architecture & Code Review (2026-06-16) — 30 Findings
 
@@ -503,38 +515,47 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 
 #### Recently Completed
 
-| #   | Feature                                                                                           | Status |
-| --- | ------------------------------------------------------------------------------------------------- | ------ |
-| 1   | **Dashboard quick actions** — "Create Ticket" / "Upload Document" buttons                         | ✅     |
-| 2   | **View in Admin button** — on portal ticket/project/document detail, gated by admin check         | ✅     |
-| 3   | **Bell dropdown → notification preferences** — inline email toggles per module                    | ✅     |
-| 4   | **View in Portal on ticket detail** — admin ticket detail links to `/portal/support/[ticketId]`   | ✅     |
-| 5   | **View in Portal per document row** — admin document list "Portal" link (table/card/list views)   | ✅     |
-| 6   | **Page metadata / titles** — all 35 server component pages have meaningful `<title>` tags         | ✅     |
-| 7   | **Loading skeletons** — `loading.tsx` for admin + portal route groups                             | ✅     |
-| 8   | **Admin org search** — `AdminOrganizationsClient` with text search, status filter, pagination     | ✅     |
-| 9   | **Inline status/priority dropdowns** — click status/priority pill → inline select on ticket       | ✅     |
-| 10  | **Ticket comment editing** — edit button within 5-min window, inline form, audit logging          | ✅     |
-| 11  | **Activity timeline** — audit event feed on admin ticket detail page                              | ✅     |
-| 12  | **Admin dashboard audit feed** — "Recent Audit Activity" panel on admin home                      | ✅     |
-| 13  | **Ticket/project CSV export** — `/export` endpoints + SDK + download buttons                      | ✅     |
-| 14  | **Input sanitizer fix** — removed HTML-encoding mutation, keep pattern detection only             | ✅     |
-| 15  | **Tenant isolation** — `requireOrgAccess()` middleware wired into all 8 entity routers            | ✅     |
-| 16  | **Local JWT verification** — fast path in `auth.ts` via `jsonwebtoken`, falls back to Supabase    | ✅     |
-| 17  | **`unhandledRejection` handler** — added to `main.ts` for crash-safe promise rejection tracking   | ✅     |
-| 18  | **Terraform image tag drift** — added `image_tag` variable, CI registers SHA-tagged task defs     | ✅     |
-| 19  | **Worker Sentry integration** — `@sentry/node`, env schema, init, error capturing                 | ✅     |
-| 20  | **Cookie security flags** — verified `httpOnly`, `secure`, `sameSite=lax` on `mct_session`        | ✅     |
-| 21  | **DO Terraform** — created `infra/terraform/digitalocean/` with droplet, firewall, Cloudflare DNS | ✅     |
-| 22  | **Worker BullMQ** — added `bullmq` + `ioredis`, `runBullMQWorker()`, `QUEUE_BACKEND` env routing  | ✅     |
-| 23  | **DO docker-compose** — full stack with Caddy, Redis, API, Worker, Web (Supabase is hosted)       | ✅     |
-| 24  | **GHCR switch** — all images now pushed to `ghcr.io/mainecybertech/mct-{api,worker,web}`          | ✅     |
-| 25  | **DO deploy workflow** — single `deploy-do.yml` building 3 images + SSH deploy to droplet         | ✅     |
-| 26  | **Terraform workflow** — `terraform-do.yml` for DO infra plan/apply                               | ✅     |
-| 27  | **Cleaned up old workflows** — removed 11 AWS/Vercel deploy and terraform workflows               | ✅     |
-| 28  | **Hosted Supabase** — self-hosted Supabase containers removed from docker-compose, uses cloud API | ✅     |
-| 29  | **DNS by environment** — prod creates `.com` A records, dev creates `.us` A records only          | ✅     |
-| 30  | **Fixed .gitignore** — `terraform` scoped to root-level only to track `infra/terraform/` subdirs  | ✅     |
+| #   | Feature                                                                                                                                                                | Status |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------- | --- |
+| 1   | **Dashboard quick actions** — "Create Ticket" / "Upload Document" buttons                                                                                              | ✅     |
+| 2   | **View in Admin button** — on portal ticket/project/document detail, gated by admin check                                                                              | ✅     |
+| 3   | **Bell dropdown → notification preferences** — inline email toggles per module                                                                                         | ✅     |
+| 4   | **View in Portal on ticket detail** — admin ticket detail links to `/portal/support/[ticketId]`                                                                        | ✅     |
+| 5   | **View in Portal per document row** — admin document list "Portal" link (table/card/list views)                                                                        | ✅     |
+| 6   | **Page metadata / titles** — all 35 server component pages have meaningful `<title>` tags                                                                              | ✅     |
+| 7   | **Loading skeletons** — `loading.tsx` for admin + portal route groups                                                                                                  | ✅     |
+| 8   | **Admin org search** — `AdminOrganizationsClient` with text search, status filter, pagination                                                                          | ✅     |
+| 9   | **Inline status/priority dropdowns** — click status/priority pill → inline select on ticket                                                                            | ✅     |
+| 10  | **Ticket comment editing** — edit button within 5-min window, inline form, audit logging                                                                               | ✅     |
+| 11  | **Activity timeline** — audit event feed on admin ticket detail page                                                                                                   | ✅     |
+| 12  | **Admin dashboard audit feed** — "Recent Audit Activity" panel on admin home                                                                                           | ✅     |
+| 13  | **Ticket/project CSV export** — `/export` endpoints + SDK + download buttons                                                                                           | ✅     |
+| 14  | **Input sanitizer fix** — removed HTML-encoding mutation, keep pattern detection only                                                                                  | ✅     |
+| 15  | **Tenant isolation** — `requireOrgAccess()` middleware wired into all 8 entity routers                                                                                 | ✅     |
+| 16  | **Local JWT verification** — fast path in `auth.ts` via `jsonwebtoken`, falls back to Supabase                                                                         | ✅     |
+| 17  | **`unhandledRejection` handler** — added to `main.ts` for crash-safe promise rejection tracking                                                                        | ✅     |
+| 18  | **Terraform image tag drift** — added `image_tag` variable, CI registers SHA-tagged task defs                                                                          | ✅     |
+| 19  | **Worker Sentry integration** — `@sentry/node`, env schema, init, error capturing                                                                                      | ✅     |
+| 20  | **Cookie security flags** — verified `httpOnly`, `secure`, `sameSite=lax` on `mct_session`                                                                             | ✅     |
+| 21  | **DO Terraform** — created `infra/terraform/digitalocean/` with droplet, firewall, Cloudflare DNS                                                                      | ✅     |
+| 22  | **Worker BullMQ** — added `bullmq` + `ioredis`, `runBullMQWorker()`, `QUEUE_BACKEND` env routing                                                                       | ✅     |
+| 23  | **DO docker-compose** — full stack with Caddy, Redis, API, Worker, Web (Supabase is hosted)                                                                            | ✅     |
+| 24  | **GHCR switch** — all images now pushed to `ghcr.io/mainecybertech/mct-{api,worker,web}`                                                                               | ✅     |
+| 25  | **DO deploy workflow** — single `deploy-do.yml` building 3 images + SSH deploy to droplet                                                                              | ✅     |
+| 26  | **Terraform workflow** — `terraform-do.yml` for DO infra plan/apply                                                                                                    | ✅     |
+| 27  | **Cleaned up old workflows** — removed 11 AWS/Vercel deploy and terraform workflows                                                                                    | ✅     |
+| 28  | **Hosted Supabase** — self-hosted Supabase containers removed from docker-compose, uses cloud API                                                                      | ✅     |
+| 29  | **DNS by environment** — prod creates `.com` A records, dev creates `.us` A records only                                                                               | ✅     |
+| 30  | **Fixed .gitignore** — `terraform` scoped to root-level only to track `infra/terraform/` subdirs                                                                       | ✅     |
+| 31  | **Domain routing middleware** — `app.*` → portal login, `www.*` → marketing; detects via `Host` header, skips local dev                                                | ✅     |
+| 32  | **NEXT_PUBLIC_API_URL build arg** — passed to web Docker build for client-side code; runtime uses internal `http://api:4000` for server-to-server                      | ✅     |
+| 33  | **Deploy speed 5x** — pipe Docker images over SSH (`docker save                                                                                                        | gzip   | ssh ... docker load`) bypasses slow GHCR pull on droplet | ✅  |
+| 34  | **Dockerfile cache cleanup** — removed Next.js `.next/cache` in builder stage; `rm -rf .pnpm` store in runner stage                                                    | ✅     |
+| 35  | **public_interactions RLS fix** — disabled RLS on public_interactions table (public data), added service_role + anon INSERT policies                                   | ✅     |
+| 36  | **CORS multi-domain** — `CORS_ORIGIN` computed per-environment includes both `app.*` and `www.*` origins for contact form API calls                                    | ✅     |
+| 37  | **MarketingHeader absolute URLs** — nav links on `app.*` domain point to `https://www.*` absolute URLs; Portal button stays relative                                   | ✅     |
+| 38  | **Webhook + JSM env vars** — `PUBLIC_TRAFFIC_WEBHOOK_URL`, `PUBLIC_LEAD_WEBHOOK_URL`, `JSM_*` vars added to API container and deploy .env                              | ✅     |
+| 39  | **Deploy reliability** — `mkdir -p /opt/mct-portal` before file transfers; targeted old-image cleanup instead of slow system prune; builder prune moved to post-deploy | ✅     |
 
 #### High Value (Still Open)
 
@@ -660,6 +681,7 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 ### Remaining Technical Debt
 
 - Wire `@mct/ui` & `@mct/config` into apps (low priority)
+- JSM ticket creation not firing (Teams webhook works) — verify `JSM_DOMAIN`, `JSM_EMAIL`, `JSM_API_TOKEN`, `JSM_SERVICEDESK_ID`, `JSM_REQUEST_TYPE_ID` secrets have correct values; API silently swallows errors via `.catch(() => {})`
 
 ## Final Codebase Review (2026-06-05) — 21 Findings
 
@@ -926,7 +948,11 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `supabase/migrations/5302028_seed_permissions.sql` — seeds 26 permissions + role assignments
 - `supabase/migrations/5302030_add_jira_fields.sql` — Jira/JSM columns on projects, tasks, tickets
 - `supabase/migrations/5302032_webhook_endpoints.sql` — webhook endpoints + deliveries tables
+- `supabase/migrations/5302033_public_interactions.sql` — public_interactions table + anon INSERT policy (RLS on)
 - `supabase/migrations/5302034_ticket_comment_editing.sql` — `edited_at` column + UPDATE RLS on `ticket_comments`
+- `supabase/migrations/5302036_public_interactions_service_role_rls.sql` — service_role INSERT policy on public_interactions
+- `supabase/migrations/5302037_public_interactions_insert_policies.sql` — idempotent anon + service_role INSERT policies
+- `supabase/migrations/5302038_disable_rls_public_interactions.sql` — disable RLS on public_interactions (public table)
 - `supabase/seeds/04_test_seed.sql` — comprehensive test seed: Jira/JSM data, branding, webhooks, notifications, permission overrides, document versions
 
 ### Docker & CI
@@ -941,6 +967,7 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `apps/web/middleware.ts` — base64url JWT expiration check before treating cookie as valid session; prevents redirect loop
 - `apps/web/app/(public)/pending/page.tsx` — uses `logoutAction()` instead of plain `/login` link to break redirect loop
 - `apps/api/src/routes/tickets.ts` — `created_by` set from `req.authUser.userId` in ticket insert (was missing, causing NOT NULL violation)
+- `apps/web/middleware.ts` — also handles domain routing: `app.*` → portal login, `www.*` → marketing; uses `request.headers.get("host")` (Docker proxy fix)
 
 ### Error Tracking
 
