@@ -14,14 +14,22 @@ export default async function UsersPage() {
 
   const memberships = await api.memberships.list();
 
-  const userIds = memberships.map((m: any) => m.user_id).filter(Boolean);
+  const uniqueUserIds = [
+    ...new Set(memberships.map((m: any) => m.user_id).filter(Boolean)),
+  ];
   const orgIds = memberships.map((m: any) => m.organization_id).filter(Boolean);
   const roleIds = memberships.map((m: any) => m.role_id).filter(Boolean);
 
   const [profiles, organizations, roles] = await Promise.all([
-    userIds.length ? api.profiles.list({ ids: userIds }) : Promise.resolve([] as any[]),
-    orgIds.length ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as any[]),
-    roleIds.length ? api.roles.list({ ids: roleIds }) : Promise.resolve([] as any[]),
+    uniqueUserIds.length
+      ? api.profiles.list({ ids: uniqueUserIds })
+      : Promise.resolve([] as any[]),
+    orgIds.length
+      ? api.organizations.list({ ids: orgIds })
+      : Promise.resolve([] as any[]),
+    roleIds.length
+      ? api.roles.list({ ids: roleIds })
+      : Promise.resolve([] as any[]),
   ]);
 
   const profileMap = Object.fromEntries(profiles.map((p: any) => [p.id, p]));
@@ -32,22 +40,22 @@ export default async function UsersPage() {
     <AdminPageShell
       breadcrumbs={
         <AdminBreadcrumbs
-          items={[
-            { label: "Admin", href: "/admin" },
-            { label: "Users" }
-          ]}
+          items={[{ label: "Admin", href: "/admin" }, { label: "Users" }]}
         />
       }
       subnav={<AdminSubnav current="users" />}
       title="Users"
       description="Manage user profiles, organization memberships, and role assignments."
       actions={
-        <div className="cyber-pill">
-          Total memberships: {memberships.length}
-        </div>
+        <div className="cyber-pill">Total users: {uniqueUserIds.length}</div>
       }
     >
-      <AdminUsersClient memberships={memberships} profileMap={profileMap} orgMap={orgMap} roleMap={roleMap} />
+      <AdminUsersClient
+        memberships={memberships}
+        profileMap={profileMap}
+        orgMap={orgMap}
+        roleMap={roleMap}
+      />
     </AdminPageShell>
   );
 }

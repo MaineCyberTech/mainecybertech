@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { AppError, success } from "../types";
 import { getEnv } from "../config/env";
 import { logAuditEvent } from "../services/audit";
+import { logger } from "../lib/logger";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -55,26 +56,36 @@ router.get("/init", async (req, res, next) => {
     if (env.PUBLIC_TRAFFIC_WEBHOOK_URL) {
       const visitorCard = {
         type: "message",
-        attachments: [{
-          contentType: "application/vnd.microsoft.card.adaptive",
-          content: {
-            $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
-            type: "AdaptiveCard",
-            version: "1.4",
-            body: [{
-              type: "TextBlock",
-              text: `👀 **New Website Visitor** 👀\n\n**Location:** ${location}\n**Platform:** ${platform.replace(/"/g, "")}\n**Referrer:** ${referrer}`,
-              wrap: true,
-            }],
+        attachments: [
+          {
+            contentType: "application/vnd.microsoft.card.adaptive",
+            content: {
+              $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+              type: "AdaptiveCard",
+              version: "1.4",
+              body: [
+                {
+                  type: "TextBlock",
+                  text: `👀 **New Website Visitor** 👀\n\n**Location:** ${location}\n**Platform:** ${platform.replace(/"/g, "")}\n**Referrer:** ${referrer}`,
+                  wrap: true,
+                },
+              ],
+            },
           },
-        }],
+        ],
       };
 
       fetch(env.PUBLIC_TRAFFIC_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(visitorCard),
-      }).catch(() => {});
+      }).catch((err) =>
+        logger.error({ err }, "Failed to send traffic webhook"),
+      );
+    } else {
+      logger.warn(
+        "PUBLIC_TRAFFIC_WEBHOOK_URL not set — skipping visitor webhook",
+      );
     }
 
     res.json(success({ trackingId: interactionId }));
@@ -95,7 +106,11 @@ router.post("/submit", async (req, res, next) => {
       .single();
 
     if (fetchError || !record) {
-      throw new AppError("NOT_FOUND", "Session expired. Please refresh the page.", 404);
+      throw new AppError(
+        "NOT_FOUND",
+        "Session expired. Please refresh the page.",
+        404,
+      );
     }
 
     const { error: updateError } = await supabase
@@ -123,26 +138,32 @@ router.post("/submit", async (req, res, next) => {
 
       const leadCard = {
         type: "message",
-        attachments: [{
-          contentType: "application/vnd.microsoft.card.adaptive",
-          content: {
-            $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
-            type: "AdaptiveCard",
-            version: "1.4",
-            body: [{ type: "TextBlock", text: teamsMessage, wrap: true }],
+        attachments: [
+          {
+            contentType: "application/vnd.microsoft.card.adaptive",
+            content: {
+              $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+              type: "AdaptiveCard",
+              version: "1.4",
+              body: [{ type: "TextBlock", text: teamsMessage, wrap: true }],
+            },
           },
-        }],
+        ],
       };
 
       fetch(env.PUBLIC_LEAD_WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(leadCard),
-      }).catch(() => {});
+      }).catch((err) => logger.error({ err }, "Failed to send lead webhook"));
+    } else {
+      logger.warn("PUBLIC_LEAD_WEBHOOK_URL not set — skipping lead webhook");
     }
 
     if (env.JSM_DOMAIN && env.JSM_API_TOKEN) {
-      const authHeader = "Basic " + Buffer.from(`${env.JSM_EMAIL}:${env.JSM_API_TOKEN}`).toString("base64");
+      const authHeader =
+        "Basic " +
+        Buffer.from(`${env.JSM_EMAIL}:${env.JSM_API_TOKEN}`).toString("base64");
 
       const ticketDescription = `*A new client request was submitted via the website.*
 
@@ -169,7 +190,11 @@ h3. Captured Session Metadata
 
       fetch(`https://${env.JSM_DOMAIN}/rest/servicedeskapi/request`, {
         method: "POST",
-        headers: { Authorization: authHeader, Accept: "application/json", "Content-Type": "application/json" },
+        headers: {
+          Authorization: authHeader,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           serviceDeskId: env.JSM_SERVICEDESK_ID,
           requestTypeId: env.JSM_REQUEST_TYPE_ID,
@@ -178,14 +203,35 @@ h3. Captured Session Metadata
             description: ticketDescription,
           },
         }),
-      }).catch(() => {});
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            logger.error(
+              {
+                status: res.status,
+                body: await res.text().catch(() => "unreadable"),
+              },
+              "JSM ticket creation failed",
+            );
+          }
+        })
+        .catch((err) => logger.error({ err }, "Failed to reach JSM API"));
+    } else {
+      logger.warn(
+        "JSM_DOMAIN or JSM_API_TOKEN not set — skipping ticket creation",
+      );
     }
 
     await logAuditEvent({
       action: "public.lead.submit",
       entityType: "public_interaction",
       entityId: parsed.trackingId,
-      metadata: { company: parsed.company, name: parsed.name, email: parsed.email, services: parsed.services },
+      metadata: {
+        company: parsed.company,
+        name: parsed.name,
+        email: parsed.email,
+        services: parsed.services,
+      },
     });
 
     res.json(success({ ok: true }));

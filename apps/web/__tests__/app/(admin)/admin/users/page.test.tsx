@@ -65,14 +65,17 @@ describe("UsersPage", () => {
     expect(screen.getByTestId("subnav")).toHaveTextContent("users");
   });
 
-  it("shows total memberships count", async () => {
-    mockMembershipsList.mockResolvedValue([{ id: "m1" }, { id: "m2" }]);
+  it("shows user count (unique users)", async () => {
+    mockMembershipsList.mockResolvedValue([
+      { id: "m1", user_id: "u1", organization_id: "o1", role_id: "r1" },
+      { id: "m2", user_id: "u1", organization_id: "o2", role_id: "r1" },
+    ]);
     mockProfilesList.mockResolvedValue([]);
     mockOrgsList.mockResolvedValue([]);
     mockRolesList.mockResolvedValue([]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
-    expect(screen.getByText("Total memberships: 2")).toBeInTheDocument();
+    expect(screen.getByText("Total users: 1")).toBeInTheDocument();
   });
 
   it("renders empty state when no memberships", async () => {
@@ -82,11 +85,19 @@ describe("UsersPage", () => {
     expect(screen.getByText("No users found.")).toBeInTheDocument();
   });
 
-  it("renders membership cards with profile info", async () => {
+  it("renders user cards with profile and org info", async () => {
     mockMembershipsList.mockResolvedValue([
-      { id: "m1", user_id: "u1", organization_id: "o1", role_id: "r1", status: "approved" },
+      {
+        id: "m1",
+        user_id: "u1",
+        organization_id: "o1",
+        role_id: "r1",
+        status: "approved",
+      },
     ]);
-    mockProfilesList.mockResolvedValue([{ id: "u1", full_name: "Alice Smith", email: "alice@test.com" }]);
+    mockProfilesList.mockResolvedValue([
+      { id: "u1", full_name: "Alice Smith", email: "alice@test.com" },
+    ]);
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme Corp" }]);
     mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin" }]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
@@ -97,11 +108,57 @@ describe("UsersPage", () => {
     expect(screen.getAllByText(/Admin/).length).toBeGreaterThanOrEqual(1);
   });
 
+  it("shows multi-org indicator for users in multiple orgs", async () => {
+    mockMembershipsList.mockResolvedValue([
+      {
+        id: "m1",
+        user_id: "u1",
+        organization_id: "o1",
+        role_id: "r1",
+        status: "approved",
+      },
+      {
+        id: "m2",
+        user_id: "u1",
+        organization_id: "o2",
+        role_id: "r2",
+        status: "approved",
+      },
+    ]);
+    mockProfilesList.mockResolvedValue([
+      { id: "u1", full_name: "Alice", email: "alice@test.com" },
+    ]);
+    mockOrgsList.mockResolvedValue([
+      { id: "o1", name: "Acme" },
+      { id: "o2", name: "BetaCo" },
+    ]);
+    mockRolesList.mockResolvedValue([
+      { id: "r1", name: "Admin" },
+      { id: "r2", name: "Viewer" },
+    ]);
+    const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
+    render(await UsersPage());
+    expect(screen.getAllByText(/1 more org/).length).toBeGreaterThanOrEqual(1);
+  });
+
   it("renders super admin badge for super admins", async () => {
     mockMembershipsList.mockResolvedValue([
-      { id: "m1", user_id: "u1", organization_id: "o1", role_id: "r1", status: "approved" },
+      {
+        id: "m1",
+        user_id: "u1",
+        organization_id: "o1",
+        role_id: "r1",
+        status: "approved",
+      },
     ]);
-    mockProfilesList.mockResolvedValue([{ id: "u1", full_name: "Admin", email: "admin@test.com", is_super_admin: true }]);
+    mockProfilesList.mockResolvedValue([
+      {
+        id: "u1",
+        full_name: "Admin",
+        email: "admin@test.com",
+        is_super_admin: true,
+      },
+    ]);
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
     mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin" }]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
@@ -111,9 +168,18 @@ describe("UsersPage", () => {
 
   it("renders billing contact badge", async () => {
     mockMembershipsList.mockResolvedValue([
-      { id: "m1", user_id: "u1", organization_id: "o1", role_id: "r1", status: "approved", is_billing_contact: true },
+      {
+        id: "m1",
+        user_id: "u1",
+        organization_id: "o1",
+        role_id: "r1",
+        status: "approved",
+        is_billing_contact: true,
+      },
     ]);
-    mockProfilesList.mockResolvedValue([{ id: "u1", full_name: "Bill", email: "bill@test.com" }]);
+    mockProfilesList.mockResolvedValue([
+      { id: "u1", full_name: "Bill", email: "bill@test.com" },
+    ]);
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
     mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin" }]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
@@ -123,9 +189,17 @@ describe("UsersPage", () => {
 
   it("links membership cards to user detail page", async () => {
     mockMembershipsList.mockResolvedValue([
-      { id: "m1", user_id: "u1", organization_id: "o1", role_id: "r1", status: "approved" },
+      {
+        id: "m1",
+        user_id: "u1",
+        organization_id: "o1",
+        role_id: "r1",
+        status: "approved",
+      },
     ]);
-    mockProfilesList.mockResolvedValue([{ id: "u1", full_name: "Alice", email: "a@a.com" }]);
+    mockProfilesList.mockResolvedValue([
+      { id: "u1", full_name: "Alice", email: "a@a.com" },
+    ]);
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
     mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin" }]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
@@ -136,7 +210,13 @@ describe("UsersPage", () => {
 
   it("handles unknown profile gracefully", async () => {
     mockMembershipsList.mockResolvedValue([
-      { id: "m1", user_id: "u-missing", organization_id: "o1", role_id: null, status: "pending" },
+      {
+        id: "m1",
+        user_id: "u-missing",
+        organization_id: "o1",
+        role_id: null,
+        status: "pending",
+      },
     ]);
     mockProfilesList.mockResolvedValue([]);
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
