@@ -2,7 +2,7 @@
 
 Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infrastructure, security, and feature functionality; marketing site integrated as the public homepage (www route, 4 phases complete)
 
-**Latest audit session (2026-06-18):** 14 audit recommendations implemented (Caddyfile headers, firewall cleanup, cache docs, worker verification, ADR index, architecture diagram, onboarding guide, API endpoint inventory). R1-R10 completed: bulk-invite admin tests, GAP_ANALYSIS.md synced, shared tsconfig wired, OpenAPI spec created, k6 load test script added. Deployed to dev. All pushed to `develop`.
+**Latest audit session (2026-06-18):** Full CI pipeline fixed (Lint/TypeCheck/Test/deploy-do all green). SSE real-time notifications added (API endpoint + client EventSource). Dependabot vulns resolved (10→0). AGENTS.md+GAP_ANALYSIS.md synced. 15 commits today — all pushed to `develop`.
 
 ## Architecture
 
