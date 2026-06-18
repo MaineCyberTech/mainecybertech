@@ -59,6 +59,26 @@ export default function NotificationBell({
     }
   }, []);
 
+  const playNotificationChime = useCallback(() => {
+    try {
+      const ctx = new (
+        window.AudioContext || (window as any).webkitAudioContext
+      )();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = "sine";
+      gain.gain.setValueAtTime(0.3, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   useEffect(() => {
     fetchUnread();
 
@@ -74,6 +94,7 @@ export default function NotificationBell({
         if (Array.isArray(data) && data.length > 0) {
           setUnread((prev) => prev + data.length);
           setNotifications(data as NotificationItem[]);
+          playNotificationChime();
         }
       } catch {
         /* ignore */
@@ -91,7 +112,7 @@ export default function NotificationBell({
       es.close();
       eventSourceRef.current = null;
     };
-  }, [fetchUnread, fetchRecent]);
+  }, [fetchUnread, fetchRecent, playNotificationChime]);
 
   const fetchPrefs = useCallback(async () => {
     setLoadingPrefs(true);
