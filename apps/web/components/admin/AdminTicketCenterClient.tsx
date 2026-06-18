@@ -26,6 +26,8 @@ const STATUS_OPTIONS = [
   "closed",
 ];
 
+const PRIORITY_OPTIONS = ["low", "normal", "high", "urgent"] as const;
+
 type Props = {
   tickets: TicketRecord[];
   organizations: OrganizationRecord[];
@@ -34,6 +36,7 @@ type Props = {
     ticketId: string,
     status: string,
   ) => Promise<void>;
+  bulkUpdateTicketsAction?: (formData: FormData) => Promise<void>;
 };
 
 function formatDateTime(value?: string | null) {
@@ -194,10 +197,14 @@ function TicketCard({
   ticket,
   orgMap,
   onStatusChange,
+  selected,
+  onSelect,
 }: {
   ticket: TicketRecord;
   orgMap: Map<string, string>;
   onStatusChange?: (ticketId: string, status: string) => void;
+  selected?: boolean;
+  onSelect?: (ticketId: string, selected: boolean) => void;
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const status = ticketStatus(ticket);
@@ -215,6 +222,11 @@ function TicketCard({
     onStatusChange?.(ticketId, newStatus);
   };
 
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    onSelect?.(ticket.id, e.target.checked);
+  };
+
   return (
     <div className="relative">
       <Link
@@ -224,6 +236,13 @@ function TicketCard({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={handleCheckboxChange}
+                className="h-4 w-4 rounded border-white/20 bg-[#0A1118] text-emerald-500 focus:ring-emerald-500 accent-emerald-500"
+                aria-label="Select ticket"
+              />
               <p className="font-medium text-slate-50">
                 {ticketSubject(ticket)}
               </p>
@@ -304,6 +323,7 @@ export default function AdminTicketCenterClient({
   organizations,
   createTicketAction,
   updateTicketStatusAction,
+  bulkUpdateTicketsAction,
 }: Props) {
   const [openModal, setOpenModal] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -317,6 +337,38 @@ export default function AdminTicketCenterClient({
     "updated",
   );
   const [page, setPage] = useState(1);
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<"status" | "priority" | null>(
+    null,
+  );
+  const [bulkStatus, setBulkStatus] = useState("");
+  const [bulkPriority, setBulkPriority] = useState("");
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
+
+  const handleBulkApply = async () => {
+    if (!bulkUpdateTicketsAction || selectedIds.size === 0) return;
+    if (!bulkStatus && !bulkPriority) return;
+
+    setBulkProcessing(true);
+    try {
+      const formData = new FormData();
+      selectedIds.forEach((id) => formData.append("ids", id));
+      if (bulkStatus) formData.set("status", bulkStatus);
+      if (bulkPriority) formData.set("priority", bulkPriority);
+      await bulkUpdateTicketsAction(formData);
+      setSelectedIds(new Set());
+      setBulkAction(null);
+      setBulkStatus("");
+      setBulkPriority("");
+    } catch (error) {
+      console.error("Bulk update failed:", error);
+    } finally {
+      setBulkProcessing(false);
+    }
+  };
 
   const visibleTickets = useMemo(
     () => tickets.filter((ticket) => !isDeletedTicket(ticket)),
@@ -573,11 +625,128 @@ export default function AdminTicketCenterClient({
               ? "Search Results"
               : "Tickets"}
           </h2>
-          <span className="cyber-pill">
-            {filtered.length} of {visibleTickets.length}
-          </span>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-slate-300">
+              <input
+                ref={selectAllRef}
+                type="checkbox"
+                checked={
+                  paginated.length > 0 &&
+                  paginated.every((t) => selectedIds.has(t.id))
+                }
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    paginated.forEach((t) =>
+                      setSelectedIds((prev) => new Set(prev).add(t.id)),
+                    );
+                    if (selectAllRef.current)
+                      selectAllRef.current.indeterminate = false;
+                  } else {
+                    paginated.forEach((t) =>
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        next.delete(t.id);
+                        return next;
+                      }),
+                    );
+                    if (selectAllRef.current)
+                      selectAllRef.current.indeterminate = false;
+                  }
+                }}
+                className="h-4 w-4 rounded border-white/20 bg-[#0A1118] text-emerald-500 focus:ring-emerald-500 accent-emerald-500"
+              />
+              Select all on page
+            </label>
+            <span className="cyber-pill">
+              {filtered.length} of {visibleTickets.length}
+            </span>
+          </div>
         </div>
         <div className="mt-6 space-y-4">
+          {selectedIds.size > 0 && bulkUpdateTicketsAction && (
+            <div className="mb-4 p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-sm font-medium text-emerald-300">
+                  {selectedIds.size} ticket{selectedIds.size !== 1 ? "s" : ""}{" "}
+                  selected
+                </span>
+                <select
+                  value={bulkAction ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setBulkAction(
+                      val === "status"
+                        ? "status"
+                        : val === "priority"
+                          ? "priority"
+                          : null,
+                    );
+                    setBulkStatus("");
+                    setBulkPriority("");
+                  }}
+                  className="cyber-input w-auto"
+                  style={{ minWidth: "140px" }}
+                >
+                  <option value="">Select bulk action</option>
+                  <option value="status">Change Status</option>
+                  <option value="priority">Change Priority</option>
+                </select>
+                {bulkAction === "status" && (
+                  <select
+                    value={bulkStatus}
+                    onChange={(e) => setBulkStatus(e.target.value)}
+                    className="cyber-input w-auto"
+                    style={{ minWidth: "160px" }}
+                    disabled={bulkProcessing}
+                  >
+                    <option value="">Select status</option>
+                    {STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {bulkAction === "priority" && (
+                  <select
+                    value={bulkPriority}
+                    onChange={(e) => setBulkPriority(e.target.value)}
+                    className="cyber-input w-auto"
+                    style={{ minWidth: "140px" }}
+                    disabled={bulkProcessing}
+                  >
+                    <option value="">Select priority</option>
+                    {PRIORITY_OPTIONS.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {bulkAction &&
+                  (bulkAction === "status" ? bulkStatus : bulkPriority) && (
+                    <button
+                      type="button"
+                      className="cyber-button"
+                      disabled={bulkProcessing}
+                      onClick={() => handleBulkApply()}
+                    >
+                      {bulkProcessing ? "Applying..." : "Apply"}
+                    </button>
+                  )}
+                <button
+                  type="button"
+                  className="cyber-button-secondary"
+                  onClick={() => setSelectedIds(new Set())}
+                  disabled={bulkProcessing}
+                >
+                  Clear Selection
+                </button>
+              </div>
+            </div>
+          )}
           {paginated.length > 0 ? (
             paginated.map((ticket) => (
               <TicketCard
@@ -585,6 +754,15 @@ export default function AdminTicketCenterClient({
                 ticket={ticket}
                 orgMap={orgMap}
                 onStatusChange={updateTicketStatusAction}
+                selected={selectedIds.has(ticket.id)}
+                onSelect={(id, checked) => {
+                  setSelectedIds((prev) => {
+                    const next = new Set(prev);
+                    if (checked) next.add(id);
+                    else next.delete(id);
+                    return next;
+                  });
+                }}
               />
             ))
           ) : (

@@ -12,6 +12,18 @@ import {
   bulkFolderSchema,
   bulkMetadataSchema,
 } from "../validators/document";
+import { z } from "zod";
+
+const createShareSchema = z.object({
+  expiresAt: z.string().datetime(),
+  maxAccess: z.number().int().positive().optional(),
+});
+
+const updateShareSchema = z.object({
+  expiresAt: z.string().datetime().optional(),
+  maxAccess: z.number().int().positive().optional().nullable(),
+  revoked: z.boolean().optional(),
+});
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -493,6 +505,209 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
     if (error || !data)
       throw new AppError("NOT_FOUND", "Version not found", 404);
     res.json(success(data));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/:id/shares", async (req, res, next) => {
+  try {
+    const parsed = createShareSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+
+    const { data: doc, error: docError } = await supabase
+      .from("documents")
+      .select("id, organization_id, storage_bucket, storage_path")
+      .eq("id", req.params.id)
+      .single();
+
+    if (docError || !doc)
+      throw new AppError("NOT_FOUND", "Document not found", 404);
+
+    const hasAccess = await supabase
+      .from("memberships")
+      .select("id")
+      .eq("user_id", req.authUser!.userId)
+      .eq("organization_id", doc.organization_id)
+      .eq("status", "approved")
+      .maybeSingle()
+      .then(({ data }) => !!data);
+
+    if (!hasAccess)
+      throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
+
+    const token = crypto.randomUUID();
+    const { data: share, error } = await supabase
+      .from("document_shares")
+      .insert({
+        document_id: doc.id,
+        organization_id: doc.organization_id,
+        created_by: req.authUser!.userId,
+        token,
+        expires_at: parsed.expiresAt,
+        max_access: parsed.maxAccess ?? null,
+      })
+      .select()
+      .single();
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "document.share.create",
+      entityType: "document",
+      entityId: doc.id,
+      metadata: { shareId: share.id, expiresAt: parsed.expiresAt },
+    });
+
+    const baseUrl = process.env.APP_BASE_URL ?? "";
+    const shareUrl = `${baseUrl}/api/v1/documents/shares/${token}`;
+
+    res.json(success({ ...share, shareUrl }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:id/shares", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+
+    const { data: doc, error: docError } = await supabase
+      .from("documents")
+      .select("id, organization_id")
+      .eq("id", req.params.id)
+      .single();
+
+    if (docError || !doc)
+      throw new AppError("NOT_FOUND", "Document not found", 404);
+
+    const hasAccess = await supabase
+      .from("memberships")
+      .select("id")
+      .eq("user_id", req.authUser!.userId)
+      .eq("organization_id", doc.organization_id)
+      .eq("status", "approved")
+      .maybeSingle()
+      .then(({ data }) => !!data);
+
+    if (!hasAccess)
+      throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
+
+    const { data, error } = await supabase
+      .from("document_shares")
+      .select("*")
+      .eq("document_id", doc.id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    res.json(success(data ?? []));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/:id/shares/:shareId", async (req, res, next) => {
+  try {
+    const parsed = updateShareSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+
+    const { data: share, error: shareError } = await supabase
+      .from("document_shares")
+      .select("id, document_id, organization_id")
+      .eq("id", req.params.shareId)
+      .single();
+
+    if (shareError || !share)
+      throw new AppError("NOT_FOUND", "Share not found", 404);
+
+    const hasAccess = await supabase
+      .from("memberships")
+      .select("id")
+      .eq("user_id", req.authUser!.userId)
+      .eq("organization_id", share.organization_id)
+      .eq("status", "approved")
+      .maybeSingle()
+      .then(({ data }) => !!data);
+
+    if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
+
+    const updateData: Record<string, unknown> = {};
+    if (parsed.expiresAt !== undefined)
+      updateData.expires_at = parsed.expiresAt;
+    if (parsed.maxAccess !== undefined)
+      updateData.max_access = parsed.maxAccess;
+    if (parsed.revoked) updateData.revoked_at = new Date().toISOString();
+
+    if (Object.keys(updateData).length === 0) {
+      throw new AppError("VALIDATION", "No fields to update", 400);
+    }
+
+    const { error } = await supabase
+      .from("document_shares")
+      .update(updateData)
+      .eq("id", req.params.shareId);
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "document.share.update",
+      entityType: "document",
+      entityId: share.document_id,
+      metadata: {
+        shareId: req.params.shareId,
+        changes: Object.keys(updateData),
+      },
+    });
+
+    res.json(success({ updated: true }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/:id/shares/:shareId", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+
+    const { data: share, error: shareError } = await supabase
+      .from("document_shares")
+      .select("id, document_id, organization_id")
+      .eq("id", req.params.shareId)
+      .single();
+
+    if (shareError || !share)
+      throw new AppError("NOT_FOUND", "Share not found", 404);
+
+    const hasAccess = await supabase
+      .from("memberships")
+      .select("id")
+      .eq("user_id", req.authUser!.userId)
+      .eq("organization_id", share.organization_id)
+      .eq("status", "approved")
+      .maybeSingle()
+      .then(({ data }) => !!data);
+
+    if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
+
+    const { error } = await supabase
+      .from("document_shares")
+      .delete()
+      .eq("id", req.params.shareId);
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "document.share.delete",
+      entityType: "document",
+      entityId: share.document_id,
+      metadata: { shareId: req.params.shareId },
+    });
+
+    res.status(204).send();
   } catch (error) {
     next(error);
   }

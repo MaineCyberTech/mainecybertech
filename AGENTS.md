@@ -2,7 +2,7 @@
 
 Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infrastructure, security, and feature functionality; marketing site integrated as the public homepage (www route, 4 phases complete)
 
-**Latest audit session (2026-06-18):** Full CI pipeline fixed (Lint/TypeCheck/Test/deploy-do all green). SSE real-time notifications added (API endpoint + client EventSource). Dependabot vulns resolved (10→0). AGENTS.md+GAP_ANALYSIS.md synced. New features: notification audio chime, SLA tracking (migration+API+SDK), admin email test button, API key management (migration+CRUD+SDK). 20 commits today — all pushed to `develop`.
+**Latest audit session (2026-06-18):** Full CI pipeline fixed (Lint/TypeCheck/Test/deploy-do all green). SSE real-time notifications added (API endpoint + client EventSource). Dependabot vulns resolved (10→0). AGENTS.md+GAP_ANALYSIS.md synced. New features: notification audio chime, SLA tracking (migration+API+SDK), admin email test button, API key management (migration+CRUD+SDK), **bulk ticket operations UI (checkbox selection + bulk status/priority), document share links (signed/expiring URLs), error retry buttons on error boundaries**. 20+ commits today — all pushed to `develop`.
 
 ## Architecture
 
@@ -32,14 +32,14 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status & Patterns
 
-**764 tests, all passing:** API 182, SDK 108, Worker 24, Web 450
+**764 tests, all passing:** API 182, SDK 108, Worker 24, Web 455
 
 | Package | Tests         | Framework                         |
 | ------- | ------------- | --------------------------------- |
 | API     | 182           | Jest + supertest                  |
 | SDK     | 108           | Jest (mocked fetch)               |
 | Worker  | 24            | Jest (env schema + task handlers) |
-| Web     | 450           | Jest + Testing Library            |
+| Web     | 455           | Jest + Testing Library            |
 | E2E     | 24 spec files | Playwright (chromium)             |
 
 ### Test patterns
@@ -436,6 +436,10 @@ Full codebase audit conducted to identify remaining gaps before pushing to GitHu
 | 20  | **Ticket create fix** — added `created_by` to insert (previously missing, NOT NULL violation)                  | ✅     |
 | 21  | **Redirect loop fix** — middleware validates JWT exp; `/pending` uses logoutAction instead of plain link       | ✅     |
 | 22  | **CI pnpm setup fix** — replaced `pnpm/action-setup` + `cache: pnpm` with `corepack enable` in all 9 workflows | ✅     |
+| 23  | **E2E workflow fix** — added `supabase db reset` to E2E workflow for seed data                                 | ✅     |
+| 24  | **Bulk ticket operations UI** — checkbox selection + bulk status/priority update                               | ✅     |
+| 25  | **Document share links** — signed/expiring URLs with CRUD API + SDK                                            | ✅     |
+| 26  | **Error retry buttons** — all 4 error boundaries (global, admin, portal, public) have "Try again"              | ✅     |
 
 ## Recommendations & Technical Debt
 
@@ -602,13 +606,13 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 
 | #   | Feature                                                                            | Effort | Status |
 | --- | ---------------------------------------------------------------------------------- | ------ | ------ |
-| 14  | **Error retry buttons** — "Try again" button on error states                       | Small  |        |
-| 15  | **Document share link** — generate signed/expiring link for external parties       | Small  |        |
-| 16  | **Markdown comment support** — lightweight rendering for ticket/project comments   | Small  |        |
-| 17  | **Email notification test button** — admin "Send Test Email" to verify SMTP config | Small  |        |
-| 18  | **Bulk ticket operations** — select and update ticket status/priority in bulk      | Medium |        |
-| 19  | **Activity feed on portal** — chronological activity timeline on dashboard         | Medium |        |
-| 20  | **Notification audio** — subtle chime on new unread notifications                  | Medium |        |
+| 14  | **Error retry buttons** — "Try again" button on error states                       | Small  | ✅     |
+| 15  | **Document share link** — generate signed/expiring link for external parties       | Small  | ✅     |
+| 16  | **Markdown comment support** — lightweight rendering for ticket/project comments   | Small  | ✅     |
+| 17  | **Email notification test button** — admin "Send Test Email" to verify SMTP config | Small  | ✅     |
+| 18  | **Bulk ticket operations** — select and update ticket status/priority in bulk      | Medium | ✅     |
+| 19  | **Activity feed on portal** — chronological activity timeline on dashboard         | Medium | ✅     |
+| 20  | **Notification audio** — subtle chime on new unread notifications                  | Medium | ✅     |
 
 ### Admin Features
 

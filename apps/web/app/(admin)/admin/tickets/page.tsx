@@ -26,7 +26,8 @@ export default async function AdminTicketsPage() {
     const priority = String(formData.get("priority") ?? "normal").trim();
     const category = String(formData.get("category") ?? "").trim();
     const description = String(formData.get("description") ?? "").trim();
-    if (!organizationId || !subject || !description) throw new Error("Organization, title, and description are required.");
+    if (!organizationId || !subject || !description)
+      throw new Error("Organization, title, and description are required.");
 
     await api.tickets.create({
       organizationId,
@@ -50,6 +51,26 @@ export default async function AdminTicketsPage() {
     revalidatePath("/admin/tickets");
   }
 
+  async function bulkUpdateTicketsAction(formData: FormData) {
+    "use server";
+    await requireAdminAccess();
+    const api = getApiClient();
+
+    const ids = formData.getAll("ids").map(String);
+    const status = formData.get("status") as string | null;
+    const priority = formData.get("priority") as string | null;
+
+    if (ids.length === 0) throw new Error("No tickets selected");
+    if (!status && !priority) throw new Error("No updates provided");
+
+    await api.tickets.bulkUpdate(ids, {
+      ...(status ? { status } : {}),
+      ...(priority ? { priority } : {}),
+    });
+
+    revalidatePath("/admin/tickets");
+  }
+
   const [organizations, ticketsResult] = await Promise.all([
     api.organizations.list(),
     api.tickets.list({}),
@@ -58,13 +79,16 @@ export default async function AdminTicketsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminBreadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Tickets" }]} />
+      <AdminBreadcrumbs
+        items={[{ label: "Admin", href: "/admin" }, { label: "Tickets" }]}
+      />
       <AdminSubnav current="tickets" />
       <AdminTicketCenterClient
         tickets={tickets as TicketRecord[]}
         organizations={organizations as OrganizationRecord[]}
         createTicketAction={createTicketAction}
         updateTicketStatusAction={updateTicketStatusAction}
+        bulkUpdateTicketsAction={bulkUpdateTicketsAction}
       />
     </div>
   );
