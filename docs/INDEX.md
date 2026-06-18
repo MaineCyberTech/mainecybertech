@@ -4,10 +4,15 @@
 
 ## Quick Start
 
-| Document                  | Purpose                                                               |
-| ------------------------- | --------------------------------------------------------------------- |
-| [README.md](../README.md) | Project overview, testing, Docker, CI/CD, design decisions            |
-| [AGENTS.md](../AGENTS.md) | Agent context: progress, constraints, test patterns, critical context |
+| Document                                                    | Purpose                                                               |
+| ----------------------------------------------------------- | --------------------------------------------------------------------- |
+| [README.md](../README.md)                                   | Project overview, testing, Docker, CI/CD, design decisions            |
+| [AGENTS.md](../AGENTS.md)                                   | Agent context: progress, constraints, test patterns, critical context |
+| [docs/ONBOARDING.md](ONBOARDING.md)                         | Developer onboarding guide — architecture, workflow, patterns         |
+| [docs/API_ENDPOINT_INVENTORY.md](API_ENDPOINT_INVENTORY.md) | Complete API endpoint inventory (86 endpoints)                        |
+| [docs/ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)     | Mermaid system architecture diagram                                   |
+| [docs/adr/README.md](adr/README.md)                         | Architecture Decision Records (7 decisions)                           |
+| [docs/MEGA_AUDIT_2026-06-18.md](MEGA_AUDIT_2026-06-18.md)   | Comprehensive architecture & security audit                           |
 
 ## Setup & Local Development
 

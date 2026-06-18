@@ -2,6 +2,8 @@
 
 Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infrastructure, security, and feature functionality; marketing site integrated as the public homepage (www route, 4 phases complete)
 
+**Latest audit session (2026-06-18):** 14 recommendations implemented — Caddyfile security headers, firewall cleanup, cache documentation, worker task verification, ADR index, architecture diagram, onboarding guide, API endpoint inventory. All pushed to `develop`.
+
 ## Architecture
 
 MCT is a **Turborepo monorepo** with 4 packages:
@@ -332,8 +334,8 @@ The full architecture review identified 20 findings across 4 categories. **All 2
 | 16  | `HEALTH_PORT` listed twice in ENVIRONMENT_VARIABLES.md | Docs        | ✅     | Removed duplicate row                                                     |
 | 17  | Duplicated block in INDEX.md                           | Docs        | ✅     | Removed lines 49-76 duplication                                           |
 | 18  | No `.env.example` files                                | Docs        | ✅     | Created for API, web, and worker                                          |
-| 19  | No API endpoint inventory                              | Docs        | Open   | Future consideration                                                      |
-| 20  | No ADR format                                          | Docs        | Open   | Future consideration                                                      |
+| 19  | No API endpoint inventory                              | Docs        | ✅     | Created `docs/API_ENDPOINT_INVENTORY.md` — 86 endpoints documented        |
+| 20  | No ADR format                                          | Docs        | ✅     | Created `docs/adr/README.md` — 7 key decisions documented                 |
 
 ## Pre-Production Review (2026-06-05)
 
