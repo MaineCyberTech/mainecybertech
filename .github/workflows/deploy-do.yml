@@ -181,6 +181,9 @@ jobs:
           cd /opt/mct-portal
           cp /tmp/.env /opt/mct-portal/.env
           chmod 600 .env
+          echo "--- FREEING DISK SPACE ---"
+          docker system prune -af || true
+          docker builder prune -af || true
           IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose up -d --no-deps api worker web caddy
           docker image prune -f
           sleep 15
@@ -209,6 +212,10 @@ jobs:
           echo "--- LOGGING INTO GHCR ---"
           echo "$GHCR_TOKEN" | ssh $SSH_OPTS root@$HOST "docker login ghcr.io -u $GHCR_USERNAME --password-stdin" 2>&1
           echo "LOGIN_EXIT=$?"
+
+          echo "--- CLEANING DROPLET DISK ---"
+          ssh $SSH_OPTS root@$HOST "docker system prune -af && docker builder prune -af" 2>&1
+          echo "CLEANUP_EXIT=$?"
 
           echo "--- PULLING IMAGES ON RUNNER ---"
           docker pull $GHCR_IMAGE_PREFIX/mct-api:$IMAGE_TAG
