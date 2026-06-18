@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
