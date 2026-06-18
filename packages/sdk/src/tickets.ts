@@ -91,4 +91,11 @@ export class TicketsApi {
     if (params?.status) qp.status = params.status;
     return this.client.get<Blob>(`/api/v1/tickets/export`, qp);
   }
+
+  bulkUpdate(ids: string[], updates: { status?: string; priority?: string }) {
+    return this.client.post<{ updated: number }>("/api/v1/tickets/bulk", {
+      ids,
+      ...updates,
+    });
+  }
 }

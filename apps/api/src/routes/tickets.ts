@@ -418,4 +418,44 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
   }
 });
 
+router.post("/bulk", requireOrgAccess, async (req, res, next) => {
+  try {
+    const { ids, status, priority } = req.body as {
+      ids?: string[];
+      status?: string;
+      priority?: string;
+    };
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      throw new AppError("VALIDATION", "ids array is required", 400);
+    }
+    if (!status && !priority) {
+      throw new AppError("VALIDATION", "status or priority is required", 400);
+    }
+
+    const supabase = getSupabaseAdmin();
+    const updateData: Record<string, string> = {};
+    if (status) updateData.status = status;
+    if (priority) updateData.priority = priority;
+
+    const { error } = await supabase
+      .from("tickets")
+      .update(updateData)
+      .in("id", ids);
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "ticket.bulk_update",
+      entityType: "ticket",
+      metadata: { ids, status, priority },
+    });
+
+    res.json(success({ updated: ids.length }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
