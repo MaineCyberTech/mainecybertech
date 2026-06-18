@@ -1,7 +1,11 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import express from "express";
-import { responseCache, invalidateCache } from "../middleware/cache";
+import {
+  responseCache,
+  responseCacheNoRenew,
+  invalidateCache,
+} from "../middleware/cache";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -75,6 +79,33 @@ describe("responseCache", () => {
 
     await request(app).get("/test");
     expect(getCallCount()).toBe(2);
+  });
+
+  it("does not self-renew on cache hit with responseCacheNoRenew", async () => {
+    invalidateCache();
+    const app = express();
+    let callCount = 0;
+
+    app.get("/no-renew", responseCacheNoRenew(60), (req, res) => {
+      callCount++;
+      res.json({ count: callCount });
+    });
+
+    const res1 = await request(app).get("/no-renew");
+    expect(res1.body.count).toBe(1);
+    expect(res1.headers["x-cache"]).toBe("MISS");
+
+    const res2 = await request(app).get("/no-renew");
+    expect(res2.body.count).toBe(1);
+    expect(res2.headers["x-cache"]).toBe("HIT");
+    expect(res2.body.count).toBe(res1.body.count);
+
+    // Invalidate and verify handler runs again
+    invalidateCache();
+
+    const res3 = await request(app).get("/no-renew");
+    expect(res3.body.count).toBe(2);
+    expect(res3.headers["x-cache"]).toBe("MISS");
   });
 
   it("invalidates all cache when no pattern", async () => {

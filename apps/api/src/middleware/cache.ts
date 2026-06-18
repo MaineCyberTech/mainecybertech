@@ -49,6 +49,39 @@ export function responseCache(ttlSeconds = 60) {
       res.setHeader("X-Cache", "MISS");
       return originalJson(data);
     };
+    next();
+  };
+}
+
+export function responseCacheNoRenew(ttlSeconds = 60) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (req.method !== "GET") {
+      return next();
+    }
+
+    ensureCleanupRunning();
+
+    const key = `${req.path}:${JSON.stringify(req.query)}`;
+    const entry = cache.get(key);
+
+    if (entry && entry.expires > Date.now()) {
+      res.setHeader("X-Cache", "HIT");
+      return res.json(entry.data);
+    }
+
+    const originalJson = res.json.bind(res);
+    res.json = (data: unknown) => {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
+        if (!cache.has(key)) {
+          cache.set(key, {
+            data,
+            expires: Date.now() + ttlSeconds * 1000,
+          });
+        }
+      }
+      res.setHeader("X-Cache", "MISS");
+      return originalJson(data);
+    };
 
     next();
   };

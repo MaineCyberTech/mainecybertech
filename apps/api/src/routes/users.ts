@@ -15,7 +15,9 @@ router.get("/", requireAdmin, async (req, res, next) => {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at")
+      .select(
+        "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+      )
       .order("email");
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -30,7 +32,9 @@ router.get("/:id", async (req, res, next) => {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at")
+      .select(
+        "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+      )
       .eq("id", req.params.id)
       .single();
 
@@ -47,28 +51,48 @@ router.get("/:id/detail", async (req, res, next) => {
 
     const { data: user, error: userError } = await supabase
       .from("profiles")
-      .select("id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at")
+      .select(
+        "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+      )
       .eq("id", req.params.id)
       .single();
 
-    if (userError || !user) throw new AppError("NOT_FOUND", "User not found", 404);
+    if (userError || !user)
+      throw new AppError("NOT_FOUND", "User not found", 404);
 
     const { data: memberships, error: memError } = await supabase
       .from("memberships")
-      .select("id, organization_id, user_id, role_id, status, is_billing_contact, is_security_contact, created_at")
+      .select(
+        "id, organization_id, user_id, role_id, status, is_billing_contact, is_security_contact, created_at",
+      )
       .eq("user_id", req.params.id);
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
 
-    const orgIds = [...new Set((memberships ?? []).map((m: { organization_id: string }) => m.organization_id))];
-    const roleIds = [...new Set((memberships ?? []).map((m: { role_id: string }) => m.role_id))];
+    const orgIds = [
+      ...new Set(
+        (memberships ?? []).map(
+          (m: { organization_id: string }) => m.organization_id,
+        ),
+      ),
+    ];
+    const roleIds = [
+      ...new Set(
+        (memberships ?? []).map((m: { role_id: string }) => m.role_id),
+      ),
+    ];
 
     const [
       { data: organizations, error: orgsError },
       { data: roles, error: rolesError },
     ] = await Promise.all([
       orgIds.length > 0
-        ? supabase.from("organizations").select("id, name, slug, status, primary_domain, support_plan, created_at, updated_at").in("id", orgIds)
+        ? supabase
+            .from("organizations")
+            .select(
+              "id, name, slug, status, primary_domain, support_plan, created_at, updated_at",
+            )
+            .in("id", orgIds)
         : { data: [], error: null },
       roleIds.length > 0
         ? supabase.from("roles").select("id, key, name").in("id", roleIds)
@@ -82,16 +106,19 @@ router.get("/:id/detail", async (req, res, next) => {
       .from("roles")
       .select("id, key, name");
 
-    if (allRolesError) throw new AppError("DB_ERROR", allRolesError.message, 500);
+    if (allRolesError)
+      throw new AppError("DB_ERROR", allRolesError.message, 500);
 
-    res.json(success({
-      user,
-      profile: user,
-      memberships: memberships ?? [],
-      organizations: organizations ?? [],
-      roles: roles ?? [],
-      allRoles: allRoles ?? [],
-    }));
+    res.json(
+      success({
+        user,
+        profile: user,
+        memberships: memberships ?? [],
+        organizations: organizations ?? [],
+        roles: roles ?? [],
+        allRoles: allRoles ?? [],
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -99,14 +126,24 @@ router.get("/:id/detail", async (req, res, next) => {
 
 router.patch("/:id/role", requireAdmin, async (req, res, next) => {
   try {
-    const { roleId } = z.object({ roleId: z.string().min(1, "roleId is required") }).parse(req.body);
+    const { roleId, organizationId } = z
+      .object({
+        roleId: z.string().min(1, "roleId is required"),
+        organizationId: z.string().optional(),
+      })
+      .parse(req.body);
 
     const supabase = getSupabaseAdmin();
 
-    const { error } = await supabase
+    let query = supabase
       .from("memberships")
       .update({ role_id: roleId })
       .eq("user_id", req.params.id);
+    if (organizationId) {
+      query = query.eq("organization_id", organizationId);
+    }
+
+    const { error } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -115,7 +152,7 @@ router.patch("/:id/role", requireAdmin, async (req, res, next) => {
       action: "user.role.update",
       entityType: "user",
       entityId: String(req.params.id),
-      metadata: { roleId },
+      metadata: { roleId, organizationId },
     });
 
     res.json(success({ updated: true }));
@@ -136,10 +173,19 @@ router.get("/:id/permissions", async (req, res, next) => {
     ] = await Promise.all([
       supabase
         .from("memberships")
-        .select("id, organization_id, role_id, status, roles(key, name), organizations(name)")
+        .select(
+          "id, organization_id, role_id, status, roles(key, name), organizations(name)",
+        )
         .eq("user_id", userId),
-      supabase.from("permissions").select("id, module_key, action_key, description").order("module_key").order("action_key"),
-      supabase.from("user_permission_overrides").select("id, organization_id, permission_id, is_allowed").eq("user_id", userId),
+      supabase
+        .from("permissions")
+        .select("id, module_key, action_key, description")
+        .order("module_key")
+        .order("action_key"),
+      supabase
+        .from("user_permission_overrides")
+        .select("id, organization_id, permission_id, is_allowed")
+        .eq("user_id", userId),
     ]);
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
@@ -150,17 +196,29 @@ router.get("/:id/permissions", async (req, res, next) => {
       ? await supabase
           .from("role_permissions")
           .select("permission_id")
-          .in("role_id", memberships.map((m: any) => m.role_id))
+          .in(
+            "role_id",
+            memberships.map((m: any) => m.role_id),
+          )
       : { data: [] as any[], error: null };
 
-    if (rolePermissions.error) throw new AppError("DB_ERROR", (rolePermissions.error as any).message, 500);
+    if (rolePermissions.error)
+      throw new AppError(
+        "DB_ERROR",
+        (rolePermissions.error as any).message,
+        500,
+      );
 
-    res.json(success({
-      memberships: memberships ?? [],
-      permissions: allPermissions ?? [],
-      rolePermissionIds: (rolePermissions.data ?? []).map((rp: any) => rp.permission_id),
-      overrides: overrides ?? [],
-    }));
+    res.json(
+      success({
+        memberships: memberships ?? [],
+        permissions: allPermissions ?? [],
+        rolePermissionIds: (rolePermissions.data ?? []).map(
+          (rp: any) => rp.permission_id,
+        ),
+        overrides: overrides ?? [],
+      }),
+    );
   } catch (error) {
     next(error);
   }
@@ -177,7 +235,11 @@ router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
     };
 
     if (!organizationId || !permissionId || isAllowed === undefined) {
-      throw new AppError("VALIDATION", "organizationId, permissionId, and isAllowed are required", 400);
+      throw new AppError(
+        "VALIDATION",
+        "organizationId, permissionId, and isAllowed are required",
+        400,
+      );
     }
 
     const { data: existing, error: checkError } = await supabase
@@ -200,7 +262,12 @@ router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
     } else {
       const { error } = await supabase
         .from("user_permission_overrides")
-        .insert({ user_id: userId, organization_id: organizationId, permission_id: permissionId, is_allowed: isAllowed });
+        .insert({
+          user_id: userId,
+          organization_id: organizationId,
+          permission_id: permissionId,
+          is_allowed: isAllowed,
+        });
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
     }
@@ -209,7 +276,12 @@ router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "user.permission.override",
       entityType: "user_permission_override",
-      metadata: { targetUserId: userId, organizationId, permissionId, isAllowed },
+      metadata: {
+        targetUserId: userId,
+        organizationId,
+        permissionId,
+        isAllowed,
+      },
     });
 
     res.json(success({ updated: true }));
