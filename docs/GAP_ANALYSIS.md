@@ -4,14 +4,14 @@
 
 ## Test Summary
 
-**714 unit tests + 24 E2E spec files — all passing**
+**764 unit tests + 24 E2E spec files — all passing**
 
 | Package | Tests         | Framework              |
 | ------- | ------------- | ---------------------- |
-| API     | 178           | Jest + supertest       |
+| API     | 182           | Jest + supertest       |
 | SDK     | 108           | Jest (mocked fetch)    |
 | Worker  | 24            | Jest                   |
-| Web     | 404           | Jest + Testing Library |
+| Web     | 450           | Jest + Testing Library |
 | E2E     | 24 spec files | Playwright (chromium)  |
 
 ## Strong Areas
