@@ -64,6 +64,7 @@ jobs:
           echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status --output json | jq -r '.service_role_key')" >> $API_ENV
           echo "CORS_ORIGIN=*" >> $API_ENV
           echo "LOG_LEVEL=silent" >> $API_ENV
+          echo "JWT_SECRET=e2e-test-secret" >> $API_ENV
 
       - name: Build API
         run: pnpm --filter=api build
