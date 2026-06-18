@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
@@ -31,19 +32,13 @@ function parseCSVLine(line: string): string[] {
 
 router.post("/invite", async (req, res, next) => {
   try {
-    const { csv, organizationId, roleId } = req.body as {
-      csv?: string;
-      organizationId?: string;
-      roleId?: string;
-    };
-
-    if (!csv || !organizationId || !roleId) {
-      throw new AppError(
-        "VALIDATION",
-        "csv, organizationId, and roleId are required",
-        400,
-      );
-    }
+    const { csv, organizationId, roleId } = z
+      .object({
+        csv: z.string().min(1, "CSV data is required"),
+        organizationId: z.string().min(1, "Organization ID is required"),
+        roleId: z.string().min(1, "Role ID is required"),
+      })
+      .parse(req.body);
 
     const supabase = getSupabaseAdmin();
     const lines = csv.split("\n").filter((l) => l.trim());

@@ -123,17 +123,12 @@ router.get("/:id/permissions", async (req, res, next) => {
 
 router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
   try {
-    const { permissionId, hasPermission } = req.body as {
-      permissionId?: string;
-      hasPermission?: boolean;
-    };
-    if (!permissionId || hasPermission === undefined) {
-      throw new AppError(
-        "VALIDATION",
-        "permissionId and hasPermission are required",
-        400,
-      );
-    }
+    const { permissionId, hasPermission } = z
+      .object({
+        permissionId: z.string().min(1),
+        hasPermission: z.boolean(),
+      })
+      .parse(req.body);
 
     const supabase = getSupabaseAdmin();
 

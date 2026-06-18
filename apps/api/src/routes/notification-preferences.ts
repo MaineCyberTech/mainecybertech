@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
@@ -47,35 +48,20 @@ router.get("/", async (req, res, next) => {
 
 router.put("/", async (req, res, next) => {
   try {
-    const { organizationId, preferences } = req.body as {
-      organizationId?: string;
-      preferences: Array<{
-        moduleKey: string;
-        channel: string;
-        enabled: boolean;
-      }>;
-    };
-
-    if (!preferences || !Array.isArray(preferences)) {
-      throw new AppError("VALIDATION", "preferences array is required", 400);
-    }
-
-    for (const pref of preferences) {
-      if (!MODULES.includes(pref.moduleKey as any)) {
-        throw new AppError(
-          "VALIDATION",
-          `Invalid module: ${pref.moduleKey}`,
-          400,
-        );
-      }
-      if (!CHANNELS.includes(pref.channel as any)) {
-        throw new AppError(
-          "VALIDATION",
-          `Invalid channel: ${pref.channel}`,
-          400,
-        );
-      }
-    }
+    const { organizationId, preferences } = z
+      .object({
+        organizationId: z.string().optional(),
+        preferences: z
+          .array(
+            z.object({
+              moduleKey: z.enum(MODULES),
+              channel: z.enum(CHANNELS),
+              enabled: z.boolean(),
+            }),
+          )
+          .min(1),
+      })
+      .parse(req.body);
 
     const supabase = getSupabaseAdmin();
 

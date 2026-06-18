@@ -228,19 +228,13 @@ router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const userId = req.params.id;
-    const { organizationId, permissionId, isAllowed } = req.body as {
-      organizationId?: string;
-      permissionId?: string;
-      isAllowed?: boolean;
-    };
-
-    if (!organizationId || !permissionId || isAllowed === undefined) {
-      throw new AppError(
-        "VALIDATION",
-        "organizationId, permissionId, and isAllowed are required",
-        400,
-      );
-    }
+    const { organizationId, permissionId, isAllowed } = z
+      .object({
+        organizationId: z.string().min(1, "organizationId is required"),
+        permissionId: z.string().min(1, "permissionId is required"),
+        isAllowed: z.boolean(),
+      })
+      .parse(req.body);
 
     const { data: existing, error: checkError } = await supabase
       .from("user_permission_overrides")

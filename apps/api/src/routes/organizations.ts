@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccessByParam } from "../middleware/org-access";
+import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -22,7 +23,7 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 
-router.get("/", async (req, res, next) => {
+router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     let query = supabase.from("organizations").select("*");
@@ -165,6 +166,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
       metadata: { name: parsed.name },
     });
 
+    invalidateCache(`/api/v1/organizations`);
     res.status(201).json(success(data));
   } catch (error) {
     next(error);
@@ -210,6 +212,7 @@ router.patch("/:id", requireAdmin, async (req, res, next) => {
       metadata: parsed,
     });
 
+    invalidateCache(`/api/v1/organizations`);
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -341,6 +344,7 @@ router.delete(
         metadata: { domain: deleted?.domain ?? null },
       });
 
+      invalidateCache(`/api/v1/organizations`);
       res.status(204).send();
     } catch (error) {
       next(error);
