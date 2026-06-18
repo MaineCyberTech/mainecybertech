@@ -30,14 +30,14 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status & Patterns
 
-**714 tests, all passing:** API 178, SDK 108, Worker 24, Web 404
+**741 tests, all passing:** API 182, SDK 108, Worker 24, Web 435
 
 | Package | Tests         | Framework                         |
 | ------- | ------------- | --------------------------------- |
-| API     | 178           | Jest + supertest                  |
+| API     | 182           | Jest + supertest                  |
 | SDK     | 108           | Jest (mocked fetch)               |
 | Worker  | 24            | Jest (env schema + task handlers) |
-| Web     | 404           | Jest + Testing Library            |
+| Web     | 435           | Jest + Testing Library            |
 | E2E     | 24 spec files | Playwright (chromium)             |
 
 ### Test patterns
@@ -221,6 +221,9 @@ Key points:
 - **MarketingHeader absolute URLs** — on the `app.*` domain, nav links (Home, Networks, Contact, etc.) point to absolute `https://www.*` URLs instead of relative paths. Detected via `window.location.hostname` in the client component. "Portal" button stays relative (`/login`) — middleware redirects to app domain.
 - **Deploy: image piping over SSH** — `docker save | gzip | ssh ... gunzip | docker load` bypasses slow GHCR pull on the droplet. Images pulled from GHCR on the GHA runner (fast, same network) then piped directly. Deploy time reduced from ~45 min to ~8 min.
 - **Deploy: targeted image cleanup** — `docker image ls | grep mct- | grep -v $TAG | xargs docker rmi` removes old MCT images before loading new ones (avoids disk full). Builder cache prune moved to post-deploy to prevent SSH timeouts (was taking 18+ min on small droplet). `mkdir -p /opt/mct-portal` ensures compose file directory exists.
+- **Multi-org role fix** — `PATCH /users/:id/role` accepts optional `organizationId`. When provided, only the membership for that org is updated instead of ALL memberships across all orgs. Prevents flattening roles for multi-org users.
+- **Cache no-renew** — added `responseCacheNoRenew()` middleware that stores the TTL once on first MISS and never rewrites on HIT. Prevents self-renewing cache that never expires. Used for roles list endpoint. `invalidateCache()` called on `PUT /:id/permissions` to clear roles cache when permissions change.
+- **Compound roles endpoint** — `GET /roles/with-permissions` returns all roles with permission counts in 2 DB queries (roles + role_permissions). Eliminates N+1 pattern from roles list page (was calling `getPermissions` once per role).
 
 ## Full Architecture & Code Review (2026-06-16) — 30 Findings
 
@@ -233,7 +236,7 @@ A comprehensive deep-dive architecture review was conducted on 2026-06-16 coveri
 | Architecture       | 8/10  | Clear modular monolith layering                                            |
 | Code Quality       | 8/10  | Strong patterns, input sanitizer fixed                                     |
 | Security           | 7/10  | Tenant isolation + local JWT verification added                            |
-| Testing            | 8/10  | 714 tests, missing load/visual tests                                       |
+| Testing            | 8/10  | 741 tests, missing load/visual tests                                       |
 | Infrastructure     | 9/10  | Mature IaC, image tag drift fixed                                          |
 | CI/CD              | 8/10  | Gated deploys, comprehensive workflows                                     |
 | Documentation      | 9/10  | Exceptional breadth and depth                                              |
@@ -556,6 +559,10 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 | 37  | **MarketingHeader absolute URLs** — nav links on `app.*` domain point to `https://www.*` absolute URLs; Portal button stays relative                                   | ✅     |
 | 38  | **Webhook + JSM env vars** — `PUBLIC_TRAFFIC_WEBHOOK_URL`, `PUBLIC_LEAD_WEBHOOK_URL`, `JSM_*` vars added to API container and deploy .env                              | ✅     |
 | 39  | **Deploy reliability** — `mkdir -p /opt/mct-portal` before file transfers; targeted old-image cleanup instead of slow system prune; builder prune moved to post-deploy | ✅     |
+| 40  | **Multi-org role fix** — `PATCH /users/:id/role` accepts optional `organizationId` to prevent corrupting all memberships for multi-org users                           | ✅     |
+| 41  | **Cache no-renew** — added `responseCacheNoRenew()` to prevent self-renewing cache TTL; added `invalidateCache()` on role permission changes                           | ✅     |
+| 42  | **Compound roles endpoint** — `GET /roles/with-permissions` returns roles + permission counts in 2 queries (eliminates N+1 from roles list page)                       | ✅     |
+| 43  | **Roles page tests** — 32 new tests: roles list page, role detail page, RolePermissionsEditor component (loading, matrix, toggles, errors, super admin)                | ✅     |
 
 #### High Value (Still Open)
 
@@ -734,7 +741,7 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 
 ## What To Do Next
 
-**All 38 pre-production findings + 21 codebase review findings documented.** Fix blocking items before pushing to GitHub.
+**All 38 pre-production findings + 21 codebase review findings documented.** All resolved.
 
 | Priority | Task                                                                                              | Effort           |
 | -------- | ------------------------------------------------------------------------------------------------- | ---------------- |
@@ -841,6 +848,8 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `apps/api/src/__tests__/billing.test.ts` — billing API tests
 - `apps/api/src/__tests__/notifications.test.ts` — notification API tests
 - `apps/api/src/__tests__/webhook-management.test.ts` — webhook management API tests
+- `apps/api/src/__tests__/cache.test.ts` — response cache middleware tests (renew + no-renew patterns)
+- `apps/api/src/__tests__/roles.test.ts` — roles API tests (CRUD + with-permissions compound endpoint)
 - `apps/web/e2e/admin/search.spec.ts` — global search E2E tests
 - `apps/web/e2e/admin/health.spec.ts` — health dashboard E2E tests
 - `apps/web/e2e/portal/notification-flow.spec.ts` — notification bell/badge E2E tests
@@ -911,6 +920,9 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `apps/web/app/(admin)/admin/organizations/[orgId]/billing/page.tsx` — admin org billing viewer (server component)
 - `apps/web/app/(admin)/admin/organizations/[orgId]/billing/AdminBillingClient.tsx` — admin org billing client component
 - `apps/web/__tests__/app/(portal)/portal/profile/page.test.tsx` — profile tests
+- `apps/web/__tests__/app/(admin)/admin/roles/page.test.tsx` — roles list page tests (stats, empty state, cards, permission counts, N+1 verification)
+- `apps/web/__tests__/app/(admin)/admin/roles/[roleId]/page.test.tsx` — role detail page tests (name, breadcrumbs, back link, editor props, error state)
+- `apps/web/__tests__/components/admin/RolePermissionsEditor.test.tsx` — permission matrix component tests (loading, modules, toggles, super admin, toasts, errors)
 
 ### API Routes (New)
 
