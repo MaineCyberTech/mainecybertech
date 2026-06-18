@@ -31,6 +31,7 @@ import notificationsRouter from "./routes/notifications";
 import notificationPreferencesRouter from "./routes/notification-preferences";
 import billingRouter from "./routes/billing";
 import webhookManagementRouter from "./routes/webhook-management";
+import slaRouter from "./routes/sla";
 import bulkRouter from "./routes/bulk";
 import { initSentry } from "./lib/sentry";
 
@@ -42,17 +43,24 @@ export function createApp(): Express {
   app.set("trust proxy", true);
 
   app.use(helmet());
-  const allowedOrigins = env.CORS_ORIGIN === "*" ? "*" : env.CORS_ORIGIN.split(",").map(s => s.trim());
-  app.use(cors({
-    origin: allowedOrigins,
-    credentials: true,
-  }));
-  app.use(express.json({
-    limit: "10mb",
-    verify: (req: any, _res, buf) => {
-      req.rawBody = buf.toString();
-    },
-  }));
+  const allowedOrigins =
+    env.CORS_ORIGIN === "*"
+      ? "*"
+      : env.CORS_ORIGIN.split(",").map((s) => s.trim());
+  app.use(
+    cors({
+      origin: allowedOrigins,
+      credentials: true,
+    }),
+  );
+  app.use(
+    express.json({
+      limit: "10mb",
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf.toString();
+      },
+    }),
+  );
   app.use(cookieParser());
   app.use(securityHeaders);
   app.use(inputSanitizer);
@@ -63,7 +71,8 @@ export function createApp(): Express {
     message: "Too many requests from this IP, please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) => req.path === "/health" || req.ip === "127.0.0.1" || req.ip === "::1",
+    skip: (req) =>
+      req.path === "/health" || req.ip === "127.0.0.1" || req.ip === "::1",
   });
 
   app.use(limiter);
@@ -93,6 +102,7 @@ export function createApp(): Express {
   app.use("/api/v1/notification-preferences", notificationPreferencesRouter);
   app.use("/api/v1/billing", billingRouter);
   app.use("/api/v1/webhook-endpoints", webhookManagementRouter);
+  app.use("/api/v1/sla", slaRouter);
   app.use("/api/v1/bulk", bulkRouter);
 
   app.use(notFoundHandler);

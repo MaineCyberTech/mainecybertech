@@ -1,4 +1,9 @@
-import { ApiClient, type ClientOptions, type RetryOptions, ApiError } from "./client";
+import {
+  ApiClient,
+  type ClientOptions,
+  type RetryOptions,
+  ApiError,
+} from "./client";
 import { AuthApi, type SignInResult, type SignUpResult } from "./auth";
 import { OrganizationsApi } from "./organizations";
 import { MembershipsApi } from "./memberships";
@@ -6,28 +11,61 @@ import { TicketsApi } from "./tickets";
 import { ProjectsApi } from "./projects";
 import { DocumentsApi } from "./documents";
 import { DashboardApi } from "./dashboard";
-import { UsersApi, type UserPermissionsResponse, type PermissionOverride } from "./users";
+import {
+  UsersApi,
+  type UserPermissionsResponse,
+  type PermissionOverride,
+} from "./users";
 import { ProfilesApi } from "./profiles";
 import { AuditApi } from "./audit";
 import { RolesApi, type RolePermissions } from "./roles";
-import { NotificationsApi, type NotificationPreference, type NotificationPreferencesResponse } from "./notifications";
-import { BillingApi, type Invoice, type Subscription, type Payment, type BillingCustomer, type BillingSummary } from "./billing";
-import { WebhooksApi, type WebhookEndpoint, type WebhookDelivery } from "./webhooks";
+import {
+  NotificationsApi,
+  type NotificationPreference,
+  type NotificationPreferencesResponse,
+} from "./notifications";
+import {
+  BillingApi,
+  type Invoice,
+  type Subscription,
+  type Payment,
+  type BillingCustomer,
+  type BillingSummary,
+} from "./billing";
+import {
+  WebhooksApi,
+  type WebhookEndpoint,
+  type WebhookDelivery,
+} from "./webhooks";
 import { BulkApi, type BulkInviteResult } from "./bulk";
-import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
+import { SLApi, type SLAMetrics } from "./sla";
+import {
+  SearchApi,
+  type SearchResult,
+  type PortalSearchResult,
+} from "./search";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
 export type * from "./types";
 export type {
-  SignInResult, SignUpResult,
-  UserPermissionsResponse, PermissionOverride,
+  SignInResult,
+  SignUpResult,
+  UserPermissionsResponse,
+  PermissionOverride,
   RolePermissions,
-  NotificationPreference, NotificationPreferencesResponse,
-  Invoice, Subscription, Payment, BillingCustomer, BillingSummary,
-  WebhookEndpoint, WebhookDelivery,
+  NotificationPreference,
+  NotificationPreferencesResponse,
+  Invoice,
+  Subscription,
+  Payment,
+  BillingCustomer,
+  BillingSummary,
+  WebhookEndpoint,
+  WebhookDelivery,
   BulkInviteResult,
-  SearchResult, PortalSearchResult,
+  SearchResult,
+  PortalSearchResult,
 };
 
 export class MCTClient {
@@ -46,6 +84,7 @@ export class MCTClient {
   public billing: BillingApi;
   public webhooks: WebhooksApi;
   public bulk: BulkApi;
+  public sla: SLApi;
   public search: SearchApi;
 
   constructor(private client: ApiClient) {
@@ -64,6 +103,7 @@ export class MCTClient {
     this.billing = new BillingApi(client);
     this.webhooks = new WebhooksApi(client);
     this.bulk = new BulkApi(client);
+    this.sla = new SLApi(client);
     this.search = new SearchApi(client);
   }
 
