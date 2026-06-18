@@ -30,14 +30,14 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status & Patterns
 
-**741 tests, all passing:** API 182, SDK 108, Worker 24, Web 435
+**750 tests, all passing:** API 182, SDK 108, Worker 24, Web 436
 
 | Package | Tests         | Framework                         |
 | ------- | ------------- | --------------------------------- |
 | API     | 182           | Jest + supertest                  |
 | SDK     | 108           | Jest (mocked fetch)               |
 | Worker  | 24            | Jest (env schema + task handlers) |
-| Web     | 435           | Jest + Testing Library            |
+| Web     | 436           | Jest + Testing Library            |
 | E2E     | 24 spec files | Playwright (chromium)             |
 
 ### Test patterns
@@ -224,6 +224,11 @@ Key points:
 - **Multi-org role fix** — `PATCH /users/:id/role` accepts optional `organizationId`. When provided, only the membership for that org is updated instead of ALL memberships across all orgs. Prevents flattening roles for multi-org users.
 - **Cache no-renew** — added `responseCacheNoRenew()` middleware that stores the TTL once on first MISS and never rewrites on HIT. Prevents self-renewing cache that never expires. Used for roles list endpoint. `invalidateCache()` called on `PUT /:id/permissions` to clear roles cache when permissions change.
 - **Compound roles endpoint** — `GET /roles/with-permissions` returns all roles with permission counts in 2 DB queries (roles + role_permissions). Eliminates N+1 pattern from roles list page (was calling `getPermissions` once per role).
+- **Zod validation complete** — added to final 4 mutation endpoints (roles, bulk, notification-preferences, users). All ~27 mutation endpoints now have Zod schema validation.
+- **Organizations list cache** — `GET /api/v1/organizations` cached 60s with `responseCacheNoRenew` + invalidation on create/update/delete.
+- **Documents + Projects list cache** — both `GET /api/v1/documents` and `GET /api/v1/projects` cached 30s.
+- **EmptyState component** — reusable component with icon/title/description/actions, wired into tickets, projects, documents admin pages.
+- **Markdown comment rendering** — `CommentBody` component (bold, italic, links, lists, code) wired into all 4 comment locations (portal + admin tickets + projects).
 
 ## Full Architecture & Code Review (2026-06-16) — 30 Findings
 
@@ -236,7 +241,7 @@ A comprehensive deep-dive architecture review was conducted on 2026-06-16 coveri
 | Architecture       | 8/10  | Clear modular monolith layering                                            |
 | Code Quality       | 8/10  | Strong patterns, input sanitizer fixed                                     |
 | Security           | 7/10  | Tenant isolation + local JWT verification added                            |
-| Testing            | 8/10  | 741 tests, missing load/visual tests                                       |
+| Testing            | 8/10  | 750 tests, missing load/visual tests                                       |
 | Infrastructure     | 9/10  | Mature IaC, image tag drift fixed                                          |
 | CI/CD              | 8/10  | Gated deploys, comprehensive workflows                                     |
 | Documentation      | 9/10  | Exceptional breadth and depth                                              |
@@ -563,6 +568,16 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 | 41  | **Cache no-renew** — added `responseCacheNoRenew()` to prevent self-renewing cache TTL; added `invalidateCache()` on role permission changes                           | ✅     |
 | 42  | **Compound roles endpoint** — `GET /roles/with-permissions` returns roles + permission counts in 2 queries (eliminates N+1 from roles list page)                       | ✅     |
 | 43  | **Roles page tests** — 32 new tests: roles list page, role detail page, RolePermissionsEditor component (loading, matrix, toggles, errors, super admin)                | ✅     |
+| 44  | **JSM logging** — added `logger.error` + `logger.warn` to all webhook/JSM fetch calls (was silently swallowing all errors)                                             | ✅     |
+| 45  | **Users list grouping** — group memberships by `user_id` in admin users list; shows "N more orgs" badge for multi-org users instead of duplicate cards                 | ✅     |
+| 46  | **Permissions editor error toast** — `RolePermissionsEditor` now shows "Failed to load permissions" toast instead of empty `catch {}`                                  | ✅     |
+| 47  | **Dockerfile ARG default** — `NEXT_PUBLIC_API_URL` ARG now has default value (silences undefined-var build warning)                                                    | ✅     |
+| 48  | **Zod validation complete** — added to final 4 mutation endpoints (roles, bulk, notification-preferences, users) — all ~27 mutations now validated                     | ✅     |
+| 49  | **Organizations list cache** — `GET /api/v1/organizations` cached 60s with `responseCacheNoRenew` + invalidation on create/update/delete                               | ✅     |
+| 50  | **Documents + Projects list cache** — both `GET /api/v1/documents` and `GET /api/v1/projects` cached 30s                                                               | ✅     |
+| 51  | **EmptyState component** — reusable component with icon/title/description/actions, wired into tickets, projects, documents admin pages                                 | ✅     |
+| 52  | **Markdown comment rendering** — `CommentBody` component (bold, italic, links, lists, code) wired into all 4 comment locations (portal + admin tickets + projects)     | ✅     |
+| 53  | **E2E JWT_SECRET fix** — added missing `JWT_SECRET` env var to E2E workflow (API startup was failing)                                                                  | ✅     |
 
 #### High Value (Still Open)
 
@@ -687,8 +702,10 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 
 ### Remaining Technical Debt
 
-- Wire `@mct/ui` & `@mct/config` into apps (low priority)
-- JSM ticket creation not firing (Teams webhook works) — verify `JSM_DOMAIN`, `JSM_EMAIL`, `JSM_API_TOKEN`, `JSM_SERVICEDESK_ID`, `JSM_REQUEST_TYPE_ID` secrets have correct values; API silently swallows errors via `.catch(() => {})`
+- Wire `@mct/config` TypeScript config into apps (tsconfig.json has incompatible settings with API/worker — needs refactor)
+- JSM ticket creation not firing (Teams webhook works) — verify `JSM_DOMAIN`, `JSM_EMAIL`, `JSM_API_TOKEN`, `JSM_SERVICEDESK_ID`, `JSM_REQUEST_TYPE_ID` secrets have correct values; logging now enabled
+- No unit tests for webhooks, bulk-invite, health, billing admin pages (zero coverage)
+- Activity feed on portal dashboard (audit timeline scoped to user's orgs)
 
 ## Final Codebase Review (2026-06-05) — 21 Findings
 
@@ -850,6 +867,9 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `apps/api/src/__tests__/webhook-management.test.ts` — webhook management API tests
 - `apps/api/src/__tests__/cache.test.ts` — response cache middleware tests (renew + no-renew patterns)
 - `apps/api/src/__tests__/roles.test.ts` — roles API tests (CRUD + with-permissions compound endpoint)
+- `apps/web/__tests__/app/(admin)/admin/roles/page.test.tsx` — roles list page tests (stats, empty state, cards, permission counts, N+1 verification)
+- `apps/web/__tests__/app/(admin)/admin/roles/[roleId]/page.test.tsx` — role detail page tests (name, breadcrumbs, back link, editor props, error state)
+- `apps/web/__tests__/components/admin/RolePermissionsEditor.test.tsx` — permission matrix component tests (loading, modules, toggles, super admin, toasts, errors)
 - `apps/web/e2e/admin/search.spec.ts` — global search E2E tests
 - `apps/web/e2e/admin/health.spec.ts` — health dashboard E2E tests
 - `apps/web/e2e/portal/notification-flow.spec.ts` — notification bell/badge E2E tests
@@ -889,6 +909,8 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 - `apps/web/components/BillingPageClient.tsx` — billing/invoice/subscription display
 - `apps/web/components/portal/OrgSwitcher.tsx` — multi-org dropdown switcher in portal header
 - `apps/web/components/portal/PortalGlobalSearch.tsx` — org-scoped search bar in portal header
+- `apps/web/components/CommentBody.tsx` — lightweight markdown comment renderer (bold, italic, links, lists, code)
+- `apps/web/components/EmptyState.tsx` — reusable empty state with icon, title, description, and action buttons
 - `apps/web/lib/org-actions.ts` — org switching cookie actions
 - `apps/web/app/(admin)/admin/loading.tsx` — admin route group loading skeleton
 - `apps/web/app/(portal)/portal/loading.tsx` — portal route group loading skeleton
