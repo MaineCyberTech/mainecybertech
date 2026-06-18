@@ -38,6 +38,7 @@ import {
   type WebhookDelivery,
 } from "./webhooks";
 import { BulkApi, type BulkInviteResult } from "./bulk";
+import { ApiKeysApi, type ApiKey, type ApiKeyWithSecret } from "./api-keys";
 import { SLApi, type SLAMetrics } from "./sla";
 import {
   SearchApi,
@@ -84,6 +85,7 @@ export class MCTClient {
   public billing: BillingApi;
   public webhooks: WebhooksApi;
   public bulk: BulkApi;
+  public apiKeys: ApiKeysApi;
   public sla: SLApi;
   public search: SearchApi;
 
@@ -103,6 +105,7 @@ export class MCTClient {
     this.billing = new BillingApi(client);
     this.webhooks = new WebhooksApi(client);
     this.bulk = new BulkApi(client);
+    this.apiKeys = new ApiKeysApi(client);
     this.sla = new SLApi(client);
     this.search = new SearchApi(client);
   }
