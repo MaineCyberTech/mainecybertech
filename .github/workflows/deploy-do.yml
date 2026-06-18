@@ -223,8 +223,8 @@ jobs:
           echo "$GHCR_TOKEN" | ssh $SSH_OPTS root@$HOST "docker login ghcr.io -u $GHCR_USERNAME --password-stdin" 2>&1
           echo "LOGIN_EXIT=$?"
 
-          echo "--- CLEANING OLD MCT IMAGES + BUILDER CACHE ON DROPLET ---"
-          ssh $SSH_OPTS root@$HOST "docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | xargs -r docker rmi 2>/dev/null; docker builder prune -af" 2>&1
+          echo "--- REMOVING OLD MCT IMAGES ON DROPLET ---"
+          ssh $SSH_OPTS root@$HOST "docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | xargs -r docker rmi 2>/dev/null" 2>&1
           echo "CLEANUP_EXIT=$?"
 
           echo "--- PULLING IMAGES ON RUNNER ---"
