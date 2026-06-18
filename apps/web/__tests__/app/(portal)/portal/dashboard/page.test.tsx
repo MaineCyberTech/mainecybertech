@@ -6,6 +6,7 @@ const mockOrganizationsGet = jest.fn();
 const mockProjectsList = jest.fn();
 const mockTicketsList = jest.fn();
 const mockDocumentsList = jest.fn();
+const mockAuditList = jest.fn();
 const mockGetApprovedMembership = jest
   .fn()
   .mockResolvedValue({ organization_id: "org-1" });
@@ -22,6 +23,7 @@ jest.mock("@/lib/api", () => ({
     projects: { list: mockProjectsList },
     tickets: { list: mockTicketsList },
     documents: { list: mockDocumentsList },
+    audit: { list: mockAuditList },
   }),
 }));
 
@@ -40,10 +42,10 @@ describe("PortalDashboardPage", () => {
     mockProjectsList.mockResolvedValue({ items: [] });
     mockTicketsList.mockResolvedValue({ items: [] });
     mockDocumentsList.mockResolvedValue({ items: [] });
+    mockAuditList.mockResolvedValue({ items: [] });
 
-    const { default: PortalDashboardPage } = await import(
-      "@/app/(portal)/portal/dashboard/page"
-    );
+    const { default: PortalDashboardPage } =
+      await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
@@ -58,22 +60,16 @@ describe("PortalDashboardPage", () => {
     mockProjectsList.mockResolvedValue({ items: [] });
     mockTicketsList.mockResolvedValue({ items: [] });
     mockDocumentsList.mockResolvedValue({ items: [] });
+    mockAuditList.mockResolvedValue({ items: [] });
 
-    const { default: PortalDashboardPage } = await import(
-      "@/app/(portal)/portal/dashboard/page"
-    );
+    const { default: PortalDashboardPage } =
+      await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
-    expect(
-      screen.getByText(/no recent project activity/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/no recent support activity/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/no recent documents/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/no recent project activity/i)).toBeInTheDocument();
+    expect(screen.getByText(/no recent support activity/i)).toBeInTheDocument();
+    expect(screen.getByText(/no recent documents/i)).toBeInTheDocument();
   });
 
   it("renders projects and tickets when data exists", async () => {
@@ -97,10 +93,10 @@ describe("PortalDashboardPage", () => {
       ],
     });
     mockDocumentsList.mockResolvedValue({ items: [] });
+    mockAuditList.mockResolvedValue({ items: [] });
 
-    const { default: PortalDashboardPage } = await import(
-      "@/app/(portal)/portal/dashboard/page"
-    );
+    const { default: PortalDashboardPage } =
+      await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
@@ -115,13 +111,17 @@ describe("PortalDashboardPage", () => {
     mockDocumentsList.mockResolvedValue({
       items: [
         { id: "d1", name: "Report Q1", updated_at: new Date().toISOString() },
-        { id: "d2", name: "Security Policy", description: "InfoSec doc", created_at: new Date().toISOString() },
+        {
+          id: "d2",
+          name: "Security Policy",
+          description: "InfoSec doc",
+          created_at: new Date().toISOString(),
+        },
       ],
     });
 
-    const { default: PortalDashboardPage } = await import(
-      "@/app/(portal)/portal/dashboard/page"
-    );
+    const { default: PortalDashboardPage } =
+      await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
@@ -143,10 +143,10 @@ describe("PortalDashboardPage", () => {
       ],
     });
     mockDocumentsList.mockResolvedValue({ items: [] });
+    mockAuditList.mockResolvedValue({ items: [] });
 
-    const { default: PortalDashboardPage } = await import(
-      "@/app/(portal)/portal/dashboard/page"
-    );
+    const { default: PortalDashboardPage } =
+      await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
@@ -156,9 +156,8 @@ describe("PortalDashboardPage", () => {
   it("shows no-org message when no approved membership", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
-    const { default: PortalDashboardPage } = await import(
-      "@/app/(portal)/portal/dashboard/page"
-    );
+    const { default: PortalDashboardPage } =
+      await import("@/app/(portal)/portal/dashboard/page");
     const element = await PortalDashboardPage();
     render(element);
 
