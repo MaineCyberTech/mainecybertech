@@ -38,14 +38,20 @@ jobs:
         id: env
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
-            echo "name=prod" >> $GITHUB_OUTPUT
-            echo "app_domain=app.mainecybertech.com" >> $GITHUB_OUTPUT
-            echo "api_domain=api.mainecybertech.com" >> $GITHUB_OUTPUT
+            ENV_NAME=prod
+            APP_DOMAIN=app.mainecybertech.com
+            API_DOMAIN=api.mainecybertech.com
+            WWW_DOMAIN=www.mainecybertech.com
           else
-            echo "name=dev" >> $GITHUB_OUTPUT
-            echo "app_domain=app.mainecybertech.us" >> $GITHUB_OUTPUT
-            echo "api_domain=api.mainecybertech.us" >> $GITHUB_OUTPUT
+            ENV_NAME=dev
+            APP_DOMAIN=app.mainecybertech.us
+            API_DOMAIN=api.mainecybertech.us
+            WWW_DOMAIN=www.mainecybertech.us
           fi
+          echo "name=$ENV_NAME" >> $GITHUB_OUTPUT
+          echo "app_domain=$APP_DOMAIN" >> $GITHUB_OUTPUT
+          echo "api_domain=$API_DOMAIN" >> $GITHUB_OUTPUT
+          echo "cors_origin=https://$APP_DOMAIN,https://$WWW_DOMAIN" >> $GITHUB_OUTPUT
           echo "host=DO_DROPLET_HOST" >> $GITHUB_OUTPUT
           echo "ssh_key=DO_SSH_PRIVATE_KEY" >> $GITHUB_OUTPUT
           echo "ssh_passphrase=DO_SSH_PASSPHRASE" >> $GITHUB_OUTPUT
@@ -165,6 +171,7 @@ jobs:
           M365_CLIENT_SECRET=$M365_CLIENT_SECRET
           APP_DOMAIN=$APP_DOMAIN
           API_DOMAIN=$API_DOMAIN
+          CORS_ORIGIN=${{ steps.env.outputs.cors_origin }}
           ENVEOF
 
           echo "--- WRITING DEPLOY.SH ---"

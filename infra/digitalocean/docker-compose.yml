@@ -6,7 +6,7 @@ x-app-env: &app-env
   SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
   SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
   JWT_SECRET: ${JWT_SECRET}
-  CORS_ORIGIN: https://${APP_DOMAIN:-app.mainecybertech.com}
+  CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
   APP_BASE_URL: https://${APP_DOMAIN:-app.mainecybertech.com}
 
 services:
