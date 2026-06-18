@@ -67,7 +67,7 @@ services:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:-latest}
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: https://${API_DOMAIN:-api.mainecybertech.com}
+      NEXT_PUBLIC_API_URL: http://api:4000
       NEXT_TELEMETRY_DISABLED: 1
       SENTRY_DSN: ${SENTRY_DSN:-}
     restart: unless-stopped
