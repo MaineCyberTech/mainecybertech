@@ -18,7 +18,7 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages ./packages
 COPY pnpm-lock.yaml package.json pnpm-workspace.yaml turbo.json ./
 COPY apps/web ./apps/web
-RUN pnpm --filter=./apps/web build
+RUN pnpm --filter=./apps/web build && rm -rf /app/apps/web/.next/cache
 
 # Runtime
 FROM base AS runner

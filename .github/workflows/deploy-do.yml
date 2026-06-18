@@ -172,12 +172,6 @@ jobs:
           cd /opt/mct-portal
           cp /tmp/.env /opt/mct-portal/.env
           chmod 600 .env
-          for i in 1 2 3; do
-            echo "--- PULL ATTEMPT $i ---"
-            IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose pull api worker web && break
-            echo "Pull failed (attempt $i), waiting 10s before retry..."
-            sleep 10
-          done
           IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose up -d --no-deps api worker web caddy
           docker image prune -f
           sleep 15
@@ -201,10 +195,30 @@ jobs:
           base64 -w0 infra/digitalocean/Caddyfile | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /opt/mct-portal/Caddyfile" 2>&1
           echo "TRANSFER_CADDY_EXIT=$?"
 
+          SSH_OPTS="-o StrictHostKeyChecking=no -o LogLevel=ERROR -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
+
           echo "--- LOGGING INTO GHCR ---"
-          echo "$GHCR_TOKEN" | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "docker login ghcr.io -u $GHCR_USERNAME --password-stdin" 2>&1
+          echo "$GHCR_TOKEN" | ssh $SSH_OPTS root@$HOST "docker login ghcr.io -u $GHCR_USERNAME --password-stdin" 2>&1
           echo "LOGIN_EXIT=$?"
 
+          echo "--- PULLING IMAGES ON RUNNER ---"
+          docker pull $GHCR_IMAGE_PREFIX/mct-api:$IMAGE_TAG
+          docker pull $GHCR_IMAGE_PREFIX/mct-worker:$IMAGE_TAG
+          docker pull $GHCR_IMAGE_PREFIX/mct-web:$IMAGE_TAG
+          echo "PULL_RUNNER_EXIT=$?"
+
+          echo "--- PIPING API IMAGE ---"
+          docker save $GHCR_IMAGE_PREFIX/mct-api:$IMAGE_TAG | gzip | ssh $SSH_OPTS root@$HOST "gunzip | docker load" 2>&1
+          echo "PIPE_API_EXIT=$?"
+
+          echo "--- PIPING WORKER IMAGE ---"
+          docker save $GHCR_IMAGE_PREFIX/mct-worker:$IMAGE_TAG | gzip | ssh $SSH_OPTS root@$HOST "gunzip | docker load" 2>&1
+          echo "PIPE_WORKER_EXIT=$?"
+
+          echo "--- PIPING WEB IMAGE ---"
+          docker save $GHCR_IMAGE_PREFIX/mct-web:$IMAGE_TAG | gzip | ssh $SSH_OPTS root@$HOST "gunzip | docker load" 2>&1
+          echo "PIPE_WEB_EXIT=$?"
+
           echo "--- EXECUTING DEPLOY ---"
-          ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR -o ServerAliveInterval=60 -o ServerAliveCountMax=10 root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX" 2>&1
+          ssh $SSH_OPTS root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX" 2>&1
           echo "DEPLOY_EXIT=$?"

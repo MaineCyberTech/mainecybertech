@@ -13,7 +13,7 @@ RUN pnpm install --frozen-lockfile --filter=./apps/api
 
 # Build the API
 WORKDIR /app/apps/api
-RUN pnpm build
+RUN pnpm build && rm -rf /app/apps/api/node_modules/.cache /root/.local/share/pnpm/store
 
 # Runtime stage
 FROM node:20-alpine

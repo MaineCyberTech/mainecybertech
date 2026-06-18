@@ -13,7 +13,7 @@ RUN pnpm install --frozen-lockfile --filter=./apps/worker
 
 # Build the worker
 WORKDIR /app/apps/worker
-RUN pnpm build
+RUN pnpm build && rm -rf /app/apps/worker/node_modules/.cache /root/.local/share/pnpm/store
 
 # Runtime stage
 FROM node:20-alpine
