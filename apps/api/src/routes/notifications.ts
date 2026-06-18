@@ -9,6 +9,57 @@ import { logAuditEvent } from "../services/audit";
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 
+// SSE stream for real-time notifications
+router.get("/stream", async (req, res, next) => {
+  try {
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    });
+
+    const supabase = getSupabaseAdmin();
+    const userId = req.authUser!.userId;
+
+    // Send initial heartbeat
+    res.write(`data: ${JSON.stringify({ type: "connected", userId })}\n\n`);
+
+    // Poll for new notifications every 5s
+    const interval = setInterval(async () => {
+      try {
+        const { data, error } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("read", false)
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (error) {
+          res.write(
+            `event: error\ndata: ${JSON.stringify({ message: error.message })}\n\n`,
+          );
+          return;
+        }
+
+        if (data && data.length > 0) {
+          res.write(`event: notification\ndata: ${JSON.stringify(data)}\n\n`);
+        }
+      } catch (err) {
+        // silent
+      }
+    }, 5000);
+
+    req.on("close", () => {
+      clearInterval(interval);
+      res.end();
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 const createNotificationSchema = z.object({
   userId: z.string().uuid(),
   organizationId: z.string().uuid().optional(),
@@ -16,14 +67,26 @@ const createNotificationSchema = z.object({
   body: z.string().min(1).max(2000),
   module: z.enum(["tickets", "projects", "documents", "billing", "system"]),
   moduleId: z.string().optional(),
-  action: z.enum(["created", "updated", "assigned", "due_soon", "overdue", "comment", "mention", "status_change"]),
+  action: z.enum([
+    "created",
+    "updated",
+    "assigned",
+    "due_soon",
+    "overdue",
+    "comment",
+    "mention",
+    "status_change",
+  ]),
 });
 
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const limit = Math.min(
+      50,
+      Math.max(1, parseInt(req.query.limit as string) || 20),
+    );
     const offset = (page - 1) * limit;
     const unreadOnly = req.query.unread === "true";
 
@@ -72,7 +135,8 @@ router.post("/:id/read", async (req, res, next) => {
       .select()
       .single();
 
-    if (error || !data) throw new AppError("NOT_FOUND", "Notification not found", 404);
+    if (error || !data)
+      throw new AppError("NOT_FOUND", "Notification not found", 404);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -136,7 +200,11 @@ router.post("/", requireAdmin, async (req, res, next) => {
       action: "notification.create",
       entityType: "notification",
       entityId: data.id,
-      metadata: { userId: parsed.userId, module: parsed.module, action: parsed.action },
+      metadata: {
+        userId: parsed.userId,
+        module: parsed.module,
+        action: parsed.action,
+      },
     });
 
     res.status(201).json(success(data));
