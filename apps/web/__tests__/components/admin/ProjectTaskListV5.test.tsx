@@ -13,6 +13,12 @@ jest.mock("@/components/admin/ConfirmIntentButton", () => {
   };
 });
 
+jest.mock("@/components/CommentBody", () => {
+  return function MockCommentBody({ body, className }: any) {
+    return <div className={className}>{body}</div>;
+  };
+});
+
 const mockCreateTask = jest.fn();
 const mockSubmitTaskForm = jest.fn();
 const mockReorderTasks = jest.fn();

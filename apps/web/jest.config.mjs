@@ -31,4 +31,5 @@ export default {
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   testPathIgnorePatterns: ['.next', 'node_modules', 'e2e'],
+  transformIgnorePatterns: ['/node_modules/(?!(marked)/)'],
 };

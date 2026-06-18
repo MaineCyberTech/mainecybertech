@@ -4,6 +4,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
+import CommentBody from "@/components/CommentBody";
 
 export const dynamic = "force-dynamic";
 
@@ -156,7 +157,7 @@ export default async function PortalSupportDetailPage({ params }: Props) {
           {comments.length > 0 ? comments.map((comment: any) => (
             <div key={comment.id ?? `${comment.created_at}-${commentBody(comment)}`} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
               <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-medium text-slate-50">{commentAuthor(comment)}</p><span className="text-xs text-slate-500" title={formatDateTime(comment.created_at)}>{formatRelativeTime(comment.created_at)}</span></div>
-              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">{commentBody(comment)}</p>
+              <CommentBody body={commentBody(comment)} className="mt-3 text-sm leading-relaxed text-slate-300 markdown-body" />
             </div>
           )) : <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">No comments yet.</div>}
         </div>

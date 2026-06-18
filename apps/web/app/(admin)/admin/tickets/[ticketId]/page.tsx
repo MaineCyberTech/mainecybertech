@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
+import CommentBody from "@/components/CommentBody";
 import {
   InlineStatusDropdown,
   InlinePriorityDropdown,
@@ -529,9 +530,7 @@ export default async function AdminTicketDetailPage({
                       </button>
                     </form>
                   ) : (
-                    <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
-                      {commentBody(comment)}
-                    </p>
+                    <CommentBody body={commentBody(comment)} className="mt-3 text-sm leading-relaxed text-slate-300 markdown-body" />
                   )}
                 </div>
               );

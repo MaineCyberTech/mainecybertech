@@ -5,6 +5,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
+import CommentBody from "@/components/CommentBody";
 import ProjectTasksWithViews from "@/components/portal/ProjectTasksWithViews";
 import { addPortalProjectUpdate, approvePortalProjectTask, addPortalTaskComment } from "./actions";
 
@@ -157,7 +158,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                     const author = profileMap.get(comment.author_id);
                     return (
                       <div key={comment.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-3">
-                        <p className="text-sm text-slate-300">{comment.body}</p>
+                        <CommentBody body={comment.body} className="text-sm text-slate-300 markdown-body" />
                         <p className="mt-2 text-xs text-slate-500" title={formatDateTime(comment.created_at)}>{author?.full_name ?? author?.email ?? "Unknown"} &bull; {formatRelativeTime(comment.created_at)}</p>
                       </div>
                     );
