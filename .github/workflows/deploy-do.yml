@@ -131,8 +131,6 @@ jobs:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JSM_BASE_URL: ${{ secrets.JSM_BASE_URL }}
-          JSM_EMAIL: ${{ secrets.JSM_EMAIL }}
-          JSM_API_TOKEN: ${{ secrets.JSM_API_TOKEN }}
           M365_TENANT_ID: ${{ secrets.M365_TENANT_ID }}
           M365_CLIENT_ID: ${{ secrets.M365_CLIENT_ID }}
           M365_CLIENT_SECRET: ${{ secrets.M365_CLIENT_SECRET }}
@@ -171,8 +169,6 @@ jobs:
           JIRA_EMAIL=$JIRA_EMAIL
           JIRA_API_TOKEN=$JIRA_API_TOKEN
           JSM_BASE_URL=$JSM_BASE_URL
-          JSM_EMAIL=$JSM_EMAIL
-          JSM_API_TOKEN=$JSM_API_TOKEN
           M365_TENANT_ID=$M365_TENANT_ID
           M365_CLIENT_ID=$M365_CLIENT_ID
           M365_CLIENT_SECRET=$M365_CLIENT_SECRET
