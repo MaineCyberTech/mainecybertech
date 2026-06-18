@@ -209,6 +209,10 @@ jobs:
           base64 -w0 /tmp/deploy.sh | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /tmp/deploy.sh && chmod +x /tmp/deploy.sh" 2>&1
           echo "TRANSFER_DEPLOY_EXIT=$?"
 
+          echo "--- ENSURING /opt/mct-portal EXISTS ---"
+          ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "mkdir -p /opt/mct-portal" 2>&1
+          echo "MKDIR_EXIT=$?"
+
           echo "--- TRANSFERRING COMPOSE FILE ---"
           base64 -w0 infra/digitalocean/docker-compose.yml | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /opt/mct-portal/docker-compose.yml" 2>&1
           echo "TRANSFER_COMPOSE_EXIT=$?"
