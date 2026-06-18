@@ -20,8 +20,20 @@ api.mainecybertech.com {
 
 www.mainecybertech.us, app.mainecybertech.us {
     reverse_proxy web:3000
+
+    header / {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
 }
 
 api.mainecybertech.us {
     reverse_proxy api:4000
+
+    header / {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
 }

@@ -1,5 +1,15 @@
 import { type Request, type Response, type NextFunction } from "express";
 
+/**
+ * In-memory response cache.
+ *
+ * DESIGN NOTE: This cache uses `Map<string, CacheEntry>` and is
+ * per-process (not distributed). It works correctly for single-instance
+ * deployments (current model: one Docker container per service). If
+ * horizontal scaling is introduced (multiple API replicas), this cache
+ * will become stale/inconsistent across instances — replace with a
+ * Redis-backed cache or remove the cache layer entirely.
+ */
 interface CacheEntry {
   data: unknown;
   expires: number;
