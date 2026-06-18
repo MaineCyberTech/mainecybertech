@@ -32,6 +32,7 @@ import notificationPreferencesRouter from "./routes/notification-preferences";
 import billingRouter from "./routes/billing";
 import webhookManagementRouter from "./routes/webhook-management";
 import slaRouter from "./routes/sla";
+import adminRouter from "./routes/admin";
 import bulkRouter from "./routes/bulk";
 import { initSentry } from "./lib/sentry";
 
@@ -103,6 +104,7 @@ export function createApp(): Express {
   app.use("/api/v1/billing", billingRouter);
   app.use("/api/v1/webhook-endpoints", webhookManagementRouter);
   app.use("/api/v1/sla", slaRouter);
+  app.use("/api/v1/admin", adminRouter);
   app.use("/api/v1/bulk", bulkRouter);
 
   app.use(notFoundHandler);
