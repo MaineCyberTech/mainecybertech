@@ -65,6 +65,8 @@ jobs:
           echo "CORS_ORIGIN=*" >> $API_ENV
           echo "LOG_LEVEL=silent" >> $API_ENV
           echo "JWT_SECRET=e2e-test-secret" >> $API_ENV
+          # Also write root .env.local for dotenv.config({ path: ".env.local" }) in main.ts
+          cp $API_ENV .env.local
 
       - name: Build API
         run: pnpm --filter=api build
@@ -83,6 +85,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZXZpbyIsImV4cCI6MTkyODY5NDQwMCwicm9sZSI6InNlcnZpY2Vfcm9sZSJ9.service-role-key
           CORS_ORIGIN: "*"
           LOG_LEVEL: silent
+          JWT_SECRET: e2e-test-secret
 
       - name: Build web app
         run: pnpm --filter=web build
