@@ -8,14 +8,6 @@
     "lint": "eslint src/",
     "test": "jest --passWithNoTests --forceExit",
     "test:watch": "jest --watch",
-    "jest": {
-      "setupFiles": [
-        "<rootDir>/jest.setup.ts"
-      ],
-      "transform": {
-        "^.+\\.tsx?$": "ts-jest"
-      }
-    },
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit"
   },
