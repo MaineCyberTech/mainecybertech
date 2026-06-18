@@ -42,8 +42,18 @@ jest.mock("../../main", () => {
   };
 });
 
+jest.mock("@sentry/node", () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+}));
+
 jest.mock("pino", () => {
-  const mockLogger = { info: jest.fn(), error: jest.fn(), warn: jest.fn(), debug: jest.fn() };
+  const mockLogger = {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  };
   return jest.fn(() => mockLogger);
 });
 
@@ -92,29 +102,41 @@ describe("m365CalendarSync", () => {
 
 describe("scheduledNotifications", () => {
   it("returns error for unknown notification type", async () => {
-    const { scheduledNotifications } = await import("../../tasks/scheduled-notifications");
+    const { scheduledNotifications } =
+      await import("../../tasks/scheduled-notifications");
     const result = await scheduledNotifications({ type: "invalid-type" });
     expect(result.ok).toBe(false);
     expect(result.error).toContain("Unknown notification type");
   });
 
   it("returns error when targetUserId missing for membership notification", async () => {
-    const { scheduledNotifications } = await import("../../tasks/scheduled-notifications");
-    const result = await scheduledNotifications({ type: "membership-approved" });
+    const { scheduledNotifications } =
+      await import("../../tasks/scheduled-notifications");
+    const result = await scheduledNotifications({
+      type: "membership-approved",
+    });
     expect(result.ok).toBe(false);
     expect(result.error).toContain("targetUserId");
   });
 
   it("returns error when targetUserId missing for custom notification", async () => {
-    const { scheduledNotifications } = await import("../../tasks/scheduled-notifications");
-    const result = await scheduledNotifications({ type: "custom", title: "Test" });
+    const { scheduledNotifications } =
+      await import("../../tasks/scheduled-notifications");
+    const result = await scheduledNotifications({
+      type: "custom",
+      title: "Test",
+    });
     expect(result.ok).toBe(false);
     expect(result.error).toContain("targetUserId");
   });
 
   it("returns error when title missing for custom notification", async () => {
-    const { scheduledNotifications } = await import("../../tasks/scheduled-notifications");
-    const result = await scheduledNotifications({ type: "custom", targetUserId: "u1" });
+    const { scheduledNotifications } =
+      await import("../../tasks/scheduled-notifications");
+    const result = await scheduledNotifications({
+      type: "custom",
+      targetUserId: "u1",
+    });
     expect(result.ok).toBe(false);
     expect(result.error).toContain("title");
   });
