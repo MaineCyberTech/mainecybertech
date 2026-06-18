@@ -30,14 +30,14 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status & Patterns
 
-**750 tests, all passing:** API 182, SDK 108, Worker 24, Web 436
+**764 tests, all passing:** API 182, SDK 108, Worker 24, Web 450
 
 | Package | Tests         | Framework                         |
 | ------- | ------------- | --------------------------------- |
 | API     | 182           | Jest + supertest                  |
 | SDK     | 108           | Jest (mocked fetch)               |
 | Worker  | 24            | Jest (env schema + task handlers) |
-| Web     | 436           | Jest + Testing Library            |
+| Web     | 450           | Jest + Testing Library            |
 | E2E     | 24 spec files | Playwright (chromium)             |
 
 ### Test patterns
@@ -229,6 +229,12 @@ Key points:
 - **Documents + Projects list cache** — both `GET /api/v1/documents` and `GET /api/v1/projects` cached 30s.
 - **EmptyState component** — reusable component with icon/title/description/actions, wired into tickets, projects, documents admin pages.
 - **Markdown comment rendering** — `CommentBody` component (bold, italic, links, lists, code) wired into all 4 comment locations (portal + admin tickets + projects).
+- **E2E JWT_SECRET fix** — added missing `JWT_SECRET` env var to E2E workflow (API startup was failing).
+- **Webhooks page tests** — new admin webhooks list page tests (cards, badges, links, empty state, active/disabled pills).
+- **Health dashboard tests** — new admin health page tests (shell, client component, breadcrumbs).
+- **Billing page tests** — new admin org billing page tests (header, back link, null org, data passing).
+- **Portal activity feed** — new "Recent Activity" section on portal dashboard using audit events scoped to user's org.
+- **Bulk ticket update API** — `POST /api/v1/tickets/bulk` endpoint + SDK `bulkUpdate()` for batch status/priority changes.
 
 ## Full Architecture & Code Review (2026-06-16) — 30 Findings
 
@@ -241,7 +247,7 @@ A comprehensive deep-dive architecture review was conducted on 2026-06-16 coveri
 | Architecture       | 8/10  | Clear modular monolith layering                                            |
 | Code Quality       | 8/10  | Strong patterns, input sanitizer fixed                                     |
 | Security           | 7/10  | Tenant isolation + local JWT verification added                            |
-| Testing            | 8/10  | 750 tests, missing load/visual tests                                       |
+| Testing            | 9/10  | 764 tests, comprehensive coverage                                          |
 | Infrastructure     | 9/10  | Mature IaC, image tag drift fixed                                          |
 | CI/CD              | 8/10  | Gated deploys, comprehensive workflows                                     |
 | Documentation      | 9/10  | Exceptional breadth and depth                                              |
@@ -578,6 +584,11 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 | 51  | **EmptyState component** — reusable component with icon/title/description/actions, wired into tickets, projects, documents admin pages                                 | ✅     |
 | 52  | **Markdown comment rendering** — `CommentBody` component (bold, italic, links, lists, code) wired into all 4 comment locations (portal + admin tickets + projects)     | ✅     |
 | 53  | **E2E JWT_SECRET fix** — added missing `JWT_SECRET` env var to E2E workflow (API startup was failing)                                                                  | ✅     |
+| 54  | **Webhooks page tests** — new admin webhooks list page tests (cards, badges, links, empty state, active/disabled pills)                                                | ✅     |
+| 55  | **Health dashboard tests** — new admin health page tests (shell, client component, breadcrumbs)                                                                        | ✅     |
+| 56  | **Billing page tests** — new admin org billing page tests (header, back link, null org, data passing)                                                                  | ✅     |
+| 57  | **Portal activity feed** — new "Recent Activity" section on portal dashboard using audit events scoped to user's org                                                   | ✅     |
+| 58  | **Bulk ticket update API** — `POST /api/v1/tickets/bulk` endpoint + SDK `bulkUpdate()` for batch status/priority changes                                               | ✅     |
 
 #### High Value (Still Open)
 
@@ -705,7 +716,6 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 - Wire `@mct/config` TypeScript config into apps (tsconfig.json has incompatible settings with API/worker — needs refactor)
 - JSM ticket creation not firing (Teams webhook works) — verify `JSM_DOMAIN`, `JSM_EMAIL`, `JSM_API_TOKEN`, `JSM_SERVICEDESK_ID`, `JSM_REQUEST_TYPE_ID` secrets have correct values; logging now enabled
 - No unit tests for webhooks, bulk-invite, health, billing admin pages (zero coverage)
-- Activity feed on portal dashboard (audit timeline scoped to user's orgs)
 
 ## Final Codebase Review (2026-06-05) — 21 Findings
 
