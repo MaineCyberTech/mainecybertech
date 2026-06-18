@@ -12,6 +12,7 @@
 | [docs/API_ENDPOINT_INVENTORY.md](API_ENDPOINT_INVENTORY.md) | Complete API endpoint inventory (86 endpoints)                        |
 | [docs/ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)     | Mermaid system architecture diagram                                   |
 | [docs/adr/README.md](adr/README.md)                         | Architecture Decision Records (7 decisions)                           |
+| [docs/openapi.yaml](openapi.yaml)                           | OpenAPI 3.0 spec — 12 core endpoint groups with schemas               |
 | [docs/MEGA_AUDIT_2026-06-18.md](MEGA_AUDIT_2026-06-18.md)   | Comprehensive architecture & security audit                           |
 
 ## Setup & Local Development
