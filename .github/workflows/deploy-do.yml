@@ -228,7 +228,7 @@ jobs:
           echo "LOGIN_EXIT=$?"
 
           echo "--- REMOVING OLD MCT IMAGES ON DROPLET ---"
-          ssh $SSH_OPTS root@$HOST "docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | xargs -r docker rmi 2>/dev/null" 2>&1
+          ssh $SSH_OPTS root@$HOST "docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | xargs -r docker rmi 2>/dev/null; true" 2>&1
           echo "CLEANUP_EXIT=$?"
 
           echo "--- PULLING IMAGES ON RUNNER ---"
