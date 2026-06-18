@@ -9,6 +9,7 @@ import {
   useTransition,
 } from "react";
 import Link from "next/link";
+import EmptyState from "@/components/EmptyState";
 
 const PAGE_SIZE = 25;
 
@@ -587,9 +588,13 @@ export default function AdminTicketCenterClient({
               />
             ))
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-              No tickets match your filters.
-            </div>
+            <EmptyState
+              icon="🎫"
+              title="No tickets found"
+              description="There are no support tickets matching your current filters."
+              actionLabel="Create Ticket"
+              actionHref="/admin/tickets/new"
+            />
           )}
         </div>
         {hasMore ? (

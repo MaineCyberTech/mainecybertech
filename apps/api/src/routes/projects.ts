@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -92,7 +93,7 @@ router.get("/export", async (req, res, next) => {
   }
 });
 
-router.get("/", async (req, res, next) => {
+router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const page = Math.max(1, parseInt(req.query.page as string) || 1);

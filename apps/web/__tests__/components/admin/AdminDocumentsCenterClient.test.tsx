@@ -25,13 +25,19 @@ const mockBulkMetadata = jest.fn();
 const baseOrg = { id: "o1", name: "Acme Corp" };
 
 const baseDoc = {
-  id: "d1", display_name: "Report Q1", file_extension: "pdf",
+  id: "d1",
+  display_name: "Report Q1",
+  file_extension: "pdf",
   resolved_url: "https://cdn.example.com/report.pdf",
   mime_type: "application/pdf",
-  organization_id: "o1", organization_name: "Acme Corp",
-  folder_path: "Finance", visibility: "org",
-  storage_bucket: "documents", storage_path: "orgs/o1/report.pdf",
-  file_name: "report.pdf", file_size: 102400,
+  organization_id: "o1",
+  organization_name: "Acme Corp",
+  folder_path: "Finance",
+  visibility: "org",
+  storage_bucket: "documents",
+  storage_path: "orgs/o1/report.pdf",
+  file_name: "report.pdf",
+  file_size: 102400,
   description: "Quarterly financial report",
   updated_at: new Date(Date.now() - 3600000).toISOString(),
   created_at: new Date(Date.now() - 86400000).toISOString(),
@@ -54,7 +60,7 @@ function renderClient(overrides: any = {}) {
       bulkDeleteAction={mockBulkDelete}
       bulkFolderAction={mockBulkFolder}
       bulkMetadataAction={mockBulkMetadata}
-    />
+    />,
   );
 }
 
@@ -62,7 +68,9 @@ let AdminDocumentsCenterClient: typeof import("@/components/admin/AdminDocuments
 
 describe("AdminDocumentsCenterClient", () => {
   beforeAll(async () => {
-    AdminDocumentsCenterClient = (await import("@/components/admin/AdminDocumentsCenterClient")).default;
+    AdminDocumentsCenterClient = (
+      await import("@/components/admin/AdminDocumentsCenterClient")
+    ).default;
   });
 
   beforeEach(() => {
@@ -86,14 +94,20 @@ describe("AdminDocumentsCenterClient", () => {
 
     it("renders New Document and Refresh View buttons", () => {
       renderClient();
-      expect(screen.getByRole("button", { name: "New Document" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Refresh View" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "New Document" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Refresh View" }),
+      ).toBeInTheDocument();
     });
 
     it("renders document cards in list view", () => {
       renderClient();
       expect(screen.getByText("Report Q1")).toBeInTheDocument();
-      expect(screen.getByText("Quarterly financial report")).toBeInTheDocument();
+      expect(
+        screen.getByText("Quarterly financial report"),
+      ).toBeInTheDocument();
     });
 
     it("renders search input and filter selects", () => {
@@ -112,17 +126,25 @@ describe("AdminDocumentsCenterClient", () => {
 
     it("renders sort buttons", () => {
       renderClient();
-      expect(screen.getByRole("button", { name: "Updated" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Updated" }),
+      ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Name" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Org" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Folder" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Visibility" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Folder" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Visibility" }),
+      ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Type" })).toBeInTheDocument();
     });
 
     it("renders select all visible and clear buttons", () => {
       renderClient();
-      expect(screen.getByRole("button", { name: "Select All Visible" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Select All Visible" }),
+      ).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Clear" })).toBeInTheDocument();
     });
 
@@ -150,13 +172,17 @@ describe("AdminDocumentsCenterClient", () => {
   describe("empty state", () => {
     it("shows empty message when no documents", () => {
       renderClient({ documents: [] });
-      expect(screen.getByText("No documents match your current view")).toBeInTheDocument();
+      expect(screen.getByText("No documents found")).toBeInTheDocument();
     });
 
     it("shows create and reset buttons in empty state", () => {
       renderClient({ documents: [] });
-      expect(screen.getByRole("button", { name: "Create Document" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Reset Filters" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Create Document" }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Reset Filters" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -180,7 +206,14 @@ describe("AdminDocumentsCenterClient", () => {
       renderClient({
         documents: [
           baseDoc,
-          { ...baseDoc, id: "d2", display_name: "Unrelated Doc", description: "Something else", storage_path: "other/path", file_name: "other.txt" },
+          {
+            ...baseDoc,
+            id: "d2",
+            display_name: "Unrelated Doc",
+            description: "Something else",
+            storage_path: "other/path",
+            file_name: "other.txt",
+          },
         ],
       });
       const searchInput = screen.getByPlaceholderText(/Search by name/);
@@ -196,7 +229,13 @@ describe("AdminDocumentsCenterClient", () => {
         organizations: [baseOrg, { id: "o2", name: "Other Inc" }],
         documents: [
           baseDoc,
-          { ...baseDoc, id: "d2", display_name: "Other Doc", organization_id: "o2", organization_name: "Other Inc" },
+          {
+            ...baseDoc,
+            id: "d2",
+            display_name: "Other Doc",
+            organization_id: "o2",
+            organization_name: "Other Inc",
+          },
         ],
       });
       const select = screen.getByDisplayValue("All organizations");
@@ -211,7 +250,12 @@ describe("AdminDocumentsCenterClient", () => {
       renderClient({
         documents: [
           baseDoc,
-          { ...baseDoc, id: "d2", display_name: "Public Doc", visibility: "public" },
+          {
+            ...baseDoc,
+            id: "d2",
+            display_name: "Public Doc",
+            visibility: "public",
+          },
         ],
       });
       const selects = screen.getAllByRole("combobox");
@@ -229,16 +273,24 @@ describe("AdminDocumentsCenterClient", () => {
       renderClient();
       const searchInput = screen.getByPlaceholderText(/Search by name/);
       await userEvent.type(searchInput, "Report");
-      expect(screen.getByText((c) => c.includes("Search:") && c.includes("Report"))).toBeInTheDocument();
+      expect(
+        screen.getByText((c) => c.includes("Search:") && c.includes("Report")),
+      ).toBeInTheDocument();
     });
 
     it("clears search when chip × clicked", async () => {
       renderClient();
       const searchInput = screen.getByPlaceholderText(/Search by name/);
       await userEvent.type(searchInput, "Report");
-      const chip = screen.getByText((c) => c.includes("Search:") && c.includes("Report"));
+      const chip = screen.getByText(
+        (c) => c.includes("Search:") && c.includes("Report"),
+      );
       await userEvent.click(chip);
-      expect(screen.queryByText((c) => c.includes("Search:") && c.includes("Report"))).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(
+          (c) => c.includes("Search:") && c.includes("Report"),
+        ),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -259,13 +311,17 @@ describe("AdminDocumentsCenterClient", () => {
   describe("inline rename", () => {
     it("shows name as button initially", () => {
       renderClient();
-      expect(screen.getByRole("button", { name: "Report Q1" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Report Q1" }),
+      ).toBeInTheDocument();
     });
 
     it("switches to input on click", async () => {
       renderClient();
       await userEvent.click(screen.getByRole("button", { name: "Report Q1" }));
-      const nameInput = document.querySelector<HTMLInputElement>("input[value='Report Q1']");
+      const nameInput = document.querySelector<HTMLInputElement>(
+        "input[value='Report Q1']",
+      );
       expect(nameInput).not.toBeNull();
     });
   });
@@ -299,7 +355,9 @@ describe("AdminDocumentsCenterClient", () => {
       renderClient();
       await userEvent.click(screen.getByRole("button", { name: "Drawer" }));
       expect(screen.getAllByText("Overview").length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByText((c) => c.includes("Organization:"))).toBeInTheDocument();
+      expect(
+        screen.getByText((c) => c.includes("Organization:")),
+      ).toBeInTheDocument();
     });
 
     it("closes drawer when Close button clicked", async () => {
@@ -320,10 +378,14 @@ describe("AdminDocumentsCenterClient", () => {
 
     it("preview tab shows preview section for image docs", async () => {
       renderClient({
-        documents: [{
-          ...baseDoc, mime_type: "image/png", file_extension: "png",
-          resolved_url: "https://cdn.example.com/img.png",
-        }],
+        documents: [
+          {
+            ...baseDoc,
+            mime_type: "image/png",
+            file_extension: "png",
+            resolved_url: "https://cdn.example.com/img.png",
+          },
+        ],
       });
       await userEvent.click(screen.getByRole("button", { name: "Drawer" }));
       await userEvent.click(screen.getByRole("button", { name: "Preview" }));
@@ -334,14 +396,22 @@ describe("AdminDocumentsCenterClient", () => {
   describe("create modal", () => {
     it("opens create modal when New Document clicked", async () => {
       renderClient();
-      await userEvent.click(screen.getByRole("button", { name: "New Document" }));
-      expect(screen.getAllByText("Create Document").length).toBeGreaterThanOrEqual(1);
-      expect(screen.getByRole("button", { name: "Create Document" })).toBeInTheDocument();
+      await userEvent.click(
+        screen.getByRole("button", { name: "New Document" }),
+      );
+      expect(
+        screen.getAllByText("Create Document").length,
+      ).toBeGreaterThanOrEqual(1);
+      expect(
+        screen.getByRole("button", { name: "Create Document" }),
+      ).toBeInTheDocument();
     });
 
     it("closes create modal when Close clicked", async () => {
       renderClient();
-      await userEvent.click(screen.getByRole("button", { name: "New Document" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "New Document" }),
+      );
       await userEvent.click(screen.getByRole("button", { name: "Close" }));
       expect(screen.queryByText("Create Document")).not.toBeInTheDocument();
     });
@@ -350,16 +420,23 @@ describe("AdminDocumentsCenterClient", () => {
   describe("selection", () => {
     it("selects a document via checkbox", async () => {
       renderClient();
-      const checkboxes = document.querySelectorAll<HTMLInputElement>("input[type='checkbox']");
+      const checkboxes = document.querySelectorAll<HTMLInputElement>(
+        "input[type='checkbox']",
+      );
       fireEvent.click(checkboxes[0]);
-      expect(screen.getByText((c) => c.includes("document selected")) && screen.getByText(/1 document selected/)).toBeInTheDocument();
+      expect(
+        screen.getByText((c) => c.includes("document selected")) &&
+          screen.getByText(/1 document selected/),
+      ).toBeInTheDocument();
     });
   });
 
   describe("bulk controls visibility", () => {
     it("shows bulk controls when a document is selected", async () => {
       renderClient();
-      const checkboxes = document.querySelectorAll<HTMLInputElement>("input[type='checkbox']");
+      const checkboxes = document.querySelectorAll<HTMLInputElement>(
+        "input[type='checkbox']",
+      );
       fireEvent.click(checkboxes[0]);
       await waitFor(() => {
         expect(screen.getByTestId("bulk-controls")).toBeInTheDocument();
@@ -383,7 +460,9 @@ describe("AdminDocumentsCenterClient", () => {
         display_name: `Doc ${i}`,
       }));
       renderClient({ documents: docs });
-      expect(screen.getByRole("button", { name: "Load more" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Load more" }),
+      ).toBeInTheDocument();
     });
   });
 
@@ -392,7 +471,9 @@ describe("AdminDocumentsCenterClient", () => {
       renderClient();
       const searchInput = screen.getByPlaceholderText(/Search by name/);
       await userEvent.type(searchInput, "TestDoc");
-      const saved = JSON.parse(window.localStorage.getItem("admin-documents-ui-prefs-v2233") ?? "{}");
+      const saved = JSON.parse(
+        window.localStorage.getItem("admin-documents-ui-prefs-v2233") ?? "{}",
+      );
       expect(saved.search).toBe("TestDoc");
     });
   });
@@ -401,13 +482,17 @@ describe("AdminDocumentsCenterClient", () => {
     it("opens create modal on Cmd+N", () => {
       renderClient();
       fireEvent.keyDown(window, { key: "n", metaKey: true });
-      expect(screen.getAllByText("Create Document").length).toBeGreaterThanOrEqual(1);
+      expect(
+        screen.getAllByText("Create Document").length,
+      ).toBeGreaterThanOrEqual(1);
     });
 
     it("closes create modal on Escape", () => {
       renderClient();
       fireEvent.keyDown(window, { key: "n", metaKey: true });
-      expect(screen.getAllByText("Create Document").length).toBeGreaterThanOrEqual(1);
+      expect(
+        screen.getAllByText("Create Document").length,
+      ).toBeGreaterThanOrEqual(1);
       fireEvent.keyDown(window, { key: "Escape" });
       expect(screen.queryByText("Create Document")).not.toBeInTheDocument();
     });

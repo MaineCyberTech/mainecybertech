@@ -2,6 +2,7 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import projectsRouter from "../routes/projects";
 import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { invalidateCache } from "../middleware/cache";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -18,7 +19,6 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
 }));
 
 jest.mock("../services/audit", () => ({
@@ -28,7 +28,11 @@ jest.mock("../services/audit", () => ({
 import { getSupabaseAdmin } from "../services/supabase";
 
 function mockAuth() {
-  const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn() };
+  const supabase = {
+    from: jest.fn(),
+    auth: { getUser: jest.fn() },
+    rpc: jest.fn(),
+  };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
   supabase.auth.getUser.mockResolvedValue({
     data: { user: { id: "user-1", email: "test@example.com" } },
@@ -37,9 +41,25 @@ function mockAuth() {
   return supabase;
 }
 
-const PROJECT = { id: "proj-1", name: "Test Project", status: "active", organization_id: "org-1" };
-const TASK = { id: "task-1", project_id: "proj-1", title: "Test Task", status: "todo", sort_order: 1 };
-const COMMENT = { id: "cmt-1", task_id: "task-1", body: "Test", is_internal: false };
+const PROJECT = {
+  id: "proj-1",
+  name: "Test Project",
+  status: "active",
+  organization_id: "org-1",
+};
+const TASK = {
+  id: "task-1",
+  project_id: "proj-1",
+  title: "Test Task",
+  status: "todo",
+  sort_order: 1,
+};
+const COMMENT = {
+  id: "cmt-1",
+  task_id: "task-1",
+  body: "Test",
+  is_internal: false,
+};
 const UPDATE = { id: "upd-1", project_id: "proj-1", body: "Update content" };
 const READ_STATE = { id: "rs-1", user_id: "user-1", task_id: "task-1" };
 
@@ -50,12 +70,15 @@ app.use(errorHandler);
 describe("projects routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    invalidateCache();
   });
 
   describe("GET /", () => {
     it("returns paginated projects", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [PROJECT], error: null, count: 1 }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [PROJECT], error: null, count: 1 }),
+      );
 
       const res = await request(app)
         .get("/api/v1/projects")
@@ -67,7 +90,9 @@ describe("projects routes", () => {
 
     it("filters by organization_id", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [], error: null, count: 0 }),
+      );
 
       const res = await request(app)
         .get("/api/v1/projects?organization_id=org-1")
@@ -80,7 +105,9 @@ describe("projects routes", () => {
   describe("GET /:id", () => {
     it("returns a project with tasks", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: PROJECT, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: PROJECT, error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/projects/proj-1")
@@ -91,7 +118,9 @@ describe("projects routes", () => {
 
     it("returns 404 when not found", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: new Error("Not found") }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("Not found") }),
+      );
 
       const res = await request(app)
         .get("/api/v1/projects/missing")
@@ -104,7 +133,9 @@ describe("projects routes", () => {
   describe("POST /", () => {
     it("creates a project", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: PROJECT, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: PROJECT, error: null }),
+      );
 
       const res = await request(app)
         .post("/api/v1/projects")
@@ -123,7 +154,9 @@ describe("projects routes", () => {
   describe("PATCH /:id", () => {
     it("updates a project", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: PROJECT, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: PROJECT, error: null }),
+      );
 
       const res = await request(app)
         .patch("/api/v1/projects/proj-1")
@@ -135,7 +168,9 @@ describe("projects routes", () => {
 
     it("returns 404 when not found", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: null }),
+      );
 
       const res = await request(app)
         .patch("/api/v1/projects/missing")
@@ -149,7 +184,9 @@ describe("projects routes", () => {
   describe("DELETE /:id", () => {
     it("deletes a project", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: null }),
+      );
 
       const res = await request(app)
         .delete("/api/v1/projects/proj-1")
@@ -162,7 +199,9 @@ describe("projects routes", () => {
   describe("GET /:id/tasks", () => {
     it("returns tasks for a project", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [TASK], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [TASK], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/projects/proj-1/tasks")
@@ -176,12 +215,19 @@ describe("projects routes", () => {
   describe("POST /:id/tasks", () => {
     it("creates a task", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: TASK, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: TASK, error: null }),
+      );
 
       const res = await request(app)
         .post("/api/v1/projects/proj-1/tasks")
         .set("Authorization", "Bearer token-123")
-        .send({ title: "New Task", status: "todo", sortOrder: 1, approvalRequired: false });
+        .send({
+          title: "New Task",
+          status: "todo",
+          sortOrder: 1,
+          approvalRequired: false,
+        });
 
       expect(res.status).toBe(201);
     });
@@ -190,7 +236,9 @@ describe("projects routes", () => {
   describe("PATCH /:id/tasks/:taskId", () => {
     it("updates a task", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: TASK, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: TASK, error: null }),
+      );
 
       const res = await request(app)
         .patch("/api/v1/projects/proj-1/tasks/task-1")
@@ -202,7 +250,9 @@ describe("projects routes", () => {
 
     it("returns 404 when task not found", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: null }),
+      );
 
       const res = await request(app)
         .patch("/api/v1/projects/proj-1/tasks/missing")
@@ -216,7 +266,9 @@ describe("projects routes", () => {
   describe("DELETE /:id/tasks/:taskId", () => {
     it("deletes a task", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: null }),
+      );
 
       const res = await request(app)
         .delete("/api/v1/projects/proj-1/tasks/task-1")
@@ -229,7 +281,9 @@ describe("projects routes", () => {
   describe("GET /:id/tasks/comments", () => {
     it("returns task comments with filters", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [COMMENT], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [COMMENT], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/projects/proj-1/tasks/comments")
@@ -240,7 +294,9 @@ describe("projects routes", () => {
 
     it("filters by organization_id", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/projects/proj-1/tasks/comments?organization_id=org-1")
@@ -253,7 +309,9 @@ describe("projects routes", () => {
   describe("POST /:id/tasks/:taskId/comments", () => {
     it("adds a task comment", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: COMMENT, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: COMMENT, error: null }),
+      );
 
       const res = await request(app)
         .post("/api/v1/projects/proj-1/tasks/task-1/comments")
@@ -267,7 +325,9 @@ describe("projects routes", () => {
   describe("GET /:id/updates", () => {
     it("returns project updates", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [UPDATE], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [UPDATE], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/projects/proj-1/updates")
@@ -280,7 +340,9 @@ describe("projects routes", () => {
   describe("POST /:id/updates", () => {
     it("creates a project update", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: UPDATE, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: UPDATE, error: null }),
+      );
 
       const res = await request(app)
         .post("/api/v1/projects/proj-1/updates")
@@ -294,7 +356,9 @@ describe("projects routes", () => {
   describe("PATCH /:id/updates/:updateId", () => {
     it("updates a project update", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: UPDATE, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: UPDATE, error: null }),
+      );
 
       const res = await request(app)
         .patch("/api/v1/projects/proj-1/updates/upd-1")
@@ -306,7 +370,9 @@ describe("projects routes", () => {
 
     it("returns 404 when update not found", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: null }),
+      );
 
       const res = await request(app)
         .patch("/api/v1/projects/proj-1/updates/missing")
@@ -320,7 +386,9 @@ describe("projects routes", () => {
   describe("DELETE /:id/updates/:updateId", () => {
     it("deletes a project update", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: null }),
+      );
 
       const res = await request(app)
         .delete("/api/v1/projects/proj-1/updates/upd-1")
@@ -333,7 +401,9 @@ describe("projects routes", () => {
   describe("PATCH /:id/tasks/:taskId/comments/:commentId", () => {
     it("updates a task comment", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: COMMENT, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: COMMENT, error: null }),
+      );
 
       const res = await request(app)
         .patch("/api/v1/projects/proj-1/tasks/task-1/comments/cmt-1")
@@ -345,7 +415,9 @@ describe("projects routes", () => {
 
     it("returns 404 when comment not found", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: null }),
+      );
 
       const res = await request(app)
         .patch("/api/v1/projects/proj-1/tasks/task-1/comments/missing")
@@ -359,7 +431,9 @@ describe("projects routes", () => {
   describe("DELETE /:id/tasks/:taskId/comments/:commentId", () => {
     it("deletes a task comment", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: null }),
+      );
 
       const res = await request(app)
         .delete("/api/v1/projects/proj-1/tasks/task-1/comments/cmt-1")
@@ -372,7 +446,9 @@ describe("projects routes", () => {
   describe("GET /:id/tasks/read-states", () => {
     it("returns read states", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [READ_STATE], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [READ_STATE], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/projects/proj-1/tasks/read-states")
@@ -385,8 +461,9 @@ describe("projects routes", () => {
   describe("POST /:id/tasks/reorder", () => {
     it("reorders tasks", async () => {
       const supabase = mockAuth();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: null }),
+      );
 
       const res = await request(app)
         .post("/api/v1/projects/proj-1/tasks/reorder")
@@ -401,8 +478,9 @@ describe("projects routes", () => {
   describe("POST /:id/tasks/:taskId/read", () => {
     it("marks a task as read", async () => {
       const supabase = mockAuth();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: null }),
+      );
 
       const res = await request(app)
         .post("/api/v1/projects/proj-1/tasks/task-1/read")
@@ -446,15 +524,39 @@ describe("projects routes", () => {
   describe("GET /:id/detail", () => {
     it("returns compound project detail in a single call", async () => {
       const supabase = mockAuth();
-      const projectWithTasks = { ...PROJECT, project_tasks: [TASK], organization_id: "org-1" };
+      const projectWithTasks = {
+        ...PROJECT,
+        project_tasks: [TASK],
+        organization_id: "org-1",
+      };
 
-      const projectBuilder = createMockBuilder({ data: projectWithTasks, error: null });
-      const membershipBuilder = createMockBuilder({ data: [{ id: "m1", user_id: "user-1", role_id: "r1", status: "approved" }], error: null });
+      const projectBuilder = createMockBuilder({
+        data: projectWithTasks,
+        error: null,
+      });
+      const membershipBuilder = createMockBuilder({
+        data: [
+          { id: "m1", user_id: "user-1", role_id: "r1", status: "approved" },
+        ],
+        error: null,
+      });
       const taskBuilder = createMockBuilder({ data: [TASK], error: null });
-      const commentBuilder = createMockBuilder({ data: [COMMENT], error: null });
-      const readStateBuilder = createMockBuilder({ data: [READ_STATE], error: null });
-      const profileBuilder = createMockBuilder({ data: [{ id: "user-1", full_name: "Test", email: "t@t.com" }], error: null });
-      const roleBuilder = createMockBuilder({ data: [{ id: "r1", key: "admin", name: "Admin" }], error: null });
+      const commentBuilder = createMockBuilder({
+        data: [COMMENT],
+        error: null,
+      });
+      const readStateBuilder = createMockBuilder({
+        data: [READ_STATE],
+        error: null,
+      });
+      const profileBuilder = createMockBuilder({
+        data: [{ id: "user-1", full_name: "Test", email: "t@t.com" }],
+        error: null,
+      });
+      const roleBuilder = createMockBuilder({
+        data: [{ id: "r1", key: "admin", name: "Admin" }],
+        error: null,
+      });
 
       let callCount = 0;
       supabase.from.mockImplementation(() => {
@@ -485,7 +587,10 @@ describe("projects routes", () => {
 
     it("returns 404 when project not found", async () => {
       const supabase = mockAuth();
-      const projectBuilder = createMockBuilder({ data: null, error: { message: "Not found" } });
+      const projectBuilder = createMockBuilder({
+        data: null,
+        error: { message: "Not found" },
+      });
       supabase.from.mockReturnValue(projectBuilder);
 
       const res = await request(app)

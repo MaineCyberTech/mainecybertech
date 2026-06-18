@@ -2,6 +2,7 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import documentsRouter from "../routes/documents";
 import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { invalidateCache } from "../middleware/cache";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -18,7 +19,6 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
 }));
 
 jest.mock("../services/audit", () => ({
@@ -79,6 +79,7 @@ const DOCUMENT = {
 describe("documents routes", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    invalidateCache();
   });
 
   describe("GET /", () => {
@@ -208,7 +209,10 @@ describe("documents routes", () => {
       supabase.from
         .mockReturnValueOnce(
           createMockBuilder({
-            data: { storage_bucket: "documents", storage_path: "orgs/org-1/file.pdf" },
+            data: {
+              storage_bucket: "documents",
+              storage_path: "orgs/org-1/file.pdf",
+            },
             error: null,
           } as MockResult),
         )
@@ -259,7 +263,10 @@ describe("documents routes", () => {
       const supabase = mockSupabase();
       supabase.from.mockReturnValue(
         createMockBuilder({
-          data: { storage_bucket: "documents", storage_path: "orgs/org-1/file.pdf" },
+          data: {
+            storage_bucket: "documents",
+            storage_path: "orgs/org-1/file.pdf",
+          },
           error: null,
         } as MockResult),
       );
@@ -297,13 +304,18 @@ describe("documents routes", () => {
   describe("POST /upload", () => {
     it("uploads a file and creates a document", async () => {
       const newDoc = { ...DOCUMENT, id: "uploaded-doc" };
-      const builder = createMockBuilder({ data: newDoc, error: null } as MockResult);
+      const builder = createMockBuilder({
+        data: newDoc,
+        error: null,
+      } as MockResult);
 
       const supabase = mockSupabase();
       supabase.from.mockReturnValue(builder);
       supabase.storage = {
         from: jest.fn().mockReturnValue({
-          upload: jest.fn().mockResolvedValue({ data: { path: "new-path" }, error: null }),
+          upload: jest
+            .fn()
+            .mockResolvedValue({ data: { path: "new-path" }, error: null }),
           remove: jest.fn(),
           createSignedUrl: jest.fn(),
         }),
@@ -345,16 +357,28 @@ describe("documents routes", () => {
         storage_path: "old/path.pdf",
         current_version: 2,
       };
-      const updatedDoc = { ...existingDoc, storage_path: "new/path.pdf", current_version: 3 };
+      const updatedDoc = {
+        ...existingDoc,
+        storage_path: "new/path.pdf",
+        current_version: 3,
+      };
 
       const supabase = mockSupabase();
       supabase.from
-        .mockReturnValueOnce(createMockBuilder({ data: existingDoc, error: null } as MockResult))
-        .mockReturnValueOnce(createMockBuilder({ data: updatedDoc, error: null } as MockResult))
-        .mockReturnValueOnce(createMockBuilder({ data: null, error: null } as MockResult));
+        .mockReturnValueOnce(
+          createMockBuilder({ data: existingDoc, error: null } as MockResult),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({ data: updatedDoc, error: null } as MockResult),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({ data: null, error: null } as MockResult),
+        );
       supabase.storage = {
         from: jest.fn().mockReturnValue({
-          upload: jest.fn().mockResolvedValue({ data: { path: "new/path.pdf" }, error: null }),
+          upload: jest
+            .fn()
+            .mockResolvedValue({ data: { path: "new/path.pdf" }, error: null }),
           remove: jest.fn().mockResolvedValue({ data: null, error: null }),
           createSignedUrl: jest.fn(),
         }),
@@ -370,7 +394,9 @@ describe("documents routes", () => {
         .attach("file", Buffer.from("new content"), "new.txt");
 
       expect(res.status).toBe(200);
-      expect(supabase.storage.from("documents").remove).toHaveBeenCalledWith(["old/path.pdf"]);
+      expect(supabase.storage.from("documents").remove).toHaveBeenCalledWith([
+        "old/path.pdf",
+      ]);
       expect(logAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({ action: "document.update" }),
       );
@@ -390,10 +416,17 @@ describe("documents routes", () => {
 
     it("returns 500 when storage upload fails", async () => {
       const supabase = mockSupabase();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: null } as MockResult),
+      );
       supabase.storage = {
         from: jest.fn().mockReturnValue({
-          upload: jest.fn().mockResolvedValue({ data: null, error: { message: "Storage full" } }),
+          upload: jest
+            .fn()
+            .mockResolvedValue({
+              data: null,
+              error: { message: "Storage full" },
+            }),
           remove: jest.fn(),
           createSignedUrl: jest.fn(),
         }),

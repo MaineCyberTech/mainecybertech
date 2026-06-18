@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import EmptyState from "@/components/EmptyState";
 
 type Project = {
   id: string;
@@ -303,9 +304,13 @@ export default function AdminProjectsClient({
               );
             })
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-              No projects match your filters.
-            </div>
+            <EmptyState
+              icon="📁"
+              title="No projects found"
+              description="There are no projects matching your current filters."
+              actionLabel="Create Project"
+              actionOnClick={() => setOpenModal(true)}
+            />
           )}
         </div>
         {hasMore ? (
