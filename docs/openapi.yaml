@@ -1,0 +1,393 @@
+openapi: "3.0.3"
+info:
+  title: Maine CyberTech Portal API
+  version: "1.0.0"
+  description: |
+    REST API for the Maine CyberTech client portal.
+    Base URL: `/api/v1`
+    Auth: Bearer token (JWT) in `Authorization` header or `mct_session` cookie.
+
+servers:
+  - url: https://api.mainecybertech.com
+    description: Production
+  - url: https://api.mainecybertech.us
+    description: Development
+  - url: http://localhost:4000
+    description: Local
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: mct_session
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION
+            message:
+              type: string
+            status:
+              type: integer
+            details:
+              type: object
+
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+        data:
+          type: object
+
+    PaginatedResult:
+      type: object
+      properties:
+        items:
+          type: array
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+paths:
+  # ────── Auth ──────
+  /api/v1/auth/me:
+    get:
+      summary: Get current user
+      security:
+        - BearerAuth: []
+        - CookieAuth: []
+      responses:
+        "200":
+          description: Current user profile with roles
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+
+  /api/v1/auth/sign-in:
+    post:
+      summary: Sign in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        "200":
+          description: JWT token set in cookie
+        "401":
+          description: Invalid credentials
+
+  /api/v1/auth/sign-up:
+    post:
+      summary: Sign up
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                fullName:
+                  type: string
+      responses:
+        "201":
+          description: Account created
+
+  # ────── Tickets ──────
+  /api/v1/tickets:
+    get:
+      summary: List tickets
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: organization_id
+          schema:
+            type: string
+          description: Filter by org
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by status
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 25
+      responses:
+        "200":
+          description: Paginated ticket list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResult"
+
+    post:
+      summary: Create ticket
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organizationId, title, priority, source]
+              properties:
+                organizationId:
+                  type: string
+                title:
+                  type: string
+                  maxLength: 255
+                description:
+                  type: string
+                priority:
+                  type: string
+                  enum: [urgent, high, normal, low]
+                source:
+                  type: string
+                  enum: [portal, email, jsm, phone, api]
+                category:
+                  type: string
+                labels:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        "201":
+          description: Ticket created
+
+  /api/v1/tickets/{id}:
+    get:
+      summary: Get ticket detail
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Ticket with comments
+        "404":
+          description: Not found
+
+    patch:
+      summary: Update ticket
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum:
+                    [
+                      new,
+                      open,
+                      in_progress,
+                      waiting_on_client,
+                      resolved,
+                      closed,
+                    ]
+                priority:
+                  type: string
+                  enum: [urgent, high, normal, low]
+                assignedTo:
+                  type: string
+      responses:
+        "200":
+          description: Ticket updated
+
+  # ────── Projects ──────
+  /api/v1/projects:
+    get:
+      summary: List projects
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Paginated project list
+
+    post:
+      summary: Create project
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organizationId, name]
+              properties:
+                organizationId:
+                  type: string
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        "201":
+          description: Project created
+
+  # ────── Documents ──────
+  /api/v1/documents:
+    get:
+      summary: List documents
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Paginated document list
+
+    post:
+      summary: Upload document
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [organizationId, file]
+              properties:
+                organizationId:
+                  type: string
+                file:
+                  type: string
+                  format: binary
+                visibility:
+                  type: string
+                  enum: [org, client, internal]
+      responses:
+        "201":
+          description: Document uploaded
+
+  # ────── Organizations ──────
+  /api/v1/organizations:
+    get:
+      summary: List organizations
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Paginated org list
+
+    post:
+      summary: Create organization
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                domain:
+                  type: string
+      responses:
+        "201":
+          description: Organization created
+
+  # ────── Public ──────
+  /api/v1/public/init:
+    get:
+      summary: Public init (geo-location)
+      responses:
+        "200":
+          description: Geo data and session info
+
+  /api/v1/public/submit:
+    post:
+      summary: Submit contact form
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, message]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                company:
+                  type: string
+                message:
+                  type: string
+      responses:
+        "200":
+          description: Form submitted
+
+  # ────── Health ──────
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200":
+          description: OK
