@@ -18,9 +18,9 @@ function isTokenExpired(token: string): boolean {
 export async function middleware(request: NextRequest) {
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const pathname = request.nextUrl.pathname;
-  const hostname = request.nextUrl.hostname;
+  const host = request.headers.get("host") || request.nextUrl.hostname;
 
-  const isAppDomain = hostname.startsWith("app.");
+  const isAppDomain = host.startsWith("app.");
 
   const isMarketingRoute =
     pathname === "/" ||
@@ -42,15 +42,19 @@ export async function middleware(request: NextRequest) {
 
   const isAuthenticated = token ? !isTokenExpired(token) : false;
 
-  // Domain-based routing: app.* for portal/auth, www/root for marketing
-  if (isAppDomain && isMarketingRoute) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
+  const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
 
-  if (!isAppDomain && (isAuthRoute || isPortalRoute || isAdminRoute)) {
-    const url = new URL(request.url);
-    url.hostname = `app.${hostname}`;
-    return NextResponse.redirect(url);
+  // Domain-based routing: app.* for portal/auth, www/root for marketing
+  if (!isLocalDev) {
+    const appHost = `app.${host.replace(/^www\./, "")}`;
+
+    if (isAppDomain && isMarketingRoute) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    if (!isAppDomain && (isAuthRoute || isPortalRoute || isAdminRoute)) {
+      return NextResponse.redirect(new URL(pathname, `https://${appHost}`));
+    }
   }
 
   if (!isAuthenticated && isPortalRoute) {
