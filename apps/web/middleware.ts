@@ -46,7 +46,9 @@ export async function middleware(request: NextRequest) {
 
   // Domain-based routing: app.* for portal/auth, www/root for marketing
   if (!isLocalDev) {
-    const appHost = `app.${host.replace(/^www\./, "")}`;
+    const appHost = host.startsWith("app.")
+      ? host
+      : `app.${host.replace(/^www\./, "")}`;
 
     if (isAppDomain && isMarketingRoute) {
       return NextResponse.redirect(new URL("/login", request.url));

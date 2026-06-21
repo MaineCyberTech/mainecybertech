@@ -92,8 +92,9 @@ export default function NotificationBell({
       try {
         const data = JSON.parse(event.data);
         if (Array.isArray(data) && data.length > 0) {
-          setUnread((prev) => prev + data.length);
-          setNotifications(data as NotificationItem[]);
+          // Fetch fresh count from server instead of adding to local state
+          fetchUnread();
+          fetchRecent();
           playNotificationChime();
         }
       } catch {
@@ -160,8 +161,8 @@ export default function NotificationBell({
     } catch {
       /* ignore */
     }
-    setUnread(0);
-    setNotifications([]);
+    await fetchUnread();
+    await fetchRecent();
   }
 
   async function handleMarkRead(id: string) {
@@ -170,8 +171,8 @@ export default function NotificationBell({
     } catch {
       /* ignore */
     }
-    setUnread((prev) => Math.max(0, prev - 1));
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    await fetchUnread();
+    await fetchRecent();
   }
 
   async function handleTogglePref(moduleKey: string, enabled: boolean) {
