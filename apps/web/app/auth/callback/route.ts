@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
+import { getCookieOptions } from "@/lib/cookie-domain";
 
 const SESSION_COOKIE = "mct_session";
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const host = request.headers.get("host") || "";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login`);
@@ -29,13 +30,11 @@ export async function GET(request: Request) {
     }
 
     const response = NextResponse.redirect(`${origin}/portal/dashboard`);
-    response.cookies.set(SESSION_COOKIE, json.data.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    response.cookies.set(
+      SESSION_COOKIE,
+      json.data.accessToken,
+      getCookieOptions(host),
+    );
 
     return response;
   } catch {

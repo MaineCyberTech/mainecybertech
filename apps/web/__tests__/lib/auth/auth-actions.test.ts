@@ -5,6 +5,9 @@ const mockCookieDelete = jest.fn();
 const mockRedirect = jest.fn();
 const mockSignIn = jest.fn();
 const mockSignUp = jest.fn();
+const mockHeaders = jest.fn().mockResolvedValue({
+  get: jest.fn().mockReturnValue("localhost:3000"),
+});
 
 jest.mock("next/headers", () => ({
   cookies: jest.fn().mockResolvedValue({
@@ -12,6 +15,7 @@ jest.mock("next/headers", () => ({
     delete: mockCookieDelete,
     get: jest.fn().mockReturnValue({ value: "test-token" }),
   }),
+  headers: mockHeaders,
 }));
 
 jest.mock("next/navigation", () => ({
@@ -44,6 +48,9 @@ const SESSION_COOKIE = "mct_session";
 describe("auth-actions", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockHeaders.mockResolvedValue({
+      get: jest.fn().mockReturnValue("localhost:3000"),
+    });
   });
 
   describe("loginAction", () => {
@@ -67,7 +74,9 @@ describe("auth-actions", () => {
 
     it("returns error message on ApiError", async () => {
       const { ApiError } = await import("@mct/sdk");
-      mockSignIn.mockRejectedValue(new ApiError("AUTH_ERROR", "Invalid credentials", 401));
+      mockSignIn.mockRejectedValue(
+        new ApiError("AUTH_ERROR", "Invalid credentials", 401),
+      );
 
       const { loginAction } = await import("@/lib/auth/auth-actions");
       const result = await loginAction("a@b.com", "wrong");
@@ -102,7 +111,9 @@ describe("auth-actions", () => {
 
     it("returns error on failure", async () => {
       const { ApiError } = await import("@mct/sdk");
-      mockSignUp.mockRejectedValue(new ApiError("VALIDATION", "Email already in use", 400));
+      mockSignUp.mockRejectedValue(
+        new ApiError("VALIDATION", "Email already in use", 400),
+      );
 
       const { signupAction } = await import("@/lib/auth/auth-actions");
       const result = await signupAction("a@b.com", "password", "Alice");

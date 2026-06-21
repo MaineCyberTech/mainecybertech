@@ -1,8 +1,9 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { MCTClient, ApiError } from "@mct/sdk";
+import { getCookieOptions } from "@/lib/cookie-domain";
 
 const SESSION_COOKIE = "mct_session";
 
@@ -16,13 +17,9 @@ export async function loginAction(email: string, password: string) {
   try {
     const result = await unauthClient().auth.signIn(email, password);
     const cookieStore = await cookies();
-    cookieStore.set(SESSION_COOKIE, result.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
+    const headersList = await headers();
+    const host = headersList.get("host") || "";
+    cookieStore.set(SESSION_COOKIE, result.accessToken, getCookieOptions(host));
   } catch (error) {
     const message =
       error instanceof ApiError
