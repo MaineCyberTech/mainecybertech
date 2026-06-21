@@ -24,6 +24,7 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -143,10 +144,13 @@ jobs:
           JSM_REQUEST_TYPE_ID: ${{ secrets.JSM_REQUEST_TYPE_ID }}
           APP_DOMAIN: ${{ steps.env.outputs.app_domain }}
           API_DOMAIN: ${{ steps.env.outputs.api_domain }}
+          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
+          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
         run: |
           echo "SSH_TEST_BEGIN"
           # Minimal SSH test — no stdin redirection
-          SSH_OUTPUT=$(ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "echo ALIVE_$(date +%s)" 2>&1)
+          SSH_OPTS="-o StrictHostKeyChecking=no -o LogLevel=ERROR -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o ConnectTimeout=10"
+          SSH_OUTPUT=$(ssh $SSH_OPTS root@$HOST "echo ALIVE_$(date +%s)" 2>&1)
           echo "SSH_EXIT=$?"
           echo "SSH_OUTPUT=$SSH_OUTPUT"
           echo "SSH_TEST_END"
@@ -193,7 +197,6 @@ jobs:
           chmod 600 .env
           echo "--- FREEING DISK SPACE ---"
           docker image prune -af || true
-          docker builder prune -af || true
           IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose up -d --no-deps api worker web caddy
           docker image prune -af
           sleep 15
@@ -202,52 +205,53 @@ jobs:
           chmod +x /tmp/deploy.sh
 
           echo "--- TRANSFERRING .ENV ---"
-          base64 -w0 /tmp/.env | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /tmp/.env" 2>&1
+          base64 -w0 /tmp/.env | ssh $SSH_OPTS root@$HOST "base64 -d > /tmp/.env" 2>&1
           echo "TRANSFER_ENV_EXIT=$?"
 
           echo "--- TRANSFERRING DEPLOY.SH ---"
-          base64 -w0 /tmp/deploy.sh | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /tmp/deploy.sh && chmod +x /tmp/deploy.sh" 2>&1
+          base64 -w0 /tmp/deploy.sh | ssh $SSH_OPTS root@$HOST "base64 -d > /tmp/deploy.sh && chmod +x /tmp/deploy.sh" 2>&1
           echo "TRANSFER_DEPLOY_EXIT=$?"
 
           echo "--- ENSURING /opt/mct-portal EXISTS ---"
-          ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "mkdir -p /opt/mct-portal" 2>&1
+          ssh $SSH_OPTS root@$HOST "mkdir -p /opt/mct-portal" 2>&1
           echo "MKDIR_EXIT=$?"
 
           echo "--- TRANSFERRING COMPOSE FILE ---"
-          base64 -w0 infra/digitalocean/docker-compose.yml | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /opt/mct-portal/docker-compose.yml" 2>&1
+          base64 -w0 infra/digitalocean/docker-compose.yml | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/docker-compose.yml" 2>&1
           echo "TRANSFER_COMPOSE_EXIT=$?"
 
           echo "--- TRANSFERRING CADDYFILE ---"
-          base64 -w0 infra/digitalocean/Caddyfile | ssh -o StrictHostKeyChecking=no -o LogLevel=ERROR root@$HOST "base64 -d > /opt/mct-portal/Caddyfile" 2>&1
+          base64 -w0 infra/digitalocean/Caddyfile | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/Caddyfile" 2>&1
           echo "TRANSFER_CADDY_EXIT=$?"
 
-          SSH_OPTS="-o StrictHostKeyChecking=no -o LogLevel=ERROR -o ServerAliveInterval=60 -o ServerAliveCountMax=10"
-
-          echo "--- LOGGING INTO GHCR ---"
-          echo "$GHCR_TOKEN" | ssh $SSH_OPTS root@$HOST "docker login ghcr.io -u $GHCR_USERNAME --password-stdin" 2>&1
-          echo "LOGIN_EXIT=$?"
+          echo "--- TRANSFERRING TLS CERTS ---"
+          if [ -n "$CF_ORIGIN_CERT" ]; then
+            echo "$CF_ORIGIN_CERT" > /tmp/fullchain.pem
+            echo "$CF_ORIGIN_KEY" > /tmp/privkey.pem
+            ssh $SSH_OPTS root@$HOST "mkdir -p /opt/mct-portal/certs"
+            cat /tmp/fullchain.pem | ssh $SSH_OPTS root@$HOST "cat > /opt/mct-portal/certs/fullchain.pem"
+            cat /tmp/privkey.pem | ssh $SSH_OPTS root@$HOST "cat > /opt/mct-portal/certs/privkey.pem"
+            ssh $SSH_OPTS root@$HOST "chmod 600 /opt/mct-portal/certs/privkey.pem /opt/mct-portal/certs/fullchain.pem"
+            echo "CERT_EXIT=$?"
+          else
+            echo "CF_ORIGIN_CERT secret not set — using self-signed certs"
+          fi
 
           echo "--- REMOVING OLD MCT IMAGES ON DROPLET ---"
           ssh $SSH_OPTS root@$HOST "docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | xargs -r docker rmi 2>/dev/null; true" 2>&1
           echo "CLEANUP_EXIT=$?"
 
-          echo "--- PULLING IMAGES ON RUNNER ---"
-          docker pull $GHCR_IMAGE_PREFIX/mct-api:$IMAGE_TAG
-          docker pull $GHCR_IMAGE_PREFIX/mct-worker:$IMAGE_TAG
-          docker pull $GHCR_IMAGE_PREFIX/mct-web:$IMAGE_TAG
-          echo "PULL_RUNNER_EXIT=$?"
+          echo "--- LOGGING INTO GHCR ON DROPLET ---"
+          echo "$GHCR_TOKEN" | ssh $SSH_OPTS root@$HOST "docker login ghcr.io -u $GHCR_USERNAME --password-stdin" 2>&1
+          echo "LOGIN_EXIT=$?"
 
-          echo "--- PIPING API IMAGE ---"
-          docker save $GHCR_IMAGE_PREFIX/mct-api:$IMAGE_TAG | gzip | ssh $SSH_OPTS root@$HOST "gunzip | docker load" 2>&1
-          echo "PIPE_API_EXIT=$?"
-
-          echo "--- PIPING WORKER IMAGE ---"
-          docker save $GHCR_IMAGE_PREFIX/mct-worker:$IMAGE_TAG | gzip | ssh $SSH_OPTS root@$HOST "gunzip | docker load" 2>&1
-          echo "PIPE_WORKER_EXIT=$?"
-
-          echo "--- PIPING WEB IMAGE ---"
-          docker save $GHCR_IMAGE_PREFIX/mct-web:$IMAGE_TAG | gzip | ssh $SSH_OPTS root@$HOST "gunzip | docker load" 2>&1
-          echo "PIPE_WEB_EXIT=$?"
+          echo "--- PULLING IMAGES ON DROPLET ---"
+          ssh $SSH_OPTS root@$HOST "
+            docker pull $GHCR_IMAGE_PREFIX/mct-api:$IMAGE_TAG &&
+            docker pull $GHCR_IMAGE_PREFIX/mct-worker:$IMAGE_TAG &&
+            docker pull $GHCR_IMAGE_PREFIX/mct-web:$IMAGE_TAG
+          " 2>&1
+          echo "PULL_EXIT=$?"
 
           echo "--- EXECUTING DEPLOY ---"
           ssh $SSH_OPTS root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX" 2>&1

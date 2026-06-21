@@ -16,6 +16,7 @@ services:
     volumes:
       - redis-data:/data
     restart: unless-stopped
+    mem_limit: 64m
 
   # ===== Our Apps =====
   api:
@@ -39,6 +40,7 @@ services:
       redis:
         condition: service_started
     restart: unless-stopped
+    mem_limit: 256m
 
   worker:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:-latest}
@@ -69,6 +71,7 @@ services:
       redis:
         condition: service_started
     restart: unless-stopped
+    mem_limit: 192m
 
   web:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:-latest}
@@ -78,6 +81,7 @@ services:
       NEXT_TELEMETRY_DISABLED: 1
       SENTRY_DSN: ${SENTRY_DSN:-}
     restart: unless-stopped
+    mem_limit: 256m
 
   # ===== Reverse Proxy =====
   caddy:
@@ -87,12 +91,14 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./certs:/etc/caddy/certs:ro
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
       - api
       - web
     restart: unless-stopped
+    mem_limit: 64m
 
 volumes:
   redis-data:
