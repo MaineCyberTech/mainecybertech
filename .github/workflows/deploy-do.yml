@@ -148,11 +148,25 @@ jobs:
           CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
         run: |
           echo "SSH_TEST_BEGIN"
-          # Minimal SSH test — no stdin redirection
+          # Minimal SSH test with retries
           SSH_OPTS="-o StrictHostKeyChecking=no -o LogLevel=ERROR -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o ConnectTimeout=10"
-          SSH_OUTPUT=$(ssh $SSH_OPTS root@$HOST "echo ALIVE_$(date +%s)" 2>&1)
-          echo "SSH_EXIT=$?"
-          echo "SSH_OUTPUT=$SSH_OUTPUT"
+          for i in $(seq 1 30); do
+            echo "SSH attempt $i/30..."
+            SSH_OUTPUT=$(ssh $SSH_OPTS root@$HOST "echo ALIVE_$(date +%s)" 2>&1)
+            SSH_EXIT=$?
+            if [ $SSH_EXIT -eq 0 ]; then
+              echo "SSH ready after $((i * 10))s"
+              echo "SSH_OUTPUT=$SSH_OUTPUT"
+              break
+            fi
+            echo "Attempt $i failed (exit $SSH_EXIT): $SSH_OUTPUT"
+            echo "Retrying in 10s..."
+            sleep 10
+          done
+          if [ $SSH_EXIT -ne 0 ]; then
+            echo "SSH never became available after 30 attempts"
+            exit 1
+          fi
           echo "SSH_TEST_END"
 
           echo "--- WRITING .ENV ---"
