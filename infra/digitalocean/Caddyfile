@@ -1,7 +1,4 @@
 www.mainecybertech.com, app.mainecybertech.com {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem {
-        protocols tls1.2 tls1.3
-    }
     reverse_proxy web:3000
 
     header / {
@@ -12,9 +9,6 @@ www.mainecybertech.com, app.mainecybertech.com {
 }
 
 api.mainecybertech.com {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem {
-        protocols tls1.2 tls1.3
-    }
     reverse_proxy api:4000
 
     header / {
@@ -25,9 +19,6 @@ api.mainecybertech.com {
 }
 
 www.mainecybertech.us, app.mainecybertech.us {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem {
-        protocols tls1.2 tls1.3
-    }
     reverse_proxy web:3000
 
     header / {
@@ -38,9 +29,6 @@ www.mainecybertech.us, app.mainecybertech.us {
 }
 
 api.mainecybertech.us {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem {
-        protocols tls1.2 tls1.3
-    }
     reverse_proxy api:4000
 
     header / {
