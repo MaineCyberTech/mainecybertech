@@ -4,7 +4,7 @@ Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infra
 
 **Latest audit session (2026-06-18):** Full CI pipeline fixed (Lint/TypeCheck/Test/deploy-do all green). SSE real-time notifications added (API endpoint + client EventSource). Dependabot vulns resolved (10→0). AGENTS.md+GAP_ANALYSIS.md synced. New features: notification audio chime, SLA tracking (migration+API+SDK), admin email test button, API key management (migration+CRUD+SDK), **bulk ticket operations UI (checkbox selection + bulk status/priority), document share links (signed/expiring URLs), error retry buttons on error boundaries**. 20+ commits today — all pushed to `develop`.
 
-**Hardening Prompt Pack Audit (2026-06-23):** Full 8-domain adversarial audit executed via `prompts/hardening_prompt_pack/`. Domains: Security, Data Integrity, Resilience, Observability, Supply Chain, Privacy, CI/CD, Evolution/Platform. **89 deduplicated findings** (12 P0 Critical, 28 P1 High, 49 P2 Medium). **Global Risk Score: 0/100 (CRITICAL)**. 10 P0s fixed in recent sessions (graceful shutdown, Terraform gates, prod approval, cookie flags, local JWT, image tagging, **circuit breaker on Supabase, outbound HTTP timeouts**). **2 P0s remain open**: secrets in SSH deploy logs, tenant isolation verification. See `docs/HARDENING_AUDIT_2026-06-23.md` for full report.
+**Hardening Prompt Pack Audit (2026-06-23):** Full 8-domain adversarial audit executed via `prompts/hardening_prompt_pack/`. Domains: Security, Data Integrity, Resilience, Observability, Supply Chain, Privacy, CI/CD, Evolution/Platform. **89 deduplicated findings** (12 P0 Critical, 28 P1 High, 49 P2 Medium). **Global Risk Score: 0/100 (CRITICAL)**. 10 P0s fixed in recent sessions (graceful shutdown, Terraform gates, prod approval, cookie flags, local JWT, image tagging, circuit breaker on Supabase, outbound HTTP timeouts). **2 P0s remain open**: tenant isolation verification (partial - webhook-management added), secrets in SSH deploy logs (fixed in c8457a7). See `docs/HARDENING_AUDIT_2026-06-23.md` for full report.
 
 ## Architecture
 
@@ -302,14 +302,13 @@ A full 8-domain adversarial audit was executed via the hardening prompt pack. Se
 
 **Global Risk Score: 0/100 (CRITICAL)**
 
-### P0 Critical Findings (2 Remain Open)
+### P0 Critical Findings (1 Remains Open)
 
-| #   | ID       | Issue                                                             | Location                          | Status     |
-| --- | -------- | ----------------------------------------------------------------- | --------------------------------- | ---------- |
-| 1   | CICD-003 | Secrets exposed in SSH deploy command logs                        | `.github/workflows/deploy-do.yml` | 🔴 Open    |
-| 2   | SEC-001  | Tenant isolation verification (requireOrgAccess on all 8 routers) | `apps/api/src/routes/*.ts`        | 🟡 Partial |
+| #   | ID      | Issue                                                             | Location                   | Status     |
+| --- | ------- | ----------------------------------------------------------------- | -------------------------- | ---------- |
+| 1   | SEC-001 | Tenant isolation verification (requireOrgAccess on all 8 routers) | `apps/api/src/routes/*.ts` | 🟡 Partial |
 
-### P0 Critical Findings (10 Fixed in Recent Sessions)
+### P0 Critical Findings (11 Fixed in Recent Sessions)
 
 | #   | ID       | Issue                                                    | Location                             | Fix                                             |
 | --- | -------- | -------------------------------------------------------- | ------------------------------------ | ----------------------------------------------- |
@@ -323,6 +322,7 @@ A full 8-domain adversarial audit was executed via the hardening prompt pack. Se
 | 8   | CICD-010 | Terraform image tag drift                                | `infra/terraform/runtime.tf`         | SHA-tagged task defs, :latest removed           |
 | 9   | RES-003  | No circuit breaker on Supabase calls (cascading failure) | `apps/api/src/lib/supabase.ts`       | CircuitBreaker class + wrapped Supabase client  |
 | 10  | RES-004  | No request timeout on outbound HTTP (JSM, Stripe, Teams) | `apps/api/src/routes/*.ts`           | HttpClient with timeout, retry, circuit breaker |
+| 11  | CICD-003 | Secrets exposed in SSH deploy command logs               | `.github/workflows/deploy-do.yml`    | Write .env on droplet via SSH heredoc           |
 
 ### Key P1 High Findings (15 Open)
 
