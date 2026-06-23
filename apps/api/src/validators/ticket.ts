@@ -44,3 +44,19 @@ export const updateTicketCommentSchema = z.object({
   body: z.string().min(1, "Comment body is required").max(10000),
   isInternal: z.boolean().optional(),
 });
+
+export const bulkTicketUpdateSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1, "At least one ticket ID required"),
+  status: z
+    .enum([
+      "new",
+      "open",
+      "triaged",
+      "in_progress",
+      "waiting_on_client",
+      "resolved",
+      "closed",
+    ])
+    .optional(),
+  priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
+});

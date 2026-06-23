@@ -10,6 +10,7 @@ import {
   updateTicketSchema,
   addTicketCommentSchema,
   updateTicketCommentSchema,
+  bulkTicketUpdateSchema,
 } from "../validators/ticket";
 
 const router: ReturnType<typeof Router> = Router();
@@ -420,18 +421,7 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
 
 router.post("/bulk", requireOrgAccess, async (req, res, next) => {
   try {
-    const { ids, status, priority } = req.body as {
-      ids?: string[];
-      status?: string;
-      priority?: string;
-    };
-
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      throw new AppError("VALIDATION", "ids array is required", 400);
-    }
-    if (!status && !priority) {
-      throw new AppError("VALIDATION", "status or priority is required", 400);
-    }
+    const { ids, status, priority } = bulkTicketUpdateSchema.parse(req.body);
 
     const supabase = getSupabaseAdmin();
     const updateData: Record<string, string> = {};
