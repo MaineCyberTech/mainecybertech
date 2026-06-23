@@ -101,7 +101,7 @@ router.get("/export", async (req, res, next) => {
     const csvRows = [headers.join(",")];
     for (const row of rows) {
       const vals = headers.map((h) => {
-        let v = row[h];
+        const v = row[h];
         if (v === null || v === undefined) return "";
         const s = typeof v === "object" ? JSON.stringify(v) : String(v);
         return s.includes(",") || s.includes('"') || s.includes("\n")

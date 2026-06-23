@@ -1,0 +1,20 @@
+{
+  "name": "@mct/db",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types.ts",
+    "./migrations": "./sql/migrations/",
+    "./policies": "./sql/policies/",
+    "./seeds": "./sql/seeds/"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "gen:types": "supabase gen types typescript --schema public > src/types.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

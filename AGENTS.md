@@ -4,7 +4,7 @@ Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infra
 
 **Latest audit session (2026-06-18):** Full CI pipeline fixed (Lint/TypeCheck/Test/deploy-do all green). SSE real-time notifications added (API endpoint + client EventSource). Dependabot vulns resolved (10→0). AGENTS.md+GAP_ANALYSIS.md synced. New features: notification audio chime, SLA tracking (migration+API+SDK), admin email test button, API key management (migration+CRUD+SDK), **bulk ticket operations UI (checkbox selection + bulk status/priority), document share links (signed/expiring URLs), error retry buttons on error boundaries**. 20+ commits today — all pushed to `develop`.
 
-**Hardening Prompt Pack Audit (2026-06-23):** Full 8-domain adversarial audit executed via `prompts/hardening_prompt_pack/`. Domains: Security, Data Integrity, Resilience, Observability, Supply Chain, Privacy, CI/CD, Evolution/Platform. **89 deduplicated findings** (12 P0 Critical, 28 P1 High, 49 P2 Medium). **Global Risk Score: 0/100 (CRITICAL)**. 8 P0s fixed in recent sessions (graceful shutdown, Terraform gates, prod approval, cookie flags, local JWT, image tagging). **4 P0s remain open**: circuit breaker on Supabase, outbound HTTP timeouts, secrets in SSH deploy logs, tenant isolation verification. See `docs/HARDENING_AUDIT_2026-06-23.md` for full report.
+**Hardening Prompt Pack Audit (2026-06-23):** Full 8-domain adversarial audit executed via `prompts/hardening_prompt_pack/`. Domains: Security, Data Integrity, Resilience, Observability, Supply Chain, Privacy, CI/CD, Evolution/Platform. **89 deduplicated findings** (12 P0 Critical, 28 P1 High, 49 P2 Medium). **Global Risk Score: 0/100 (CRITICAL)**. 10 P0s fixed in recent sessions (graceful shutdown, Terraform gates, prod approval, cookie flags, local JWT, image tagging, **circuit breaker on Supabase, outbound HTTP timeouts**). **2 P0s remain open**: secrets in SSH deploy logs, tenant isolation verification. See `docs/HARDENING_AUDIT_2026-06-23.md` for full report.
 
 ## Architecture
 
@@ -34,7 +34,7 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status & Patterns
 
-**764 tests, all passing:** API 182, SDK 108, Worker 24, Web 455
+**769 tests, all passing:** API 182, SDK 108, Worker 24, Web 455
 
 | Package | Tests         | Framework                         |
 | ------- | ------------- | --------------------------------- |
@@ -251,7 +251,7 @@ A comprehensive deep-dive architecture review was conducted on 2026-06-16 coveri
 | Architecture       | 8/10  | Clear modular monolith layering                                            |
 | Code Quality       | 8/10  | Strong patterns, input sanitizer fixed                                     |
 | Security           | 7/10  | Tenant isolation + local JWT verification added                            |
-| Testing            | 9/10  | 764 tests, comprehensive coverage                                          |
+| Testing            | 9/10  | 769 tests, comprehensive coverage                                          |
 | Infrastructure     | 9/10  | Mature IaC, image tag drift fixed                                          |
 | CI/CD              | 8/10  | Gated deploys, comprehensive workflows                                     |
 | Documentation      | 9/10  | Exceptional breadth and depth                                              |

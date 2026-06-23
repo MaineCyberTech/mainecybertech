@@ -1,27 +1,43 @@
 import type { Config } from "tailwindcss";
+import {
+  colors,
+  spacing,
+  typography,
+  borders,
+  shadows,
+  motion,
+} from "@mct/ui/tokens";
 
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
     "./components/**/*.{ts,tsx}",
-    "./lib/**/*.{ts,tsx}"
+    "./lib/**/*.{ts,tsx}",
+    "../../packages/ui/src/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
       colors: {
-        cyber: {
-          base: "#0A1118",
-          card: "rgba(18, 30, 45, 0.75)",
-          cardHover: "rgba(25, 40, 60, 0.95)"
-        }
+        cyber: colors.cyber,
+        slate: colors.slate,
+        emerald: colors.emerald,
+        amber: colors.amber,
+        red: colors.red,
       },
       fontFamily: {
-        orbitron: ["var(--font-orbitron)", "sans-serif"],
-        inter: ["var(--font-inter)", "sans-serif"]
-      }
-    }
+        display: typography.fontFamily.display,
+        body: typography.fontFamily.body,
+        mono: typography.fontFamily.mono,
+      },
+      spacing: spacing,
+      borderRadius: borders.radii,
+      borderWidth: borders.widths,
+      boxShadow: shadows,
+      transitionDuration: motion.duration,
+      transitionTimingFunction: motion.easing,
+    },
   },
-  plugins: []
+  plugins: [],
 };
 
 export default config;
