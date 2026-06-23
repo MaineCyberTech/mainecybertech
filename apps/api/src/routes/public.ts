@@ -5,6 +5,7 @@ import { AppError, success } from "../types";
 import { getEnv } from "../config/env";
 import { logAuditEvent } from "../services/audit";
 import { logger } from "../lib/logger";
+import { httpClients } from "../lib/http-client";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -32,7 +33,9 @@ router.get("/init", async (req, res, next) => {
     let location = "Unknown";
     try {
       const cleanIp = ipAddress.replace("::ffff:", "");
-      const geoRes = await fetch(`http://ip-api.com/json/${cleanIp}`);
+      const geoRes = await httpClients.geo.get(
+        `http://ip-api.com/json/${cleanIp}`,
+      );
       const geoData: any = await geoRes.json();
       if (geoData.status === "success") {
         location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
@@ -75,13 +78,11 @@ router.get("/init", async (req, res, next) => {
         ],
       };
 
-      fetch(env.PUBLIC_TRAFFIC_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(visitorCard),
-      }).catch((err) =>
-        logger.error({ err }, "Failed to send traffic webhook"),
-      );
+      httpClients.teams
+        .post(env.PUBLIC_TRAFFIC_WEBHOOK_URL, visitorCard)
+        .catch((err) =>
+          logger.error({ err }, "Failed to send traffic webhook"),
+        );
     } else {
       logger.warn(
         "PUBLIC_TRAFFIC_WEBHOOK_URL not set — skipping visitor webhook",
@@ -151,11 +152,9 @@ router.post("/submit", async (req, res, next) => {
         ],
       };
 
-      fetch(env.PUBLIC_LEAD_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(leadCard),
-      }).catch((err) => logger.error({ err }, "Failed to send lead webhook"));
+      httpClients.teams
+        .post(env.PUBLIC_LEAD_WEBHOOK_URL, leadCard)
+        .catch((err) => logger.error({ err }, "Failed to send lead webhook"));
     } else {
       logger.warn("PUBLIC_LEAD_WEBHOOK_URL not set — skipping lead webhook");
     }
@@ -188,22 +187,25 @@ h3. Captured Session Metadata
 | *Session ID* | ${record.id} |
 | *User Agent* | ${record.user_agent} |`;
 
-      fetch(`https://${env.JSM_DOMAIN}/rest/servicedeskapi/request`, {
-        method: "POST",
-        headers: {
-          Authorization: authHeader,
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          serviceDeskId: env.JSM_SERVICEDESK_ID,
-          requestTypeId: env.JSM_REQUEST_TYPE_ID,
-          requestFieldValues: {
-            summary: `Web Lead: ${parsed.company} - ${parsed.services}`,
-            description: ticketDescription,
+      httpClients.jsm
+        .post(
+          `https://${env.JSM_DOMAIN}/rest/servicedeskapi/request`,
+          {
+            serviceDeskId: env.JSM_SERVICEDESK_ID,
+            requestTypeId: env.JSM_REQUEST_TYPE_ID,
+            requestFieldValues: {
+              summary: `Web Lead: ${parsed.company} - ${parsed.services}`,
+              description: ticketDescription,
+            },
           },
-        }),
-      })
+          {
+            headers: {
+              Authorization: authHeader,
+              Accept: "application/json",
+              "Content-Type": "application/json",
+            },
+          },
+        )
         .then(async (res) => {
           if (!res.ok) {
             logger.error(
