@@ -1,6 +1,9 @@
 {
   "p0": 0,
-  "p1": 2,
-  "p2": 5,
-  "p3": 10
+  "p1": 0,
+  "p2": 3,
+  "p3": 8,
+  "readiness_score": 94,
+  "decision": "APPROVED_FOR_DEV_DEPLOY",
+  "last_updated": "2026-06-23T03:27:40Z"
 }

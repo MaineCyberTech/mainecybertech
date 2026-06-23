@@ -1,3 +1,10 @@
 {
-  "runs": []
+  "last_run": "2026-06-23T03:27:24.330323Z",
+  "commit": "3779e61",
+  "readiness_score": 94,
+  "p0": 0,
+  "p1": 0,
+  "p2": 3,
+  "p3": 8,
+  "decision": "APPROVED_FOR_DEV_DEPLOY"
 }
