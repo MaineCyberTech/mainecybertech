@@ -7,6 +7,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { AppError, success } from "../types";
 import { getEnv } from "../config/env";
+import { httpClients } from "../lib/http-client";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -187,7 +188,7 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
     if (!stripeKey)
       throw new AppError("CONFIG", "STRIPE_SECRET_KEY not configured", 500);
 
-    const headers = {
+    const stripeHeaders = {
       Authorization: `Bearer ${stripeKey}`,
       "Content-Type": "application/x-www-form-urlencoded",
     };
@@ -208,13 +209,13 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
       if (!customer.stripe_customer_id) continue;
 
       const [invoicesRes, subsRes] = await Promise.all([
-        fetch(
+        httpClients.stripe.get(
           `https://api.stripe.com/v1/invoices?customer=${customer.stripe_customer_id}&limit=20`,
-          { headers },
+          { headers: stripeHeaders },
         ),
-        fetch(
+        httpClients.stripe.get(
           `https://api.stripe.com/v1/subscriptions?customer=${customer.stripe_customer_id}&limit=10`,
-          { headers },
+          { headers: stripeHeaders },
         ),
       ]);
 

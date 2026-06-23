@@ -1,6 +1,4 @@
-# Audit Dashboard
+# Governance Dashboard
 
-- P0
-- P1
-- P2
-- P3
+- trends
+- score
