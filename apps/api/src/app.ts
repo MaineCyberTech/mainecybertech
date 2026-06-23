@@ -10,6 +10,7 @@ import { requestId, requestLogger } from "./middleware/request-id";
 import { rateLimitByUser } from "./middleware/rate-limit";
 import { inputSanitizer } from "./middleware/security";
 import { securityHeaders } from "./middleware/security-headers";
+import { idempotencyMiddleware } from "./middleware/idempotency";
 import healthRouter from "./routes/health";
 import authRouter from "./routes/auth";
 import organizationsRouter from "./routes/organizations";
@@ -35,6 +36,7 @@ import slaRouter from "./routes/sla";
 import adminRouter from "./routes/admin";
 import bulkRouter from "./routes/bulk";
 import { initSentry } from "./lib/sentry";
+import { register } from "./lib/metrics";
 
 export function createApp(): Express {
   initSentry();
@@ -80,8 +82,17 @@ export function createApp(): Express {
   app.use(rateLimitByUser);
   app.use(requestId);
   app.use(requestLogger);
+  app.use(idempotencyMiddleware);
 
   app.use("/health", healthRouter);
+  app.use("/metrics", async (_req, res) => {
+    try {
+      res.set("Content-Type", register.contentType);
+      res.end(await register.metrics());
+    } catch (ex) {
+      res.status(500).end(ex instanceof Error ? ex.message : String(ex));
+    }
+  });
   app.use("/api/v1", docsRouter);
 
   app.use("/api/v1/auth", authRouter);

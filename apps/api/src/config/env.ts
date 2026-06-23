@@ -24,11 +24,7 @@ const envSchema = z.object({
   PUBLIC_LEAD_WEBHOOK_URL: z.string().optional(),
   JSM_DOMAIN: z.string().optional(),
   JSM_EMAIL: z.string().optional(),
-  JSM_API_TOKEN: z.string().optional(),
-  JSM_SERVICEDESK_ID: z.string().optional(),
-  JSM_REQUEST_TYPE_ID: z.string().optional(),
-  STRIPE_SECRET_KEY: z.string().optional(),
-  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  REDIS_URL: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

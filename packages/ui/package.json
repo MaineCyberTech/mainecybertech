@@ -9,10 +9,18 @@
     "./styles.css": "./src/styles.css",
     "./hooks/use-theme": "./src/hooks/use-theme.tsx",
     "./providers/ThemeProvider": "./src/providers/ThemeProvider.tsx",
-    "./components/ThemeToggle": "./src/components/ThemeToggle.tsx"
+    "./components/ThemeToggle": "./src/components/ThemeToggle.tsx",
+    "./components/Button": "./src/components/Button.tsx",
+    "./components/Input": "./src/components/Input.tsx",
+    "./components/Badge": "./src/components/Badge.tsx",
+    "./components/Avatar": "./src/components/Avatar.tsx",
+    "./components/Dialog": "./src/components/Dialog.tsx",
+    "./components/Skeleton": "./src/components/Skeleton.tsx",
+    "./components/SidebarGroup": "./src/components/SidebarGroup.tsx"
   },
   "dependencies": {
     "clsx": "^2.1.1",
+    "lucide-react": "^0.453.0",
     "react": "^19.0.0",
     "tailwind-merge": "^2.5.5"
   },

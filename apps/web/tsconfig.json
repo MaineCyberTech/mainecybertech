@@ -10,7 +10,13 @@
     "plugins": [{ "name": "next" }],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@mct/ui/*": ["../../packages/ui/src/*"],
+      "@mct/ui": ["../../packages/ui/src/index.ts"],
+      "@mct/sdk/*": ["../../packages/sdk/src/*"],
+      "@mct/sdk": ["../../packages/sdk/src/index.ts"],
+      "@mct/config/*": ["../../packages/config/*"],
+      "@mct/config": ["../../packages/config/eslint.mjs"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
