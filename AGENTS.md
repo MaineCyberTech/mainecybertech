@@ -302,27 +302,27 @@ A full 8-domain adversarial audit was executed via the hardening prompt pack. Se
 
 **Global Risk Score: 0/100 (CRITICAL)**
 
-### P0 Critical Findings (4 Remain Open)
+### P0 Critical Findings (2 Remain Open)
 
 | #   | ID       | Issue                                                             | Location                          | Status     |
 | --- | -------- | ----------------------------------------------------------------- | --------------------------------- | ---------- |
-| 1   | RES-003  | No circuit breaker on Supabase calls (cascading failure)          | `apps/api/src/lib/supabase.ts`    | 🔴 Open    |
-| 2   | RES-004  | No request timeout on outbound HTTP (JSM, Stripe, Teams)          | `apps/api/src/routes/*.ts`        | 🔴 Open    |
-| 3   | CICD-003 | Secrets exposed in SSH deploy command logs                        | `.github/workflows/deploy-do.yml` | 🔴 Open    |
-| 4   | SEC-001  | Tenant isolation verification (requireOrgAccess on all 8 routers) | `apps/api/src/routes/*.ts`        | 🟡 Partial |
+| 1   | CICD-003 | Secrets exposed in SSH deploy command logs                        | `.github/workflows/deploy-do.yml` | 🔴 Open    |
+| 2   | SEC-001  | Tenant isolation verification (requireOrgAccess on all 8 routers) | `apps/api/src/routes/*.ts`        | 🟡 Partial |
 
-### P0 Critical Findings (8 Fixed in Recent Sessions)
+### P0 Critical Findings (10 Fixed in Recent Sessions)
 
-| #   | ID       | Issue                            | Location                             | Fix                                        |
-| --- | -------- | -------------------------------- | ------------------------------------ | ------------------------------------------ |
-| 1   | RES-001  | No graceful shutdown in API      | `apps/api/src/main.ts`               | SIGTERM/SIGINT handlers with 10s drain     |
-| 2   | RES-002  | No graceful shutdown in Worker   | `apps/worker/src/main.ts`            | inFlightTasks tracking + drain loop        |
-| 3   | CICD-001 | No production approval gate      | `.github/workflows/deploy-do.yml`    | prod-approval environment                  |
-| 4   | CICD-002 | Terraform prod apply not gated   | `.github/workflows/terraform-do.yml` | validate + e2e + migrations gate           |
-| 5   | SEC-004  | Cookie security flags unverified | `apps/api/src/lib/auth.ts`           | HttpOnly, Secure, SameSite=Lax enforced    |
-| 6   | SEC-005  | No local JWT verification        | `apps/api/src/lib/auth.ts`           | jsonwebtoken fast path + Supabase fallback |
-| 7   | SEC-006  | Stripe webhook verify order      | `apps/api/src/routes/billing.ts`     | express.json({ verify }) captures raw body |
-| 8   | CICD-010 | Terraform image tag drift        | `infra/terraform/runtime.tf`         | SHA-tagged task defs, :latest removed      |
+| #   | ID       | Issue                                                    | Location                             | Fix                                             |
+| --- | -------- | -------------------------------------------------------- | ------------------------------------ | ----------------------------------------------- |
+| 1   | RES-001  | No graceful shutdown in API                              | `apps/api/src/main.ts`               | SIGTERM/SIGINT handlers with 10s drain          |
+| 2   | RES-002  | No graceful shutdown in Worker                           | `apps/worker/src/main.ts`            | inFlightTasks tracking + drain loop             |
+| 3   | CICD-001 | No production approval gate                              | `.github/workflows/deploy-do.yml`    | prod-approval environment                       |
+| 4   | CICD-002 | Terraform prod apply not gated                           | `.github/workflows/terraform-do.yml` | validate + e2e + migrations gate                |
+| 5   | SEC-004  | Cookie security flags unverified                         | `apps/api/src/lib/auth.ts`           | HttpOnly, Secure, SameSite=Lax enforced         |
+| 6   | SEC-005  | No local JWT verification                                | `apps/api/src/lib/auth.ts`           | jsonwebtoken fast path + Supabase fallback      |
+| 7   | SEC-006  | Stripe webhook verify order                              | `apps/api/src/routes/billing.ts`     | express.json({ verify }) captures raw body      |
+| 8   | CICD-010 | Terraform image tag drift                                | `infra/terraform/runtime.tf`         | SHA-tagged task defs, :latest removed           |
+| 9   | RES-003  | No circuit breaker on Supabase calls (cascading failure) | `apps/api/src/lib/supabase.ts`       | CircuitBreaker class + wrapped Supabase client  |
+| 10  | RES-004  | No request timeout on outbound HTTP (JSM, Stripe, Teams) | `apps/api/src/routes/*.ts`           | HttpClient with timeout, retry, circuit breaker |
 
 ### Key P1 High Findings (15 Open)
 
