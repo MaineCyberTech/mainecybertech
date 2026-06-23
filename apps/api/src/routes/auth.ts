@@ -6,6 +6,7 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { logAuditEvent } from "../services/audit";
 import { logger } from "../lib/logger";
+import { rateLimitAuth } from "../middleware/rate-limit";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -14,24 +15,41 @@ router.get("/me", requireAuth, async (req, res, next) => {
     const supabase = getSupabaseAdmin();
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at")
+      .select(
+        "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+      )
       .eq("id", req.authUser!.userId)
       .single();
 
     if (error || !profile) {
-      res.json(success({ userId: req.authUser!.userId, email: req.authUser!.email }));
+      res.json(
+        success({ userId: req.authUser!.userId, email: req.authUser!.email }),
+      );
       return;
     }
 
-    res.json(success({ userId: profile.id, email: profile.email, fullName: profile.full_name, phone: profile.phone, title: profile.title, isSuperAdmin: profile.is_super_admin, defaultOrganizationId: profile.default_organization_id, createdAt: profile.created_at }));
+    res.json(
+      success({
+        userId: profile.id,
+        email: profile.email,
+        fullName: profile.full_name,
+        phone: profile.phone,
+        title: profile.title,
+        isSuperAdmin: profile.is_super_admin,
+        defaultOrganizationId: profile.default_organization_id,
+        createdAt: profile.created_at,
+      }),
+    );
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/sign-in", async (req, res, next) => {
+router.post("/sign-in", rateLimitAuth, async (req, res, next) => {
   try {
-    const { email, password } = z.object({ email: z.string().email(), password: z.string().min(1) }).parse(req.body);
+    const { email, password } = z
+      .object({ email: z.string().email(), password: z.string().min(1) })
+      .parse(req.body);
 
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -62,13 +80,15 @@ router.post("/sign-in", async (req, res, next) => {
   }
 });
 
-router.post("/sign-up", async (req, res, next) => {
+router.post("/sign-up", rateLimitAuth, async (req, res, next) => {
   try {
-    const { email, password, fullName } = z.object({
-      email: z.string().email(),
-      password: z.string().min(6),
-      fullName: z.string().max(100).optional(),
-    }).parse(req.body);
+    const { email, password, fullName } = z
+      .object({
+        email: z.string().email(),
+        password: z.string().min(6),
+        fullName: z.string().max(100).optional(),
+      })
+      .parse(req.body);
 
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase.auth.signUp({
@@ -96,9 +116,7 @@ router.post("/sign-up", async (req, res, next) => {
 
     res.json(
       success({
-        user: data.user
-          ? { id: data.user.id, email: data.user.email }
-          : null,
+        user: data.user ? { id: data.user.id, email: data.user.email } : null,
       }),
     );
   } catch (error) {
@@ -106,7 +124,10 @@ router.post("/sign-up", async (req, res, next) => {
   }
 });
 
-function extractCodeVerifier(cookies: string, supabaseUrl: string): string | null {
+function extractCodeVerifier(
+  cookies: string,
+  supabaseUrl: string,
+): string | null {
   const hostname = new URL(supabaseUrl).hostname;
   const ref = hostname.split(".")[0];
   const verifierKey = `sb-${ref}-auth-token-code-verifier`;
@@ -118,9 +139,13 @@ function extractCodeVerifier(cookies: string, supabaseUrl: string): string | nul
     : null;
 }
 
-router.post("/callback", async (req, res, next) => {
+router.post("/callback", rateLimitAuth, async (req, res, next) => {
   try {
-    const { auth_code, code_verifier: directVerifier, cookies } = req.body as {
+    const {
+      auth_code,
+      code_verifier: directVerifier,
+      cookies,
+    } = req.body as {
       auth_code: string;
       code_verifier?: string | null;
       cookies?: string;
@@ -133,7 +158,8 @@ router.post("/callback", async (req, res, next) => {
     const env = getEnv();
 
     const codeVerifier =
-      directVerifier ?? (cookies ? extractCodeVerifier(cookies, env.SUPABASE_URL) : null);
+      directVerifier ??
+      (cookies ? extractCodeVerifier(cookies, env.SUPABASE_URL) : null);
 
     const body: Record<string, string> = { auth_code };
     if (codeVerifier) body.code_verifier = codeVerifier;
@@ -216,7 +242,7 @@ router.post("/sign-out", requireAuth, async (req, res, next) => {
   }
 });
 
-router.post("/forgot-password", async (req, res, next) => {
+router.post("/forgot-password", rateLimitAuth, async (req, res, next) => {
   try {
     const { email } = z.object({ email: z.string().email() }).parse(req.body);
 
@@ -241,12 +267,14 @@ router.post("/forgot-password", async (req, res, next) => {
   }
 });
 
-router.post("/reset-password", async (req, res, next) => {
+router.post("/reset-password", rateLimitAuth, async (req, res, next) => {
   try {
-    const { email, password } = z.object({
-      email: z.string().email(),
-      password: z.string().min(6),
-    }).parse(req.body);
+    const { email, password } = z
+      .object({
+        email: z.string().email(),
+        password: z.string().min(6),
+      })
+      .parse(req.body);
 
     const supabase = getSupabaseAdmin();
     const { data: users, error: lookupError } = await supabase

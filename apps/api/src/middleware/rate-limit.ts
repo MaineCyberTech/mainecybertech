@@ -20,3 +20,13 @@ export const rateLimitByUser = rateLimit({
     req.ip === "127.0.0.1" ||
     req.ip === "::1",
 });
+
+export const rateLimitAuth = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: "Too many authentication attempts, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `ip:${req.ip}`,
+  skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
+});
