@@ -4,6 +4,8 @@ Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infra
 
 **Latest audit session (2026-06-18):** Full CI pipeline fixed (Lint/TypeCheck/Test/deploy-do all green). SSE real-time notifications added (API endpoint + client EventSource). Dependabot vulns resolved (10→0). AGENTS.md+GAP_ANALYSIS.md synced. New features: notification audio chime, SLA tracking (migration+API+SDK), admin email test button, API key management (migration+CRUD+SDK), **bulk ticket operations UI (checkbox selection + bulk status/priority), document share links (signed/expiring URLs), error retry buttons on error boundaries**. 20+ commits today — all pushed to `develop`.
 
+**Hardening Prompt Pack Audit (2026-06-23):** Full 8-domain adversarial audit executed via `prompts/hardening_prompt_pack/`. Domains: Security, Data Integrity, Resilience, Observability, Supply Chain, Privacy, CI/CD, Evolution/Platform. **89 deduplicated findings** (12 P0 Critical, 28 P1 High, 49 P2 Medium). **Global Risk Score: 0/100 (CRITICAL)**. 8 P0s fixed in recent sessions (graceful shutdown, Terraform gates, prod approval, cookie flags, local JWT, image tagging). **4 P0s remain open**: circuit breaker on Supabase, outbound HTTP timeouts, secrets in SSH deploy logs, tenant isolation verification. See `docs/HARDENING_AUDIT_2026-06-23.md` for full report.
+
 ## Architecture
 
 MCT is a **Turborepo monorepo** with 4 packages:
@@ -279,6 +281,68 @@ A comprehensive deep-dive architecture review was conducted on 2026-06-16 coveri
 | 12  | No error retry buttons on error boundaries                  | Medium   | Small  |        |
 
 See `docs/CODE_REVIEW_2026-06-16.md` for 30 detailed recommendations across 8 categories, the full risk register with 20 items, and a phased 4-stage roadmap.
+
+## Hardening Prompt Pack Audit (2026-06-23) — 89 Findings
+
+A full 8-domain adversarial audit was executed via the hardening prompt pack. See [`docs/HARDENING_AUDIT_2026-06-23.md`](docs/HARDENING_AUDIT_2026-06-23.md) for the full report.
+
+### Summary
+
+| Domain              | P0 (Critical) | P1 (High) | P2 (Medium) | Total  |
+| ------------------- | ------------- | --------- | ----------- | ------ |
+| Security            | 7             | 11        | 5           | 23     |
+| Data Integrity      | 1             | 6         | 5           | 12     |
+| Resilience          | 2             | 5         | 3           | 10     |
+| Observability       | 1             | 4         | 2           | 7      |
+| Supply Chain        | 0             | 3         | 2           | 5      |
+| Privacy             | 1             | 3         | 1           | 5      |
+| CI/CD               | 3             | 5         | 2           | 10     |
+| Evolution/Platform  | 0             | 5         | 5           | 10     |
+| **Total (deduped)** | **12**        | **28**    | **49**      | **89** |
+
+**Global Risk Score: 0/100 (CRITICAL)**
+
+### P0 Critical Findings (4 Remain Open)
+
+| #   | ID       | Issue                                                             | Location                          | Status     |
+| --- | -------- | ----------------------------------------------------------------- | --------------------------------- | ---------- |
+| 1   | RES-003  | No circuit breaker on Supabase calls (cascading failure)          | `apps/api/src/lib/supabase.ts`    | 🔴 Open    |
+| 2   | RES-004  | No request timeout on outbound HTTP (JSM, Stripe, Teams)          | `apps/api/src/routes/*.ts`        | 🔴 Open    |
+| 3   | CICD-003 | Secrets exposed in SSH deploy command logs                        | `.github/workflows/deploy-do.yml` | 🔴 Open    |
+| 4   | SEC-001  | Tenant isolation verification (requireOrgAccess on all 8 routers) | `apps/api/src/routes/*.ts`        | 🟡 Partial |
+
+### P0 Critical Findings (8 Fixed in Recent Sessions)
+
+| #   | ID       | Issue                            | Location                             | Fix                                        |
+| --- | -------- | -------------------------------- | ------------------------------------ | ------------------------------------------ |
+| 1   | RES-001  | No graceful shutdown in API      | `apps/api/src/main.ts`               | SIGTERM/SIGINT handlers with 10s drain     |
+| 2   | RES-002  | No graceful shutdown in Worker   | `apps/worker/src/main.ts`            | inFlightTasks tracking + drain loop        |
+| 3   | CICD-001 | No production approval gate      | `.github/workflows/deploy-do.yml`    | prod-approval environment                  |
+| 4   | CICD-002 | Terraform prod apply not gated   | `.github/workflows/terraform-do.yml` | validate + e2e + migrations gate           |
+| 5   | SEC-004  | Cookie security flags unverified | `apps/api/src/lib/auth.ts`           | HttpOnly, Secure, SameSite=Lax enforced    |
+| 6   | SEC-005  | No local JWT verification        | `apps/api/src/lib/auth.ts`           | jsonwebtoken fast path + Supabase fallback |
+| 7   | SEC-006  | Stripe webhook verify order      | `apps/api/src/routes/billing.ts`     | express.json({ verify }) captures raw body |
+| 8   | CICD-010 | Terraform image tag drift        | `infra/terraform/runtime.tf`         | SHA-tagged task defs, :latest removed      |
+
+### Key P1 High Findings (15 Open)
+
+| #   | ID       | Issue                                                 | Location                                           |
+| --- | -------- | ----------------------------------------------------- | -------------------------------------------------- |
+| 1   | SEC-008  | Zod validation incomplete (11/27 mutation endpoints)  | `apps/api/src/routes/*.ts`                         |
+| 2   | SEC-012  | No rate limit on auth endpoints                       | `apps/api/src/routes/auth.ts`                      |
+| 3   | SEC-013  | JWT_SECRET not rotated; single key all environments   | `apps/api/src/lib/auth.ts`                         |
+| 4   | SEC-014  | Service role key used for admin ops (bypasses RLS)    | `apps/api/src/lib/supabase.ts`                     |
+| 5   | SEC-015  | No password strength policy                           | `apps/api/src/routes/auth.ts`                      |
+| 6   | SEC-016  | Missing security headers (CSP, HSTS, X-Frame-Options) | `apps/api/src/main.ts`, `apps/web/next.config.mjs` |
+| 7   | DATA-006 | No optimistic locking on mutable entities             | `apps/api/src/routes/*.ts`                         |
+| 8   | DATA-007 | Bulk operations lack transaction atomicity            | `apps/api/src/routes/tickets.ts`                   |
+| 9   | DATA-009 | markAllRead crosses organization boundaries           | `apps/api/src/routes/notifications.ts`             |
+| 10  | DATA-014 | Webhook deliveries lack idempotency keys              | `apps/api/src/routes/webhooks.ts`                  |
+| 11  | RES-006  | UI false success on bulk operations (partial failure) | `apps/web/components/admin/tickets/*`              |
+| 12  | RES-007  | 30s polling for notifications (no SSE/WebSocket)      | `apps/web/components/NotificationBell.tsx`         |
+| 13  | OBS-001  | No structured logging in web server components        | `apps/web/app/**/*.tsx`                            |
+| 14  | EVOL-001 | No caching layer (every query hits Postgres)          | `apps/api/src/middleware/cache.ts`                 |
+| 15  | EVOL-003 | N+1 queries persist in admin pages                    | `apps/web/app/(admin)/**`                          |
 
 ## Marketing Site Integration Plan
 

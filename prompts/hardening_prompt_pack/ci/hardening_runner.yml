@@ -1,0 +1,9 @@
+
+name: hardening-runner
+on: [push, pull_request]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python runner/run_all.py

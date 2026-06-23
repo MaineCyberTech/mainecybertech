@@ -1,0 +1,8 @@
+[
+  {
+    "severity": "P0",
+    "file": "api/auth.ts",
+    "issue": "auth bypass",
+    "fix": "add middleware"
+  }
+]
