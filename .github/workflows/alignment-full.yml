@@ -1,0 +1,18 @@
+
+name: alignment-full
+on: [push, pull_request]
+jobs:
+  alignment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python cli/alignment_cli.py run
+      - run: python cli/alignment_cli.py diff
+      - run: python cli/alignment_cli.py dashboard
+      - name: Gate PR on P0
+        run: |
+          P0=$(jq '.p0' dashboards/data/sample_data.json)
+          if [ "$P0" -gt 0 ]; then exit 1; fi

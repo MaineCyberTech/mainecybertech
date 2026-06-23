@@ -1,0 +1,3 @@
+name: alignment_engine
+on: [push,pull_request]
+jobs: {alignment:{runs-on: ubuntu-latest,steps:[{run:"echo run alignment"}]}}

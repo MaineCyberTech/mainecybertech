@@ -1,0 +1,18 @@
+
+name: alignment-badges
+on:
+  workflow_run:
+    workflows: [alignment-engine]
+    types: [completed]
+jobs:
+  badges:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python scripts/ci/generate_badges.py
+      - run: |
+          git config user.name badge-bot
+          git config user.email badge@bot.com
+          git add badges
+          git commit -m 'update badges' || echo no changes
+          git push

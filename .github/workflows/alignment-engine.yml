@@ -1,0 +1,14 @@
+
+name: alignment-engine
+on: [push, pull_request]
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python cli/alignment_cli.py run
+      - run: python cli/alignment_cli.py diff
+      - run: python cli/alignment_cli.py dashboard

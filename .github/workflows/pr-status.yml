@@ -1,0 +1,20 @@
+
+name: pr-status
+on: pull_request
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const data = require('./dashboards/data/sample_data.json');
+            const body = `### Alignment
+P0:${data.p0} P1:${data.p1} P2:${data.p2} P3:${data.p3}`;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body
+            });
