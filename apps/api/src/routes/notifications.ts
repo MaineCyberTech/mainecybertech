@@ -2,12 +2,14 @@ import { Router } from "express";
 import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
+import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
+router.use(requireOrgAccess);
 
 // SSE stream for real-time notifications
 router.get("/stream", async (req, res, next) => {
@@ -154,11 +156,13 @@ router.post("/:id/read", async (req, res, next) => {
 router.post("/mark-all-read", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const orgId = req.query.organization_id as string | undefined;
     const { error } = await supabase
       .from("notifications")
       .update({ read: true, read_at: new Date().toISOString() })
       .eq("user_id", req.authUser!.userId)
-      .eq("read", false);
+      .eq("read", false)
+      .eq("organization_id", orgId ?? "");
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
