@@ -42,7 +42,9 @@ jobs:
         continue-on-error: true
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          terraform init \
+            -backend-config="env/backend.${{ steps.env.outputs.name }}.hcl"
 
       - name: Terraform Validate
         run: terraform validate
@@ -51,6 +53,7 @@ jobs:
         id: plan
         run: |
           terraform plan \
+            -var-file="env/${{ steps.env.outputs.name }}.tfvars" \
             -var="do_token=${{ secrets.DO_API_TOKEN }}" \
             -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" \
@@ -62,4 +65,5 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref_name == 'main' || github.ref_name == 'develop'
+        environment: ${{ github.ref_name == 'main' && 'prod-approval' || 'dev' }}
         run: terraform apply -auto-approve tfplan
