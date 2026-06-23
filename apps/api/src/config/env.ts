@@ -20,10 +20,15 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
   PUBLIC_TRAFFIC_WEBHOOK_URL: z.string().optional(),
   PUBLIC_LEAD_WEBHOOK_URL: z.string().optional(),
   JSM_DOMAIN: z.string().optional(),
   JSM_EMAIL: z.string().optional(),
+  JSM_API_TOKEN: z.string().optional(),
+  JSM_SERVICEDESK_ID: z.string().optional(),
+  JSM_REQUEST_TYPE_ID: z.string().optional(),
   REDIS_URL: z.string().url().optional(),
 });
 

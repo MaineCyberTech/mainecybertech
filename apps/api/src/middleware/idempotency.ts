@@ -25,7 +25,7 @@ export function idempotencyMiddleware(
   checkIdempotencyKey(key)
     .then((existing) => {
       if (existing) {
-        logger.info("Idempotency key hit", { key, existing });
+        logger.info({ key, existing }, "Idempotency key hit");
         res.setHeader("Idempotency-Key", key);
         return res.status(409).json({
           error: "Idempotent request already processed",
@@ -37,10 +37,10 @@ export function idempotencyMiddleware(
       res.send = function (body?: unknown): Response {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           storeIdempotencyKey(key, JSON.stringify(body)).catch((err) =>
-            logger.error("Failed to store idempotency key", {
-              key,
-              error: String(err),
-            }),
+            logger.error(
+              { key, error: String(err) },
+              "Failed to store idempotency key",
+            ),
           );
         }
         return originalSend.call(this, body);
@@ -49,7 +49,7 @@ export function idempotencyMiddleware(
       next();
     })
     .catch((err) => {
-      logger.error("Idempotency check failed", { key, error: String(err) });
+      logger.error({ key, error: String(err) }, "Idempotency check failed");
       next();
     });
 }

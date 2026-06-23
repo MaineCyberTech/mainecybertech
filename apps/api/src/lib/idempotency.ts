@@ -11,24 +11,25 @@ export function getRedisClient(): Redis | null {
       try {
         redisClient = new Redis(env.REDIS_URL, {
           maxRetriesPerRequest: 3,
-          retryStrategy: (times) => Math.min(times * 100, 3000),
+          retryStrategy: (times: number) => Math.min(times * 100, 3000),
           lazyConnect: true,
         });
-        redisClient.on("error", (err) =>
-          logger.error("Redis client error", { error: String(err) }),
+        redisClient.on("error", (err: Error) =>
+          logger.error({ error: String(err) }, "Redis client error"),
         );
-        redisClient.connect().catch((err) =>
-          logger.warn(
-            "Redis connection failed, idempotency will use in-memory fallback",
-            {
-              error: String(err),
-            },
-          ),
+        redisClient
+          .connect()
+          .catch((err: Error) =>
+            logger.warn(
+              { error: String(err) },
+              "Redis connection failed, idempotency will use in-memory fallback",
+            ),
+          );
+      } catch (err: unknown) {
+        logger.warn(
+          { error: String(err) },
+          "Failed to initialize Redis client",
         );
-      } catch (err) {
-        logger.warn("Failed to initialize Redis client", {
-          error: String(err),
-        });
       }
     }
   }
@@ -49,12 +50,10 @@ export async function checkIdempotencyKey(key: string): Promise<string | null> {
     try {
       const value = await redis.get(prefixedKey);
       if (value) return value;
-    } catch (err) {
+    } catch (err: unknown) {
       logger.warn(
+        { error: String(err) },
         "Redis checkIdempotencyKey failed, falling back to in-memory",
-        {
-          error: String(err),
-        },
       );
     }
   }
@@ -80,12 +79,10 @@ export async function storeIdempotencyKey(
     try {
       await redis.setex(prefixedKey, IDEMPOTENCY_TTL_SECONDS, value);
       return;
-    } catch (err) {
+    } catch (err: unknown) {
       logger.warn(
+        { error: String(err) },
         "Redis storeIdempotencyKey failed, falling back to in-memory",
-        {
-          error: String(err),
-        },
       );
     }
   }
@@ -104,8 +101,8 @@ export async function deleteIdempotencyKey(key: string): Promise<void> {
     try {
       await redis.del(prefixedKey);
       return;
-    } catch (err) {
-      logger.warn("Redis deleteIdempotencyKey failed", { error: String(err) });
+    } catch (err: unknown) {
+      logger.warn({ error: String(err) }, "Redis deleteIdempotencyKey failed");
     }
   }
 
