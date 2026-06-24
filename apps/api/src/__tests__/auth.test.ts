@@ -18,7 +18,6 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
 }));
 
 jest.mock("../services/audit", () => ({
@@ -125,14 +124,18 @@ describe("POST /sign-up", () => {
 
     const res = await request(app)
       .post("/api/v1/auth/sign-up")
-      .send({ email: "new@b.com", password: "secret123", fullName: "New User" });
+      .send({
+        email: "new@b.com",
+        password: "SecurePass123!",
+        fullName: "New User",
+      });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.user).toBeDefined();
     expect(supabase.auth.signUp).toHaveBeenCalledWith({
       email: "new@b.com",
-      password: "secret123",
+      password: "SecurePass123!",
       options: expect.objectContaining({
         data: { full_name: "New User" },
       }),
@@ -144,7 +147,7 @@ describe("POST /sign-up", () => {
 
     const res = await request(app)
       .post("/api/v1/auth/sign-up")
-      .send({ password: "secret123" });
+      .send({ password: "SecurePass123!" });
 
     expect(res.status).toBe(400);
   });
@@ -154,12 +157,12 @@ describe("POST /sign-up", () => {
 
     const res = await request(app)
       .post("/api/v1/auth/sign-up")
-      .send({ email: "new@b.com", password: "secret123" });
+      .send({ email: "new@b.com", password: "SecurePass123!" });
 
     expect(res.status).toBe(200);
     expect(supabase.auth.signUp).toHaveBeenCalledWith({
       email: "new@b.com",
-      password: "secret123",
+      password: "SecurePass123!",
       options: expect.objectContaining({
         data: { full_name: null },
       }),
@@ -184,7 +187,16 @@ describe("GET /me", () => {
       select: jest.fn().mockReturnValue({
         eq: jest.fn().mockReturnValue({
           single: jest.fn().mockResolvedValue({
-            data: { id: "user-1", full_name: "Test User", email: "test@example.com", phone: null, title: null, is_super_admin: false, default_organization_id: null, created_at: "" },
+            data: {
+              id: "user-1",
+              full_name: "Test User",
+              email: "test@example.com",
+              phone: null,
+              title: null,
+              is_super_admin: false,
+              default_organization_id: null,
+              created_at: "",
+            },
             error: null,
           }),
         }),

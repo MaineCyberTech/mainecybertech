@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import zxcvbn from "zxcvbn";
 import { getSupabaseAdmin } from "../services/supabase";
 import { getEnv } from "../config/env";
 import { AppError, success } from "../types";
@@ -9,6 +10,22 @@ import { logger } from "../lib/logger";
 import { rateLimitAuth } from "../middleware/rate-limit";
 
 const router: ReturnType<typeof Router> = Router();
+
+const MIN_PASSWORD_SCORE = 3; // zxcvbn score 0-4, require at least 3 (strong)
+
+function validatePasswordStrength(password: string): {
+  valid: boolean;
+  message?: string;
+} {
+  const result = zxcvbn(password);
+  if (result.score < MIN_PASSWORD_SCORE) {
+    const feedback = result.feedback.warning
+      ? result.feedback.warning
+      : "Password is too weak";
+    return { valid: false, message: feedback };
+  }
+  return { valid: true };
+}
 
 router.get("/me", requireAuth, async (req, res, next) => {
   try {
@@ -85,10 +102,28 @@ router.post("/sign-up", rateLimitAuth, async (req, res, next) => {
     const { email, password, fullName } = z
       .object({
         email: z.string().email(),
-        password: z.string().min(6),
+        password: z
+          .string()
+          .min(1)
+          .refine(
+            (password) => {
+              const result = validatePasswordStrength(password);
+              return result.valid;
+            },
+            { message: "Password is too weak" },
+          ),
         fullName: z.string().max(100).optional(),
       })
       .parse(req.body);
+
+    const pwdCheck = validatePasswordStrength(password);
+    if (!pwdCheck.valid) {
+      throw new AppError(
+        "WEAK_PASSWORD",
+        pwdCheck.message || "Password is too weak",
+        400,
+      );
+    }
 
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase.auth.signUp({
@@ -272,9 +307,27 @@ router.post("/reset-password", rateLimitAuth, async (req, res, next) => {
     const { email, password } = z
       .object({
         email: z.string().email(),
-        password: z.string().min(6),
+        password: z
+          .string()
+          .min(1)
+          .refine(
+            (password) => {
+              const result = validatePasswordStrength(password);
+              return result.valid;
+            },
+            { message: "Password is too weak" },
+          ),
       })
       .parse(req.body);
+
+    const pwdCheck = validatePasswordStrength(password);
+    if (!pwdCheck.valid) {
+      throw new AppError(
+        "WEAK_PASSWORD",
+        pwdCheck.message || "Password is too weak",
+        400,
+      );
+    }
 
     const supabase = getSupabaseAdmin();
     const { data: users, error: lookupError } = await supabase
