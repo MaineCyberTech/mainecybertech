@@ -221,10 +221,22 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateTicketSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+
+    const { data: current, error: fetchError } = await supabase
+      .from("tickets")
+      .select("version")
+      .eq("id", req.params.id)
+      .single();
+
+    if (fetchError || !current) {
+      throw new AppError("NOT_FOUND", "Ticket not found", 404);
+    }
+
+    checkVersionMatch(current.version, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -241,22 +253,30 @@ router.patch("/:id", async (req, res, next) => {
     if (parsed.resolution !== undefined)
       updateData.resolution = parsed.resolution;
 
+    updateData.version = current.version + 1;
+
     const { data, error } = await supabase
       .from("tickets")
       .update(updateData)
       .eq("id", req.params.id)
+      .eq("version", current.version)
       .select()
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Ticket not found", 404);
+    if (!data)
+      throw new AppError(
+        "VERSION_CONFLICT",
+        "Ticket was modified by another user",
+        409,
+      );
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "ticket.update",
       entityType: "ticket",
       entityId: data.id,
-      metadata: parsed,
+      metadata: { ...parsed, version: data.version },
     });
 
     if (parsed.assignedTo) {
