@@ -6,11 +6,14 @@ import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import DocumentPreview from "@/components/DocumentPreview";
 import DocumentVersionsClient from "@/components/portal/DocumentVersionsClient";
+import DocumentShareClient from "@/components/portal/DocumentShareClient";
 
-export const metadata = { title: "Document Details - Portal - Maine CyberTech" };
+export const metadata = {
+  title: "Document Details - Portal - Maine CyberTech",
+};
 
 function formatBytes(bytes?: number | null) {
-  if (!bytes || bytes <= 0) return "—";
+  if (!bytes || bytes <= 0) return "\u2014";
   const units = ["B", "KB", "MB", "GB", "TB"];
   let value = bytes;
   let unit = 0;
@@ -27,7 +30,9 @@ type PortalDocumentPageProps = {
   }>;
 };
 
-export default async function PortalDocumentDetailPage({ params }: PortalDocumentPageProps) {
+export default async function PortalDocumentDetailPage({
+  params,
+}: PortalDocumentPageProps) {
   const { documentId } = await params;
   const api = getApiClient();
   const membership = await getApprovedMembership();
@@ -58,7 +63,19 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
   const displayTitle = document.title ?? document.name ?? "Untitled Document";
 
   let isAdmin = false;
-  try { await requireAdminAccess(); isAdmin = true; } catch { isAdmin = false; }
+  try {
+    await requireAdminAccess();
+    isAdmin = true;
+  } catch {
+    isAdmin = false;
+  }
+
+  let initialShares: any[] = [];
+  try {
+    initialShares = await api.documents.listShares(documentId);
+  } catch {
+    initialShares = [];
+  }
 
   return (
     <div className="space-y-6">
@@ -66,7 +83,7 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
         items={[
           { label: "Portal", href: "/portal/dashboard" },
           { label: "Documents", href: "/portal/documents" },
-          { label: displayTitle }
+          { label: displayTitle },
         ]}
       />
 
@@ -82,8 +99,14 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
 
         <div className="flex flex-wrap gap-2">
           <span className="cyber-pill">{formatBytes(document.file_size)}</span>
-          <span className="cyber-pill">{document.mime_type ?? "Unknown type"}</span>
-          {isAdmin ? <Link href="/admin/documents" className="cyber-button-secondary">View in Admin</Link> : null}
+          <span className="cyber-pill">
+            {document.mime_type ?? "Unknown type"}
+          </span>
+          {isAdmin ? (
+            <Link href="/admin/documents" className="cyber-button-secondary">
+              View in Admin
+            </Link>
+          ) : null}
           <Link href="/portal/documents" className="cyber-button-secondary">
             Back to Documents
           </Link>
@@ -102,7 +125,9 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
 
           <div className="flex flex-wrap gap-3">
             <div className="cyber-pill">Created: {document.created_at}</div>
-            <div className="cyber-pill">Updated: {document.updated_at ?? document.created_at}</div>
+            <div className="cyber-pill">
+              Updated: {document.updated_at ?? document.created_at}
+            </div>
             <div className="cyber-pill">Visibility: {document.visibility}</div>
             <div className="cyber-pill">Bucket: {bucketName}</div>
           </div>
@@ -113,10 +138,19 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
         <section className="cyber-panel">
           <h2 className="cyber-heading text-lg">Preview</h2>
           <div className="mt-6">
-            <DocumentPreview url={downloadUrl} mimeType={document.mime_type} fileName={document.file_name} />
+            <DocumentPreview
+              url={downloadUrl}
+              mimeType={document.mime_type}
+              fileName={document.file_name}
+            />
           </div>
         </section>
       ) : null}
+
+      <DocumentShareClient
+        documentId={documentId}
+        initialShares={initialShares}
+      />
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Download & Version Info</h2>
@@ -124,14 +158,23 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
 
         <div className="mt-6 space-y-4">
           <div className="flex flex-wrap gap-3">
-            <div className="cyber-pill">Version {document.current_version ?? 1}</div>
+            <div className="cyber-pill">
+              Version {document.current_version ?? 1}
+            </div>
             <div className="cyber-pill">Created: {document.created_at}</div>
-            <div className="cyber-pill">Updated: {document.updated_at ?? document.created_at}</div>
+            <div className="cyber-pill">
+              Updated: {document.updated_at ?? document.created_at}
+            </div>
             <div className="cyber-pill">Visibility: {document.visibility}</div>
           </div>
 
           {downloadUrl ? (
-            <a href={downloadUrl} target="_blank" rel="noreferrer" className="cyber-button inline-flex items-center">
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="cyber-button inline-flex items-center"
+            >
               Download Document
             </a>
           ) : (
