@@ -1,4 +1,7 @@
+"use client";
+
 import { logoutAction } from "@/lib/auth/auth-actions";
+import { Button } from "@mct/ui/components/Button";
 
 export const metadata = { title: "Pending Approval - Maine CyberTech" };
 
@@ -10,20 +13,19 @@ export default function PendingPage() {
           Approval Pending
         </h1>
         <p className="mt-4 text-slate-400">
-          Your email is verified, but your organization access is still waiting for admin approval.
+          Your email is verified, but your organization access is still waiting
+          for admin approval.
         </p>
 
         <div className="mt-6 rounded-lg border border-emerald-600/20 bg-emerald-600/10 p-4 text-sm text-slate-200">
-          Once approved, you&rsquo;ll gain access to dashboard, tickets, projects, billing, documents, and contracts.
+          Once approved, you&rsquo;ll gain access to dashboard, tickets,
+          projects, billing, documents, and contracts.
         </div>
 
         <form action={logoutAction} className="mt-6 inline-block">
-          <button
-            type="submit"
-            className="rounded-lg border-2 border-emerald-600 bg-emerald-600 px-4 py-3 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-[#0A1118] transition-all duration-300 hover:bg-transparent hover:text-emerald-500"
-          >
+          <Button type="submit" variant="primary" className="w-full">
             Sign Out &amp; Return to Login
-          </button>
+          </Button>
         </form>
       </div>
     </main>
