@@ -223,6 +223,9 @@ router.post("/:id/test", requireAdmin, async (req, res, next) => {
 
     const duration = Date.now() - start;
 
+    // Generate idempotency key for this delivery attempt
+    const idempotencyKey = `test-${webhook.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
     await supabase.from("webhook_deliveries").insert({
       webhook_id: webhook.id,
       event: "ping",
@@ -236,6 +239,7 @@ router.post("/:id/test", requireAdmin, async (req, res, next) => {
       response_body: responseBody || null,
       error,
       duration_ms: duration,
+      idempotency_key: idempotencyKey,
     });
 
     if (error || responseStatus >= 400) {
