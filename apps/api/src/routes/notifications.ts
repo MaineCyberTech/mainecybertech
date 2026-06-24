@@ -11,7 +11,7 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
-// SSE stream for real-time notifications
+// SSE stream for real-time notifications using Supabase realtime
 router.get("/stream", async (req, res, next) => {
   try {
     res.writeHead(200, {
@@ -27,34 +27,59 @@ router.get("/stream", async (req, res, next) => {
     // Send initial heartbeat
     res.write(`data: ${JSON.stringify({ type: "connected", userId })}\n\n`);
 
-    // Poll for new notifications every 5s
-    const interval = setInterval(async () => {
-      try {
-        const { data, error } = await supabase
-          .from("notifications")
-          .select("*")
-          .eq("user_id", userId)
-          .eq("read", false)
-          .order("created_at", { ascending: false })
-          .limit(5);
-
-        if (error) {
+    // Use Supabase realtime subscription for real-time notifications
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
           res.write(
-            `event: error\ndata: ${JSON.stringify({ message: error.message })}\n\n`,
+            `event: notification\ndata: ${JSON.stringify(payload.new)}\n\n`,
           );
-          return;
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          res.write(
+            `event: notification_update\ndata: ${JSON.stringify(payload.new)}\n\n`,
+          );
+        },
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          res.write(`data: ${JSON.stringify({ type: "subscribed" })}\n\n`);
         }
+      });
 
-        if (data && data.length > 0) {
-          res.write(`event: notification\ndata: ${JSON.stringify(data)}\n\n`);
+    // Send initial unread notifications on connect
+    supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("read", false)
+      .order("created_at", { ascending: false })
+      .limit(5)
+      .then(({ data, error }) => {
+        if (!error && data && data.length > 0) {
+          res.write(`event: initial\ndata: ${JSON.stringify(data)}\n\n`);
         }
-      } catch (err) {
-        // silent
-      }
-    }, 5000);
+      });
 
     req.on("close", () => {
-      clearInterval(interval);
+      supabase.removeChannel(channel);
       res.end();
     });
   } catch (error) {
