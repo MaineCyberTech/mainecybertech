@@ -456,10 +456,13 @@ router.post("/bulk", requireOrgAccess, async (req, res, next) => {
       return { id, data };
     });
 
-    const { error } = await supabase.rpc("bulk_update_with_version", {
-      table_name: "tickets",
-      updates,
-    });
+    const { data: results, error } = await supabase.rpc(
+      "bulk_update_with_version",
+      {
+        table_name: "tickets",
+        updates,
+      },
+    );
 
     if (error) {
       if (error.message.includes("Version conflict")) {
@@ -468,14 +471,17 @@ router.post("/bulk", requireOrgAccess, async (req, res, next) => {
       throw new AppError("DB_ERROR", error.message, 500);
     }
 
+    const successful = results.filter((r: any) => r.success).length;
+    const failed = results.filter((r: any) => !r.success);
+
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "ticket.bulk_update",
       entityType: "ticket",
-      metadata: { ids, status, priority },
+      metadata: { ids, status, priority, successful, failed: failed.length },
     });
 
-    res.json(success({ updated: ids.length }));
+    res.json(success({ results, successful, failed: failed.length }));
   } catch (error) {
     next(error);
   }

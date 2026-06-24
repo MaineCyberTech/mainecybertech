@@ -410,17 +410,20 @@ router.post("/bulk/folder", async (req, res, next) => {
       data: { folder_path: parsed.folderPath },
     }));
 
-    const { error } = await supabase.rpc("bulk_update_with_version", {
-      table_name: "documents",
-      updates,
-    });
+    const { data: results, error } = await supabase.rpc(
+      "bulk_update_with_version",
+      {
+        table_name: "documents",
+        updates,
+      },
+    );
 
     if (error) {
-      if (error.message.includes("Version conflict")) {
-        throw new AppError("VERSION_CONFLICT", error.message, 409);
-      }
       throw new AppError("DB_ERROR", error.message, 500);
     }
+
+    const successful = results.filter((r: any) => r.success).length;
+    const failed = results.filter((r: any) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -429,10 +432,12 @@ router.post("/bulk/folder", async (req, res, next) => {
       metadata: {
         documentIds: parsed.documentIds,
         folderPath: parsed.folderPath,
+        successful,
+        failed: failed.length,
       },
     });
 
-    res.json(success({ updated: parsed.documentIds.length }));
+    res.json(success({ results, successful, failed: failed.length }));
   } catch (error) {
     next(error);
   }
@@ -460,17 +465,20 @@ router.post("/bulk/metadata", async (req, res, next) => {
       data: updateData,
     }));
 
-    const { error } = await supabase.rpc("bulk_update_with_version", {
-      table_name: "documents",
-      updates,
-    });
+    const { data: results, error } = await supabase.rpc(
+      "bulk_update_with_version",
+      {
+        table_name: "documents",
+        updates,
+      },
+    );
 
     if (error) {
-      if (error.message.includes("Version conflict")) {
-        throw new AppError("VERSION_CONFLICT", error.message, 409);
-      }
       throw new AppError("DB_ERROR", error.message, 500);
     }
+
+    const successful = results.filter((r: any) => r.success).length;
+    const failed = results.filter((r: any) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -479,10 +487,12 @@ router.post("/bulk/metadata", async (req, res, next) => {
       metadata: {
         documentIds: parsed.documentIds,
         fields: Object.keys(updateData),
+        successful,
+        failed: failed.length,
       },
     });
 
-    res.json(success({ updated: parsed.documentIds.length }));
+    res.json(success({ results, successful, failed: failed.length }));
   } catch (error) {
     next(error);
   }
