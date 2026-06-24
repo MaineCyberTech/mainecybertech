@@ -18,18 +18,19 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
+  getSupabaseUser: jest.fn(),
 }));
 
 jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
 }));
 
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
 
 function mockAuth() {
   const supabase = { from: jest.fn(), auth: { getUser: jest.fn() } };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
+  (getSupabaseUser as jest.Mock).mockReturnValue(supabase);
   supabase.auth.getUser.mockResolvedValue({
     data: { user: { id: "user-1", email: "test@example.com" } },
     error: null,
@@ -37,7 +38,13 @@ function mockAuth() {
   return supabase;
 }
 
-const PROFILE = { id: "prof-1", full_name: "Test User", email: "test@example.com", phone: null, title: "Engineer" };
+const PROFILE = {
+  id: "prof-1",
+  full_name: "Test User",
+  email: "test@example.com",
+  phone: null,
+  title: "Engineer",
+};
 
 const app = createTestApp();
 app.use("/api/v1/profiles", profilesRouter);
@@ -52,7 +59,9 @@ describe("profiles routes", () => {
     it("returns a list of profiles", async () => {
       mockAuth();
       const result: MockResult = { data: [PROFILE], error: null };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
+        createMockBuilder(result),
+      );
 
       const res = await request(app)
         .get("/api/v1/profiles")
@@ -65,7 +74,9 @@ describe("profiles routes", () => {
     it("filters by ids", async () => {
       mockAuth();
       const result: MockResult = { data: [PROFILE], error: null };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
+        createMockBuilder(result),
+      );
 
       const res = await request(app)
         .get("/api/v1/profiles?ids=prof-1")
@@ -79,7 +90,9 @@ describe("profiles routes", () => {
     it("returns a profile by id", async () => {
       mockAuth();
       const result: MockResult = { data: PROFILE, error: null };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
+        createMockBuilder(result),
+      );
 
       const res = await request(app)
         .get("/api/v1/profiles/prof-1")
@@ -91,8 +104,13 @@ describe("profiles routes", () => {
 
     it("returns 404 when not found", async () => {
       mockAuth();
-      const result: MockResult = { data: null, error: new Error("Not found") };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+      const result: MockResult = {
+        data: null,
+        error: { message: "Not found", code: "PGRST116" },
+      };
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
+        createMockBuilder(result),
+      );
 
       const res = await request(app)
         .get("/api/v1/profiles/missing")
@@ -107,7 +125,9 @@ describe("profiles routes", () => {
       mockAuth();
       const updated = { ...PROFILE, full_name: "Updated Name" };
       const result: MockResult = { data: updated, error: null };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
+        createMockBuilder(result),
+      );
 
       const res = await request(app)
         .patch("/api/v1/profiles/prof-1")
@@ -121,7 +141,9 @@ describe("profiles routes", () => {
     it("returns 404 when profile not found", async () => {
       mockAuth();
       const result: MockResult = { data: null, error: null };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
+        createMockBuilder(result),
+      );
 
       const res = await request(app)
         .patch("/api/v1/profiles/missing")
