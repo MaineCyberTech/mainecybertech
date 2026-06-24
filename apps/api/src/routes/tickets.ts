@@ -448,16 +448,25 @@ router.post("/bulk", requireOrgAccess, async (req, res, next) => {
     const { ids, status, priority } = bulkTicketUpdateSchema.parse(req.body);
 
     const supabase = getSupabaseAdmin();
-    const updateData: Record<string, string> = {};
-    if (status) updateData.status = status;
-    if (priority) updateData.priority = priority;
 
-    const { error } = await supabase
-      .from("tickets")
-      .update(updateData)
-      .in("id", ids);
+    const updates = ids.map((id) => {
+      const data: Record<string, string> = {};
+      if (status) data.status = status;
+      if (priority) data.priority = priority;
+      return { id, data };
+    });
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const { error } = await supabase.rpc("bulk_update_with_version", {
+      table_name: "tickets",
+      updates,
+    });
+
+    if (error) {
+      if (error.message.includes("Version conflict")) {
+        throw new AppError("VERSION_CONFLICT", error.message, 409);
+      }
+      throw new AppError("DB_ERROR", error.message, 500);
+    }
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

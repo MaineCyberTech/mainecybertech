@@ -405,12 +405,22 @@ router.post("/bulk/folder", async (req, res, next) => {
     const parsed = bulkFolderSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { error } = await supabase
-      .from("documents")
-      .update({ folder_path: parsed.folderPath })
-      .in("id", parsed.documentIds);
+    const updates = parsed.documentIds.map((id) => ({
+      id,
+      data: { folder_path: parsed.folderPath },
+    }));
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const { error } = await supabase.rpc("bulk_update_with_version", {
+      table_name: "documents",
+      updates,
+    });
+
+    if (error) {
+      if (error.message.includes("Version conflict")) {
+        throw new AppError("VERSION_CONFLICT", error.message, 409);
+      }
+      throw new AppError("DB_ERROR", error.message, 500);
+    }
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -445,12 +455,22 @@ router.post("/bulk/metadata", async (req, res, next) => {
       throw new AppError("VALIDATION", "No fields to update", 400);
     }
 
-    const { error } = await supabase
-      .from("documents")
-      .update(updateData)
-      .in("id", parsed.documentIds);
+    const updates = parsed.documentIds.map((id) => ({
+      id,
+      data: updateData,
+    }));
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const { error } = await supabase.rpc("bulk_update_with_version", {
+      table_name: "documents",
+      updates,
+    });
+
+    if (error) {
+      if (error.message.includes("Version conflict")) {
+        throw new AppError("VERSION_CONFLICT", error.message, 409);
+      }
+      throw new AppError("DB_ERROR", error.message, 500);
+    }
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
