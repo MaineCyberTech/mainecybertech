@@ -266,3 +266,24 @@ export interface DocumentVersion {
   checksum?: string | null;
   created_at: string;
 }
+
+export interface DocumentShare {
+  id: string;
+  document_id: string;
+  organization_id: string;
+  created_by: string;
+  token: string;
+  expires_at: string;
+  access_count: number;
+  max_access: number | null;
+  revoked_at: string | null;
+  created_at: string;
+  share_url?: string;
+}
+
+export interface DocumentAccessResponse {
+  documentName: string;
+  mimeType: string | null;
+  downloadUrl: string;
+  expiresIn: number;
+}

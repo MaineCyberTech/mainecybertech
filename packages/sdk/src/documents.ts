@@ -1,19 +1,11 @@
 import { ApiClient } from "./client";
-import type { Document, DocumentVersion, PaginatedResult } from "./types";
-
-export type DocumentShare = {
-  id: string;
-  document_id: string;
-  organization_id: string;
-  created_by: string;
-  token: string;
-  expires_at: string;
-  access_count: number;
-  max_access: number | null;
-  revoked_at: string | null;
-  created_at: string;
-  share_url?: string;
-};
+import type {
+  Document,
+  DocumentVersion,
+  DocumentShare,
+  DocumentAccessResponse,
+  PaginatedResult,
+} from "./types";
 
 export class DocumentsApi {
   constructor(private client: ApiClient) {}
@@ -174,6 +166,13 @@ export class DocumentsApi {
   removeShare(documentId: string, shareId: string) {
     return this.client.delete<void>(
       `/api/v1/documents/${documentId}/shares/${shareId}`,
+    );
+  }
+
+  // Access a shared document via public token (no auth required)
+  accessShare(token: string) {
+    return this.client.get<DocumentAccessResponse>(
+      `/api/v1/documents/shares/${token}`,
     );
   }
 }

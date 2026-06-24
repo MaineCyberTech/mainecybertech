@@ -67,6 +67,8 @@ export type {
   BulkInviteResult,
   SearchResult,
   PortalSearchResult,
+  DocumentShare,
+  DocumentAccessResponse,
 };
 
 export class MCTClient {
