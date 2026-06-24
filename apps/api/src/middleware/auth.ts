@@ -12,6 +12,7 @@ declare global {
         userId: string;
         email: string;
       };
+      userJwt?: string;
     }
   }
 }
@@ -49,6 +50,8 @@ export async function requireAuth(
       );
     }
 
+    req.userJwt = token;
+
     const secrets = getJwtSecrets();
     if (secrets.length > 0) {
       for (const secret of secrets) {
@@ -59,7 +62,7 @@ export async function requireAuth(
             exp?: number;
           };
           if (decoded.exp && decoded.exp * 1000 < Date.now()) {
-            throw new AppError("UNAUTHORIZED", "Token expired", 401);
+            throw new AppError("UNAUTHORIZED", "Token expired", 40101);
           }
           req.authUser = {
             userId: decoded.sub,

@@ -1,12 +1,15 @@
 import { Router } from "express";
 import { z } from "zod";
 import multer from "multer";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
+});
 
 const updateProfileSchema = z.object({
   fullName: z.string().max(255).optional().nullable(),
@@ -20,13 +23,16 @@ router.use(requireAuth);
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getSupabaseUser(req.userJwt!);
     const ids = req.query.ids as string | undefined;
     const email = req.query.email as string | undefined;
     let query = supabase.from("profiles").select("*");
 
     if (ids) {
-      const idsArr = ids.split(",").map((s) => s.trim()).filter(Boolean);
+      const idsArr = ids
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       if (idsArr.length > 0) {
         query = query.in("id", idsArr);
       }
@@ -38,7 +44,8 @@ router.get("/", async (req, res, next) => {
         .select("*")
         .eq("email", email.toLowerCase())
         .maybeSingle();
-      if (profileError) throw new AppError("DB_ERROR", profileError.message, 500);
+      if (profileError)
+        throw new AppError("DB_ERROR", profileError.message, 500);
       res.json(success(profile ?? null));
       return;
     }
@@ -54,7 +61,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getSupabaseUser(req.userJwt!);
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -72,7 +79,7 @@ router.get("/:id", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateProfileSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getSupabaseUser(req.userJwt!);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.fullName !== undefined) updateData.full_name = parsed.fullName;
@@ -110,13 +117,17 @@ router.post("/:id/avatar", upload.single("avatar"), async (req, res, next) => {
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.mimetype)) {
-      throw new AppError("VALIDATION", "Avatar must be a JPEG, PNG, WebP, or GIF image", 400);
+      throw new AppError(
+        "VALIDATION",
+        "Avatar must be a JPEG, PNG, WebP, or GIF image",
+        400,
+      );
     }
 
     const ext = file.originalname.split(".").pop() ?? "png";
     const userId = req.params.id as string;
     const storagePath = `${userId}/avatar.${ext}`;
-    const supabase = getSupabaseAdmin();
+    const supabase = getSupabaseUser(req.userJwt!);
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
@@ -125,9 +136,12 @@ router.post("/:id/avatar", upload.single("avatar"), async (req, res, next) => {
         upsert: true,
       });
 
-    if (uploadError) throw new AppError("STORAGE_ERROR", uploadError.message, 500);
+    if (uploadError)
+      throw new AppError("STORAGE_ERROR", uploadError.message, 500);
 
-    const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(storagePath);
+    const { data: publicUrl } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(storagePath);
 
     const { error: updateError } = await supabase
       .from("profiles")

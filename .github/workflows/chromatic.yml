@@ -1,0 +1,41 @@
+name: Chromatic
+
+on:
+  push:
+    branches: [develop, main]
+    paths:
+      - 'packages/ui/**'
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'packages/ui/**'
+
+jobs:
+  chromatic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        run: corepack enable && corepack prepare pnpm@10 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Storybook
+        run: pnpm storybook:build
+
+      - name: Chromatic
+        uses: chromaui/action@v11
+        with:
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+          storybookBuildDir: docs/storybook-static
+          onlyChanged: true
+          exitZeroOnChanges: true
+          exitOnceUploaded: true

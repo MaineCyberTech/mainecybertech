@@ -35,6 +35,28 @@ export function getSupabaseAdmin(): SupabaseClient {
   return _adminClient;
 }
 
+export function getSupabaseUser(jwt: string): SupabaseClient {
+  const env = getEnv();
+  return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+    db: {
+      timeout: 30_000,
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+    global: {
+      fetch: (...args) => fetch(...args),
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+      },
+    },
+    realtime: {
+      transport: WebSocket as any,
+    },
+  });
+}
+
 export function getSupabaseCircuitBreaker(): CircuitBreaker {
   return circuitBreaker;
 }
