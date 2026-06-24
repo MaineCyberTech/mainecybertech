@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { loginAction } from "@/lib/auth/auth-actions";
+import { Button } from "@mct/ui/components/Button";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -64,7 +65,12 @@ export default function LoginPage() {
           </div>
 
           <div className="flex justify-end">
-            <Link href="/forgot-password" className="text-xs text-emerald-400 hover:text-emerald-300">Forgot password?</Link>
+            <Link
+              href="/forgot-password"
+              className="text-xs text-emerald-400 hover:text-emerald-300"
+            >
+              Forgot password?
+            </Link>
           </div>
 
           {errorMsg ? (
@@ -73,13 +79,14 @@ export default function LoginPage() {
             </div>
           ) : null}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg border-2 border-emerald-600 bg-emerald-600 px-4 py-3 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-[#0A1118] transition-all duration-300 hover:bg-transparent hover:text-emerald-500"
+            loading={loading}
+            className="w-full"
           >
             {loading ? "Signing In..." : "Secure Login"}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-6 text-sm text-slate-400">

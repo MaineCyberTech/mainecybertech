@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useState } from "react";
 import { signupAction } from "@/lib/auth/auth-actions";
+import { Button } from "@mct/ui/components/Button";
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState("");
@@ -27,7 +27,9 @@ export default function SignupPage() {
       return;
     }
 
-    setMessage("Check your email to confirm your account, then return to continue.");
+    setMessage(
+      "Check your email to confirm your account, then return to continue.",
+    );
   }
 
   return (
@@ -37,7 +39,8 @@ export default function SignupPage() {
           Create Secure Account
         </h1>
         <p className="mt-3 text-sm text-slate-400">
-          Sign up with your business email. Verified users are reviewed for client access approval.
+          Sign up with your business email. Verified users are reviewed for
+          client access approval.
         </p>
 
         <form onSubmit={handleSignup} className="mt-6 space-y-4">
@@ -94,13 +97,14 @@ export default function SignupPage() {
             </div>
           ) : null}
 
-          <button
+          <Button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg border-2 border-emerald-600 bg-emerald-600 px-4 py-3 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-[#0A1118] transition-all duration-300 hover:bg-transparent hover:text-emerald-500"
+            loading={loading}
+            className="w-full"
           >
             {loading ? "Creating Account..." : "Create Account"}
-          </button>
+          </Button>
         </form>
 
         <p className="mt-6 text-sm text-slate-400">
