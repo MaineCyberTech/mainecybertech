@@ -106,7 +106,10 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets[steps.env.outputs.ssh_key] }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keygen -p -P "${{ secrets[steps.env.outputs.ssh_passphrase] }}" -N "" -f ~/.ssh/id_rsa
+          # Only strip passphrase if DO_SSH_PASSPHRASE secret is set
+          if [ -n "${{ secrets[steps.env.outputs.ssh_passphrase] }}" ]; then
+            ssh-keygen -p -P "${{ secrets[steps.env.outputs.ssh_passphrase] }}" -N "" -f ~/.ssh/id_rsa
+          fi
           ssh-keyscan -H "${{ secrets[steps.env.outputs.host] }}" >> ~/.ssh/known_hosts 2>&1 || echo "ssh-keyscan failed (non-fatal)"
 
       - name: Deploy to DigitalOcean
