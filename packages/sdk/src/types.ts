@@ -243,6 +243,15 @@ export interface UserDetail {
   allRoles: Role[];
 }
 
+export interface UserCompound {
+  user: User;
+  profile: Profile | null;
+  memberships: Membership[];
+  organizations: Organization[];
+  roles: Role[];
+  allRoles: Role[];
+}
+
 export interface Notification {
   id: string;
   user_id: string;

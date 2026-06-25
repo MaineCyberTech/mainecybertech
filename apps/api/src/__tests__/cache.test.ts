@@ -7,18 +7,6 @@ import {
   invalidateCache,
 } from "../middleware/cache";
 
-jest.mock("../config/env", () => ({
-  getEnv: jest.fn().mockReturnValue({
-    NODE_ENV: "test",
-    SUPABASE_URL: "https://test.supabase.co",
-    SUPABASE_ANON_KEY: "test-anon-key",
-    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
-    CORS_ORIGIN: "*",
-    LOG_LEVEL: "silent",
-    API_PORT: 4000,
-  }),
-}));
-
 function createTestApp() {
   const app = express();
   let callCount = 0;

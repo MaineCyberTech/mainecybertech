@@ -1,5 +1,5 @@
 import { ApiClient } from "./client";
-import type { User, AuthUser, UserDetail } from "./types";
+import type { User, AuthUser, UserDetail, UserCompound } from "./types";
 
 export interface PermissionOverride {
   id: string;
@@ -10,7 +10,12 @@ export interface PermissionOverride {
 
 export interface UserPermissionsResponse {
   memberships: any[];
-  permissions: Array<{ id: string; module_key: string; action_key: string; description?: string | null }>;
+  permissions: Array<{
+    id: string;
+    module_key: string;
+    action_key: string;
+    description?: string | null;
+  }>;
   rolePermissionIds: string[];
   overrides: PermissionOverride[];
 }
@@ -30,6 +35,10 @@ export class UsersApi {
     return this.client.get<UserDetail>(`/api/v1/users/${id}/detail`);
   }
 
+  getCompound() {
+    return this.client.get<UserCompound[]>(`/api/v1/users/compound`);
+  }
+
   me() {
     return this.client.get<AuthUser>("/api/v1/auth/me");
   }
@@ -41,14 +50,22 @@ export class UsersApi {
   }
 
   getPermissions(userId: string) {
-    return this.client.get<UserPermissionsResponse>(`/api/v1/users/${userId}/permissions`);
+    return this.client.get<UserPermissionsResponse>(
+      `/api/v1/users/${userId}/permissions`,
+    );
   }
 
-  updatePermissions(userId: string, data: {
-    permissionId: string;
-    organizationId: string;
-    isAllowed: boolean;
-  }) {
-    return this.client.put<{ updated: boolean }>(`/api/v1/users/${userId}/permissions`, data);
+  updatePermissions(
+    userId: string,
+    data: {
+      permissionId: string;
+      organizationId: string;
+      isAllowed: boolean;
+    },
+  ) {
+    return this.client.put<{ updated: boolean }>(
+      `/api/v1/users/${userId}/permissions`,
+      data,
+    );
   }
 }

@@ -27,6 +27,136 @@ router.get("/", requireAdmin, async (req, res, next) => {
   }
 });
 
+// Compound endpoint: fetch all users with their related data in one query
+router.get("/compound", requireAdmin, async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+
+    // Fetch all users with their profiles and memberships
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select(
+        "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+      )
+      .order("email");
+
+    if (profilesError)
+      throw new AppError("DB_ERROR", profilesError.message, 500);
+
+    if (!profiles || profiles.length === 0) {
+      res.json(success([]));
+      return;
+    }
+
+    const userIds = profiles.map((p) => p.id);
+
+    // Fetch all memberships for these users
+    const { data: memberships, error: memError } = await supabase
+      .from("memberships")
+      .select(
+        "id, organization_id, user_id, role_id, status, is_billing_contact, is_security_contact, created_at",
+      )
+      .in("user_id", userIds);
+
+    if (memError) throw new AppError("DB_ERROR", memError.message, 500);
+
+    // Collect unique org and role IDs
+    const orgIds = [
+      ...new Set(
+        (memberships ?? []).map(
+          (m: { organization_id: string }) => m.organization_id,
+        ),
+      ),
+    ];
+    const roleIds = [
+      ...new Set(
+        (memberships ?? []).map((m: { role_id: string }) => m.role_id),
+      ),
+    ];
+
+    // Fetch organizations, roles, and all roles in parallel
+    const [
+      { data: organizations, error: orgsError },
+      { data: roles, error: rolesError },
+      { data: allRoles, error: allRolesError },
+    ] = await Promise.all([
+      orgIds.length > 0
+        ? supabase
+            .from("organizations")
+            .select(
+              "id, name, slug, status, primary_domain, support_plan, created_at, updated_at",
+            )
+            .in("id", orgIds)
+        : { data: [], error: null },
+      roleIds.length > 0
+        ? supabase.from("roles").select("id, key, name").in("id", roleIds)
+        : { data: [], error: null },
+      supabase.from("roles").select("id, key, name"),
+    ]);
+
+    if (orgsError) throw new AppError("DB_ERROR", orgsError.message, 500);
+    if (rolesError) throw new AppError("DB_ERROR", rolesError.message, 500);
+    if (allRolesError)
+      throw new AppError("DB_ERROR", allRolesError.message, 500);
+
+    // Build the compound response
+    const userIdsWithMemberships = new Set(
+      (memberships ?? []).map((m) => m.user_id),
+    );
+    const compound = profiles
+      .filter((p) => userIdsWithMemberships.has(p.id))
+      .map((profile) => {
+        const userMemberships = (memberships ?? []).filter(
+          (m) => m.user_id === profile.id,
+        );
+        const orgIdsForUser = [
+          ...new Set(userMemberships.map((m) => m.organization_id)),
+        ];
+        const userOrganizations = (organizations ?? []).filter((o) =>
+          orgIdsForUser.includes(o.id),
+        );
+        const userRoles = [
+          ...new Set(
+            userMemberships.map((m: { role_id: string }) => m.role_id),
+          ),
+        ];
+
+        return {
+          user: {
+            id: profile.id,
+            full_name: profile.full_name,
+            email: profile.email,
+            phone: profile.phone,
+            title: profile.title,
+            is_super_admin: profile.is_super_admin,
+            default_organization_id: profile.default_organization_id,
+            created_at: profile.created_at,
+          },
+          profile: {
+            id: profile.id,
+            full_name: profile.full_name,
+            email: profile.email,
+            phone: profile.phone,
+            title: profile.title,
+            is_super_admin: profile.is_super_admin,
+            default_organization_id: profile.default_organization_id,
+            created_at: profile.created_at,
+          },
+          memberships: (memberships ?? []).filter(
+            (m) => m.user_id === profile.id,
+          ),
+          organizations: userOrganizations,
+          roles: (roles ?? []).filter((r) => userRoles.includes(r.id)),
+          allRoles: allRoles ?? [],
+        };
+      });
+
+    res.json(success(compound));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.get("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
