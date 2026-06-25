@@ -13,7 +13,7 @@ permissions:
   id-token: write
 
 jobs:
-  terraform:
+  terraform-plan:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -49,7 +49,7 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Plan (PR / push)
+      - name: Terraform Plan
         id: plan
         run: |
           terraform plan \
@@ -63,12 +63,61 @@ jobs:
             -out=tfplan
         continue-on-error: false
 
+      - name: Upload plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ steps.env.outputs.name }}
+          path: infra/terraform/digitalocean/tfplan
+          retention-days: 1
+
+  terraform-apply-prod:
+    needs: terraform-plan
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    environment: prod-approval
+    defaults:
+      run:
+        working-directory: infra/terraform/digitalocean
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9
+
+      - name: Download plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-prod
+          path: infra/terraform/digitalocean
+
       - name: Terraform Apply
-        if: github.ref_name == 'main'
-        environment: prod-approval
         run: terraform apply -auto-approve tfplan
 
-      - name: Terraform Apply (dev)
-        if: github.ref_name == 'develop'
-        environment: dev
+  terraform-apply-dev:
+    needs: terraform-plan
+    if: github.ref_name == 'develop'
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        working-directory: infra/terraform/digitalocean
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9
+
+      - name: Download plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-dev
+          path: infra/terraform/digitalocean
+
+      - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
