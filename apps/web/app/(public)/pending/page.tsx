@@ -3,8 +3,6 @@
 import { logoutAction } from "@/lib/auth/auth-actions";
 import { Button } from "@mct/ui/components/Button";
 
-export const metadata = { title: "Pending Approval - Maine CyberTech" };
-
 export default function PendingPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl items-center px-6">
