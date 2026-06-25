@@ -64,6 +64,11 @@ jobs:
         continue-on-error: false
 
       - name: Terraform Apply
-        if: github.ref_name == 'main' || github.ref_name == 'develop'
-        environment: ${{ github.ref_name == 'main' && 'prod-approval' || 'dev' }}
+        if: github.ref_name == 'main'
+        environment: prod-approval
+        run: terraform apply -auto-approve tfplan
+
+      - name: Terraform Apply (dev)
+        if: github.ref_name == 'develop'
+        environment: dev
         run: terraform apply -auto-approve tfplan
