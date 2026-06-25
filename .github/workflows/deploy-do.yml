@@ -146,11 +146,13 @@ jobs:
           CORS_ORIGIN: ${{ steps.env.outputs.cors_origin }}
         run: |
           echo "SSH_TEST_BEGIN"
+          # Disable exit on error for SSH retries
+          set +e
           # Minimal SSH test with retries
-          SSH_OPTS="-o StrictHostKeyChecking=no -o LogLevel=ERROR -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o ConnectTimeout=10"
+          SSH_OPTS="-o StrictHostKeyChecking=no -o LogLevel=INFO -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o ConnectTimeout=10"
           for i in $(seq 1 30); do
             echo "SSH attempt $i/30..."
-            SSH_OUTPUT=$(ssh $SSH_OPTS root@$HOST "echo ALIVE_$(date +%s)" 2>&1)
+            SSH_OUTPUT=$(ssh -v $SSH_OPTS root@$HOST "echo ALIVE_$(date +%s)" 2>&1)
             SSH_EXIT=$?
             echo "SSH_EXIT=$SSH_EXIT"
             echo "SSH_OUTPUT=$SSH_OUTPUT"
@@ -165,6 +167,7 @@ jobs:
             echo "SSH never became available after 30 attempts"
             exit 1
           fi
+          set -e
           echo "SSH_TEST_END"
 
           # Write .env directly on the droplet via SSH (secrets never in runner logs)
