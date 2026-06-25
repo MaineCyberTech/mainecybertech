@@ -44,20 +44,39 @@ jobs:
             APP_DOMAIN=app.mainecybertech.com
             API_DOMAIN=api.mainecybertech.com
             WWW_DOMAIN=www.mainecybertech.com
+            DROPLET_NAME=mct-portal-prod
           else
             ENV_NAME=dev
             APP_DOMAIN=app.mainecybertech.us
             API_DOMAIN=api.mainecybertech.us
             WWW_DOMAIN=www.mainecybertech.us
+            DROPLET_NAME=mct-portal-dev
           fi
           echo "name=$ENV_NAME" >> $GITHUB_OUTPUT
           echo "app_domain=$APP_DOMAIN" >> $GITHUB_OUTPUT
           echo "api_domain=$API_DOMAIN" >> $GITHUB_OUTPUT
+          echo "www_domain=$WWW_DOMAIN" >> $GITHUB_OUTPUT
           echo "cors_origin=https://$APP_DOMAIN,https://$WWW_DOMAIN" >> $GITHUB_OUTPUT
-          echo "host=DO_DROPLET_HOST" >> $GITHUB_OUTPUT
+          echo "droplet_name=$DROPLET_NAME" >> $GITHUB_OUTPUT
           echo "ssh_key=DO_SSH_PRIVATE_KEY" >> $GITHUB_OUTPUT
           echo "ssh_passphrase=DO_SSH_PASSPHRASE" >> $GITHUB_OUTPUT
           echo "ghcr_prefix=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Get Droplet IP via DigitalOcean API
+        id: droplet
+        run: |
+          # Install doctl
+          curl -sL https://github.com/digitalocean/doctl/releases/download/v1.115.0/doctl-1.115.0-linux-amd64.tar.gz | tar -xz -C /usr/local/bin
+          # Get droplet IP by name
+          DROPLET_IP=$(doctl compute droplet list --format Name,PublicIPv4 --no-header | grep "^${{ steps.env.outputs.droplet_name }} " | awk '{print $2}')
+          if [ -z "$DROPLET_IP" ]; then
+            echo "ERROR: Droplet ${{ steps.env.outputs.droplet_name }} not found"
+            exit 1
+          fi
+          echo "Droplet IP: $DROPLET_IP"
+          echo "host=$DROPLET_IP" >> $GITHUB_OUTPUT
+        env:
+          DIGITALOCEAN_ACCESS_TOKEN: ${{ secrets.DO_API_TOKEN }}
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -110,7 +129,7 @@ jobs:
           if [ -n "${{ secrets[steps.env.outputs.ssh_passphrase] }}" ]; then
             ssh-keygen -p -P "${{ secrets[steps.env.outputs.ssh_passphrase] }}" -N "" -f ~/.ssh/id_rsa
           fi
-          ssh-keyscan -H "${{ secrets[steps.env.outputs.host] }}" >> ~/.ssh/known_hosts 2>&1 || echo "ssh-keyscan failed (non-fatal)"
+          ssh-keyscan -H "${{ steps.droplet.outputs.host }}" >> ~/.ssh/known_hosts 2>&1 || echo "ssh-keyscan failed (non-fatal)"
 
       - name: Deploy to DigitalOcean
         shell: bash
@@ -119,7 +138,7 @@ jobs:
           GHCR_IMAGE_PREFIX: ${{ steps.env.outputs.ghcr_prefix }}
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOST: ${{ secrets[steps.env.outputs.host] }}
+          HOST: ${{ steps.droplet.outputs.host }}
           CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
           CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
           APP_DOMAIN: ${{ steps.env.outputs.app_domain }}
