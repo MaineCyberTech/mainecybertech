@@ -17,13 +17,16 @@
 </p>
 
 The Maine CyberTech Portal is a modern MSP/client operations platform built as a **Turborepo monorepo** with:
+
 - a **Next.js frontend**
 - an **Express API**
 - a **Supabase/PostgreSQL backend**
 - a **worker framework** for integrations and async jobs
 
 ## What it does
+
 The platform is designed to support:
+
 - onboarding
 - support tickets
 - projects
@@ -34,7 +37,9 @@ The platform is designed to support:
 - auditability
 
 ## Current status
+
 ### Production-ready now
+
 - frontend / web app with complete test coverage (427 tests)
 - API / backend with security middleware and OpenAPI docs (155 tests)
 - database / RLS foundation
@@ -48,33 +53,34 @@ The platform is designed to support:
 - OpenAPI/Swagger documentation
 
 ### Still in progress
+
 - shared package consolidation
 
 ## Prerequisites
 
 ### Development
 
-| Requirement | Version | Notes |
-|-------------|---------|-------|
-| **Node.js** | 18+ (20 recommended) | [nodejs.org](https://nodejs.org) |
-| **pnpm** | 10+ | `npm install -g pnpm` |
-| **Docker Desktop** | Latest | Required for local Supabase |
-| **Supabase CLI** | Latest | `npm install -g supabase` |
-| **PowerShell** | 5.1+ (Windows) or Bash | For local stack scripts |
+| Requirement        | Version                | Notes                            |
+| ------------------ | ---------------------- | -------------------------------- |
+| **Node.js**        | 18+ (20 recommended)   | [nodejs.org](https://nodejs.org) |
+| **pnpm**           | 10+                    | `npm install -g pnpm`            |
+| **Docker Desktop** | Latest                 | Required for local Supabase      |
+| **Supabase CLI**   | Latest                 | `npm install -g supabase`        |
+| **PowerShell**     | 5.1+ (Windows) or Bash | For local stack scripts          |
 
 ### Production
 
-| Service | Provider | Required By |
-|---------|----------|-------------|
-| **Supabase project** | [supabase.com](https://supabase.com) | Database, Auth, Storage |
-| **AWS account** | [aws.amazon.com](https://aws.amazon.com) | ECS (API + Worker), S3, SSM, ALB, CloudWatch |
-| **Vercel account** | [vercel.com](https://vercel.com) | Web app hosting |
-| **Stripe account** | [stripe.com](https://stripe.com) | Billing (optional) |
-| **Atlassian account** | [atlassian.com](https://www.atlassian.com) | Jira/JSM sync (optional) |
-| **Microsoft 365** | [microsoft.com](https://www.microsoft.com) | Calendar sync (optional) |
-| **SMTP provider** | Any | Email notifications (optional) |
-| **Sentry account** | [sentry.io](https://sentry.io) | Error tracking (optional) |
-| **Slack workspace** | [slack.com](https://slack.com) | Alarm notifications (optional) |
+| Service               | Provider                                   | Required By                                  |
+| --------------------- | ------------------------------------------ | -------------------------------------------- |
+| **Supabase project**  | [supabase.com](https://supabase.com)       | Database, Auth, Storage                      |
+| **AWS account**       | [aws.amazon.com](https://aws.amazon.com)   | ECS (API + Worker), S3, SSM, ALB, CloudWatch |
+| **Vercel account**    | [vercel.com](https://vercel.com)           | Web app hosting                              |
+| **Stripe account**    | [stripe.com](https://stripe.com)           | Billing (optional)                           |
+| **Atlassian account** | [atlassian.com](https://www.atlassian.com) | Jira/JSM sync (optional)                     |
+| **Microsoft 365**     | [microsoft.com](https://www.microsoft.com) | Calendar sync (optional)                     |
+| **SMTP provider**     | Any                                        | Email notifications (optional)               |
+| **Sentry account**    | [sentry.io](https://sentry.io)             | Error tracking (optional)                    |
+| **Slack workspace**   | [slack.com](https://slack.com)             | Alarm notifications (optional)               |
 
 ### GitHub Secrets Required
 
@@ -131,6 +137,7 @@ pnpm --filter=web lint       # ESLint
 ```
 
 ## Quick links
+
 - **Developer setup:** [docs/README.dev.md](./docs/README.dev.md)
 - **Architectural analysis:** [docs/ARCHITECTURAL_ANALYSIS.md](./docs/ARCHITECTURAL_ANALYSIS.md)
 - **Environment variables:** [docs/ENVIRONMENT_VARIABLES.md](./docs/ENVIRONMENT_VARIABLES.md)
@@ -148,6 +155,7 @@ pnpm --filter=web lint       # ESLint
 ### Infrastructure Gaps Fixed
 
 During a comprehensive audit, 13 gaps were identified and fixed:
+
 - **SSM secrets** — 16 integration secrets (Stripe, Sentry, SMTP, Jira, JSM, M365) added to Terraform with conditional creation
 - **ECS injection** — All new secrets wired into `runtime.tf` task definitions + IAM permissions
 - **Docker HEALTHCHECK** — Added to worker Dockerfile (port 3001)
@@ -173,6 +181,7 @@ The web app never directly talks to Supabase. Instead, the auth callback flow wo
 4. The API extracts the PKCE code verifier from its own `SUPABASE_URL` ref, exchanges it for a session, and sets the `mct_session` cookie
 
 This means:
+
 - No `@supabase/ssr` library dependency in the web app
 - No `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` env vars needed in the web build
 - All Supabase interactions are centralized in the API layer
@@ -265,6 +274,7 @@ pnpm --filter=web e2e:debug
 ```
 
 E2E tests are in `apps/web/e2e/` and cover:
+
 - Login, signup, and pending approval flows
 - Admin dashboard, users, organizations, projects, tickets, documents
 - Portal dashboard, documents, support center
@@ -290,18 +300,19 @@ docker compose up
 docker compose run e2e
 ```
 
-| Service | Image | Size | Exposed Port |
-|---------|-------|------|-------------|
-| web | `mainecybertech-portal-web` | ~331 MB | 3000 |
-| api | `mainecybertech-portal-api` | ~287 MB | 4000 |
-| worker | `mainecybertech-portal-worker` | ~278 MB | — |
-| e2e | `mcr.microsoft.com/playwright:v1.60.0` | — | — |
+| Service | Image                                  | Size    | Exposed Port |
+| ------- | -------------------------------------- | ------- | ------------ |
+| web     | `mainecybertech-portal-web`            | ~331 MB | 3000         |
+| api     | `mainecybertech-portal-api`            | ~287 MB | 4000         |
+| worker  | `mainecybertech-portal-worker`         | ~278 MB | —            |
+| e2e     | `mcr.microsoft.com/playwright:v1.60.0` | —       | —            |
 
 The web app uses Next.js `output: "standalone"` for optimized production builds. The API and worker use `tsup` for compilation.
 
 ### Environment files
 
 Each service expects a `.env.local` file in its app directory:
+
 - `apps/web/.env.local` — Next.js public vars + API URL
 - `apps/api/.env.local` — Supabase URL/service key, server config
 - `apps/worker/.env.local` — Supabase URL/service key, worker config
@@ -310,25 +321,29 @@ Each service expects a `.env.local` file in its app directory:
 
 GitHub Actions workflows in `.github/workflows/`:
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `validate.yml` | workflow_call | Reusable gate: test + lint + typecheck |
-| `test.yml` | push/PR main,develop | Run all unit/integration tests |
-| `lint.yml` | push/PR main,develop | Lint check |
-| `typecheck.yml` | push/PR main,develop | TypeScript type checking |
-| `e2e.yml` | push/PR main,develop, workflow_call | Build web, run Playwright E2E tests |
-| `supabase-migrations.yml` | push main+develop, workflow_call | Run Supabase DB migrations |
-| `api-deploy-ecs.prod.yml` | push main | Deploy API to ECS prod (validate + approval) |
-| `api-deploy-ecs.dev.yml` | push develop | Deploy API to ECS dev |
-| `worker-deploy-ecs.prod.yml` | push main | Deploy worker to ECS prod (validate + approval) |
-| `worker-deploy-ecs.dev.yml` | push develop | Deploy worker to ECS dev |
-| `web-prod-vercel.yml` | push main | Deploy web to Vercel production (validate + approval) |
-| `web-dev-vercel.yml` | push develop | Deploy web to Vercel preview |
-| `web-preview.yml` | PR | Validate web build (no deploy) |
-| `terraform-plan.prod.yml` | PR main | Plan prod infra changes |
-| `terraform-apply.prod.yml` | push main | Apply prod infra |
-| `terraform-plan.dev.yml` | PR develop | Plan dev infra changes |
-| `terraform-apply.dev.yml` | push develop | Apply dev infra |
+| Workflow                     | Trigger                             | Purpose                                               |
+| ---------------------------- | ----------------------------------- | ----------------------------------------------------- |
+| `validate.yml`               | workflow_call                       | Reusable gate: test + lint + typecheck                |
+| `test.yml`                   | push/PR main,develop                | Run all unit/integration tests                        |
+| `lint.yml`                   | push/PR main,develop                | Lint check                                            |
+| `typecheck.yml`              | push/PR main,develop                | TypeScript type checking                              |
+| `e2e.yml`                    | push/PR main,develop, workflow_call | Build web, run Playwright E2E tests                   |
+| `supabase-migrations.yml`    | push main+develop, workflow_call    | Run Supabase DB migrations                            |
+| `api-deploy-ecs.prod.yml`    | push main                           | Deploy API to ECS prod (validate + approval)          |
+| `api-deploy-ecs.dev.yml`     | push develop                        | Deploy API to ECS dev                                 |
+| `worker-deploy-ecs.prod.yml` | push main                           | Deploy worker to ECS prod (validate + approval)       |
+| `worker-deploy-ecs.dev.yml`  | push develop                        | Deploy worker to ECS dev                              |
+| `web-prod-vercel.yml`        | push main                           | Deploy web to Vercel production (validate + approval) |
+| `web-dev-vercel.yml`         | push develop                        | Deploy web to Vercel preview                          |
+| `web-preview.yml`            | PR                                  | Validate web build (no deploy)                        |
+| `terraform-plan.prod.yml`    | PR main                             | Plan prod infra changes                               |
+| `terraform-apply.prod.yml`   | push main                           | Apply prod infra                                      |
+| `terraform-plan.dev.yml`     | PR develop                          | Plan dev infra changes                                |
+| `terraform-apply.dev.yml`    | push develop                        | Apply dev infra                                       |
 
 ## License
+
 ISC
+#   t r i g g e r 
+ 
+ 
