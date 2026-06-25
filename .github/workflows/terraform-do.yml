@@ -41,6 +41,18 @@ jobs:
         run: terraform fmt -check
         continue-on-error: true
 
+      - name: Create tfvars file
+        id: tfvars
+        run: |
+          cat > "${{ steps.env.outputs.name }}.tfvars" <<EOF
+          do_token              = "${{ secrets.DO_API_TOKEN }}"
+          ssh_fingerprint       = "${{ secrets.DO_SSH_FINGERPRINT }}"
+          cloudflare_api_token  = "${{ secrets.CLOUDFLARE_API_TOKEN }}"
+          cloudflare_zone_id    = "${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          droplet_size          = "s-1vcpu-512mb-10gb"
+          environment           = "${{ steps.env.outputs.name }}"
+          EOF
+
       - name: Terraform Init
         run: |
           terraform init \
@@ -53,7 +65,7 @@ jobs:
         id: plan
         run: |
           terraform plan \
-            -var-file="env/${{ steps.env.outputs.name }}.tfvars" \
+            -var-file="${{ steps.env.outputs.name }}.tfvars" \
             -var="do_token=${{ secrets.DO_API_TOKEN }}" \
             -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" \
