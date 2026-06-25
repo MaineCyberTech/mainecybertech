@@ -125,9 +125,11 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets[steps.env.outputs.ssh_key] }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          # Only strip passphrase if DO_SSH_PASSPHRASE secret is set
-          if [ -n "${{ secrets[steps.env.outputs.ssh_passphrase] }}" ]; then
-            ssh-keygen -p -P "${{ secrets[steps.env.outputs.ssh_passphrase] }}" -N "" -f ~/.ssh/id_rsa
+          # Only strip passphrase if DO_SSH_PASSPHRASE secret is set AND non-whitespace
+          PASSPHRASE="${{ secrets[steps.env.outputs.ssh_passphrase] }}"
+          if [ -n "$PASSPHRASE" ] && [ -n "${PASSPHRASE// /}" ]; then
+            ssh-keygen -p -P "$PASSPHRASE" -N "" -f ~/.ssh/id_rsa
+</parameter
           fi
           ssh-keyscan -H "${{ steps.droplet.outputs.host }}" >> ~/.ssh/known_hosts 2>&1 || echo "ssh-keyscan failed (non-fatal)"
 
