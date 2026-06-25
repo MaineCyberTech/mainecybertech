@@ -152,12 +152,12 @@ jobs:
             echo "SSH attempt $i/30..."
             SSH_OUTPUT=$(ssh $SSH_OPTS root@$HOST "echo ALIVE_$(date +%s)" 2>&1)
             SSH_EXIT=$?
+            echo "SSH_EXIT=$SSH_EXIT"
+            echo "SSH_OUTPUT=$SSH_OUTPUT"
             if [ $SSH_EXIT -eq 0 ]; then
               echo "SSH ready after $((i * 10))s"
-              echo "SSH_OUTPUT=$SSH_OUTPUT"
               break
             fi
-            echo "Attempt $i failed (exit $SSH_EXIT): $SSH_OUTPUT"
             echo "Retrying in 10s..."
             sleep 10
           done
