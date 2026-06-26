@@ -1,8 +1,10 @@
 # Terraform Backend Configuration - Production
-# Stores state in AWS S3 (or compatible) for team collaboration
+# Stores state in DigitalOcean Spaces (S3-compatible)
 
-bucket         = "mainecybertech-terraform-state"
+bucket         = "portal-terraform-state"
 key            = "digitalocean/prod/terraform.tfstate"
 region         = "us-east-1"
-dynamodb_table = "terraform-locks"
-encrypt        = true
+skip_credentials_validation = true
+skip_metadata_api_check     = true
+skip_requesting_account_id  = true
+encrypt                     = true

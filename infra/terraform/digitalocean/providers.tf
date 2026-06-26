@@ -3,7 +3,7 @@ terraform {
 
   backend "s3" {
     bucket                      = "portal-terraform-state"
-    key                         = "digitalocean/${var.environment}/terraform.tfstate"
+    key                         = "digitalocean/terraform.tfstate"
     region                      = "us-east-1"
     skip_credentials_validation = true
     skip_metadata_api_check     = true
