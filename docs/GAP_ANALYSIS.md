@@ -26,10 +26,11 @@
 | Security         | CORS with credentials, rate limiting (per-user + global), CSP headers, XSS sanitizer, Helmet, Supabase RLS                |
 | Infrastructure   | Terraform (12 files), Docker (3 images), SSM secrets (23 parameters), CloudWatch alarms, autoscaling, Slack notifications |
 | Documentation    | 30+ docs covering all features                                                                                            |
+| Architecture     | Master System Architecture Review Report created (`docs/MASTER_SYSTEM_ARCHITECTURE_REVIEW.md`) — 12-domain synthesis      |
 
 ## Remaining Gaps
 
-### High Impact — Quick Fixes
+### High Impact — Quick Fixes (✅ All Resolved)
 
 | #   | Gap                                                                                                                                     | Recommendation                                                                    | Effort | Status  |
 | --- | --------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------ | ------- |
@@ -39,19 +40,19 @@
 
 ### Medium Impact
 
-| #   | Gap                                                                                                                                             | Recommendation                                                | Effort |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------ |
-| 4   | **Tight mobile screens** — subnav pills overflow on very narrow viewports                                                                       | Add `@media (max-width: 360px)` breakpoint for smaller pills  | 15 min |
-| 5   | **Permission override UI** — `GET/PUT /users/:id/permissions` API exists but no admin UI to toggle user-level overrides (only read-only matrix) | Add toggle buttons to `PermissionsMatrix`                     | 1-2 hr |
-| 6   | **No loading skeletons** — pages show plain "Loading..." text while fetching                                                                    | Replace with skeleton placeholders matching card/table shapes | 1 hr   |
+| #   | Gap                                                                                                                                             | Recommendation                                                | Effort | Status |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------ | ------ |
+| 4   | **Tight mobile screens** — subnav pills overflow on very narrow viewports                                                                       | Add `@media (max-width: 360px)` breakpoint for smaller pills  | 15 min | Open   |
+| 5   | **Permission override UI** — `GET/PUT /users/:id/permissions` API exists but no admin UI to toggle user-level overrides (only read-only matrix) | Add toggle buttons to `PermissionsMatrix`                     | 1-2 hr | Open   |
+| 6   | **No loading skeletons** — pages show plain "Loading..." text while fetching                                                                    | Replace with skeleton placeholders matching card/table shapes | 1 hr   | Open   |
 
-### Low Priority
+### Low Priority (✅ All Resolved)
 
-| #   | Gap                                                                                                   | Recommendation                                    | Effort |
-| --- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------- | ------ |
-| 7   | **No `global-error.tsx`** — Next.js recommends a root `global-error.js` for App Router error boundary | Create `app/global-error.tsx` with Sentry capture | 15 min |
-| 8   | **No bundle analyzer** — can't inspect web bundle size                                                | Add `@next/bundle-analyzer`                       | 15 min |
-| 9   | **No favicon** — browser tab shows default Next.js icon                                               | Add favicon/icons from brand assets               | 15 min |
+| #   | Gap                                                                                                     | Recommendation                                    | Effort | Status  |
+| --- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------- | ------ | ------- |
+| 7   | ~~**No `global-error.tsx`** — Next.js recommends a root `global-error.js` for App Router error boundary | Create `app/global-error.tsx` with Sentry capture | 15 min | ✅ Done |
+| 8   | ~~**No bundle analyzer** — can't inspect web bundle size                                                | Add `@next/bundle-analyzer`                       | 15 min | ✅ Done |
+| 9   | ~~**No favicon** — browser tab shows default Next.js icon                                               | Add favicon/icons from brand assets               | 15 min | ✅ Done |
 
 ## Feature Roadmap
 
