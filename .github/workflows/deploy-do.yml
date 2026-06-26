@@ -67,13 +67,13 @@ jobs:
         run: |
           # Install doctl
           curl -sL https://github.com/digitalocean/doctl/releases/download/v1.115.0/doctl-1.115.0-linux-amd64.tar.gz | tar -xz -C /usr/local/bin
-          # Get droplet IP by name - doctl output may have IP on next line
+          # Get droplet IP using JSON output for reliability
           echo "Looking for droplet: ${{ steps.env.outputs.droplet_name }}"
-          # Get all output and find the IP after the droplet name
-          DOCTL_OUTPUT=$(doctl compute droplet list --format Name,PublicIPv4 --no-header)
-          echo "Full doctl output:"
-          echo "$DOCTL_OUTPUT"
-          DROPLET_IP=$(echo "$DOCTL_OUTPUT" | awk -v name="${{ steps.env.outputs.droplet_name }}" '$1 == name {print $2; next} $1 ~ "^" name "$" {getline; print $1; exit}')
+          DOCTL_JSON=$(doctl compute droplet list --output json)
+          echo "Full doctl JSON output:"
+          echo "$DOCTL_JSON"
+          # Use jq to extract IP for exact name match
+          DROPLET_IP=$(echo "$DOCTL_JSON" | jq -r --arg name "${{ steps.env.outputs.droplet_name }}" '.[] | select(.name == $name) | .public_ipv4')
           echo "Extracted IP: '$DROPLET_IP'"
           # Validate IP format
           if [[ ! "$DROPLET_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
