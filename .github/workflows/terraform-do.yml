@@ -62,7 +62,13 @@ jobs:
       - name: Terraform Init
         run: |
           terraform init \
-            -backend-config="env/backend.${{ steps.env.outputs.name }}.hcl"
+            -backend-config="bucket=portal-terraform-state" \
+            -backend-config="key=digitalocean/${{ steps.env.outputs.name }}/terraform.tfstate" \
+            -backend-config="region=us-east-1" \
+            -backend-config="skip_credentials_validation=true" \
+            -backend-config="skip_metadata_api_check=true" \
+            -backend-config="skip_requesting_account_id=true" \
+            -backend-config="encrypt=true"
         env:
           AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
 
@@ -137,11 +143,19 @@ jobs:
           path: infra/terraform/digitalocean
 
       - name: Terraform Init
-        run: terraform init -backend-config="env/backend.dev.hcl"
+        run: |
+          terraform init \
+            -backend-config="bucket=portal-terraform-state" \
+            -backend-config="key=digitalocean/dev/terraform.tfstate" \
+            -backend-config="region=us-east-1" \
+            -backend-config="skip_credentials_validation=true" \
+            -backend-config="skip_metadata_api_check=true" \
+            -backend-config="skip_requesting_account_id=true" \
+            -backend-config="encrypt=true"
         env:
           AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve tfplan tfplan
         env:
           AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
