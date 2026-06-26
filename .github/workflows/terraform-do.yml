@@ -61,6 +61,10 @@ jobs:
 
       - name: Terraform Init
         run: |
+          export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
+          export AWS_ACCESS_KEY_ID=""
+          export AWS_SECRET_ACCESS_KEY=""
+          export AWS_SDK_LOAD_CONFIG=0
           terraform init \
             -backend-config="bucket=portal-terraform-state" \
             -backend-config="key=digitalocean/${{ steps.env.outputs.name }}/terraform.tfstate" \
@@ -69,11 +73,6 @@ jobs:
             -backend-config="skip_metadata_api_check=true" \
             -backend-config="skip_requesting_account_id=true" \
             -backend-config="encrypt=true"
-        env:
-          AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
-          AWS_ACCESS_KEY_ID: ""
-          AWS_SECRET_ACCESS_KEY: ""
-          AWS_SDK_LOAD_CONFIG: "0"
 
       - name: Terraform Validate
         run: terraform validate
@@ -118,12 +117,12 @@ jobs:
           path: infra/terraform/digitalocean
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-        env:
-          AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
-          AWS_ACCESS_KEY_ID: ""
-          AWS_SECRET_ACCESS_KEY: ""
-          AWS_SDK_LOAD_CONFIG: "0"
+        run: |
+          export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
+          export AWS_ACCESS_KEY_ID=""
+          export AWS_SECRET_ACCESS_KEY=""
+          export AWS_SDK_LOAD_CONFIG=0
+          terraform apply -auto-approve tfplan
 
   terraform-apply-dev:
     needs: terraform-plan
@@ -150,6 +149,10 @@ jobs:
 
       - name: Terraform Init
         run: |
+          export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
+          export AWS_ACCESS_KEY_ID=""
+          export AWS_SECRET_ACCESS_KEY=""
+          export AWS_SDK_LOAD_CONFIG=0
           terraform init \
             -backend-config="bucket=portal-terraform-state" \
             -backend-config="key=digitalocean/dev/terraform.tfstate" \
@@ -158,16 +161,11 @@ jobs:
             -backend-config="skip_metadata_api_check=true" \
             -backend-config="skip_requesting_account_id=true" \
             -backend-config="encrypt=true"
-        env:
-          AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
-          AWS_ACCESS_KEY_ID: ""
-          AWS_SECRET_ACCESS_KEY: ""
-          AWS_SDK_LOAD_CONFIG: "0"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-        env:
-          AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
-          AWS_ACCESS_KEY_ID: ""
-          AWS_SECRET_ACCESS_KEY: ""
-          AWS_SDK_LOAD_CONFIG: "0"
+        run: |
+          export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
+          export AWS_ACCESS_KEY_ID=""
+          export AWS_SECRET_ACCESS_KEY=""
+          export AWS_SDK_LOAD_CONFIG=0
+          terraform apply -auto-approve tfplan
