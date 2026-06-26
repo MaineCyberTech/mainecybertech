@@ -132,5 +132,8 @@ jobs:
           name: tfplan-dev
           path: infra/terraform/digitalocean
 
+      - name: Terraform Init
+        run: terraform init -backend-config="env/backend.dev.hcl"
+
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
