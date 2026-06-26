@@ -67,17 +67,10 @@ jobs:
         run: |
           # Install doctl
           curl -sL https://github.com/digitalocean/doctl/releases/download/v1.115.0/doctl-1.115.0-linux-amd64.tar.gz | tar -xz -C /usr/local/bin
-          # Install jq
-          apt-get update && apt-get install -y jq
-          # Get droplet IP using JSON output for reliability
+          # Get droplet IP directly using doctl get command
           echo "Looking for droplet: ${{ steps.env.outputs.droplet_name }}"
-          DOCTL_JSON=$(doctl compute droplet list --output json)
-          echo "Full doctl JSON output (first 500 chars):"
-          echo "$DOCTL_JSON" | head -c 500
-          echo ""
-          # Use jq to extract IP for exact name match
-          DROPLET_IP=$(echo "$DOCTL_JSON" | jq -r --arg name "${{ steps.env.outputs.droplet_name }}" '.[] | select(.name == $name) | .public_ipv4')
-          echo "Extracted IP: '$DROPLET_IP'"
+          DROPLET_IP=$(doctl compute droplet get ${{ steps.env.outputs.droplet_name }} --format PublicIPv4 --no-header)
+          echo "Droplet IP: $DROPLET_IP"
           # Validate IP format
           if [[ ! "$DROPLET_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "ERROR: Invalid IP format: '$DROPLET_IP'"
