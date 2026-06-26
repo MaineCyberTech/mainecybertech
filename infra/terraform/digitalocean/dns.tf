@@ -5,7 +5,7 @@ resource "cloudflare_dns_record" "prod_www" {
   zone_id = var.cloudflare_zone_id
   name    = "www"
   type    = "A"
-  content = digitalocean_droplet.portal.ipv4_address
+  content = digitalocean_reserved_ip.portal.ip_address
   ttl     = 1
   proxied = true
 }
@@ -15,7 +15,7 @@ resource "cloudflare_dns_record" "prod_app" {
   zone_id = var.cloudflare_zone_id
   name    = "app"
   type    = "A"
-  content = digitalocean_droplet.portal.ipv4_address
+  content = digitalocean_reserved_ip.portal.ip_address
   ttl     = 1
   proxied = true
 }
@@ -25,7 +25,7 @@ resource "cloudflare_dns_record" "prod_api" {
   zone_id = var.cloudflare_zone_id
   name    = "api"
   type    = "A"
-  content = digitalocean_droplet.portal.ipv4_address
+  content = digitalocean_reserved_ip.portal.ip_address
   ttl     = 1
   proxied = true
 }
@@ -36,7 +36,7 @@ resource "cloudflare_dns_record" "test_www" {
   zone_id = var.cloudflare_zone_id_us
   name    = "www"
   type    = "A"
-  content = digitalocean_droplet.portal.ipv4_address
+  content = digitalocean_reserved_ip.portal.ip_address
   ttl     = 1
   proxied = true
 }
@@ -46,7 +46,7 @@ resource "cloudflare_dns_record" "test_app" {
   zone_id = var.cloudflare_zone_id_us
   name    = "app"
   type    = "A"
-  content = digitalocean_droplet.portal.ipv4_address
+  content = digitalocean_reserved_ip.portal.ip_address
   ttl     = 1
   proxied = true
 }
@@ -56,7 +56,7 @@ resource "cloudflare_dns_record" "test_api" {
   zone_id = var.cloudflare_zone_id_us
   name    = "api"
   type    = "A"
-  content = digitalocean_droplet.portal.ipv4_address
+  content = digitalocean_reserved_ip.portal.ip_address
   ttl     = 1
   proxied = true
 }

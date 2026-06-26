@@ -6,6 +6,7 @@ resource "digitalocean_droplet" "portal" {
   ssh_keys = [var.ssh_fingerprint]
 
   monitoring = true
+  tags       = ["mct-portal", var.environment]
 
   user_data = templatefile("${path.module}/cloud-init.yml", {
     docker_compose_dir = var.docker_compose_dir
@@ -16,4 +17,10 @@ resource "digitalocean_droplet" "portal" {
     prevent_destroy = true
     ignore_changes  = [user_data]
   }
+}
+
+resource "digitalocean_reserved_ip" "portal" {
+  region      = var.droplet_region
+  droplet_id  = digitalocean_droplet.portal.id
+  description = "Reserved IP for mct-portal-${var.environment}"
 }
