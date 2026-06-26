@@ -71,6 +71,9 @@ jobs:
             -backend-config="encrypt=true"
         env:
           AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
+          AWS_ACCESS_KEY_ID: ""
+          AWS_SECRET_ACCESS_KEY: ""
+          AWS_SDK_LOAD_CONFIG: "0"
 
       - name: Terraform Validate
         run: terraform validate
@@ -118,6 +121,9 @@ jobs:
         run: terraform apply -auto-approve tfplan
         env:
           AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
+          AWS_ACCESS_KEY_ID: ""
+          AWS_SECRET_ACCESS_KEY: ""
+          AWS_SDK_LOAD_CONFIG: "0"
 
   terraform-apply-dev:
     needs: terraform-plan
@@ -154,8 +160,14 @@ jobs:
             -backend-config="encrypt=true"
         env:
           AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
+          AWS_ACCESS_KEY_ID: ""
+          AWS_SECRET_ACCESS_KEY: ""
+          AWS_SDK_LOAD_CONFIG: "0"
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan tfplan
+        run: terraform apply -auto-approve tfplan
         env:
           AWS_ENDPOINT_URL: https://nyc3.digitaloceanspaces.com
+          AWS_ACCESS_KEY_ID: ""
+          AWS_SECRET_ACCESS_KEY: ""
+          AWS_SDK_LOAD_CONFIG: "0"
