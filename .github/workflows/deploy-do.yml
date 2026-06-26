@@ -67,9 +67,10 @@ jobs:
         run: |
           # Install doctl
           curl -sL https://github.com/digitalocean/doctl/releases/download/v1.115.0/doctl-1.115.0-linux-amd64.tar.gz | tar -xz -C /usr/local/bin
-          # Get droplet IP by name
+          # Get droplet IP by name - doctl output may have IP on next line
           echo "Looking for droplet: ${{ steps.env.outputs.droplet_name }}"
-          DROPLET_IP=$(doctl compute droplet list --format Name,PublicIPv4 --no-header | grep -E "^${{ steps.env.outputs.droplet_name }}($| )" | awk '{print $2}')
+          # Get all output and find the IP after the droplet name
+          DROPLET_IP=$(doctl compute droplet list --format Name,PublicIPv4 --no-header | awk -v name="${{ steps.env.outputs.droplet_name }}" '$1 == name {print $2; next} $1 ~ "^" name "$" {getline; print $1; exit}')
           # Validate IP format
           if [[ ! "$DROPLET_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "ERROR: Invalid IP format: '$DROPLET_IP'"
