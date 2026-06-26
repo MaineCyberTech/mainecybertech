@@ -43,12 +43,17 @@ jobs:
 
       - name: Create tfvars file
         id: tfvars
+        env:
+          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+          DO_SSH_FINGERPRINT: ${{ secrets.DO_SSH_FINGERPRINT }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
         run: |
           cat > "${{ steps.env.outputs.name }}.tfvars" <<EOF
-          do_token              = "${{ secrets.DO_API_TOKEN }}"
-          ssh_fingerprint       = "${{ secrets.DO_SSH_FINGERPRINT }}"
-          cloudflare_api_token  = "${{ secrets.CLOUDFLARE_API_TOKEN }}"
-          cloudflare_zone_id    = "${{ secrets.CLOUDFLARE_ZONE_ID }}"
+          do_token              = "${DO_API_TOKEN}"
+          ssh_fingerprint       = "${DO_SSH_FINGERPRINT}"
+          cloudflare_api_token  = "${CLOUDFLARE_API_TOKEN}"
+          cloudflare_zone_id    = "${CLOUDFLARE_ZONE_ID}"
           droplet_size          = "s-1vcpu-512mb-10gb"
           environment           = "${{ steps.env.outputs.name }}"
           EOF
@@ -66,11 +71,6 @@ jobs:
         run: |
           terraform plan \
             -var-file="${{ steps.env.outputs.name }}.tfvars" \
-            -var="do_token=${{ secrets.DO_API_TOKEN }}" \
-            -var="cloudflare_api_token=${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            -var="cloudflare_zone_id=${{ secrets.CLOUDFLARE_ZONE_ID }}" \
-            -var="ssh_fingerprint=${{ secrets.DO_SSH_FINGERPRINT }}" \
-            -var="environment=${{ steps.env.outputs.name }}" \
             -no-color \
             -out=tfplan
         continue-on-error: false
