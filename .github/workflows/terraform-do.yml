@@ -18,6 +18,7 @@ jobs:
     defaults:
       run:
         working-directory: infra/terraform/digitalocean
+    environment: dev
 
     steps:
       - name: Checkout
