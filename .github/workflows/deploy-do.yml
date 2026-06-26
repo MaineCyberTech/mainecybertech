@@ -70,12 +70,14 @@ jobs:
           # Get droplet IP by name - doctl output may have IP on next line
           echo "Looking for droplet: ${{ steps.env.outputs.droplet_name }}"
           # Get all output and find the IP after the droplet name
-          DROPLET_IP=$(doctl compute droplet list --format Name,PublicIPv4 --no-header | awk -v name="${{ steps.env.outputs.droplet_name }}" '$1 == name {print $2; next} $1 ~ "^" name "$" {getline; print $1; exit}')
+          DOCTL_OUTPUT=$(doctl compute droplet list --format Name,PublicIPv4 --no-header)
+          echo "Full doctl output:"
+          echo "$DOCTL_OUTPUT"
+          DROPLET_IP=$(echo "$DOCTL_OUTPUT" | awk -v name="${{ steps.env.outputs.droplet_name }}" '$1 == name {print $2; next} $1 ~ "^" name "$" {getline; print $1; exit}')
+          echo "Extracted IP: '$DROPLET_IP'"
           # Validate IP format
           if [[ ! "$DROPLET_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "ERROR: Invalid IP format: '$DROPLET_IP'"
-            echo "Full doctl output:"
-            doctl compute droplet list --format Name,PublicIPv4 --no-header
             exit 1
           fi
           echo "Droplet IP: $DROPLET_IP"
