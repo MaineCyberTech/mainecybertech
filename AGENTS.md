@@ -6,6 +6,37 @@ Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infra
 
 **Hardening Prompt Pack Audit (2026-06-23):** Full 8-domain adversarial audit executed via `prompts/hardening_prompt_pack/`. Domains: Security, Data Integrity, Resilience, Observability, Supply Chain, Privacy, CI/CD, Evolution/Platform. **89 deduplicated findings** (12 P0 Critical, 28 P1 High, 49 P2 Medium). **Global Risk Score: 0/100 (CRITICAL)**. **All 12 P0s fixed** (graceful shutdown, Terraform gates, prod approval, cookie flags, local JWT, image tagging, circuit breaker on Supabase, outbound HTTP timeouts, secrets in SSH deploy logs, tenant isolation). See `docs/HARDENING_AUDIT_2026-06-23.md` for full report.
 
+### 🎯 Architectural Synthesis (2026-06-10)
+
+The MCT platform is a **Hybrid Platform Monorepo** operating as a highly resilient Modular Monolith. Its strength lies in the robust separation of concerns across its services, while maintaining transactional consistency via shared core packages (`@mct/config`).
+
+#### 🗺️ Repository Structure & Flow
+
+- **Services:** API (Gateway), Web (Client UI), Worker (Async Jobs).
+- **Flow:** Authentication is managed by a critical middleware layer that enforces JWT validation and multi-domain routing. All subsequent requests are gated by `requireOrgAccess()`, ensuring mandatory tenancy isolation.
+- **Data Flow:** Data ingress → Validation/Authorization Middleware → Supabase Persistence + Audit Logging → Potential Asynchronous Side Effects (Worker).
+
+#### 🛡️ Security Model Highlights
+
+The security architecture is a layered defense model:
+
+1.  **Edge Protection:** Cloudflare CDN/WAF handles rate limiting and basic DDoS protection.
+2.  **Request Validation:** `middleware.ts` performs JWT expiry checks and domain routing.
+3.  **Authorization Core (API):** The combination of the `requireOrgAccess()` middleware with RLS policies on Supabase enforces data access boundaries at the most granular level.
+4.  **Secrets Management:** Secrets are managed via GitHub Environments/SSM, never hardcoded in application code or config files.
+
+### 📈 Operational Resilience & Best Practices (Hardened)
+
+The platform is engineered for uptime and reliability through several advanced patterns:
+
+- **Graceful Shutdowns:** Implemented for both API and Worker processes to guarantee clean state draining during deployments.
+- **Circuit Breaking/Timeouts:** Outbound external calls utilize circuit breakers, retries, and timeouts (JSM, Stripe) preventing cascading failure from third parties.
+- **Observability:** Structured logging (`pino`), X-Request-ID correlation IDs, and integrated Sentry error tracking provide end-to-end visibility into failures.
+
+### 🧱 Key Architectural Decisions:
+
+_(Details on why specific patterns were chosen are recorded in `docs/CODE_REVIEW_2026-06-16.md`)_
+
 ## Architecture
 
 MCT is a **Turborepo monorepo** with 4 packages:
