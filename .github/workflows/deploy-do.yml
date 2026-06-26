@@ -69,11 +69,14 @@ jobs:
           curl -sL https://github.com/digitalocean/doctl/releases/download/v1.115.0/doctl-1.115.0-linux-amd64.tar.gz | tar -xz -C /usr/local/bin
           # Get droplet IP directly using doctl get command
           echo "Looking for droplet: ${{ steps.env.outputs.droplet_name }}"
-          DROPLET_IP=$(doctl compute droplet get ${{ steps.env.outputs.droplet_name }} --format PublicIPv4 --no-header)
-          echo "Droplet IP: $DROPLET_IP"
+          echo "Running: doctl compute droplet get ${{ steps.env.outputs.droplet_name }} --format PublicIPv4 --no-header"
+          DROPLET_IP=$(doctl compute droplet get ${{ steps.env.outputs.droplet_name }} --format PublicIPv4 --no-header 2>&1)
+          echo "Raw command output: '$DROPLET_IP'"
           # Validate IP format
           if [[ ! "$DROPLET_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "ERROR: Invalid IP format: '$DROPLET_IP'"
+            echo "Trying alternative: doctl compute droplet list --format Name,PublicIPv4 --no-header"
+            doctl compute droplet list --format Name,PublicIPv4 --no-header
             exit 1
           fi
           echo "Droplet IP: $DROPLET_IP"
