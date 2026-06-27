@@ -1,3 +1,129 @@
+name: deploy-do
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: Target environment
+        type: choice
+        options: [dev, prod]
+        default: dev
+  push:
+    branches: [main, develop]
+    paths:
+      - "apps/api/**"
+      - "apps/web/**"
+      - "apps/worker/**"
+      - "packages/**"
+      - "infra/digitalocean/**"
+      - ".github/workflows/deploy-do.yml"
+
+env:
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      name: ${{ steps.env.outputs.name }}
+      app_domain: ${{ steps.env.outputs.app_domain }}
+      api_domain: ${{ steps.env.outputs.api_domain }}
+      www_domain: ${{ steps.env.outputs.www_domain }}
+      deploy_host: ${{ steps.env.outputs.deploy_host }}
+      cors_origin: ${{ steps.env.outputs.cors_origin }}
+      ghcr_prefix: ${{ steps.env.outputs.ghcr_prefix }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ] || [ "${{ github.event.inputs.deploy_target }}" = "prod" ]; then
+            APP_DOMAIN=app.mainecybertech.com
+            API_DOMAIN=api.mainecybertech.com
+            WWW_DOMAIN=www.mainecybertech.com
+            DEPLOY_HOST=app.mainecybertech.com
+            ENV_NAME=prod
+          else
+            APP_DOMAIN=app.mainecybertech.us
+            API_DOMAIN=api.mainecybertech.us
+            WWW_DOMAIN=www.mainecybertech.us
+            DEPLOY_HOST=app.mainecybertech.us
+            ENV_NAME=dev
+          fi
+          echo "name=$ENV_NAME" >> $GITHUB_OUTPUT
+          echo "app_domain=$APP_DOMAIN" >> $GITHUB_OUTPUT
+          echo "api_domain=$API_DOMAIN" >> $GITHUB_OUTPUT
+          echo "www_domain=$WWW_DOMAIN" >> $GITHUB_OUTPUT
+          echo "deploy_host=$DEPLOY_HOST" >> $GITHUB_OUTPUT
+          echo "cors_origin=https://$APP_DOMAIN,https://$WWW_DOMAIN" >> $GITHUB_OUTPUT
+          echo "ghcr_prefix=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+  build-api:
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-worker:
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/worker/Dockerfile
+          push: true
+          tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-web:
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://${{ needs.setup.outputs.api_domain }}
+          tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   deploy:
     needs: [setup, build-api, build-worker, build-web]
     runs-on: ubuntu-latest
