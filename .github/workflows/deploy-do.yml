@@ -151,8 +151,7 @@ jobs:
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          SSH_SECRET_NAME="${{ needs.setup.outputs.name == 'prod' && 'DO_SSH_PRIVATE_KEY' || 'DO_SSH_PRIVATE_KEY' }}"
-          echo "${{ secrets[SSH_SECRET_NAME] }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.DO_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           PASSPHRASE="${{ secrets.DO_SSH_PASSPHRASE }}"
           if [ -n "$PASSPHRASE" ] && [ -n "${PASSPHRASE// /}" ]; then

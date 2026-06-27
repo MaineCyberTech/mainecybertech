@@ -12,11 +12,11 @@ jobs:
         with:
           script: |
             const data = require('./dashboards/data/sample_data.json');
-            const body = `### Alignment Results
-P0: ${data.p0}
-P1: ${data.p1}
-P2: ${data.p2}
-P3: ${data.p3}`;
+            const body = '### Alignment Results\n' +
+              'P0: ' + data.p0 + '\n' +
+              'P1: ' + data.p1 + '\n' +
+              'P2: ' + data.p2 + '\n' +
+              'P3: ' + data.p3;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
