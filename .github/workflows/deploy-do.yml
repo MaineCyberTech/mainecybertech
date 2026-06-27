@@ -198,6 +198,7 @@ jobs:
           host: ${{ needs.setup.outputs.deploy_host }}
           username: root
           key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          envs: IMAGE_TAG,GHCR_IMAGE_PREFIX,GHCR_USERNAME,GHCR_TOKEN,CF_ORIGIN_CERT,CF_ORIGIN_KEY
           script: |
             set -e
             echo "$GHCR_TOKEN" | docker login ghcr.io -u $GHCR_USERNAME --password-stdin
@@ -217,6 +218,13 @@ jobs:
             IMAGE_TAG=$IMAGE_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --remove-orphans
             sleep 15
             docker compose ps --format 'table {{.Name}}\t{{.Status}}'
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          GHCR_IMAGE_PREFIX: ${{ needs.setup.outputs.ghcr_prefix }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
+          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
 
       - name: Health check
         env:
