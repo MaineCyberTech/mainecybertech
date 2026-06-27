@@ -71,17 +71,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: |
-          terraform init \
-            -input=false \
-            -backend-config="bucket=portal-terraform-state" \
-            -backend-config="key=digitalocean/terraform.tfstate" \
-            -backend-config="region=us-east-1" \
-            -backend-config="endpoint=https://nyc3.digitaloceanspaces.com" \
-            -backend-config="skip_credentials_validation=true" \
-            -backend-config="skip_metadata_api_check=true" \
-            -backend-config="skip_requesting_account_id=true" \
-            -backend-config="encrypt=true"
+        run: terraform init -input=false
 
       - name: Terraform Validate
         run: terraform validate
@@ -146,17 +136,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: |
-          terraform init \
-            -input=false \
-            -backend-config="bucket=portal-terraform-state" \
-            -backend-config="key=digitalocean/terraform.tfstate" \
-            -backend-config="region=us-east-1" \
-            -backend-config="endpoint=https://nyc3.digitaloceanspaces.com" \
-            -backend-config="skip_credentials_validation=true" \
-            -backend-config="skip_metadata_api_check=true" \
-            -backend-config="skip_requesting_account_id=true" \
-            -backend-config="encrypt=true"
+        run: terraform init -input=false
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -input=false tfplan
@@ -188,17 +168,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: |
-          terraform init \
-            -input=false \
-            -backend-config="bucket=portal-terraform-state" \
-            -backend-config="key=digitalocean/terraform.tfstate" \
-            -backend-config="region=us-east-1" \
-            -backend-config="endpoint=https://nyc3.digitaloceanspaces.com" \
-            -backend-config="skip_credentials_validation=true" \
-            -backend-config="skip_metadata_api_check=true" \
-            -backend-config="skip_requesting_account_id=true" \
-            -backend-config="encrypt=true"
+        run: terraform init -input=false
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -input=false tfplan
