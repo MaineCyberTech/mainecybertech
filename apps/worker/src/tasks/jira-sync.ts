@@ -1,6 +1,6 @@
 import pino from "pino";
-import { env } from "../main";
-import type { TaskHandler, TaskResult } from "../main";
+import { env } from "../env";
+import type { TaskHandler, TaskResult } from "../task-registry";
 
 const logger = pino({ level: env.LOG_LEVEL });
 

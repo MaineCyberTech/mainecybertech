@@ -144,15 +144,44 @@ During a comprehensive audit the following were identified and fixed:
 | 4   | ~~No favicon — Browser shows default Next.js icon~~                                 | `apps/web/app/layout.tsx` / `public/`    | 🔴 Critical | ✅ **FIXED** |
 | 5   | ~~No bundle analyzer — Cannot inspect web bundle size~~                             | Add `@next/bundle-analyzer`              | 🟡 High     | ✅ **FIXED** |
 
+## Repo Audit (2026-06-26)
+
+Full 8-phase comparative audit against reference repo `C:\temp\chat` (chat-platform). See `prompts/repo_audit_prompt_pack/MERGED_REPO_AUDIT_SUMMARY.md` for full report.
+
+### Verified Findings — P0 Items Already Implemented
+
+| # | Issue | Location | Status |
+|---|-------|----------|--------|
+| 1 | Terraform env files exist — `dev.tfvars` has real values; `prod.tfvars` uses placeholders (CI injects from GH Secrets) | `infra/terraform/digitalocean/env/` | ✅ Done — CI dynamically creates tfvars |
+| 2 | Admin page tests exist — all 4 pages have test files | `apps/web/__tests__/app/(admin)/` | ✅ Done — 7+3+6+4 = 20 tests covering webhooks, health, bulk-invite, billing |
+| 3 | JSM/Teams webhook fully implemented — Teams Adaptive Cards + JSM servicedesk API | `apps/api/src/routes/public.ts` | ✅ Done — full implementation with error handling |
+
+### Actual Open Gaps from Audit
+
+| # | Issue | Location | Impact | Status |
+|---|-------|----------|--------|--------|
+| 4 | ~~Root package.json scripts simplified~~ | ~~`package.json`~~ | ~~📋 Medium~~ | ✅ Done |
+| 5 | ~~Shared mock builder utilities created and integrated into admin tests~~ | ~~`apps/web/lib/test-utils.ts` + 4 test files~~ | ~~📋 Medium~~ | ✅ Done |
+| 6 | Prettier config added (`.prettierrc.json` + `.prettierignore`) | Root | 📋 Low | ✅ Done |
+| 7 | `.gitignore` pruned to essential entries (137 → 43 lines) | `.gitignore` | 📋 Low | ✅ Done |
+
+### Comparative Audit Summary
+
+- **Testing:** MCT 769 tests vs Chat 15 tests — MCT vastly superior
+- **Documentation:** MCT 37 docs vs Chat 1 (AGENTS.md) — MCT superior
+- **Env hygiene:** MCT Zod-validated per service vs Chat `.env.local.example` — MCT superior
+- **CI/CD safety:** MCT gated/approval-required vs Chat flat workflows — MCT superior
+- **Chat patterns worth adopting:** real env config files, mock builder test utilities, date-based migration naming, simpler root scripts
+
 ### Technical Debt
 
 | #   | Issue                                                                       | Location                                                 | Impact      | Status          |
 | --- | --------------------------------------------------------------------------- | -------------------------------------------------------- | ----------- | --------------- |
 | 6   | **0 ESLint warnings** (unused vars, missing deps in hooks, `iconOnly` prop) | `apps/web/`, `apps/api/`, `apps/worker/`                 | Medium      | ✅ Reduced to 0 |
-| 7   | `@mct/ui` & `@mct/config` not wired into apps                               | `apps/*/package.json`                                    | Medium      | Pending         |
-| 8   | ESLint `MODULE_TYPELESS_PACKAGE_JSON` warnings — need `"type": "module"`    | `apps/api`, `apps/web`, `apps/worker`, `packages/config` | Low         | Pending         |
-| 9   | React `iconOnly` prop warning — passed to DOM element                       | `apps/web/components/admin/ProjectTaskListV5.tsx`        | Low         | Pending         |
-| 10  | `pnpm build` (web) fails on Windows EPERM — symlink issue (pre-existing)    | `apps/web/next.config.mjs`                               | Known issue | Known           |
+| 7   | ~~`@mct/ui` & `@mct/config` not wired into apps~~                           | ~~`apps/*/package.json`~~                                | ~~Medium~~  | ✅ Already wired via tsconfig extends + path aliases |
+| 8   | Root `package.json` scripts simplified (ci script added, unused scripts removed) | `package.json` (root)                                | Low         | ✅ Done |
+| 9   | ~~Shared test utilities created (`lib/test-utils.ts`)~~ | ~~`apps/web/lib/test-utils.ts`~~                         | ~~Low~~    | ✅ Done — integrated into webhooks/health/bulk-invite/billing tests |
+| 10  | `pnpm build` (web) fails on Windows EPERM — symlink issue (pre-existing) | `apps/web/next.config.mjs` | Known issue | Known |
 
 ### Documentation Gaps
 

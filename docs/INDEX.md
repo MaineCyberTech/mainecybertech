@@ -55,6 +55,7 @@
 | [docs/ROLLBACK_PROCEDURES.md](ROLLBACK_PROCEDURES.md)                                                                 | ECS, Vercel, Supabase, Terraform rollback                              |
 | [docs/MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md)                                                         | Monitoring strategy, alerting setup, dashboards                        |
 | [docs/SECRETS_ROTATION.md](SECRETS_ROTATION.md)                                                                       | Rotation schedule, procedures, emergency rotation                      |
+| [docs/JWT_ROTATION.md](JWT_ROTATION.md)                                                                               | JWT secret rotation policy and procedures                              |
 | [docs/API_RATE_LIMITING.md](API_RATE_LIMITING.md)                                                                     | Rate limit configuration and behavior (300/15min)                      |
 | [docs/API_VERSIONING.md](API_VERSIONING.md)                                                                           | API versioning strategy                                                |
 | [docs/CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md](CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md)                   | Cloudflare caching and proxy configuration                             |

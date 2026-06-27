@@ -4,7 +4,12 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
+import {
+  requireIfMatch,
+  checkVersionMatch,
+} from "../middleware/optimistic-locking";
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -25,10 +30,23 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
+const projectExportColumns: CsvColumn[] = [
+  { key: "id" },
+  { key: "organization_id" },
+  { key: "name" },
+  { key: "description" },
+  { key: "status" },
+  { key: "priority" },
+  { key: "starts_at" },
+  { key: "due_at" },
+  { key: "external_jira_project_key" },
+  { key: "created_at" },
+  { key: "updated_at" },
+];
+
 router.get("/export", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const format = (req.query.format as string) || "csv";
 
     let query = supabase.from("projects").select("*");
 
@@ -44,50 +62,7 @@ router.get("/export", async (req, res, next) => {
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    const rows = data ?? [];
-
-    if (format === "json") {
-      res.setHeader("Content-Type", "application/json");
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="projects-export-${Date.now()}.json"`,
-      );
-      res.json(rows);
-      return;
-    }
-
-    const headers = [
-      "id",
-      "organization_id",
-      "name",
-      "description",
-      "status",
-      "priority",
-      "starts_at",
-      "due_at",
-      "external_jira_project_key",
-      "created_at",
-      "updated_at",
-    ];
-    const csvRows = [headers.join(",")];
-    for (const row of rows) {
-      const vals = headers.map((h) => {
-        const v = row[h];
-        if (v === null || v === undefined) return "";
-        const s = typeof v === "object" ? JSON.stringify(v) : String(v);
-        return s.includes(",") || s.includes('"') || s.includes("\n")
-          ? `"${s.replace(/"/g, '""')}"`
-          : s;
-      });
-      csvRows.push(vals.join(","));
-    }
-
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="projects-export-${Date.now()}.csv"`,
-    );
-    res.send(csvRows.join("\n"));
+    sendExportResponse(res, data ?? [], projectExportColumns, "projects");
   } catch (error) {
     next(error);
   }
@@ -295,10 +270,22 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateProjectSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+
+    const { data: current, error: fetchError } = await supabase
+      .from("projects")
+      .select("version")
+      .eq("id", req.params.id)
+      .single();
+
+    if (fetchError || !current) {
+      throw new AppError("NOT_FOUND", "Project not found", 404);
+    }
+
+    checkVersionMatch(current.version, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -311,15 +298,23 @@ router.patch("/:id", async (req, res, next) => {
     if (parsed.externalJiraProjectKey !== undefined)
       updateData.external_jira_project_key = parsed.externalJiraProjectKey;
 
+    updateData.version = current.version + 1;
+
     const { data, error } = await supabase
       .from("projects")
       .update(updateData)
       .eq("id", req.params.id)
+      .eq("version", current.version)
       .select()
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Project not found", 404);
+    if (!data)
+      throw new AppError(
+        "VERSION_CONFLICT",
+        "Project was modified by another user",
+        409,
+      );
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

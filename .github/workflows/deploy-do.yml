@@ -8,6 +8,10 @@ on:
         type: choice
         options: [dev, prod]
         default: dev
+      rollback:
+        description: "Rollback to previous deployment"
+        type: boolean
+        default: false
   push:
     branches: [main, develop]
     paths:
@@ -220,7 +224,12 @@ jobs:
           echo "TRANSFER_COMPOSE_EXIT=$?"
 
           echo "--- TRANSFERRING CADDYFILE ---"
-          base64 -w0 infra/digitalocean/Caddyfile | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/Caddyfile" 2>&1
+          CADDYFILE_SRC="infra/digitalocean/Caddyfile.${{ steps.env.outputs.name }}"
+          if [ ! -f "$CADDYFILE_SRC" ]; then
+            echo "Caddyfile for ${{ steps.env.outputs.name }} not found at $CADDYFILE_SRC, falling back to Caddyfile"
+            CADDYFILE_SRC="infra/digitalocean/Caddyfile"
+          fi
+          base64 -w0 "$CADDYFILE_SRC" | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/Caddyfile" 2>&1
           echo "TRANSFER_CADDY_EXIT=$?"
 
           echo "--- TRANSFERRING TLS CERTS ---"
@@ -255,3 +264,78 @@ jobs:
           echo "--- EXECUTING DEPLOY ---"
           ssh $SSH_OPTS root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX" 2>&1
           echo "DEPLOY_EXIT=$?"
+
+      - name: Health check after deploy
+        env:
+          API_DOMAIN: ${{ steps.env.outputs.api_domain }}
+          APP_DOMAIN: ${{ steps.env.outputs.app_domain }}
+        run: |
+          set +e
+          echo "--- API HEALTH CHECK ---"
+          for i in $(seq 1 30); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null)
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "API ready after $((i * 4))s"
+              break
+            fi
+            echo "Attempt $i/30: API returned $HTTP_CODE, waiting 4s..."
+            sleep 4
+          done
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "API never became healthy after 30 attempts"
+            exit 1
+          fi
+
+          echo "--- WEB HEALTH CHECK ---"
+          for i in $(seq 1 15); do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null)
+            if [ "$HTTP_CODE" != "000" ] && [ -n "$HTTP_CODE" ]; then
+              echo "Web ready after $((i * 4))s (HTTP $HTTP_CODE)"
+              break
+            fi
+            echo "Attempt $i/15: Web not reachable, waiting 4s..."
+            sleep 4
+          done
+          if [ "$HTTP_CODE" = "000" ] || [ -z "$HTTP_CODE" ]; then
+            echo "Web never became reachable after 15 attempts"
+            exit 1
+          fi
+
+          echo "--- HEALTH CHECKS PASSED ---"
+          set -e
+
+      - name: Rollback on failure
+        if: failure() && steps.env.outputs.ghcr_prefix != ''
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          GHCR_IMAGE_PREFIX: ${{ steps.env.outputs.ghcr_prefix }}
+          GHCR_USERNAME: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HOST: ${{ steps.env.outputs.deploy_host }}
+        run: |
+          set +e
+          echo "--- ROLLBACK TRIGGERED ---"
+          # Find previous image tags on the droplet
+          ssh $SSH_OPTS root@$HOST "
+            docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | head -3
+          " 2>&1
+          # Could add auto-rollback logic here if previous tag is known
+          echo "Manual rollback required: docker compose pull previous tags and docker compose up -d"
+          set -e
+
+      - name: Manual rollback workflow dispatch
+        if: inputs.rollback == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'deploy-do.yml',
+              ref: '${{ github.ref_name }}',
+              inputs: {
+                deploy_target: '${{ steps.env.outputs.name }}',
+                rollback: 'false'
+              }
+            });
+            console.log('Rollback workflow dispatched');

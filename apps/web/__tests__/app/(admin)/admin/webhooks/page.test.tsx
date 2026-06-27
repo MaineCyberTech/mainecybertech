@@ -1,15 +1,17 @@
 import { render, screen } from "@testing-library/react";
+import { setupAdminPageMocks } from "@/lib/test-utils";
 
-const mockRequireAdminAccess = jest.fn();
-jest.mock("@/lib/auth/admin", () => ({
-  requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
-}));
+let mocks: ReturnType<typeof setupAdminPageMocks>;
 
 const mockWebhooksList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
     webhooks: { list: mockWebhooksList },
   }),
+}));
+
+jest.mock("@/lib/auth/admin", () => ({
+  requireAdminAccess: (...args: any[]) => mocks.requireAdminAccess(...args),
 }));
 
 jest.mock("next/link", () => {
@@ -35,21 +37,21 @@ jest.mock("@/components/admin/AdminSubnav", () => {
 describe("AdminWebhooksPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAdminAccess.mockResolvedValue(undefined);
+    mocks = setupAdminPageMocks();
+    mockWebhooksList.mockResolvedValue([]);
   });
 
   it("renders page shell with title and description", async () => {
-    mockWebhooksList.mockResolvedValue([]);
     const Page = (await import("@/app/(admin)/admin/webhooks/page")).default;
     render(await Page());
     expect(
       screen.getByRole("heading", { name: "Webhook Endpoints" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/Manage outbound webhook/)).toBeInTheDocument();
+    expect(mocks.requireAdminAccess).toHaveBeenCalledTimes(1);
   });
 
   it("renders empty state when no webhooks", async () => {
-    mockWebhooksList.mockResolvedValue([]);
     const Page = (await import("@/app/(admin)/admin/webhooks/page")).default;
     render(await Page());
     expect(
@@ -132,7 +134,6 @@ describe("AdminWebhooksPage", () => {
   });
 
   it("has new webhook button", async () => {
-    mockWebhooksList.mockResolvedValue([]);
     const Page = (await import("@/app/(admin)/admin/webhooks/page")).default;
     render(await Page());
     const newLink = screen.getByText("+ New Webhook");

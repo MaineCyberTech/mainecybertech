@@ -364,7 +364,8 @@ export default function AdminTicketCenterClient({
       setBulkStatus("");
       setBulkPriority("");
     } catch (error) {
-      console.error("Bulk update failed:", error);
+      const message = error instanceof Error ? error.message : "Bulk update failed";
+      alert(message);
     } finally {
       setBulkProcessing(false);
     }

@@ -7,10 +7,16 @@ on:
     paths:
       - "infra/terraform/digitalocean/**"
       - ".github/workflows/terraform-do.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "infra/terraform/digitalocean/**"
+      - ".github/workflows/terraform-do.yml"
 
 permissions:
   contents: read
   id-token: write
+  pull-requests: write
 
 jobs:
   terraform-plan:
@@ -83,8 +89,24 @@ jobs:
           terraform plan \
             -var-file="${{ steps.env.outputs.name }}.tfvars" \
             -no-color \
-            -out=tfplan
+            -out=tfplan 2>&1 | tee ${{ runner.temp }}/tfplan.txt
         continue-on-error: false
+
+      - name: Post plan to PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('${{ runner.temp }}/tfplan.txt', 'utf8');
+            const envName = '${{ steps.env.outputs.name }}';
+            const header = `## Terraform Plan (${envName})\n\n\`\`\`\n${planOutput.slice(0, 60000)}\n\`\`\``;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: header
+            });
 
       - name: Upload plan
         uses: actions/upload-artifact@v4

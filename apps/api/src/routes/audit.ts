@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
+import { sendExportResponse, CsvColumn } from "../lib/csv";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -47,10 +48,21 @@ router.get("/", async (req, res, next) => {
   }
 });
 
+const auditExportColumns: CsvColumn[] = [
+  { key: "id" },
+  { key: "action" },
+  { key: "entity_type" },
+  { key: "entity_id" },
+  { key: "organization_id" },
+  { key: "actor_user_id" },
+  { key: "actor_type" },
+  { key: "metadata" },
+  { key: "created_at" },
+];
+
 router.get("/export", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const format = (req.query.format as string) || "csv";
 
     let query = supabase.from("audit_logs").select("*");
 
@@ -75,48 +87,7 @@ router.get("/export", async (req, res, next) => {
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    const rows = data ?? [];
-
-    if (format === "json") {
-      res.setHeader("Content-Type", "application/json");
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="audit-export-${Date.now()}.json"`,
-      );
-      res.json(rows);
-      return;
-    }
-
-    const headers = [
-      "id",
-      "action",
-      "entity_type",
-      "entity_id",
-      "organization_id",
-      "actor_user_id",
-      "actor_type",
-      "metadata",
-      "created_at",
-    ];
-    const csvRows = [headers.join(",")];
-    for (const row of rows) {
-      const vals = headers.map((h) => {
-        const v = row[h];
-        if (v === null || v === undefined) return "";
-        const s = typeof v === "object" ? JSON.stringify(v) : String(v);
-        return s.includes(",") || s.includes('"') || s.includes("\n")
-          ? `"${s.replace(/"/g, '""')}"`
-          : s;
-      });
-      csvRows.push(vals.join(","));
-    }
-
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="audit-export-${Date.now()}.csv"`,
-    );
-    res.send(csvRows.join("\n"));
+    sendExportResponse(res, data ?? [], auditExportColumns, "audit");
   } catch (error) {
     next(error);
   }

@@ -1,6 +1,6 @@
 import Redis from "ioredis";
-import { getEnv } from "../config/env.js";
-import { logger } from "./logger.js";
+import { getEnv } from "../config/env";
+import { logger } from "./logger";
 
 let redisClient: Redis | null = null;
 

@@ -93,7 +93,11 @@ export class TicketsApi {
   }
 
   bulkUpdate(ids: string[], updates: { status?: string; priority?: string }) {
-    return this.client.post<{ updated: number }>("/api/v1/tickets/bulk", {
+    return this.client.post<{
+      results: Array<{ id: string; success: boolean; error?: string }>;
+      successful: number;
+      failed: number;
+    }>("/api/v1/tickets/bulk", {
       ids,
       ...updates,
     });

@@ -1,9 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import { setupAdminPageMocks } from "@/lib/test-utils";
 
-const mockRequireAdminAccess = jest.fn();
-jest.mock("@/lib/auth/admin", () => ({
-  requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
-}));
+let mocks: ReturnType<typeof setupAdminPageMocks>;
 
 const mockOrgGet = jest.fn();
 const mockBillingSummary = jest.fn();
@@ -23,6 +21,10 @@ jest.mock("@/lib/api", () => ({
       getBillingCustomer: mockBillingGetCustomer,
     },
   }),
+}));
+
+jest.mock("@/lib/auth/admin", () => ({
+  requireAdminAccess: (...args: any[]) => mocks.requireAdminAccess(...args),
 }));
 
 jest.mock("next/link", () => {
@@ -45,16 +47,16 @@ jest.mock(
 describe("AdminOrgBillingPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAdminAccess.mockResolvedValue(undefined);
-  });
-
-  it("renders org name and billing header", async () => {
+    mocks = setupAdminPageMocks();
     mockOrgGet.mockResolvedValue({ id: "o1", name: "Acme Corp" });
     mockBillingSummary.mockResolvedValue(null);
     mockBillingListSubs.mockResolvedValue([]);
     mockBillingListInvoices.mockResolvedValue({ items: [] });
     mockBillingListPayments.mockResolvedValue({ items: [] });
     mockBillingGetCustomer.mockResolvedValue(null);
+  });
+
+  it("renders org name and billing header", async () => {
     const Page = (
       await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")
     ).default;
@@ -64,12 +66,6 @@ describe("AdminOrgBillingPage", () => {
   });
 
   it("renders back link to organization", async () => {
-    mockOrgGet.mockResolvedValue({ id: "o1", name: "Acme Corp" });
-    mockBillingSummary.mockResolvedValue(null);
-    mockBillingListSubs.mockResolvedValue([]);
-    mockBillingListInvoices.mockResolvedValue({ items: [] });
-    mockBillingListPayments.mockResolvedValue({ items: [] });
-    mockBillingGetCustomer.mockResolvedValue(null);
     const Page = (
       await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")
     ).default;
@@ -83,11 +79,6 @@ describe("AdminOrgBillingPage", () => {
 
   it("handles null org gracefully", async () => {
     mockOrgGet.mockRejectedValue(new Error("not found"));
-    mockBillingSummary.mockResolvedValue(null);
-    mockBillingListSubs.mockResolvedValue([]);
-    mockBillingListInvoices.mockResolvedValue({ items: [] });
-    mockBillingListPayments.mockResolvedValue({ items: [] });
-    mockBillingGetCustomer.mockResolvedValue(null);
     const Page = (
       await import("@/app/(admin)/admin/organizations/[orgId]/billing/page")
     ).default;
@@ -96,7 +87,6 @@ describe("AdminOrgBillingPage", () => {
   });
 
   it("passes billing data to client component", async () => {
-    mockOrgGet.mockResolvedValue({ id: "o1", name: "Acme Corp" });
     mockBillingSummary.mockResolvedValue({
       totalRevenue: 5000,
       activeSubscriptions: 2,

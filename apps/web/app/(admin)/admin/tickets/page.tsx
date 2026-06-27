@@ -63,10 +63,20 @@ export default async function AdminTicketsPage() {
     if (ids.length === 0) throw new Error("No tickets selected");
     if (!status && !priority) throw new Error("No updates provided");
 
-    await api.tickets.bulkUpdate(ids, {
+    const result = await api.tickets.bulkUpdate(ids, {
       ...(status ? { status } : {}),
       ...(priority ? { priority } : {}),
     });
+
+    if (result.failed > 0) {
+      const failedItems = result.results
+        .filter((r) => !r.success)
+        .map((r) => `${r.id}: ${r.error ?? "Unknown error"}`)
+        .join("; ");
+      throw new Error(
+        `Bulk update partially failed (${result.successful}/${result.results.length} succeeded): ${failedItems}`,
+      );
+    }
 
     revalidatePath("/admin/tickets");
   }

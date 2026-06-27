@@ -56,20 +56,10 @@ export class ApiClient {
     this.retry = { ...DEFAULT_RETRY, ...opts.retries };
   }
 
-  private async request<T>(
-    method: string,
-    path: string,
-    body?: unknown,
-    params?: Record<string, string | number | undefined>,
+  private async executeFetch<T>(
+    url: string,
+    init: RequestInit,
   ): Promise<T> {
-    const token = await this.getToken();
-    const url = `${this.baseUrl}${path}${buildQuery(params)}`;
-
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= this.retry.maxRetries; attempt++) {
@@ -78,9 +68,7 @@ export class ApiClient {
         const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
         const res = await fetch(url, {
-          method,
-          headers,
-          body: body ? JSON.stringify(body) : undefined,
+          ...init,
           signal: controller.signal,
           credentials: "include",
         });
@@ -100,21 +88,11 @@ export class ApiClient {
             attempt < this.retry.maxRetries &&
             this.retry.retryableStatuses.includes(res.status)
           ) {
-            const delay = Math.min(
-              this.retry.initialDelayMs *
-                Math.pow(this.retry.backoffFactor, attempt),
-              this.retry.maxDelayMs,
-            );
-            await sleep(delay);
+            await sleep(this.backoffDelay(attempt));
             continue;
           }
 
-          throw new ApiError(
-            err.code,
-            err.message,
-            err.status,
-            err.details,
-          );
+          throw new ApiError(err.code, err.message, err.status, err.details);
         }
 
         return json.data as T;
@@ -126,19 +104,12 @@ export class ApiClient {
           error instanceof DOMException &&
           error.name === "AbortError"
         ) {
-          lastError = new Error(
-            `Request timed out after ${this.timeoutMs}ms`,
-          );
+          lastError = new Error(`Request timed out after ${this.timeoutMs}ms`);
           continue;
         }
 
         if (attempt < this.retry.maxRetries) {
-          const delay = Math.min(
-            this.retry.initialDelayMs *
-              Math.pow(this.retry.backoffFactor, attempt),
-            this.retry.maxDelayMs,
-          );
-          await sleep(delay);
+          await sleep(this.backoffDelay(attempt));
           lastError = error as Error;
           continue;
         }
@@ -148,6 +119,34 @@ export class ApiClient {
     }
 
     throw lastError ?? new Error("Max retries exceeded");
+  }
+
+  private backoffDelay(attempt: number): number {
+    return Math.min(
+      this.retry.initialDelayMs * Math.pow(this.retry.backoffFactor, attempt),
+      this.retry.maxDelayMs,
+    );
+  }
+
+  private async request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    params?: Record<string, string | number | undefined>,
+  ): Promise<T> {
+    const token = await this.getToken();
+    const url = `${this.baseUrl}${path}${buildQuery(params)}`;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    return this.executeFetch<T>(url, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
   }
 
   get<T>(
@@ -180,84 +179,11 @@ export class ApiClient {
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
 
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt <= this.retry.maxRetries; attempt++) {
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-
-        const res = await fetch(url, {
-          method: "POST",
-          headers,
-          body: formData,
-          signal: controller.signal,
-          credentials: "include",
-        });
-
-        clearTimeout(timer);
-
-        const json: ApiResponse<T> = await res.json();
-
-        if (!res.ok || !json.success) {
-          const err = json.error ?? {
-            code: "UNKNOWN",
-            message: `HTTP ${res.status}`,
-            status: res.status,
-          };
-
-          if (
-            attempt < this.retry.maxRetries &&
-            this.retry.retryableStatuses.includes(res.status)
-          ) {
-            const delay = Math.min(
-              this.retry.initialDelayMs *
-                Math.pow(this.retry.backoffFactor, attempt),
-              this.retry.maxDelayMs,
-            );
-            await sleep(delay);
-            continue;
-          }
-
-          throw new ApiError(
-            err.code,
-            err.message,
-            err.status,
-            err.details,
-          );
-        }
-
-        return json.data as T;
-      } catch (error) {
-        if (error instanceof ApiError) throw error;
-
-        if (
-          attempt < this.retry.maxRetries &&
-          error instanceof DOMException &&
-          error.name === "AbortError"
-        ) {
-          lastError = new Error(
-            `Request timed out after ${this.timeoutMs}ms`,
-          );
-          continue;
-        }
-
-        if (attempt < this.retry.maxRetries) {
-          const delay = Math.min(
-            this.retry.initialDelayMs *
-              Math.pow(this.retry.backoffFactor, attempt),
-            this.retry.maxDelayMs,
-          );
-          await sleep(delay);
-          lastError = error as Error;
-          continue;
-        }
-
-        throw error;
-      }
-    }
-
-    throw lastError ?? new Error("Max retries exceeded");
+    return this.executeFetch<T>(url, {
+      method: "POST",
+      headers,
+      body: formData,
+    });
   }
 }
 

@@ -1,4 +1,4 @@
-import { registerTask } from "../main";
+import { registerTask } from "../task-registry";
 import { stripeReconcile } from "./stripe-reconcile";
 import { jiraSync } from "./jira-sync";
 import { jsmSync } from "./jsm-sync";

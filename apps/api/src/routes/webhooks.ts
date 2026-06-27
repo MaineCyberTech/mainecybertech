@@ -5,8 +5,42 @@ import { logger } from "../lib/logger";
 import { failure, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
+import {
+  checkIdempotencyKey,
+  storeIdempotencyKey,
+} from "../lib/idempotency";
 
 const router: ReturnType<typeof Router> = Router();
+
+async function logWebhookDelivery(
+  event: string,
+  reqBody: unknown,
+  idempotencyKey: string,
+): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  try {
+    await supabase.from("webhook_deliveries").insert({
+      webhook_id: null,
+      event,
+      status: "success",
+      request_body: reqBody,
+      response_status: 200,
+      idempotency_key: idempotencyKey,
+    });
+    await storeIdempotencyKey(idempotencyKey, "done");
+  } catch (err) {
+    logger.warn({ err }, `Failed to log ${event} webhook delivery`);
+  }
+}
+
+async function dedupWebhook(key: string): Promise<boolean> {
+  const existing = await checkIdempotencyKey(key);
+  if (existing) {
+    logger.info({ key }, "Duplicate webhook, skipping");
+    return true;
+  }
+  return false;
+}
 
 const JIRA_STATUS_MAP: Record<string, string> = {
   "To Do": "todo",
@@ -74,6 +108,12 @@ router.post("/stripe", async (req, res, next) => {
     }
 
     logger.info({ type: event.type, id: event.id }, "Stripe webhook received");
+
+    const stripeKey = `stripe-${event.id}`;
+    if (await dedupWebhook(stripeKey)) {
+      res.json(success({ received: true }));
+      return;
+    }
 
     const supabase = getSupabaseAdmin();
 
@@ -181,20 +221,11 @@ router.post("/stripe", async (req, res, next) => {
       metadata: { id: event.id },
     });
 
-    // Log webhook delivery with idempotency key
-    const stripeIdempotencyKey = `stripe-${event.id}`;
-    try {
-      await supabase.from("webhook_deliveries").insert({
-        webhook_id: null,
-        event: `stripe.${event.type}`,
-        status: "success",
-        request_body: req.body,
-        response_status: 200,
-        idempotency_key: stripeIdempotencyKey,
-      });
-    } catch (err) {
-      logger.warn({ err }, "Failed to log Stripe webhook delivery");
-    }
+    await logWebhookDelivery(
+      `stripe.${event.type}`,
+      req.body,
+      `stripe-${event.id}`,
+    );
 
     res.json(success({ received: true }));
   } catch (error) {
@@ -213,6 +244,12 @@ router.post("/jira", async (req, res, next) => {
       { event: event.webhookEvent, issueKey, status: statusName },
       "Jira webhook received",
     );
+
+    const jiraKey = `jira-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}`;
+    if (await dedupWebhook(jiraKey)) {
+      res.json(success({ received: true }));
+      return;
+    }
 
     if (issueKey && statusName) {
       const supabase = getSupabaseAdmin();
@@ -244,21 +281,11 @@ router.post("/jira", async (req, res, next) => {
       metadata: { issue: issueKey, summary, status: statusName },
     });
 
-    // Log webhook delivery with idempotency key
-    const jiraIdempotencyKey = `jira-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}-${Date.now()}`;
-    const supabase = getSupabaseAdmin();
-    try {
-      await supabase.from("webhook_deliveries").insert({
-        webhook_id: null,
-        event: `jira.${event.webhookEvent ?? "unknown"}`,
-        status: "success",
-        request_body: req.body,
-        response_status: 200,
-        idempotency_key: jiraIdempotencyKey,
-      });
-    } catch (err) {
-      logger.warn({ err }, "Failed to log Jira webhook delivery");
-    }
+    await logWebhookDelivery(
+      `jira.${event.webhookEvent ?? "unknown"}`,
+      req.body,
+      jiraKey,
+    );
 
     res.json(success({ received: true }));
   } catch (error) {
@@ -277,6 +304,12 @@ router.post("/jsm", async (req, res, next) => {
       { event: event.webhookEvent, issueKey, status: statusName },
       "JSM webhook received",
     );
+
+    const jsmKey = `jsm-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}`;
+    if (await dedupWebhook(jsmKey)) {
+      res.json(success({ received: true }));
+      return;
+    }
 
     if (issueKey && statusName) {
       const supabase = getSupabaseAdmin();
@@ -313,21 +346,11 @@ router.post("/jsm", async (req, res, next) => {
       metadata: { issue: issueKey, summary, status: statusName },
     });
 
-    // Log webhook delivery with idempotency key
-    const jsmIdempotencyKey = `jsm-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}-${Date.now()}`;
-    const supabase = getSupabaseAdmin();
-    try {
-      await supabase.from("webhook_deliveries").insert({
-        webhook_id: null,
-        event: `jsm.${event.webhookEvent ?? "unknown"}`,
-        status: "success",
-        request_body: req.body,
-        response_status: 200,
-        idempotency_key: jsmIdempotencyKey,
-      });
-    } catch (err) {
-      logger.warn({ err }, "Failed to log JSM webhook delivery");
-    }
+    await logWebhookDelivery(
+      `jsm.${event.webhookEvent ?? "unknown"}`,
+      req.body,
+      jsmKey,
+    );
 
     res.json(success({ received: true }));
   } catch (error) {
@@ -339,6 +362,13 @@ router.post("/m365", async (req, res, next) => {
   try {
     const event = req.body;
     logger.info({ resource: event.resource }, "M365 webhook received");
+
+    const m365Key = `m365-${event.resource}-${event.changeType}`;
+    if (await dedupWebhook(m365Key)) {
+      res.json(success({ received: true }));
+      return;
+    }
+
     await logAuditEvent({
       actorType: "system",
       action: "m365.webhook",
@@ -346,21 +376,11 @@ router.post("/m365", async (req, res, next) => {
       metadata: { resource: event.resource, changeType: event.changeType },
     });
 
-    // Log webhook delivery with idempotency key
-    const m365IdempotencyKey = `m365-${event.resource}-${event.changeType}-${Date.now()}`;
-    const supabase = getSupabaseAdmin();
-    try {
-      await supabase.from("webhook_deliveries").insert({
-        webhook_id: null,
-        event: "m365.webhook",
-        status: "success",
-        request_body: req.body,
-        response_status: 200,
-        idempotency_key: m365IdempotencyKey,
-      });
-    } catch (err) {
-      logger.warn({ err }, "Failed to log M365 webhook delivery");
-    }
+    await logWebhookDelivery(
+      "m365.webhook",
+      req.body,
+      m365Key,
+    );
 
     res.json(success({ received: true }));
   } catch (error) {

@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.next/
+.turbo/
+coverage/
+storybook-static/
+pnpm-lock.yaml
+*.tsbuildinfo
+*.log
+.terraform/
+*.tfstate
+*.tfstate.*
+.env
+.env.local
+env/

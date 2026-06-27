@@ -1,5 +1,5 @@
 import { jest } from "@jest/globals";
-import { startHealthServer } from "../main";
+import { startHealthServer } from "../health-server";
 
 describe("worker health server", () => {
   it("startHealthServer is a function", () => {

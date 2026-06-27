@@ -6,6 +6,10 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccessByParam } from "../middleware/org-access";
 import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
+import {
+  requireIfMatch,
+  checkVersionMatch,
+} from "../middleware/optimistic-locking";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -173,10 +177,22 @@ router.post("/", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireAdmin, async (req, res, next) => {
+router.patch("/:id", requireAdmin, requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateOrganizationSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+
+    const { data: current, error: fetchError } = await supabase
+      .from("organizations")
+      .select("version")
+      .eq("id", req.params.id)
+      .single();
+
+    if (fetchError || !current) {
+      throw new AppError("NOT_FOUND", "Organization not found", 404);
+    }
+
+    checkVersionMatch(current.version, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -194,15 +210,23 @@ router.patch("/:id", requireAdmin, async (req, res, next) => {
     if (parsed.customDomain !== undefined)
       updateData.custom_domain = parsed.customDomain;
 
+    updateData.version = current.version + 1;
+
     const { data, error } = await supabase
       .from("organizations")
       .update(updateData)
       .eq("id", req.params.id)
+      .eq("version", current.version)
       .select()
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Organization not found", 404);
+    if (!data)
+      throw new AppError(
+        "VERSION_CONFLICT",
+        "Organization was modified by another user",
+        409,
+      );
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

@@ -138,13 +138,25 @@ function ensureCacheReady(): void {
   // but we can ensure it's ready if needed
 }
 
+function buildCacheKey(req: Request): string {
+  const baseKey = `${req.path}:${JSON.stringify(req.query)}`;
+  const authUser = (req as Request & { authUser?: { userId: string; orgId?: string } }).authUser;
+  if (authUser?.orgId) {
+    return `org=${authUser.orgId}:${baseKey}`;
+  }
+  if (authUser?.userId) {
+    return `user=${authUser.userId}:${baseKey}`;
+  }
+  return baseKey;
+}
+
 export function responseCache(ttlSeconds = 60) {
   return async (req: Request, res: Response, next: NextFunction) => {
     if (req.method !== "GET") {
       return next();
     }
 
-    const key = `${req.path}:${JSON.stringify(req.query)}`;
+    const key = buildCacheKey(req);
     const entry = await cacheBackend.get(key);
 
     if (entry && entry.expires > Date.now()) {
@@ -170,7 +182,7 @@ export function responseCacheNoRenew(ttlSeconds = 60) {
       return next();
     }
 
-    const key = `${req.path}:${JSON.stringify(req.query)}`;
+    const key = buildCacheKey(req);
     const entry = await cacheBackend.get(key);
 
     if (entry && entry.expires > Date.now()) {

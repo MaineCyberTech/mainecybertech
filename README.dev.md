@@ -571,4 +571,16 @@ For the cleanest contributor/operator experience, keep this file alongside:
 - GitHub secrets and variables matrix
 - Terraform environment file guide
 
-That gives contributors one path for development and operators one path for deployment.
+### New Documentation (Added 2026-06-26)
+
+- `docs/technical-writing/migration-guide.md` - Comprehensive deployment and migration guide
+- `docs/technical-writing/ERROR_HANDLING.md` - API error handling patterns and standards
+- `docs/migrations/naming-guide.md` - Database migration naming conventions
+- `docs/developer-guide/setup-local-development.md` - Comprehensive local development setup
+- `docs/arch/evaluation/db-package-evaluation.md` - Shared DB package evaluation
+- `docs/API_ERROR_HANDLING.md` - API error handling documentation
+- `docs/migrations/naming-guide.md` - Database migration naming conventions
+- `TROUBLESHOOTING.md` - Common issues and solutions
+- `scripts/dev-start.sh` - Development startup script
+- `scripts/dev-stop.sh` - Development shutdown script
+- `scripts/dev-setup.sh` - Automated setup script

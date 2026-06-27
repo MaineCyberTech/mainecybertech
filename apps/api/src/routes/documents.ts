@@ -7,6 +7,10 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import {
+  requireIfMatch,
+  checkVersionMatch,
+} from "../middleware/optimistic-locking";
+import {
   createDocumentSchema,
   updateDocumentSchema,
   bulkFolderSchema,
@@ -283,10 +287,22 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateDocumentSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+
+    const { data: current, error: fetchError } = await supabase
+      .from("documents")
+      .select("version")
+      .eq("id", req.params.id)
+      .single();
+
+    if (fetchError || !current) {
+      throw new AppError("NOT_FOUND", "Document not found", 404);
+    }
+
+    checkVersionMatch(current.version, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -307,15 +323,23 @@ router.patch("/:id", async (req, res, next) => {
       updateData.current_version = parsed.currentVersion;
     if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
 
+    updateData.version = current.version + 1;
+
     const { data, error } = await supabase
       .from("documents")
       .update(updateData)
       .eq("id", req.params.id)
+      .eq("version", current.version)
       .select()
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (!data)
+      throw new AppError(
+        "VERSION_CONFLICT",
+        "Document was modified by another user",
+        409,
+      );
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

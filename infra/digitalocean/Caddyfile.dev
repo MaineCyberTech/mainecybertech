@@ -1,0 +1,49 @@
+www.mainecybertech.com, app.mainecybertech.com {
+    reverse_proxy web:3000
+
+    header / {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
+api.mainecybertech.com {
+    # SSE endpoint needs no buffering
+    @sse path /api/v1/notifications/stream
+    reverse_proxy @sse api:4000 {
+        flush_interval -1
+    }
+    reverse_proxy api:4000
+
+    header / {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
+www.mainecybertech.us, app.mainecybertech.us {
+    reverse_proxy web:3000
+
+    header / {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
+
+api.mainecybertech.us {
+    # SSE endpoint needs no buffering
+    @sse path /api/v1/notifications/stream
+    reverse_proxy @sse api:4000 {
+        flush_interval -1
+    }
+    reverse_proxy api:4000
+
+    header / {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}

@@ -15,7 +15,33 @@ function isTokenExpired(token: string): boolean {
   }
 }
 
+function generateNonce(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let nonce = "";
+  for (let i = 0; i < 16; i++) {
+    nonce += chars[bytes[i] % chars.length];
+  }
+  return nonce;
+}
+
+function setCspHeaders(
+  response: NextResponse,
+  nonce: string,
+): void {
+  response.headers.set(
+    "Content-Security-Policy",
+    `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'`,
+  );
+}
+
 export async function middleware(request: NextRequest) {
+  const nonce = generateNonce();
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const pathname = request.nextUrl.pathname;
   const host = request.headers.get("host") || request.nextUrl.hostname;
@@ -51,23 +77,37 @@ export async function middleware(request: NextRequest) {
       : `app.${host.replace(/^www\./, "")}`;
 
     if (isAppDomain && isMarketingRoute) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      const redirect = NextResponse.redirect(new URL("/login", request.url));
+      setCspHeaders(redirect, nonce);
+      return redirect;
     }
 
     if (!isAppDomain && (isAuthRoute || isPortalRoute || isAdminRoute)) {
-      return NextResponse.redirect(new URL(pathname, `https://${appHost}`));
+      const redirect = NextResponse.redirect(
+        new URL(pathname, `https://${appHost}`),
+      );
+      setCspHeaders(redirect, nonce);
+      return redirect;
     }
   }
 
   if (!isAuthenticated && isPortalRoute) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const redirect = NextResponse.redirect(new URL("/login", request.url));
+    setCspHeaders(redirect, nonce);
+    return redirect;
   }
 
   if (isAuthenticated && (pathname === "/login" || pathname === "/signup")) {
-    return NextResponse.redirect(new URL("/portal/dashboard", request.url));
+    const redirect = NextResponse.redirect(
+      new URL("/portal/dashboard", request.url),
+    );
+    setCspHeaders(redirect, nonce);
+    return redirect;
   }
 
-  return NextResponse.next({ request });
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
+  setCspHeaders(response, nonce);
+  return response;
 }
 
 export const config = {

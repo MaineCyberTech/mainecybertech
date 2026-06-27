@@ -1,7 +1,10 @@
 import { render, screen } from "@testing-library/react";
+import { setupAdminPageMocks } from "@/lib/test-utils";
+
+let mocks: ReturnType<typeof setupAdminPageMocks>;
 
 jest.mock("@/lib/auth/admin", () => ({
-  requireAdminAccess: jest.fn(),
+  requireAdminAccess: (...args: any[]) => mocks.requireAdminAccess(...args),
 }));
 
 jest.mock("next/link", () => {
@@ -31,6 +34,11 @@ jest.mock("@/components/HealthDashboardClient", () => {
 });
 
 describe("AdminHealthPage", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mocks = setupAdminPageMocks();
+  });
+
   it("renders page shell with title", async () => {
     const Page = (await import("@/app/(admin)/admin/health/page")).default;
     render(await Page());

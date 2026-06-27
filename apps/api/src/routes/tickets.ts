@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { sendExportResponse, CsvColumn } from "../lib/csv";
 import {
   requireIfMatch,
   checkVersionMatch,
@@ -22,10 +23,26 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
+const ticketExportColumns: CsvColumn[] = [
+  { key: "id" },
+  { key: "organization_id" },
+  { key: "title" },
+  { key: "description" },
+  { key: "status" },
+  { key: "priority" },
+  { key: "category" },
+  { key: "source" },
+  { key: "assigned_to" },
+  { key: "external_jsm_issue_key" },
+  { key: "labels" },
+  { key: "resolution" },
+  { key: "created_at" },
+  { key: "updated_at" },
+];
+
 router.get("/export", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const format = (req.query.format as string) || "csv";
 
     let query = supabase.from("tickets").select("*");
 
@@ -41,53 +58,7 @@ router.get("/export", async (req, res, next) => {
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    const rows = data ?? [];
-
-    if (format === "json") {
-      res.setHeader("Content-Type", "application/json");
-      res.setHeader(
-        "Content-Disposition",
-        `attachment; filename="tickets-export-${Date.now()}.json"`,
-      );
-      res.json(rows);
-      return;
-    }
-
-    const headers = [
-      "id",
-      "organization_id",
-      "title",
-      "description",
-      "status",
-      "priority",
-      "category",
-      "source",
-      "assigned_to",
-      "external_jsm_issue_key",
-      "labels",
-      "resolution",
-      "created_at",
-      "updated_at",
-    ];
-    const csvRows = [headers.join(",")];
-    for (const row of rows) {
-      const vals = headers.map((h) => {
-        const v = row[h];
-        if (v === null || v === undefined) return "";
-        const s = typeof v === "object" ? JSON.stringify(v) : String(v);
-        return s.includes(",") || s.includes('"') || s.includes("\n")
-          ? `"${s.replace(/"/g, '""')}"`
-          : s;
-      });
-      csvRows.push(vals.join(","));
-    }
-
-    res.setHeader("Content-Type", "text/csv");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="tickets-export-${Date.now()}.csv"`,
-    );
-    res.send(csvRows.join("\n"));
+    sendExportResponse(res, data ?? [], ticketExportColumns, "tickets");
   } catch (error) {
     next(error);
   }

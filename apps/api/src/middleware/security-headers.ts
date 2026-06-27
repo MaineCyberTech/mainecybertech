@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { type Request, type Response, type NextFunction } from "express";
 
 export function securityHeaders(req: Request, res: Response, next: NextFunction) {
@@ -10,17 +11,20 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
   res.setHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
   res.removeHeader("X-Powered-By");
 
+  const nonce = randomUUID();
+  res.setHeader("X-Content-Security-Policy-Nonce", nonce);
+
   const isSwaggerUI = req.path.startsWith("/api/v1/docs");
 
   if (isSwaggerUI) {
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' unpkg.com; style-src 'self' 'unsafe-inline' unpkg.com; img-src 'self' data: unpkg.com; font-src 'self' data:; connect-src 'self'",
+      `default-src 'self'; script-src 'self' 'nonce-${nonce}' unpkg.com; style-src 'self' 'unsafe-inline' unpkg.com; img-src 'self' data: unpkg.com; font-src 'self' data:; connect-src 'self'`,
     );
   } else {
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'",
+      `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'`,
     );
   }
 

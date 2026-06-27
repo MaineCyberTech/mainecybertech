@@ -23,9 +23,9 @@ function resetEnvMock(): void {
 
 resetEnvMock();
 
-jest.mock("../../main", () => {
+jest.mock("../../env", () => {
   // Return a Proxy that reads from the mutable envMock object
-  const actual = jest.requireActual("../../main");
+  const actual = jest.requireActual("../../env");
   return {
     ...actual,
     env: new Proxy(envMock, {

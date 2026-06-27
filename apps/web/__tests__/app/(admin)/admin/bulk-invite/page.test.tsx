@@ -1,9 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import { setupAdminPageMocks } from "@/lib/test-utils";
 
-const mockRequireAdminAccess = jest.fn();
-jest.mock("@/lib/auth/admin", () => ({
-  requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
-}));
+let mocks: ReturnType<typeof setupAdminPageMocks>;
 
 const mockOrgsList = jest.fn();
 const mockRolesList = jest.fn();
@@ -12,6 +10,10 @@ jest.mock("@/lib/api", () => ({
     organizations: { list: mockOrgsList },
     roles: { list: mockRolesList },
   }),
+}));
+
+jest.mock("@/lib/auth/admin", () => ({
+  requireAdminAccess: (...args: any[]) => mocks.requireAdminAccess(...args),
 }));
 
 jest.mock("next/link", () => {
@@ -48,12 +50,12 @@ jest.mock("@/components/admin/BulkInviteForm", () => {
 describe("AdminBulkInvitePage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRequireAdminAccess.mockResolvedValue(undefined);
+    mocks = setupAdminPageMocks();
+    mockOrgsList.mockResolvedValue([]);
+    mockRolesList.mockResolvedValue([]);
   });
 
   it("renders page shell with title and description", async () => {
-    mockOrgsList.mockResolvedValue([]);
-    mockRolesList.mockResolvedValue([]);
     const Page = (await import("@/app/(admin)/admin/bulk-invite/page")).default;
     render(await Page());
     expect(
@@ -90,16 +92,12 @@ describe("AdminBulkInvitePage", () => {
   });
 
   it("requires admin access", async () => {
-    mockOrgsList.mockResolvedValue([]);
-    mockRolesList.mockResolvedValue([]);
     const Page = (await import("@/app/(admin)/admin/bulk-invite/page")).default;
     render(await Page());
-    expect(mockRequireAdminAccess).toHaveBeenCalledTimes(1);
+    expect(mocks.requireAdminAccess).toHaveBeenCalledTimes(1);
   });
 
   it("renders breadcrumbs and subnav", async () => {
-    mockOrgsList.mockResolvedValue([]);
-    mockRolesList.mockResolvedValue([]);
     const Page = (await import("@/app/(admin)/admin/bulk-invite/page")).default;
     render(await Page());
     expect(screen.getByTestId("breadcrumbs")).toHaveTextContent("2 items");

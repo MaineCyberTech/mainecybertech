@@ -182,12 +182,17 @@ router.post("/mark-all-read", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const orgId = req.query.organization_id as string | undefined;
-    const { error } = await supabase
+    let query = supabase
       .from("notifications")
       .update({ read: true, read_at: new Date().toISOString() })
       .eq("user_id", req.authUser!.userId)
-      .eq("read", false)
-      .eq("organization_id", orgId ?? "");
+      .eq("read", false);
+
+    if (orgId) {
+      query = query.eq("organization_id", orgId);
+    }
+
+    const { error } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 type AdminSubnavProps = {
-  current: "home" | "approvals" | "organizations" | "users" | "tickets" | "documents" | "projects" | "webhooks" | "roles" | string;
+  current: "home" | "approvals" | "organizations" | "users" | "tickets" | "documents" | "projects" | "webhooks" | "roles" | "sla" | "api-keys" | string;
 };
 
 const NAV_ITEMS = [
@@ -13,6 +13,8 @@ const NAV_ITEMS = [
   { key: "tickets", href: "/admin/tickets", label: "Tickets" },
   { key: "documents", href: "/admin/documents", label: "Documents" },
   { key: "projects", href: "/admin/projects", label: "Projects" },
+  { key: "sla", href: "/admin/sla", label: "SLA" },
+  { key: "api-keys", href: "/admin/api-keys", label: "API Keys" },
   { key: "webhooks", href: "/admin/webhooks", label: "Webhooks" },
 ];
 

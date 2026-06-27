@@ -1,6 +1,0 @@
-# Dev / testing backend example
-bucket         = "replace-with-your-dev-terraform-state-bucket"
-key            = "mainecybertech/dev/terraform.tfstate"
-region         = "us-east-1"
-dynamodb_table = "replace-with-your-dev-lock-table"
-encrypt        = true

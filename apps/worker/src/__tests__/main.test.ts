@@ -3,13 +3,15 @@ import {
   envSchema,
   parseEnv,
   type Env,
+} from "../env";
+import {
   registerTask,
   getTaskHandler,
   getRegisteredTaskTypes,
   executeTask,
   type TaskMessage,
   type TaskResult,
-} from "../main";
+} from "../task-registry";
 
 jest.mock("pino", () => {
   const mockLogger = {
