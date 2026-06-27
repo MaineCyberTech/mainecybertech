@@ -2,6 +2,7 @@ import "./globals.css";
 import type { Metadata } from "next";
 import { Inter, Orbitron } from "next/font/google";
 import { ThemeProvider } from "@mct/ui/providers/ThemeProvider";
+import { VersionBadge } from "@/components/version-badge";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,19 +24,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${orbitron.variable} font-inter cyber-page-bg antialiased`}
       >
-        <div className="fixed left-1/2 top-[20%] -z-10 h-[800px] w-[800px] -translate-x-1/2 bg-[radial-gradient(circle,rgba(5,150,105,0.08)_0%,transparent_60%)] pointer-events-none" />
+        <div className="pointer-events-none fixed left-1/2 top-[20%] -z-10 h-[800px] w-[800px] -translate-x-1/2 bg-[radial-gradient(circle,rgba(5,150,105,0.08)_0%,transparent_60%)]" />
         <ThemeProvider defaultTheme="system" storageKey="mct-theme">
           {children}
+          <VersionBadge />
         </ThemeProvider>
       </body>
     </html>
