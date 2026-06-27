@@ -113,19 +113,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/setup-buildx-action@v3
-          - uses: docker/build-push-action@v6
-            with:
-              context: .
-              file: apps/web/Dockerfile
-              push: true
-              build-args: |
-                NEXT_PUBLIC_API_URL=https://${{ needs.setup.outputs.api_domain }}
-                NEXT_PUBLIC_APP_VERSION=${{ env.IMAGE_TAG }}
-                NEXT_PUBLIC_GIT_SHA=${{ github.sha }}
-                NEXT_PUBLIC_BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.pusher.date || '' }}
-              tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
-              cache-from: type=gha
-              cache-to: type=gha,mode=max
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_URL=https://${{ needs.setup.outputs.api_domain }}
+            NEXT_PUBLIC_APP_VERSION=${{ env.IMAGE_TAG }}
+            NEXT_PUBLIC_GIT_SHA=${{ github.sha }}
+            NEXT_PUBLIC_BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.pusher.date || '' }}
+          tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     needs: [setup, build-api, build-worker, build-web]
