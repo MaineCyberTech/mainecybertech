@@ -33,6 +33,7 @@ jobs:
       deploy_host: ${{ steps.env.outputs.deploy_host }}
       cors_origin: ${{ steps.env.outputs.cors_origin }}
       ghcr_prefix: ${{ steps.env.outputs.ghcr_prefix }}
+      droplet_name: ${{ steps.env.outputs.droplet_name }}
     steps:
       - uses: actions/checkout@v4
       - name: Determine environment
