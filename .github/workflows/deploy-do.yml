@@ -4,14 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       deploy_target:
-        description: "Target deployment environment"
+        description: Target environment
         type: choice
         options: [dev, prod]
         default: dev
-      rollback_sha:
-        description: "SHA to rollback to (leave empty for normal deploy)"
-        required: false
-        type: string
   push:
     branches: [main, develop]
     paths:
@@ -21,10 +17,6 @@ on:
       - "packages/**"
       - "infra/digitalocean/**"
       - ".github/workflows/deploy-do.yml"
-
-concurrency:
-  group: deploy-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
   IMAGE_TAG: ${{ github.sha }}
@@ -43,22 +35,21 @@ jobs:
       ghcr_prefix: ${{ steps.env.outputs.ghcr_prefix }}
     steps:
       - uses: actions/checkout@v4
-
       - name: Determine environment
         id: env
         run: |
-          if [[ "${{ github.ref_name }}" == "main" ]]; then
-            ENV_NAME=prod
+          if [ "${{ github.ref_name }}" = "main" ] || [ "${{ github.event.inputs.deploy_target }}" = "prod" ]; then
             APP_DOMAIN=app.mainecybertech.com
             API_DOMAIN=api.mainecybertech.com
             WWW_DOMAIN=www.mainecybertech.com
             DEPLOY_HOST=app.mainecybertech.com
+            ENV_NAME=prod
           else
-            ENV_NAME=dev
             APP_DOMAIN=app.mainecybertech.us
             API_DOMAIN=api.mainecybertech.us
             WWW_DOMAIN=www.mainecybertech.us
             DEPLOY_HOST=app.mainecybertech.us
+            ENV_NAME=dev
           fi
           echo "name=$ENV_NAME" >> $GITHUB_OUTPUT
           echo "app_domain=$APP_DOMAIN" >> $GITHUB_OUTPUT
@@ -85,9 +76,7 @@ jobs:
           context: .
           file: apps/api/Dockerfile
           push: true
-          tags: |
-            ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
-            ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ needs.setup.outputs.name }}
+          tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -108,9 +97,7 @@ jobs:
           context: .
           file: apps/worker/Dockerfile
           push: true
-          tags: |
-            ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
-            ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ needs.setup.outputs.name }}
+          tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -133,9 +120,7 @@ jobs:
           push: true
           build-args: |
             NEXT_PUBLIC_API_URL=https://${{ needs.setup.outputs.api_domain }}
-          tags: |
-            ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
-            ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ needs.setup.outputs.name }}
+          tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -143,22 +128,14 @@ jobs:
     needs: [setup, build-api, build-worker, build-web]
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment:
-      name: ${{ needs.setup.outputs.name }}
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.DO_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          PASSPHRASE="${{ secrets.DO_SSH_PASSPHRASE }}"
-          if [ -n "$PASSPHRASE" ] && [ -n "${PASSPHRASE// /}" ]; then
-            ssh-keygen -p -P "$PASSPHRASE" -N "" -f ~/.ssh/id_rsa
-          fi
           ssh-keyscan -H "${{ needs.setup.outputs.deploy_host }}" >> ~/.ssh/known_hosts 2>&1 || echo "ssh-keyscan failed (non-fatal)"
-
       - name: Deploy to DigitalOcean
         shell: bash
         env:
@@ -167,170 +144,81 @@ jobs:
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOST: ${{ needs.setup.outputs.deploy_host }}
-          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
-          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
           APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
           API_DOMAIN: ${{ needs.setup.outputs.api_domain }}
           CORS_ORIGIN: ${{ needs.setup.outputs.cors_origin }}
+          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
+          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
         run: |
           SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=10 -o ServerAliveInterval=30"
-
           echo "--- WAITING FOR SSH ---"
-          set +e
           for i in $(seq 1 10); do
-            SSH_OUTPUT=$(ssh $SSH_OPTS root@$HOST "echo ALIVE" 2>&1)
-            SSH_EXIT=$?
-            if [ $SSH_EXIT -eq 0 ]; then
-              echo "SSH ready after $((i * 10))s"
-              break
-            fi
-            echo "SSH attempt $i/10 failed, retrying in 10s..."
+            ssh -q $SSH_OPTS root@$HOST "echo alive" && { echo "SSH ready after $((i*10))s"; break; }
+            echo "Retry $i/10..."
             sleep 10
+            [ $i -eq 10 ] && { echo "SSH never available"; exit 1; }
           done
-          if [ $SSH_EXIT -ne 0 ]; then
-            echo "SSH never became available after 10 attempts"
-            exit 1
-          fi
-          set -e
-
-          echo "--- WRITING .ENV ON DROPLET ---"
+          echo "--- WRITING .ENV ---"
+          ssh $SSH_OPTS root@$HOST "mkdir -p /opt/mct-portal"
           ssh $SSH_OPTS root@$HOST "
-            mkdir -p /opt/mct-portal
-            cat > /opt/mct-portal/.env << 'ENVEOF'
-            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-            STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
-            STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
-            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
-            SMTP_HOST=${{ secrets.SMTP_HOST }}
-            SMTP_PORT=${{ secrets.SMTP_PORT }}
-            SMTP_USER=${{ secrets.SMTP_USER }}
-            SMTP_PASS=${{ secrets.SMTP_PASS }}
-            EMAIL_FROM=${{ secrets.EMAIL_FROM }}
-            JIRA_BASE_URL=${{ secrets.JIRA_BASE_URL }}
-            JIRA_EMAIL=${{ secrets.JIRA_EMAIL }}
-            JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }}
-            JSM_BASE_URL=${{ secrets.JSM_BASE_URL }}
-            M365_TENANT_ID=${{ secrets.M365_TENANT_ID }}
-            M365_CLIENT_ID=${{ secrets.M365_CLIENT_ID }}
-            M365_CLIENT_SECRET=${{ secrets.M365_CLIENT_SECRET }}
-            PUBLIC_TRAFFIC_WEBHOOK_URL=${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }}
-            PUBLIC_LEAD_WEBHOOK_URL=${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }}
-            JSM_DOMAIN=${{ secrets.JSM_DOMAIN }}
-            JSM_EMAIL=${{ secrets.JSM_EMAIL }}
-            JSM_API_TOKEN=${{ secrets.JSM_API_TOKEN }}
-            JSM_SERVICEDESK_ID=${{ secrets.JSM_SERVICEDESK_ID }}
-            JSM_REQUEST_TYPE_ID=${{ secrets.JSM_REQUEST_TYPE_ID }}
-            APP_DOMAIN=${APP_DOMAIN}
-            API_DOMAIN=${API_DOMAIN}
-            CORS_ORIGIN=${CORS_ORIGIN}
-            ENVEOF
+            echo SUPABASE_URL=${{ secrets.SUPABASE_URL }} > /opt/mct-portal/.env
+            echo JWT_SECRET=${{ secrets.JWT_SECRET }} >> /opt/mct-portal/.env
+            echo SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} >> /opt/mct-portal/.env
+            echo SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} >> /opt/mct-portal/.env
+            echo STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} >> /opt/mct-portal/.env
+            echo STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} >> /opt/mct-portal/.env
+            echo SENTRY_DSN=${{ secrets.SENTRY_DSN }} >> /opt/mct-portal/.env
+            echo SMTP_HOST=${{ secrets.SMTP_HOST }} >> /opt/mct-portal/.env
+            echo SMTP_PORT=${{ secrets.SMTP_PORT }} >> /opt/mct-portal/.env
+            echo SMTP_USER=${{ secrets.SMTP_USER }} >> /opt/mct-portal/.env
+            echo SMTP_PASS=${{ secrets.SMTP_PASS }} >> /opt/mct-portal/.env
+            echo EMAIL_FROM=${{ secrets.EMAIL_FROM }} >> /opt/mct-portal/.env
+            echo JIRA_BASE_URL=${{ secrets.JIRA_BASE_URL }} >> /opt/mct-portal/.env
+            echo JIRA_EMAIL=${{ secrets.JIRA_EMAIL }} >> /opt/mct-portal/.env
+            echo JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} >> /opt/mct-portal/.env
+            echo JSM_BASE_URL=${{ secrets.JSM_BASE_URL }} >> /opt/mct-portal/.env
+            echo M365_TENANT_ID=${{ secrets.M365_TENANT_ID }} >> /opt/mct-portal/.env
+            echo M365_CLIENT_ID=${{ secrets.M365_CLIENT_ID }} >> /opt/mct-portal/.env
+            echo M365_CLIENT_SECRET=${{ secrets.M365_CLIENT_SECRET }} >> /opt/mct-portal/.env
+            echo PUBLIC_TRAFFIC_WEBHOOK_URL=${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }} >> /opt/mct-portal/.env
+            echo PUBLIC_LEAD_WEBHOOK_URL=${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }} >> /opt/mct-portal/.env
+            echo JSM_DOMAIN=${{ secrets.JSM_DOMAIN }} >> /opt/mct-portal/.env
+            echo JSM_EMAIL=${{ secrets.JSM_EMAIL }} >> /opt/mct-portal/.env
+            echo JSM_API_TOKEN=${{ secrets.JSM_API_TOKEN }} >> /opt/mct-portal/.env
+            echo JSM_SERVICEDESK_ID=${{ secrets.JSM_SERVICEDESK_ID }} >> /opt/mct-portal/.env
+            echo JSM_REQUEST_TYPE_ID=${{ secrets.JSM_REQUEST_TYPE_ID }} >> /opt/mct-portal/.env
+            echo APP_DOMAIN=${APP_DOMAIN} >> /opt/mct-portal/.env
+            echo API_DOMAIN=${API_DOMAIN} >> /opt/mct-portal/.env
+            echo CORS_ORIGIN=${CORS_ORIGIN} >> /opt/mct-portal/.env
             chmod 600 /opt/mct-portal/.env
           " 2>&1
-
-          echo "--- TRANSFERRING COMPOSE AND CADDYFILE ---"
-          ssh $SSH_OPTS root@$HOST "mkdir -p /opt/mct-portal"
-          base64 -w0 infra/digitalocean/docker-compose.yml | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/docker-compose.yml" 2>&1
-
+          echo "--- TRANSFERRING FILES ---"
+          base64 -w0 infra/digitalocean/docker-compose.yml | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/docker-compose.yml"
           CADDYFILE_SRC="infra/digitalocean/Caddyfile.${{ needs.setup.outputs.name }}"
-          if [ ! -f "$CADDYFILE_SRC" ]; then
-            CADDYFILE_SRC="infra/digitalocean/Caddyfile"
-          fi
-          base64 -w0 "$CADDYFILE_SRC" | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/Caddyfile" 2>&1
-
-          echo "--- TRANSFERRING TLS CERTS ---"
-          if [ -n "$CF_ORIGIN_CERT" ]; then
-            echo "$CF_ORIGIN_CERT" > /tmp/fullchain.pem
-            echo "$CF_ORIGIN_KEY" > /tmp/privkey.pem
-            ssh $SSH_OPTS root@$HOST "mkdir -p /opt/mct-portal/certs"
-            cat /tmp/fullchain.pem | ssh $SSH_OPTS root@$HOST "cat > /opt/mct-portal/certs/fullchain.pem"
-            cat /tmp/privkey.pem | ssh $SSH_OPTS root@$HOST "cat > /opt/mct-portal/certs/privkey.pem"
-            ssh $SSH_OPTS root@$HOST "chmod 600 /opt/mct-portal/certs/privkey.pem /opt/mct-portal/certs/fullchain.pem"
-          else
-            echo "CF_ORIGIN_CERT secret not set"
-          fi
-
-          echo "--- FREEING DISK SPACE ON DROPLET ---"
-          ssh $SSH_OPTS root@$HOST "docker system prune -af --volumes 2>/dev/null; docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | xargs -r docker rmi 2>/dev/null; true" 2>&1
-
-          echo "--- LOGGING INTO GHCR ON DROPLET ---"
+          [ -f "$CADDYFILE_SRC" ] || CADDYFILE_SRC="infra/digitalocean/Caddyfile"
+          base64 -w0 "$CADDYFILE_SRC" | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/Caddyfile"
+          echo "--- FREEING DISK ---"
+          ssh $SSH_OPTS root@$HOST "docker system prune -af --volumes 2>/dev/null; docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | xargs -r docker rmi 2>/dev/null; true"
+          echo "--- PULLING IMAGES ---"
           echo "$GHCR_TOKEN" | ssh $SSH_OPTS root@$HOST "docker login ghcr.io -u $GHCR_USERNAME --password-stdin" 2>&1
-
-          echo "--- PULLING IMAGES ON DROPLET ---"
-          ssh $SSH_OPTS root@$HOST "
-            docker pull $GHCR_IMAGE_PREFIX/mct-api:$IMAGE_TAG &&
-            docker pull $GHCR_IMAGE_PREFIX/mct-worker:$IMAGE_TAG &&
-            docker pull $GHCR_IMAGE_PREFIX/mct-web:$IMAGE_TAG
-          " 2>&1
-
-          echo "--- EXECUTING DEPLOY ---"
-          ssh $SSH_OPTS root@$HOST "
-            cd /opt/mct-portal
-            IMAGE_TAG=$IMAGE_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --no-deps api worker web caddy
-            sleep 15
-            docker compose ps --format 'table {{.Name}}\t{{.Status}}'
-          " 2>&1
-
-      - name: Health check after deploy
+          ssh $SSH_OPTS root@$HOST "docker pull $GHCR_IMAGE_PREFIX/mct-api:$IMAGE_TAG && docker pull $GHCR_IMAGE_PREFIX/mct-worker:$IMAGE_TAG && docker pull $GHCR_IMAGE_PREFIX/mct-web:$IMAGE_TAG"
+          echo "--- DEPLOYING ---"
+          ssh $SSH_OPTS root@$HOST "cd /opt/mct-portal && IMAGE_TAG=$IMAGE_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --no-deps api worker web caddy && sleep 15 && docker compose ps --format 'table {{.Name}}\t{{.Status}}'"
+      - name: Health check
         env:
           API_DOMAIN: ${{ needs.setup.outputs.api_domain }}
           APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
         run: |
-          set +e
-          echo "--- API HEALTH CHECK ---"
           for i in $(seq 1 30); do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null)
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "API ready after $((i * 4))s"
-              break
-            fi
-            echo "Attempt $i/30: API returned $HTTP_CODE, waiting 4s..."
-            sleep 4
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null || echo "000")
+            [ "$CODE" = "200" ] && { echo "API ready after $((i*4))s"; break; }
+            echo "Attempt $i/30: $CODE"; sleep 4
           done
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "API never became healthy after 30 attempts"
-            exit 1
-          fi
-
-          echo "--- WEB HEALTH CHECK ---"
+          [ "$CODE" != "200" ] && { echo "API health check failed"; exit 1; }
           for i in $(seq 1 15); do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null)
-            if [ "$HTTP_CODE" != "000" ] && [ -n "$HTTP_CODE" ]; then
-              echo "Web ready after $((i * 4))s (HTTP $HTTP_CODE)"
-              break
-            fi
-            echo "Attempt $i/15: Web not reachable, waiting 4s..."
-            sleep 4
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null || echo "000")
+            [ "$CODE" != "000" ] && { echo "Web ready after $((i*4))s (HTTP $CODE)"; break; }
+            echo "Attempt $i/15: $CODE"; sleep 4
           done
-          if [ "$HTTP_CODE" = "000" ] || [ -z "$HTTP_CODE" ]; then
-            echo "Web never became reachable after 15 attempts"
-            exit 1
-          fi
-
-          echo "--- HEALTH CHECKS PASSED ---"
-          set -e
-
-      - name: Rollback on failure
-        if: failure()
-        env:
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
-          GHCR_IMAGE_PREFIX: ${{ needs.setup.outputs.ghcr_prefix }}
-          GHCR_USERNAME: ${{ github.actor }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOST: ${{ needs.setup.outputs.deploy_host }}
-          SSH_OPTS: "-o StrictHostKeyChecking=no -o ConnectTimeout=10 -o ServerAliveInterval=30"
-        run: |
-          set +e
-          echo "--- ROLLBACK TRIGGERED ---"
-          ssh $SSH_OPTS root@$HOST "
-            PREV_TAG=\$(docker image ls --format '{{.Tag}}' | grep -v '$IMAGE_TAG' | head -1)
-            if [ -n \"\$PREV_TAG\" ]; then
-              echo \"Rolling back to \$PREV_TAG...\"
-              IMAGE_TAG=\$PREV_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --no-deps api worker web caddy
-            else
-              echo \"No previous tag found, manual rollback required\"
-            fi
-          " 2>&1
-          set -e
+          [ "$CODE" = "000" ] && { echo "Web health check failed"; exit 1; }
+          echo "--- ALL HEALTH CHECKS PASSED ---"
