@@ -42,22 +42,48 @@ jobs:
             APP_DOMAIN=app.mainecybertech.com
             API_DOMAIN=api.mainecybertech.com
             WWW_DOMAIN=www.mainecybertech.com
-            DEPLOY_HOST=app.mainecybertech.com
             ENV_NAME=prod
+            DROPLET_NAME=mct-portal-prod
           else
             APP_DOMAIN=app.mainecybertech.us
             API_DOMAIN=api.mainecybertech.us
             WWW_DOMAIN=www.mainecybertech.us
-            DEPLOY_HOST=app.mainecybertech.us
             ENV_NAME=dev
+            DROPLET_NAME=mct-portal-dev
           fi
           echo "name=$ENV_NAME" >> $GITHUB_OUTPUT
           echo "app_domain=$APP_DOMAIN" >> $GITHUB_OUTPUT
           echo "api_domain=$API_DOMAIN" >> $GITHUB_OUTPUT
           echo "www_domain=$WWW_DOMAIN" >> $GITHUB_OUTPUT
-          echo "deploy_host=$DEPLOY_HOST" >> $GITHUB_OUTPUT
+          echo "deploy_host=$DROPLET_NAME" >> $GITHUB_OUTPUT
           echo "cors_origin=https://$APP_DOMAIN,https://$WWW_DOMAIN" >> $GITHUB_OUTPUT
           echo "ghcr_prefix=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "droplet_name=$DROPLET_NAME" >> $GITHUB_OUTPUT
+
+  resolve-ip:
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      droplet_ip: ${{ steps.ip.outputs.droplet_ip }}
+    steps:
+      - name: Resolve droplet IP
+        id: ip
+        env:
+          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+        run: |
+          set -e
+          DROPLET_NAME="${{ needs.setup.outputs.droplet_name }}"
+          ALL_DROPLETS=$(curl -sf -H "Authorization: Bearer $DO_API_TOKEN" \
+            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200")
+          IP=$(echo "$ALL_DROPLETS" | jq -r --arg name "$DROPLET_NAME" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
+          if [ -z "$IP" ]; then
+            echo "ERROR: No $DROPLET_NAME droplet found"
+            echo "$ALL_DROPLETS" | jq '[.droplets[] | {name, ip: .networks.v4[0].ip_address, created: .created_at}]'
+            exit 1
+          fi
+          echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
+          echo "Using droplet IP: $IP"
 
   build-api:
     needs: setup
@@ -128,7 +154,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    needs: [setup, build-api, build-worker, build-web]
+    needs: [setup, resolve-ip, build-api, build-worker, build-web]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -137,7 +163,7 @@ jobs:
       - name: Setup droplet
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ needs.setup.outputs.deploy_host }}
+          host: ${{ needs.resolve-ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           script: |
@@ -195,7 +221,7 @@ jobs:
       - name: Deploy containers
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ needs.setup.outputs.deploy_host }}
+          host: ${{ needs.resolve-ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           script: |

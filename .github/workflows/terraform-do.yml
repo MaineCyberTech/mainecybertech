@@ -123,6 +123,8 @@ jobs:
     defaults:
       run:
         working-directory: infra/terraform/digitalocean
+    outputs:
+      droplet_ip: ${{ steps.apply.outputs.droplet_ip }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -145,10 +147,13 @@ jobs:
         run: terraform init -input=false
 
       - name: Terraform Apply
+        id: apply
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: terraform apply -auto-approve -input=false tfplan
+        run: |
+          terraform apply -auto-approve -input=false tfplan
+          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
 
   terraform-apply-dev:
     needs: terraform-plan
@@ -158,6 +163,8 @@ jobs:
     defaults:
       run:
         working-directory: infra/terraform/digitalocean
+    outputs:
+      droplet_ip: ${{ steps.apply.outputs.droplet_ip }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -180,7 +187,10 @@ jobs:
         run: terraform init -input=false
 
       - name: Terraform Apply
+        id: apply
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: terraform apply -auto-approve -input=false tfplan
+        run: |
+          terraform apply -auto-approve -input=false tfplan
+          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
