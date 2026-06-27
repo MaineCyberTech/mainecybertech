@@ -12,7 +12,13 @@ RUN pnpm install --frozen-lockfile
 # Build
 FROM base AS builder
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_VERSION
+ARG NEXT_PUBLIC_GIT_SHA
+ARG NEXT_PUBLIC_BUILD_TIME
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.mainecybertech.com}
+ENV NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION:-0.0.0-dev}
+ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA:-local}
+ENV NEXT_PUBLIC_BUILD_TIME=${NEXT_PUBLIC_BUILD_TIME:-}
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages ./packages
