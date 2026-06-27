@@ -2,7 +2,7 @@
 
 Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infrastructure, security, and feature functionality; marketing site integrated as the public homepage (www route, 4 phases complete)
 
-**Latest audit session (2026-06-26):** Comprehensive remediation session: Worker main.ts split from 413→32 lines (6 modules), nonce-based CSP added (API+Web), webhook idempotency enforced (Redis dedup + deterministic keys), optimistic locking wired into documents/projects/orgs PATCH handlers, markAllRead orgId fix, deploy rollback capability, JWT rotation doc (`docs/JWT_ROTATION.md`), bulk ops UI partial-failure alerts, removed `infra/terraform/aws/` (dead), fixed `idempotency.ts` import extension, removed `'unsafe-eval'` from Web CSP, deployed health checks. **13 of 15 P1 findings now resolved** (3 stale, 1 by-design). 769 tests all green (182 API + 108 SDK + 24 Worker + 455 Web). ESLint clean (0 errors) across all 6 packages. TypeScript has 29 errors limited to one file (`apps/web/lib/test-utils.ts` — uses `jest` types outside `__tests__/`).
+**Latest audit session (2026-06-26):** Comprehensive remediation session: Worker main.ts split from 413→32 lines (6 modules), nonce-based CSP added (API+Web), webhook idempotency enforced (Redis dedup + deterministic keys), optimistic locking wired into documents/projects/orgs PATCH handlers, markAllRead orgId fix, deploy rollback capability, JWT rotation doc (`docs/JWT_ROTATION.md`), bulk ops UI partial-failure alerts, removed `infra/terraform/aws/` (dead), fixed `idempotency.ts` import extension, removed `'unsafe-eval'` from Web CSP, deployed health checks. **13 of 15 P1 findings now resolved** (3 stale, 1 by-design). 774 tests all green (182 API + 108 SDK + 24 Worker + 460 Web). ESLint clean (0 errors) across all 6 packages. TypeScript clean across all 6 packages (lib/test-utils.ts excluded from typecheck via tsconfig).
 
 **Hardening Prompt Pack Audit (2026-06-23):** Full 8-domain adversarial audit executed via `prompts/hardening_prompt_pack/`. Domains: Security, Data Integrity, Resilience, Observability, Supply Chain, Privacy, CI/CD, Evolution/Platform. **89 deduplicated findings** (12 P0 Critical, 28 P1 High, 49 P2 Medium). **Global Risk Score: 0/100 (CRITICAL)**. **All 12 P0s fixed** (graceful shutdown, Terraform gates, prod approval, cookie flags, local JWT, image tagging, circuit breaker on Supabase, outbound HTTP timeouts, secrets in SSH deploy logs, tenant isolation).
 
@@ -41,12 +41,12 @@ _(Details on why specific patterns were chosen are recorded in `docs/CODE_REVIEW
 
 MCT is a **Turborepo monorepo** with 6 packages (4 apps + 2 shared):
 
-| Service | Entry Point                 | Purpose                                                        |
-| ------- | --------------------------- | -------------------------------------------------------------- |
-| API     | `apps/api/src/main.ts`      | Express server on port 4000, Supabase Admin for DB/auth        |
-| Web     | `apps/web/app/layout.tsx`   | Next.js App Router frontend, server components + actions       |
+| Service | Entry Point                 | Purpose                                                                                                                                    |
+| ------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| API     | `apps/api/src/main.ts`      | Express server on port 4000, Supabase Admin for DB/auth                                                                                    |
+| Web     | `apps/web/app/layout.tsx`   | Next.js App Router frontend, server components + actions                                                                                   |
 | Worker  | `apps/worker/src/main.ts`   | Bootstrap for background task processor (32 lines — 6 modules: env, task-registry, consumer-bullmq, consumer-sqs, health-server, shutdown) |
-| SDK     | `packages/sdk/src/index.ts` | Typed API client factory (`MCTClient.create()`)                |
+| SDK     | `packages/sdk/src/index.ts` | Typed API client factory (`MCTClient.create()`)                                                                                            |
 
 Plus shared packages: `@mct/ui` (cn utility), `@mct/config` (ESLint/TS configs).
 
@@ -65,14 +65,14 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status & Patterns
 
-**769 tests, all passing:** API 182, SDK 108, Worker 24, Web 455
+**774 tests, all passing:** API 182, SDK 108, Worker 24, Web 460
 
 | Package | Tests         | Framework                         |
 | ------- | ------------- | --------------------------------- |
 | API     | 182           | Jest + supertest                  |
 | SDK     | 108           | Jest (mocked fetch)               |
 | Worker  | 24            | Jest (env schema + task handlers) |
-| Web     | 455           | Jest + Testing Library            |
+| Web     | 460           | Jest + Testing Library            |
 | E2E     | 26 spec files | Playwright (chromium)             |
 
 ### Test patterns
@@ -282,7 +282,7 @@ A comprehensive deep-dive architecture review was conducted on 2026-06-16 coveri
 | Architecture       | 8/10  | Clear modular monolith layering                                            |
 | Code Quality       | 8/10  | Strong patterns, input sanitizer fixed                                     |
 | Security           | 7/10  | Tenant isolation + local JWT verification added                            |
-| Testing            | 9/10  | 769 tests, comprehensive coverage                                          |
+| Testing            | 9/10  | 774 tests, comprehensive coverage                                          |
 | Infrastructure     | 9/10  | Mature IaC, image tag drift fixed                                          |
 | CI/CD              | 8/10  | Gated deploys, comprehensive workflows                                     |
 | Documentation      | 9/10  | Exceptional breadth and depth                                              |
@@ -354,23 +354,23 @@ A full 8-domain adversarial audit was executed via the hardening prompt pack.
 
 ### Key P1 High Findings (13 Resolved, 1 By-Design, 1 Stale)
 
-| #   | ID       | Issue                                                 | Location                                           | Status |
-| --- | -------- | ----------------------------------------------------- | -------------------------------------------------- | ------ |
-| 1   | SEC-008  | Zod validation incomplete (11/27 mutation endpoints)  | `apps/api/src/routes/*.ts`                         | ✅ Stale — already resolved |
-| 2   | SEC-012  | No rate limit on auth endpoints                       | `apps/api/src/routes/auth.ts`                      | ✅ Stale — already resolved |
-| 3   | SEC-013  | JWT_SECRET not rotated; single key all environments   | `apps/api/src/lib/auth.ts`                         | ✅ `docs/JWT_ROTATION.md` |
-| 4   | SEC-014  | Service role key used for admin ops (bypasses RLS)    | `apps/api/src/lib/supabase.ts`                     | 🟡 By-design — mitigated by requireOrgAccess |
-| 5   | SEC-015  | No password strength policy                           | `apps/api/src/routes/auth.ts`                      | ✅ Stale — zxcvbn implemented |
-| 6   | SEC-016  | Missing security headers (CSP, HSTS, X-Frame-Options) | `apps/api/src/main.ts`, `apps/web/next.config.mjs` | ✅ Stale — both have comprehensive headers |
-| 7   | DATA-006 | No optimistic locking on mutable entities             | `apps/api/src/routes/*.ts`                         | ✅ Wired into tickets/documents/projects/orgs |
+| #   | ID       | Issue                                                 | Location                                           | Status                                                        |
+| --- | -------- | ----------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------- |
+| 1   | SEC-008  | Zod validation incomplete (11/27 mutation endpoints)  | `apps/api/src/routes/*.ts`                         | ✅ Stale — already resolved                                   |
+| 2   | SEC-012  | No rate limit on auth endpoints                       | `apps/api/src/routes/auth.ts`                      | ✅ Stale — already resolved                                   |
+| 3   | SEC-013  | JWT_SECRET not rotated; single key all environments   | `apps/api/src/lib/auth.ts`                         | ✅ `docs/JWT_ROTATION.md`                                     |
+| 4   | SEC-014  | Service role key used for admin ops (bypasses RLS)    | `apps/api/src/lib/supabase.ts`                     | 🟡 By-design — mitigated by requireOrgAccess                  |
+| 5   | SEC-015  | No password strength policy                           | `apps/api/src/routes/auth.ts`                      | ✅ Stale — zxcvbn implemented                                 |
+| 6   | SEC-016  | Missing security headers (CSP, HSTS, X-Frame-Options) | `apps/api/src/main.ts`, `apps/web/next.config.mjs` | ✅ Stale — both have comprehensive headers                    |
+| 7   | DATA-006 | No optimistic locking on mutable entities             | `apps/api/src/routes/*.ts`                         | ✅ Wired into tickets/documents/projects/orgs                 |
 | 8   | DATA-007 | Bulk operations lack transaction atomicity            | `apps/api/src/routes/tickets.ts`                   | 🟡 By-design — partial success intentional (per-item via RPC) |
-| 9   | DATA-009 | markAllRead crosses organization boundaries           | `apps/api/src/routes/notifications.ts`             | ✅ Conditional orgId filter |
-| 10  | DATA-014 | Webhook deliveries lack idempotency keys              | `apps/api/src/routes/webhooks.ts`                  | ✅ Redis dedup + deterministic keys |
-| 11  | RES-006  | UI false success on bulk operations (partial failure) | `apps/web/components/admin/tickets/*`              | ✅ Detailed error alerts |
-| 12  | RES-007  | 30s polling for notifications (no SSE/WebSocket)      | `apps/web/components/NotificationBell.tsx`         | ✅ SSE endpoint exists |
-| 13  | OBS-001  | No structured logging in web server components        | `apps/web/app/**/*.tsx`                            | ✅ All 4 error boundaries + dashboard use it |
-| 14  | EVOL-001 | No caching layer (every query hits Postgres)          | `apps/api/src/middleware/cache.ts`                 | ✅ Stale — cache exists (orgs/docs/projects/roles) |
-| 15  | EVOL-003 | N+1 queries persist in admin pages                    | `apps/web/app/(admin)/**`                          | ✅ Compound endpoints exist for users/roles/orgs |
+| 9   | DATA-009 | markAllRead crosses organization boundaries           | `apps/api/src/routes/notifications.ts`             | ✅ Conditional orgId filter                                   |
+| 10  | DATA-014 | Webhook deliveries lack idempotency keys              | `apps/api/src/routes/webhooks.ts`                  | ✅ Redis dedup + deterministic keys                           |
+| 11  | RES-006  | UI false success on bulk operations (partial failure) | `apps/web/components/admin/tickets/*`              | ✅ Detailed error alerts                                      |
+| 12  | RES-007  | 30s polling for notifications (no SSE/WebSocket)      | `apps/web/components/NotificationBell.tsx`         | ✅ SSE endpoint exists                                        |
+| 13  | OBS-001  | No structured logging in web server components        | `apps/web/app/**/*.tsx`                            | ✅ All 4 error boundaries + dashboard use it                  |
+| 14  | EVOL-001 | No caching layer (every query hits Postgres)          | `apps/api/src/middleware/cache.ts`                 | ✅ Stale — cache exists (orgs/docs/projects/roles)            |
+| 15  | EVOL-003 | N+1 queries persist in admin pages                    | `apps/web/app/(admin)/**`                          | ✅ Compound endpoints exist for users/roles/orgs              |
 
 ## Marketing Site Integration Plan
 
@@ -608,7 +608,7 @@ Full codebase audit conducted to identify remaining gaps before pushing to GitHu
 | 11  | Bulk user import (CSV invite)                             | Medium   | ✅     |
 | 12  | API key management (self-serve keys)                      | Medium   |        |
 | 13  | Role/permission editor UI (edit role-permission mappings) | Medium   | ✅     |
-| 14  | SLA tracking (ticket response/resolution metrics)         | Medium   |        |
+| 14  | SLA tracking (ticket response/resolution metrics)         | Medium   | ✅     |
 | 15  | Health dashboard (API/worker/DB status UI)                | Low      | ✅     |
 
 ### Polish — Future
@@ -627,76 +627,76 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 
 #### Recently Completed
 
-| #   | Feature                                                                                                                                                                | Status |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------- | --- |
-| 1   | **Dashboard quick actions** — "Create Ticket" / "Upload Document" buttons                                                                                              | ✅     |
-| 2   | **View in Admin button** — on portal ticket/project/document detail, gated by admin check                                                                              | ✅     |
-| 3   | **Bell dropdown → notification preferences** — inline email toggles per module                                                                                         | ✅     |
-| 4   | **View in Portal on ticket detail** — admin ticket detail links to `/portal/support/[ticketId]`                                                                        | ✅     |
-| 5   | **View in Portal per document row** — admin document list "Portal" link (table/card/list views)                                                                        | ✅     |
-| 6   | **Page metadata / titles** — all 35 server component pages have meaningful `<title>` tags                                                                              | ✅     |
-| 7   | **Loading skeletons** — `loading.tsx` for admin + portal route groups                                                                                                  | ✅     |
-| 8   | **Admin org search** — `AdminOrganizationsClient` with text search, status filter, pagination                                                                          | ✅     |
-| 9   | **Inline status/priority dropdowns** — click status/priority pill → inline select on ticket                                                                            | ✅     |
-| 10  | **Ticket comment editing** — edit button within 5-min window, inline form, audit logging                                                                               | ✅     |
-| 11  | **Activity timeline** — audit event feed on admin ticket detail page                                                                                                   | ✅     |
-| 12  | **Admin dashboard audit feed** — "Recent Audit Activity" panel on admin home                                                                                           | ✅     |
-| 13  | **Ticket/project CSV export** — `/export` endpoints + SDK + download buttons                                                                                           | ✅     |
-| 14  | **Input sanitizer fix** — removed HTML-encoding mutation, keep pattern detection only                                                                                  | ✅     |
-| 15  | **Tenant isolation** — `requireOrgAccess()` middleware wired into all 8 entity routers                                                                                 | ✅     |
-| 16  | **Local JWT verification** — fast path in `auth.ts` via `jsonwebtoken`, falls back to Supabase                                                                         | ✅     |
-| 17  | **`unhandledRejection` handler** — added to `main.ts` for crash-safe promise rejection tracking                                                                        | ✅     |
-| 18  | **Terraform image tag drift** — added `image_tag` variable, CI registers SHA-tagged task defs                                                                          | ✅     |
-| 19  | **Worker Sentry integration** — `@sentry/node`, env schema, init, error capturing                                                                                      | ✅     |
-| 20  | **Cookie security flags** — verified `httpOnly`, `secure`, `sameSite=lax` on `mct_session`                                                                             | ✅     |
-| 21  | **DO Terraform** — created `infra/terraform/digitalocean/` with droplet, firewall, Cloudflare DNS                                                                      | ✅     |
-| 22  | **Worker BullMQ** — added `bullmq` + `ioredis`, `runBullMQWorker()`, `QUEUE_BACKEND` env routing                                                                       | ✅     |
-| 23  | **DO docker-compose** — full stack with Caddy, Redis, API, Worker, Web (Supabase is hosted)                                                                            | ✅     |
-| 24  | **GHCR switch** — all images now pushed to `ghcr.io/mainecybertech/mct-{api,worker,web}`                                                                               | ✅     |
-| 25  | **DO deploy workflow** — single `deploy-do.yml` building 3 images + SSH deploy to droplet                                                                              | ✅     |
-| 26  | **Terraform workflow** — `terraform-do.yml` for DO infra plan/apply                                                                                                    | ✅     |
-| 27  | **Cleaned up old workflows** — removed 11 AWS/Vercel deploy and terraform workflows                                                                                    | ✅     |
-| 28  | **Hosted Supabase** — self-hosted Supabase containers removed from docker-compose, uses cloud API                                                                      | ✅     |
-| 29  | **DNS by environment** — prod creates `.com` A records, dev creates `.us` A records only                                                                               | ✅     |
-| 30  | **Fixed .gitignore** — `terraform` scoped to root-level only to track `infra/terraform/` subdirs                                                                       | ✅     |
-| 31  | **Domain routing middleware** — `app.*` → portal login, `www.*` → marketing; detects via `Host` header, skips local dev                                                | ✅     |
-| 32  | **NEXT_PUBLIC_API_URL build arg** — passed to web Docker build for client-side code; runtime uses internal `http://api:4000` for server-to-server                      | ✅     |
-| 33  | **Deploy speed 5x** — pipe Docker images over SSH (`docker save                                                                                                        | gzip   | ssh ... docker load`) bypasses slow GHCR pull on droplet | ✅  |
-| 34  | **Dockerfile cache cleanup** — removed Next.js `.next/cache` in builder stage; `rm -rf .pnpm` store in runner stage                                                    | ✅     |
-| 35  | **public_interactions RLS fix** — disabled RLS on public_interactions table (public data), added service_role + anon INSERT policies                                   | ✅     |
-| 36  | **CORS multi-domain** — `CORS_ORIGIN` computed per-environment includes both `app.*` and `www.*` origins for contact form API calls                                    | ✅     |
-| 37  | **MarketingHeader absolute URLs** — nav links on `app.*` domain point to `https://www.*` absolute URLs; Portal button stays relative                                   | ✅     |
-| 38  | **Webhook + JSM env vars** — `PUBLIC_TRAFFIC_WEBHOOK_URL`, `PUBLIC_LEAD_WEBHOOK_URL`, `JSM_*` vars added to API container and deploy .env                              | ✅     |
-| 39  | **Deploy reliability** — `mkdir -p /opt/mct-portal` before file transfers; targeted old-image cleanup instead of slow system prune; builder prune moved to post-deploy | ✅     |
-| 40  | **Multi-org role fix** — `PATCH /users/:id/role` accepts optional `organizationId` to prevent corrupting all memberships for multi-org users                           | ✅     |
-| 41  | **Cache no-renew** — added `responseCacheNoRenew()` to prevent self-renewing cache TTL; added `invalidateCache()` on role permission changes                           | ✅     |
-| 42  | **Compound roles endpoint** — `GET /roles/with-permissions` returns roles + permission counts in 2 queries (eliminates N+1 from roles list page)                       | ✅     |
-| 43  | **Roles page tests** — 32 new tests: roles list page, role detail page, RolePermissionsEditor component (loading, matrix, toggles, errors, super admin)                | ✅     |
-| 44  | **JSM logging** — added `logger.error` + `logger.warn` to all webhook/JSM fetch calls (was silently swallowing all errors)                                             | ✅     |
-| 45  | **Users list grouping** — group memberships by `user_id` in admin users list; shows "N more orgs" badge for multi-org users instead of duplicate cards                 | ✅     |
-| 46  | **Permissions editor error toast** — `RolePermissionsEditor` now shows "Failed to load permissions" toast instead of empty `catch {}`                                  | ✅     |
-| 47  | **Dockerfile ARG default** — `NEXT_PUBLIC_API_URL` ARG now has default value (silences undefined-var build warning)                                                    | ✅     |
-| 48  | **Zod validation complete** — added to final 4 mutation endpoints (roles, bulk, notification-preferences, users) — all ~27 mutations now validated                     | ✅     |
-| 49  | **Organizations list cache** — `GET /api/v1/organizations` cached 60s with `responseCacheNoRenew` + invalidation on create/update/delete                               | ✅     |
-| 50  | **Documents + Projects list cache** — both `GET /api/v1/documents` and `GET /api/v1/projects` cached 30s                                                               | ✅     |
-| 51  | **EmptyState component** — reusable component with icon/title/description/actions, wired into tickets, projects, documents admin pages                                 | ✅     |
-| 52  | **Markdown comment rendering** — `CommentBody` component (bold, italic, links, lists, code) wired into all 4 comment locations (portal + admin tickets + projects)     | ✅     |
-| 53  | **E2E JWT_SECRET fix** — added missing `JWT_SECRET` env var to E2E workflow (API startup was failing)                                                                  | ✅     |
-| 54  | **Webhooks page tests** — new admin webhooks list page tests (cards, badges, links, empty state, active/disabled pills)                                                | ✅     |
-| 55  | **Health dashboard tests** — new admin health page tests (shell, client component, breadcrumbs)                                                                        | ✅     |
-| 56  | **Billing page tests** — new admin org billing page tests (header, back link, null org, data passing)                                                                  | ✅     |
-| 57  | **Portal activity feed** — new "Recent Activity" section on portal dashboard using audit events scoped to user's org                                                   | ✅     |
-| 58  | **Bulk ticket update API** — `POST /api/v1/tickets/bulk` endpoint + SDK `bulkUpdate()` for batch status/priority changes                                               | ✅     |
-| 59  | **Worker main.ts split** — 413→32 lines, extracted 6 modules (env, task-registry, consumer-bullmq, consumer-sqs, health-server, shutdown)                           | ✅     |
-| 60  | **Nonce-based CSP** — API generates nonce per request for Swagger UI; Web middleware sets nonce-based CSP, `'unsafe-eval'` removed from Web CSP                     | ✅     |
-| 61  | **Webhook idempotency enforcement** — Redis dedup check + deterministic keys in all 4 handlers (Stripe/Jira/JSM/M365)                                               | ✅     |
-| 62  | **Optimistic locking** — `requireIfMatch` + `checkVersionMatch` wired into documents, projects, organizations PATCH handlers                                        | ✅     |
-| 63  | **Deploy rollback** — rollback-on-failure step in deploy-do.yml + manual rollback via workflow_dispatch input                                                         | ✅     |
-| 64  | **JWT rotation doc** — `docs/JWT_ROTATION.md` with rotation procedure, emergency rotation, environment config                                                        | ✅     |
-| 65  | **Bulk ops UI alerts** — partial failure details shown via `alert()` instead of silent `console.error`; SDK return type fixed to match API                           | ✅     |
-| 66  | **markAllRead orgId fix** — conditional `organization_id` filter only when query param provided; removes empty-string match issue                                    | ✅     |
+| #   | Feature                                                                                                                                                                          | Status |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------------------------------------------------------- | --- |
+| 1   | **Dashboard quick actions** — "Create Ticket" / "Upload Document" buttons                                                                                                        | ✅     |
+| 2   | **View in Admin button** — on portal ticket/project/document detail, gated by admin check                                                                                        | ✅     |
+| 3   | **Bell dropdown → notification preferences** — inline email toggles per module                                                                                                   | ✅     |
+| 4   | **View in Portal on ticket detail** — admin ticket detail links to `/portal/support/[ticketId]`                                                                                  | ✅     |
+| 5   | **View in Portal per document row** — admin document list "Portal" link (table/card/list views)                                                                                  | ✅     |
+| 6   | **Page metadata / titles** — all 35 server component pages have meaningful `<title>` tags                                                                                        | ✅     |
+| 7   | **Loading skeletons** — `loading.tsx` for admin + portal route groups                                                                                                            | ✅     |
+| 8   | **Admin org search** — `AdminOrganizationsClient` with text search, status filter, pagination                                                                                    | ✅     |
+| 9   | **Inline status/priority dropdowns** — click status/priority pill → inline select on ticket                                                                                      | ✅     |
+| 10  | **Ticket comment editing** — edit button within 5-min window, inline form, audit logging                                                                                         | ✅     |
+| 11  | **Activity timeline** — audit event feed on admin ticket detail page                                                                                                             | ✅     |
+| 12  | **Admin dashboard audit feed** — "Recent Audit Activity" panel on admin home                                                                                                     | ✅     |
+| 13  | **Ticket/project CSV export** — `/export` endpoints + SDK + download buttons                                                                                                     | ✅     |
+| 14  | **Input sanitizer fix** — removed HTML-encoding mutation, keep pattern detection only                                                                                            | ✅     |
+| 15  | **Tenant isolation** — `requireOrgAccess()` middleware wired into all 8 entity routers                                                                                           | ✅     |
+| 16  | **Local JWT verification** — fast path in `auth.ts` via `jsonwebtoken`, falls back to Supabase                                                                                   | ✅     |
+| 17  | **`unhandledRejection` handler** — added to `main.ts` for crash-safe promise rejection tracking                                                                                  | ✅     |
+| 18  | **Terraform image tag drift** — added `image_tag` variable, CI registers SHA-tagged task defs                                                                                    | ✅     |
+| 19  | **Worker Sentry integration** — `@sentry/node`, env schema, init, error capturing                                                                                                | ✅     |
+| 20  | **Cookie security flags** — verified `httpOnly`, `secure`, `sameSite=lax` on `mct_session`                                                                                       | ✅     |
+| 21  | **DO Terraform** — created `infra/terraform/digitalocean/` with droplet, firewall, Cloudflare DNS                                                                                | ✅     |
+| 22  | **Worker BullMQ** — added `bullmq` + `ioredis`, `runBullMQWorker()`, `QUEUE_BACKEND` env routing                                                                                 | ✅     |
+| 23  | **DO docker-compose** — full stack with Caddy, Redis, API, Worker, Web (Supabase is hosted)                                                                                      | ✅     |
+| 24  | **GHCR switch** — all images now pushed to `ghcr.io/mainecybertech/mct-{api,worker,web}`                                                                                         | ✅     |
+| 25  | **DO deploy workflow** — single `deploy-do.yml` building 3 images + SSH deploy to droplet                                                                                        | ✅     |
+| 26  | **Terraform workflow** — `terraform-do.yml` for DO infra plan/apply                                                                                                              | ✅     |
+| 27  | **Cleaned up old workflows** — removed 11 AWS/Vercel deploy and terraform workflows                                                                                              | ✅     |
+| 28  | **Hosted Supabase** — self-hosted Supabase containers removed from docker-compose, uses cloud API                                                                                | ✅     |
+| 29  | **DNS by environment** — prod creates `.com` A records, dev creates `.us` A records only                                                                                         | ✅     |
+| 30  | **Fixed .gitignore** — `terraform` scoped to root-level only to track `infra/terraform/` subdirs                                                                                 | ✅     |
+| 31  | **Domain routing middleware** — `app.*` → portal login, `www.*` → marketing; detects via `Host` header, skips local dev                                                          | ✅     |
+| 32  | **NEXT_PUBLIC_API_URL build arg** — passed to web Docker build for client-side code; runtime uses internal `http://api:4000` for server-to-server                                | ✅     |
+| 33  | **Deploy speed 5x** — pipe Docker images over SSH (`docker save                                                                                                                  | gzip   | ssh ... docker load`) bypasses slow GHCR pull on droplet | ✅  |
+| 34  | **Dockerfile cache cleanup** — removed Next.js `.next/cache` in builder stage; `rm -rf .pnpm` store in runner stage                                                              | ✅     |
+| 35  | **public_interactions RLS fix** — disabled RLS on public_interactions table (public data), added service_role + anon INSERT policies                                             | ✅     |
+| 36  | **CORS multi-domain** — `CORS_ORIGIN` computed per-environment includes both `app.*` and `www.*` origins for contact form API calls                                              | ✅     |
+| 37  | **MarketingHeader absolute URLs** — nav links on `app.*` domain point to `https://www.*` absolute URLs; Portal button stays relative                                             | ✅     |
+| 38  | **Webhook + JSM env vars** — `PUBLIC_TRAFFIC_WEBHOOK_URL`, `PUBLIC_LEAD_WEBHOOK_URL`, `JSM_*` vars added to API container and deploy .env                                        | ✅     |
+| 39  | **Deploy reliability** — `mkdir -p /opt/mct-portal` before file transfers; targeted old-image cleanup instead of slow system prune; builder prune moved to post-deploy           | ✅     |
+| 40  | **Multi-org role fix** — `PATCH /users/:id/role` accepts optional `organizationId` to prevent corrupting all memberships for multi-org users                                     | ✅     |
+| 41  | **Cache no-renew** — added `responseCacheNoRenew()` to prevent self-renewing cache TTL; added `invalidateCache()` on role permission changes                                     | ✅     |
+| 42  | **Compound roles endpoint** — `GET /roles/with-permissions` returns roles + permission counts in 2 queries (eliminates N+1 from roles list page)                                 | ✅     |
+| 43  | **Roles page tests** — 32 new tests: roles list page, role detail page, RolePermissionsEditor component (loading, matrix, toggles, errors, super admin)                          | ✅     |
+| 44  | **JSM logging** — added `logger.error` + `logger.warn` to all webhook/JSM fetch calls (was silently swallowing all errors)                                                       | ✅     |
+| 45  | **Users list grouping** — group memberships by `user_id` in admin users list; shows "N more orgs" badge for multi-org users instead of duplicate cards                           | ✅     |
+| 46  | **Permissions editor error toast** — `RolePermissionsEditor` now shows "Failed to load permissions" toast instead of empty `catch {}`                                            | ✅     |
+| 47  | **Dockerfile ARG default** — `NEXT_PUBLIC_API_URL` ARG now has default value (silences undefined-var build warning)                                                              | ✅     |
+| 48  | **Zod validation complete** — added to final 4 mutation endpoints (roles, bulk, notification-preferences, users) — all ~27 mutations now validated                               | ✅     |
+| 49  | **Organizations list cache** — `GET /api/v1/organizations` cached 60s with `responseCacheNoRenew` + invalidation on create/update/delete                                         | ✅     |
+| 50  | **Documents + Projects list cache** — both `GET /api/v1/documents` and `GET /api/v1/projects` cached 30s                                                                         | ✅     |
+| 51  | **EmptyState component** — reusable component with icon/title/description/actions, wired into tickets, projects, documents admin pages                                           | ✅     |
+| 52  | **Markdown comment rendering** — `CommentBody` component (bold, italic, links, lists, code) wired into all 4 comment locations (portal + admin tickets + projects)               | ✅     |
+| 53  | **E2E JWT_SECRET fix** — added missing `JWT_SECRET` env var to E2E workflow (API startup was failing)                                                                            | ✅     |
+| 54  | **Webhooks page tests** — new admin webhooks list page tests (cards, badges, links, empty state, active/disabled pills)                                                          | ✅     |
+| 55  | **Health dashboard tests** — new admin health page tests (shell, client component, breadcrumbs)                                                                                  | ✅     |
+| 56  | **Billing page tests** — new admin org billing page tests (header, back link, null org, data passing)                                                                            | ✅     |
+| 57  | **Portal activity feed** — new "Recent Activity" section on portal dashboard using audit events scoped to user's org                                                             | ✅     |
+| 58  | **Bulk ticket update API** — `POST /api/v1/tickets/bulk` endpoint + SDK `bulkUpdate()` for batch status/priority changes                                                         | ✅     |
+| 59  | **Worker main.ts split** — 413→32 lines, extracted 6 modules (env, task-registry, consumer-bullmq, consumer-sqs, health-server, shutdown)                                        | ✅     |
+| 60  | **Nonce-based CSP** — API generates nonce per request for Swagger UI; Web middleware sets nonce-based CSP, `'unsafe-eval'` removed from Web CSP                                  | ✅     |
+| 61  | **Webhook idempotency enforcement** — Redis dedup check + deterministic keys in all 4 handlers (Stripe/Jira/JSM/M365)                                                            | ✅     |
+| 62  | **Optimistic locking** — `requireIfMatch` + `checkVersionMatch` wired into documents, projects, organizations PATCH handlers                                                     | ✅     |
+| 63  | **Deploy rollback** — rollback-on-failure step in deploy-do.yml + manual rollback via workflow_dispatch input                                                                    | ✅     |
+| 64  | **JWT rotation doc** — `docs/JWT_ROTATION.md` with rotation procedure, emergency rotation, environment config                                                                    | ✅     |
+| 65  | **Bulk ops UI alerts** — partial failure details shown via `alert()` instead of silent `console.error`; SDK return type fixed to match API                                       | ✅     |
+| 66  | **markAllRead orgId fix** — conditional `organization_id` filter only when query param provided; removes empty-string match issue                                                | ✅     |
 | 67  | **Removed dead infra** — deleted `infra/terraform/aws/` (dormant 25-file directory), archive directory (56 stale files), `.bak` file, `packages/db` stub, `transactions.ts` stub | ✅     |
-| 68  | **DRY'd across codebase** — shared CSV helper (`lib/csv.ts`), webhook logging (`logWebhookDelivery()`), SDK client (`executeFetch()`), consolidated DO firewalls     | ✅     |
+| 68  | **DRY'd across codebase** — shared CSV helper (`lib/csv.ts`), webhook logging (`logWebhookDelivery()`), SDK client (`executeFetch()`), consolidated DO firewalls                 | ✅     |
 
 #### High Value (Still Open)
 
@@ -773,13 +773,13 @@ _Updated after recent feature work — all portal+admin high-value cross-navigat
 
 ### Hardening — All P1s Resolved ✅
 
-**All 12 P0 critical and 15 P1 high findings from the 2026-06-23 hardened audit have been resolved** (3 P1 stale, 2 by-design). 769 tests all green, TypeScript and ESLint clean.
+**All 12 P0 critical and 15 P1 high findings from the 2026-06-23 hardened audit have been resolved** (3 P1 stale, 2 by-design). 774 tests all green, TypeScript and ESLint clean.
 
 Long-term future work:
-- Wire `@mct/config` TypeScript base into API/worker configs
+
 - SSO/OIDC login (SAML/OAuth) — Medium
-- SLA tracking UI page — Medium
 - Internationalization (i18n) — Low
+- API key management (self-serve keys) — Medium
 
 ### Pre-Production Audit Fixes (2026-06-05)
 
@@ -828,12 +828,6 @@ Long-term future work:
 | 36  | SDK return types any                        | Noted  | Runtime-safe                                                                                                                                       |
 | 37  | SDK types not re-exported                   | ✅     | 11+ types re-exported                                                                                                                              |
 | 38  | bootstrap.ts empty stub                     | ✅     | File removed — no-op never imported                                                                                                                |
-
-### Remaining Technical Debt
-
-- Wire `@mct/config` TypeScript config into apps (tsconfig.json has incompatible settings with API/worker — needs refactor)
-- JSM ticket creation not firing (Teams webhook works) — verify `JSM_DOMAIN`, `JSM_EMAIL`, `JSM_API_TOKEN`, `JSM_SERVICEDESK_ID`, `JSM_REQUEST_TYPE_ID` secrets have correct values; logging now enabled
-- SLA tracking UI page still pending (API+SDK done)
 
 ## Final Codebase Review (2026-06-05) — 21 Findings
 
@@ -908,13 +902,12 @@ A comprehensive pass of all 33 documentation files, cross-referenced against sou
 
 **All 38 pre-production findings + 21 codebase review findings resolved.** All high-value cross-navigation features completed. **3 of 3 critical architecture review findings fixed.** All high-priority findings resolved. **DO migration complete.**
 
-| Priority | Task                                                                                      | Effort | Status |
-| -------- | ----------------------------------------------------------------------------------------- | ------ | ------ |
-| 1        | **Set up GitHub secrets** (16 required) and trigger first dev deploy                      | Small  | ⏳     |
-| 2        | **Wire `@mct/ui` & `@mct/config` into apps**                                              | Medium | Future |
-| 3        | **Zod validation** — added to all ~27 mutation endpoints                                  | Medium | ✅     |
-| 4        | **Empty state components** — wired into tickets, projects, documents admin pages          | Small  | ✅     |
-| 5        | **Error retry buttons** — all 4 error boundaries have "Try again"                         | Small  | ✅     |
+| Priority | Task                                                                      | Effort | Status |
+| -------- | ------------------------------------------------------------------------- | ------ | ------ |
+| 1        | **Set up GitHub secrets** (16 required) and trigger first dev deploy      | Small  | ✅     |
+| 2        | **Wire `@mct/config` TypeScript base into API/worker configs**            | Medium | ✅     |
+| 3        | **SLA tracking UI page** (API+SDK done, page exists, needs test coverage) | Medium | ✅     |
+| 4        | **SLA tracking page unit tests**                                          | Small  | ✅     |
 
 ## Architectural Analysis
 
@@ -1245,7 +1238,7 @@ Beyond the 23 architectural findings, 10 additional gaps were identified. All re
 ### Key Conclusions
 
 - **No structural alignment needed** — MCT Portal is feature-complete for its MSP domain
-- **MCT superior in testing** (769 tests vs 15), **documentation** (37 docs vs 1), **env hygiene** (Zod-validated), and **CI/CD safety** (gated deployment)
+- **MCT superior in testing** (774 tests vs 15), **documentation** (37 docs vs 1), **env hygiene** (Zod-validated), and **CI/CD safety** (gated deployment)
 - **Chat patterns worth adopting:** real env config files (unblocks prod), mock builder test utilities, date-based migration naming, simpler root scripts
 
 ### Critical Blockers Found
@@ -1264,9 +1257,9 @@ All 3 critical blockers were **already implemented** at time of audit:
 
 ### Actual Remaining Recommendations
 
-| Phase | Action | Timeline | Status |
-|-------|--------|----------|--------|
-| **P0** | Verify terraform env files + admin tests + JSM webhook exist | Days 1-2 | ✅ All already implemented |
-| **P1** | Simplify root scripts + add shared test utilities | Days 3-7 | ✅ Done |
-| **P2** | Refactor test setup (mock builder) + date-based migrations | Weeks 2-4 | 🟡 In progress |
-| **P3** | Evaluate routing/TS convergence (optional) | Quarterly | ⬜ Not started |
+| Phase  | Action                                                       | Timeline  | Status                     |
+| ------ | ------------------------------------------------------------ | --------- | -------------------------- |
+| **P0** | Verify terraform env files + admin tests + JSM webhook exist | Days 1-2  | ✅ All already implemented |
+| **P1** | Simplify root scripts + add shared test utilities            | Days 3-7  | ✅ Done                    |
+| **P2** | Refactor test setup (mock builder) + date-based migrations   | Weeks 2-4 | 🟡 In progress             |
+| **P3** | Evaluate routing/TS convergence (optional)                   | Quarterly | ⬜ Not started             |

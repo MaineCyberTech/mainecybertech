@@ -55,30 +55,26 @@ jobs:
           DO_SSH_FINGERPRINT: ${{ secrets.DO_SSH_FINGERPRINT }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_ZONE_ID_US: ${{ secrets.CLOUDFLARE_ZONE_ID_US }}
         run: |
           cat > "${{ steps.env.outputs.name }}.tfvars" <<EOF
           do_token              = "${DO_API_TOKEN}"
           ssh_fingerprint       = "${DO_SSH_FINGERPRINT}"
           cloudflare_api_token  = "${CLOUDFLARE_API_TOKEN}"
           cloudflare_zone_id    = "${CLOUDFLARE_ZONE_ID}"
+          cloudflare_zone_id_us = "${CLOUDFLARE_ZONE_ID_US}"
           droplet_size          = "s-1vcpu-512mb-10gb"
           environment           = "${{ steps.env.outputs.name }}"
           EOF
 
       - name: Terraform Init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: |
           export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
-          export AWS_ACCESS_KEY_ID=""
-          export AWS_SECRET_ACCESS_KEY=""
           export AWS_SDK_LOAD_CONFIG=0
-          terraform init \
-            -backend-config="bucket=portal-terraform-state" \
-            -backend-config="key=digitalocean/${{ steps.env.outputs.name }}/terraform.tfstate" \
-            -backend-config="region=us-east-1" \
-            -backend-config="skip_credentials_validation=true" \
-            -backend-config="skip_metadata_api_check=true" \
-            -backend-config="skip_requesting_account_id=true" \
-            -backend-config="encrypt=true"
+          terraform init
 
       - name: Terraform Validate
         run: terraform validate
@@ -138,13 +134,17 @@ jobs:
           name: tfplan-prod
           path: infra/terraform/digitalocean
 
-      - name: Terraform Apply
+      - name: Terraform Init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: |
           export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
-          export AWS_ACCESS_KEY_ID=""
-          export AWS_SECRET_ACCESS_KEY=""
           export AWS_SDK_LOAD_CONFIG=0
-          terraform apply -auto-approve tfplan
+          terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
 
   terraform-apply-dev:
     needs: terraform-plan
@@ -170,24 +170,13 @@ jobs:
           path: infra/terraform/digitalocean
 
       - name: Terraform Init
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: |
           export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
-          export AWS_ACCESS_KEY_ID=""
-          export AWS_SECRET_ACCESS_KEY=""
           export AWS_SDK_LOAD_CONFIG=0
-          terraform init \
-            -backend-config="bucket=portal-terraform-state" \
-            -backend-config="key=digitalocean/dev/terraform.tfstate" \
-            -backend-config="region=us-east-1" \
-            -backend-config="skip_credentials_validation=true" \
-            -backend-config="skip_metadata_api_check=true" \
-            -backend-config="skip_requesting_account_id=true" \
-            -backend-config="encrypt=true"
+          terraform init
 
       - name: Terraform Apply
-        run: |
-          export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
-          export AWS_ACCESS_KEY_ID=""
-          export AWS_SECRET_ACCESS_KEY=""
-          export AWS_SDK_LOAD_CONFIG=0
-          terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve tfplan

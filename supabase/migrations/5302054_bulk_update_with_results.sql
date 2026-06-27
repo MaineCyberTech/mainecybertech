@@ -1,6 +1,8 @@
 -- Transactional bulk update function with per-item results
 -- Returns JSON array of results: [{"id": "uuid", "success": true, "version": 2}, {"id": "uuid", "success": false, "error": "Version conflict"}]
 
+drop function if exists bulk_update_with_version(text, jsonb);
+
 CREATE OR REPLACE FUNCTION bulk_update_with_version(
     table_name text,
     updates jsonb

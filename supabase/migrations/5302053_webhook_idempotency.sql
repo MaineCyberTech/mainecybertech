@@ -9,6 +9,16 @@ create index if not exists idx_webhook_deliveries_idempotency
   where idempotency_key is not null;
 
 -- Add unique constraint to prevent duplicate deliveries with same idempotency key
-alter table if exists public.webhook_deliveries
-  add constraint if not exists webhook_deliveries_idempotency_unique
-  unique (idempotency_key);
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'webhook_deliveries_idempotency_unique'
+    and connamespace = (select oid from pg_namespace where nspname = 'public')
+  ) then
+    alter table public.webhook_deliveries
+      add constraint webhook_deliveries_idempotency_unique
+      unique (idempotency_key);
+  end if;
+end;
+$$;

@@ -16,7 +16,7 @@ services:
     volumes:
       - redis-data:/data
     restart: unless-stopped
-    mem_limit: 64m
+    mem_limit: 48m
 
   # ===== Our Apps =====
   api:
@@ -40,7 +40,7 @@ services:
       redis:
         condition: service_started
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 128m
 
   worker:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:-latest}
@@ -71,7 +71,7 @@ services:
       redis:
         condition: service_started
     restart: unless-stopped
-    mem_limit: 192m
+    mem_limit: 128m
 
   web:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:-latest}
@@ -81,7 +81,7 @@ services:
       NEXT_TELEMETRY_DISABLED: 1
       SENTRY_DSN: ${SENTRY_DSN:-}
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 128m
 
   # ===== Reverse Proxy =====
   caddy:

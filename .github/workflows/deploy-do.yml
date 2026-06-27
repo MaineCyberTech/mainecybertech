@@ -8,10 +8,10 @@ on:
         type: choice
         options: [dev, prod]
         default: dev
-      rollback:
-        description: "Rollback to previous deployment"
-        type: boolean
-        default: false
+      rollback_sha:
+        description: "SHA to rollback to (leave empty for normal deploy)"
+        required: false
+        type: string
   push:
     branches: [main, develop]
     paths:
@@ -22,23 +22,27 @@ on:
       - "infra/digitalocean/**"
       - ".github/workflows/deploy-do.yml"
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   IMAGE_TAG: ${{ github.sha }}
 
 jobs:
-  build-and-deploy:
+  setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    environment:
-      name: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
-
+    timeout-minutes: 5
+    outputs:
+      name: ${{ steps.env.outputs.name }}
+      app_domain: ${{ steps.env.outputs.app_domain }}
+      api_domain: ${{ steps.env.outputs.api_domain }}
+      www_domain: ${{ steps.env.outputs.www_domain }}
+      deploy_host: ${{ steps.env.outputs.deploy_host }}
+      cors_origin: ${{ steps.env.outputs.cors_origin }}
+      ghcr_prefix: ${{ steps.env.outputs.ghcr_prefix }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Determine environment
         id: env
@@ -62,104 +66,134 @@ jobs:
           echo "www_domain=$WWW_DOMAIN" >> $GITHUB_OUTPUT
           echo "deploy_host=$DEPLOY_HOST" >> $GITHUB_OUTPUT
           echo "cors_origin=https://$APP_DOMAIN,https://$WWW_DOMAIN" >> $GITHUB_OUTPUT
-          echo "ssh_key=DO_SSH_PRIVATE_KEY" >> $GITHUB_OUTPUT
-          echo "ssh_passphrase=DO_SSH_PASSPHRASE" >> $GITHUB_OUTPUT
           echo "ghcr_prefix=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+  build-api:
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push API image
-        uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/api/Dockerfile
           push: true
-          tags: ${{ steps.env.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
+          tags: |
+            ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
+            ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ needs.setup.outputs.name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push Worker image
-        uses: docker/build-push-action@v6
+  build-worker:
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/worker/Dockerfile
           push: true
-          tags: ${{ steps.env.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
+          tags: |
+            ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
+            ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ needs.setup.outputs.name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Build and push Web image
-        uses: docker/build-push-action@v6
+  build-web:
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/web/Dockerfile
           push: true
-          tags: ${{ steps.env.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
           build-args: |
-            NEXT_PUBLIC_API_URL=https://${{ steps.env.outputs.api_domain }}
+            NEXT_PUBLIC_API_URL=https://${{ needs.setup.outputs.api_domain }}
+          tags: |
+            ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
+            ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ needs.setup.outputs.name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  deploy:
+    needs: [setup, build-api, build-worker, build-web]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: ${{ needs.setup.outputs.name }}
+    steps:
+      - uses: actions/checkout@v4
+
       - name: Set up SSH key
         run: |
-           mkdir -p ~/.ssh
-           echo "${{ secrets[steps.env.outputs.ssh_key] }}" > ~/.ssh/id_rsa
-           chmod 600 ~/.ssh/id_rsa
-           # Only strip passphrase if DO_SSH_PASSPHRASE secret is set AND non-whitespace
-           PASSPHRASE="${{ secrets[steps.env.outputs.ssh_passphrase] }}"
-           if [ -n "$PASSPHRASE" ] && [ -n "${PASSPHRASE// /}" ]; then
-             ssh-keygen -p -P "$PASSPHRASE" -N "" -f ~/.ssh/id_rsa
-           fi
-           ssh-keyscan -H "${{ steps.env.outputs.deploy_host }}" >> ~/.ssh/known_hosts 2>&1 || echo "ssh-keyscan failed (non-fatal)"
+          mkdir -p ~/.ssh
+          SSH_SECRET_NAME="${{ needs.setup.outputs.name == 'prod' && 'DO_SSH_PRIVATE_KEY' || 'DO_SSH_PRIVATE_KEY' }}"
+          echo "${{ secrets[SSH_SECRET_NAME] }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          PASSPHRASE="${{ secrets.DO_SSH_PASSPHRASE }}"
+          if [ -n "$PASSPHRASE" ] && [ -n "${PASSPHRASE// /}" ]; then
+            ssh-keygen -p -P "$PASSPHRASE" -N "" -f ~/.ssh/id_rsa
+          fi
+          ssh-keyscan -H "${{ needs.setup.outputs.deploy_host }}" >> ~/.ssh/known_hosts 2>&1 || echo "ssh-keyscan failed (non-fatal)"
 
       - name: Deploy to DigitalOcean
         shell: bash
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
-          GHCR_IMAGE_PREFIX: ${{ steps.env.outputs.ghcr_prefix }}
+          GHCR_IMAGE_PREFIX: ${{ needs.setup.outputs.ghcr_prefix }}
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOST: ${{ steps.env.outputs.deploy_host }}
+          HOST: ${{ needs.setup.outputs.deploy_host }}
           CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
           CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
-          APP_DOMAIN: ${{ steps.env.outputs.app_domain }}
-          API_DOMAIN: ${{ steps.env.outputs.api_domain }}
-          CORS_ORIGIN: ${{ steps.env.outputs.cors_origin }}
+          APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
+          API_DOMAIN: ${{ needs.setup.outputs.api_domain }}
+          CORS_ORIGIN: ${{ needs.setup.outputs.cors_origin }}
         run: |
-          echo "SSH_TEST_BEGIN"
-          # Disable exit on error for SSH retries
+          SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=10 -o ServerAliveInterval=30"
+
+          echo "--- WAITING FOR SSH ---"
           set +e
-          # Minimal SSH test with retries
-          SSH_OPTS="-o StrictHostKeyChecking=no -o LogLevel=INFO -o ServerAliveInterval=60 -o ServerAliveCountMax=10 -o ConnectTimeout=10"
-          for i in $(seq 1 30); do
-            echo "SSH attempt $i/30..."
-            SSH_OUTPUT=$(ssh -v $SSH_OPTS root@$HOST "echo ALIVE_$(date +%s)" 2>&1)
+          for i in $(seq 1 10); do
+            SSH_OUTPUT=$(ssh $SSH_OPTS root@$HOST "echo ALIVE" 2>&1)
             SSH_EXIT=$?
-            echo "SSH_EXIT=$SSH_EXIT"
-            echo "SSH_OUTPUT=$SSH_OUTPUT"
             if [ $SSH_EXIT -eq 0 ]; then
               echo "SSH ready after $((i * 10))s"
               break
             fi
-            echo "Retrying in 10s..."
+            echo "SSH attempt $i/10 failed, retrying in 10s..."
             sleep 10
           done
           if [ $SSH_EXIT -ne 0 ]; then
-            echo "SSH never became available after 30 attempts"
+            echo "SSH never became available after 10 attempts"
             exit 1
           fi
           set -e
-          echo "SSH_TEST_END"
 
-          # Write .env directly on the droplet via SSH (secrets never in runner logs)
           echo "--- WRITING .ENV ON DROPLET ---"
           ssh $SSH_OPTS root@$HOST "
             mkdir -p /opt/mct-portal
@@ -190,47 +224,22 @@ jobs:
             JSM_API_TOKEN=${{ secrets.JSM_API_TOKEN }}
             JSM_SERVICEDESK_ID=${{ secrets.JSM_SERVICEDESK_ID }}
             JSM_REQUEST_TYPE_ID=${{ secrets.JSM_REQUEST_TYPE_ID }}
-            APP_DOMAIN=${{ steps.env.outputs.app_domain }}
-            API_DOMAIN=${{ steps.env.outputs.api_domain }}
-            CORS_ORIGIN=${{ steps.env.outputs.cors_origin }}
+            APP_DOMAIN=${APP_DOMAIN}
+            API_DOMAIN=${API_DOMAIN}
+            CORS_ORIGIN=${CORS_ORIGIN}
             ENVEOF
             chmod 600 /opt/mct-portal/.env
           " 2>&1
 
-          echo "--- WRITING DEPLOY.SH ---"
-          cat > /tmp/deploy.sh << 'DEPLOYSCRIPT'
-          #!/bin/bash
-          set -euo pipefail
-          cd /opt/mct-portal
-          echo "--- FREEING DISK SPACE ---"
-          docker image prune -af || true
-          IMAGE_TAG="$1" GHCR_IMAGE_PREFIX="$2" docker compose up -d --no-deps api worker web caddy
-          docker image prune -af
-          sleep 15
-          docker compose ps --format "table {{.Name}}\t{{.Status}}"
-          DEPLOYSCRIPT
-          chmod +x /tmp/deploy.sh
-
-          echo "--- ENSURING /opt/mct-portal EXISTS ---"
-          ssh $SSH_OPTS root@$HOST "mkdir -p /opt/mct-portal" 2>&1
-          echo "MKDIR_EXIT=$?"
-
-          echo "--- TRANSFERRING DEPLOY.SH ---"
-          base64 -w0 /tmp/deploy.sh | ssh $SSH_OPTS root@$HOST "base64 -d > /tmp/deploy.sh && chmod +x /tmp/deploy.sh" 2>&1
-          echo "TRANSFER_DEPLOY_EXIT=$?"
-
-          echo "--- TRANSFERRING COMPOSE FILE ---"
+          echo "--- TRANSFERRING COMPOSE AND CADDYFILE ---"
+          ssh $SSH_OPTS root@$HOST "mkdir -p /opt/mct-portal"
           base64 -w0 infra/digitalocean/docker-compose.yml | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/docker-compose.yml" 2>&1
-          echo "TRANSFER_COMPOSE_EXIT=$?"
 
-          echo "--- TRANSFERRING CADDYFILE ---"
-          CADDYFILE_SRC="infra/digitalocean/Caddyfile.${{ steps.env.outputs.name }}"
+          CADDYFILE_SRC="infra/digitalocean/Caddyfile.${{ needs.setup.outputs.name }}"
           if [ ! -f "$CADDYFILE_SRC" ]; then
-            echo "Caddyfile for ${{ steps.env.outputs.name }} not found at $CADDYFILE_SRC, falling back to Caddyfile"
             CADDYFILE_SRC="infra/digitalocean/Caddyfile"
           fi
           base64 -w0 "$CADDYFILE_SRC" | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/Caddyfile" 2>&1
-          echo "TRANSFER_CADDY_EXIT=$?"
 
           echo "--- TRANSFERRING TLS CERTS ---"
           if [ -n "$CF_ORIGIN_CERT" ]; then
@@ -240,18 +249,15 @@ jobs:
             cat /tmp/fullchain.pem | ssh $SSH_OPTS root@$HOST "cat > /opt/mct-portal/certs/fullchain.pem"
             cat /tmp/privkey.pem | ssh $SSH_OPTS root@$HOST "cat > /opt/mct-portal/certs/privkey.pem"
             ssh $SSH_OPTS root@$HOST "chmod 600 /opt/mct-portal/certs/privkey.pem /opt/mct-portal/certs/fullchain.pem"
-            echo "CERT_EXIT=$?"
           else
-            echo "CF_ORIGIN_CERT secret not set — using self-signed certs"
+            echo "CF_ORIGIN_CERT secret not set"
           fi
 
-          echo "--- REMOVING OLD MCT IMAGES ON DROPLET ---"
-          ssh $SSH_OPTS root@$HOST "docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | xargs -r docker rmi 2>/dev/null; true" 2>&1
-          echo "CLEANUP_EXIT=$?"
+          echo "--- FREEING DISK SPACE ON DROPLET ---"
+          ssh $SSH_OPTS root@$HOST "docker system prune -af --volumes 2>/dev/null; docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | xargs -r docker rmi 2>/dev/null; true" 2>&1
 
           echo "--- LOGGING INTO GHCR ON DROPLET ---"
           echo "$GHCR_TOKEN" | ssh $SSH_OPTS root@$HOST "docker login ghcr.io -u $GHCR_USERNAME --password-stdin" 2>&1
-          echo "LOGIN_EXIT=$?"
 
           echo "--- PULLING IMAGES ON DROPLET ---"
           ssh $SSH_OPTS root@$HOST "
@@ -259,16 +265,19 @@ jobs:
             docker pull $GHCR_IMAGE_PREFIX/mct-worker:$IMAGE_TAG &&
             docker pull $GHCR_IMAGE_PREFIX/mct-web:$IMAGE_TAG
           " 2>&1
-          echo "PULL_EXIT=$?"
 
           echo "--- EXECUTING DEPLOY ---"
-          ssh $SSH_OPTS root@$HOST "bash /tmp/deploy.sh $IMAGE_TAG $GHCR_IMAGE_PREFIX" 2>&1
-          echo "DEPLOY_EXIT=$?"
+          ssh $SSH_OPTS root@$HOST "
+            cd /opt/mct-portal
+            IMAGE_TAG=$IMAGE_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --no-deps api worker web caddy
+            sleep 15
+            docker compose ps --format 'table {{.Name}}\t{{.Status}}'
+          " 2>&1
 
       - name: Health check after deploy
         env:
-          API_DOMAIN: ${{ steps.env.outputs.api_domain }}
-          APP_DOMAIN: ${{ steps.env.outputs.app_domain }}
+          API_DOMAIN: ${{ needs.setup.outputs.api_domain }}
+          APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
         run: |
           set +e
           echo "--- API HEALTH CHECK ---"
@@ -305,37 +314,24 @@ jobs:
           set -e
 
       - name: Rollback on failure
-        if: failure() && steps.env.outputs.ghcr_prefix != ''
+        if: failure()
         env:
           IMAGE_TAG: ${{ env.IMAGE_TAG }}
-          GHCR_IMAGE_PREFIX: ${{ steps.env.outputs.ghcr_prefix }}
+          GHCR_IMAGE_PREFIX: ${{ needs.setup.outputs.ghcr_prefix }}
           GHCR_USERNAME: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOST: ${{ steps.env.outputs.deploy_host }}
+          HOST: ${{ needs.setup.outputs.deploy_host }}
+          SSH_OPTS: "-o StrictHostKeyChecking=no -o ConnectTimeout=10 -o ServerAliveInterval=30"
         run: |
           set +e
           echo "--- ROLLBACK TRIGGERED ---"
-          # Find previous image tags on the droplet
           ssh $SSH_OPTS root@$HOST "
-            docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | head -3
+            PREV_TAG=\$(docker image ls --format '{{.Tag}}' | grep -v '$IMAGE_TAG' | head -1)
+            if [ -n \"\$PREV_TAG\" ]; then
+              echo \"Rolling back to \$PREV_TAG...\"
+              IMAGE_TAG=\$PREV_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --no-deps api worker web caddy
+            else
+              echo \"No previous tag found, manual rollback required\"
+            fi
           " 2>&1
-          # Could add auto-rollback logic here if previous tag is known
-          echo "Manual rollback required: docker compose pull previous tags and docker compose up -d"
           set -e
-
-      - name: Manual rollback workflow dispatch
-        if: inputs.rollback == 'true'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const run = await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'deploy-do.yml',
-              ref: '${{ github.ref_name }}',
-              inputs: {
-                deploy_target: '${{ steps.env.outputs.name }}',
-                rollback: 'false'
-              }
-            });
-            console.log('Rollback workflow dispatched');

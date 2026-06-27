@@ -4,8 +4,8 @@
 -- Add retry columns to webhook_deliveries
 alter table if exists public.webhook_deliveries
   add column if not exists retry_count int not null default 0,
-  add column if not null if not exists next_retry_at timestamptz,
-  add if not exists dead_letter boolean not null default false;
+  add column if not exists next_retry_at timestamptz,
+  add column if not exists dead_letter boolean not null default false;
 
 -- Create dead letter queue table
 create table if not exists public.webhook_dead_letters (
