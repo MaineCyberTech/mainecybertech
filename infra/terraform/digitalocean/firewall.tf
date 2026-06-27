@@ -2,7 +2,7 @@ data "cloudflare_ip_ranges" "ipv4" {}
 data "cloudflare_ip_ranges" "ipv6" {}
 
 resource "digitalocean_firewall" "web" {
-  name        = "mct-portal-${var.environment}-http"
+  name        = "mct-portal-${var.environment}-${digitalocean_droplet.portal.id}"
   droplet_ids = [digitalocean_droplet.portal.id]
 
   inbound_rule {
