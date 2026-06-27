@@ -139,7 +139,7 @@ jobs:
         with:
           host: ${{ needs.setup.outputs.deploy_host }}
           username: root
-          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           script: |
             set -e
             cloud-init status --wait 2>/dev/null || true
@@ -197,34 +197,26 @@ jobs:
         with:
           host: ${{ needs.setup.outputs.deploy_host }}
           username: root
-          key: ${{ secrets.DO_SSH_PRIVATE_KEY }}
-          envs: IMAGE_TAG,GHCR_IMAGE_PREFIX,GHCR_USERNAME,GHCR_TOKEN,CF_ORIGIN_CERT,CF_ORIGIN_KEY
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           script: |
             set -e
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u $GHCR_USERNAME --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             mkdir -p /opt/mct-portal/certs
-            echo "$CF_ORIGIN_CERT" > /opt/mct-portal/certs/fullchain.pem
-            echo "$CF_ORIGIN_KEY" > /opt/mct-portal/certs/privkey.pem
+            echo "${{ secrets.CF_ORIGIN_CERT }}" > /opt/mct-portal/certs/fullchain.pem
+            echo "${{ secrets.CF_ORIGIN_KEY }}" > /opt/mct-portal/certs/privkey.pem
             chmod 600 /opt/mct-portal/certs/privkey.pem
             docker system prune -af --volumes 2>/dev/null || true
-            docker pull $GHCR_IMAGE_PREFIX/mct-api:$IMAGE_TAG
-            docker pull $GHCR_IMAGE_PREFIX/mct-worker:$IMAGE_TAG
-            docker pull $GHCR_IMAGE_PREFIX/mct-web:$IMAGE_TAG
+            docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
+            docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
+            docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
             CADDYFILE="infra/digitalocean/Caddyfile.${{ needs.setup.outputs.name }}"
             [ -f "/opt/mct-portal/repo/$CADDYFILE" ] || CADDYFILE="infra/digitalocean/Caddyfile"
             cp /opt/mct-portal/repo/$CADDYFILE /opt/mct-portal/Caddyfile
             cp /opt/mct-portal/repo/infra/digitalocean/docker-compose.yml /opt/mct-portal/docker-compose.yml
             cd /opt/mct-portal
-            IMAGE_TAG=$IMAGE_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --remove-orphans
+            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose up -d --remove-orphans
             sleep 15
             docker compose ps --format 'table {{.Name}}\t{{.Status}}'
-        env:
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
-          GHCR_IMAGE_PREFIX: ${{ needs.setup.outputs.ghcr_prefix }}
-          GHCR_USERNAME: ${{ github.actor }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
-          CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
 
       - name: Health check
         env:
