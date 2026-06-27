@@ -74,10 +74,16 @@ jobs:
         run: terraform init -input=false
 
       - name: Terraform Validate
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: terraform validate
 
       - name: Terraform Plan
         id: plan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: |
           terraform plan \
             -var-file="${{ steps.env.outputs.name }}.tfvars" \
@@ -139,6 +145,9 @@ jobs:
         run: terraform init -input=false
 
       - name: Terraform Apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: terraform apply -auto-approve -input=false tfplan
 
   terraform-apply-dev:
@@ -171,4 +180,7 @@ jobs:
         run: terraform init -input=false
 
       - name: Terraform Apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: terraform apply -auto-approve -input=false tfplan
