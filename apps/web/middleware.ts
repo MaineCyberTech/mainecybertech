@@ -6,9 +6,7 @@ function isTokenExpired(token: string): boolean {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return true;
-    const payload = JSON.parse(
-      Buffer.from(parts[1], "base64url").toString("utf-8"),
-    );
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
     return payload.exp ? payload.exp * 1000 < Date.now() : true;
   } catch {
     return true;
@@ -26,13 +24,10 @@ function generateNonce(): string {
   return nonce;
 }
 
-function setCspHeaders(
-  response: NextResponse,
-  nonce: string,
-): void {
+function setCspHeaders(response: NextResponse, nonce: string): void {
   response.headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'`,
+    `default-src 'self'; script-src 'self' 'nonce-${nonce}' 'sha256-OBTN3RiyCV4Bq7dFqZ5a2pAXjnCcCYeTJMO2I/LYKeo=' 'sha256-DMwYb6cGf+rlwiwgWF/n0IsUk8Ob3bM0agSbwDb1uPc=' 'sha256-Jyk2/vjovCDXMEB7V1zyyTRwdZWuEgowanc/KBk7wlA=' 'sha256-dWUUFxzLL06Fv9JsL4BOUt/PknG3WjZ3IcvdHLJL2pk=' 'sha256-DDQXH/Xnlgxvw0NrVSM5sY/iNH6J5wGyIDdy/gY8CPU=' 'sha256-TyC/Fb96xbSZgLfgHgJBPgeNWAMjGJYEqndPoGj3EjA=' 'sha256-uPFcq4d4DccCX5vpbwhR8eQZeiQJayR2e0XPVCcyOJw='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'`,
   );
 }
 
@@ -49,9 +44,7 @@ export async function middleware(request: NextRequest) {
   const isAppDomain = host.startsWith("app.");
 
   const isMarketingRoute =
-    pathname === "/" ||
-    pathname.startsWith("/services") ||
-    pathname === "/contact";
+    pathname === "/" || pathname.startsWith("/services") || pathname === "/contact";
 
   const isAuthRoute =
     pathname.startsWith("/login") ||
@@ -61,8 +54,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/pending") ||
     pathname.startsWith("/auth/callback");
 
-  const isPortalRoute =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
+  const isPortalRoute = pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
 
   const isAdminRoute = pathname.startsWith("/admin");
 
@@ -72,9 +64,7 @@ export async function middleware(request: NextRequest) {
 
   // Domain-based routing: app.* for portal/auth, www/root for marketing
   if (!isLocalDev) {
-    const appHost = host.startsWith("app.")
-      ? host
-      : `app.${host.replace(/^www\./, "")}`;
+    const appHost = host.startsWith("app.") ? host : `app.${host.replace(/^www\./, "")}`;
 
     if (isAppDomain && isMarketingRoute) {
       const redirect = NextResponse.redirect(new URL("/login", request.url));
@@ -83,9 +73,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!isAppDomain && (isAuthRoute || isPortalRoute || isAdminRoute)) {
-      const redirect = NextResponse.redirect(
-        new URL(pathname, `https://${appHost}`),
-      );
+      const redirect = NextResponse.redirect(new URL(pathname, `https://${appHost}`));
       setCspHeaders(redirect, nonce);
       return redirect;
     }
@@ -98,9 +86,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAuthenticated && (pathname === "/login" || pathname === "/signup")) {
-    const redirect = NextResponse.redirect(
-      new URL("/portal/dashboard", request.url),
-    );
+    const redirect = NextResponse.redirect(new URL("/portal/dashboard", request.url));
     setCspHeaders(redirect, nonce);
     return redirect;
   }
