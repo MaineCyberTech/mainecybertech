@@ -18,9 +18,3 @@ resource "digitalocean_droplet" "portal" {
     ignore_changes  = [user_data]
   }
 }
-
-resource "digitalocean_reserved_ip" "portal" {
-  region      = var.droplet_region
-  droplet_id  = digitalocean_droplet.portal.id
-  description = "Reserved IP for mct-portal-${var.environment}"
-}
