@@ -41,7 +41,7 @@
     "prettier": "^3.8.4",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "storybook": "^10.4.6",
-    "supabase": "^2.107.0",
+    "supabase": "^2.108.0",
     "supabase-cli": "^0.0.21",
     "turbo": "^2.9.18",
     "typescript": "^6.0.3"
