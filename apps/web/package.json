@@ -19,7 +19,7 @@
     "@mct/config": "workspace:^",
     "@mct/sdk": "workspace:*",
     "@mct/ui": "workspace:^",
-    "@sentry/nextjs": "^10.57.0",
+    "@sentry/nextjs": "^10.62.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
     "next": "^15.1.6",

@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@mct/config": "workspace:^",
-    "@sentry/node": "^10.56.0",
+    "@sentry/node": "^10.62.0",
     "@supabase/supabase-js": "^2.49.1",
     "@types/zxcvbn": "^4.4.5",
     "cookie-parser": "^1.4.7",
