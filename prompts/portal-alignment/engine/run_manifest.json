@@ -1,6 +1,6 @@
 {
   "version": "3.0",
-  "last_run": "2026-06-23T03:27:35.451358Z",
+  "last_run": "2026-06-30T06:57:24.388417+00:00",
   "phases": [
     "phase1_inventory",
     "phase2_database_schema",
@@ -11,7 +11,12 @@
     "phase7_release_gate"
   ],
   "outputs": {
-    "inventory": "alignment-audit-results.json",
-    "release_decision": "APPROVED_FOR_DEV_DEPLOY"
+    "inventory": "outputs/inventory.json",
+    "release_decision": "APPROVED_FOR_PROD_DEPLOY",
+    "readiness_score": 91,
+    "p0": 0,
+    "p1": 0,
+    "p2": 3,
+    "p3": 3
   }
 }

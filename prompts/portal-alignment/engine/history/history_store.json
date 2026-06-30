@@ -1,10 +1,10 @@
 {
-  "last_run": "2026-06-23T03:27:24.330323Z",
-  "commit": "3779e61",
-  "readiness_score": 94,
+  "last_run": "2026-06-30T06:57:24.388417+00:00",
+  "commit": "3137104 fix: add Next.js inline script hashes to CSP in middleware",
+  "readiness_score": 91,
   "p0": 0,
   "p1": 0,
   "p2": 3,
-  "p3": 8,
-  "decision": "APPROVED_FOR_DEV_DEPLOY"
+  "p3": 3,
+  "decision": "APPROVED_FOR_PROD_DEPLOY"
 }

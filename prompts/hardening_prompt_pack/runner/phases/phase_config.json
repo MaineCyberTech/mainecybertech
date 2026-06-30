@@ -1,1 +1,24 @@
-{ "phases": ["security", "data", "resilience", "evolution"] }
+{
+  "version": "3.0",
+  "description": "Hardening Prompt Pack execution phases \u00e2\u20ac\u201d all 8 domains + merger + reconciliation",
+  "phases": [
+    "security",
+    "data",
+    "resilience",
+    "observability",
+    "supply_chain",
+    "privacy",
+    "ci_cd",
+    "evolution"
+  ],
+  "post_phases": ["merger", "reconciliation"],
+  "output_dir": "engine/outputs/",
+  "last_run": "2026-06-30T06:57:20.898767+00:00",
+  "outputs": {
+    "global_findings": "engine/outputs/global_findings.json",
+    "reconciled_findings": "engine/outputs/reconciled_findings.json",
+    "system_risk_score": "engine/outputs/system_risk_score.json",
+    "risk_score": 50,
+    "status": "BLOCKED"
+  }
+}
