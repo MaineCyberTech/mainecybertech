@@ -1,8 +1,13 @@
 import Script from "next/script";
+import type { Metadata } from "next";
 import MarketingHeader from "../../components/marketing/MarketingHeader";
 import ParticleBackground from "../../components/marketing/ParticleBackground";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+
+export const metadata: Metadata = {
+  title: "Maine Cyber Technology",
+};
 const TAWKTO_ID = process.env.NEXT_PUBLIC_TAWKTO_ID;
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {

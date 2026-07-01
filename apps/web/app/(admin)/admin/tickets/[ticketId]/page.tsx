@@ -23,16 +23,12 @@ export const metadata = { title: "Ticket Details - Admin - Maine CyberTech" };
 const DELETED_PREFIX = "[Deleted] ";
 
 function storedTicketTitle(ticket: any) {
-  return String(
-    ticket?.title ?? ticket?.subject ?? ticket?.name ?? `Ticket ${ticket?.id}`,
-  );
+  return String(ticket?.title ?? ticket?.subject ?? ticket?.name ?? `Ticket ${ticket?.id}`);
 }
 
 function displayTicketTitle(ticket: any) {
   const title = storedTicketTitle(ticket);
-  return title.startsWith(DELETED_PREFIX)
-    ? title.slice(DELETED_PREFIX.length)
-    : title;
+  return title.startsWith(DELETED_PREFIX) ? title.slice(DELETED_PREFIX.length) : title;
 }
 
 function ticketDescription(ticket: any) {
@@ -46,18 +42,11 @@ function ticketDescription(ticket: any) {
 }
 
 function ticketCategory(ticket: any) {
-  return (
-    ticket?.category ??
-    ticket?.type ??
-    ticket?.classification ??
-    "Uncategorized"
-  );
+  return ticket?.category ?? ticket?.type ?? ticket?.classification ?? "Uncategorized";
 }
 
 function ticketStatus(ticket: any) {
-  return String(
-    ticket?.status ?? ticket?.state ?? ticket?.ticket_status ?? "new",
-  ).toLowerCase();
+  return String(ticket?.status ?? ticket?.state ?? ticket?.ticket_status ?? "new").toLowerCase();
 }
 
 function ticketPriority(ticket: any) {
@@ -66,12 +55,8 @@ function ticketPriority(ticket: any) {
 
 function isDeletedTicket(ticket: any) {
   return (
-    Boolean(
-      ticket?.is_deleted ??
-      ticket?.deleted ??
-      ticket?.deleted_at ??
-      ticket?.archived_at,
-    ) || storedTicketTitle(ticket).startsWith(DELETED_PREFIX)
+    Boolean(ticket?.is_deleted ?? ticket?.deleted ?? ticket?.deleted_at ?? ticket?.archived_at) ||
+    storedTicketTitle(ticket).startsWith(DELETED_PREFIX)
   );
 }
 
@@ -102,10 +87,7 @@ function formatDateTime(value?: string | null) {
 
 function formatRelativeTime(value?: string | null) {
   if (!value) return "—";
-  const seconds = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(value).getTime()) / 1000),
-  );
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -153,10 +135,7 @@ type Props = {
   }>;
 };
 
-export default async function AdminTicketDetailPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function AdminTicketDetailPage({ params, searchParams }: Props) {
   await requireAdminAccess();
   const { ticketId } = await params;
   const { edit, confirmDelete, editComment } = await searchParams;
@@ -199,7 +178,7 @@ export default async function AdminTicketDetailPage({
       />
       <AdminSubnav current="tickets" />
 
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
             {displayTicketTitle(ticket)}
@@ -208,11 +187,9 @@ export default async function AdminTicketDetailPage({
             Organization: {organization?.name ?? ticket.organization_id}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-500">
-              Ticket ID: {ticket.id}
-            </span>
+            <span className="text-xs text-slate-500">Ticket ID: {ticket.id}</span>
             {ticket.external_jsm_issue_key ? (
-              <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono text-blue-300">
+              <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[10px] text-blue-300">
                 {ticket.external_jsm_issue_key}
               </span>
             ) : null}
@@ -231,28 +208,23 @@ export default async function AdminTicketDetailPage({
             </>
           )}
           {editMode ? (
-            <Link
-              href={`/admin/tickets/${ticketId}`}
-              className="cyber-button-secondary"
-            >
+            <Link href={`/admin/tickets/${ticketId}`} className="cyber-button-secondary">
               Cancel Edit
             </Link>
           ) : (
-            <Link
-              href={`/admin/tickets/${ticketId}?edit=1`}
-              className="cyber-button-secondary"
-            >
+            <Link href={`/admin/tickets/${ticketId}?edit=1`} className="cyber-button-secondary">
               Edit Ticket
             </Link>
           )}
-          <Link
-            href={`/portal/support/${ticketId}`}
-            className="cyber-button-secondary"
-          >
+          <Link href={`/portal/support/${ticketId}`} className="cyber-button-secondary">
             View in Portal
           </Link>
           {deleted ? (
-            <form action={restoreTicketAction.bind(null, ticketId)}>
+            <form
+              action={async () => {
+                await restoreTicketAction(ticketId);
+              }}
+            >
               <button type="submit" className="cyber-button-secondary">
                 Restore Ticket
               </button>
@@ -279,30 +251,23 @@ export default async function AdminTicketDetailPage({
                 Confirm Ticket Deletion
               </h2>
               <p className="mt-3 max-w-2xl text-sm text-red-100/90">
-                This performs a safer soft-delete so the ticket can be restored
-                later. Type <span className="font-semibold">DELETE</span> below
-                to confirm.
+                This performs a safer soft-delete so the ticket can be restored later. Type{" "}
+                <span className="font-semibold">DELETE</span> below to confirm.
               </p>
             </div>
-            <Link
-              href={`/admin/tickets/${ticketId}`}
-              className="cyber-button-secondary"
-            >
+            <Link href={`/admin/tickets/${ticketId}`} className="cyber-button-secondary">
               Cancel
             </Link>
           </div>
           <form
-            action={deleteTicketAction.bind(null, ticketId)}
+            action={async (fd) => {
+              await deleteTicketAction(ticketId, fd);
+            }}
             className="mt-6 flex flex-col gap-4 md:flex-row md:items-end"
           >
             <div className="w-full max-w-sm">
               <label className="cyber-label">Type DELETE to confirm</label>
-              <input
-                name="confirmation"
-                className="cyber-input"
-                placeholder="DELETE"
-                required
-              />
+              <input name="confirmation" className="cyber-input" placeholder="DELETE" required />
             </div>
             <button
               type="submit"
@@ -321,7 +286,9 @@ export default async function AdminTicketDetailPage({
             <span className="cyber-pill">Admin</span>
           </div>
           <form
-            action={updateTicketAction.bind(null, ticketId)}
+            action={async (fd) => {
+              await updateTicketAction(ticketId, fd);
+            }}
             className="mt-6 space-y-4"
           >
             <div>
@@ -336,11 +303,7 @@ export default async function AdminTicketDetailPage({
             <div className="grid gap-4 md:grid-cols-3">
               <div>
                 <label className="cyber-label">Status</label>
-                <select
-                  name="status"
-                  defaultValue={status}
-                  className="cyber-input"
-                >
+                <select name="status" defaultValue={status} className="cyber-input">
                   <option value="new">new</option>
                   <option value="triaged">triaged</option>
                   <option value="pending">pending</option>
@@ -350,11 +313,7 @@ export default async function AdminTicketDetailPage({
               </div>
               <div>
                 <label className="cyber-label">Priority</label>
-                <select
-                  name="priority"
-                  defaultValue={priority}
-                  className="cyber-input"
-                >
+                <select name="priority" defaultValue={priority} className="cyber-input">
                   <option value="low">low</option>
                   <option value="normal">normal</option>
                   <option value="high">high</option>
@@ -395,24 +354,18 @@ export default async function AdminTicketDetailPage({
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
-                Category
-              </p>
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Category</p>
               <p className="mt-2 text-slate-200">{ticketCategory(ticket)}</p>
             </div>
             <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
-                Updated
-              </p>
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Updated</p>
               <p className="mt-2 text-slate-200">
                 {formatDateTime(ticket.updated_at ?? ticket.created_at)}
               </p>
             </div>
             {ticket.labels?.length ? (
               <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
-                  Labels
-                </p>
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Labels</p>
                 <p className="mt-2 flex flex-wrap gap-1">
                   {ticket.labels.map((l: string) => (
                     <span
@@ -427,17 +380,13 @@ export default async function AdminTicketDetailPage({
             ) : null}
             {ticket.resolution ? (
               <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
-                  Resolution
-                </p>
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Resolution</p>
                 <p className="mt-2 text-slate-200">{ticket.resolution}</p>
               </div>
             ) : null}
           </div>
           <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-            <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
-              Description
-            </p>
+            <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Description</p>
             <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
               {ticketDescription(ticket)}
             </p>
@@ -461,19 +410,14 @@ export default async function AdminTicketDetailPage({
 
               return (
                 <div
-                  key={
-                    comment.id ??
-                    `${comment.created_at}-${commentBody(comment)}`
-                  }
+                  key={comment.id ?? `${comment.created_at}-${commentBody(comment)}`}
                   className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium text-slate-50">
-                        {commentAuthor(comment)}
-                      </p>
+                      <p className="text-sm font-medium text-slate-50">{commentAuthor(comment)}</p>
                       {commentInternal(comment) ? (
-                        <span className="inline-flex min-h-7 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] leading-none text-amber-300">
+                        <span className="inline-flex min-h-7 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-amber-300">
                           Internal
                         </span>
                       ) : null}
@@ -484,15 +428,13 @@ export default async function AdminTicketDetailPage({
                         {formatRelativeTime(comment.created_at)}
                       </span>
                       {comment.edited_at ? (
-                        <span className="text-xs text-slate-600 italic">
-                          (edited)
-                        </span>
+                        <span className="text-xs italic text-slate-600">(edited)</span>
                       ) : null}
                     </div>
                     {canEdit && !isEditing ? (
                       <a
                         href={`/admin/tickets/${ticketId}?editComment=${comment.id}`}
-                        className="text-xs text-slate-500 hover:text-slate-300 underline"
+                        className="text-xs text-slate-500 underline hover:text-slate-300"
                       >
                         Edit
                       </a>
@@ -500,7 +442,7 @@ export default async function AdminTicketDetailPage({
                     {isEditing ? (
                       <a
                         href={`/admin/tickets/${ticketId}`}
-                        className="text-xs text-slate-500 hover:text-slate-300 underline"
+                        className="text-xs text-slate-500 underline hover:text-slate-300"
                       >
                         Cancel
                       </a>
@@ -508,11 +450,9 @@ export default async function AdminTicketDetailPage({
                   </div>
                   {isEditing ? (
                     <form
-                      action={editCommentAction.bind(
-                        null,
-                        ticketId,
-                        comment.id,
-                      )}
+                      action={async (fd) => {
+                        await editCommentAction(ticketId, comment.id, fd);
+                      }}
                       className="mt-3 space-y-3"
                     >
                       <textarea
@@ -522,15 +462,15 @@ export default async function AdminTicketDetailPage({
                         defaultValue={commentBody(comment)}
                         required
                       />
-                      <button
-                        type="submit"
-                        className="cyber-button-secondary text-xs"
-                      >
+                      <button type="submit" className="cyber-button-secondary text-xs">
                         Save Edit
                       </button>
                     </form>
                   ) : (
-                    <CommentBody body={commentBody(comment)} className="mt-3 text-sm leading-relaxed text-slate-300 markdown-body" />
+                    <CommentBody
+                      body={commentBody(comment)}
+                      className="markdown-body mt-3 text-sm leading-relaxed text-slate-300"
+                    />
                   )}
                 </div>
               );
@@ -542,7 +482,9 @@ export default async function AdminTicketDetailPage({
           )}
         </div>
         <form
-          action={addCommentAction.bind(null, ticketId, ticket.organization_id)}
+          action={async (fd) => {
+            await addCommentAction(ticketId, ticket.organization_id, fd);
+          }}
           className="mt-6 space-y-4"
         >
           <div>
@@ -584,12 +526,10 @@ export default async function AdminTicketDetailPage({
                 key={log.id}
                 className="flex items-start gap-3 rounded-lg border border-white/5 bg-[#0A1118]/60 px-4 py-3"
               >
-                <div className="mt-0.5 h-2 w-2 rounded-full bg-emerald-500/60 shrink-0" />
+                <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500/60" />
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-slate-400">
-                    <span className="font-medium text-slate-300">
-                      {log.action}
-                    </span>
+                    <span className="font-medium text-slate-300">{log.action}</span>
                     {log.metadata ? (
                       <span className="ml-2 text-slate-600">
                         {log.metadata.previousBody

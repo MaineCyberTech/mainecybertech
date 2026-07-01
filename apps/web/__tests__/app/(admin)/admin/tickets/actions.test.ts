@@ -20,9 +20,7 @@ describe("createTicket", () => {
   });
 
   it("creates a ticket with all fields", async () => {
-    const { createTicket } = await import(
-      "@/app/(admin)/admin/tickets/actions"
-    );
+    const { createTicket } = await import("@/app/(admin)/admin/tickets/actions");
 
     const formData = new FormData();
     formData.set("organizationId", "org-1");
@@ -45,9 +43,7 @@ describe("createTicket", () => {
   });
 
   it("uses default priority when not provided", async () => {
-    const { createTicket } = await import(
-      "@/app/(admin)/admin/tickets/actions"
-    );
+    const { createTicket } = await import("@/app/(admin)/admin/tickets/actions");
 
     const formData = new FormData();
     formData.set("organizationId", "org-1");
@@ -55,15 +51,11 @@ describe("createTicket", () => {
 
     await createTicket(formData);
 
-    expect(mockTicketsCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ priority: "normal" }),
-    );
+    expect(mockTicketsCreate).toHaveBeenCalledWith(expect.objectContaining({ priority: "normal" }));
   });
 
   it("uses null for empty description and category", async () => {
-    const { createTicket } = await import(
-      "@/app/(admin)/admin/tickets/actions"
-    );
+    const { createTicket } = await import("@/app/(admin)/admin/tickets/actions");
 
     const formData = new FormData();
     formData.set("organizationId", "org-1");
@@ -76,32 +68,28 @@ describe("createTicket", () => {
     );
   });
 
-  it("throws when organizationId is missing", async () => {
-    const { createTicket } = await import(
-      "@/app/(admin)/admin/tickets/actions"
-    );
+  it("returns error when organizationId is missing", async () => {
+    const { createTicket } = await import("@/app/(admin)/admin/tickets/actions");
 
     const formData = new FormData();
     formData.set("title", "Issue");
 
-    await expect(createTicket(formData)).rejects.toThrow(
-      "Organization and title are required.",
-    );
+    const result = await createTicket(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Organization and title");
     expect(mockTicketsCreate).not.toHaveBeenCalled();
   });
 
-  it("throws when title is empty", async () => {
-    const { createTicket } = await import(
-      "@/app/(admin)/admin/tickets/actions"
-    );
+  it("returns error when title is empty", async () => {
+    const { createTicket } = await import("@/app/(admin)/admin/tickets/actions");
 
     const formData = new FormData();
     formData.set("organizationId", "org-1");
     formData.set("title", "");
 
-    await expect(createTicket(formData)).rejects.toThrow(
-      "Organization and title are required.",
-    );
+    const result = await createTicket(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Organization and title");
     expect(mockTicketsCreate).not.toHaveBeenCalled();
   });
 });

@@ -18,67 +18,92 @@ export default async function AdminTicketsPage() {
 
   async function createTicketAction(formData: FormData) {
     "use server";
-    await requireAdminAccess();
-    const api = getApiClient();
+    try {
+      await requireAdminAccess();
+      const api = getApiClient();
 
-    const organizationId = String(formData.get("organizationId") ?? "").trim();
-    const subject = String(formData.get("subject") ?? "").trim();
-    const priority = String(formData.get("priority") ?? "normal").trim();
-    const category = String(formData.get("category") ?? "").trim();
-    const description = String(formData.get("description") ?? "").trim();
-    if (!organizationId || !subject || !description)
-      throw new Error("Organization, title, and description are required.");
+      const organizationId = String(formData.get("organizationId") ?? "").trim();
+      const subject = String(formData.get("subject") ?? "").trim();
+      const priority = String(formData.get("priority") ?? "normal").trim();
+      const category = String(formData.get("category") ?? "").trim();
+      const description = String(formData.get("description") ?? "").trim();
+      if (!organizationId || !subject || !description)
+        return { ok: false as const, error: "Organization, title, and description are required." };
 
-    await api.tickets.create({
-      organizationId,
-      title: subject,
-      description,
-      priority,
-      category: category || null,
-      source: "admin",
-    });
+      await api.tickets.create({
+        organizationId,
+        title: subject,
+        description,
+        priority,
+        category: category || null,
+        source: "admin",
+      });
 
-    revalidatePath("/admin/tickets");
-    revalidatePath("/admin");
-    redirect("/admin/tickets");
+      revalidatePath("/admin/tickets");
+      revalidatePath("/admin");
+      redirect("/admin/tickets");
+    } catch (error) {
+      if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+      return {
+        ok: false as const,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
   }
 
   async function updateTicketStatusAction(ticketId: string, status: string) {
     "use server";
-    await requireAdminAccess();
-    const api = getApiClient();
-    await api.tickets.update(ticketId, { status });
-    revalidatePath("/admin/tickets");
+    try {
+      await requireAdminAccess();
+      const api = getApiClient();
+      await api.tickets.update(ticketId, { status });
+      revalidatePath("/admin/tickets");
+      return { ok: true as const };
+    } catch (error) {
+      return {
+        ok: false as const,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
   }
 
   async function bulkUpdateTicketsAction(formData: FormData) {
     "use server";
-    await requireAdminAccess();
-    const api = getApiClient();
+    try {
+      await requireAdminAccess();
+      const api = getApiClient();
 
-    const ids = formData.getAll("ids").map(String);
-    const status = formData.get("status") as string | null;
-    const priority = formData.get("priority") as string | null;
+      const ids = formData.getAll("ids").map(String);
+      const status = formData.get("status") as string | null;
+      const priority = formData.get("priority") as string | null;
 
-    if (ids.length === 0) throw new Error("No tickets selected");
-    if (!status && !priority) throw new Error("No updates provided");
+      if (ids.length === 0) return { ok: false as const, error: "No tickets selected" };
+      if (!status && !priority) return { ok: false as const, error: "No updates provided" };
 
-    const result = await api.tickets.bulkUpdate(ids, {
-      ...(status ? { status } : {}),
-      ...(priority ? { priority } : {}),
-    });
+      const result = await api.tickets.bulkUpdate(ids, {
+        ...(status ? { status } : {}),
+        ...(priority ? { priority } : {}),
+      });
 
-    if (result.failed > 0) {
-      const failedItems = result.results
-        .filter((r) => !r.success)
-        .map((r) => `${r.id}: ${r.error ?? "Unknown error"}`)
-        .join("; ");
-      throw new Error(
-        `Bulk update partially failed (${result.successful}/${result.results.length} succeeded): ${failedItems}`,
-      );
+      if (result.failed > 0) {
+        const failedItems = result.results
+          .filter((r) => !r.success)
+          .map((r) => `${r.id}: ${r.error ?? "Unknown error"}`)
+          .join("; ");
+        return {
+          ok: false as const,
+          error: `Bulk update partially failed (${result.successful}/${result.results.length} succeeded): ${failedItems}`,
+        };
+      }
+
+      revalidatePath("/admin/tickets");
+      return { ok: true as const };
+    } catch (error) {
+      return {
+        ok: false as const,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
     }
-
-    revalidatePath("/admin/tickets");
   }
 
   const [organizations, ticketsResult] = await Promise.all([
@@ -89,9 +114,7 @@ export default async function AdminTicketsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminBreadcrumbs
-        items={[{ label: "Admin", href: "/admin" }, { label: "Tickets" }]}
-      />
+      <AdminBreadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Tickets" }]} />
       <AdminSubnav current="tickets" />
       <AdminTicketCenterClient
         tickets={tickets as TicketRecord[]}

@@ -7,7 +7,7 @@ type TicketRecord = Record<string, any> & { id: string };
 
 type Props = {
   tickets: TicketRecord[];
-  createTicketAction: (formData: FormData) => Promise<void>;
+  createTicketAction: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
 };
 
 function formatDateTime(value?: string | null) {
@@ -52,7 +52,10 @@ function ticketPriority(ticket: TicketRecord) {
 
 function isDeletedTicket(ticket: TicketRecord) {
   const title = String(ticket.title ?? ticket.subject ?? "");
-  return Boolean(ticket.is_deleted ?? ticket.deleted ?? ticket.deleted_at ?? ticket.archived_at) || title.startsWith("[Deleted] ");
+  return (
+    Boolean(ticket.is_deleted ?? ticket.deleted ?? ticket.deleted_at ?? ticket.archived_at) ||
+    title.startsWith("[Deleted] ")
+  );
 }
 
 function isClosedStatus(status: string) {
@@ -91,7 +94,15 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
-function TicketList({ title, tickets, emptyText }: { title: string; tickets: TicketRecord[]; emptyText: string }) {
+function TicketList({
+  title,
+  tickets,
+  emptyText,
+}: {
+  title: string;
+  tickets: TicketRecord[];
+  emptyText: string;
+}) {
   return (
     <section className="cyber-panel">
       <div className="flex items-center justify-between gap-3">
@@ -99,33 +110,49 @@ function TicketList({ title, tickets, emptyText }: { title: string; tickets: Tic
         <span className="cyber-pill">Total {tickets.length}</span>
       </div>
       <div className="mt-6 space-y-4">
-        {tickets.length > 0 ? tickets.map((ticket) => {
-          const status = ticketStatus(ticket);
-          const priority = ticketPriority(ticket);
-          return (
-            <Link key={ticket.id} href={`/portal/support/${ticket.id}`} className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
-                    {ticket.external_jsm_issue_key ? (
-                      <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono text-blue-300">{ticket.external_jsm_issue_key}</span>
-                    ) : null}
+        {tickets.length > 0 ? (
+          tickets.map((ticket) => {
+            const status = ticketStatus(ticket);
+            const priority = ticketPriority(ticket);
+            return (
+              <Link
+                key={ticket.id}
+                href={`/portal/support/${ticket.id}`}
+                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
+                      {ticket.external_jsm_issue_key ? (
+                        <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[10px] text-blue-300">
+                          {ticket.external_jsm_issue_key}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="mt-2 line-clamp-2 text-sm text-slate-400">
+                      {ticketDescription(ticket) ?? "No description provided."}
+                    </p>
                   </div>
-                  <p className="mt-2 text-sm text-slate-400 line-clamp-2">{ticketDescription(ticket) ?? "No description provided."}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={ticketPillClass(status)}>{status}</span>
+                    <span className={priorityClass(priority)}>{priority}</span>
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={ticketPillClass(status)}>{status}</span>
-                  <span className={priorityClass(priority)}>{priority}</span>
+                <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
+                  <span>{ticketCategory(ticket)}</span>
+                  <span title={formatDateTime(ticket.updated_at ?? ticket.created_at)}>
+                    Updated {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}
+                  </span>
                 </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
-                <span>{ticketCategory(ticket)}</span>
-                <span title={formatDateTime(ticket.updated_at ?? ticket.created_at)}>Updated {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}</span>
-              </div>
-            </Link>
-          );
-        }) : <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">{emptyText}</div>}
+              </Link>
+            );
+          })
+        ) : (
+          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            {emptyText}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -136,19 +163,34 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
   const [openModal, setOpenModal] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const visibleTickets = useMemo(() => (tickets ?? []).filter((ticket) => !isDeletedTicket(ticket)), [tickets]);
-  const openTickets = useMemo(() => visibleTickets.filter((ticket) => !isClosedStatus(ticketStatus(ticket))), [visibleTickets]);
-  const closedTickets = useMemo(() => visibleTickets.filter((ticket) => isClosedStatus(ticketStatus(ticket))), [visibleTickets]);
+  const visibleTickets = useMemo(
+    () => (tickets ?? []).filter((ticket) => !isDeletedTicket(ticket)),
+    [tickets],
+  );
+  const openTickets = useMemo(
+    () => visibleTickets.filter((ticket) => !isClosedStatus(ticketStatus(ticket))),
+    [visibleTickets],
+  );
+  const closedTickets = useMemo(
+    () => visibleTickets.filter((ticket) => isClosedStatus(ticketStatus(ticket))),
+    [visibleTickets],
+  );
   const visibleOpenTickets = openTickets.length > 0 ? openTickets : visibleTickets;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">Support</h1>
-          <p className="mt-3 text-slate-300">Open and track support requests for your organization.</p>
+          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+            Support
+          </h1>
+          <p className="mt-3 text-slate-300">
+            Open and track support requests for your organization.
+          </p>
         </div>
-        <button type="button" className="cyber-button-secondary" onClick={() => setOpenModal(true)}>Submit Ticket</button>
+        <button type="button" className="cyber-button-secondary" onClick={() => setOpenModal(true)}>
+          Submit Ticket
+        </button>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -157,14 +199,32 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
         <StatCard label="All Tickets" value={visibleTickets.length} />
       </div>
 
-      <TicketList title={openTickets.length > 0 ? "Open Tickets" : "Recent Tickets"} tickets={visibleOpenTickets} emptyText="No open tickets right now." />
+      <TicketList
+        title={openTickets.length > 0 ? "Open Tickets" : "Recent Tickets"}
+        tickets={visibleOpenTickets}
+        emptyText="No open tickets right now."
+      />
 
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
           <h2 className="cyber-heading text-lg">Ticket History</h2>
-          <button type="button" className="cyber-button-secondary" onClick={() => setShowHistory((value) => !value)}>{showHistory ? "Hide History" : "Show History"}</button>
+          <button
+            type="button"
+            className="cyber-button-secondary"
+            onClick={() => setShowHistory((value) => !value)}
+          >
+            {showHistory ? "Hide History" : "Show History"}
+          </button>
         </div>
-        {showHistory ? <div className="mt-6"><TicketList title="All Tickets" tickets={visibleTickets} emptyText="No ticket history yet." /></div> : null}
+        {showHistory ? (
+          <div className="mt-6">
+            <TicketList
+              title="All Tickets"
+              tickets={visibleTickets}
+              emptyText="No ticket history yet."
+            />
+          </div>
+        ) : null}
       </section>
 
       {openModal ? (
@@ -172,15 +232,36 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
           <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#071018] shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
-                <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">Create Support Ticket</h2>
+                <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">
+                  Create Support Ticket
+                </h2>
                 <p className="mt-1 text-sm text-slate-400">Submit a new issue or request.</p>
               </div>
-              <button type="button" className="cyber-button-secondary" onClick={() => setOpenModal(false)}>Close</button>
+              <button
+                type="button"
+                className="cyber-button-secondary"
+                onClick={() => setOpenModal(false)}
+              >
+                Close
+              </button>
             </div>
-            <form action={(formData) => { startTransition(async () => { await createTicketAction(formData); setOpenModal(false); }); }} className="space-y-4 px-6 py-6">
+            <form
+              action={(formData) => {
+                startTransition(async () => {
+                  const result = await createTicketAction(formData);
+                  if (result.ok) setOpenModal(false);
+                });
+              }}
+              className="space-y-4 px-6 py-6"
+            >
               <div>
                 <label className="cyber-label">Title</label>
-                <input name="subject" className="cyber-input" placeholder="What do you need help with?" required />
+                <input
+                  name="subject"
+                  className="cyber-input"
+                  placeholder="What do you need help with?"
+                  required
+                />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
@@ -194,16 +275,34 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
                 </div>
                 <div>
                   <label className="cyber-label">Category</label>
-                  <input name="category" className="cyber-input" placeholder="Networking, Endpoint, Billing..." />
+                  <input
+                    name="category"
+                    className="cyber-input"
+                    placeholder="Networking, Endpoint, Billing..."
+                  />
                 </div>
               </div>
               <div>
                 <label className="cyber-label">Description</label>
-                <textarea name="description" rows={6} className="cyber-input" placeholder="Describe the issue or request in as much detail as possible..." required />
+                <textarea
+                  name="description"
+                  rows={6}
+                  className="cyber-input"
+                  placeholder="Describe the issue or request in as much detail as possible..."
+                  required
+                />
               </div>
               <div className="flex items-center justify-end gap-3">
-                <button type="button" className="cyber-button-secondary" onClick={() => setOpenModal(false)}>Cancel</button>
-                <button type="submit" className="cyber-button" disabled={isPending}>{isPending ? "Submitting..." : "Submit Ticket"}</button>
+                <button
+                  type="button"
+                  className="cyber-button-secondary"
+                  onClick={() => setOpenModal(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="cyber-button" disabled={isPending}>
+                  {isPending ? "Submitting..." : "Submit Ticket"}
+                </button>
               </div>
             </form>
           </div>

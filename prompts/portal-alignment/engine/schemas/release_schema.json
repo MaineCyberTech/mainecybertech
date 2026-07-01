@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Release Gate Schema",
+  "description": "Output schema for the release gate decision (phase 7)",
+  "type": "object",
+  "required": [
+    "version",
+    "generated_at",
+    "readiness_score",
+    "decision",
+    "summary",
+    "blockers",
+    "caveats",
+    "recommended_remediation"
+  ],
+  "properties": {
+    "version": { "type": "string", "const": "3.0" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "git_ref": { "type": "string", "description": "Commit hash for traceability" },
+    "readiness_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+    "decision": {
+      "type": "string",
+      "enum": ["APPROVED", "CONDITIONAL", "BLOCKED"]
+    },
+    "summary": {
+      "type": "object",
+      "required": ["total_findings", "P0", "P1", "P2", "P3"],
+      "properties": {
+        "total_findings": { "type": "integer" },
+        "P0": { "type": "integer" },
+        "P1": { "type": "integer" },
+        "P2": { "type": "integer" },
+        "P3": { "type": "integer" }
+      }
+    },
+    "blockers": { "type": "array", "items": { "type": "string" } },
+    "caveats": { "type": "array", "items": { "type": "string" } },
+    "recommended_remediation": { "type": "string" }
+  }
+}

@@ -23,19 +23,13 @@ const DEFAULT_RETRY: RetryOptions = {
   retryableStatuses: [429, 502, 503, 504],
 };
 
-function buildQuery(
-  params?: Record<string, string | number | undefined>,
-): string {
+function buildQuery(params?: Record<string, string | number | undefined>): string {
   if (!params) return "";
   const entries = Object.entries(params).filter(([, v]) => v !== undefined);
   if (entries.length === 0) return "";
   return (
     "?" +
-    entries
-      .map(
-        ([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`,
-      )
-      .join("&")
+    entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join("&")
   );
 }
 
@@ -56,10 +50,7 @@ export class ApiClient {
     this.retry = { ...DEFAULT_RETRY, ...opts.retries };
   }
 
-  private async executeFetch<T>(
-    url: string,
-    init: RequestInit,
-  ): Promise<T> {
+  private async executeFetch<T>(url: string, init: RequestInit): Promise<T> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= this.retry.maxRetries; attempt++) {
@@ -149,10 +140,7 @@ export class ApiClient {
     });
   }
 
-  get<T>(
-    path: string,
-    params?: Record<string, string | number | undefined>,
-  ): Promise<T> {
+  get<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
     return this.request<T>("GET", path, undefined, params);
   }
 
@@ -170,6 +158,33 @@ export class ApiClient {
 
   delete<T>(path: string): Promise<T> {
     return this.request<T>("DELETE", path);
+  }
+
+  async getBlob(path: string, params?: Record<string, string | number | undefined>): Promise<Blob> {
+    const token = await this.getToken();
+    const url = `${this.baseUrl}${path}${buildQuery(params)}`;
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        headers,
+        credentials: "include",
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        throw new ApiError("HTTP_ERROR", `HTTP ${res.status}`, res.status);
+      }
+
+      return res.blob();
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async postFormData<T>(path: string, formData: FormData): Promise<T> {

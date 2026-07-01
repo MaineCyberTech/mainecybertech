@@ -43,13 +43,7 @@ function priorityClass(priority: string) {
   }
 }
 
-function Chip({
-  children,
-  onRemove,
-}: {
-  children: React.ReactNode;
-  onRemove: () => void;
-}) {
+function Chip({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
       {children}
@@ -68,7 +62,7 @@ type Props = {
   projects: Project[];
   orgMap: Record<string, { name: string }>;
   allOrganizations: Org[];
-  createProjectAction: (formData: FormData) => Promise<void>;
+  createProjectAction: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
 };
 
 export default function AdminProjectsClient({
@@ -91,10 +85,7 @@ export default function AdminProjectsClient({
     if (search.trim()) {
       const q = search.toLowerCase();
       items = items.filter((p) => {
-        return (
-          p.name.toLowerCase().includes(q) ||
-          (p.description ?? "").toLowerCase().includes(q)
-        );
+        return p.name.toLowerCase().includes(q) || (p.description ?? "").toLowerCase().includes(q);
       });
     }
 
@@ -109,10 +100,7 @@ export default function AdminProjectsClient({
     return items;
   }, [projects, search, orgFilter, statusFilter]);
 
-  const paginated = useMemo(
-    () => filtered.slice(0, page * PAGE_SIZE),
-    [filtered, page],
-  );
+  const paginated = useMemo(() => filtered.slice(0, page * PAGE_SIZE), [filtered, page]);
   const hasMore = paginated.length < filtered.length;
 
   const activeFilters: { label: string; onRemove: () => void }[] = [];
@@ -148,8 +136,8 @@ export default function AdminProjectsClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative min-w-[200px] flex-1">
           <input
             type="text"
             value={search}
@@ -161,7 +149,7 @@ export default function AdminProjectsClient({
             className="cyber-input w-full pl-9"
           />
           <svg
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -206,16 +194,10 @@ export default function AdminProjectsClient({
       </div>
 
       <div className="flex gap-2">
-        <a
-          href="/api/v1/projects/export?format=csv"
-          className="cyber-button-secondary text-xs"
-        >
+        <a href="/api/v1/projects/export?format=csv" className="cyber-button-secondary text-xs">
           Download CSV
         </a>
-        <a
-          href="/api/v1/projects/export?format=json"
-          className="cyber-button-secondary text-xs"
-        >
+        <a href="/api/v1/projects/export?format=json" className="cyber-button-secondary text-xs">
           Download JSON
         </a>
       </div>
@@ -229,7 +211,7 @@ export default function AdminProjectsClient({
           ))}
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-slate-300 underline"
+            className="text-xs text-slate-500 underline hover:text-slate-300"
             onClick={() => {
               setSearch("");
               setOrgFilter("");
@@ -276,9 +258,7 @@ export default function AdminProjectsClient({
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-slate-50">
-                        {project.name}
-                      </p>
+                      <p className="truncate font-medium text-slate-50">{project.name}</p>
                       <p className="mt-1 text-sm text-slate-400">
                         Org: {org?.name ?? "Unknown Org"}
                       </p>
@@ -287,14 +267,10 @@ export default function AdminProjectsClient({
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <span className={projectStatusClass(project.status)}>
-                        {project.status}
-                      </span>
-                      <span className={priorityClass(project.priority)}>
-                        {project.priority}
-                      </span>
+                      <span className={projectStatusClass(project.status)}>{project.status}</span>
+                      <span className={priorityClass(project.priority)}>{project.priority}</span>
                       {project.external_jira_project_key ? (
-                        <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono text-blue-300">
+                        <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[10px] text-blue-300">
                           {project.external_jira_project_key}
                         </span>
                       ) : null}
@@ -328,7 +304,7 @@ export default function AdminProjectsClient({
 
       {openModal ? (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:items-center">
-          <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#071018] shadow-2xl my-8">
+          <div className="my-8 w-full max-w-2xl rounded-xl border border-white/10 bg-[#071018] shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
                 <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">
@@ -349,8 +325,8 @@ export default function AdminProjectsClient({
             <form
               action={(formData) => {
                 startTransition(async () => {
-                  await createProjectAction(formData);
-                  setOpenModal(false);
+                  const result = await createProjectAction(formData);
+                  if (result.ok) setOpenModal(false);
                 });
               }}
               className="space-y-4 px-6 py-6"
@@ -358,12 +334,7 @@ export default function AdminProjectsClient({
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="cyber-label">Organization</label>
-                  <select
-                    name="organizationId"
-                    className="cyber-input"
-                    required
-                    defaultValue=""
-                  >
+                  <select name="organizationId" className="cyber-input" required defaultValue="">
                     <option value="">Select organization</option>
                     {allOrganizations.map((org) => (
                       <option key={org.id} value={org.id}>
@@ -374,11 +345,7 @@ export default function AdminProjectsClient({
                 </div>
                 <div>
                   <label className="cyber-label">Status</label>
-                  <select
-                    name="status"
-                    defaultValue="planned"
-                    className="cyber-input"
-                  >
+                  <select name="status" defaultValue="planned" className="cyber-input">
                     <option value="planned">planned</option>
                     <option value="active">active</option>
                     <option value="blocked">blocked</option>
@@ -393,19 +360,11 @@ export default function AdminProjectsClient({
                 </div>
                 <div className="md:col-span-2">
                   <label className="cyber-label">Description</label>
-                  <textarea
-                    name="description"
-                    rows={3}
-                    className="cyber-input"
-                  />
+                  <textarea name="description" rows={3} className="cyber-input" />
                 </div>
                 <div>
                   <label className="cyber-label">Priority</label>
-                  <input
-                    name="priority"
-                    defaultValue="normal"
-                    className="cyber-input"
-                  />
+                  <input name="priority" defaultValue="normal" className="cyber-input" />
                 </div>
                 <div>
                   <label className="cyber-label">Jira Project Key</label>
@@ -417,19 +376,11 @@ export default function AdminProjectsClient({
                 </div>
                 <div>
                   <label className="cyber-label">Start Date</label>
-                  <input
-                    type="datetime-local"
-                    name="startsAt"
-                    className="cyber-input"
-                  />
+                  <input type="datetime-local" name="startsAt" className="cyber-input" />
                 </div>
                 <div>
                   <label className="cyber-label">Due Date</label>
-                  <input
-                    type="datetime-local"
-                    name="dueAt"
-                    className="cyber-input"
-                  />
+                  <input type="datetime-local" name="dueAt" className="cyber-input" />
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3">
@@ -440,11 +391,7 @@ export default function AdminProjectsClient({
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="cyber-button"
-                  disabled={isPending}
-                >
+                <button type="submit" className="cyber-button" disabled={isPending}>
                   {isPending ? "Creating..." : "Create Project"}
                 </button>
               </div>

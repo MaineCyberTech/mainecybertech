@@ -6,27 +6,32 @@ import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 
 export async function updateTicketAction(ticketId: string, formData: FormData) {
-  await requireAdminAccess();
-  const api = getApiClient();
-  const subject = String(formData.get("subject") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const category = String(formData.get("category") ?? "").trim();
-  const priority = String(formData.get("priority") ?? "normal").trim();
-  const status = String(formData.get("status") ?? "new").trim();
-  if (!subject || !description)
-    throw new Error("Title and description are required.");
+  try {
+    await requireAdminAccess();
+    const api = getApiClient();
+    const subject = String(formData.get("subject") ?? "").trim();
+    const description = String(formData.get("description") ?? "").trim();
+    const category = String(formData.get("category") ?? "").trim();
+    const priority = String(formData.get("priority") ?? "normal").trim();
+    const status = String(formData.get("status") ?? "new").trim();
+    if (!subject || !description)
+      return { ok: false as const, error: "Title and description are required." };
 
-  await api.tickets.update(ticketId, {
-    title: subject,
-    description,
-    category: category || null,
-    priority,
-    status,
-  });
+    await api.tickets.update(ticketId, {
+      title: subject,
+      description,
+      category: category || null,
+      priority,
+      status,
+    });
 
-  revalidatePath(`/admin/tickets/${ticketId}`);
-  revalidatePath("/admin/tickets");
-  redirect(`/admin/tickets/${ticketId}`);
+    revalidatePath(`/admin/tickets/${ticketId}`);
+    revalidatePath("/admin/tickets");
+    redirect(`/admin/tickets/${ticketId}`);
+  } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
+  }
 }
 
 export async function addCommentAction(
@@ -34,76 +39,98 @@ export async function addCommentAction(
   organizationId: string,
   formData: FormData,
 ) {
-  await requireAdminAccess();
-  const api = getApiClient();
-  const body = String(formData.get("body") ?? "").trim();
-  const isInternal = String(formData.get("isInternal") ?? "false") === "true";
-  if (!body) throw new Error("Comment body is required.");
+  try {
+    await requireAdminAccess();
+    const api = getApiClient();
+    const body = String(formData.get("body") ?? "").trim();
+    const isInternal = String(formData.get("isInternal") ?? "false") === "true";
+    if (!body) return { ok: false as const, error: "Comment body is required." };
 
-  await api.tickets.addComment(ticketId, {
-    body,
-    isInternal,
-    organizationId,
-  });
+    await api.tickets.addComment(ticketId, {
+      body,
+      isInternal,
+      organizationId,
+    });
 
-  revalidatePath(`/admin/tickets/${ticketId}`);
-  redirect(`/admin/tickets/${ticketId}`);
+    revalidatePath(`/admin/tickets/${ticketId}`);
+    redirect(`/admin/tickets/${ticketId}`);
+  } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
+  }
 }
 
-export async function editCommentAction(
-  ticketId: string,
-  commentId: string,
-  formData: FormData,
-) {
-  await requireAdminAccess();
-  const api = getApiClient();
-  const body = String(formData.get("body") ?? "").trim();
-  if (!body) throw new Error("Comment body is required.");
+export async function editCommentAction(ticketId: string, commentId: string, formData: FormData) {
+  try {
+    await requireAdminAccess();
+    const api = getApiClient();
+    const body = String(formData.get("body") ?? "").trim();
+    if (!body) return { ok: false as const, error: "Comment body is required." };
 
-  await api.tickets.updateComment(ticketId, commentId, { body });
+    await api.tickets.updateComment(ticketId, commentId, { body });
 
-  revalidatePath(`/admin/tickets/${ticketId}`);
+    revalidatePath(`/admin/tickets/${ticketId}`);
+    return { ok: true as const };
+  } catch (error) {
+    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
+  }
 }
 
 export async function deleteTicketAction(ticketId: string, formData: FormData) {
-  await requireAdminAccess();
-  const confirmation = String(formData.get("confirmation") ?? "").trim();
-  if (confirmation !== "DELETE") {
-    throw new Error(
-      "To delete this ticket, type DELETE in the confirmation box.",
-    );
+  try {
+    await requireAdminAccess();
+    const confirmation = String(formData.get("confirmation") ?? "").trim();
+    if (confirmation !== "DELETE") {
+      return {
+        ok: false as const,
+        error: "To delete this ticket, type DELETE in the confirmation box.",
+      };
+    }
+
+    const api = getApiClient();
+    await api.tickets.update(ticketId, { status: "closed" } as any);
+
+    revalidatePath(`/admin/tickets/${ticketId}`);
+    revalidatePath("/admin/tickets");
+    revalidatePath("/admin");
+    redirect(`/admin/tickets/${ticketId}`);
+  } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
   }
-
-  const api = getApiClient();
-  await api.tickets.update(ticketId, { status: "closed" } as any);
-
-  revalidatePath(`/admin/tickets/${ticketId}`);
-  revalidatePath("/admin/tickets");
-  revalidatePath("/admin");
-  redirect(`/admin/tickets/${ticketId}`);
 }
 
 export async function inlineUpdateAction(ticketId: string, formData: FormData) {
-  await requireAdminAccess();
-  const api = getApiClient();
-  const status = String(formData.get("status") ?? "").trim();
-  const priority = String(formData.get("priority") ?? "").trim();
-  const updates: Record<string, string> = {};
-  if (status) updates.status = status;
-  if (priority) updates.priority = priority;
-  if (Object.keys(updates).length === 0) return;
-  await api.tickets.update(ticketId, updates as any);
-  revalidatePath(`/admin/tickets/${ticketId}`);
-  redirect(`/admin/tickets/${ticketId}`);
+  try {
+    await requireAdminAccess();
+    const api = getApiClient();
+    const status = String(formData.get("status") ?? "").trim();
+    const priority = String(formData.get("priority") ?? "").trim();
+    const updates: Record<string, string> = {};
+    if (status) updates.status = status;
+    if (priority) updates.priority = priority;
+    if (Object.keys(updates).length === 0) return { ok: true as const };
+    await api.tickets.update(ticketId, updates as any);
+    revalidatePath(`/admin/tickets/${ticketId}`);
+    redirect(`/admin/tickets/${ticketId}`);
+  } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
+  }
 }
 
 export async function restoreTicketAction(ticketId: string) {
-  await requireAdminAccess();
-  const api = getApiClient();
-  await api.tickets.update(ticketId, { status: "new" } as any);
+  try {
+    await requireAdminAccess();
+    const api = getApiClient();
+    await api.tickets.update(ticketId, { status: "new" } as any);
 
-  revalidatePath(`/admin/tickets/${ticketId}`);
-  revalidatePath("/admin/tickets");
-  revalidatePath("/admin");
-  redirect(`/admin/tickets/${ticketId}`);
+    revalidatePath(`/admin/tickets/${ticketId}`);
+    revalidatePath("/admin/tickets");
+    revalidatePath("/admin");
+    redirect(`/admin/tickets/${ticketId}`);
+  } catch (error) {
+    if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
+    return { ok: false as const, error: error instanceof Error ? error.message : "Unknown error" };
+  }
 }
