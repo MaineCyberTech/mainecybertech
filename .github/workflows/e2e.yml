@@ -8,6 +8,8 @@ on:
       - "apps/web/e2e/**"
       - "apps/web/playwright.config.ts"
       - "packages/**"
+      - "supabase/seeds/**"
+      - "supabase/migrations/**"
       - ".github/workflows/e2e.yml"
   pull_request:
     branches: [main, develop]
@@ -15,6 +17,8 @@ on:
       - "apps/web/e2e/**"
       - "apps/web/playwright.config.ts"
       - "packages/**"
+      - "supabase/seeds/**"
+      - "supabase/migrations/**"
       - ".github/workflows/e2e.yml"
   workflow_call:
 
