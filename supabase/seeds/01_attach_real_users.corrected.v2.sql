@@ -146,38 +146,9 @@ on conflict (organization_id, user_id, module_key, channel) do update
 set enabled = excluded.enabled;
 
 -- ---------------------------------------------------------
--- ONBOARDING
+-- ONBOARDING (table removed in migration 5302055)
 -- ---------------------------------------------------------
-insert into public.onboarding_submissions (
-  id,
-  organization_id,
-  submitted_by,
-  status,
-  progress_percent,
-  company_profile,
-  contacts,
-  technical_environment,
-  service_requirements,
-  security_requirements,
-  uploaded_artifacts,
-  submitted_at
-)
-values
-  (
-    '51000000-0000-0000-0000-000000000001'::uuid,
-    '11111111-1111-1111-1111-111111111111'::uuid,
-    'ef0370d6-0da8-43a1-8f24-d8c4f19448a0'::uuid,
-    'submitted',
-    100,
-    jsonb_build_object('employee_count', 85, 'hq', 'Portland, ME'),
-    jsonb_build_array(jsonb_build_object('name', 'Avery Client Admin', 'email', 'clientadmin.real@acme.example')),
-    jsonb_build_object('m365', true, 'endpoint_count', 92),
-    jsonb_build_object('services', jsonb_build_array('managed-it', 'soc', 'backup')),
-    jsonb_build_object('mfa_required', true, 'edr', true),
-    jsonb_build_array(jsonb_build_object('name', 'network-diagram.pdf')),
-    now() - interval '14 days'
-  )
-on conflict (id) do nothing;
+-- insert into public.onboarding_submissions (...) values (...);
 
 -- ---------------------------------------------------------
 -- TICKETS + COMMENTS
@@ -261,12 +232,7 @@ values
   )
 on conflict (id) do nothing;
 
-insert into public.project_members (project_id, user_id, role)
-values
-  ('53000000-0000-0000-0000-000000000001'::uuid, 'ef0370d6-0da8-43a1-8f24-d8c4f19448a0'::uuid, 'stakeholder'),
-  ('53000000-0000-0000-0000-000000000001'::uuid, 'b0a65dea-16c7-4f54-8192-d9267a4219d1'::uuid, 'owner'),
-  ('53000000-0000-0000-0000-000000000001'::uuid, '817016dc-cc3b-49d1-8ee6-637f880fa0a4'::uuid, 'msp_admin')
-on conflict (project_id, user_id) do update set role = excluded.role;
+-- insert into public.project_members (project_id, user_id, role) values (...);
 
 insert into public.project_tasks (
   id, project_id, organization_id, created_by, owner_id, title, description, details, status, due_date, due_at, sort_order, estimate_hours, actual_hours, approval_required, approved_by, approved_at, metadata
@@ -456,79 +422,24 @@ values
   ('54100000-0000-0000-0000-000000000002'::uuid, '54000000-0000-0000-0000-000000000002'::uuid, 1, 'orgs/22222222-2222-2222-2222-222222222222/contracts/beta-engagement-letter-v1.pdf', 'ebc615c1-6c95-46a6-9bf1-68a4af87b1d8'::uuid, 'seed-beta-engagement-v1')
 on conflict (id) do nothing;
 
-insert into public.document_permissions (
-  id, document_id, user_id, role_id, can_view, can_edit, can_share
-)
-values
-  ('54200000-0000-0000-0000-000000000001'::uuid, '54000000-0000-0000-0000-000000000003'::uuid, '817016dc-cc3b-49d1-8ee6-637f880fa0a4'::uuid, null, true, true, true),
-  ('54200000-0000-0000-0000-000000000002'::uuid, '54000000-0000-0000-0000-000000000003'::uuid, 'ef0370d6-0da8-43a1-8f24-d8c4f19448a0'::uuid, null, true, false, false),
-  ('54200000-0000-0000-0000-000000000003'::uuid, '54000000-0000-0000-0000-000000000004'::uuid, null, (select id from public.roles where key = 'client_user' limit 1), true, false, false)
-on conflict (id) do nothing;
+-- insert into public.document_permissions (...) values (...);
 
 -- ---------------------------------------------------------
--- CONTRACTS / SIGNERS (disabled - contracts table was removed in migration 5302055)
+-- CONTRACTS / SIGNERS (tables removed in migration 5302055)
 -- ---------------------------------------------------------
 -- insert into public.contracts (...) values (...);
 -- insert into public.contract_signers (...) values (...);
--- Contract data preserved for future re-enabling:
--- contract: Beta Legal Managed Services Agreement (id=55000000-...)
--- signers: Blake Client Admin, user.real@beta.example
-    null,
-    'pending'
-  )
-on conflict (id) do nothing;
 
 -- ---------------------------------------------------------
--- APPOINTMENTS
+-- APPOINTMENTS (table removed in migration 5302055)
 -- ---------------------------------------------------------
-insert into public.appointments (
-  id, organization_id, created_by, owner_id, title, description, starts_at, ends_at, location, meeting_url, type
-)
-values
-  (
-    '56000000-0000-0000-0000-000000000001'::uuid,
-    '11111111-1111-1111-1111-111111111111'::uuid,
-    'ef0370d6-0da8-43a1-8f24-d8c4f19448a0'::uuid,
-    'b0a65dea-16c7-4f54-8192-d9267a4219d1'::uuid,
-    'Security Review Meeting',
-    'Weekly hardening project review.',
-    now() + interval '2 days',
-    now() + interval '2 days 1 hour',
-    'Teams',
-    'https://example.invalid/meet/security-review',
-    'meeting'
-  )
-on conflict (id) do nothing;
+-- insert into public.appointments (...) values (...);
 
 -- ---------------------------------------------------------
--- CHAT
+-- CHAT (tables removed in migration 5302055)
 -- ---------------------------------------------------------
-insert into public.chat_threads (
-  id, organization_id, created_by, title, status
-)
-values
-  (
-    '57000000-0000-0000-0000-000000000001'::uuid,
-    '11111111-1111-1111-1111-111111111111'::uuid,
-    'ef0370d6-0da8-43a1-8f24-d8c4f19448a0'::uuid,
-    'Open items for MFA rollout',
-    'open'
-  )
-on conflict (id) do nothing;
-
-insert into public.chat_messages (
-  id, thread_id, organization_id, author_id, body, is_bot
-)
-values
-  (
-    '57100000-0000-0000-0000-000000000001'::uuid,
-    '57000000-0000-0000-0000-000000000001'::uuid,
-    '11111111-1111-1111-1111-111111111111'::uuid,
-    'ef0370d6-0da8-43a1-8f24-d8c4f19448a0'::uuid,
-    'Please post the current list of excluded accounts here for review.',
-    false
-  )
-on conflict (id) do nothing;
+-- insert into public.chat_threads (...) values (...);
+-- insert into public.chat_messages (...) values (...);
 
 -- ---------------------------------------------------------
 -- AUDIT
