@@ -21,6 +21,7 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     strategy:
       matrix:
         node-version: [20.x]
@@ -50,11 +51,12 @@ jobs:
         with:
           version: latest
 
-      - name: Start Supabase local
-        run: supabase start
+      - name: Pull Supabase images
+        run: supabase start --debug 2>&1 || supabase stop --no-backup-volume 2>/dev/null; supabase start
         env:
           SUPABASE_DB_HOST: localhost
           SUPABASE_DB_PORT: 5432
+          SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
 
       - name: Apply migrations and seeds
         run: supabase db reset
