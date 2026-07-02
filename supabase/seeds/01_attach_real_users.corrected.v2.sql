@@ -466,37 +466,13 @@ values
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------
--- CONTRACTS / SIGNERS
+-- CONTRACTS / SIGNERS (disabled - contracts table was removed in migration 5302055)
 -- ---------------------------------------------------------
-insert into public.contracts (
-  id, organization_id, created_by, document_id, title, status, external_signature_provider, external_envelope_id, effective_date, expiration_date
-)
-values
-  (
-    '55000000-0000-0000-0000-000000000001'::uuid,
-    '22222222-2222-2222-2222-222222222222'::uuid,
-    'ebc615c1-6c95-46a6-9bf1-68a4af87b1d8'::uuid,
-    '54000000-0000-0000-0000-000000000002'::uuid,
-    'Beta Legal Managed Services Agreement',
-    'pending_signature',
-    'docusign',
-    'env_seed_beta_001',
-    current_date,
-    current_date + 365
-  )
-on conflict (id) do nothing;
-
-insert into public.contract_signers (
-  id, contract_id, user_id, email, signer_name, signing_order, signed_at, status
-)
-values
-  (
-    '55100000-0000-0000-0000-000000000001'::uuid,
-    '55000000-0000-0000-0000-000000000001'::uuid,
-    'ebc615c1-6c95-46a6-9bf1-68a4af87b1d8'::uuid,
-    'clientadmin.real@beta.example',
-    'Blake Client Admin',
-    1,
+-- insert into public.contracts (...) values (...);
+-- insert into public.contract_signers (...) values (...);
+-- Contract data preserved for future re-enabling:
+-- contract: Beta Legal Managed Services Agreement (id=55000000-...)
+-- signers: Blake Client Admin, user.real@beta.example
     null,
     'pending'
   )
