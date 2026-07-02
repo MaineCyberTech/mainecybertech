@@ -11,6 +11,7 @@ export interface RetryOptions {
 export interface ClientOptions {
   baseUrl: string;
   getToken?: () => Promise<string | null>;
+  getCsrfToken?: () => string | undefined;
   timeoutMs?: number;
   retries?: Partial<RetryOptions>;
 }
@@ -40,12 +41,15 @@ function sleep(ms: number): Promise<void> {
 export class ApiClient {
   private baseUrl: string;
   private getToken: () => Promise<string | null>;
+  private getCsrfToken: () => string | undefined;
   private timeoutMs: number;
   private retry: RetryOptions;
+  private unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
   constructor(opts: ClientOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
     this.getToken = opts.getToken ?? (async () => null);
+    this.getCsrfToken = opts.getCsrfToken ?? (() => undefined);
     this.timeoutMs = opts.timeoutMs ?? 30_000;
     this.retry = { ...DEFAULT_RETRY, ...opts.retries };
   }
@@ -131,7 +135,12 @@ export class ApiClient {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    } else if (this.unsafeMethods.has(method)) {
+      const csrfToken = this.getCsrfToken();
+      if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+    }
 
     return this.executeFetch<T>(url, {
       method,

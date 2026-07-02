@@ -66,7 +66,12 @@ export class CircuitBreaker {
     }
 
     try {
-      const result = await operation();
+      const result = await Promise.race([
+        operation(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Circuit breaker timeout")), this.config.timeout),
+        ),
+      ]);
       this.onSuccess();
       return result;
     } catch (error) {
@@ -95,10 +100,7 @@ export class CircuitBreaker {
     if (this.state === "half-open") {
       this.state = "open";
       this.nextAttempt = new Date(Date.now() + this.config.timeout);
-    } else if (
-      this.state === "closed" &&
-      this.failures >= this.config.failureThreshold
-    ) {
+    } else if (this.state === "closed" && this.failures >= this.config.failureThreshold) {
       this.state = "open";
       this.nextAttempt = new Date(Date.now() + this.config.timeout);
     }

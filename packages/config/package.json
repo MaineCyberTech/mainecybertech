@@ -4,7 +4,8 @@
   "private": true,
   "exports": {
     "./eslint": "./eslint.mjs",
-    "./typescript": "./tsconfig.json"
+    "./typescript": "./tsconfig.json",
+    "./date": "./src/date.ts"
   },
   "devDependencies": {
     "eslint": "^9.17.0",

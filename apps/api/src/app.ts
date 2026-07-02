@@ -10,6 +10,7 @@ import { requestId, requestLogger } from "./middleware/request-id";
 import { rateLimitByUser } from "./middleware/rate-limit";
 import { inputSanitizer } from "./middleware/security";
 import { securityHeaders } from "./middleware/security-headers";
+import { csrfProtection } from "./middleware/csrf";
 import { idempotencyMiddleware } from "./middleware/idempotency";
 import healthRouter from "./routes/health";
 import authRouter from "./routes/auth";
@@ -48,9 +49,7 @@ export function createApp(): Express {
 
   app.use(helmet());
   const allowedOrigins =
-    env.CORS_ORIGIN === "*"
-      ? "*"
-      : env.CORS_ORIGIN.split(",").map((s) => s.trim());
+    env.CORS_ORIGIN === "*" ? "*" : env.CORS_ORIGIN.split(",").map((s) => s.trim());
   app.use(
     cors({
       origin: allowedOrigins,
@@ -75,8 +74,7 @@ export function createApp(): Express {
     message: "Too many requests from this IP, please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) =>
-      req.path === "/health" || req.ip === "127.0.0.1" || req.ip === "::1",
+    skip: (req) => req.path === "/health" || req.ip === "127.0.0.1" || req.ip === "::1",
   });
 
   app.use(limiter);
@@ -84,6 +82,7 @@ export function createApp(): Express {
   app.use(requestId);
   app.use(requestLogger);
   app.use(idempotencyMiddleware);
+  app.use(csrfProtection);
 
   app.use("/health", healthRouter);
   app.use("/metrics", async (_req, res) => {

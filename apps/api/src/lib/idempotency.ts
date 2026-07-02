@@ -26,10 +26,7 @@ export function getRedisClient(): Redis | null {
             ),
           );
       } catch (err: unknown) {
-        logger.warn(
-          { error: String(err) },
-          "Failed to initialize Redis client",
-        );
+        logger.warn({ error: String(err) }, "Failed to initialize Redis client");
       }
     }
   }
@@ -37,10 +34,17 @@ export function getRedisClient(): Redis | null {
 }
 
 const IDEMPOTENCY_TTL_SECONDS = 24 * 60 * 60;
-const IN_MEMORY_FALLBACK = new Map<
-  string,
-  { value: string; expiresAt: number }
->();
+const IDEMPOTENCY_MAX_ENTRIES = 10_000;
+const IN_MEMORY_FALLBACK = new Map<string, { value: string; expiresAt: number }>();
+
+function evictInMemoryIfNeeded(): void {
+  if (IN_MEMORY_FALLBACK.size >= IDEMPOTENCY_MAX_ENTRIES) {
+    const oldest = IN_MEMORY_FALLBACK.keys().next();
+    if (!oldest.done) {
+      IN_MEMORY_FALLBACK.delete(oldest.value);
+    }
+  }
+}
 
 export async function checkIdempotencyKey(key: string): Promise<string | null> {
   const redis = getRedisClient();
@@ -68,10 +72,7 @@ export async function checkIdempotencyKey(key: string): Promise<string | null> {
   return null;
 }
 
-export async function storeIdempotencyKey(
-  key: string,
-  value: string,
-): Promise<void> {
+export async function storeIdempotencyKey(key: string, value: string): Promise<void> {
   const redis = getRedisClient();
   const prefixedKey = `idempotency:${key}`;
 
@@ -87,6 +88,7 @@ export async function storeIdempotencyKey(
     }
   }
 
+  evictInMemoryIfNeeded();
   IN_MEMORY_FALLBACK.set(key, {
     value,
     expiresAt: Date.now() + IDEMPOTENCY_TTL_SECONDS * 1000,

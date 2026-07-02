@@ -1,10 +1,4 @@
-import {
-  Registry,
-  Counter,
-  Histogram,
-  Gauge,
-  collectDefaultMetrics,
-} from "prom-client";
+import { Registry, Counter, Histogram, Gauge, collectDefaultMetrics } from "prom-client";
 
 export const register = new Registry();
 
@@ -77,6 +71,18 @@ export const searchQueriesTotal = new Counter({
   registers: [register],
 });
 
+export const activeOrganizations = new Gauge({
+  name: "portal_active_organizations",
+  help: "Current number of active organizations",
+  registers: [register],
+});
+
+export const activeUsers = new Gauge({
+  name: "portal_active_users",
+  help: "Current number of active users",
+  registers: [register],
+});
+
 export const circuitBreakerStatus = new Gauge({
   name: "portal_circuit_breaker_status",
   help: "Circuit breaker status (0=closed, 1=half-open, 2=open)",
@@ -90,18 +96,11 @@ export const idempotencyKeyHits = new Counter({
   registers: [register],
 });
 
-export function recordDbQuery(
-  operation: string,
-  table: string,
-  durationSeconds: number,
-) {
+export function recordDbQuery(operation: string, table: string, durationSeconds: number) {
   dbQueryDuration.observe({ operation, table }, durationSeconds);
 }
 
-export function recordWebhookDelivery(
-  status: "success" | "failed",
-  event: string,
-) {
+export function recordWebhookDelivery(status: "success" | "failed", event: string) {
   webhookDeliveriesTotal.inc({ status, event });
 }
 
@@ -129,14 +128,19 @@ export function recordSearchQuery() {
   searchQueriesTotal.inc();
 }
 
-export function setCircuitBreakerStatus(
-  name: string,
-  status: "closed" | "half-open" | "open",
-) {
+export function setCircuitBreakerStatus(name: string, status: "closed" | "half-open" | "open") {
   const value = status === "closed" ? 0 : status === "half-open" ? 1 : 2;
   circuitBreakerStatus.set({ name }, value);
 }
 
 export function recordIdempotencyKeyHit() {
   idempotencyKeyHits.inc();
+}
+
+export function setActiveOrganizations(count: number) {
+  activeOrganizations.set(count);
+}
+
+export function setActiveUsers(count: number) {
+  activeUsers.set(count);
 }
