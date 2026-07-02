@@ -52,7 +52,13 @@ jobs:
           version: latest
 
       - name: Pull Supabase images
-        run: supabase start --debug 2>&1 || supabase stop --no-backup-volume 2>/dev/null; supabase start
+        run: |
+          supabase start --debug 2>&1 || {
+            echo "First attempt failed, cleaning up and retrying..."
+            supabase stop --no-backup-volume 2>/dev/null || true
+            sleep 5
+            supabase start
+          }
         env:
           SUPABASE_DB_HOST: localhost
           SUPABASE_DB_PORT: 5432
