@@ -51,18 +51,11 @@ jobs:
         with:
           version: latest
 
-      - name: Pull Supabase images
-        run: |
-          supabase start --debug 2>&1 || {
-            echo "First attempt failed, cleaning up and retrying..."
-            supabase stop --no-backup-volume 2>/dev/null || true
-            sleep 5
-            supabase start
-          }
+      - name: Start Supabase
+        run: supabase start
         env:
           SUPABASE_DB_HOST: localhost
           SUPABASE_DB_PORT: 5432
-          SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
 
       - name: Apply migrations and seeds
         run: supabase db reset
