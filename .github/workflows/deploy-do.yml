@@ -245,6 +245,8 @@ jobs:
             cd /opt/mct-portal
             IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose up -d --remove-orphans
             sleep 15
+            docker compose restart caddy
+            sleep 5
             docker compose ps --format 'table {{.Name}}\t{{.Status}}'
 
       - name: Health check
