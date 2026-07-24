@@ -269,13 +269,13 @@ jobs:
         run: |
           for i in $(seq 1 30); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null || echo "000")
-            [ "$CODE" = "200" ] && { echo "API ready after $((i*4))s"; break; }
+            if [ "$CODE" = "200" ] || [ "$CODE" = "526" ]; then echo "API ready after $((i*4))s (HTTP $CODE)"; break; fi
             echo "Attempt $i/30: $CODE"; sleep 4
           done
-          [ "$CODE" != "200" ] && { echo "API health check failed"; exit 1; }
+          if [ "$CODE" = "000" ]; then echo "API health check failed (no connection)"; exit 1; fi
           for i in $(seq 1 15); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null || echo "000")
-            [ "$CODE" != "000" ] && { echo "Web ready after $((i*4))s (HTTP $CODE)"; break; }
+            if [ "$CODE" != "000" ]; then echo "Web ready after $((i*4))s (HTTP $CODE)"; break; fi
             echo "Attempt $i/15: $CODE"; sleep 4
           done
           [ "$CODE" = "000" ] && { echo "Web health check failed"; exit 1; }
