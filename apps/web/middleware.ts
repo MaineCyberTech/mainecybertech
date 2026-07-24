@@ -28,7 +28,7 @@ function setCspHeaders(response: NextResponse, nonce: string, host: string): voi
   const apiOrigin = `https://${host.replace(/^(www|app)\./, "api.")}`;
   response.headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ${apiOrigin}`,
+    `default-src 'self'; script-src 'self' 'unsafe-inline' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ${apiOrigin}`,
   );
 }
 
