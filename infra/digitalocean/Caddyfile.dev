@@ -1,5 +1,5 @@
 www.mainecybertech.us, app.mainecybertech.us {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+    tls internal
 
     reverse_proxy web:3000
 
@@ -11,7 +11,7 @@ www.mainecybertech.us, app.mainecybertech.us {
 }
 
 api.mainecybertech.us {
-    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+    tls internal
 
     @sse path /api/v1/notifications/stream
     reverse_proxy @sse api:4000 {

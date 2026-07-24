@@ -252,7 +252,12 @@ jobs:
             docker compose -p mct-portal down --remove-orphans || true
             IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans
             sleep 15
-            docker compose ps --format 'table {{.Name}}\t{{.Status}}'
+            echo "=== Docker compose ps ==="
+            docker compose -p mct-portal ps --format 'table {{.Name}}\t{{.Status}}\t{{.Ports}}'
+            echo "=== Port 443 listener ==="
+            ss -tlnp 2>/dev/null | grep :443 || netstat -tlnp 2>/dev/null | grep :443 || echo "no listener"
+            echo "=== Caddy logs (last 10 lines) ==="
+            docker compose -p mct-portal logs --tail=10 caddy 2>/dev/null || docker logs mct-portal-caddy-1 --tail 10 2>/dev/null || echo "no caddy logs"
         env:
           CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
           CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
