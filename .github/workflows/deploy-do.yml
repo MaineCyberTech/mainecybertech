@@ -251,6 +251,7 @@ jobs:
             cp /opt/mct-portal/repo/infra/digitalocean/docker-compose.yml /opt/mct-portal/docker-compose.yml
             cd /opt/mct-portal
             docker compose -p mct-portal down --remove-orphans || true
+            docker rm -f mct-portal-caddy-1 2>/dev/null || true
             IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans
             sleep 15
             echo "=== Docker compose ps ==="
