@@ -234,6 +234,7 @@ jobs:
             echo "${{ secrets.CF_ORIGIN_CERT }}" > /opt/mct-portal/certs/fullchain.pem
             echo "${{ secrets.CF_ORIGIN_KEY }}" > /opt/mct-portal/certs/privkey.pem
             chmod 600 /opt/mct-portal/certs/privkey.pem
+            docker compose down || true
             docker system prune -af --volumes 2>/dev/null || true
             docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
             docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
