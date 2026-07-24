@@ -187,37 +187,39 @@ jobs:
             git checkout -B ${{ github.ref_name }} origin/${{ github.ref_name }}
             git reset --hard origin/${{ github.ref_name }}
             mkdir -p /opt/mct-portal
-            printf '%s\n' \
-              SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-              JWT_SECRET=${{ secrets.JWT_SECRET }} \
-              SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
-              SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} \
-              STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} \
-              STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} \
-              SENTRY_DSN=${{ secrets.SENTRY_DSN }} \
-              SMTP_HOST=${{ secrets.SMTP_HOST }} \
-              SMTP_PORT=${{ secrets.SMTP_PORT }} \
-              SMTP_USER=${{ secrets.SMTP_USER }} \
-              SMTP_PASS=${{ secrets.SMTP_PASS }} \
-              EMAIL_FROM=${{ secrets.EMAIL_FROM }} \
-              JIRA_BASE_URL=${{ secrets.JIRA_BASE_URL }} \
-              JIRA_EMAIL=${{ secrets.JIRA_EMAIL }} \
-              JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} \
-              JSM_BASE_URL=${{ secrets.JSM_BASE_URL }} \
-              M365_TENANT_ID=${{ secrets.M365_TENANT_ID }} \
-              M365_CLIENT_ID=${{ secrets.M365_CLIENT_ID }} \
-              M365_CLIENT_SECRET=${{ secrets.M365_CLIENT_SECRET }} \
-              PUBLIC_TRAFFIC_WEBHOOK_URL=${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }} \
-              PUBLIC_LEAD_WEBHOOK_URL=${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }} \
-              JSM_DOMAIN=${{ secrets.JSM_DOMAIN }} \
-              JSM_EMAIL=${{ secrets.JSM_EMAIL }} \
-              JSM_API_TOKEN=${{ secrets.JSM_API_TOKEN }} \
-              JSM_SERVICEDESK_ID=${{ secrets.JSM_SERVICEDESK_ID }} \
-              JSM_REQUEST_TYPE_ID=${{ secrets.JSM_REQUEST_TYPE_ID }} \
-              APP_DOMAIN=${{ needs.setup.outputs.app_domain }} \
-              API_DOMAIN=${{ needs.setup.outputs.api_domain }} \
-              CORS_ORIGIN=${{ needs.setup.outputs.cors_origin }} \
-              > /opt/mct-portal/.env
+            : > /opt/mct-portal/.env
+            for pair in \
+              "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" \
+              "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
+              "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" \
+              "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+              "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" \
+              "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
+              "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" \
+              "SMTP_HOST=${{ secrets.SMTP_HOST }}" \
+              "SMTP_PORT=${{ secrets.SMTP_PORT }}" \
+              "SMTP_USER=${{ secrets.SMTP_USER }}" \
+              "SMTP_PASS=${{ secrets.SMTP_PASS }}" \
+              "EMAIL_FROM=${{ secrets.EMAIL_FROM }}" \
+              "JIRA_BASE_URL=${{ secrets.JIRA_BASE_URL }}" \
+              "JIRA_EMAIL=${{ secrets.JIRA_EMAIL }}" \
+              "JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }}" \
+              "JSM_BASE_URL=${{ secrets.JSM_BASE_URL }}" \
+              "M365_TENANT_ID=${{ secrets.M365_TENANT_ID }}" \
+              "M365_CLIENT_ID=${{ secrets.M365_CLIENT_ID }}" \
+              "M365_CLIENT_SECRET=${{ secrets.M365_CLIENT_SECRET }}" \
+              "PUBLIC_TRAFFIC_WEBHOOK_URL=${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }}" \
+              "PUBLIC_LEAD_WEBHOOK_URL=${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }}" \
+              "JSM_DOMAIN=${{ secrets.JSM_DOMAIN }}" \
+              "JSM_EMAIL=${{ secrets.JSM_EMAIL }}" \
+              "JSM_API_TOKEN=${{ secrets.JSM_API_TOKEN }}" \
+              "JSM_SERVICEDESK_ID=${{ secrets.JSM_SERVICEDESK_ID }}" \
+              "JSM_REQUEST_TYPE_ID=${{ secrets.JSM_REQUEST_TYPE_ID }}" \
+              "APP_DOMAIN=${{ needs.setup.outputs.app_domain }}" \
+              "API_DOMAIN=${{ needs.setup.outputs.api_domain }}" \
+              "CORS_ORIGIN=${{ needs.setup.outputs.cors_origin }}"; do
+              printf '%s\n' "$pair" >> /opt/mct-portal/.env
+            done
             chmod 600 /opt/mct-portal/.env
             echo "Droplet ready"
 
