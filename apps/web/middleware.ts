@@ -28,7 +28,7 @@ function setCspHeaders(response: NextResponse, nonce: string, host: string): voi
   const apiOrigin = `https://${host.replace(/^(www|app)\./, "api.")}`;
   response.headers.set(
     "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'nonce-${nonce}' 'sha256-OBTN3RiyCV4Bq7dFqZ5a2pAXjnCcCYeTJMO2I/LYKeo=' 'sha256-DMwYb6cGf+rlwiwgWF/n0IsUk8Ob3bM0agSbwDb1uPc=' 'sha256-Jyk2/vjovCDXMEB7V1zyyTRwdZWuEgowanc/KBk7wlA=' 'sha256-dWUUFxzLL06Fv9JsL4BOUt/PknG3WjZ3IcvdHLJL2pk=' 'sha256-DDQXH/Xnlgxvw0NrVSM5sY/iNH6J5wGyIDdy/gY8CPU=' 'sha256-TyC/Fb96xbSZgLfgHgJBPgeNWAMjGJYEqndPoGj3EjA=' 'sha256-uPFcq4d4DccCX5vpbwhR8eQZeiQJayR2e0XPVCcyOJw='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ${apiOrigin}`,
+    `default-src 'self'; script-src 'self' 'nonce-${nonce}' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ${apiOrigin}`,
   );
 }
 
@@ -93,6 +93,7 @@ export async function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set("x-nonce", nonce);
   setCspHeaders(response, nonce, host);
   return response;
 }
