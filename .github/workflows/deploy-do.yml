@@ -240,16 +240,17 @@ jobs:
             docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
             CADDYFILE="infra/digitalocean/Caddyfile.${{ needs.setup.outputs.name }}"
             [ -f "/opt/mct-portal/repo/$CADDYFILE" ] || CADDYFILE="infra/digitalocean/Caddyfile"
-            cp /opt/mct-portal/repo/$CADDYFILE /opt/mct-portal/Caddyfile
+            if [ -s "/opt/mct-portal/certs/fullchain.pem" ] && [ -s "/opt/mct-portal/certs/privkey.pem" ]; then
+              cp /opt/mct-portal/repo/$CADDYFILE /opt/mct-portal/Caddyfile
+            else
+              echo "WARNING: Cert files empty/missing, using tls internal fallback"
+              sed 's|tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem|tls internal|' /opt/mct-portal/repo/$CADDYFILE > /opt/mct-portal/Caddyfile
+            fi
             cp /opt/mct-portal/repo/infra/digitalocean/docker-compose.yml /opt/mct-portal/docker-compose.yml
             cd /opt/mct-portal
-            docker compose down || true
-            echo "=== checking port 443 ==="; ss -tlnp 2>/dev/null | grep :443 || netstat -tlnp 2>/dev/null | grep :443 || echo "no ss/netstat"
-            fuser -k 443/tcp 2>/dev/null || true
-            sleep 2
-            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose up -d --remove-orphans
+            docker compose -p mct-portal down --remove-orphans || true
+            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans
             sleep 15
-            docker compose restart caddy
             sleep 5
             docker compose ps --format 'table {{.Name}}\t{{.Status}}'
 
