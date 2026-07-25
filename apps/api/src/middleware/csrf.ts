@@ -24,6 +24,12 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
+  // Allow internal Docker network requests (server-to-server)
+  const ip = req.ip || req.socket.remoteAddress || "";
+  if (ip.includes("172.") || ip.includes("127.0.0.1") || ip.includes("::1") || ip.includes("::ffff:172.")) {
+    return next();
+  }
+
   if (SAFE_METHODS.includes(req.method)) {
     const token = generateToken();
     res.cookie(CSRF_COOKIE, token, {
