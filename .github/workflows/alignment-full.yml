@@ -1,5 +1,9 @@
 name: alignment-full
 on: [push, pull_request]
+
+permissions:
+  contents: read
+
 jobs:
   alignment:
     runs-on: ubuntu-latest

@@ -1,5 +1,5 @@
 import { getApiClient } from "@/lib/api";
-import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import ProfileClient from "./ProfileClient";
 
@@ -27,16 +27,20 @@ export default async function ProfilePage() {
   if (!initialData) {
     return (
       <div className="space-y-6">
-        <PortalBreadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Profile" }]} />
+        <Breadcrumbs
+          items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Profile" }]}
+        />
         <PortalSubnav current="dashboard" />
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">Unable to load profile.</div>
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
+          Unable to load profile.
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <PortalBreadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Profile" }]} />
+      <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Profile" }]} />
       <PortalSubnav current="dashboard" />
       <ProfileClient initialData={initialData} />
     </div>

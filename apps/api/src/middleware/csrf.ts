@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { randomBytes, timingSafeEqual } from "node:crypto";
+import { getEnv } from "../config/env";
 
 const CSRF_TOKEN_LENGTH = 32;
 const CSRF_HEADER = "x-csrf-token";
@@ -27,7 +28,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     const token = generateToken();
     res.cookie(CSRF_COOKIE, token, {
       httpOnly: false,
-      secure: process.env.NODE_ENV === "production",
+      secure: getEnv().NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 24 * 60 * 60 * 1000,
     });

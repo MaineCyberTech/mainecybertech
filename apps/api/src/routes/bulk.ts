@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
-import { AppError, success } from "../types";
+import { success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
@@ -42,8 +42,7 @@ router.post("/invite", async (req, res, next) => {
 
     const supabase = getSupabaseAdmin();
     const lines = csv.split("\n").filter((l) => l.trim());
-    const results: Array<{ email: string; status: string; message: string }> =
-      [];
+    const results: Array<{ email: string; status: string; message: string }> = [];
 
     for (const line of lines) {
       const cols = parseCSVLine(line);
@@ -72,19 +71,15 @@ router.post("/invite", async (req, res, next) => {
           userId = existingProfile.id;
           results.push({ email, status: "exists", message: "User exists" });
         } else {
-          const { data: signUpData, error: signUpError } =
-            await supabase.auth.admin.createUser({
-              email,
-              password: Array.from(
-                { length: 16 },
-                () =>
-                  "abcdefghijklmnopqrstuvwxyz0123456789"[
-                    Math.floor(Math.random() * 36)
-                  ],
-              ).join(""),
-              email_confirm: true,
-              user_metadata: { full_name: fullName },
-            });
+          const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
+            email,
+            password: Array.from(
+              { length: 16 },
+              () => "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)],
+            ).join(""),
+            email_confirm: true,
+            user_metadata: { full_name: fullName },
+          });
 
           if (signUpError || !signUpData.user) {
             results.push({

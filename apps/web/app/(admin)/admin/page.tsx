@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
+import EmptyState from "@/components/EmptyState";
 
 export const metadata = { title: "Admin Dashboard - Maine CyberTech" };
 
@@ -10,10 +11,7 @@ export const dynamic = "force-dynamic";
 
 function rel(value?: string | null) {
   if (!value) return "—";
-  const s = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(value).getTime()) / 1000),
-  );
+  const s = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
   if (s < 60) return `${s}s ago`;
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m ago`;
@@ -27,9 +25,7 @@ function ticketSubject(t: any) {
   return t?.subject ?? t?.title ?? t?.name ?? `Ticket ${t?.id}`;
 }
 function ticketStatus(t: any) {
-  return String(
-    t?.status ?? t?.state ?? t?.ticket_status ?? "new",
-  ).toLowerCase();
+  return String(t?.status ?? t?.state ?? t?.ticket_status ?? "new").toLowerCase();
 }
 function ticketPriority(t: any) {
   return String(t?.priority ?? t?.severity ?? "normal").toLowerCase();
@@ -86,9 +82,7 @@ export default async function AdminHomePage() {
   const orgs = orgsResult;
   const orgMap = new Map(orgs.map((o: any) => [o.id, o.name ?? o.id]));
   const recentTicketsAll = (ticketsResult.items ?? []) as any[];
-  const recentTickets = recentTicketsAll
-    .filter((t) => !isDeletedTicket(t))
-    .slice(0, 8);
+  const recentTickets = recentTicketsAll.filter((t) => !isDeletedTicket(t)).slice(0, 8);
   const recentDocs = (docsResult.items ?? []).slice(0, 5) as any[];
   const recentProjects = (projectsResult.items ?? []).slice(0, 5) as any[];
   const pendingMemberships = pendingMembershipsResult.slice(0, 5) as any[];
@@ -96,26 +90,22 @@ export default async function AdminHomePage() {
   const openTicketCount = recentTicketsAll.filter(
     (t) =>
       !isDeletedTicket(t) &&
-      !["resolved", "closed", "complete", "completed"].includes(
-        ticketStatus(t),
-      ),
+      !["resolved", "closed", "complete", "completed"].includes(ticketStatus(t)),
   ).length;
   const recentAudit = (auditResult.items ?? []).slice(0, 5) as any[];
 
   return (
     <div className="space-y-6">
-      <AdminBreadcrumbs items={[{ label: "Admin" }]} />
+      <Breadcrumbs items={[{ label: "Admin" }]} />
       <AdminSubnav current="home" />
 
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500 sm:text-xs">
+            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Organizations
             </p>
-            <p className="font-orbitron text-lg text-slate-50 sm:text-xl">
-              {orgs.length}
-            </p>
+            <p className="font-orbitron text-lg text-slate-50 sm:text-xl">{orgs.length}</p>
           </div>
           <p className="mt-2 text-xs text-slate-400 sm:mt-3 sm:text-sm">
             Total customer organizations in the platform.
@@ -123,7 +113,7 @@ export default async function AdminHomePage() {
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500 sm:text-xs">
+            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Tickets
             </p>
             <p className="font-orbitron text-lg text-slate-50 sm:text-xl">
@@ -136,7 +126,7 @@ export default async function AdminHomePage() {
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500 sm:text-xs">
+            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Documents
             </p>
             <p className="font-orbitron text-lg text-slate-50 sm:text-xl">
@@ -149,7 +139,7 @@ export default async function AdminHomePage() {
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500 sm:text-xs">
+            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Projects
             </p>
             <p className="font-orbitron text-lg text-slate-50 sm:text-xl">
@@ -162,7 +152,7 @@ export default async function AdminHomePage() {
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500 sm:text-xs">
+            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Pending Approvals
             </p>
             <p className="font-orbitron text-lg text-slate-50 sm:text-xl">
@@ -170,8 +160,8 @@ export default async function AdminHomePage() {
             </p>
           </div>
           <p className="mt-2 text-xs text-slate-400 sm:mt-3 sm:text-sm">
-            {pendingOrgsResult.length} orgs &bull;{" "}
-            {pendingMembershipsResult.length} memberships waiting.
+            {pendingOrgsResult.length} orgs &bull; {pendingMembershipsResult.length} memberships
+            waiting.
           </p>
         </div>
       </div>
@@ -194,31 +184,18 @@ export default async function AdminHomePage() {
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <p className="font-medium text-slate-50">
-                        {ticketSubject(t)}
-                      </p>
-                      <p className="mt-2 text-xs text-slate-500">
-                        Org:{" "}
-                        {orgMap.get(t.organization_id) ?? t.organization_id} •
-                        Updated {rel(t.updated_at ?? t.created_at)}
+                      <p className="font-medium text-slate-50">{ticketSubject(t)}</p>
+                      <p className="mt-2 text-xs text-slate-400">
+                        Org: {orgMap.get(t.organization_id) ?? t.organization_id} • Updated{" "}
+                        {rel(t.updated_at ?? t.created_at)}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         className={pill(
-                          [
-                            "resolved",
-                            "closed",
-                            "complete",
-                            "completed",
-                          ].includes(ticketStatus(t))
+                          ["resolved", "closed", "complete", "completed"].includes(ticketStatus(t))
                             ? "emerald"
-                            : [
-                                  "triaged",
-                                  "pending",
-                                  "waiting",
-                                  "on_hold",
-                                ].includes(ticketStatus(t))
+                            : ["triaged", "pending", "waiting", "on_hold"].includes(ticketStatus(t))
                               ? "amber"
                               : "blue",
                         )}
@@ -241,9 +218,11 @@ export default async function AdminHomePage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-                No recent ticket activity.
-              </div>
+              <EmptyState
+                icon="🎫"
+                title="No recent ticket activity"
+                description="Support tickets from client organizations will appear here."
+              />
             )}
           </div>
         </section>
@@ -264,13 +243,10 @@ export default async function AdminHomePage() {
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <p className="font-medium text-slate-50">
-                        {documentName(d)}
-                      </p>
-                      <p className="mt-2 text-xs text-slate-500">
-                        Org:{" "}
-                        {orgMap.get(d.organization_id) ?? d.organization_id} •
-                        Updated {rel(d.updated_at ?? d.created_at)}
+                      <p className="font-medium text-slate-50">{documentName(d)}</p>
+                      <p className="mt-2 text-xs text-slate-400">
+                        Org: {orgMap.get(d.organization_id) ?? d.organization_id} • Updated{" "}
+                        {rel(d.updated_at ?? d.created_at)}
                       </p>
                     </div>
                     <span
@@ -288,9 +264,11 @@ export default async function AdminHomePage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-                No recent document activity.
-              </div>
+              <EmptyState
+                icon="📄"
+                title="No recent document activity"
+                description="Document records across organizations will appear here."
+              />
             )}
           </div>
         </section>
@@ -310,15 +288,17 @@ export default async function AdminHomePage() {
                   className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
                 >
                   <p className="font-medium text-slate-50">{projectName(p)}</p>
-                  <p className="mt-2 text-xs text-slate-500">
+                  <p className="mt-2 text-xs text-slate-400">
                     Updated {rel(p.updated_at ?? p.created_at)}
                   </p>
                 </Link>
               ))
             ) : (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-                No recent project activity.
-              </div>
+              <EmptyState
+                icon="📋"
+                title="No recent project activity"
+                description="Project work across organizations will appear here."
+              />
             )}
           </div>
         </section>
@@ -336,19 +316,19 @@ export default async function AdminHomePage() {
                   key={log.id}
                   className="flex items-start gap-3 rounded-lg border border-white/5 bg-[#0A1118]/60 px-4 py-3"
                 >
-                  <div className="mt-1 h-1.5 w-1.5 rounded-full shrink-0 bg-emerald-500/60" />
+                  <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/60" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs text-slate-300">{log.action}</p>
-                    <p className="mt-0.5 text-[11px] text-slate-500">
-                      {rel(log.created_at)}
-                    </p>
+                    <p className="mt-0.5 text-[11px] text-slate-400">{rel(log.created_at)}</p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-                No recent audit activity.
-              </div>
+              <EmptyState
+                icon="📊"
+                title="No recent audit activity"
+                description="Audit events from the platform will appear here."
+              />
             )}
           </div>
         </section>
@@ -357,9 +337,7 @@ export default async function AdminHomePage() {
       <div className="grid gap-4 xl:grid-cols-2">
         <section className="cyber-panel">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="cyber-heading text-lg">
-              Pending Membership Approvals
-            </h2>
+            <h2 className="cyber-heading text-lg">Pending Membership Approvals</h2>
             <Link href="/admin/approvals" className="cyber-button-secondary">
               Open Queue
             </Link>
@@ -367,33 +345,26 @@ export default async function AdminHomePage() {
           <div className="mt-6 space-y-4">
             {pendingMemberships.length > 0 ? (
               pendingMemberships.map((m) => (
-                <div
-                  key={m.id}
-                  className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
-                >
+                <div key={m.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
                   <p className="font-medium text-slate-50">
                     {orgMap.get(m.organization_id) ?? m.organization_id}
                   </p>
-                  <p className="mt-2 text-xs text-slate-500">
-                    User: {m.user_id}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Requested {rel(m.created_at)}
-                  </p>
+                  <p className="mt-2 text-xs text-slate-400">User: {m.user_id}</p>
+                  <p className="mt-1 text-xs text-slate-400">Requested {rel(m.created_at)}</p>
                 </div>
               ))
             ) : (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-                No pending memberships.
-              </div>
+              <EmptyState
+                icon="👥"
+                title="No pending memberships"
+                description="New membership requests will appear here for review."
+              />
             )}
           </div>
         </section>
         <section className="cyber-panel">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="cyber-heading text-lg">
-              Pending Organization Requests
-            </h2>
+            <h2 className="cyber-heading text-lg">Pending Organization Requests</h2>
             <Link href="/admin/approvals" className="cyber-button-secondary">
               Open Queue
             </Link>
@@ -401,20 +372,17 @@ export default async function AdminHomePage() {
           <div className="mt-6 space-y-4">
             {pendingOrganizations.length > 0 ? (
               pendingOrganizations.map((o) => (
-                <div
-                  key={o.id}
-                  className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
-                >
+                <div key={o.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
                   <p className="font-medium text-slate-50">{o.name ?? o.id}</p>
-                  <p className="mt-2 text-xs text-slate-500">
-                    Requested {rel(o.created_at)}
-                  </p>
+                  <p className="mt-2 text-xs text-slate-400">Requested {rel(o.created_at)}</p>
                 </div>
               ))
             ) : (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-                No pending organizations.
-              </div>
+              <EmptyState
+                icon="🏢"
+                title="No pending organizations"
+                description="New organization requests will appear here for review."
+              />
             )}
           </div>
         </section>
@@ -422,22 +390,18 @@ export default async function AdminHomePage() {
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Quick Actions</h2>
-        <div className="mt-6 grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-7">
+        <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-7">
           <Link href="/admin/approvals" className={quick}>
             <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
               Approvals
             </h3>
-            <p className="mt-3 text-sm text-slate-400">
-              Review pending orgs and memberships.
-            </p>
+            <p className="mt-3 text-sm text-slate-400">Review pending orgs and memberships.</p>
           </Link>
           <Link href="/admin/organizations" className={quick}>
             <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
               Organizations
             </h3>
-            <p className="mt-3 text-sm text-slate-400">
-              Manage customer org records and settings.
-            </p>
+            <p className="mt-3 text-sm text-slate-400">Manage customer org records and settings.</p>
           </Link>
           <Link href="/admin/users" className={quick}>
             <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
@@ -451,9 +415,7 @@ export default async function AdminHomePage() {
             <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
               Tickets
             </h3>
-            <p className="mt-3 text-sm text-slate-400">
-              Jump into the active support queue.
-            </p>
+            <p className="mt-3 text-sm text-slate-400">Jump into the active support queue.</p>
           </Link>
           <Link href="/admin/documents" className={quick}>
             <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
@@ -475,9 +437,7 @@ export default async function AdminHomePage() {
             <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
               Client Portal
             </h3>
-            <p className="mt-3 text-sm text-slate-400">
-              Open the customer-facing portal.
-            </p>
+            <p className="mt-3 text-sm text-slate-400">Open the customer-facing portal.</p>
           </Link>
         </div>
       </section>

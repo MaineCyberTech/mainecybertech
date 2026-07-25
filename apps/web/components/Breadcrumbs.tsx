@@ -5,11 +5,11 @@ type Crumb = {
   href?: string;
 };
 
-type PortalBreadcrumbsProps = {
+type BreadcrumbsProps = {
   items: Crumb[];
 };
 
-export default function PortalBreadcrumbs({ items }: PortalBreadcrumbsProps) {
+export default function Breadcrumbs({ items }: BreadcrumbsProps) {
   return (
     <nav aria-label="Breadcrumb" className="mb-6">
       <ol className="flex flex-wrap items-center gap-2 text-sm text-slate-400">
@@ -23,9 +23,7 @@ export default function PortalBreadcrumbs({ items }: PortalBreadcrumbsProps) {
                   {item.label}
                 </Link>
               ) : (
-                <span className={isLast ? "text-slate-200" : "text-slate-400"}>
-                  {item.label}
-                </span>
+                <span className={isLast ? "text-slate-200" : "text-slate-400"}>{item.label}</span>
               )}
 
               {!isLast ? <span className="text-slate-600">/</span> : null}

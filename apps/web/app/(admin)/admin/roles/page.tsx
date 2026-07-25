@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 
@@ -13,42 +13,35 @@ export default async function AdminRolesPage() {
   const api = getApiClient();
   const roles = await api.roles.listWithPermissions();
 
-  const totalPerms = roles.reduce(
-    (a: number, r: any) => a + r.permissionCount,
-    0,
-  );
+  const totalPerms = roles.reduce((a: number, r: any) => a + r.permissionCount, 0);
 
   return (
     <AdminPageShell
-      breadcrumbs={
-        <AdminBreadcrumbs
-          items={[{ label: "Admin", href: "/admin" }, { label: "Roles" }]}
-        />
-      }
+      breadcrumbs={<Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Roles" }]} />}
       subnav={<AdminSubnav current="roles" />}
       title="Roles & Permissions"
       description="Manage system roles and their permission mappings."
     >
-      <div className="grid gap-4 sm:grid-cols-3 mb-6">
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{roles.length}</p>
-          <p className="text-xs text-slate-500">Roles</p>
+          <p className="text-xs text-slate-400">Roles</p>
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
           <p className="text-2xl font-bold text-emerald-400">{totalPerms}</p>
-          <p className="text-xs text-slate-500">Total Permissions Granted</p>
+          <p className="text-xs text-slate-400">Total Permissions Granted</p>
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
           <p className="text-2xl font-bold text-slate-50">
             {roles.filter((r: any) => r.is_system).length}
           </p>
-          <p className="text-xs text-slate-500">System Roles</p>
+          <p className="text-xs text-slate-400">System Roles</p>
         </div>
       </div>
 
       <div className="space-y-4">
         {roles.length === 0 ? (
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-8 text-center text-sm text-slate-500">
+          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-8 text-center text-sm text-slate-400">
             No roles found.
           </div>
         ) : (
@@ -67,13 +60,13 @@ export default async function AdminRolesPage() {
                       {role.description ?? "No description"}
                     </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <div className="flex shrink-0 flex-wrap items-center gap-2">
                     <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-300">
                       {count} permissions
                     </span>
                     <span className="cyber-pill text-xs">{role.key}</span>
                     {role.is_system ? (
-                      <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] font-semibold text-blue-300 uppercase tracking-wider">
+                      <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-blue-300">
                         System
                       </span>
                     ) : null}

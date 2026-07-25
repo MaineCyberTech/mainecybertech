@@ -25,7 +25,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.map((i: any) => i.label).join(" > ")}</nav>;
   };
@@ -38,7 +38,14 @@ jest.mock("@/components/admin/AdminSubnav", () => {
 });
 
 jest.mock("@/components/admin/AdminPageShell", () => {
-  return function MockPageShell({ title, description, breadcrumbs, subnav, actions, children }: any) {
+  return function MockPageShell({
+    title,
+    description,
+    breadcrumbs,
+    subnav,
+    actions,
+    children,
+  }: any) {
     return (
       <div>
         {breadcrumbs}
@@ -57,11 +64,25 @@ jest.mock("@/app/(admin)/admin/users/[userId]/actions", () => ({
   updateMembership: jest.fn(),
 }));
 
-const baseProfile = { id: "u1", full_name: "Alice Smith", email: "alice@test.com", phone: "+123", title: "Engineer", is_super_admin: false, default_organization_id: null };
+const baseProfile = {
+  id: "u1",
+  full_name: "Alice Smith",
+  email: "alice@test.com",
+  phone: "+123",
+  title: "Engineer",
+  is_super_admin: false,
+  default_organization_id: null,
+};
 
 function makeDetail(profileOverrides: Record<string, any> = {}, extra: Record<string, any> = {}) {
   return {
-    user: { id: "u1", email: "alice@test.com", full_name: "Alice Smith", role_id: null, created_at: "" },
+    user: {
+      id: "u1",
+      email: "alice@test.com",
+      full_name: "Alice Smith",
+      role_id: null,
+      created_at: "",
+    },
     profile: { ...baseProfile, ...profileOverrides },
     memberships: extra.memberships ?? [],
     organizations: extra.organizations ?? [],
@@ -123,15 +144,32 @@ describe("UserDetailPage", () => {
   });
 
   it("renders membership with org and role", async () => {
-    mockUsersGetDetail.mockResolvedValue(makeDetail({}, {
-      memberships: [{ id: "m1", organization_id: "o1", role_id: "r1", user_id: "u1", status: "approved", is_billing_contact: false, is_security_contact: false }],
-      organizations: [{ id: "o1", name: "Acme Corp" }],
-      roles: [{ id: "r1", name: "Admin" }],
-    }));
+    mockUsersGetDetail.mockResolvedValue(
+      makeDetail(
+        {},
+        {
+          memberships: [
+            {
+              id: "m1",
+              organization_id: "o1",
+              role_id: "r1",
+              user_id: "u1",
+              status: "approved",
+              is_billing_contact: false,
+              is_security_contact: false,
+            },
+          ],
+          organizations: [{ id: "o1", name: "Acme Corp" }],
+          roles: [{ id: "r1", name: "Admin" }],
+        },
+      ),
+    );
     const Page = (await import("@/app/(admin)/admin/users/[userId]/page")).default;
     render(await Page({ params: Promise.resolve({ userId: "u1" }) }));
     expect(screen.getByText("Acme Corp")).toBeInTheDocument();
-    expect(screen.getByText((c) => c.includes("Admin") && c.includes("approved"))).toBeInTheDocument();
+    expect(
+      screen.getByText((c) => c.includes("Admin") && c.includes("approved")),
+    ).toBeInTheDocument();
   });
 
   it("shows save profile button", async () => {
@@ -155,11 +193,24 @@ describe("UserDetailPage", () => {
   });
 
   it("shows unknown org for memberships with no match", async () => {
-    mockUsersGetDetail.mockResolvedValue(makeDetail({}, {
-      memberships: [{ id: "m1", organization_id: "missing", role_id: "r1", user_id: "u1", status: "pending" }],
-      organizations: [],
-      roles: [{ id: "r1", name: "Viewer" }],
-    }));
+    mockUsersGetDetail.mockResolvedValue(
+      makeDetail(
+        {},
+        {
+          memberships: [
+            {
+              id: "m1",
+              organization_id: "missing",
+              role_id: "r1",
+              user_id: "u1",
+              status: "pending",
+            },
+          ],
+          organizations: [],
+          roles: [{ id: "r1", name: "Viewer" }],
+        },
+      ),
+    );
     const Page = (await import("@/app/(admin)/admin/users/[userId]/page")).default;
     render(await Page({ params: Promise.resolve({ userId: "u1" }) }));
     expect(screen.getByText("Unknown Org")).toBeInTheDocument();
@@ -173,22 +224,52 @@ describe("UserDetailPage", () => {
   });
 
   it("shows save membership button", async () => {
-    mockUsersGetDetail.mockResolvedValue(makeDetail({}, {
-      memberships: [{ id: "m1", organization_id: "o1", role_id: "r1", user_id: "u1", status: "approved", is_billing_contact: false, is_security_contact: false }],
-      organizations: [{ id: "o1", name: "Acme" }],
-      roles: [{ id: "r1", name: "Admin", key: "admin" }],
-    }));
+    mockUsersGetDetail.mockResolvedValue(
+      makeDetail(
+        {},
+        {
+          memberships: [
+            {
+              id: "m1",
+              organization_id: "o1",
+              role_id: "r1",
+              user_id: "u1",
+              status: "approved",
+              is_billing_contact: false,
+              is_security_contact: false,
+            },
+          ],
+          organizations: [{ id: "o1", name: "Acme" }],
+          roles: [{ id: "r1", name: "Admin", key: "admin" }],
+        },
+      ),
+    );
     const Page = (await import("@/app/(admin)/admin/users/[userId]/page")).default;
     render(await Page({ params: Promise.resolve({ userId: "u1" }) }));
     expect(screen.getByText("Save Membership")).toBeInTheDocument();
   });
 
   it("shows billing and security contact checkboxes", async () => {
-    mockUsersGetDetail.mockResolvedValue(makeDetail({}, {
-      memberships: [{ id: "m1", organization_id: "o1", role_id: "r1", user_id: "u1", status: "approved", is_billing_contact: true, is_security_contact: true }],
-      organizations: [{ id: "o1", name: "Acme" }],
-      roles: [{ id: "r1", name: "Admin", key: "admin" }],
-    }));
+    mockUsersGetDetail.mockResolvedValue(
+      makeDetail(
+        {},
+        {
+          memberships: [
+            {
+              id: "m1",
+              organization_id: "o1",
+              role_id: "r1",
+              user_id: "u1",
+              status: "approved",
+              is_billing_contact: true,
+              is_security_contact: true,
+            },
+          ],
+          organizations: [{ id: "o1", name: "Acme" }],
+          roles: [{ id: "r1", name: "Admin", key: "admin" }],
+        },
+      ),
+    );
     const Page = (await import("@/app/(admin)/admin/users/[userId]/page")).default;
     render(await Page({ params: Promise.resolve({ userId: "u1" }) }));
     expect(screen.getByText("Billing Contact")).toBeInTheDocument();

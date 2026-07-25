@@ -44,6 +44,16 @@ Never recommend broad rewrites without justification.
 Never force symmetry if the current repo is already better.
 Never break working contracts without explicitly warning about it.
 
+## Pre-Flight Validation
+
+Before beginning any phase, verify:
+
+- Both repo paths exist and are accessible
+- The reference repo (`C:\temp\chat`) matches the expected project
+- The current working repo is the correct target for comparison
+
+If either path is invalid or the repos appear misidentified, halt and report the discrepancy before proceeding.
+
 ## Optional Ultra-Strict Wrapper
 
 Do not give generic recommendations.

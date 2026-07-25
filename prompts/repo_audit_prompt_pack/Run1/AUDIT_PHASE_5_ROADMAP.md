@@ -10,6 +10,7 @@
 ## 1. Roadmap Summary
 
 **Core Finding:** MCT Portal is a mature evolution from Chat Platform, but has specific gaps:
+
 - Production blocks (missing env configs, admin tests)
 - Some pattern improvements from Chat (simpler package.json, testing setup, migration structure)
 - Shared packages (@mct/ui, @mct/config) not wired into apps
@@ -21,6 +22,7 @@
 ## 2. Immediate Low-Risk Wins (Phase 1)
 
 ### **WIN 1: Fix Production Environment Config (BLOCKER)**
+
 - **What:** Create real `env/prod.tfvars`, `backend.prod.hcl` and `env/dev.tfvars`, `backend.dev.hcl` from `.example` files
 - **Why:** Without real configs, `terraform validate` fails - MCT cannot deploy to production
 - **Inspired By:** Chat has these files pre-configured
@@ -32,6 +34,7 @@
 - **Impact:** CRITICAL - production deploy enabled
 
 ### **WIN 2: Add Admin Page Tests (Defensive)**
+
 - **What:** Add Jest + Playwright tests for admin/webhooks, bulk-invite, health, organizations/[orgId]/billing
 - **Why:** Zero test coverage risks regression; CI confidence needed
 - **Inspired By:** Chat's test structure and patterns
@@ -47,6 +50,7 @@
 ## 3. Low-Risk Similarity Improvements (Phase 2)
 
 ### **SIM 1: Wire Shared Packages (@mct/ui, @mct/config)**
+
 - **What:** Add `@mct/ui` and `@mct/config` to all app `tsconfig.json` files
 - **Why:** Consistency across workspace, better lint/typecheck
 - **Inspired By:** Chat's direct package references in tsconfig
@@ -58,6 +62,7 @@
 - **Impact:** Low - improves consistency, no functional changes
 
 ### **SIM 2: Simplify Root Package Scripts**
+
 - **What:** Copy Chat's pattern for common scripts, keep MCT-specific additions
 - **Why:** Cleaner root configuration, easier onboarding
 - **Inspired By:** Chat's simple, clear scripts in package.json
@@ -73,6 +78,7 @@
 ## 4. Medium-Risk Convergence Candidates (Phase 3)
 
 ### **CONVERGE 1: Testing Approach Refactoring**
+
 - **What:** Refactor test setup to include Chat's mock builder utilities
 - **Why:** More declarative test definitions, easier maintenance
 - **Inspired By:** Chat's `tests/setup/vitest.setup.ts` pattern
@@ -84,6 +90,7 @@
 - **Impact:** Medium - improves test maintainability
 
 ### **CONVERGE 2: Migration Structure Simplification**
+
 - **What:** Migrate to date-based migration naming (like Chat) while preserving MCT's migration count
 - **Why:** Clearer migration history and rollback paths
 - **Inspired By:** Chat's `20260625*` migration naming
@@ -99,6 +106,7 @@
 ## 5. Optional Strategic Improvements (Phase 4)
 
 ### **STRAT 1: Routing Architecture Alignment**
+
 - **What:** Consider aligning route groups with Chat's simpler structure
 - **Why:** Current `(admin)/(portal)/(public)` works but may have duplication
 - **Inspired By:** Chat's flat route structure
@@ -110,6 +118,7 @@
 - **Impact:** High - could affect user navigation
 
 ### **STRAT 2: TypeScript Sanitization**
+
 - **What:** Reduce `:any` annotations in MCT web code (security improvement)
 - **Why:** Better type safety, maintainability
 - **Inspired By:** Chat's lower `:any` usage
@@ -127,6 +136,7 @@
 ### **NON-NEGOTIABLE ELEMENTS**
 
 **A. Enterprise Features (Never Change)**
+
 - Ticket system with comments + 5-min editing window
 - Document management with versions + sharing links
 - Organization-based tenancy (multi-tenancy)
@@ -136,6 +146,7 @@
 - Marketing site + contact form integration
 
 **B. Architecture Foundation (Critical for Platform)**
+
 - `(admin)/(portal)/(public)` route groups
 - Cross-domain routing: `www.*` vs `app.*`
 - Auth flow: JWT local verification + Supabase fallback
@@ -144,6 +155,7 @@
 - GitHub Actions gating (validate + prod-approval)
 
 **C. Production Contract (Cannot Touch)**
+
 - All env var schemas (JWT_SECRET, CORS_ORIGIN, SUPABASE vars, Stripe keys, etc.)
 - API endpoint contracts (no breaking changes)
 - Supabase RLS policies
@@ -179,6 +191,7 @@ PHASE 3 (OPTIONAL STRATEGIC)
 ## 8. Minimum Validation Gates
 
 ### **GATE 1: Infrastructure Ready (After Phase 1 Fix)**
+
 ```
 - terraform validate passes in CI
 - env/prod.tfvars + env/dev.tfvars exist
@@ -187,6 +200,7 @@ PHASE 3 (OPTIONAL STRATEGIC)
 ```
 
 ### **GATE 2: Security & Stability (After Phase 2)**
+
 ```
 - Shared packages wired and typecheck passes
 - Testing setup migrated without breaking existing tests
@@ -195,6 +209,7 @@ PHASE 3 (OPTIONAL STRATEGIC)
 ```
 
 ### **GATE 3: Strategic Improvements (After Gate 2)**
+
 ```
 - Route testing passes for admin/portal/public access
 - TypeScript sanitization passes all tests

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import AvatarPill from "@/components/admin/AvatarPill";
@@ -692,7 +692,7 @@ function AdminTaskCard({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3">
-              <span className="text-slate-500" aria-hidden="true">
+              <span className="text-slate-400" aria-hidden="true">
                 ↕
               </span>
               <AvatarPill
@@ -706,7 +706,7 @@ function AdminTaskCard({
               {taskState.details ?? taskState.description ?? "No task details provided."}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-400">
                 Due: {formatDateTimeUtc(taskState.due_at)}
               </span>
               {taskState.approval_required ? (
@@ -732,7 +732,7 @@ function AdminTaskCard({
       </summary>
 
       <div className="border-t border-white/10 px-4 pb-4 pt-4">
-        <p className="mb-2 text-xs text-slate-500">
+        <p className="mb-2 text-xs text-slate-400">
           Created by:{" "}
           {taskState.created_by_name ??
             taskState.created_by_email ??
@@ -741,14 +741,14 @@ function AdminTaskCard({
         </p>
         {taskState.approved_at ? (
           <p
-            className="mb-4 text-xs text-slate-500"
+            className="mb-4 text-xs text-slate-400"
             title={formatDateTimeUtc(taskState.approved_at)}
           >
             Approved by: {taskState.approved_by_name ?? taskState.approved_by_email ?? "Unknown"} •{" "}
             {formatRelativeTime(taskState.approved_at)}
           </p>
         ) : (
-          <p className="mb-4 text-xs text-slate-500">Approval state: Not approved</p>
+          <p className="mb-4 text-xs text-slate-400">Approval state: Not approved</p>
         )}
 
         <form onSubmit={handleTaskFormSubmit} className="mt-4 space-y-4">
@@ -938,7 +938,7 @@ function AdminTaskCard({
                       className="markdown-body mt-2 text-sm text-slate-300"
                     />
                     <p
-                      className="mt-2 text-xs text-slate-500"
+                      className="mt-2 text-xs text-slate-400"
                       title={formatDateTimeUtc(comment.created_at)}
                     >
                       {comment.author_name ?? comment.author_email ?? "Unknown"} •{" "}

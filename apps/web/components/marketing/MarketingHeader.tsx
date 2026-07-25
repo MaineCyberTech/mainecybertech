@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -19,6 +19,21 @@ export default function MarketingHeader() {
   const [isAppDomain, setIsAppDomain] = useState(false);
   const [wwwBase, setWwwBase] = useState("");
   const pathname = usePathname();
+  const hamburgerBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (menuOpen) {
+      const firstLink = document.querySelector<HTMLAnchorElement>("[data-mobile-menu] a");
+      firstLink?.focus();
+    }
+  }, [menuOpen]);
+
+  const handleMenuKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setMenuOpen(false);
+      hamburgerBtnRef.current?.focus();
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
@@ -59,10 +74,7 @@ export default function MarketingHeader() {
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
-        <Link
-          href={linkHref("/")}
-          className="flex items-center gap-3 no-underline"
-        >
+        <Link href={linkHref("/")} className="flex items-center gap-3 no-underline">
           <span className="font-orbitron text-lg font-bold uppercase tracking-wider text-slate-50 sm:text-xl">
             Maine{" "}
             <span className="text-emerald-500 drop-shadow-[0_0_10px_rgba(5,150,105,0.4)]">
@@ -72,22 +84,26 @@ export default function MarketingHeader() {
         </Link>
 
         <button
+          ref={hamburgerBtnRef}
           className="flex flex-col gap-[5px] sm:hidden"
           onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
+          aria-expanded={menuOpen}
+          aria-label="Toggle navigation menu"
         >
           <span
-            className={`h-0.5 w-7 bg-slate-50 transition ${menuOpen ? "rotate-45 translate-y-[7px]" : ""}`}
+            className={`h-0.5 w-7 bg-slate-50 transition ${menuOpen ? "translate-y-[7px] rotate-45" : ""}`}
           />
+          <span className={`h-0.5 w-7 bg-slate-50 transition ${menuOpen ? "opacity-0" : ""}`} />
           <span
-            className={`h-0.5 w-7 bg-slate-50 transition ${menuOpen ? "opacity-0" : ""}`}
-          />
-          <span
-            className={`h-0.5 w-7 bg-slate-50 transition ${menuOpen ? "-rotate-45 -translate-y-[7px]" : ""}`}
+            className={`h-0.5 w-7 bg-slate-50 transition ${menuOpen ? "-translate-y-[7px] -rotate-45" : ""}`}
           />
         </button>
 
         <nav
+          data-mobile-menu
+          role="navigation"
+          aria-label="Main navigation"
+          onKeyDown={handleMenuKeyDown}
           className={`${menuOpen ? "flex" : "hidden"} absolute left-0 top-full w-full flex-col border-b border-emerald-600/20 bg-[#0A1118]/95 px-6 pb-6 pt-4 backdrop-blur-md sm:static sm:flex sm:w-auto sm:flex-row sm:items-center sm:gap-2 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none`}
         >
           {navItems.map((item) => (

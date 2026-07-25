@@ -38,7 +38,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -187,7 +187,12 @@ describe("AdminDocumentsPage", () => {
         { ...baseDoc, id: "d2", mime_type: "text/plain", file_name: "notes.txt" },
         { ...baseDoc, id: "d3", mime_type: "video/mp4", file_name: "clip.mp4" },
         { ...baseDoc, id: "d4", mime_type: "audio/mpeg", file_name: "song.mp3" },
-        { ...baseDoc, id: "d5", mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", file_name: "doc.docx" },
+        {
+          ...baseDoc,
+          id: "d5",
+          mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          file_name: "doc.docx",
+        },
       ],
       total: 5,
     });

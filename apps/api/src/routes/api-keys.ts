@@ -4,7 +4,6 @@ import crypto from "crypto";
 import { getSupabaseAdmin } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { responseCacheNoRenew } from "../middleware/cache";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 
@@ -36,9 +35,7 @@ router.get("/", async (req, res, next) => {
 
     let query = supabase
       .from("api_keys")
-      .select(
-        "id, name, key_prefix, permissions, expires_at, last_used_at, is_active, created_at",
-      )
+      .select("id, name, key_prefix, permissions, expires_at, last_used_at, is_active, created_at")
       .order("created_at", { ascending: false });
 
     if (orgId) query = query.eq("organization_id", orgId);
@@ -134,10 +131,7 @@ router.patch("/:id", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase
-      .from("api_keys")
-      .delete()
-      .eq("id", req.params.id);
+    const { error } = await supabase.from("api_keys").delete().eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

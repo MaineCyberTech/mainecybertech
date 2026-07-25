@@ -5,11 +5,8 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
-import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
-import {
-  requireIfMatch,
-  checkVersionMatch,
-} from "../middleware/optimistic-locking";
+import { responseCacheNoRenew } from "../middleware/cache";
+import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -56,9 +53,7 @@ router.get("/export", async (req, res, next) => {
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter);
 
-    const { data, error } = await query
-      .order("created_at", { ascending: false })
-      .limit(10000);
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -72,10 +67,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(req.query.limit as string) || 25),
-    );
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("projects").select("*", { count: "exact" });
@@ -90,9 +82,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
       data: projects,
       error,
       count,
-    } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    } = await query.order("created_at", { ascending: false }).range(offset, offset + limit - 1);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -118,8 +108,7 @@ router.get("/:id", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Project not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Project not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -136,8 +125,7 @@ router.get("/:id/detail", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
 
-    if (projError || !project)
-      throw new AppError("NOT_FOUND", "Project not found", 404);
+    if (projError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
 
     const orgId = project.organization_id as string;
 
@@ -149,9 +137,7 @@ router.get("/:id/detail", async (req, res, next) => {
     ] = await Promise.all([
       supabase
         .from("memberships")
-        .select(
-          "id, user_id, role_id, status, is_billing_contact, is_security_contact",
-        )
+        .select("id, user_id, role_id, status, is_billing_contact, is_security_contact")
         .eq("organization_id", orgId)
         .eq("status", "approved"),
       supabase
@@ -173,13 +159,10 @@ router.get("/:id/detail", async (req, res, next) => {
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
     if (tasksError) throw new AppError("DB_ERROR", tasksError.message, 500);
-    if (commentsError)
-      throw new AppError("DB_ERROR", commentsError.message, 500);
+    if (commentsError) throw new AppError("DB_ERROR", commentsError.message, 500);
     if (readsError) throw new AppError("DB_ERROR", readsError.message, 500);
 
-    const memberUserIds = (memberships ?? []).map(
-      (m: { user_id: string }) => m.user_id,
-    );
+    const memberUserIds = (memberships ?? []).map((m: { user_id: string }) => m.user_id);
     const allUserIds = new Set<string>(memberUserIds);
     for (const t of tasks ?? []) {
       if ((t as { owner_id: string | null }).owner_id)
@@ -203,16 +186,11 @@ router.get("/:id/detail", async (req, res, next) => {
     if (profError) throw new AppError("DB_ERROR", profError.message, 500);
 
     const memberRoleIds = [
-      ...new Set(
-        (memberships ?? []).map((m: { role_id: string }) => m.role_id),
-      ),
+      ...new Set((memberships ?? []).map((m: { role_id: string }) => m.role_id)),
     ];
     const { data: roles, error: rolesError } =
       memberRoleIds.length > 0
-        ? await supabase
-            .from("roles")
-            .select("id, key, name")
-            .in("id", memberRoleIds)
+        ? await supabase.from("roles").select("id, key, name").in("id", memberRoleIds)
         : { data: [], error: null };
 
     if (rolesError) throw new AppError("DB_ERROR", rolesError.message, 500);
@@ -289,8 +267,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
-    if (parsed.description !== undefined)
-      updateData.description = parsed.description;
+    if (parsed.description !== undefined) updateData.description = parsed.description;
     if (parsed.status !== undefined) updateData.status = parsed.status;
     if (parsed.priority !== undefined) updateData.priority = parsed.priority;
     if (parsed.startsAt !== undefined) updateData.starts_at = parsed.startsAt;
@@ -309,12 +286,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data)
-      throw new AppError(
-        "VERSION_CONFLICT",
-        "Project was modified by another user",
-        409,
-      );
+    if (!data) throw new AppError("VERSION_CONFLICT", "Project was modified by another user", 409);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -333,10 +305,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase
-      .from("projects")
-      .delete()
-      .eq("id", req.params.id);
+    const { error } = await supabase.from("projects").delete().eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -414,43 +383,51 @@ router.post("/:id/tasks", async (req, res, next) => {
   }
 });
 
-router.patch("/:id/tasks/:taskId", async (req, res, next) => {
+router.patch("/:id/tasks/:taskId", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateTaskSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
+    const { data: currentTask, error: taskFetchError } = await supabase
+      .from("project_tasks")
+      .select("version")
+      .eq("id", req.params.taskId)
+      .single();
+
+    if (taskFetchError || !currentTask) {
+      throw new AppError("NOT_FOUND", "Task not found", 404);
+    }
+
+    checkVersionMatch(currentTask.version, req.ifMatchVersion);
+
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
-    if (parsed.description !== undefined)
-      updateData.description = parsed.description;
+    if (parsed.description !== undefined) updateData.description = parsed.description;
     if (parsed.details !== undefined) updateData.details = parsed.details;
     if (parsed.status !== undefined) updateData.status = parsed.status;
-    if (parsed.sortOrder !== undefined)
-      updateData.sort_order = parsed.sortOrder;
+    if (parsed.sortOrder !== undefined) updateData.sort_order = parsed.sortOrder;
     if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
     if (parsed.approvalRequired !== undefined)
       updateData.approval_required = parsed.approvalRequired;
     if (parsed.ownerId !== undefined) updateData.owner_id = parsed.ownerId;
-    if (parsed.approvedBy !== undefined)
-      updateData.approved_by = parsed.approvedBy;
-    if (parsed.approvedAt !== undefined)
-      updateData.approved_at = parsed.approvedAt;
+    if (parsed.approvedBy !== undefined) updateData.approved_by = parsed.approvedBy;
+    if (parsed.approvedAt !== undefined) updateData.approved_at = parsed.approvedAt;
     if (parsed.externalJiraIssueKey !== undefined)
       updateData.external_jira_issue_key = parsed.externalJiraIssueKey;
-    if (parsed.issueType !== undefined)
-      updateData.issue_type = parsed.issueType;
+    if (parsed.issueType !== undefined) updateData.issue_type = parsed.issueType;
     if (parsed.priority !== undefined) updateData.priority = parsed.priority;
     if (parsed.labels !== undefined) updateData.labels = parsed.labels;
-    if (parsed.parentTaskId !== undefined)
-      updateData.parent_task_id = parsed.parentTaskId;
+    if (parsed.parentTaskId !== undefined) updateData.parent_task_id = parsed.parentTaskId;
     if (parsed.epicKey !== undefined) updateData.epic_key = parsed.epicKey;
-    if (parsed.resolution !== undefined)
-      updateData.resolution = parsed.resolution;
+    if (parsed.resolution !== undefined) updateData.resolution = parsed.resolution;
     if (parsed.sprint !== undefined) updateData.sprint = parsed.sprint;
+
+    updateData.version = currentTask.version + 1;
 
     const { data, error } = await supabase
       .from("project_tasks")
       .update(updateData)
+      .eq("version", currentTask.version)
       .eq("id", req.params.taskId)
       .eq("project_id", req.params.id)
       .select()
@@ -501,10 +478,7 @@ router.delete("/:id/tasks/:taskId", async (req, res, next) => {
 router.get("/:id/tasks/comments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    let query = supabase
-      .from("project_task_comments")
-      .select("*")
-      .eq("project_id", req.params.id);
+    let query = supabase.from("project_task_comments").select("*").eq("project_id", req.params.id);
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -621,8 +595,7 @@ router.patch("/:id/updates/:updateId", async (req, res, next) => {
 
     const updateData: Record<string, unknown> = {};
     if (parsed.body !== undefined) updateData.body = parsed.body;
-    if (parsed.isInternal !== undefined)
-      updateData.is_internal = parsed.isInternal;
+    if (parsed.isInternal !== undefined) updateData.is_internal = parsed.isInternal;
     if (parsed.isPinned !== undefined) updateData.is_pinned = parsed.isPinned;
 
     const { data, error } = await supabase
@@ -675,71 +648,64 @@ router.delete("/:id/updates/:updateId", async (req, res, next) => {
   }
 });
 
-router.patch(
-  "/:id/tasks/:taskId/comments/:commentId",
-  async (req, res, next) => {
-    try {
-      const parsed = updateTaskCommentSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
+router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) => {
+  try {
+    const parsed = updateTaskCommentSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
 
-      const updateData: Record<string, unknown> = {};
-      if (parsed.body !== undefined) updateData.body = parsed.body;
-      if (parsed.isInternal !== undefined)
-        updateData.is_internal = parsed.isInternal;
+    const updateData: Record<string, unknown> = {};
+    if (parsed.body !== undefined) updateData.body = parsed.body;
+    if (parsed.isInternal !== undefined) updateData.is_internal = parsed.isInternal;
 
-      const { data, error } = await supabase
-        .from("project_task_comments")
-        .update(updateData)
-        .eq("id", req.params.commentId)
-        .eq("task_id", req.params.taskId)
-        .select()
-        .single();
+    const { data, error } = await supabase
+      .from("project_task_comments")
+      .update(updateData)
+      .eq("id", req.params.commentId)
+      .eq("task_id", req.params.taskId)
+      .select()
+      .single();
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      if (!data) throw new AppError("NOT_FOUND", "Comment not found", 404);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!data) throw new AppError("NOT_FOUND", "Comment not found", 404);
 
-      await logAuditEvent({
-        actorUserId: req.authUser!.userId,
-        action: "project.task.comment.edit",
-        entityType: "project_task_comment",
-        entityId: String(req.params.commentId),
-        metadata: { taskId: req.params.taskId, projectId: req.params.id },
-      });
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "project.task.comment.edit",
+      entityType: "project_task_comment",
+      entityId: String(req.params.commentId),
+      metadata: { taskId: req.params.taskId, projectId: req.params.id },
+    });
 
-      res.json(success(data));
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+    res.json(success(data));
+  } catch (error) {
+    next(error);
+  }
+});
 
-router.delete(
-  "/:id/tasks/:taskId/comments/:commentId",
-  async (req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const { error } = await supabase
-        .from("project_task_comments")
-        .delete()
-        .eq("id", req.params.commentId)
-        .eq("task_id", req.params.taskId);
+router.delete("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase
+      .from("project_task_comments")
+      .delete()
+      .eq("id", req.params.commentId)
+      .eq("task_id", req.params.taskId);
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-      await logAuditEvent({
-        actorUserId: req.authUser!.userId,
-        action: "project.task.comment.delete",
-        entityType: "project_task_comment",
-        entityId: String(req.params.commentId),
-        metadata: { taskId: req.params.taskId, projectId: req.params.id },
-      });
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "project.task.comment.delete",
+      entityType: "project_task_comment",
+      entityId: String(req.params.commentId),
+      metadata: { taskId: req.params.taskId, projectId: req.params.id },
+    });
 
-      res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/:id/tasks/read-states", async (req, res, next) => {
   try {

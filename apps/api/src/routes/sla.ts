@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
@@ -15,16 +14,10 @@ router.get("/metrics", responseCacheNoRenew(60), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const orgId = req.query.organization_id as string | undefined;
-    const days = Math.min(
-      90,
-      Math.max(1, parseInt(req.query.days as string) || 30),
-    );
+    const days = Math.min(90, Math.max(1, parseInt(req.query.days as string) || 30));
     const since = new Date(Date.now() - days * 86400000).toISOString();
 
-    let query = supabase
-      .from("sla_logs")
-      .select("*", { count: "exact" })
-      .gte("created_at", since);
+    let query = supabase.from("sla_logs").select("*", { count: "exact" }).gte("created_at", since);
 
     if (orgId) query = query.eq("organization_id", orgId);
 
@@ -39,10 +32,7 @@ router.get("/metrics", responseCacheNoRenew(60), async (req, res, next) => {
     const resolved = logs?.filter((l: any) => l.resolved_at).length ?? 0;
 
     // Per-metric breakdown
-    const byMetric: Record<
-      string,
-      { total: number; breached: number; avgMinutes: number }
-    > = {};
+    const byMetric: Record<string, { total: number; breached: number; avgMinutes: number }> = {};
     for (const log of logs ?? []) {
       const m = log.metric;
       if (!byMetric[m]) byMetric[m] = { total: 0, breached: 0, avgMinutes: 0 };
@@ -50,8 +40,7 @@ router.get("/metrics", responseCacheNoRenew(60), async (req, res, next) => {
       if (log.breached) byMetric[m].breached++;
       if (log.actual_minutes) {
         byMetric[m].avgMinutes =
-          (byMetric[m].avgMinutes * (byMetric[m].total - 1) +
-            log.actual_minutes) /
+          (byMetric[m].avgMinutes * (byMetric[m].total - 1) + log.actual_minutes) /
           byMetric[m].total;
       }
     }

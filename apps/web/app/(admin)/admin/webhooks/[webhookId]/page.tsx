@@ -1,7 +1,7 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Link from "next/link";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import WebhookDetailClient from "./WebhookDetailClient";
@@ -36,7 +36,7 @@ export default async function WebhookDetailPage({ params }: Props) {
   return (
     <AdminPageShell
       breadcrumbs={
-        <AdminBreadcrumbs
+        <Breadcrumbs
           items={[
             { label: "Admin", href: "/admin" },
             { label: "Webhooks", href: "/admin/webhooks" },

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
@@ -119,7 +119,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
       <div className="flex items-center justify-between gap-3 whitespace-nowrap">
-        <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{label}</p>
+        <p className="text-xs uppercase tracking-[0.12em] text-slate-400">{label}</p>
         <p className="text-base font-semibold text-slate-50">{value}</p>
       </div>
     </div>
@@ -248,7 +248,7 @@ function TicketCard({
             <span className={priorityPillClass(priority)}>{priority}</span>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
+        <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400">
           <span>Org: {orgMap.get(ticket.organization_id) ?? ticket.organization_id}</span>
           <span>Category: {ticketCategory(ticket)}</span>
           <span>Assignee: {assigneeLabel(ticket)}</span>
@@ -472,7 +472,7 @@ export default function AdminTicketCenterClient({
             className="cyber-input w-full pl-9"
           />
           <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -526,7 +526,7 @@ export default function AdminTicketCenterClient({
           ))}
           <button
             type="button"
-            className="text-xs text-slate-500 underline hover:text-slate-300"
+            className="text-xs text-slate-400 underline hover:text-slate-300"
             onClick={() => {
               setSearch("");
               setOrgFilter("");

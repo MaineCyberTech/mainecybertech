@@ -16,7 +16,7 @@ jest.mock("@/lib/api", () => ({
   }),
 }));
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -78,7 +78,9 @@ describe("ApprovalQueuePage", () => {
   });
 
   it("renders pending organizations with approve/reject", async () => {
-    mockOrgsList.mockResolvedValue([{ id: "org-1", name: "New Org", slug: "new-org", primary_domain: "new.org" }]);
+    mockOrgsList.mockResolvedValue([
+      { id: "org-1", name: "New Org", slug: "new-org", primary_domain: "new.org" },
+    ]);
     mockMembershipsList.mockResolvedValue([]);
     const Page = (await import("@/app/(admin)/admin/approvals/page")).default;
     render(await Page());
@@ -93,7 +95,9 @@ describe("ApprovalQueuePage", () => {
     mockMembershipsList.mockResolvedValue([
       { id: "m1", user_id: "u1", organization_id: "o1", status: "pending" },
     ]);
-    mockProfilesList.mockResolvedValue([{ id: "u1", full_name: "Jane Doe", email: "jane@test.com" }]);
+    mockProfilesList.mockResolvedValue([
+      { id: "u1", full_name: "Jane Doe", email: "jane@test.com" },
+    ]);
     const Page = (await import("@/app/(admin)/admin/approvals/page")).default;
     render(await Page());
     expect(screen.getByText("Jane Doe")).toBeInTheDocument();

@@ -29,12 +29,11 @@ class CacheBackend {
         this.redis = createClient({ url: env.REDIS_URL });
         await this.redis.connect();
         this.useRedis = true;
-        console.log("Redis cache connected");
+        const { logger } = await import("../lib/logger");
+        logger.info("Redis cache connected");
       } catch (err) {
-        console.warn(
-          "Failed to connect to Redis, falling back to in-memory cache:",
-          err,
-        );
+        const { logger } = await import("../lib/logger");
+        logger.warn({ err }, "Failed to connect to Redis, falling back to in-memory cache");
       }
     }
     this.startCleanup();
@@ -79,11 +78,7 @@ class CacheBackend {
 
     if (this.useRedis && this.redis) {
       try {
-        await this.redis.setEx(
-          key,
-          ttlSeconds,
-          JSON.stringify({ data, expires }),
-        );
+        await this.redis.setEx(key, ttlSeconds, JSON.stringify({ data, expires }));
         return;
       } catch {
         // Fall through to memory cache on Redis error
@@ -131,11 +126,6 @@ export async function initializeCache(): Promise<void> {
 
 export function shutdownCache(): void {
   cacheBackend.shutdown();
-}
-
-function ensureCacheReady(): void {
-  // Cache is lazily initialized on first use
-  // but we can ensure it's ready if needed
 }
 
 function buildCacheKey(req: Request): string {

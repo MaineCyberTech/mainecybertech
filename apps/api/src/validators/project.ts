@@ -5,7 +5,7 @@ export const createProjectSchema = z.object({
   name: z.string().min(1, "Name is required").max(500),
   description: z.string().max(10000).optional().nullable(),
   status: z
-    .enum(["planned", "active", "on_hold", "completed", "cancelled"])
+    .enum(["planned", "active", "blocked", "client_review", "completed", "archived"])
     .default("planned"),
   priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
   startsAt: z.string().optional().nullable(),
@@ -17,7 +17,7 @@ export const updateProjectSchema = z.object({
   name: z.string().min(1).max(500).optional(),
   description: z.string().max(10000).optional().nullable(),
   status: z
-    .enum(["planned", "active", "on_hold", "completed", "cancelled"])
+    .enum(["planned", "active", "blocked", "client_review", "completed", "archived"])
     .optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
   startsAt: z.string().optional().nullable(),

@@ -74,7 +74,11 @@ export function createApp(): Express {
     message: "Too many requests from this IP, please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) => req.path === "/health" || req.ip === "127.0.0.1" || req.ip === "::1",
+    skip: (req) =>
+      req.path === "/health" ||
+      req.ip === "127.0.0.1" ||
+      req.ip === "::1" ||
+      req.path.startsWith("/api/v1/webhooks/"),
   });
 
   app.use(limiter);

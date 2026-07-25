@@ -24,9 +24,14 @@ updates:
         patterns:
           - "@aws-sdk/*"
     open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    versioning-strategy: increase
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
+    labels:
+      - "ci"

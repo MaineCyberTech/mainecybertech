@@ -4,6 +4,7 @@ import { jiraSync } from "./jira-sync";
 import { jsmSync } from "./jsm-sync";
 import { m365CalendarSync } from "./m365-calendar-sync";
 import { scheduledNotifications } from "./scheduled-notifications";
+import { retentionTask } from "./retention";
 
 export function registerAllTasks(): void {
   registerTask("stripe-reconcile", stripeReconcile);
@@ -11,4 +12,5 @@ export function registerAllTasks(): void {
   registerTask("jsm-sync", jsmSync);
   registerTask("m365-calendar-sync", m365CalendarSync);
   registerTask("scheduled-notifications", scheduledNotifications);
+  registerTask("retention", retentionTask);
 }

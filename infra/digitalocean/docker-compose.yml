@@ -13,10 +13,16 @@ services:
   # ===== Queue =====
   redis:
     image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD:-mct-redis-dev}
     volumes:
       - redis-data:/data
     restart: unless-stopped
     mem_limit: 48m
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-mct-redis-dev}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # ===== Our Apps =====
   api:
@@ -25,7 +31,8 @@ services:
       <<: *app-env
       API_PORT: 4000
       LOG_LEVEL: info
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:-mct-redis-dev}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-mct-redis-dev}
       SENTRY_DSN: ${SENTRY_DSN:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
@@ -38,9 +45,14 @@ services:
       JSM_REQUEST_TYPE_ID: ${JSM_REQUEST_TYPE_ID:-}
     depends_on:
       redis:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
     mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   worker:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-worker:${IMAGE_TAG:-latest}
@@ -49,7 +61,8 @@ services:
       LOG_LEVEL: info
       HEALTH_PORT: 3001
       QUEUE_BACKEND: bullmq
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:-mct-redis-dev}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-mct-redis-dev}
       SENTRY_DSN: ${SENTRY_DSN:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       JIRA_BASE_URL: ${JIRA_BASE_URL:-}
@@ -69,7 +82,7 @@ services:
       API_BASE_URL: https://${API_DOMAIN:-api.mainecybertech.com}
     depends_on:
       redis:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
     mem_limit: 128m
 
@@ -80,6 +93,9 @@ services:
       NEXT_PUBLIC_API_URL: http://api:4000
       NEXT_TELEMETRY_DISABLED: 1
       SENTRY_DSN: ${SENTRY_DSN:-}
+    depends_on:
+      api:
+        condition: service_healthy
     restart: unless-stopped
     mem_limit: 128m
 

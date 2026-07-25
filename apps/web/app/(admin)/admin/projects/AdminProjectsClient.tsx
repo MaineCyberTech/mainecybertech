@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -149,7 +149,7 @@ export default function AdminProjectsClient({
             className="cyber-input w-full pl-9"
           />
           <svg
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -211,7 +211,7 @@ export default function AdminProjectsClient({
           ))}
           <button
             type="button"
-            className="text-xs text-slate-500 underline hover:text-slate-300"
+            className="text-xs text-slate-400 underline hover:text-slate-300"
             onClick={() => {
               setSearch("");
               setOrgFilter("");

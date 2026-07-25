@@ -3,7 +3,7 @@ import AvatarPill from "@/components/admin/AvatarPill";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import CommentBody from "@/components/CommentBody";
 import ProjectTasksWithViews from "@/components/portal/ProjectTasksWithViews";
@@ -71,7 +71,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
   if (!membership?.organization_id) {
     return (
       <div className="space-y-6">
-        <PortalBreadcrumbs
+        <Breadcrumbs
           items={[
             { label: "Portal", href: "/portal/dashboard" },
             { label: "Projects", href: "/portal/projects" },
@@ -95,7 +95,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
   } catch {
     return (
       <div className="space-y-6">
-        <PortalBreadcrumbs
+        <Breadcrumbs
           items={[
             { label: "Portal", href: "/portal/dashboard" },
             { label: "Projects", href: "/portal/projects" },
@@ -175,7 +175,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                     <p className="mt-2 text-sm text-slate-400">
                       {task.details ?? task.description ?? "No details."}
                     </p>
-                    <p className="mt-2 text-xs text-slate-500">
+                    <p className="mt-2 text-xs text-slate-400">
                       Due: {formatDateTime(task.due_at)}
                     </p>
                   </div>
@@ -236,7 +236,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                               className="markdown-body text-sm text-slate-300"
                             />
                             <p
-                              className="mt-2 text-xs text-slate-500"
+                              className="mt-2 text-xs text-slate-400"
                               title={formatDateTime(comment.created_at)}
                             >
                               {author?.full_name ?? author?.email ?? "Unknown"} &bull;{" "}
@@ -283,7 +283,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <PortalBreadcrumbs
+      <Breadcrumbs
         items={[
           { label: "Portal", href: "/portal/dashboard" },
           { label: "Projects", href: "/portal/projects" },
@@ -349,7 +349,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                           {author?.full_name ?? author?.email ?? "Unknown Author"}
                         </p>
                         <p
-                          className="text-xs text-slate-500"
+                          className="text-xs text-slate-400"
                           title={formatDateTime(update.created_at)}
                         >
                           {formatRelativeTime(update.created_at)}

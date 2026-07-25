@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import CommentBody from "@/components/CommentBody";
 import {
@@ -169,7 +169,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
 
   return (
     <div className="space-y-6">
-      <AdminBreadcrumbs
+      <Breadcrumbs
         items={[
           { label: "Admin", href: "/admin" },
           { label: "Tickets", href: "/admin/tickets" },
@@ -187,7 +187,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
             Organization: {organization?.name ?? ticket.organization_id}
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-500">Ticket ID: {ticket.id}</span>
+            <span className="text-xs text-slate-400">Ticket ID: {ticket.id}</span>
             {ticket.external_jsm_issue_key ? (
               <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[10px] text-blue-300">
                 {ticket.external_jsm_issue_key}
@@ -354,18 +354,18 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Category</p>
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Category</p>
               <p className="mt-2 text-slate-200">{ticketCategory(ticket)}</p>
             </div>
             <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-              <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Updated</p>
+              <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Updated</p>
               <p className="mt-2 text-slate-200">
                 {formatDateTime(ticket.updated_at ?? ticket.created_at)}
               </p>
             </div>
             {ticket.labels?.length ? (
               <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Labels</p>
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Labels</p>
                 <p className="mt-2 flex flex-wrap gap-1">
                   {ticket.labels.map((l: string) => (
                     <span
@@ -380,13 +380,13 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
             ) : null}
             {ticket.resolution ? (
               <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-                <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Resolution</p>
+                <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Resolution</p>
                 <p className="mt-2 text-slate-200">{ticket.resolution}</p>
               </div>
             ) : null}
           </div>
           <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-            <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Description</p>
+            <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Description</p>
             <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
               {ticketDescription(ticket)}
             </p>
@@ -422,7 +422,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                         </span>
                       ) : null}
                       <span
-                        className="text-xs text-slate-500"
+                        className="text-xs text-slate-400"
                         title={formatDateTime(comment.created_at)}
                       >
                         {formatRelativeTime(comment.created_at)}
@@ -434,7 +434,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                     {canEdit && !isEditing ? (
                       <a
                         href={`/admin/tickets/${ticketId}?editComment=${comment.id}`}
-                        className="text-xs text-slate-500 underline hover:text-slate-300"
+                        className="text-xs text-slate-400 underline hover:text-slate-300"
                       >
                         Edit
                       </a>
@@ -442,7 +442,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                     {isEditing ? (
                       <a
                         href={`/admin/tickets/${ticketId}`}
-                        className="text-xs text-slate-500 underline hover:text-slate-300"
+                        className="text-xs text-slate-400 underline hover:text-slate-300"
                       >
                         Cancel
                       </a>

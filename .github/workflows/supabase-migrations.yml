@@ -9,6 +9,9 @@ on:
       - ".github/workflows/supabase-migrations.yml"
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   migrate:
     runs-on: ubuntu-latest
@@ -33,6 +36,11 @@ jobs:
 
       - name: Link project
         run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Diff migrations (dry-run)
+        run: supabase db diff --linked --schema public || true
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 

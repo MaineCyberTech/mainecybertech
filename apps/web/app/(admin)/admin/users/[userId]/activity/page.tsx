@@ -34,14 +34,12 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
           <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
             {profile?.full_name ?? "User"} Activity
           </h1>
-          <p className="mt-3 text-slate-400">
-            Timeline of actions performed by this user.
-          </p>
+          <p className="mt-3 text-slate-400">Timeline of actions performed by this user.</p>
         </div>
 
         <Link
           href={`/admin/users/${userId}`}
-          className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
+          className="font-orbitron rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
         >
           Back to User
         </Link>
@@ -69,7 +67,7 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
                     </p>
                   </div>
 
-                  <div className="text-right text-xs text-slate-500">
+                  <div className="text-right text-xs text-slate-400">
                     {new Date(log.created_at).toLocaleString()}
                   </div>
                 </div>

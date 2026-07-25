@@ -5,9 +5,13 @@ import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
+import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
 
 const router: ReturnType<typeof Router> = Router();
+
+router.use(requireAuth);
+router.use(requireOrgAccess);
 
 const createSchema = z.object({
   organizationId: z.string().uuid(),
@@ -25,7 +29,7 @@ const updateSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-router.get("/", requireAuth, requireOrgAccess, async (req, res, next) => {
+router.get("/", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const orgId = req.query.organization_id as string | undefined;
@@ -43,7 +47,7 @@ router.get("/", requireAuth, requireOrgAccess, async (req, res, next) => {
   }
 });
 
-router.get("/:id", requireAuth, requireOrgAccess, async (req, res, next) => {
+router.get("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
@@ -51,8 +55,7 @@ router.get("/:id", requireAuth, requireOrgAccess, async (req, res, next) => {
       .select("*")
       .eq("id", req.params.id)
       .single();
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Webhook not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Webhook not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -94,10 +97,22 @@ router.post("/", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireAdmin, async (req, res, next) => {
+router.patch("/:id", requireAdmin, requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+
+    const { data: current, error: fetchError } = await supabase
+      .from("webhook_endpoints")
+      .select("version")
+      .eq("id", req.params.id)
+      .single();
+
+    if (fetchError || !current) {
+      throw new AppError("NOT_FOUND", "Webhook not found", 404);
+    }
+
+    checkVersionMatch(current.version, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -106,9 +121,12 @@ router.patch("/:id", requireAdmin, async (req, res, next) => {
     if (parsed.events !== undefined) updateData.events = parsed.events;
     if (parsed.isActive !== undefined) updateData.is_active = parsed.isActive;
 
+    updateData.version = current.version + 1;
+
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .update(updateData)
+      .eq("version", current.version)
       .eq("id", req.params.id)
       .select()
       .single();
@@ -154,34 +172,26 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get(
-  "/:id/deliveries",
-  requireAuth,
-  requireOrgAccess,
-  async (req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const page = Math.max(1, parseInt(req.query.page as string) || 1);
-      const limit = Math.min(
-        50,
-        Math.max(1, parseInt(req.query.limit as string) || 20),
-      );
-      const offset = (page - 1) * limit;
+router.get("/:id/deliveries", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const offset = (page - 1) * limit;
 
-      const { data, error, count } = await supabase
-        .from("webhook_deliveries")
-        .select("*", { count: "exact" })
-        .eq("webhook_id", req.params.id)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+    const { data, error, count } = await supabase
+      .from("webhook_deliveries")
+      .select("*", { count: "exact" })
+      .eq("webhook_id", req.params.id)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
-    } catch (error) {
-      next(error);
-    }
-  },
-);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.post("/:id/test", requireAdmin, async (req, res, next) => {
   try {
@@ -191,8 +201,7 @@ router.post("/:id/test", requireAdmin, async (req, res, next) => {
       .select("*")
       .eq("id", req.params.id)
       .single();
-    if (fetchError || !webhook)
-      throw new AppError("NOT_FOUND", "Webhook not found", 404);
+    if (fetchError || !webhook) throw new AppError("NOT_FOUND", "Webhook not found", 404);
 
     const payload = {
       event: "ping",
@@ -263,9 +272,7 @@ router.post("/:id/test", requireAdmin, async (req, res, next) => {
         .from("webhook_endpoints")
         .update({ last_success_at: new Date().toISOString(), last_error: null })
         .eq("id", webhook.id);
-      res.json(
-        success({ ok: true, status: responseStatus, duration_ms: duration }),
-      );
+      res.json(success({ ok: true, status: responseStatus, duration_ms: duration }));
     }
 
     await logAuditEvent({

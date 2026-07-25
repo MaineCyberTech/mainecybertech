@@ -1,11 +1,8 @@
 import { Worker as BullWorker, type Job } from "bullmq";
 import { env } from "./env";
-import {
-  executeTask,
-  getRegisteredTaskTypes,
-} from "./task-registry";
+import { executeTask } from "./task-registry";
 import { logger } from "./logger";
-import { isShuttingDown, trackInFlight, drainInFlight } from "./shutdown";
+import { isShuttingDown, drainInFlight } from "./shutdown";
 
 let bullWorker: BullWorker | null = null;
 
@@ -20,10 +17,7 @@ export async function runBullMQWorker(): Promise<void> {
       logger.info({ type: task.type, jobId: job.id }, "Processing BullMQ job");
       const result = await executeTask(task);
       if (!result.ok) {
-        logger.warn(
-          { type: task.type, jobId: job.id, error: result.error },
-          "BullMQ job failed",
-        );
+        logger.warn({ type: task.type, jobId: job.id, error: result.error }, "BullMQ job failed");
         throw new Error(result.error);
       }
       return result;
@@ -46,10 +40,7 @@ export async function runBullMQWorker(): Promise<void> {
     logger.error({ error: error.message }, "BullMQ worker error");
   });
 
-  logger.info(
-    { concurrency, redisUrl: env.REDIS_URL },
-    "BullMQ worker started",
-  );
+  logger.info({ concurrency, redisUrl: env.REDIS_URL }, "BullMQ worker started");
 
   await new Promise<void>((resolve) => {
     const shutdown = async () => {

@@ -1,6 +1,6 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { createProject } from "./actions";
@@ -27,30 +27,36 @@ export default async function AdminProjectsPage() {
 
   return (
     <AdminPageShell
-      breadcrumbs={<AdminBreadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Projects" }]} />}
+      breadcrumbs={
+        <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Projects" }]} />
+      }
       subnav={<AdminSubnav current="projects" />}
       title="Projects"
       description="Manage projects, publish tasks, and post client-visible or internal updates."
     >
-      <div className="grid gap-4 sm:grid-cols-3 mb-6">
+      <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{projects.length}</p>
-          <p className="text-xs text-slate-500">Total Projects</p>
+          <p className="text-xs text-slate-400">Total Projects</p>
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
           <p className="text-2xl font-bold text-amber-400">{activeCount}</p>
-          <p className="text-xs text-slate-500">Active</p>
+          <p className="text-xs text-slate-400">Active</p>
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
           <p className="text-2xl font-bold text-emerald-400">{completedCount}</p>
-          <p className="text-xs text-slate-500">Completed</p>
+          <p className="text-xs text-slate-400">Completed</p>
         </div>
       </div>
 
       <AdminProjectsClient
         projects={projects}
         orgMap={Object.fromEntries(orgMap)}
-        allOrganizations={allOrganizations.map((o: any) => ({ id: o.id, name: o.name, slug: o.slug }))}
+        allOrganizations={allOrganizations.map((o: any) => ({
+          id: o.id,
+          name: o.name,
+          slug: o.slug,
+        }))}
         createProjectAction={createProject}
       />
     </AdminPageShell>

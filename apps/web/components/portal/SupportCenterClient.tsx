@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -87,7 +87,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
       <div className="flex items-center justify-between gap-3 whitespace-nowrap">
-        <p className="text-xs uppercase tracking-[0.12em] text-slate-500">{label}</p>
+        <p className="text-xs uppercase tracking-[0.12em] text-slate-400">{label}</p>
         <p className="text-base font-semibold text-slate-50">{value}</p>
       </div>
     </div>
@@ -139,7 +139,7 @@ function TicketList({
                     <span className={priorityClass(priority)}>{priority}</span>
                   </div>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
+                <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400">
                   <span>{ticketCategory(ticket)}</span>
                   <span title={formatDateTime(ticket.updated_at ?? ticket.created_at)}>
                     Updated {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}

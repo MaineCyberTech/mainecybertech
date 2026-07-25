@@ -5,11 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
-import {
-  responseCache,
-  responseCacheNoRenew,
-  invalidateCache,
-} from "../middleware/cache";
+import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -18,9 +14,7 @@ router.use(requireAuth);
 router.get("/", responseCacheNoRenew(120), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    let query = supabase
-      .from("roles")
-      .select("id, key, name, description, is_system");
+    let query = supabase.from("roles").select("id, key, name, description, is_system");
 
     const idsFilter = req.query.ids as string | undefined;
     if (idsFilter) {
@@ -85,26 +79,16 @@ router.get("/:id/permissions", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
 
-    const [
-      { data: role },
-      { data: allPermissions },
-      { data: rolePermissionIds },
-    ] = await Promise.all([
-      supabase
-        .from("roles")
-        .select("id, key, name")
-        .eq("id", req.params.id)
-        .single(),
-      supabase
-        .from("permissions")
-        .select("id, module_key, action_key, description")
-        .order("module_key")
-        .order("action_key"),
-      supabase
-        .from("role_permissions")
-        .select("permission_id")
-        .eq("role_id", req.params.id),
-    ]);
+    const [{ data: role }, { data: allPermissions }, { data: rolePermissionIds }] =
+      await Promise.all([
+        supabase.from("roles").select("id, key, name").eq("id", req.params.id).single(),
+        supabase
+          .from("permissions")
+          .select("id, module_key, action_key, description")
+          .order("module_key")
+          .order("action_key"),
+        supabase.from("role_permissions").select("permission_id").eq("role_id", req.params.id),
+      ]);
 
     if (!role) throw new AppError("NOT_FOUND", "Role not found", 404);
 
@@ -112,9 +96,7 @@ router.get("/:id/permissions", async (req, res, next) => {
       success({
         role,
         permissions: allPermissions ?? [],
-        rolePermissionIds: (rolePermissionIds ?? []).map(
-          (rp: any) => rp.permission_id,
-        ),
+        rolePermissionIds: (rolePermissionIds ?? []).map((rp: any) => rp.permission_id),
       }),
     );
   } catch (error) {
@@ -140,11 +122,7 @@ router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
       .single();
     if (!role) throw new AppError("NOT_FOUND", "Role not found", 404);
     if (role.is_system && role.key === "super_admin") {
-      throw new AppError(
-        "VALIDATION",
-        "Super Admin role permissions cannot be modified",
-        400,
-      );
+      throw new AppError("VALIDATION", "Super Admin role permissions cannot be modified", 400);
     }
 
     if (hasPermission) {

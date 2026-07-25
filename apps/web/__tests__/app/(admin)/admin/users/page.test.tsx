@@ -27,7 +27,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -125,9 +125,7 @@ describe("UsersPage", () => {
         status: "approved",
       },
     ]);
-    mockProfilesList.mockResolvedValue([
-      { id: "u1", full_name: "Alice", email: "alice@test.com" },
-    ]);
+    mockProfilesList.mockResolvedValue([{ id: "u1", full_name: "Alice", email: "alice@test.com" }]);
     mockOrgsList.mockResolvedValue([
       { id: "o1", name: "Acme" },
       { id: "o2", name: "BetaCo" },
@@ -177,9 +175,7 @@ describe("UsersPage", () => {
         is_billing_contact: true,
       },
     ]);
-    mockProfilesList.mockResolvedValue([
-      { id: "u1", full_name: "Bill", email: "bill@test.com" },
-    ]);
+    mockProfilesList.mockResolvedValue([{ id: "u1", full_name: "Bill", email: "bill@test.com" }]);
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
     mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin" }]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
@@ -197,9 +193,7 @@ describe("UsersPage", () => {
         status: "approved",
       },
     ]);
-    mockProfilesList.mockResolvedValue([
-      { id: "u1", full_name: "Alice", email: "a@a.com" },
-    ]);
+    mockProfilesList.mockResolvedValue([{ id: "u1", full_name: "Alice", email: "a@a.com" }]);
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
     mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin" }]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;

@@ -21,51 +21,65 @@ const SQL_INJECTION_PATTERNS = [
 ];
 
 function containsDangerousContent(value: unknown): boolean {
-  if (typeof value !== "string") return false;
-  return DANGEROUS_PATTERNS.some((pattern) => pattern.test(value));
+  if (typeof value === "string") {
+    return DANGEROUS_PATTERNS.some((pattern) => pattern.test(value));
+  }
+  if (Array.isArray(value)) {
+    return value.some((v) => containsDangerousContent(v));
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).some((v) => containsDangerousContent(v));
+  }
+  return false;
 }
 
 function containsSqlInjection(value: unknown): boolean {
-  if (typeof value !== "string") return false;
-  return SQL_INJECTION_PATTERNS.some((pattern) => pattern.test(value));
+  if (typeof value === "string") {
+    return SQL_INJECTION_PATTERNS.some((pattern) => pattern.test(value));
+  }
+  if (Array.isArray(value)) {
+    return value.some((v) => containsSqlInjection(v));
+  }
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).some((v) => containsSqlInjection(v));
+  }
+  return false;
 }
 
-export function inputSanitizer(
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-) {
+function traverseAndCheck(
+  obj: Record<string, unknown>,
+  ip: string | undefined,
+  path: string,
+): string | null {
+  for (const [key, value] of Object.entries(obj)) {
+    if (containsDangerousContent(value)) {
+      logger.warn({ key, ip, path }, "Blocked XSS attempt");
+      return "Input contains potentially dangerous content";
+    }
+    if (containsSqlInjection(value)) {
+      logger.warn({ key, ip, path }, "Blocked SQL injection attempt");
+      return "Input contains invalid characters";
+    }
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const nested = traverseAndCheck(value as Record<string, unknown>, ip, path);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
+
+export function inputSanitizer(req: Request, _res: Response, next: NextFunction) {
   if (req.body && typeof req.body === "object") {
-    for (const [key, value] of Object.entries(req.body)) {
-      if (containsDangerousContent(value)) {
-        logger.warn({ key, ip: req.ip, path: req.path }, "Blocked XSS attempt");
-        throw new AppError(
-          "VALIDATION",
-          "Input contains potentially dangerous content",
-          400,
-        );
-      }
-      if (containsSqlInjection(value)) {
-        logger.warn(
-          { key, ip: req.ip, path: req.path },
-          "Blocked SQL injection attempt",
-        );
-        throw new AppError(
-          "VALIDATION",
-          "Input contains invalid characters",
-          400,
-        );
-      }
+    const bodyError = traverseAndCheck(req.body as Record<string, unknown>, req.ip, req.path);
+    if (bodyError) {
+      throw new AppError("VALIDATION", bodyError, 400);
     }
   }
 
   if (req.query && typeof req.query === "object") {
     for (const [key, value] of Object.entries(req.query)) {
       if (containsDangerousContent(value)) {
-        logger.warn(
-          { key, ip: req.ip, path: req.path },
-          "Blocked XSS in query params",
-        );
+        logger.warn({ key, ip: req.ip, path: req.path }, "Blocked XSS in query params");
         throw new AppError(
           "VALIDATION",
           "Query parameter contains potentially dangerous content",

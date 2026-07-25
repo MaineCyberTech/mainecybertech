@@ -1,18 +1,14 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "production", "test"])
-    .default("development"),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   API_PORT: z.coerce.number().default(4000),
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
-  LOG_LEVEL: z
-    .enum(["debug", "info", "warn", "error", "silent"])
-    .default("info"),
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
   JWT_SECRET: z.string().min(1),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
@@ -30,6 +26,9 @@ const envSchema = z.object({
   JSM_SERVICEDESK_ID: z.string().optional(),
   JSM_REQUEST_TYPE_ID: z.string().optional(),
   REDIS_URL: z.string().url().optional(),
+  JIRA_WEBHOOK_SECRET: z.string().optional(),
+  JSM_WEBHOOK_SECRET: z.string().optional(),
+  M365_WEBHOOK_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -40,10 +39,7 @@ export function getEnv(): Env {
   if (!_env) {
     const result = envSchema.safeParse(process.env);
     if (!result.success) {
-      console.error(
-        "Invalid environment variables:",
-        result.error.flatten().fieldErrors,
-      );
+      console.error("Invalid environment variables:", result.error.flatten().fieldErrors);
       process.exit(1);
     }
     _env = result.data;

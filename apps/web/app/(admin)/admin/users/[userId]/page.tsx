@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { updateUserProfileBasics, updateMembership } from "./actions";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import PermissionsMatrix from "@/components/admin/PermissionsMatrix";
@@ -43,11 +43,11 @@ export default async function UserDetailPage({ params }: UserPageProps) {
   return (
     <AdminPageShell
       breadcrumbs={
-        <AdminBreadcrumbs
+        <Breadcrumbs
           items={[
             { label: "Admin", href: "/admin" },
             { label: "Users", href: "/admin/users" },
-            { label: profile.full_name ?? "User Detail" }
+            { label: profile.full_name ?? "User Detail" },
           ]}
         />
       }
@@ -87,20 +87,12 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
             <div>
               <label className="cyber-label">Phone</label>
-              <input
-                name="phone"
-                defaultValue={profile.phone ?? ""}
-                className="cyber-input"
-              />
+              <input name="phone" defaultValue={profile.phone ?? ""} className="cyber-input" />
             </div>
 
             <div>
               <label className="cyber-label">Title</label>
-              <input
-                name="title"
-                defaultValue={profile.title ?? ""}
-                className="cyber-input"
-              />
+              <input name="title" defaultValue={profile.title ?? ""} className="cyber-input" />
             </div>
           </div>
 
@@ -141,9 +133,7 @@ export default async function UserDetailPage({ params }: UserPageProps) {
                   className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
                 >
                   <div className="mb-4">
-                    <p className="font-medium text-slate-50">
-                      {org?.name ?? "Unknown Org"}
-                    </p>
+                    <p className="font-medium text-slate-50">{org?.name ?? "Unknown Org"}</p>
                     <p className="text-sm text-slate-400">
                       Current Role: {role?.name ?? "Unknown"} • Status: {membership.status}
                     </p>
@@ -223,7 +213,9 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Permissions</h2>
-        <p className="mt-2 text-sm text-slate-400">Role-based and individual permission overrides.</p>
+        <p className="mt-2 text-sm text-slate-400">
+          Role-based and individual permission overrides.
+        </p>
         <PermissionsMatrix userId={userId} memberships={memberships} />
       </section>
     </AdminPageShell>

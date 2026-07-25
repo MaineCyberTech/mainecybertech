@@ -20,7 +20,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -151,9 +151,7 @@ describe("AdminRolesPage", () => {
     const Page = (await import("@/app/(admin)/admin/roles/page")).default;
     render(await Page());
     const links = screen.getAllByRole("link");
-    expect(
-      links.some((l) => l.getAttribute("href") === "/admin/roles/role-1"),
-    ).toBe(true);
+    expect(links.some((l) => l.getAttribute("href") === "/admin/roles/role-1")).toBe(true);
   });
 
   it("handles missing description gracefully", async () => {

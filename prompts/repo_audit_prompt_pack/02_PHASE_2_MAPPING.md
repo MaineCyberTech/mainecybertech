@@ -40,6 +40,7 @@ Focus on:
 - scripts/tooling
 - tests
 - infra/config/docs
+- database / schema patterns (migration strategies, RLS policies, seed data, table design)
 
 ### Required output format
 
@@ -53,5 +54,13 @@ Focus on:
 8. Areas That Cannot Yet Be Mapped Reliably
 
 Do NOT recommend major changes yet.
-The purpose is to build a highly accurate “this corresponds to that” map.
+The purpose is to build a highly accurate "this corresponds to that" map.
 Be explicit and detailed.
+
+### Self-Review
+
+Before concluding Phase 2, review your output and flag:
+
+- Any mapping based on folder name similarity rather than actual implementation inspection
+- Any area where you're uncertain about the equivalence
+- Any feature that exists in one repo but you couldn't find its counterpart (or confirm its absence) in the other

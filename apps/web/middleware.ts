@@ -24,12 +24,24 @@ function generateNonce(): string {
   return nonce;
 }
 
-function setCspHeaders(response: NextResponse, nonce: string, host: string): void {
-  const apiOrigin = `https://${host.replace(/^(www|app)\./, "api.")}`;
-  response.headers.set(
-    "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'unsafe-inline' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' ${apiOrigin}`,
-  );
+function setCspHeaders(
+  response: NextResponse,
+  nonce: string,
+  host: string,
+  isLocalDev: boolean,
+): void {
+  if (isLocalDev) {
+    response.headers.set(
+      "Content-Security-Policy",
+      `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://localhost:* http://localhost:* https://*.supabase.co`,
+    );
+  } else {
+    const apiOrigin = `https://${host.replace(/^(www|app)\./, "api.")}`;
+    response.headers.set(
+      "Content-Security-Policy",
+      `default-src 'self'; script-src 'self' 'unsafe-inline' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${apiOrigin} wss:`,
+    );
+  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -69,35 +81,35 @@ export async function middleware(request: NextRequest) {
 
     if (isAppDomain && isMarketingRoute) {
       const redirect = NextResponse.redirect(new URL("/login", request.url));
-      setCspHeaders(redirect, nonce, host);
+      setCspHeaders(redirect, nonce, host, isLocalDev);
       return redirect;
     }
 
     if (!isAppDomain && (isAuthRoute || isPortalRoute || isAdminRoute)) {
       const redirect = NextResponse.redirect(new URL(pathname, `https://${appHost}`));
-      setCspHeaders(redirect, nonce, host);
+      setCspHeaders(redirect, nonce, host, isLocalDev);
       return redirect;
     }
   }
 
   if (!isAuthenticated && isPortalRoute) {
     const redirect = NextResponse.redirect(new URL("/login", request.url));
-    setCspHeaders(redirect, nonce, host);
+    setCspHeaders(redirect, nonce, host, isLocalDev);
     return redirect;
   }
 
   if (isAuthenticated && (pathname === "/login" || pathname === "/signup")) {
     const redirect = NextResponse.redirect(new URL("/portal/dashboard", request.url));
-    setCspHeaders(redirect, nonce, host);
+    setCspHeaders(redirect, nonce, host, isLocalDev);
     return redirect;
   }
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("x-nonce", nonce);
-  setCspHeaders(response, nonce, host);
+  setCspHeaders(response, nonce, host, isLocalDev);
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/|favicon.ico).*)"],
 };

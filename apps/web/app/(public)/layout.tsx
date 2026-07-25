@@ -6,7 +6,12 @@ import ParticleBackground from "../../components/marketing/ParticleBackground";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
-  title: "Maine Cyber Technology",
+  title: {
+    default: "Maine Cyber Technology",
+    template: "%s — Maine CyberTech",
+  },
+  description:
+    "Maine Cyber Technology provides managed cybersecurity, IT services, and compliance solutions for businesses.",
 };
 const TAWKTO_ID = process.env.NEXT_PUBLIC_TAWKTO_ID;
 

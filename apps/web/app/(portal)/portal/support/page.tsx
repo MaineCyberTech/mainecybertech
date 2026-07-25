@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
-import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import SupportCenterClient from "@/components/portal/SupportCenterClient";
 
@@ -58,9 +58,7 @@ export default async function PortalSupportPage() {
 
   return (
     <div className="space-y-6">
-      <PortalBreadcrumbs
-        items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Support" }]}
-      />
+      <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Support" }]} />
       <PortalSubnav current="support" />
       <SupportCenterClient
         tickets={(tickets ?? []) as TicketRecord[]}

@@ -20,7 +20,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -56,8 +56,7 @@ describe("RoleDetailPage", () => {
       description: "Admin role",
       is_system: true,
     });
-    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page"))
-      .default;
+    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page")).default;
     render(await Page({ params: Promise.resolve({ roleId: "r1" }) }));
     expect(screen.getByText("Admin")).toBeInTheDocument();
     expect(screen.getByText("Admin role")).toBeInTheDocument();
@@ -71,8 +70,7 @@ describe("RoleDetailPage", () => {
       description: null,
       is_system: false,
     });
-    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page"))
-      .default;
+    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page")).default;
     render(await Page({ params: Promise.resolve({ roleId: "r1" }) }));
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
     expect(screen.getByTestId("subnav")).toHaveTextContent("roles");
@@ -86,8 +84,7 @@ describe("RoleDetailPage", () => {
       description: null,
       is_system: false,
     });
-    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page"))
-      .default;
+    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page")).default;
     render(await Page({ params: Promise.resolve({ roleId: "r1" }) }));
     const backLink = screen.getByText("Back");
     expect(backLink).toBeInTheDocument();
@@ -102,8 +99,7 @@ describe("RoleDetailPage", () => {
       description: null,
       is_system: true,
     });
-    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page"))
-      .default;
+    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page")).default;
     render(await Page({ params: Promise.resolve({ roleId: "r1" }) }));
     const editor = screen.getByTestId("permissions-editor");
     expect(editor).toHaveTextContent("super_admin");
@@ -118,16 +114,14 @@ describe("RoleDetailPage", () => {
       description: "Admin role",
       is_system: false,
     });
-    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page"))
-      .default;
+    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page")).default;
     render(await Page({ params: Promise.resolve({ roleId: "r1" }) }));
     expect(screen.getByText("Permission Toggles")).toBeInTheDocument();
   });
 
   it("shows error for not-found role", async () => {
     mockRolesGet.mockRejectedValue(new Error("not found"));
-    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page"))
-      .default;
+    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page")).default;
     render(await Page({ params: Promise.resolve({ roleId: "missing" }) }));
     expect(screen.getByText("Role not found.")).toBeInTheDocument();
   });
@@ -140,8 +134,7 @@ describe("RoleDetailPage", () => {
       description: null,
       is_system: false,
     });
-    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page"))
-      .default;
+    const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page")).default;
     render(await Page({ params: Promise.resolve({ roleId: "r1" }) }));
     expect(screen.getByText("No description")).toBeInTheDocument();
   });

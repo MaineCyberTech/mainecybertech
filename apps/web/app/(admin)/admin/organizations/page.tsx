@@ -1,6 +1,6 @@
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { getApiClient } from "@/lib/api";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminOrganizationsClient from "@/components/admin/AdminOrganizationsClient";
@@ -17,12 +17,7 @@ export default async function OrganizationsPage() {
   return (
     <AdminPageShell
       breadcrumbs={
-        <AdminBreadcrumbs
-          items={[
-            { label: "Admin", href: "/admin" },
-            { label: "Organizations" }
-          ]}
-        />
+        <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Organizations" }]} />
       }
       subnav={<AdminSubnav current="organizations" />}
       title="Organizations"

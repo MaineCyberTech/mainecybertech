@@ -66,8 +66,10 @@ export class CircuitBreaker {
     }
 
     try {
+      const op = operation();
+      op.catch(() => {});
       const result = await Promise.race([
-        operation(),
+        op,
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("Circuit breaker timeout")), this.config.timeout),
         ),

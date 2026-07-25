@@ -18,7 +18,7 @@ export function getCookieOptions(host: string) {
   return {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? ("none" as const) : ("lax" as const),
+    sameSite: "lax" as const,
     domain,
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
@@ -31,10 +31,7 @@ export function getDeleteCookieOptions(host: string) {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite:
-      process.env.NODE_ENV === "production"
-        ? ("none" as const)
-        : ("lax" as const),
+    sameSite: "lax" as const,
     domain,
     path: "/",
   };

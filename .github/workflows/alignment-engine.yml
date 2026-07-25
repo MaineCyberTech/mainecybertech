@@ -1,5 +1,9 @@
 name: alignment-engine
 on: [push, pull_request]
+
+permissions:
+  contents: read
+
 jobs:
   run:
     runs-on: ubuntu-latest

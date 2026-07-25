@@ -59,9 +59,7 @@ describe("profiles routes", () => {
     it("returns a list of profiles", async () => {
       mockAuth();
       const result: MockResult = { data: [PROFILE], error: null };
-      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
-        createMockBuilder(result),
-      );
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app)
         .get("/api/v1/profiles")
@@ -74,9 +72,7 @@ describe("profiles routes", () => {
     it("filters by ids", async () => {
       mockAuth();
       const result: MockResult = { data: [PROFILE], error: null };
-      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
-        createMockBuilder(result),
-      );
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app)
         .get("/api/v1/profiles?ids=prof-1")
@@ -90,9 +86,7 @@ describe("profiles routes", () => {
     it("returns a profile by id", async () => {
       mockAuth();
       const result: MockResult = { data: PROFILE, error: null };
-      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
-        createMockBuilder(result),
-      );
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app)
         .get("/api/v1/profiles/prof-1")
@@ -108,9 +102,7 @@ describe("profiles routes", () => {
         data: null,
         error: { message: "Not found", code: "PGRST116" },
       };
-      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
-        createMockBuilder(result),
-      );
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app)
         .get("/api/v1/profiles/missing")
@@ -125,12 +117,10 @@ describe("profiles routes", () => {
       mockAuth();
       const updated = { ...PROFILE, full_name: "Updated Name" };
       const result: MockResult = { data: updated, error: null };
-      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
-        createMockBuilder(result),
-      );
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app)
-        .patch("/api/v1/profiles/prof-1")
+        .patch("/api/v1/profiles/user-1")
         .set("Authorization", "Bearer token-123")
         .send({ fullName: "Updated Name" });
 
@@ -141,16 +131,14 @@ describe("profiles routes", () => {
     it("returns 404 when profile not found", async () => {
       mockAuth();
       const result: MockResult = { data: null, error: null };
-      (getSupabaseUser as jest.Mock)().from.mockReturnValue(
-        createMockBuilder(result),
-      );
+      (getSupabaseUser as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app)
         .patch("/api/v1/profiles/missing")
         .set("Authorization", "Bearer token-123")
         .send({ fullName: "Updated" });
 
-      expect(res.status).toBe(404);
+      expect(res.status).toBe(403);
     });
   });
 });

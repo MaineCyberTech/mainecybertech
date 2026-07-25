@@ -10,9 +10,7 @@ type OrgActivityPageProps = {
   }>;
 };
 
-export default async function OrganizationActivityPage({
-  params
-}: OrgActivityPageProps) {
+export default async function OrganizationActivityPage({ params }: OrgActivityPageProps) {
   await requireAdminAccess();
   const { orgId } = await params;
   const api = getApiClient();
@@ -43,7 +41,7 @@ export default async function OrganizationActivityPage({
 
         <Link
           href={`/admin/organizations/${orgId}`}
-          className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
+          className="font-orbitron rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
         >
           Back to Organization
         </Link>
@@ -71,7 +69,7 @@ export default async function OrganizationActivityPage({
                     </p>
                   </div>
 
-                  <div className="text-right text-xs text-slate-500">
+                  <div className="text-right text-xs text-slate-400">
                     {new Date(log.created_at).toLocaleString()}
                   </div>
                 </div>

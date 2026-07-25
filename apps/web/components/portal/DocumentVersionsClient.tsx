@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { getClientApi } from "@/lib/client-api";
@@ -26,19 +26,25 @@ export default function DocumentVersionsClient({ documentId }: Props) {
     setLoading(false);
   }, [documentId]);
 
-  useEffect(() => { fetchVersions(); }, [fetchVersions]);
+  useEffect(() => {
+    fetchVersions();
+  }, [fetchVersions]);
 
-  if (loading) return <div className="text-xs text-slate-500 py-2">Loading versions...</div>;
+  if (loading) return <div className="py-2 text-xs text-slate-400">Loading versions...</div>;
   if (versions.length <= 1) return null;
 
   return (
     <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/40 p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Version History</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+        Version History
+      </p>
       <div className="mt-3 space-y-2">
         {versions.map((v) => (
           <div key={v.id} className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
-              <span className="rounded bg-emerald-600/15 px-1.5 py-0.5 font-mono text-emerald-400">v{v.version_number}</span>
+              <span className="rounded bg-emerald-600/15 px-1.5 py-0.5 font-mono text-emerald-400">
+                v{v.version_number}
+              </span>
               <span className="text-slate-400">{new Date(v.created_at).toLocaleString()}</span>
             </div>
           </div>

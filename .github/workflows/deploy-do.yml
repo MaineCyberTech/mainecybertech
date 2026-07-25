@@ -18,6 +18,11 @@ on:
       - "infra/digitalocean/**"
       - ".github/workflows/deploy-do.yml"
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
 env:
   IMAGE_TAG: ${{ github.sha }}
 
@@ -238,7 +243,7 @@ jobs:
             printf '%s\n' "$CF_ORIGIN_CERT" > /opt/mct-portal/certs/fullchain.pem
             printf '%s\n' "$CF_ORIGIN_KEY" > /opt/mct-portal/certs/privkey.pem
             chmod 600 /opt/mct-portal/certs/privkey.pem
-            docker system prune -af --volumes 2>/dev/null || true
+            docker image prune -af 2>/dev/null || true
             docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
             docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
             docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}

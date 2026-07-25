@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { getClientApi } from "@/lib/client-api";
@@ -49,12 +49,19 @@ type Props = {
 };
 
 function formatCents(cents: number, currency = "usd") {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: currency.toUpperCase() }).format(cents / 100);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(cents / 100);
 }
 
 function formatDate(iso?: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
 
 function statusColor(status: string) {
@@ -94,27 +101,31 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
   return (
     <div className="space-y-6">
       {syncMsg ? (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">{syncMsg}</div>
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+          {syncMsg}
+        </div>
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{summary?.activeSubscriptions ?? 0}</p>
-          <p className="text-xs text-slate-500">Active Plans</p>
+          <p className="text-xs text-slate-400">Active Plans</p>
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-          <p className={`text-2xl font-bold ${(summary?.overdueInvoices ?? 0) > 0 ? "text-red-400" : "text-slate-50"}`}>
+          <p
+            className={`text-2xl font-bold ${(summary?.overdueInvoices ?? 0) > 0 ? "text-red-400" : "text-slate-50"}`}
+          >
             {summary?.overdueInvoices ?? 0}
           </p>
-          <p className="text-xs text-slate-500">Overdue</p>
+          <p className="text-xs text-slate-400">Overdue</p>
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{summary?.paidInvoices ?? 0}</p>
-          <p className="text-xs text-slate-500">Paid</p>
+          <p className="text-xs text-slate-400">Paid</p>
         </div>
         <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{summary?.totalInvoices ?? 0}</p>
-          <p className="text-xs text-slate-500">Total Invoices</p>
+          <p className="text-xs text-slate-400">Total Invoices</p>
         </div>
       </div>
 
@@ -125,11 +136,13 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
             <div>
               <p className="text-xl font-bold text-slate-50">{activeSub.plan_name}</p>
               <p className="mt-1 text-sm text-slate-400">
-                {formatCents(activeSub.amount_cents ?? 0, activeSub.currency ?? "usd")}/mo
-                &middot; Next billing {formatDate(activeSub.current_period_end)}
+                {formatCents(activeSub.amount_cents ?? 0, activeSub.currency ?? "usd")}/mo &middot;
+                Next billing {formatDate(activeSub.current_period_end)}
               </p>
             </div>
-            <span className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wider ${statusColor(activeSub.status)}`}>
+            <span
+              className={`rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wider ${statusColor(activeSub.status)}`}
+            >
               {activeSub.status}
             </span>
           </div>
@@ -141,10 +154,16 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
           <h2 className="cyber-heading text-lg">Billing Details</h2>
           <div className="mt-6 flex flex-wrap gap-6 text-sm">
             {customer.billing_email ? (
-              <div><span className="text-slate-500">Billing Email:</span> <span className="ml-2 text-slate-200">{customer.billing_email}</span></div>
+              <div>
+                <span className="text-slate-400">Billing Email:</span>{" "}
+                <span className="ml-2 text-slate-200">{customer.billing_email}</span>
+              </div>
             ) : null}
             {customer.default_payment_method ? (
-              <div><span className="text-slate-500">Payment Method:</span> <span className="ml-2 text-slate-200">{customer.default_payment_method}</span></div>
+              <div>
+                <span className="text-slate-400">Payment Method:</span>{" "}
+                <span className="ml-2 text-slate-200">{customer.default_payment_method}</span>
+              </div>
             ) : null}
           </div>
         </section>
@@ -153,43 +172,77 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
       <section className="cyber-panel">
         <div className="flex items-center justify-between">
           <h2 className="cyber-heading text-lg">Invoices</h2>
-          <button onClick={handleSync} disabled={syncing}
-            className="cyber-button-secondary text-xs">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="cyber-button-secondary text-xs"
+          >
             {syncing ? "Syncing..." : "Sync from Stripe"}
           </button>
         </div>
         <div className="mt-6 overflow-x-auto">
           {invoices.length === 0 ? (
-            <div className="py-8 text-center text-sm text-slate-500">No invoices yet.</div>
+            <div className="py-8 text-center text-sm text-slate-400">No invoices yet.</div>
           ) : (
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500">Invoice</th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500">Date</th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500">Amount</th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500">Status</th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500">Download</th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                    Invoice
+                  </th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                    Date
+                  </th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                    Amount
+                  </th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                    Status
+                  </th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                    Download
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {invoices.map((inv) => (
-                  <tr key={inv.id} className="border-b border-white/5 transition hover:bg-white/[0.02]">
-                    <td className="px-3 py-3 font-medium text-slate-200">{inv.invoice_number ?? inv.id.slice(0, 8)}</td>
+                  <tr
+                    key={inv.id}
+                    className="border-b border-white/5 transition hover:bg-white/[0.02]"
+                  >
+                    <td className="px-3 py-3 font-medium text-slate-200">
+                      {inv.invoice_number ?? inv.id.slice(0, 8)}
+                    </td>
                     <td className="px-3 py-3 text-slate-400">{formatDate(inv.created_at)}</td>
-                    <td className="px-3 py-3 text-slate-200">{formatCents(inv.total_cents, inv.currency)}</td>
+                    <td className="px-3 py-3 text-slate-200">
+                      {formatCents(inv.total_cents, inv.currency)}
+                    </td>
                     <td className="px-3 py-3">
-                      <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${statusColor(inv.status)}`}>
+                      <span
+                        className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${statusColor(inv.status)}`}
+                      >
                         {inv.status}
                       </span>
                     </td>
                     <td className="px-3 py-3">
                       {inv.invoice_pdf_url ? (
-                        <a href={inv.invoice_pdf_url} target="_blank" rel="noreferrer"
-                          className="text-emerald-400 hover:text-emerald-300 text-xs">PDF</a>
+                        <a
+                          href={inv.invoice_pdf_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-emerald-400 hover:text-emerald-300"
+                        >
+                          PDF
+                        </a>
                       ) : inv.hosted_invoice_url ? (
-                        <a href={inv.hosted_invoice_url} target="_blank" rel="noreferrer"
-                          className="text-emerald-400 hover:text-emerald-300 text-xs">View</a>
+                        <a
+                          href={inv.hosted_invoice_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs text-emerald-400 hover:text-emerald-300"
+                        >
+                          View
+                        </a>
                       ) : (
                         <span className="text-xs text-slate-600">—</span>
                       )}
@@ -207,16 +260,23 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
           <h2 className="cyber-heading text-lg">Subscription History</h2>
           <div className="mt-6 space-y-3">
             {subscriptions.map((sub) => (
-              <div key={sub.id} className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div
+                key={sub.id}
+                className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+              >
                 <div>
                   <p className="font-medium text-slate-200">{sub.plan_name}</p>
-                  <p className="mt-1 text-xs text-slate-500">{formatCents(sub.amount_cents ?? 0, sub.currency ?? "usd")}/mo</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {formatCents(sub.amount_cents ?? 0, sub.currency ?? "usd")}/mo
+                  </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${statusColor(sub.status)}`}>
+                  <span
+                    className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${statusColor(sub.status)}`}
+                  >
                     {sub.status}
                   </span>
-                  <span className="text-xs text-slate-500">{formatDate(sub.created_at)}</span>
+                  <span className="text-xs text-slate-400">{formatDate(sub.created_at)}</span>
                 </div>
               </div>
             ))}

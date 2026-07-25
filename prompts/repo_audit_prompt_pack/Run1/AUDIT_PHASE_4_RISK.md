@@ -10,6 +10,7 @@
 ## 1. High-Risk Areas
 
 ### **A. Missing Real Environment Configuration (P1 Blocking)**
+
 - **Files:** `infra/terraform/env/dev.tfvars`, `env/prod.tfvars`, `backend.dev.hcl`, `backend.prod.hcl`
 - **Blast Radius:** Cannot deploy to dev/prod, CI/CD workflows will fail on `terraform validate`
 - **Dependency Chain:** CI → terraform init → plan/apply → deploy images → cluster services
@@ -24,6 +25,7 @@
 - **Root Impact:** This is a **BLOCKER** for any production deployment
 
 ### **B. Unit Tests Missing for Admin Pages (P1 Medium)**
+
 - **Files:** `apps/web/__tests__/app/(admin)/admin/webhooks/`, `bulk-invite/`, `health/`, `organizations/[orgId]/billing/`
 - **Blast Radius:** Test coverage gap but apps currently work in CI
 - **Dependency Chain:** QA coverage → CI confidence → production readiness
@@ -41,6 +43,7 @@
 ## 2. Medium-Risk Areas
 
 ### **C. Shared Packages Not Wired (P2)**
+
 - **Files:** `packages/ui`, `packages/config` not referenced in app `tsconfig.json`
 - **Blast Radius:** Type safety and linting consistency across workspace
 - **Dependency Chain:** Config → type checking → linting → CI failures
@@ -54,6 +57,7 @@
 - **Auth/Routing/Contracts:** No impact, but reduces consistency
 
 ### **D. JSM Ticket Creation (P3)**
+
 - **Files:** `apps/api/src/routes/public.ts`
 - **Blast Radius:** Teams contact form webhook/Ticket creation broken
 - **Dependency Chain:** Marketing site contact form → broken flow
@@ -71,6 +75,7 @@
 ## 3. Low-Risk Areas
 
 ### **E. `:any` Annotations in Web**
+
 - **Files:** `apps/web/**/*.tsx`
 - **Blast Radius:** Type safety reduction, but runtime-safe
 - **Dependency Chain:** Code maintainability
@@ -83,6 +88,7 @@
 - **Deployment Behavior:** No impact
 
 ### **F. SDK Return Types Any**
+
 - **Files:** `packages/sdk/src/**/*.ts`
 - **Blast Radius:** Type safety for SDK users, but runtime-safe
 - **Migration Complexity:** Medium - change return types, may break SDK users
@@ -94,6 +100,7 @@
 - **Deployment Behavior:** No impact except SDK releases
 
 ### **G. Development Workflow Integration (Low Priority)**
+
 - i18n, PWA, mobile optimization, calendar view, iOS/android apps
 - All are low impact, nice-to-have features
 
@@ -111,7 +118,7 @@
 
 1. **All admin pages** - Bulk operations UI, webhook management, billing viewer, health dashboard
 2. **Marketing contact form** - Ensure Teams ticket creation flow works
-3. **Cross-domain routing** - Verify www.* vs app.* routing works end-to-end
+3. **Cross-domain routing** - Verify www._ vs app._ routing works end-to-end
 
 ---
 
@@ -131,7 +138,7 @@
 - **Route structure:** Don't change (public)/(portal)/(admin) groups
 - **Environment variables:** Don't remove required ones (JWT_SECRET, DO_TOKEN, etc.)
 - **CI/CD workflows:** Don't modify validation gates or approval requirements
-- **Cross-domain integration:** Don't break www.* vs app.* routing
+- **Cross-domain integration:** Don't break www._ vs app._ routing
 
 ---
 

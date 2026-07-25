@@ -20,7 +20,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -63,7 +63,14 @@ describe("OrganizationsPage", () => {
 
   it("renders organization cards with details", async () => {
     mockOrgsList.mockResolvedValue([
-      { id: "org-1", name: "Acme Corp", slug: "acme", primary_domain: "acme.com", status: "active", support_plan: "premium" },
+      {
+        id: "org-1",
+        name: "Acme Corp",
+        slug: "acme",
+        primary_domain: "acme.com",
+        status: "active",
+        support_plan: "premium",
+      },
     ]);
     const Page = (await import("@/app/(admin)/admin/organizations/page")).default;
     render(await Page());
@@ -76,7 +83,14 @@ describe("OrganizationsPage", () => {
 
   it("handles null primary_domain", async () => {
     mockOrgsList.mockResolvedValue([
-      { id: "org-1", name: "Beta Inc", slug: "beta", primary_domain: null, status: "pending", support_plan: null },
+      {
+        id: "org-1",
+        name: "Beta Inc",
+        slug: "beta",
+        primary_domain: null,
+        status: "pending",
+        support_plan: null,
+      },
     ]);
     const Page = (await import("@/app/(admin)/admin/organizations/page")).default;
     render(await Page());

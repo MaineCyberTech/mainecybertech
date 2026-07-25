@@ -19,9 +19,7 @@ function validatePasswordStrength(password: string): {
 } {
   const result = zxcvbn(password);
   if (result.score < MIN_PASSWORD_SCORE) {
-    const feedback = result.feedback.warning
-      ? result.feedback.warning
-      : "Password is too weak";
+    const feedback = result.feedback.warning ? result.feedback.warning : "Password is too weak";
     return { valid: false, message: feedback };
   }
   return { valid: true };
@@ -39,9 +37,7 @@ router.get("/me", requireAuth, async (req, res, next) => {
       .single();
 
     if (error || !profile) {
-      res.json(
-        success({ userId: req.authUser!.userId, email: req.authUser!.email }),
-      );
+      res.json(success({ userId: req.authUser!.userId, email: req.authUser!.email }));
       return;
     }
 
@@ -75,6 +71,11 @@ router.post("/sign-in", rateLimitAuth, async (req, res, next) => {
     });
 
     if (error) {
+      logAuditEvent({
+        action: "auth.sign-in.failed",
+        entityType: "user",
+        metadata: { email, reason: error.message },
+      });
       throw new AppError("AUTH_ERROR", error.message, 401);
     }
 
@@ -118,11 +119,7 @@ router.post("/sign-up", rateLimitAuth, async (req, res, next) => {
 
     const pwdCheck = validatePasswordStrength(password);
     if (!pwdCheck.valid) {
-      throw new AppError(
-        "WEAK_PASSWORD",
-        pwdCheck.message || "Password is too weak",
-        400,
-      );
+      throw new AppError("WEAK_PASSWORD", pwdCheck.message || "Password is too weak", 400);
     }
 
     const supabase = getSupabaseAdmin();
@@ -159,19 +156,12 @@ router.post("/sign-up", rateLimitAuth, async (req, res, next) => {
   }
 });
 
-function extractCodeVerifier(
-  cookies: string,
-  supabaseUrl: string,
-): string | null {
+function extractCodeVerifier(cookies: string, supabaseUrl: string): string | null {
   const hostname = new URL(supabaseUrl).hostname;
   const ref = hostname.split(".")[0];
   const verifierKey = `sb-${ref}-auth-token-code-verifier`;
-  const match = cookies
-    .split(";")
-    .find((c) => c.trim().startsWith(`${verifierKey}=`));
-  return match
-    ? decodeURIComponent(match.split("=").slice(1).join("=").trim())
-    : null;
+  const match = cookies.split(";").find((c) => c.trim().startsWith(`${verifierKey}=`));
+  return match ? decodeURIComponent(match.split("=").slice(1).join("=").trim()) : null;
 }
 
 router.post("/callback", rateLimitAuth, async (req, res, next) => {
@@ -193,8 +183,7 @@ router.post("/callback", rateLimitAuth, async (req, res, next) => {
     const env = getEnv();
 
     const codeVerifier =
-      directVerifier ??
-      (cookies ? extractCodeVerifier(cookies, env.SUPABASE_URL) : null);
+      directVerifier ?? (cookies ? extractCodeVerifier(cookies, env.SUPABASE_URL) : null);
 
     const body: Record<string, string> = { auth_code };
     if (codeVerifier) body.code_verifier = codeVerifier;
@@ -227,17 +216,14 @@ router.post("/callback", rateLimitAuth, async (req, res, next) => {
       metadata: { email: tokenData.user?.email ?? null },
     });
 
-    const rpcRes = await fetch(
-      `${env.SUPABASE_URL}/rest/v1/rpc/bootstrap_portal_access`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: env.SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${accessToken}`,
-        },
+    const rpcRes = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/bootstrap_portal_access`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: env.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${accessToken}`,
       },
-    );
+    });
 
     if (!rpcRes.ok) {
       const rpcBody = await rpcRes.text();
@@ -283,7 +269,7 @@ router.post("/forgot-password", rateLimitAuth, async (req, res, next) => {
 
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${req.headers.origin ?? "http://localhost:3000"}/password-reset`,
+      redirectTo: `${req.headers.origin ?? getEnv().APP_BASE_URL}/password-reset`,
     });
 
     if (error) {
@@ -322,11 +308,7 @@ router.post("/reset-password", rateLimitAuth, async (req, res, next) => {
 
     const pwdCheck = validatePasswordStrength(password);
     if (!pwdCheck.valid) {
-      throw new AppError(
-        "WEAK_PASSWORD",
-        pwdCheck.message || "Password is too weak",
-        400,
-      );
+      throw new AppError("WEAK_PASSWORD", pwdCheck.message || "Password is too weak", 400);
     }
 
     const supabase = getSupabaseAdmin();

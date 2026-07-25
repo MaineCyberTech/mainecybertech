@@ -1,4 +1,4 @@
-import { getApiClient } from "@/lib/api";
+﻿import { getApiClient } from "@/lib/api";
 
 type PermissionsMatrixProps = {
   userId: string;
@@ -22,7 +22,9 @@ export default async function PermissionsMatrix({ userId }: PermissionsMatrixPro
   const modules: string[] = [...new Set<string>(permissions.map((p: any) => p.module_key))];
   const actions: string[] = [...new Set<string>(permissions.map((p: any) => p.action_key))];
 
-  const permMap = new Map<string, any>(permissions.map((p: any) => [`${p.module_key}:${p.action_key}`, p]));
+  const permMap = new Map<string, any>(
+    permissions.map((p: any) => [`${p.module_key}:${p.action_key}`, p]),
+  );
 
   return (
     <div className="mt-6 overflow-x-auto">
@@ -37,22 +39,36 @@ export default async function PermissionsMatrix({ userId }: PermissionsMatrixPro
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500">Module</th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                    Module
+                  </th>
                   {actions.map((action: string) => (
-                    <th key={action} className="px-3 py-2 text-center text-xs uppercase tracking-[0.12em] text-slate-500">{action}</th>
+                    <th
+                      key={action}
+                      className="px-3 py-2 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
+                    >
+                      {action}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {modules.map((module: string) => (
-                  <tr key={module} className="border-b border-white/5 transition hover:bg-white/[0.02]">
-                    <td className="px-3 py-2 font-medium text-slate-200 capitalize">{module}</td>
+                  <tr
+                    key={module}
+                    className="border-b border-white/5 transition hover:bg-white/[0.02]"
+                  >
+                    <td className="px-3 py-2 font-medium capitalize text-slate-200">{module}</td>
                     {actions.map((action: string) => {
                       const perm = permMap.get(`${module}:${action}`);
                       const hasRolePermission = perm && rolePermissionIds?.includes(perm.id);
-                      const override = perm && overrides?.find((o: any) =>
-                        o.permission_id === perm.id && o.organization_id === membership.organization_id
-                      );
+                      const override =
+                        perm &&
+                        overrides?.find(
+                          (o: any) =>
+                            o.permission_id === perm.id &&
+                            o.organization_id === membership.organization_id,
+                        );
 
                       let bg = "bg-slate-800/30";
                       let indicator = "—";
@@ -66,13 +82,15 @@ export default async function PermissionsMatrix({ userId }: PermissionsMatrixPro
 
                       return (
                         <td key={action} className={`px-3 py-2 text-center text-xs ${bg}`}>
-                          <span className={
-                            hasRolePermission || override?.is_allowed
-                              ? "text-emerald-400"
-                              : override
-                                ? "text-red-400"
-                                : "text-slate-500"
-                          }>
+                          <span
+                            className={
+                              hasRolePermission || override?.is_allowed
+                                ? "text-emerald-400"
+                                : override
+                                  ? "text-red-400"
+                                  : "text-slate-400"
+                            }
+                          >
                             {indicator}
                           </span>
                         </td>

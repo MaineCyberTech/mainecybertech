@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import OrgBrandingForm from "@/components/admin/OrgBrandingForm";
@@ -9,7 +9,7 @@ import AdminDocUpload from "@/components/admin/AdminDocUpload";
 import {
   updateOrganizationBasics,
   createOrganizationDomain,
-  updateOrganizationDomain
+  updateOrganizationDomain,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -49,11 +49,11 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
   return (
     <AdminPageShell
       breadcrumbs={
-        <AdminBreadcrumbs
+        <Breadcrumbs
           items={[
             { label: "Admin", href: "/admin" },
             { label: "Organizations", href: "/admin/organizations" },
-            { label: org.name }
+            { label: org.name },
           ]}
         />
       }
@@ -75,29 +75,17 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="cyber-label">Name</label>
-              <input
-                name="name"
-                defaultValue={org.name}
-                className="cyber-input"
-              />
+              <input name="name" defaultValue={org.name} className="cyber-input" />
             </div>
 
             <div>
               <label className="cyber-label">Slug</label>
-              <input
-                name="slug"
-                defaultValue={org.slug}
-                className="cyber-input"
-              />
+              <input name="slug" defaultValue={org.slug} className="cyber-input" />
             </div>
 
             <div>
               <label className="cyber-label">Status</label>
-              <select
-                name="status"
-                defaultValue={org.status}
-                className="cyber-input"
-              >
+              <select name="status" defaultValue={org.status} className="cyber-input">
                 <option value="pending">pending</option>
                 <option value="approved">approved</option>
                 <option value="rejected">rejected</option>
@@ -150,7 +138,10 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
                     </p>
                   </div>
 
-                  <form action={updateOrganizationDomain} className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <form
+                    action={updateOrganizationDomain}
+                    className="flex flex-col gap-3 sm:flex-row sm:items-center"
+                  >
                     <input type="hidden" name="organizationId" value={org.id} />
                     <input type="hidden" name="domainId" value={domain.id} />
 
@@ -181,17 +172,9 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
           <input type="hidden" name="organizationId" value={org.id} />
 
           <div className="grid gap-4 md:grid-cols-[1fr,220px,auto]">
-            <input
-              name="domain"
-              placeholder="example.com"
-              className="cyber-input"
-            />
+            <input name="domain" placeholder="example.com" className="cyber-input" />
 
-            <select
-              name="autoApprove"
-              defaultValue="false"
-              className="cyber-input"
-            >
+            <select name="autoApprove" defaultValue="false" className="cyber-input">
               <option value="false">Manual approval</option>
               <option value="true">Auto-approve</option>
             </select>
@@ -224,7 +207,8 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
                         {profile?.full_name ?? "Unknown User"}
                       </p>
                       <p className="text-sm text-slate-400">
-                        {profile?.email ?? "No email"} • Role: {role?.name ?? "Unknown"} • Status: {membership.status}
+                        {profile?.email ?? "No email"} • Role: {role?.name ?? "Unknown"} • Status:{" "}
+                        {membership.status}
                       </p>
                     </div>
 
@@ -254,9 +238,14 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="cyber-heading text-lg">Billing &amp; Payments</h2>
-            <p className="mt-1 text-sm text-slate-400">View invoices, subscriptions, and payment history.</p>
+            <p className="mt-1 text-sm text-slate-400">
+              View invoices, subscriptions, and payment history.
+            </p>
           </div>
-          <Link href={`/admin/organizations/${org.id}/billing`} className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10">
+          <Link
+            href={`/admin/organizations/${org.id}/billing`}
+            className="font-orbitron rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
+          >
             View Billing
           </Link>
         </div>
@@ -268,7 +257,10 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
             <h2 className="cyber-heading text-lg">Documents</h2>
             <p className="mt-1 text-sm text-slate-400">Upload a document for this organization.</p>
           </div>
-          <Link href="/admin/documents" className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10">
+          <Link
+            href="/admin/documents"
+            className="font-orbitron rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
+          >
             All Documents
           </Link>
         </div>

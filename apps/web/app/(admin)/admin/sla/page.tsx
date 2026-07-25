@@ -1,6 +1,6 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminSLAClient from "@/components/admin/AdminSLAClient";
@@ -19,18 +19,13 @@ export default async function AdminSLAPage() {
   return (
     <AdminPageShell
       breadcrumbs={
-        <AdminBreadcrumbs
-          items={[{ label: "Admin", href: "/admin" }, { label: "SLA Tracking" }]}
-        />
+        <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "SLA Tracking" }]} />
       }
       subnav={<AdminSubnav current="sla" />}
       title="SLA Tracking"
       description="Monitor service-level agreement metrics across organizations."
     >
-      <AdminSLAClient
-        organizations={organizations ?? []}
-        initialMetrics={slaMetrics}
-      />
+      <AdminSLAClient organizations={organizations ?? []} initialMetrics={slaMetrics} />
     </AdminPageShell>
   );
 }

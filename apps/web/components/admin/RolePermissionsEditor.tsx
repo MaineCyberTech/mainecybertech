@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { getClientApi } from "@/lib/client-api";
@@ -69,28 +69,18 @@ function sortActions(actions: string[]): string[] {
   });
 }
 
-export default function RolePermissionsEditor({
-  roleId,
-  roleKey,
-  isSystem,
-}: Props) {
+export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Props) {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [rolePermissionIds, setRolePermissionIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
-  const addToast = useCallback(
-    (message: string, kind: "success" | "error" = "success") => {
-      const id = Date.now();
-      setToasts((prev) => [...prev, { id, message, kind }]);
-      setTimeout(
-        () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-        3000,
-      );
-    },
-    [],
-  );
+  const addToast = useCallback((message: string, kind: "success" | "error" = "success") => {
+    const id = Date.now();
+    setToasts((prev) => [...prev, { id, message, kind }]);
+    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
+  }, []);
 
   const fetchData = useCallback(async () => {
     try {
@@ -107,29 +97,17 @@ export default function RolePermissionsEditor({
     fetchData();
   }, [fetchData]);
 
-  const modules = sortModules([
-    ...new Set(permissions.map((p) => p.module_key)),
-  ]);
-  const actions = sortActions([
-    ...new Set(permissions.map((p) => p.action_key)),
-  ]);
-  const permMap = new Map(
-    permissions.map((p) => [`${p.module_key}:${p.action_key}`, p]),
-  );
+  const modules = sortModules([...new Set(permissions.map((p) => p.module_key))]);
+  const actions = sortActions([...new Set(permissions.map((p) => p.action_key))]);
+  const permMap = new Map(permissions.map((p) => [`${p.module_key}:${p.action_key}`, p]));
 
   async function togglePermission(permissionId: string, currentlyHas: boolean) {
     if (isSystem && roleKey === "super_admin") return;
     setToggling(permissionId);
     try {
-      await getClientApi().roles.updatePermission(
-        roleId,
-        permissionId,
-        !currentlyHas,
-      );
+      await getClientApi().roles.updatePermission(roleId, permissionId, !currentlyHas);
       if (currentlyHas) {
-        setRolePermissionIds((prev) =>
-          prev.filter((id) => id !== permissionId),
-        );
+        setRolePermissionIds((prev) => prev.filter((id) => id !== permissionId));
         addToast("Permission revoked");
       } else {
         setRolePermissionIds((prev) => [...prev, permissionId]);
@@ -145,11 +123,7 @@ export default function RolePermissionsEditor({
   const totalCount = permissions.length;
 
   if (loading)
-    return (
-      <div className="py-8 text-center text-sm text-slate-500">
-        Loading permissions...
-      </div>
-    );
+    return <div className="py-8 text-center text-sm text-slate-400">Loading permissions...</div>;
 
   const groupedModules = new Map<string, string[]>();
   for (const mod of modules) {
@@ -181,32 +155,32 @@ export default function RolePermissionsEditor({
 
       <div className="flex flex-wrap items-center gap-4 text-sm">
         <span className="text-slate-400">
-          <span className="text-emerald-400 font-semibold">{grantedCount}</span>{" "}
-          / {totalCount} permissions granted
+          <span className="font-semibold text-emerald-400">{grantedCount}</span> / {totalCount}{" "}
+          permissions granted
         </span>
         <div className="flex items-center gap-2 text-xs">
           <span className="inline-block h-3 w-3 rounded border border-emerald-500/30 bg-emerald-500/15" />
-          <span className="text-slate-500">Granted</span>
-          <span className="inline-block h-3 w-3 rounded border border-white/10 bg-[#0A1118]/60 ml-2" />
-          <span className="text-slate-500">Not set</span>
+          <span className="text-slate-400">Granted</span>
+          <span className="ml-2 inline-block h-3 w-3 rounded border border-white/10 bg-[#0A1118]/60" />
+          <span className="text-slate-400">Not set</span>
         </div>
       </div>
 
       {[...groupedModules.entries()].map(([group, mods]) => (
         <div key={group} className="overflow-x-auto">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
             {group}
           </p>
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-white/10">
-                <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-500">
+                <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
                   Module
                 </th>
                 {actions.map((action) => (
                   <th
                     key={action}
-                    className="px-3 py-2 text-center text-xs uppercase tracking-[0.12em] text-slate-500"
+                    className="px-3 py-2 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
                   >
                     {action}
                   </th>
@@ -215,21 +189,13 @@ export default function RolePermissionsEditor({
             </thead>
             <tbody>
               {mods.map((mod) => (
-                <tr
-                  key={mod}
-                  className="border-b border-white/5 transition hover:bg-white/[0.02]"
-                >
-                  <td className="px-3 py-3 font-medium text-slate-200 capitalize">
-                    {mod}
-                  </td>
+                <tr key={mod} className="border-b border-white/5 transition hover:bg-white/[0.02]">
+                  <td className="px-3 py-3 font-medium capitalize text-slate-200">{mod}</td>
                   {actions.map((action) => {
                     const perm = permMap.get(`${mod}:${action}`);
                     if (!perm)
                       return (
-                        <td
-                          key={action}
-                          className="px-3 py-3 text-center text-slate-600"
-                        >
+                        <td key={action} className="px-3 py-3 text-center text-slate-600">
                           —
                         </td>
                       );

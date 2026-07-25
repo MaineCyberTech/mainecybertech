@@ -4,11 +4,27 @@ on:
   workflow_dispatch:
   push:
     branches: [main, develop]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.github/workflows/test.yml'
   pull_request:
     branches: [main, develop]
+    paths:
+      - 'apps/**'
+      - 'packages/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - '.github/workflows/test.yml'
+
+permissions:
+  contents: read
 
 jobs:
   test:
+    timeout-minutes: 20
     runs-on: ubuntu-latest
     strategy:
       matrix:

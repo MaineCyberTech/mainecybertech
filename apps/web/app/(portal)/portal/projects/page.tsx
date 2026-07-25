@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
-import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 export const metadata = { title: "Projects - Portal - Maine CyberTech" };
@@ -28,19 +28,27 @@ function formatRelativeTime(value?: string | null) {
 
 function projectStatusClass(status: string) {
   switch (status) {
-    case "completed": return "cyber-pill-success inline-flex items-center justify-center leading-none min-h-9";
-    case "blocked": return "cyber-pill-danger inline-flex items-center justify-center leading-none min-h-9";
-    case "client_review": return "cyber-pill-warning inline-flex items-center justify-center leading-none min-h-9";
-    case "active": return "cyber-pill-warning inline-flex items-center justify-center leading-none min-h-9";
-    default: return "cyber-pill inline-flex items-center justify-center leading-none min-h-9";
+    case "completed":
+      return "cyber-pill-success inline-flex items-center justify-center leading-none min-h-9";
+    case "blocked":
+      return "cyber-pill-danger inline-flex items-center justify-center leading-none min-h-9";
+    case "client_review":
+      return "cyber-pill-warning inline-flex items-center justify-center leading-none min-h-9";
+    case "active":
+      return "cyber-pill-warning inline-flex items-center justify-center leading-none min-h-9";
+    default:
+      return "cyber-pill inline-flex items-center justify-center leading-none min-h-9";
   }
 }
 
 function priorityClass(priority: string) {
   switch ((priority || "").toLowerCase()) {
-    case "urgent": return "cyber-pill-danger inline-flex items-center justify-center leading-none min-h-9";
-    case "high": return "cyber-pill-warning inline-flex items-center justify-center leading-none min-h-9";
-    default: return "cyber-pill inline-flex items-center justify-center leading-none min-h-9";
+    case "urgent":
+      return "cyber-pill-danger inline-flex items-center justify-center leading-none min-h-9";
+    case "high":
+      return "cyber-pill-warning inline-flex items-center justify-center leading-none min-h-9";
+    default:
+      return "cyber-pill inline-flex items-center justify-center leading-none min-h-9";
   }
 }
 
@@ -51,9 +59,13 @@ export default async function PortalProjectsPage() {
   if (!membership?.organization_id) {
     return (
       <div className="space-y-6">
-        <PortalBreadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Projects" }]} />
+        <Breadcrumbs
+          items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Projects" }]}
+        />
         <PortalSubnav current="projects" />
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">Access restricted. Please contact your administrator.</div>
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
+          Access restricted. Please contact your administrator.
+        </div>
       </div>
     );
   }
@@ -73,22 +85,32 @@ export default async function PortalProjectsPage() {
   const taskIds = tasks.map((t: any) => t.id);
   const taskMap = new Map(tasks.map((task: any) => [task.id, task.project_id]));
 
-  const comments = taskIds.length && projectIds.length
-    ? (await Promise.all(projectIds.map((id: string) =>
-        api.projects.listTaskComments(id, {
-          organizationId: membership.organization_id,
-          isInternal: false,
-        })
-      ))).flat()
-    : [];
+  const comments =
+    taskIds.length && projectIds.length
+      ? (
+          await Promise.all(
+            projectIds.map((id: string) =>
+              api.projects.listTaskComments(id, {
+                organizationId: membership.organization_id,
+                isInternal: false,
+              }),
+            ),
+          )
+        ).flat()
+      : [];
 
-  const reads = currentUserId && taskIds.length && projectIds.length
-    ? (await Promise.all(projectIds.map((id: string) =>
-        api.projects.listReadStates(id, {
-          organizationId: membership.organization_id,
-        })
-      ))).flat()
-    : [];
+  const reads =
+    currentUserId && taskIds.length && projectIds.length
+      ? (
+          await Promise.all(
+            projectIds.map((id: string) =>
+              api.projects.listReadStates(id, {
+                organizationId: membership.organization_id,
+              }),
+            ),
+          )
+        ).flat()
+      : [];
 
   const readMap = new Map((reads ?? []).map((row: any) => [row.task_id, row.last_seen_at]));
   const unreadByProject = new Map<string, number>();
@@ -97,14 +119,17 @@ export default async function PortalProjectsPage() {
     const projectId = taskMap.get(comment.task_id);
     if (!projectId) return;
     const lastSeenAt = readMap.get(comment.task_id);
-    const isUnread = !lastSeenAt || new Date(comment.created_at).getTime() > new Date(lastSeenAt).getTime();
+    const isUnread =
+      !lastSeenAt || new Date(comment.created_at).getTime() > new Date(lastSeenAt).getTime();
     if (!isUnread) return;
     unreadByProject.set(projectId, (unreadByProject.get(projectId) ?? 0) + 1);
   });
 
   return (
     <div className="space-y-6">
-      <PortalBreadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Projects" }]} />
+      <Breadcrumbs
+        items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Projects" }]}
+      />
       <PortalSubnav current="projects" />
 
       <section className="cyber-panel">
@@ -118,22 +143,41 @@ export default async function PortalProjectsPage() {
             (projects ?? []).map((project: any) => {
               const unreadCount = unreadByProject.get(project.id) ?? 0;
               return (
-                <Link key={project.id} href={`/portal/projects/${project.id}`} className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80">
+                <Link
+                  key={project.id}
+                  href={`/portal/projects/${project.id}`}
+                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="font-orbitron text-lg uppercase tracking-[0.12em] text-slate-50">{project.name}</h3>
+                    <h3 className="font-orbitron text-lg uppercase tracking-[0.12em] text-slate-50">
+                      {project.name}
+                    </h3>
                     <div className="flex flex-wrap gap-2">
                       <span className={projectStatusClass(project.status)}>{project.status}</span>
                       <span className={priorityClass(project.priority)}>{project.priority}</span>
-                      {unreadCount > 0 ? <span className="inline-flex items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-amber-300 shadow-[0_0_0_1px_rgba(245,158,11,0.15),0_0_18px_rgba(245,158,11,0.18)]">Unread {unreadCount}</span> : null}
+                      {unreadCount > 0 ? (
+                        <span className="inline-flex items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-amber-300 shadow-[0_0_0_1px_rgba(245,158,11,0.15),0_0_18px_rgba(245,158,11,0.18)]">
+                          Unread {unreadCount}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
-                  <p className="mt-3 text-sm text-slate-400">{project.description ?? "No project summary provided."}</p>
-                  <p className="mt-4 text-xs text-slate-500" title={formatDateTime(project.updated_at)}>Updated {formatRelativeTime(project.updated_at)}</p>
+                  <p className="mt-3 text-sm text-slate-400">
+                    {project.description ?? "No project summary provided."}
+                  </p>
+                  <p
+                    className="mt-4 text-xs text-slate-400"
+                    title={formatDateTime(project.updated_at)}
+                  >
+                    Updated {formatRelativeTime(project.updated_at)}
+                  </p>
                 </Link>
               );
             })
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">No projects found.</div>
+            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+              No projects found.
+            </div>
           )}
         </div>
       </section>

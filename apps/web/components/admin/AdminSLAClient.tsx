@@ -1,12 +1,19 @@
-"use client";
+﻿"use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 type Org = Record<string, any> & { id: string; name?: string };
 type SLAMetrics = {
   summary: { total: number; breached: number; breachedRate: number; resolved: number };
   byMetric: Record<string, { total: number; breached: number; avgMinutes: number }>;
-  recent: Array<{ id: string; metric: string; target_minutes: number; actual_minutes: number | null; breached: boolean; created_at: string }>;
+  recent: Array<{
+    id: string;
+    metric: string;
+    target_minutes: number;
+    actual_minutes: number | null;
+    breached: boolean;
+    created_at: string;
+  }>;
 };
 
 export default function AdminSLAClient({
@@ -47,7 +54,9 @@ export default function AdminSLAClient({
           >
             <option value="">All organizations</option>
             {organizations.map((org) => (
-              <option key={org.id} value={org.id}>{org.name ?? org.id}</option>
+              <option key={org.id} value={org.id}>
+                {org.name ?? org.id}
+              </option>
             ))}
           </select>
         </div>
@@ -59,7 +68,9 @@ export default function AdminSLAClient({
             className="cyber-input"
           >
             {[7, 14, 30, 60, 90].map((d) => (
-              <option key={d} value={d}>{d} days</option>
+              <option key={d} value={d}>
+                {d} days
+              </option>
             ))}
           </select>
         </div>
@@ -89,10 +100,15 @@ export default function AdminSLAClient({
         <div className="mt-4 space-y-3">
           {Object.entries(metrics.byMetric).length > 0 ? (
             Object.entries(metrics.byMetric).map(([key, m]) => (
-              <div key={key} className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div
+                key={key}
+                className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+              >
                 <div>
                   <p className="font-medium text-slate-50">{metricLabels[key] ?? key}</p>
-                  <p className="text-xs text-slate-500">{m.total} events, {m.breached} breached</p>
+                  <p className="text-xs text-slate-400">
+                    {m.total} events, {m.breached} breached
+                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-slate-400">Avg {Math.round(m.avgMinutes)} min</p>
@@ -122,11 +138,13 @@ export default function AdminSLAClient({
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                    event.breached
-                      ? "bg-red-500/10 text-red-300"
-                      : "bg-emerald-500/10 text-emerald-300"
-                  }`}>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                      event.breached
+                        ? "bg-red-500/10 text-red-300"
+                        : "bg-emerald-500/10 text-emerald-300"
+                    }`}
+                  >
                     {event.breached ? "BREACHED" : "OK"}
                   </span>
                   <div>
@@ -134,13 +152,13 @@ export default function AdminSLAClient({
                       {metricLabels[event.metric] ?? event.metric}
                     </p>
                     {event.actual_minutes && (
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-slate-400">
                         {event.actual_minutes} min (target: {event.target_minutes} min)
                       </p>
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-400">
                   {new Date(event.created_at).toLocaleDateString()}
                 </p>
               </div>

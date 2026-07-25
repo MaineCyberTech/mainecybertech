@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminTicketCenterClient from "@/components/admin/AdminTicketCenterClient";
 
@@ -114,7 +114,7 @@ export default async function AdminTicketsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminBreadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Tickets" }]} />
+      <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Tickets" }]} />
       <AdminSubnav current="tickets" />
       <AdminTicketCenterClient
         tickets={tickets as TicketRecord[]}

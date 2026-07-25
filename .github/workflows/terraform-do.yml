@@ -24,7 +24,7 @@ jobs:
     defaults:
       run:
         working-directory: infra/terraform/digitalocean
-    environment: dev
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
 
     steps:
       - name: Checkout

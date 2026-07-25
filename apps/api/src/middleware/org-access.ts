@@ -1,8 +1,9 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { AppError } from "../types";
+import { getEnv } from "../config/env";
 
-const isTest = process.env.NODE_ENV === "test";
+const isTest = getEnv().NODE_ENV === "test";
 
 function extractOrgId(req: Request): string | null {
   if (req.query.organization_id) return req.query.organization_id as string;
@@ -31,9 +32,7 @@ async function checkOrgAccess(userId: string, orgId: string): Promise<boolean> {
 
   if (allMemberships && allMemberships.length > 0) {
     const isAdmin = allMemberships.some((row) =>
-      ["admin", "super_admin"].includes(
-        (row.roles as unknown as { key: string }).key,
-      ),
+      ["admin", "super_admin"].includes((row.roles as unknown as { key: string }).key),
     );
     if (isAdmin) return true;
   }
@@ -41,11 +40,7 @@ async function checkOrgAccess(userId: string, orgId: string): Promise<boolean> {
   return false;
 }
 
-export async function requireOrgAccess(
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-) {
+export async function requireOrgAccess(req: Request, _res: Response, next: NextFunction) {
   if (isTest) return next();
 
   try {
@@ -61,11 +56,7 @@ export async function requireOrgAccess(
 
     const hasAccess = await checkOrgAccess(req.authUser.userId, orgId);
     if (!hasAccess) {
-      throw new AppError(
-        "FORBIDDEN",
-        "You do not have access to this organization",
-        403,
-      );
+      throw new AppError("FORBIDDEN", "You do not have access to this organization", 403);
     }
 
     next();
@@ -74,11 +65,7 @@ export async function requireOrgAccess(
   }
 }
 
-export async function requireOrgAccessByParam(
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-) {
+export async function requireOrgAccessByParam(req: Request, _res: Response, next: NextFunction) {
   if (isTest) return next();
 
   try {
@@ -93,11 +80,7 @@ export async function requireOrgAccessByParam(
 
     const hasAccess = await checkOrgAccess(req.authUser.userId, orgId);
     if (!hasAccess) {
-      throw new AppError(
-        "FORBIDDEN",
-        "You do not have access to this organization",
-        403,
-      );
+      throw new AppError("FORBIDDEN", "You do not have access to this organization", 403);
     }
 
     next();

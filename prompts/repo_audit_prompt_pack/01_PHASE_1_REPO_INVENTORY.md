@@ -59,3 +59,11 @@ Be exhaustive.
 Do not be generic.
 Reference exact folders/files/modules whenever available.
 If something cannot be verified, label it as a hypothesis.
+
+### Self-Review
+
+Before concluding Phase 1, review your output and flag:
+
+- Any claim not directly verifiable from the file tree
+- Any area you skipped due to size/complexity that warrants deeper inspection
+- Any structural issue you felt compelled to mention despite the "no recommendations yet" rule

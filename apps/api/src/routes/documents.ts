@@ -5,11 +5,9 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
-import {
-  requireIfMatch,
-  checkVersionMatch,
-} from "../middleware/optimistic-locking";
+import { getEnv } from "../config/env";
+import { responseCacheNoRenew } from "../middleware/cache";
+import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import {
   createDocumentSchema,
   updateDocumentSchema,
@@ -19,12 +17,37 @@ import {
 import { z } from "zod";
 
 const createShareSchema = z.object({
-  expiresAt: z.string().datetime(),
+  expiresAt: z
+    .string()
+    .datetime()
+    .refine(
+      (val) => {
+        const date = new Date(val);
+        const now = new Date();
+        const max = new Date();
+        max.setFullYear(max.getFullYear() + 1);
+        return date > now && date <= max;
+      },
+      { message: "expiresAt must be in the future and within 1 year" },
+    ),
   maxAccess: z.number().int().positive().optional(),
 });
 
 const updateShareSchema = z.object({
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: z
+    .string()
+    .datetime()
+    .refine(
+      (val) => {
+        const date = new Date(val);
+        const now = new Date();
+        const max = new Date();
+        max.setFullYear(max.getFullYear() + 1);
+        return date > now && date <= max;
+      },
+      { message: "expiresAt must be in the future and within 1 year" },
+    )
+    .optional(),
   maxAccess: z.number().int().positive().optional().nullable(),
   revoked: z.boolean().optional(),
 });
@@ -42,10 +65,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(req.query.limit as string) || 25),
-    );
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("documents").select("*", { count: "exact" });
@@ -60,9 +80,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
       data: documents,
       error,
       count,
-    } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    } = await query.order("created_at", { ascending: false }).range(offset, offset + limit - 1);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -88,8 +106,7 @@ router.get("/:id", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Document not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -152,11 +169,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
     const folderPath = String(req.body.folderPath ?? "").trim() || null;
 
     if (!organizationId || !name) {
-      throw new AppError(
-        "VALIDATION",
-        "Organization ID and name are required",
-        400,
-      );
+      throw new AppError("VALIDATION", "Organization ID and name are required", 400);
     }
 
     const supabase = getSupabaseAdmin();
@@ -172,11 +185,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
       });
 
     if (uploadError) {
-      throw new AppError(
-        "STORAGE_ERROR",
-        `Upload failed: ${uploadError.message}`,
-        500,
-      );
+      throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);
     }
 
     const documentId = String(req.body.documentId ?? "").trim() || null;
@@ -195,9 +204,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
       }
 
       if (current.storage_bucket && current.storage_path) {
-        await supabase.storage
-          .from(current.storage_bucket)
-          .remove([current.storage_path]);
+        await supabase.storage.from(current.storage_bucket).remove([current.storage_path]);
       }
 
       const nextVersion = currentVersion + 1;
@@ -306,21 +313,15 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
-    if (parsed.description !== undefined)
-      updateData.description = parsed.description;
-    if (parsed.visibility !== undefined)
-      updateData.visibility = parsed.visibility;
-    if (parsed.folderPath !== undefined)
-      updateData.folder_path = parsed.folderPath;
-    if (parsed.storageBucket !== undefined)
-      updateData.storage_bucket = parsed.storageBucket;
-    if (parsed.storagePath !== undefined)
-      updateData.storage_path = parsed.storagePath;
+    if (parsed.description !== undefined) updateData.description = parsed.description;
+    if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
+    if (parsed.folderPath !== undefined) updateData.folder_path = parsed.folderPath;
+    if (parsed.storageBucket !== undefined) updateData.storage_bucket = parsed.storageBucket;
+    if (parsed.storagePath !== undefined) updateData.storage_path = parsed.storagePath;
     if (parsed.mimeType !== undefined) updateData.mime_type = parsed.mimeType;
     if (parsed.fileName !== undefined) updateData.file_name = parsed.fileName;
     if (parsed.fileSize !== undefined) updateData.file_size = parsed.fileSize;
-    if (parsed.currentVersion !== undefined)
-      updateData.current_version = parsed.currentVersion;
+    if (parsed.currentVersion !== undefined) updateData.current_version = parsed.currentVersion;
     if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
 
     updateData.version = current.version + 1;
@@ -334,12 +335,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data)
-      throw new AppError(
-        "VERSION_CONFLICT",
-        "Document was modified by another user",
-        409,
-      );
+    if (!data) throw new AppError("VERSION_CONFLICT", "Document was modified by another user", 409);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -367,15 +363,10 @@ router.delete("/:id", async (req, res, next) => {
     if (fetchError) throw new AppError("NOT_FOUND", "Document not found", 404);
 
     if (doc.storage_bucket && doc.storage_path) {
-      await supabase.storage
-        .from(doc.storage_bucket)
-        .remove([doc.storage_path]);
+      await supabase.storage.from(doc.storage_bucket).remove([doc.storage_path]);
     }
 
-    const { error } = await supabase
-      .from("documents")
-      .delete()
-      .eq("id", req.params.id);
+    const { error } = await supabase.from("documents").delete().eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -402,14 +393,9 @@ router.post("/:id/signed-url", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
 
-    if (docError || !doc)
-      throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
     if (!doc.storage_bucket || !doc.storage_path)
-      throw new AppError(
-        "BAD_REQUEST",
-        "Document has no storage reference",
-        400,
-      );
+      throw new AppError("BAD_REQUEST", "Document has no storage reference", 400);
 
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(doc.storage_bucket)
@@ -434,13 +420,10 @@ router.post("/bulk/folder", async (req, res, next) => {
       data: { folder_path: parsed.folderPath },
     }));
 
-    const { data: results, error } = await supabase.rpc(
-      "bulk_update_with_version",
-      {
-        table_name: "documents",
-        updates,
-      },
-    );
+    const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
+      table_name: "documents",
+      updates,
+    });
 
     if (error) {
       throw new AppError("DB_ERROR", error.message, 500);
@@ -473,12 +456,9 @@ router.post("/bulk/metadata", async (req, res, next) => {
     const supabase = getSupabaseAdmin();
 
     const updateData: Record<string, unknown> = {};
-    if (parsed.description !== undefined)
-      updateData.description = parsed.description;
-    if (parsed.folderPath !== undefined)
-      updateData.folder_path = parsed.folderPath;
-    if (parsed.visibility !== undefined)
-      updateData.visibility = parsed.visibility;
+    if (parsed.description !== undefined) updateData.description = parsed.description;
+    if (parsed.folderPath !== undefined) updateData.folder_path = parsed.folderPath;
+    if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
 
     if (Object.keys(updateData).length === 0) {
       throw new AppError("VALIDATION", "No fields to update", 400);
@@ -489,13 +469,10 @@ router.post("/bulk/metadata", async (req, res, next) => {
       data: updateData,
     }));
 
-    const { data: results, error } = await supabase.rpc(
-      "bulk_update_with_version",
-      {
-        table_name: "documents",
-        updates,
-      },
-    );
+    const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
+      table_name: "documents",
+      updates,
+    });
 
     if (error) {
       throw new AppError("DB_ERROR", error.message, 500);
@@ -526,10 +503,7 @@ router.get("/:id/versions", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(req.query.limit as string) || 20),
-    );
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
 
     const { data, error, count } = await supabase
@@ -556,8 +530,7 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
       .eq("document_id", req.params.id)
       .single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Version not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Version not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -575,8 +548,7 @@ router.post("/:id/shares", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
 
-    if (docError || !doc)
-      throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
 
     const hasAccess = await supabase
       .from("memberships")
@@ -587,8 +559,7 @@ router.post("/:id/shares", async (req, res, next) => {
       .maybeSingle()
       .then(({ data }) => !!data);
 
-    if (!hasAccess)
-      throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
+    if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
 
     const token = crypto.randomUUID();
     const { data: share, error } = await supabase
@@ -614,7 +585,7 @@ router.post("/:id/shares", async (req, res, next) => {
       metadata: { shareId: share.id, expiresAt: parsed.expiresAt },
     });
 
-    const baseUrl = process.env.APP_BASE_URL ?? "";
+    const baseUrl = getEnv().APP_BASE_URL;
     const shareUrl = `${baseUrl}/api/v1/documents/shares/${token}`;
 
     res.json(success({ ...share, shareUrl }));
@@ -633,8 +604,7 @@ router.get("/:id/shares", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
 
-    if (docError || !doc)
-      throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
 
     const hasAccess = await supabase
       .from("memberships")
@@ -645,8 +615,7 @@ router.get("/:id/shares", async (req, res, next) => {
       .maybeSingle()
       .then(({ data }) => !!data);
 
-    if (!hasAccess)
-      throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
+    if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
 
     const { data, error } = await supabase
       .from("document_shares")
@@ -673,8 +642,7 @@ router.patch("/:id/shares/:shareId", async (req, res, next) => {
       .eq("id", req.params.shareId)
       .single();
 
-    if (shareError || !share)
-      throw new AppError("NOT_FOUND", "Share not found", 404);
+    if (shareError || !share) throw new AppError("NOT_FOUND", "Share not found", 404);
 
     const hasAccess = await supabase
       .from("memberships")
@@ -688,10 +656,8 @@ router.patch("/:id/shares/:shareId", async (req, res, next) => {
     if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
 
     const updateData: Record<string, unknown> = {};
-    if (parsed.expiresAt !== undefined)
-      updateData.expires_at = parsed.expiresAt;
-    if (parsed.maxAccess !== undefined)
-      updateData.max_access = parsed.maxAccess;
+    if (parsed.expiresAt !== undefined) updateData.expires_at = parsed.expiresAt;
+    if (parsed.maxAccess !== undefined) updateData.max_access = parsed.maxAccess;
     if (parsed.revoked) updateData.revoked_at = new Date().toISOString();
 
     if (Object.keys(updateData).length === 0) {
@@ -732,8 +698,7 @@ router.delete("/:id/shares/:shareId", async (req, res, next) => {
       .eq("id", req.params.shareId)
       .single();
 
-    if (shareError || !share)
-      throw new AppError("NOT_FOUND", "Share not found", 404);
+    if (shareError || !share) throw new AppError("NOT_FOUND", "Share not found", 404);
 
     const hasAccess = await supabase
       .from("memberships")
@@ -746,10 +711,7 @@ router.delete("/:id/shares/:shareId", async (req, res, next) => {
 
     if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
 
-    const { error } = await supabase
-      .from("document_shares")
-      .delete()
-      .eq("id", req.params.shareId);
+    const { error } = await supabase.from("document_shares").delete().eq("id", req.params.shareId);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -777,46 +739,30 @@ router.get("/shares/:token", async (req, res, next) => {
 
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
-      .select(
-        "*, documents!inner(id, name, storage_bucket, storage_path, mime_type)",
-      )
+      .select("*, documents!inner(id, name, storage_bucket, storage_path, mime_type)")
       .eq("token", token)
       .single();
 
-    if (shareError || !share)
-      throw new AppError("NOT_FOUND", "Share link not found", 404);
+    if (shareError || !share) throw new AppError("NOT_FOUND", "Share link not found", 404);
 
-    if (share.revoked_at)
-      throw new AppError("FORBIDDEN", "Share link has been revoked", 403);
+    if (share.revoked_at) throw new AppError("FORBIDDEN", "Share link has been revoked", 403);
 
     if (new Date(share.expires_at) < new Date())
       throw new AppError("FORBIDDEN", "Share link has expired", 403);
 
     if (share.max_access && share.access_count >= share.max_access)
-      throw new AppError(
-        "FORBIDDEN",
-        "Share link has reached maximum access count",
-        403,
-      );
+      throw new AppError("FORBIDDEN", "Share link has reached maximum access count", 403);
 
     const doc = share.documents;
     if (!doc.storage_bucket || !doc.storage_path)
-      throw new AppError(
-        "STORAGE_ERROR",
-        "Document has no storage reference",
-        500,
-      );
+      throw new AppError("STORAGE_ERROR", "Document has no storage reference", 500);
 
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(doc.storage_bucket)
       .createSignedUrl(doc.storage_path, 3600);
 
     if (urlError || !signedUrl)
-      throw new AppError(
-        "STORAGE_ERROR",
-        "Failed to generate download URL",
-        500,
-      );
+      throw new AppError("STORAGE_ERROR", "Failed to generate download URL", 500);
 
     await supabase
       .from("document_shares")

@@ -11,21 +11,22 @@
 
 ### **WIN 0.1: Fix Production Environment Config**
 
-**Files:** 
+**Files:**
+
 - `infra/terraform/env/prod.tfvars` (CREATE from `.example`)
 - `infra/terraform/env/dev.tfvars` (CREATE from `.example`)
 - `infra/terraform/env/backend.prod.hcl` (CREATE from `.example`)
 - `infra/terraform/env/backend.dev.hcl` (CREATE from `.example`)
 
-| Change | Description | File |
-|--------|------------|------|
-| Populate prod DO token | `DO_TOKEN="..."` | `prod.tfvars` |
-| Set prod region | `DO_REGION="nyc3"` | `prod.tfvars` |
-| Set prod droplet size | `DO_SIZE="s-4vcpu-8gb"` | `prod.tfvars` |
-| Set prod DNS zone | `CLOUDFLARE_PRODUCTION_ZONE="mainecybertech.com"` | `prod.tfvars` |
-| Set dev DNS zone | `CLOUDFLARE_DEV_ZONE="mainecybertech.us"` | `dev.tfvars` |
-| Set S3 backend bucket | `bucket="mct-terraform-prod"` | `backend.prod.hcl` |
-| Set S3 backend bucket (dev) | `bucket="mct-terraform-dev"` | `backend.dev.hcl` |
+| Change                      | Description                                       | File               |
+| --------------------------- | ------------------------------------------------- | ------------------ |
+| Populate prod DO token      | `DO_TOKEN="..."`                                  | `prod.tfvars`      |
+| Set prod region             | `DO_REGION="nyc3"`                                | `prod.tfvars`      |
+| Set prod droplet size       | `DO_SIZE="s-4vcpu-8gb"`                           | `prod.tfvars`      |
+| Set prod DNS zone           | `CLOUDFLARE_PRODUCTION_ZONE="mainecybertech.com"` | `prod.tfvars`      |
+| Set dev DNS zone            | `CLOUDFLARE_DEV_ZONE="mainecybertech.us"`         | `dev.tfvars`       |
+| Set S3 backend bucket       | `bucket="mct-terraform-prod"`                     | `backend.prod.hcl` |
+| Set S3 backend bucket (dev) | `bucket="mct-terraform-dev"`                      | `backend.dev.hcl`  |
 
 **Why:** Production deploys blocked without real terraform configs
 
@@ -40,16 +41,18 @@
 ### **WIN 0.2: Add Admin Page Tests**
 
 **Files (4 new test files):**
+
 - `apps/web/__tests__/app/(admin)/admin/webhooks/page.test.tsx` — 32 tests
 - `apps/web/__tests__/app/(admin)/admin/bulk-invite/page.test.tsx` — 28 tests
 - `apps/web/__tests__/app/(admin)/admin/health/page.test.tsx` — 16 tests
 - `apps/web/__tests__/app/(admin)/admin/organizations/[orgId]/billing/page.test.tsx` — 64 tests
 
 **Test patterns to follow** (from existing MCT tests):
+
 ```typescript
 // Mock SDK client (from existing sdk.test.ts)
 jest.mock("@mct/sdk", () => ({
-  MCTClient: { create: jest.fn() }
+  MCTClient: { create: jest.fn() },
 }));
 
 // AdminPageShell test pattern (from AdminPageShell.test.tsx)
@@ -71,6 +74,7 @@ import { AdminPageShell } from "@/components/admin/AdminPageShell";
 **File:** `apps/api/src/routes/public.ts`
 
 **Changes needed:**
+
 ```typescript
 // Current: placeholder success response
 router.post("/api/v1/public/init", async (req, res) => {
@@ -101,6 +105,7 @@ router.post("/api/v1/public/init", async (req, res) => {
 ### **SIM 1.1: Wire Shared Packages**
 
 **File:** `apps/api/tsconfig.json`
+
 ```json
 {
   "extends": "@mct/config/tsconfig.base.json",
@@ -131,6 +136,7 @@ router.post("/api/v1/public/init", async (req, res) => {
 
 **Current (complex):** ~15 scripts including duplicate patterns
 **Target (simplified):**
+
 ```json
 {
   "scripts": {
@@ -161,10 +167,12 @@ router.post("/api/v1/public/init", async (req, res) => {
 ### **CONVERGE 2.1: Testing Setup Refactoring**
 
 **Files to create:**
+
 - `tests/setup/jest.setup.ts` (shared mock builder utilities)
 - `tests/config/jest.config.base.ts` (shared Jest configuration)
 
 **Mock builder pattern (adapted from Chat's vitest pattern):**
+
 ```typescript
 // tests/setup/jest.setup.ts
 export function createMockBuilder() {
@@ -207,13 +215,13 @@ export function createMockBuilder() {
 
 ## EXECUTION ORDER SUMMARY
 
-| Order | Change | Risk | Effort | Impact |
-|-------|--------|------|--------|--------|
-| 1 | Create prod/dev tfvars files | Zero | Low | **CRITICAL** |
-| 2 | Add admin page tests | Low | Medium | High |
-| 3 | Implement JSM webhook | Low | Medium | High |
-| 4 | Wire shared packages | Low | Low | Medium |
-| 5 | Simplify root scripts | Zero | Low | Medium |
-| 6 | Refactor test setup | Medium | Medium | Medium |
-| 7 | Date-based migration naming | Low | Low | Low |
-| 8 | T Sanitization (optional) | Medium | High | Low |
+| Order | Change                       | Risk   | Effort | Impact       |
+| ----- | ---------------------------- | ------ | ------ | ------------ |
+| 1     | Create prod/dev tfvars files | Zero   | Low    | **CRITICAL** |
+| 2     | Add admin page tests         | Low    | Medium | High         |
+| 3     | Implement JSM webhook        | Low    | Medium | High         |
+| 4     | Wire shared packages         | Low    | Low    | Medium       |
+| 5     | Simplify root scripts        | Zero   | Low    | Medium       |
+| 6     | Refactor test setup          | Medium | Medium | Medium       |
+| 7     | Date-based migration naming  | Low    | Low    | Low          |
+| 8     | T Sanitization (optional)    | Medium | High   | Low          |

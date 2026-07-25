@@ -1,6 +1,6 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import NewWebhookForm from "@/components/admin/NewWebhookForm";
@@ -15,13 +15,19 @@ export default async function NewWebhookPage() {
 
   return (
     <AdminPageShell
-      breadcrumbs={<AdminBreadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Webhooks", href: "/admin/webhooks" }, { label: "New" }]} />}
+      breadcrumbs={
+        <Breadcrumbs
+          items={[
+            { label: "Admin", href: "/admin" },
+            { label: "Webhooks", href: "/admin/webhooks" },
+            { label: "New" },
+          ]}
+        />
+      }
       subnav={<AdminSubnav current="webhooks" />}
       title="New Webhook Endpoint"
     >
-      <NewWebhookForm
-        organizations={organizations.map((o: any) => ({ id: o.id, name: o.name }))}
-      />
+      <NewWebhookForm organizations={organizations.map((o: any) => ({ id: o.id, name: o.name }))} />
     </AdminPageShell>
   );
 }

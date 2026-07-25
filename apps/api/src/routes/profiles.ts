@@ -5,6 +5,7 @@ import { getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
+import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -44,8 +45,7 @@ router.get("/", async (req, res, next) => {
         .select("*")
         .eq("email", email.toLowerCase())
         .maybeSingle();
-      if (profileError)
-        throw new AppError("DB_ERROR", profileError.message, 500);
+      if (profileError) throw new AppError("DB_ERROR", profileError.message, 500);
       res.json(success(profile ?? null));
       return;
     }
@@ -68,27 +68,55 @@ router.get("/:id", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Profile not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Profile not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateProfileSchema.parse(req.body);
-    const supabase = getSupabaseUser(req.userJwt!);
+
+    // Only allow users to edit their own profile (unless admin)
+    if (req.authUser!.userId !== req.params.id) {
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data: isAdmin } = await supabaseAdmin
+        .from("profiles")
+        .select("is_super_admin")
+        .eq("id", req.authUser!.userId)
+        .single();
+      if (!isAdmin?.is_super_admin) {
+        throw new AppError("FORBIDDEN", "You can only edit your own profile", 403);
+      }
+    }
+
+    const supabase = getSupabaseAdmin();
+
+    const { data: current, error: fetchError } = await supabase
+      .from("profiles")
+      .select("version")
+      .eq("id", req.params.id)
+      .single();
+
+    if (fetchError || !current) {
+      throw new AppError("NOT_FOUND", "Profile not found", 404);
+    }
+
+    checkVersionMatch(current.version, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.fullName !== undefined) updateData.full_name = parsed.fullName;
     if (parsed.phone !== undefined) updateData.phone = parsed.phone;
     if (parsed.title !== undefined) updateData.title = parsed.title;
 
+    updateData.version = current.version + 1;
+
     const { data, error } = await supabase
       .from("profiles")
       .update(updateData)
+      .eq("version", current.version)
       .eq("id", req.params.id)
       .select()
       .single();
@@ -100,7 +128,7 @@ router.patch("/:id", async (req, res, next) => {
       actorUserId: req.authUser?.userId,
       action: "profile.update",
       entityType: "profile",
-      entityId: req.params.id,
+      entityId: req.params.id as string,
       metadata: updateData,
     });
 
@@ -117,11 +145,7 @@ router.post("/:id/avatar", upload.single("avatar"), async (req, res, next) => {
 
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.mimetype)) {
-      throw new AppError(
-        "VALIDATION",
-        "Avatar must be a JPEG, PNG, WebP, or GIF image",
-        400,
-      );
+      throw new AppError("VALIDATION", "Avatar must be a JPEG, PNG, WebP, or GIF image", 400);
     }
 
     const ext = file.originalname.split(".").pop() ?? "png";
@@ -136,12 +160,9 @@ router.post("/:id/avatar", upload.single("avatar"), async (req, res, next) => {
         upsert: true,
       });
 
-    if (uploadError)
-      throw new AppError("STORAGE_ERROR", uploadError.message, 500);
+    if (uploadError) throw new AppError("STORAGE_ERROR", uploadError.message, 500);
 
-    const { data: publicUrl } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(storagePath);
+    const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(storagePath);
 
     const { error: updateError } = await supabase
       .from("profiles")

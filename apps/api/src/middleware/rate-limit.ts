@@ -27,6 +27,9 @@ export const rateLimitAuth = rateLimit({
   message: "Too many authentication attempts, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => `ip:${req.ip}`,
+  keyGenerator: (req) => {
+    const email = (req.body as Record<string, unknown> | undefined)?.email;
+    return email ? `email:${email}` : `ip:${req.ip}`;
+  },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });

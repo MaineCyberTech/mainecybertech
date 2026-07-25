@@ -1,7 +1,7 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Link from "next/link";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RolePermissionsEditor from "@/components/admin/RolePermissionsEditor";
@@ -31,7 +31,7 @@ export default async function RoleDetailPage({ params }: Props) {
   return (
     <AdminPageShell
       breadcrumbs={
-        <AdminBreadcrumbs
+        <Breadcrumbs
           items={[
             { label: "Admin", href: "/admin" },
             { label: "Roles", href: "/admin/roles" },
@@ -54,11 +54,7 @@ export default async function RoleDetailPage({ params }: Props) {
           Click a cell to grant or revoke the permission for this role.
         </p>
         <div className="mt-6">
-          <RolePermissionsEditor
-            roleId={roleId}
-            roleKey={role.key}
-            isSystem={role.is_system}
-          />
+          <RolePermissionsEditor roleId={roleId} roleKey={role.key} isSystem={role.is_system} />
         </div>
       </section>
     </AdminPageShell>

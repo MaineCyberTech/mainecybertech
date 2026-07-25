@@ -16,11 +16,13 @@ jest.mock("@/lib/api", () => ({
 
 jest.mock("next/link", () => {
   return ({ children, href, ...rest }: any) => (
-    <a href={href} {...rest}>{children}</a>
+    <a href={href} {...rest}>
+      {children}
+    </a>
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -105,7 +107,14 @@ describe("AdminProjectsPage", () => {
   it("renders project queue with cards", async () => {
     mockProjectsList.mockResolvedValue({
       items: [
-        { id: "p1", name: "Security Audit", description: "Q2 audit", organization_id: "o1", status: "active", priority: "high" },
+        {
+          id: "p1",
+          name: "Security Audit",
+          description: "Q2 audit",
+          organization_id: "o1",
+          status: "active",
+          priority: "high",
+        },
       ],
     });
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme Corp" }]);
@@ -116,7 +125,16 @@ describe("AdminProjectsPage", () => {
 
   it("shows no description fallback", async () => {
     mockProjectsList.mockResolvedValue({
-      items: [{ id: "p1", name: "Audit", description: null, organization_id: "o1", status: "planned", priority: "normal" }],
+      items: [
+        {
+          id: "p1",
+          name: "Audit",
+          description: null,
+          organization_id: "o1",
+          status: "planned",
+          priority: "normal",
+        },
+      ],
     });
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
     const Page = (await import("@/app/(admin)/admin/projects/page")).default;
@@ -126,7 +144,16 @@ describe("AdminProjectsPage", () => {
 
   it("handles unknown org gracefully", async () => {
     mockProjectsList.mockResolvedValue({
-      items: [{ id: "p1", name: "Audit", description: null, organization_id: "missing", status: "planned", priority: "normal" }],
+      items: [
+        {
+          id: "p1",
+          name: "Audit",
+          description: null,
+          organization_id: "missing",
+          status: "planned",
+          priority: "normal",
+        },
+      ],
     });
     mockOrgsList.mockResolvedValue([]);
     const Page = (await import("@/app/(admin)/admin/projects/page")).default;

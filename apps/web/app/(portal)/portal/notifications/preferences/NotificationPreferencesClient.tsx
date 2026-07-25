@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { getClientApi } from "@/lib/client-api";
@@ -25,7 +25,13 @@ const CHANNELS = [
 ];
 
 function moduleIcon(moduleKey: string) {
-  const icons: Record<string, string> = { tickets: "🎫", projects: "📋", documents: "📄", billing: "💳", system: "⚙️" };
+  const icons: Record<string, string> = {
+    tickets: "🎫",
+    projects: "📋",
+    documents: "📄",
+    billing: "💳",
+    system: "⚙️",
+  };
   return icons[moduleKey] ?? "🔔";
 }
 
@@ -39,11 +45,15 @@ export default function NotificationPreferencesClient() {
     try {
       const result = await getClientApi().notifications.listPreferences();
       setPreferences(result.preferences);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchPrefs(); }, [fetchPrefs]);
+  useEffect(() => {
+    fetchPrefs();
+  }, [fetchPrefs]);
 
   function isEnabled(moduleKey: string, channel: string): boolean {
     const pref = preferences.find((p) => p.module_key === moduleKey && p.channel === channel);
@@ -55,9 +65,12 @@ export default function NotificationPreferencesClient() {
     setPreferences((prev) => {
       const existing = prev.find((p) => p.module_key === moduleKey && p.channel === channel);
       if (existing) {
-        return prev.map((p) => p.id === existing.id ? { ...p, enabled: !current } : p);
+        return prev.map((p) => (p.id === existing.id ? { ...p, enabled: !current } : p));
       }
-      return [...prev, { id: "", organization_id: null, module_key: moduleKey, channel, enabled: !current }];
+      return [
+        ...prev,
+        { id: "", organization_id: null, module_key: moduleKey, channel, enabled: !current },
+      ];
     });
   }
 
@@ -70,19 +83,21 @@ export default function NotificationPreferencesClient() {
         moduleKey: m.key,
         channel: c.key,
         enabled: isEnabled(m.key, c.key),
-      }))
+      })),
     );
 
     try {
       await getClientApi().notifications.updatePreferences({ preferences: prefsPayload });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setSaving(false);
   }
 
   if (loading) {
-    return <div className="py-8 text-center text-sm text-slate-500">Loading preferences...</div>;
+    return <div className="py-8 text-center text-sm text-slate-400">Loading preferences...</div>;
   }
 
   return (
@@ -97,9 +112,16 @@ export default function NotificationPreferencesClient() {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-white/10">
-              <th className="px-4 py-3 text-xs uppercase tracking-[0.12em] text-slate-500">Module</th>
+              <th className="px-4 py-3 text-xs uppercase tracking-[0.12em] text-slate-400">
+                Module
+              </th>
               {CHANNELS.map((c) => (
-                <th key={c.key} className="px-4 py-3 text-xs uppercase tracking-[0.12em] text-slate-500 text-center">{c.label}</th>
+                <th
+                  key={c.key}
+                  className="px-4 py-3 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
+                >
+                  {c.label}
+                </th>
               ))}
             </tr>
           </thead>
@@ -122,9 +144,11 @@ export default function NotificationPreferencesClient() {
                         role="switch"
                         aria-checked={enabled}
                       >
-                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                          enabled ? "translate-x-6" : "translate-x-1"
-                        }`} />
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
+                            enabled ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
                       </button>
                     </td>
                   );
@@ -141,7 +165,7 @@ export default function NotificationPreferencesClient() {
         </button>
       </div>
 
-      <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-xs text-slate-500">
+      <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-xs text-slate-400">
         Changes take effect immediately. In-app notifications appear in the bell icon in the header.
         Email notifications require SMTP to be configured on the server.
       </div>

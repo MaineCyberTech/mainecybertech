@@ -5,10 +5,8 @@ import { logger } from "../lib/logger";
 import { failure, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
-import {
-  checkIdempotencyKey,
-  storeIdempotencyKey,
-} from "../lib/idempotency";
+import { verifyWebhookSignature } from "../lib/webhook-signature";
+import { checkIdempotencyKey, storeIdempotencyKey } from "../lib/idempotency";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -64,22 +62,14 @@ router.post("/stripe", async (req, res, next) => {
   try {
     const signature = req.headers["stripe-signature"] as string | undefined;
     if (!signature) {
-      res
-        .status(400)
-        .json(
-          failure("MISSING_SIGNATURE", "Missing stripe-signature header", 400),
-        );
+      res.status(400).json(failure("MISSING_SIGNATURE", "Missing stripe-signature header", 400));
       return;
     }
 
     const env = getEnv();
     const stripeSecret = env.STRIPE_WEBHOOK_SECRET;
     if (!stripeSecret) {
-      res
-        .status(500)
-        .json(
-          failure("CONFIG_ERROR", "Stripe webhook secret not configured", 500),
-        );
+      res.status(500).json(failure("CONFIG_ERROR", "Stripe webhook secret not configured", 500));
       return;
     }
 
@@ -88,22 +78,12 @@ router.post("/stripe", async (req, res, next) => {
     });
     let event: any;
     try {
-      event = stripe.webhooks.constructEvent(
-        (req as any).rawBody,
-        signature,
-        stripeSecret,
-      );
+      event = stripe.webhooks.constructEvent((req as any).rawBody, signature, stripeSecret);
     } catch (err) {
       logger.error({ err }, "Stripe webhook signature verification failed");
       res
         .status(400)
-        .json(
-          failure(
-            "INVALID_SIGNATURE",
-            "Webhook signature verification failed",
-            400,
-          ),
-        );
+        .json(failure("INVALID_SIGNATURE", "Webhook signature verification failed", 400));
       return;
     }
 
@@ -117,10 +97,7 @@ router.post("/stripe", async (req, res, next) => {
 
     const supabase = getSupabaseAdmin();
 
-    if (
-      event.type === "invoice.paid" ||
-      event.type === "invoice.payment_failed"
-    ) {
+    if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
       const inv = event.data?.object;
       if (inv?.customer) {
         const { data: customer } = await supabase
@@ -131,9 +108,7 @@ router.post("/stripe", async (req, res, next) => {
 
         if (customer) {
           const status =
-            inv.status === "open" &&
-            inv.due_date &&
-            new Date(inv.due_date * 1000) < new Date()
+            inv.status === "open" && inv.due_date && new Date(inv.due_date * 1000) < new Date()
               ? "overdue"
               : inv.status;
           await supabase.from("invoices").upsert(
@@ -148,14 +123,10 @@ router.post("/stripe", async (req, res, next) => {
               currency: inv.currency,
               hosted_invoice_url: inv.hosted_invoice_url,
               invoice_pdf_url: inv.invoice_pdf,
-              due_at: inv.due_date
-                ? new Date(inv.due_date * 1000).toISOString()
-                : null,
+              due_at: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
               paid_at:
                 inv.status === "paid"
-                  ? new Date(
-                      inv.status_transitions?.paid_at * 1000,
-                    ).toISOString()
+                  ? new Date(inv.status_transitions?.paid_at * 1000).toISOString()
                   : null,
             },
             { onConflict: "stripe_invoice_id" },
@@ -221,11 +192,7 @@ router.post("/stripe", async (req, res, next) => {
       metadata: { id: event.id },
     });
 
-    await logWebhookDelivery(
-      `stripe.${event.type}`,
-      req.body,
-      `stripe-${event.id}`,
-    );
+    await logWebhookDelivery(`stripe.${event.type}`, req.body, `stripe-${event.id}`);
 
     res.json(success({ received: true }));
   } catch (error) {
@@ -245,6 +212,17 @@ router.post("/jira", async (req, res, next) => {
       "Jira webhook received",
     );
 
+    const jiraSecret = getEnv().JIRA_WEBHOOK_SECRET;
+    if (jiraSecret) {
+      const sig = req.headers["x-hub-signature"] as string | undefined;
+      const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
+      if (!verifyWebhookSignature(rawBody, sig, jiraSecret)) {
+        logger.warn("Jira webhook signature verification failed");
+        res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
+        return;
+      }
+    }
+
     const jiraKey = `jira-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}`;
     if (await dedupWebhook(jiraKey)) {
       res.json(success({ received: true }));
@@ -254,8 +232,7 @@ router.post("/jira", async (req, res, next) => {
     if (issueKey && statusName) {
       const supabase = getSupabaseAdmin();
       const mappedStatus =
-        JIRA_STATUS_MAP[statusName] ??
-        statusName.toLowerCase().replace(/\s+/g, "_");
+        JIRA_STATUS_MAP[statusName] ?? statusName.toLowerCase().replace(/\s+/g, "_");
       const { data: task } = await supabase
         .from("project_tasks")
         .select("id, status")
@@ -263,10 +240,7 @@ router.post("/jira", async (req, res, next) => {
         .single();
 
       if (task && task.status !== mappedStatus) {
-        await supabase
-          .from("project_tasks")
-          .update({ status: mappedStatus })
-          .eq("id", task.id);
+        await supabase.from("project_tasks").update({ status: mappedStatus }).eq("id", task.id);
         logger.info(
           { issueKey, taskId: task.id, from: task.status, to: mappedStatus },
           "Task status synced from Jira webhook",
@@ -281,11 +255,7 @@ router.post("/jira", async (req, res, next) => {
       metadata: { issue: issueKey, summary, status: statusName },
     });
 
-    await logWebhookDelivery(
-      `jira.${event.webhookEvent ?? "unknown"}`,
-      req.body,
-      jiraKey,
-    );
+    await logWebhookDelivery(`jira.${event.webhookEvent ?? "unknown"}`, req.body, jiraKey);
 
     res.json(success({ received: true }));
   } catch (error) {
@@ -305,6 +275,17 @@ router.post("/jsm", async (req, res, next) => {
       "JSM webhook received",
     );
 
+    const jsmSecret = getEnv().JSM_WEBHOOK_SECRET;
+    if (jsmSecret) {
+      const sig = req.headers["x-hub-signature"] as string | undefined;
+      const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
+      if (!verifyWebhookSignature(rawBody, sig, jsmSecret)) {
+        logger.warn("JSM webhook signature verification failed");
+        res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
+        return;
+      }
+    }
+
     const jsmKey = `jsm-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}`;
     if (await dedupWebhook(jsmKey)) {
       res.json(success({ received: true }));
@@ -314,8 +295,7 @@ router.post("/jsm", async (req, res, next) => {
     if (issueKey && statusName) {
       const supabase = getSupabaseAdmin();
       const mappedStatus =
-        JSM_STATUS_MAP[statusName] ??
-        statusName.toLowerCase().replace(/\s+/g, "_");
+        JSM_STATUS_MAP[statusName] ?? statusName.toLowerCase().replace(/\s+/g, "_");
       const { data: ticket } = await supabase
         .from("tickets")
         .select("id, status")
@@ -323,10 +303,7 @@ router.post("/jsm", async (req, res, next) => {
         .single();
 
       if (ticket && ticket.status !== mappedStatus) {
-        await supabase
-          .from("tickets")
-          .update({ status: mappedStatus })
-          .eq("id", ticket.id);
+        await supabase.from("tickets").update({ status: mappedStatus }).eq("id", ticket.id);
         logger.info(
           {
             issueKey,
@@ -346,11 +323,7 @@ router.post("/jsm", async (req, res, next) => {
       metadata: { issue: issueKey, summary, status: statusName },
     });
 
-    await logWebhookDelivery(
-      `jsm.${event.webhookEvent ?? "unknown"}`,
-      req.body,
-      jsmKey,
-    );
+    await logWebhookDelivery(`jsm.${event.webhookEvent ?? "unknown"}`, req.body, jsmKey);
 
     res.json(success({ received: true }));
   } catch (error) {
@@ -362,6 +335,17 @@ router.post("/m365", async (req, res, next) => {
   try {
     const event = req.body;
     logger.info({ resource: event.resource }, "M365 webhook received");
+
+    const m365Secret = getEnv().M365_WEBHOOK_SECRET;
+    if (m365Secret) {
+      const sig = req.headers["x-hub-signature"] as string | undefined;
+      const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
+      if (!verifyWebhookSignature(rawBody, sig, m365Secret)) {
+        logger.warn("M365 webhook signature verification failed");
+        res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
+        return;
+      }
+    }
 
     const m365Key = `m365-${event.resource}-${event.changeType}`;
     if (await dedupWebhook(m365Key)) {
@@ -376,11 +360,7 @@ router.post("/m365", async (req, res, next) => {
       metadata: { resource: event.resource, changeType: event.changeType },
     });
 
-    await logWebhookDelivery(
-      "m365.webhook",
-      req.body,
-      m365Key,
-    );
+    await logWebhookDelivery("m365.webhook", req.body, m365Key);
 
     res.json(success({ received: true }));
   } catch (error) {
