@@ -24,6 +24,9 @@ export function createMockBuilder(result: MockResult) {
     gte: jest.fn(chain),
     lte: jest.fn(chain),
     filter: jest.fn(chain),
+    not: jest.fn(chain),
+    ilike: jest.fn(chain),
+    limit: jest.fn(chain),
     maybeSingle: jest.fn(chain),
     rpc: jest.fn(chain),
     upsert: jest.fn(chain),
@@ -37,10 +40,12 @@ export function createMockBuilder(result: MockResult) {
 
 export function createTestApp() {
   const app = express();
-  app.use(express.json({
-    verify: (req: any, _res, buf) => {
-      req.rawBody = buf.toString();
-    },
-  }));
+  app.use(
+    express.json({
+      verify: (req: any, _res, buf) => {
+        req.rawBody = buf.toString();
+      },
+    }),
+  );
   return app;
 }

@@ -14,11 +14,13 @@ type AdminSubnavProps = {
     | "roles"
     | "sla"
     | "api-keys"
+    | "business-os"
     | string;
 };
 
 const NAV_ITEMS = [
   { key: "home", href: "/admin", label: "Overview" },
+  { key: "business-os", href: "/admin/business-os", label: "Business OS" },
   { key: "approvals", href: "/admin/approvals", label: "Approvals" },
   { key: "organizations", href: "/admin/organizations", label: "Organizations" },
   { key: "users", href: "/admin/users", label: "Users" },

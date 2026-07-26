@@ -24,9 +24,15 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
     return next();
   }
 
-  // Allow internal Docker network requests (server-to-server)
-  const ip = req.ip || req.socket.remoteAddress || "";
-  if (ip.includes("172.") || ip.includes("127.0.0.1") || ip.includes("::1") || ip.includes("::ffff:172.")) {
+  // Allow internal Docker/private network requests (server-to-server)
+  // Express req.ip may be the direct remote address in Docker networks
+  const rawIp = (req.ip || req.socket.remoteAddress || "").replace(/^::ffff:/, "");
+  const forwardedFor = (req.headers["x-forwarded-for"] as string || "").split(",")[0]?.trim() || "";
+  const internalIps = ["127.", "10.", "172.16.", "172.17.", "172.18.", "172.19.", "172.2", "172.3", "192.168."];
+  const isInternal = internalIps.some(
+    (prefix) => rawIp.startsWith(prefix) || forwardedFor.startsWith(prefix) || rawIp === "::1",
+  );
+  if (isInternal) {
     return next();
   }
 

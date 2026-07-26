@@ -1,9 +1,4 @@
-import {
-  ApiClient,
-  type ClientOptions,
-  type RetryOptions,
-  ApiError,
-} from "./client";
+import { ApiClient, type ClientOptions, type RetryOptions, ApiError } from "./client";
 import { AuthApi, type SignInResult, type SignUpResult } from "./auth";
 import { OrganizationsApi } from "./organizations";
 import { MembershipsApi } from "./memberships";
@@ -11,11 +6,7 @@ import { TicketsApi } from "./tickets";
 import { ProjectsApi } from "./projects";
 import { DocumentsApi } from "./documents";
 import { DashboardApi } from "./dashboard";
-import {
-  UsersApi,
-  type UserPermissionsResponse,
-  type PermissionOverride,
-} from "./users";
+import { UsersApi, type UserPermissionsResponse, type PermissionOverride } from "./users";
 import { ProfilesApi } from "./profiles";
 import { AuditApi } from "./audit";
 import { RolesApi, type RolePermissions } from "./roles";
@@ -32,19 +23,17 @@ import {
   type BillingCustomer,
   type BillingSummary,
 } from "./billing";
-import {
-  WebhooksApi,
-  type WebhookEndpoint,
-  type WebhookDelivery,
-} from "./webhooks";
+import { WebhooksApi, type WebhookEndpoint, type WebhookDelivery } from "./webhooks";
 import { BulkApi, type BulkInviteResult } from "./bulk";
 import { ApiKeysApi, type ApiKey, type ApiKeyWithSecret } from "./api-keys";
 import { SLApi, type SLAMetrics } from "./sla";
 import {
-  SearchApi,
-  type SearchResult,
-  type PortalSearchResult,
-} from "./search";
+  ApprovalsApi,
+  type ApprovalRequest,
+  type ApprovalStats,
+  type ApprovalDetail,
+} from "./approvals";
+import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -67,6 +56,9 @@ export type {
   BulkInviteResult,
   SearchResult,
   PortalSearchResult,
+  ApprovalRequest,
+  ApprovalStats,
+  ApprovalDetail,
 };
 
 export class MCTClient {
@@ -88,6 +80,7 @@ export class MCTClient {
   public apiKeys: ApiKeysApi;
   public sla: SLApi;
   public search: SearchApi;
+  public approvals: ApprovalsApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -108,6 +101,7 @@ export class MCTClient {
     this.apiKeys = new ApiKeysApi(client);
     this.sla = new SLApi(client);
     this.search = new SearchApi(client);
+    this.approvals = new ApprovalsApi(client);
   }
 
   static create(opts: ClientOptions) {
