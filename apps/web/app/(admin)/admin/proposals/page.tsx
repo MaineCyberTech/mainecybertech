@@ -41,20 +41,27 @@ const statusPill = (s: string) => {
 export default async function ProposalsPage() {
   await requireAdminAccess();
   const api = getApiClient();
-  const result = await api.proposals.list({});
-  const proposals = result.items as Array<{
+
+  let proposals = [] as Array<{
     id: string;
     title: string;
     status: string;
     grand_total: number;
     created_at: string;
   }>;
+  let draftCount = 0;
+  let sentCount = 0;
+  let approvedCount = 0;
 
-  const draftCount = result.items.filter((p: { status: string }) => p.status === "draft").length;
-  const sentCount = result.items.filter((p: { status: string }) => p.status === "sent").length;
-  const approvedCount = result.items.filter(
-    (p: { status: string }) => p.status === "approved",
-  ).length;
+  try {
+    const result = await api.proposals.list({});
+    proposals = result.items as typeof proposals;
+    draftCount = result.items.filter((p: { status: string }) => p.status === "draft").length;
+    sentCount = result.items.filter((p: { status: string }) => p.status === "sent").length;
+    approvedCount = result.items.filter((p: { status: string }) => p.status === "approved").length;
+  } catch {
+    // Gracefully degrade if proposals API is not yet available
+  }
 
   return (
     <AdminPageShell

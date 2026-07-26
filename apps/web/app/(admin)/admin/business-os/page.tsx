@@ -46,21 +46,44 @@ export default async function BusinessOsPage() {
   await requireAdminAccess();
   const api = getApiClient();
 
-  const [summary, overdueApprovals, recentActivity, orgHealth] = await Promise.all([
-    api.dashboard.businessOsSummary(),
-    api.dashboard.approvalsOverdue(),
-    api.dashboard.recentActivity({ limit: 10 }),
-    api.dashboard.orgHealth(),
-  ]);
-
-  const overdue = overdueApprovals as { items: unknown[]; total: number };
-  const activity = recentActivity as unknown[];
-  const health = orgHealth as Array<{
+  let summary: Awaited<ReturnType<typeof api.dashboard.businessOsSummary>> = {
+    organizations: { total: 0, approved: 0, pending: 0, recent: [] },
+    tickets: { open: 0 },
+    projects: { active: 0 },
+    documents: { total: 0 },
+    approvals: { pending: 0 },
+    users: { total: 0 },
+  };
+  let overdue = { items: [] as unknown[], total: 0 };
+  let activity = [] as unknown[];
+  let health = [] as Array<{
     id: string;
     name: string;
     openTickets: number;
     activeProjects: number;
   }>;
+
+  try {
+    const results = await Promise.allSettled([
+      api.dashboard.businessOsSummary(),
+      api.dashboard.approvalsOverdue(),
+      api.dashboard.recentActivity({ limit: 10 }),
+      api.dashboard.orgHealth(),
+    ]);
+    if (results[0].status === "fulfilled") summary = results[0].value;
+    if (results[1].status === "fulfilled")
+      overdue = results[1].value as { items: unknown[]; total: number };
+    if (results[2].status === "fulfilled") activity = results[2].value as unknown[];
+    if (results[3].status === "fulfilled")
+      health = results[3].value as Array<{
+        id: string;
+        name: string;
+        openTickets: number;
+        activeProjects: number;
+      }>;
+  } catch {
+    // Gracefully degrade if business OS API is not yet available
+  }
 
   return (
     <AdminPageShell
