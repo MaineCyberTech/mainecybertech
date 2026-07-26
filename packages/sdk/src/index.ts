@@ -33,6 +33,13 @@ import {
   type ApprovalStats,
   type ApprovalDetail,
 } from "./approvals";
+import {
+  ProposalsApi,
+  type Proposal,
+  type ProposalPhase,
+  type ProposalLineItem,
+  type ProposalDetail,
+} from "./proposals";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -59,6 +66,10 @@ export type {
   ApprovalRequest,
   ApprovalStats,
   ApprovalDetail,
+  Proposal,
+  ProposalPhase,
+  ProposalLineItem,
+  ProposalDetail,
 };
 
 export class MCTClient {
@@ -81,6 +92,7 @@ export class MCTClient {
   public sla: SLApi;
   public search: SearchApi;
   public approvals: ApprovalsApi;
+  public proposals: ProposalsApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -102,6 +114,7 @@ export class MCTClient {
     this.sla = new SLApi(client);
     this.search = new SearchApi(client);
     this.approvals = new ApprovalsApi(client);
+    this.proposals = new ProposalsApi(client);
   }
 
   static create(opts: ClientOptions) {

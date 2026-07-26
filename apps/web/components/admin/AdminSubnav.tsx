@@ -25,6 +25,7 @@ const NAV_ITEMS = [
   { key: "organizations", href: "/admin/organizations", label: "Organizations" },
   { key: "users", href: "/admin/users", label: "Users" },
   { key: "roles", href: "/admin/roles", label: "Roles" },
+  { key: "proposals", href: "/admin/proposals", label: "Proposals" },
   { key: "tickets", href: "/admin/tickets", label: "Tickets" },
   { key: "documents", href: "/admin/documents", label: "Documents" },
   { key: "projects", href: "/admin/projects", label: "Projects" },
