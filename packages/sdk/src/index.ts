@@ -60,6 +60,13 @@ import {
   type WebsiteMonitor,
   type DmarcAssessment,
 } from "./batch";
+import {
+  SecurityOpsApi,
+  type OffboardingRecord,
+  type BreakGlassAccount,
+  type OnboardingClient,
+  type PatchGroup,
+} from "./security-ops";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -111,6 +118,10 @@ export type {
   StatusItem,
   WebsiteMonitor,
   DmarcAssessment,
+  OffboardingRecord,
+  BreakGlassAccount,
+  OnboardingClient,
+  PatchGroup,
 };
 
 export class MCTClient {
@@ -143,6 +154,7 @@ export class MCTClient {
   public vendors: VendorsApi;
   public serviceCatalog: ServiceCatalogApi;
   public batch: BatchApi;
+  public securityOps: SecurityOpsApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -174,6 +186,7 @@ export class MCTClient {
     this.vendors = new VendorsApi(client);
     this.serviceCatalog = new ServiceCatalogApi(client);
     this.batch = new BatchApi(client);
+    this.securityOps = new SecurityOpsApi(client);
   }
 
   static create(opts: ClientOptions) {
