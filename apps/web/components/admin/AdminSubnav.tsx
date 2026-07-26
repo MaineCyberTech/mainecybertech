@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { key: "tickets", href: "/admin/tickets", label: "Tickets" },
   { key: "documents", href: "/admin/documents", label: "Documents" },
   { key: "findings", href: "/admin/findings", label: "Findings" },
+  { key: "assets", href: "/admin/assets", label: "Assets" },
   { key: "projects", href: "/admin/projects", label: "Projects" },
   { key: "sla", href: "/admin/sla", label: "SLA" },
   { key: "api-keys", href: "/admin/api-keys", label: "API Keys" },

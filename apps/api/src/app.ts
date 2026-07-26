@@ -41,6 +41,7 @@ import approvalsRouter from "./routes/approvals";
 import businessOsRouter from "./routes/business-os";
 import proposalsRouter from "./routes/proposals";
 import findingsRouter from "./routes/findings";
+import assetsRouter from "./routes/assets";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -130,6 +131,7 @@ export function createApp(): Express {
   app.use("/api/v1/business-os", businessOsRouter);
   app.use("/api/v1/proposals", proposalsRouter);
   app.use("/api/v1/findings", findingsRouter);
+  app.use("/api/v1/assets", assetsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
