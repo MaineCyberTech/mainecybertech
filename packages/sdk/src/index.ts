@@ -74,6 +74,7 @@ import {
   type IdentityVerification,
   type EndpointSecurity,
 } from "./security-suite";
+import { GovernanceApi } from "./governance";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -167,6 +168,7 @@ export class MCTClient {
   public batch: BatchApi;
   public securityOps: SecurityOpsApi;
   public securitySuite: SecuritySuiteApi;
+  public governance: GovernanceApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -200,6 +202,7 @@ export class MCTClient {
     this.batch = new BatchApi(client);
     this.securityOps = new SecurityOpsApi(client);
     this.securitySuite = new SecuritySuiteApi(client);
+    this.governance = new GovernanceApi(client);
   }
 
   static create(opts: ClientOptions) {

@@ -45,6 +45,7 @@ const NAV_ITEMS = [
   { key: "incidents", href: "/admin/incidents", label: "Incidents" },
   { key: "id-verify", href: "/admin/id-verify", label: "ID Verify" },
   { key: "endpoint-security", href: "/admin/endpoint-security", label: "Endpoints" },
+  { key: "governance", href: "/admin/governance", label: "Governance" },
   { key: "tickets", href: "/admin/tickets", label: "Tickets" },
   { key: "documents", href: "/admin/documents", label: "Documents" },
   { key: "findings", href: "/admin/findings", label: "Findings" },
