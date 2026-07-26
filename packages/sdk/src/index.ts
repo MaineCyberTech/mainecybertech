@@ -67,6 +67,13 @@ import {
   type OnboardingClient,
   type PatchGroup,
 } from "./security-ops";
+import {
+  SecuritySuiteApi,
+  type M365HardeningRecord,
+  type IncidentRecord,
+  type IdentityVerification,
+  type EndpointSecurity,
+} from "./security-suite";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -122,6 +129,10 @@ export type {
   BreakGlassAccount,
   OnboardingClient,
   PatchGroup,
+  M365HardeningRecord,
+  IncidentRecord,
+  IdentityVerification,
+  EndpointSecurity,
 };
 
 export class MCTClient {
@@ -155,6 +166,7 @@ export class MCTClient {
   public serviceCatalog: ServiceCatalogApi;
   public batch: BatchApi;
   public securityOps: SecurityOpsApi;
+  public securitySuite: SecuritySuiteApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -187,6 +199,7 @@ export class MCTClient {
     this.serviceCatalog = new ServiceCatalogApi(client);
     this.batch = new BatchApi(client);
     this.securityOps = new SecurityOpsApi(client);
+    this.securitySuite = new SecuritySuiteApi(client);
   }
 
   static create(opts: ClientOptions) {

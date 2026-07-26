@@ -50,6 +50,7 @@ import vendorsRouter from "./routes/vendors";
 import serviceCatalogRouter from "./routes/service-catalog";
 import batchRouter from "./routes/batch";
 import securityOpsRouter from "./routes/security-ops";
+import securitySuiteRouter from "./routes/security-suite";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -148,6 +149,7 @@ export function createApp(): Express {
   app.use("/api/v1/service-catalog", serviceCatalogRouter);
   app.use("/api/v1/batch", batchRouter);
   app.use("/api/v1/security-ops", securityOpsRouter);
+  app.use("/api/v1/security-suite", securitySuiteRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
