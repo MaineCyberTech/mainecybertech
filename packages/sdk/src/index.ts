@@ -52,6 +52,7 @@ import { QbrApi, type QbrReport } from "./qbr";
 import { FileRequestsApi, type FileRequest } from "./file-requests";
 import { AiApi, type TriageAnalysis, type TicketSummary, type ReplyDraft } from "./ai";
 import { VendorsApi, type VendorContract, type VendorContact } from "./vendors";
+import { ServiceCatalogApi, type ServiceCatalogItem } from "./service-catalog";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -98,6 +99,7 @@ export type {
   ReplyDraft,
   VendorContract,
   VendorContact,
+  ServiceCatalogItem,
 };
 
 export class MCTClient {
@@ -128,6 +130,7 @@ export class MCTClient {
   public fileRequests: FileRequestsApi;
   public ai: AiApi;
   public vendors: VendorsApi;
+  public serviceCatalog: ServiceCatalogApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -157,6 +160,7 @@ export class MCTClient {
     this.fileRequests = new FileRequestsApi(client);
     this.ai = new AiApi(client);
     this.vendors = new VendorsApi(client);
+    this.serviceCatalog = new ServiceCatalogApi(client);
   }
 
   static create(opts: ClientOptions) {

@@ -32,6 +32,7 @@ const NAV_ITEMS = [
   { key: "ai", href: "/admin/ai", label: "AI Tools" },
   { key: "vendor-contracts", href: "/admin/vendor-contracts", label: "Contracts" },
   { key: "vendor-contacts", href: "/admin/vendor-contacts", label: "Vendors" },
+  { key: "service-catalog", href: "/admin/service-catalog", label: "Services" },
   { key: "tickets", href: "/admin/tickets", label: "Tickets" },
   { key: "documents", href: "/admin/documents", label: "Documents" },
   { key: "findings", href: "/admin/findings", label: "Findings" },

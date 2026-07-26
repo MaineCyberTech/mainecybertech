@@ -47,6 +47,7 @@ import qbrRouter from "./routes/qbr";
 import fileRequestsRouter from "./routes/file-requests";
 import aiRouter from "./routes/ai";
 import vendorsRouter from "./routes/vendors";
+import serviceCatalogRouter from "./routes/service-catalog";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -142,6 +143,7 @@ export function createApp(): Express {
   app.use("/api/v1/file-requests", fileRequestsRouter);
   app.use("/api/v1/ai", aiRouter);
   app.use("/api/v1/vendors", vendorsRouter);
+  app.use("/api/v1/service-catalog", serviceCatalogRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
