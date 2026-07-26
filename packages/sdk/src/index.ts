@@ -42,6 +42,12 @@ import {
 } from "./proposals";
 import { FindingsApi, type Finding, type FindingDetail, type FindingStats } from "./findings";
 import { AssetsApi, type Asset, type AssetDetail, type AssetStats } from "./assets";
+import {
+  DomainMonitorsApi,
+  type DomainMonitor,
+  type DomainMonitorDetail,
+  type DomainStats,
+} from "./domain-monitors";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -78,6 +84,9 @@ export type {
   Asset,
   AssetDetail,
   AssetStats,
+  DomainMonitor,
+  DomainMonitorDetail,
+  DomainStats,
 };
 
 export class MCTClient {
@@ -103,6 +112,7 @@ export class MCTClient {
   public proposals: ProposalsApi;
   public findings: FindingsApi;
   public assets: AssetsApi;
+  public domainMonitors: DomainMonitorsApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -127,6 +137,7 @@ export class MCTClient {
     this.proposals = new ProposalsApi(client);
     this.findings = new FindingsApi(client);
     this.assets = new AssetsApi(client);
+    this.domainMonitors = new DomainMonitorsApi(client);
   }
 
   static create(opts: ClientOptions) {

@@ -26,6 +26,7 @@ const NAV_ITEMS = [
   { key: "users", href: "/admin/users", label: "Users" },
   { key: "roles", href: "/admin/roles", label: "Roles" },
   { key: "proposals", href: "/admin/proposals", label: "Proposals" },
+  { key: "domain-monitors", href: "/admin/domain-monitors", label: "DNS" },
   { key: "tickets", href: "/admin/tickets", label: "Tickets" },
   { key: "documents", href: "/admin/documents", label: "Documents" },
   { key: "findings", href: "/admin/findings", label: "Findings" },
