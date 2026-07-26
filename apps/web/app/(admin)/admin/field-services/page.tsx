@@ -3,6 +3,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Field Services - Admin" };
 
@@ -44,13 +45,14 @@ export default async function FieldServicesPage() {
           { key: "staging", label: "Staging", count: counts.staging || 0 },
           { key: "network-diagrams", label: "Diagrams", count: counts.diagrams || 0 },
         ].map((m) => (
-          <div
+          <Link
             key={m.key}
-            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-center"
+            href={`/admin/field-services/${m.key}`}
+            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-center transition hover:border-emerald-600/25 hover:bg-[#0A1118]/80"
           >
             <p className="font-orbitron text-xl text-slate-50">{m.count}</p>
             <p className="mt-1 text-xs text-slate-400">{m.label}</p>
-          </div>
+          </Link>
         ))}
       </div>
     </AdminPageShell>

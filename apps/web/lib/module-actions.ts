@@ -863,6 +863,396 @@ export async function createRetention(formData: FormData) {
   }
 }
 
+// ── Update Actions ──────────────────────────────────────────────
+
+export async function updateAsset(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.assets.update(id, {
+      name: String(formData.get("name") || ""),
+      assetType: String(formData.get("assetType") || ""),
+      make: String(formData.get("make") || ""),
+      model: String(formData.get("model") || ""),
+      serialNumber: String(formData.get("serialNumber") || ""),
+      assetTag: String(formData.get("assetTag") || ""),
+      status: String(formData.get("status") || ""),
+      location: String(formData.get("location") || ""),
+      purchaseDate: String(formData.get("purchaseDate") || ""),
+      warrantyExpires: String(formData.get("warrantyExpires") || ""),
+      lifecycleScore: Number(formData.get("lifecycleScore") || 0),
+      maintenanceNotes: String(formData.get("maintenanceNotes") || ""),
+    } as Record<string, unknown>);
+    revalidatePath("/admin/assets");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateBreakGlass(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.securityOps.breakGlass.update(id, {
+      accountName: String(formData.get("accountName") || ""),
+      system: String(formData.get("system") || ""),
+      custodianName: String(formData.get("custodianName") || ""),
+      lastRotatedAt: String(formData.get("lastRotatedAt") || ""),
+      nextRotationAt: String(formData.get("nextRotationAt") || ""),
+      accessProcedure: String(formData.get("accessProcedure") || ""),
+      testNotes: String(formData.get("testNotes") || ""),
+      status: String(formData.get("status") || ""),
+    });
+    revalidatePath("/admin/break-glass");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateDmarc(id: string, formData: FormData) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+    const res = await fetch(`${baseUrl}/api/v1/batch/dmarc/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        domain: String(formData.get("domain") || ""),
+        spf_valid: formData.get("spfValid") === "on",
+        dkim_configured: formData.get("dkimConfigured") === "on",
+        dmarc_valid: formData.get("dmarcValid") === "on",
+        dmarc_policy: String(formData.get("dmarcPolicy") || ""),
+        recommendation_notes: String(formData.get("recommendationNotes") || ""),
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    revalidatePath("/admin/dmarc");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateDomainMonitor(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.domainMonitors.update(id, {
+      domain: String(formData.get("domain") || ""),
+      displayName: String(formData.get("displayName") || ""),
+      dnsProvider: String(formData.get("dnsProvider") || ""),
+      cloudflareProxied: formData.get("cloudflareProxied") === "on",
+      checkIntervalHours: Number(formData.get("checkIntervalHours") || 24),
+      alertsEnabled: formData.get("alertsEnabled") === "on",
+    } as Record<string, unknown>);
+    revalidatePath("/admin/domain-monitors");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateEndpoint(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.securitySuite.endpoints.update(id, {
+      deviceGroup: String(formData.get("deviceGroup") || ""),
+      totalEndpoints: Number(formData.get("totalEndpoints") || 0),
+      avInstalled: Number(formData.get("avInstalled") || 0),
+      diskEncrypted: Number(formData.get("diskEncrypted") || 0),
+      mdmEnrolled: Number(formData.get("mdmEnrolled") || 0),
+      coveragePct: Number(formData.get("coveragePct") || 0),
+    });
+    revalidatePath("/admin/endpoint-security");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateFileRequest(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await (api.fileRequests as any).update(id, {
+      title: String(formData.get("title") || ""),
+      description: String(formData.get("description") || ""),
+      token: String(formData.get("token") || ""),
+      expiresAt: String(formData.get("expiresAt") || ""),
+      maxFileSizeMb: Number(formData.get("maxFileSizeMb") || 0),
+      maxFiles: Number(formData.get("maxFiles") || 0),
+      status: String(formData.get("status") || ""),
+    });
+    revalidatePath("/admin/file-requests");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateFinding(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.findings.update(id, {
+      title: String(formData.get("title") || ""),
+      description: String(formData.get("description") || ""),
+      severity: String(formData.get("severity") || ""),
+      status: String(formData.get("status") || ""),
+      source: String(formData.get("source") || ""),
+      remediationPlan: String(formData.get("remediationPlan") || ""),
+      remediationDeadline: String(formData.get("remediationDeadline") || ""),
+      findingCategory: String(formData.get("findingCategory") || ""),
+      affectedSystems: String(formData.get("affectedSystems") || ""),
+    });
+    revalidatePath("/admin/findings");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateIdVerify(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.securitySuite.idVerify.update(id, {
+      requestorName: String(formData.get("requestorName") || ""),
+      verificationMethod: String(formData.get("verificationMethod") || ""),
+      actionAuthorized: String(formData.get("actionAuthorized") || ""),
+      verificationPass: formData.get("verificationPass") === "on",
+      notes: String(formData.get("notes") || ""),
+    });
+    revalidatePath("/admin/id-verify");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateIncident(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.securitySuite.incidents.update(id, {
+      title: String(formData.get("title") || ""),
+      incidentType: String(formData.get("incidentType") || ""),
+      severity: String(formData.get("severity") || ""),
+      status: String(formData.get("status") || ""),
+      description: String(formData.get("description") || ""),
+      affectedSystems: String(formData.get("affectedSystems") || ""),
+      rootCause: String(formData.get("rootCause") || ""),
+      lessonsLearned: String(formData.get("lessonsLearned") || ""),
+    });
+    revalidatePath("/admin/incidents");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateLicense(id: string, formData: FormData) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+    const res = await fetch(`${baseUrl}/api/v1/batch/licenses/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vendor: String(formData.get("vendor") || ""),
+        product_name: String(formData.get("productName") || ""),
+        total_seats: Number(formData.get("totalSeats") || 0),
+        assigned_seats: Number(formData.get("assignedSeats") || 0),
+        unused_seats: Number(formData.get("unusedSeats") || 0),
+        cost_per_seat: Number(formData.get("costPerSeat") || 0),
+        annual_cost: Number(formData.get("annualCost") || 0),
+        renewal_date: String(formData.get("renewalDate") || ""),
+        optimization_notes: String(formData.get("optimizationNotes") || ""),
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    revalidatePath("/admin/licenses");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateM365(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.securitySuite.m365.update(id, {
+      tenantDomain: String(formData.get("tenantDomain") || ""),
+      mfaEnforced: formData.get("mfaEnforced") === "on",
+      conditionalAccessConfigured: formData.get("conditionalAccessConfigured") === "on",
+      legacyAuthBlocked: formData.get("legacyAuthBlocked") === "on",
+      overallScore: Number(formData.get("overallScore") || 0),
+      notes: String(formData.get("notes") || ""),
+    });
+    revalidatePath("/admin/m365-hardening");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateOffboarding(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.securityOps.offboarding.update(id, {
+      employeeName: String(formData.get("employeeName") || ""),
+      employeeEmail: String(formData.get("employeeEmail") || ""),
+      department: String(formData.get("department") || ""),
+      offboardingDate: String(formData.get("offboardingDate") || ""),
+      accountDisabled: formData.get("accountDisabled") === "on",
+      mailboxConverted: formData.get("mailboxConverted") === "on",
+      onedriveTransferred: formData.get("onedriveTransferred") === "on",
+      licenseReclaimed: formData.get("licenseReclaimed") === "on",
+      accessReviewed: formData.get("accessReviewed") === "on",
+      evidenceCollected: formData.get("evidenceCollected") === "on",
+    });
+    revalidatePath("/admin/offboarding");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateOnboarding(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.securityOps.onboarding.update(id, {
+      clientName: String(formData.get("clientName") || ""),
+      discoveryComplete: formData.get("discoveryComplete") === "on",
+      m365SetupComplete: formData.get("m365SetupComplete") === "on",
+      securityBaselineApplied: formData.get("securityBaselineApplied") === "on",
+      handoffComplete: formData.get("handoffComplete") === "on",
+      notes: String(formData.get("notes") || ""),
+    });
+    revalidatePath("/admin/onboarding");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updatePatchGroup(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.securityOps.patchCompliance.update(id, {
+      deviceGroup: String(formData.get("deviceGroup") || ""),
+      totalDevices: Number(formData.get("totalDevices") || 0),
+      patchedDevices: Number(formData.get("patchedDevices") || 0),
+      pendingPatches: Number(formData.get("pendingPatches") || 0),
+      criticalPatches: Number(formData.get("criticalPatches") || 0),
+      compliancePct: Number(formData.get("compliancePct") || 0),
+    });
+    revalidatePath("/admin/patch-compliance");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateService(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.serviceCatalog.update(id, {
+      name: String(formData.get("name") || ""),
+      description: String(formData.get("description") || ""),
+      category: String(formData.get("category") || ""),
+      basePrice: Number(formData.get("basePrice") || 0),
+      unit: String(formData.get("unit") || ""),
+      billingModel: String(formData.get("billingModel") || ""),
+      isBundled: formData.get("isBundled") === "on",
+      isActive: formData.get("isActive") === "on",
+    } as Record<string, unknown>);
+    revalidatePath("/admin/service-catalog");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateStatusItem(id: string, formData: FormData) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+    const res = await fetch(`${baseUrl}/api/v1/batch/status/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: String(formData.get("title") || ""),
+        severity: String(formData.get("severity") || ""),
+        description: String(formData.get("description") || ""),
+        is_public: formData.get("isPublic") === "on",
+        is_resolved: formData.get("isResolved") === "on",
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    revalidatePath("/admin/status");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateVendorContract(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.vendors.contracts.update(id, {
+      vendorName: String(formData.get("vendorName") || ""),
+      serviceName: String(formData.get("serviceName") || ""),
+      contractNumber: String(formData.get("contractNumber") || ""),
+      renewalDate: String(formData.get("renewalDate") || ""),
+      endDate: String(formData.get("endDate") || ""),
+      contractValue: Number(formData.get("contractValue") || 0),
+      autoRenews: formData.get("autoRenews") === "on",
+      notes: String(formData.get("notes") || ""),
+    } as Record<string, unknown>);
+    revalidatePath("/admin/vendor-contracts");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateVendorContact(id: string, formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.vendors.contacts.update(id, {
+      vendorName: String(formData.get("vendorName") || ""),
+      contactName: String(formData.get("contactName") || ""),
+      roleTitle: String(formData.get("roleTitle") || ""),
+      email: String(formData.get("email") || ""),
+      phone: String(formData.get("phone") || ""),
+      supportPortalUrl: String(formData.get("supportPortalUrl") || ""),
+      accountNumber: String(formData.get("accountNumber") || ""),
+      isPrimary: formData.get("isPrimary") === "on",
+      notes: String(formData.get("notes") || ""),
+    } as Record<string, unknown>);
+    revalidatePath("/admin/vendor-contacts");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function updateWebsiteMonitor(id: string, formData: FormData) {
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+    const res = await fetch(`${baseUrl}/api/v1/batch/website-monitors/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url: String(formData.get("url") || ""),
+        display_name: String(formData.get("displayName") || ""),
+        check_interval_hours: Number(formData.get("checkIntervalHours") || 24),
+        alerts_enabled: formData.get("alertsEnabled") === "on",
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    revalidatePath("/admin/website-monitors");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+// ── Governance ──────────────────────────────────────────────────
+
 export async function createTabletop(formData: FormData) {
   const api = getApiClient();
   try {
