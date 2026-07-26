@@ -51,6 +51,7 @@ import {
 import { QbrApi, type QbrReport } from "./qbr";
 import { FileRequestsApi, type FileRequest } from "./file-requests";
 import { AiApi, type TriageAnalysis, type TicketSummary, type ReplyDraft } from "./ai";
+import { VendorsApi, type VendorContract, type VendorContact } from "./vendors";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -95,6 +96,8 @@ export type {
   TriageAnalysis,
   TicketSummary,
   ReplyDraft,
+  VendorContract,
+  VendorContact,
 };
 
 export class MCTClient {
@@ -124,6 +127,7 @@ export class MCTClient {
   public qbr: QbrApi;
   public fileRequests: FileRequestsApi;
   public ai: AiApi;
+  public vendors: VendorsApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -152,6 +156,7 @@ export class MCTClient {
     this.qbr = new QbrApi(client);
     this.fileRequests = new FileRequestsApi(client);
     this.ai = new AiApi(client);
+    this.vendors = new VendorsApi(client);
   }
 
   static create(opts: ClientOptions) {
