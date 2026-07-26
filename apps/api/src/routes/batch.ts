@@ -10,8 +10,24 @@ import {
   createWebsiteMonitorSchema,
   createDmarcAssessmentSchema,
 } from "../validators/batch";
-
 const router: ReturnType<typeof Router> = Router();
+
+router.get("/status/public", async (_req, res, next) => {
+  try {
+    const sb = getSupabaseAdmin();
+    const { data, error } = await sb
+      .from("status_items")
+      .select("*")
+      .eq("is_public", true)
+      .eq("is_resolved", false)
+      .order("created_at", { ascending: false });
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data ?? []));
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
@@ -100,22 +116,6 @@ crudRoute(
   "dmarc_assessments",
   createDmarcAssessmentSchema as unknown as Record<string, unknown>,
 );
-
-router.get("/status/public", async (_req, res, next) => {
-  try {
-    const sb = getSupabaseAdmin();
-    const { data, error } = await sb
-      .from("status_items")
-      .select("*")
-      .eq("is_public", true)
-      .eq("is_resolved", false)
-      .order("created_at", { ascending: false });
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data ?? []));
-  } catch (e) {
-    next(e);
-  }
-});
 
 router.get("/licenses/savings", async (req, res, next) => {
   try {

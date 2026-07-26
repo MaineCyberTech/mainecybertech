@@ -8,6 +8,41 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { createFileRequestSchema, updateFileRequestSchema } from "../validators/file-requests";
 
 const router: ReturnType<typeof Router> = Router();
+
+router.get("/public/:token", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("file_requests")
+      .select(
+        "id, title, description, token, storage_path, max_file_size_mb, allowed_mime_types, max_files, expires_at, upload_count, status",
+      )
+      .eq("token", req.params.token)
+      .single();
+    if (error || !data) throw new AppError("NOT_FOUND", "File request not found or expired", 404);
+    if (data.status !== "active")
+      throw new AppError("GONE", "This upload link is no longer active", 410);
+    if (new Date(data.expires_at) < new Date())
+      throw new AppError("EXPIRED", "This upload link has expired", 410);
+    if (data.upload_count >= data.max_files)
+      throw new AppError("FULL", "Upload limit reached", 410);
+    res.json(
+      success({
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        maxFileSizeMb: data.max_file_size_mb,
+        allowedMimeTypes: data.allowed_mime_types,
+        maxFiles: data.max_files,
+        uploadCount: data.upload_count,
+        expiresAt: data.expires_at,
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
@@ -145,42 +180,6 @@ router.delete("/:id", async (req, res, next) => {
       entityId: String(req.params.id),
     });
     res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.get("/public/:token", async (req, res, next) => {
-  try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("file_requests")
-      .select(
-        "id, title, description, token, storage_path, max_file_size_mb, allowed_mime_types, max_files, expires_at, upload_count, status",
-      )
-      .eq("token", req.params.token)
-      .single();
-
-    if (error || !data) throw new AppError("NOT_FOUND", "File request not found or expired", 404);
-    if (data.status !== "active")
-      throw new AppError("GONE", "This upload link is no longer active", 410);
-    if (new Date(data.expires_at) < new Date())
-      throw new AppError("EXPIRED", "This upload link has expired", 410);
-    if (data.upload_count >= data.max_files)
-      throw new AppError("FULL", "Upload limit reached", 410);
-
-    res.json(
-      success({
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        maxFileSizeMb: data.max_file_size_mb,
-        allowedMimeTypes: data.allowed_mime_types,
-        maxFiles: data.max_files,
-        uploadCount: data.upload_count,
-        expiresAt: data.expires_at,
-      }),
-    );
   } catch (error) {
     next(error);
   }
