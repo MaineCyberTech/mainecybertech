@@ -53,6 +53,13 @@ import { FileRequestsApi, type FileRequest } from "./file-requests";
 import { AiApi, type TriageAnalysis, type TicketSummary, type ReplyDraft } from "./ai";
 import { VendorsApi, type VendorContract, type VendorContact } from "./vendors";
 import { ServiceCatalogApi, type ServiceCatalogItem } from "./service-catalog";
+import {
+  BatchApi,
+  type LicenseRecord,
+  type StatusItem,
+  type WebsiteMonitor,
+  type DmarcAssessment,
+} from "./batch";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -100,6 +107,10 @@ export type {
   VendorContract,
   VendorContact,
   ServiceCatalogItem,
+  LicenseRecord,
+  StatusItem,
+  WebsiteMonitor,
+  DmarcAssessment,
 };
 
 export class MCTClient {
@@ -131,6 +142,7 @@ export class MCTClient {
   public ai: AiApi;
   public vendors: VendorsApi;
   public serviceCatalog: ServiceCatalogApi;
+  public batch: BatchApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -161,6 +173,7 @@ export class MCTClient {
     this.ai = new AiApi(client);
     this.vendors = new VendorsApi(client);
     this.serviceCatalog = new ServiceCatalogApi(client);
+    this.batch = new BatchApi(client);
   }
 
   static create(opts: ClientOptions) {
