@@ -40,6 +40,7 @@ import bulkRouter from "./routes/bulk";
 import approvalsRouter from "./routes/approvals";
 import businessOsRouter from "./routes/business-os";
 import proposalsRouter from "./routes/proposals";
+import findingsRouter from "./routes/findings";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -128,6 +129,7 @@ export function createApp(): Express {
   app.use("/api/v1/approvals", approvalsRouter);
   app.use("/api/v1/business-os", businessOsRouter);
   app.use("/api/v1/proposals", proposalsRouter);
+  app.use("/api/v1/findings", findingsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
