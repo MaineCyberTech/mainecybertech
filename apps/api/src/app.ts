@@ -53,6 +53,7 @@ import securityOpsRouter from "./routes/security-ops";
 import securitySuiteRouter from "./routes/security-suite";
 import governanceRouter from "./routes/governance";
 import fieldServicesRouter from "./routes/field-services";
+import eduAutomationRouter from "./routes/edu-automation";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -154,6 +155,7 @@ export function createApp(): Express {
   app.use("/api/v1/security-suite", securitySuiteRouter);
   app.use("/api/v1/governance", governanceRouter);
   app.use("/api/v1/field-services", fieldServicesRouter);
+  app.use("/api/v1/edu-automation", eduAutomationRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
