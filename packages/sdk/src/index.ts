@@ -77,6 +77,7 @@ import {
 import { GovernanceApi } from "./governance";
 import { FieldServicesApi } from "./field-services";
 import { EduAutomationApi } from "./edu-automation";
+import { FinalApi } from "./final";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -173,6 +174,7 @@ export class MCTClient {
   public governance: GovernanceApi;
   public fieldServices: FieldServicesApi;
   public eduAutomation: EduAutomationApi;
+  public final: FinalApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -209,6 +211,7 @@ export class MCTClient {
     this.governance = new GovernanceApi(client);
     this.fieldServices = new FieldServicesApi(client);
     this.eduAutomation = new EduAutomationApi(client);
+    this.final = new FinalApi(client);
   }
 
   static create(opts: ClientOptions) {
