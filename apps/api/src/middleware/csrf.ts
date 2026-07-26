@@ -19,20 +19,31 @@ function timingSafeCompare(a: string, b: string): boolean {
   }
 }
 
+const CSRF_SKIP_PATHS = [
+  "/api/v1/auth/sign-in",
+  "/api/v1/auth/sign-up",
+  "/api/v1/auth/forgot-password",
+  "/api/v1/auth/reset-password",
+  "/api/v1/auth/callback",
+];
+
 export function csrfProtection(req: Request, res: Response, next: NextFunction) {
   if (req.headers["authorization"]) {
     return next();
   }
 
-  // Allow internal Docker/private network requests (server-to-server)
-  // Express req.ip may be the direct remote address in Docker networks
-  const rawIp = (req.ip || req.socket.remoteAddress || "").replace(/^::ffff:/, "");
-  const forwardedFor = (req.headers["x-forwarded-for"] as string || "").split(",")[0]?.trim() || "";
-  const internalIps = ["127.", "10.", "172.16.", "172.17.", "172.18.", "172.19.", "172.2", "172.3", "192.168."];
-  const isInternal = internalIps.some(
-    (prefix) => rawIp.startsWith(prefix) || forwardedFor.startsWith(prefix) || rawIp === "::1",
-  );
-  if (isInternal) {
+  // Auth endpoints are rate-limited and don't need CSRF
+  if (CSRF_SKIP_PATHS.includes(req.path)) {
+    return next();
+  }
+
+  // Public contact form is explicitly open
+  if (req.path.startsWith("/api/v1/public/")) {
+    return next();
+  }
+
+  // Webhook endpoints use signature verification
+  if (req.path.startsWith("/api/v1/webhooks/")) {
     return next();
   }
 
