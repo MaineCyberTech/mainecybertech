@@ -84,7 +84,7 @@ Rewrite homepage copy around:
 - Security cameras
 - Cloud backup
 - Disaster recovery
-- Maine small businesses, nonprofits, churches, marinas, warehouses, and local organizations
+- Maine small businesses, campgrounds, restaurants, marinas, warehouses, and local organizations
 
 Use professional, practical, local language.
 

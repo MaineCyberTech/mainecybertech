@@ -13,7 +13,7 @@ const services: Record<string, { title: string; subtitle: string; icon: string; 
     networks: {
       title: "Business Wi-Fi & Network Installation",
       subtitle:
-        "Professional network installation, Wi-Fi design, UniFi setup, and connectivity for Maine offices, churches, marinas, warehouses, and facilities.",
+        "Professional network installation, Wi-Fi design, UniFi setup, and connectivity for Maine offices, restaurants, marinas, warehouses, and facilities.",
       icon: "🌐",
       body: [
         "We provide new installs of business networks and management of pre-existing infrastructure with intentions of updating outdated equipment.",

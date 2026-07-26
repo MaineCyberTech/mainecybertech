@@ -6,7 +6,7 @@ This folder contains the SEO implementation and content strategy pack for Maine 
 
 - Improve local search visibility for Maine Cyber Tech.
 - Create focused service pages for managed IT, cybersecurity, Microsoft 365, networking, Wi-Fi, UniFi, security cameras, cloud backup, and consulting.
-- Build a local SEO blog library targeting Maine businesses, nonprofits, churches, marinas, warehouses, and local organizations.
+- Build a local SEO blog library targeting Maine businesses, campgrounds, restaurants, marinas, warehouses, and local organizations.
 - Add technical SEO foundations to the Next.js marketing site.
 - Add sitemap, robots policy, metadata helpers, and structured data components.
 - Keep admin, portal, login, signup, and password reset routes out of search indexing.
@@ -21,8 +21,8 @@ This folder contains the SEO implementation and content strategy pack for Maine 
 - UniFi installation Maine
 - Security camera installation Maine
 - Cloud backup Maine
-- IT support for churches Maine
-- IT support for nonprofits Maine
+- IT support for restaurants Maine
+- IT support for campgrounds Maine
 - Network installation for warehouses and marinas
 
 ## Implementation Areas

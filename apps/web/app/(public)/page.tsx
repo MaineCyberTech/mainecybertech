@@ -9,7 +9,7 @@ import { buildMetadata } from "../../lib/seo/metadata";
 
 export const metadata: Metadata = buildMetadata({
   description:
-    "Enterprise-grade IT management, proactive cybersecurity, and robust infrastructure built for Maine small businesses, nonprofits, churches, marinas, warehouses, and local organizations.",
+    "Enterprise-grade IT management, proactive cybersecurity, and robust infrastructure built for Maine small businesses, campgrounds, restaurants, marinas, warehouses, and local organizations.",
 });
 
 const services = [
@@ -17,7 +17,7 @@ const services = [
     icon: "🌐",
     title: "Business Networks",
     description:
-      "Professional network installation, Wi-Fi design, UniFi setup, and connectivity for Maine offices, churches, marinas, warehouses, and facilities.",
+      "Professional network installation, Wi-Fi design, UniFi setup, and connectivity for Maine offices, restaurants, marinas, warehouses, and facilities.",
     href: "/services/networks",
   },
   {
@@ -76,7 +76,7 @@ export default function HomePage() {
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-400 sm:text-xl">
             Maine CyberTech provides managed IT services, cybersecurity, Microsoft 365 support,
             business Wi-Fi, network installation, UniFi systems, security cameras, cloud backup, and
-            technology consulting for Maine small businesses, nonprofits, churches, marinas,
+            technology consulting for Maine small businesses, campgrounds, restaurants, marinas,
             warehouses, and local organizations.
           </p>
           <a
@@ -117,12 +117,12 @@ export default function HomePage() {
                 desc: "Managed IT, Microsoft 365, cybersecurity, and day-to-day technology support.",
               },
               {
-                name: "Nonprofits",
+                name: "Campgrounds",
                 desc: "Affordable IT guidance, security reviews, and Microsoft 365 administration.",
               },
               {
-                name: "Churches",
-                desc: "Wi-Fi, security cameras, phone systems, and technology planning for congregations.",
+                name: "Restaurants",
+                desc: "Wi-Fi, security cameras, phone systems, and technology planning for dining and hospitality.",
               },
               {
                 name: "Marinas",
@@ -273,7 +273,7 @@ export default function HomePage() {
             coastal Maine.
           </p>
           <p className="mt-4 text-base text-slate-500">
-            We work with small businesses, nonprofits, churches, marinas, warehouses, and local
+            We work with small businesses, campgrounds, restaurants, marinas, warehouses, and local
             facilities that need practical, professional technology support without a full-time
             internal IT team.
           </p>
@@ -299,7 +299,7 @@ export default function HomePage() {
               },
               {
                 q: "What types of organizations do you work with?",
-                a: "We work with Maine small businesses, nonprofits, churches, marinas, warehouses, and local facilities. Our services are designed for organizations that may not have full-time internal IT staff.",
+                a: "We work with Maine small businesses, campgrounds, restaurants, marinas, warehouses, and local facilities. Our services are designed for organizations that may not have full-time internal IT staff.",
               },
               {
                 q: "Do you support Microsoft 365?",

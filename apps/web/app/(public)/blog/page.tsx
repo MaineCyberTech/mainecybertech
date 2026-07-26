@@ -11,7 +11,7 @@ import { serviceSeo } from "@/lib/seo/services";
 export const metadata: Metadata = buildMetadata({
   title: "Blog",
   description:
-    "Practical IT, cybersecurity, and technology guides for Maine small businesses, nonprofits, and local organizations.",
+    "Practical IT, cybersecurity, and technology guides for Maine small businesses, campgrounds, and local organizations.",
   path: "/blog",
 });
 
@@ -51,7 +51,7 @@ export default function BlogPage() {
             </h1>
             <p className="mt-4 text-lg text-slate-400">
               Practical IT, cybersecurity, and technology guides for Maine small businesses,
-              nonprofits, and local organizations.
+              campgrounds, and local organizations.
             </p>
           </div>
 

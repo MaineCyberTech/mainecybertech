@@ -22,13 +22,13 @@
    - Primary keyword: security camera installation Maine
    - CTA: Security Systems
 
-5. Cybersecurity Checklist for Maine Nonprofits and Small Businesses
-   - Slug: /blog/cybersecurity-checklist-maine-nonprofits-small-businesses
+5. Cybersecurity Checklist for Maine campgrounds and Small Businesses
+   - Slug: /blog/cybersecurity-checklist-maine-campgrounds-small-businesses
    - Primary keyword: cybersecurity services Maine
    - CTA: Cybersecurity Services
 
-6. How to Improve Wi-Fi in Churches, Marinas, Warehouses, and Older Buildings
-   - Slug: /blog/improve-wifi-churches-marinas-warehouses-older-buildings
+6. How to Improve Wi-Fi in restaurants, Marinas, Warehouses, and Older Buildings
+   - Slug: /blog/improve-wifi-restaurants-marinas-warehouses-older-buildings
    - Primary keyword: improve business Wi-Fi Maine
    - CTA: Network Installation
 
@@ -37,8 +37,8 @@
    - Primary keyword: UniFi installation Maine
    - CTA: Network Installation
 
-8. ISP Consolidation Checklist for Churches and Local Organizations
-   - Slug: /blog/isp-consolidation-checklist-churches-local-organizations
+8. ISP Consolidation Checklist for restaurants and Local Organizations
+   - Slug: /blog/isp-consolidation-checklist-restaurants-local-organizations
    - Primary keyword: ISP consolidation checklist
    - CTA: Contact
 
@@ -47,9 +47,9 @@
    - Primary keyword: cloud backup Maine
    - CTA: Cloud Services
 
-10. IT Support for Churches and Nonprofits in Maine: What to Review First
-    - Slug: /blog/it-support-churches-nonprofits-maine
-    - Primary keyword: IT support churches Maine
+10. IT Support for restaurants and campgrounds in Maine: What to Review First
+    - Slug: /blog/it-support-restaurants-campgrounds-maine
+    - Primary keyword: IT support restaurants Maine
     - CTA: Managed IT Services
 
 11. Technology Checklist for Marinas, Warehouses, and Outdoor Facilities
@@ -76,7 +76,7 @@
 22. How Many Security Cameras Does a Small Business Need?
 23. Backup vs Disaster Recovery: What Small Businesses Need to Know
 24. What Files Should a Small Business Back Up?
-25. Phone, Internet, Wi-Fi, and Security Camera Planning for Churches
+25. Phone, Internet, Wi-Fi, and Security Camera Planning for restaurants
 26. Network and Camera Planning for Boat Storage and Warehouse Buildings
 
 ## P2 Posts

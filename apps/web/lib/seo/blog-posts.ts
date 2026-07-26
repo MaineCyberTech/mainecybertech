@@ -214,7 +214,7 @@ export const blogPosts: BlogPost[] = [
     title: "Business Wi-Fi Planning Checklist for Maine Buildings",
     metaTitle: "Business Wi-Fi Planning Checklist for Maine Buildings",
     metaDescription:
-      "Plan better business Wi-Fi for Maine offices, churches, marinas, warehouses, and local facilities with this checklist for coverage, cabling, access points, outdoor areas, and network equipment.",
+      "Plan better business Wi-Fi for Maine offices, restaurants, marinas, warehouses, and local facilities with this checklist for coverage, cabling, access points, outdoor areas, and network equipment.",
     primaryKeyword: "business Wi-Fi Maine",
     category: "Networking",
     relatedServices: ["networks"],

@@ -16,7 +16,7 @@ export const serviceSeo: ServiceSeoConfig[] = [
     title: "Business Wi-Fi & Network Installation",
     metaTitle: "Business Wi-Fi & Network Installation in Maine | Maine CyberTech",
     metaDescription:
-      "Professional network installation, Wi-Fi design, UniFi setup, cabling coordination, firewall planning, and connectivity support for Maine offices, churches, marinas, warehouses, and facilities.",
+      "Professional network installation, Wi-Fi design, UniFi setup, cabling coordination, firewall planning, and connectivity support for Maine offices, restaurants, marinas, warehouses, and facilities.",
     h1: "Business Wi-Fi and Network Installation in Maine",
     primaryKeyword: "network installation Maine",
     secondaryKeywords: [
@@ -45,7 +45,7 @@ export const serviceSeo: ServiceSeoConfig[] = [
     title: "Managed IT Services",
     metaTitle: "Managed IT Services in Maine | Maine CyberTech",
     metaDescription:
-      "Managed IT support for Maine small businesses, nonprofits, churches, marinas, warehouses, and local organizations. Help desk, Microsoft 365, devices, networks, security, and backup planning.",
+      "Managed IT support for Maine small businesses, campgrounds, restaurants, marinas, warehouses, and local organizations. Help desk, Microsoft 365, devices, networks, security, and backup planning.",
     h1: "Managed IT Services in Maine",
     primaryKeyword: "managed IT services Maine",
     secondaryKeywords: [

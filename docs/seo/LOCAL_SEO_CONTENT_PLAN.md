@@ -19,23 +19,23 @@ Example topics:
 
 ### 2. Cybersecurity / Microsoft 365 Security
 
-Target business owners and nonprofit administrators looking for plain-English security guidance.
+Target business owners and campground administrators looking for plain-English security guidance.
 
 Example topics:
 
 - Microsoft 365 Security Checklist for Maine Small Businesses
-- Cybersecurity Checklist for Maine Nonprofits and Small Businesses
+- Cybersecurity Checklist for Maine campgrounds and Small Businesses
 - Why Every Business Should Enable MFA Before Anything Else
 - What to Do After a Suspicious Login Alert in Microsoft 365
 
 ### 3. Wi-Fi / Networking / UniFi
 
-Target local facility managers, churches, marinas, warehouses, and offices with coverage, cabling, or outdoor Wi-Fi needs.
+Target local facility managers, restaurants, marinas, warehouses, and offices with coverage, cabling, or outdoor Wi-Fi needs.
 
 Example topics:
 
 - Business Wi-Fi Planning Checklist for Maine Buildings
-- How to Improve Wi-Fi in Churches, Marinas, Warehouses, and Older Buildings
+- How to Improve Wi-Fi in restaurants, Marinas, Warehouses, and Older Buildings
 - UniFi Network Setup for Small Businesses: What to Plan Before Installation
 - Outdoor Wi-Fi Planning Guide for Maine Properties
 
@@ -67,9 +67,9 @@ Target niches aligned with Maine Cyber Tech's proposal/project work.
 
 Example topics:
 
-- IT Support for Churches and Nonprofits in Maine: What to Review First
+- IT Support for restaurants and campgrounds in Maine: What to Review First
 - Technology Checklist for Marinas, Warehouses, and Outdoor Facilities
-- Phone, Internet, Wi-Fi, and Security Camera Planning for Churches
+- Phone, Internet, Wi-Fi, and Security Camera Planning for restaurants
 - Network and Camera Planning for Boat Storage and Warehouse Buildings
 
 ## Internal linking rules

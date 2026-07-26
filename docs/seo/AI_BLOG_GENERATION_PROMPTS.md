@@ -14,12 +14,12 @@ Company positioning:
 - UniFi network deployments
 - Security camera systems
 - Cloud backup and disaster recovery
-- Technology consulting for small businesses, nonprofits, churches, marinas, warehouses, and local organizations
+- Technology consulting for small businesses, campgrounds, restaurants, marinas, warehouses, and local organizations
 
 Target audience:
 
 - Maine small business owners
-- Nonprofit/church administrators
+- Campground/restaurant administrators
 - Marina/warehouse/facility managers
 - Local organizations with limited internal IT
 - Decision makers who need practical, trustworthy, plain-English guidance

@@ -15,7 +15,7 @@
 
 ## Business description
 
-Maine Cyber Tech provides managed IT services, cybersecurity support, Microsoft 365 administration, business Wi-Fi, network installation, UniFi systems, security cameras, cloud backup, disaster recovery planning, and technology consulting for Maine small businesses, nonprofits, churches, marinas, warehouses, and local organizations.
+Maine Cyber Tech provides managed IT services, cybersecurity support, Microsoft 365 administration, business Wi-Fi, network installation, UniFi systems, security cameras, cloud backup, disaster recovery planning, and technology consulting for Maine small businesses, campgrounds, restaurants, marinas, warehouses, and local organizations.
 
 ## Services to add
 
@@ -47,4 +47,4 @@ Maine Cyber Tech provides managed IT services, cybersecurity support, Microsoft 
 
 ## Review request text
 
-Hi [Name], thanks again for working with Maine Cyber Tech. If you were happy with the service, would you mind leaving us a quick Google review? It helps local businesses and nonprofits find reliable IT, cybersecurity, networking, Wi-Fi, and support services in Maine.
+Hi [Name], thanks again for working with Maine Cyber Tech. If you were happy with the service, would you mind leaving us a quick Google review? It helps local businesses and campgrounds find reliable IT, cybersecurity, networking, Wi-Fi, and support services in Maine.
