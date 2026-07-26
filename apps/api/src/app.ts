@@ -43,6 +43,7 @@ import proposalsRouter from "./routes/proposals";
 import findingsRouter from "./routes/findings";
 import assetsRouter from "./routes/assets";
 import domainMonitorsRouter from "./routes/domain-monitors";
+import qbrRouter from "./routes/qbr";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -134,6 +135,7 @@ export function createApp(): Express {
   app.use("/api/v1/findings", findingsRouter);
   app.use("/api/v1/assets", assetsRouter);
   app.use("/api/v1/domain-monitors", domainMonitorsRouter);
+  app.use("/api/v1/qbr", qbrRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

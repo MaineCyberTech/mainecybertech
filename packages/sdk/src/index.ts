@@ -48,6 +48,7 @@ import {
   type DomainMonitorDetail,
   type DomainStats,
 } from "./domain-monitors";
+import { QbrApi, type QbrReport } from "./qbr";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -87,6 +88,7 @@ export type {
   DomainMonitor,
   DomainMonitorDetail,
   DomainStats,
+  QbrReport,
 };
 
 export class MCTClient {
@@ -113,6 +115,7 @@ export class MCTClient {
   public findings: FindingsApi;
   public assets: AssetsApi;
   public domainMonitors: DomainMonitorsApi;
+  public qbr: QbrApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -138,6 +141,7 @@ export class MCTClient {
     this.findings = new FindingsApi(client);
     this.assets = new AssetsApi(client);
     this.domainMonitors = new DomainMonitorsApi(client);
+    this.qbr = new QbrApi(client);
   }
 
   static create(opts: ClientOptions) {
