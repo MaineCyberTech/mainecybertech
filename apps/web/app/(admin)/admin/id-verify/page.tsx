@@ -4,7 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Identity Verification" };
 export default async function IdVerifyPage() {
@@ -31,11 +30,7 @@ export default async function IdVerifyPage() {
       subnav={<AdminSubnav current="id-verify" />}
       title="Identity Verification Anti-Vishing"
       description="Verify requestor identity before privileged actions like MFA reset, password reset, or vendor changes."
-      actions={
-        <Link href="/admin/id-verify/new" className="cyber-button">
-          New Verification
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
@@ -60,8 +55,6 @@ export default async function IdVerifyPage() {
               icon="🛡️"
               title="No verifications"
               description="Verify identities before privileged changes."
-              actionHref="/admin/id-verify/new"
-              actionLabel="New Verification"
             />
           )}
         </div>

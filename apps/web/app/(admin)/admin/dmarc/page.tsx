@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DMARC Coach - Admin" };
 
@@ -43,11 +41,7 @@ export default async function DmarcPage() {
       subnav={<AdminSubnav current="dmarc" />}
       title="Email Deliverability DMARC Coach"
       description="Guide clients through SPF, DKIM, and DMARC setup for email security."
-      actions={
-        <Link href="/admin/dmarc/new" className="cyber-button">
-          New Assessment
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
@@ -71,8 +65,6 @@ export default async function DmarcPage() {
               icon="📧"
               title="No DMARC assessments"
               description="Record SPF/DKIM/DMARC assessment results."
-              actionHref="/admin/dmarc/new"
-              actionLabel="New Assessment"
             />
           )}
         </div>

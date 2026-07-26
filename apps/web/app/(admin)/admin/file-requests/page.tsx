@@ -44,9 +44,6 @@ export default async function FileRequestsPage() {
       actions={
         <div className="flex flex-wrap gap-2">
           <div className="cyber-pill">{active} Active</div>
-          <Link href="/admin/file-requests/new" className="cyber-button">
-            New Request
-          </Link>
         </div>
       }
     >
@@ -82,8 +79,6 @@ export default async function FileRequestsPage() {
               icon="📁"
               title="No file requests"
               description="Create a secure upload link for a client to submit files."
-              actionHref="/admin/file-requests/new"
-              actionLabel="New Request"
             />
           )}
         </div>

@@ -36,11 +36,7 @@ export default async function VendorContactsPage() {
       subnav={<AdminSubnav current="vendor-contacts" />}
       title="Vendor Contact Escalation Directory"
       description="Centralized vendor contacts, support portals, account IDs, and escalation paths."
-      actions={
-        <Link href="/admin/vendor-contacts/new" className="cyber-button">
-          Add Contact
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -68,8 +64,6 @@ export default async function VendorContactsPage() {
               icon="📞"
               title="No vendor contacts"
               description="Add vendor support contacts and escalation paths."
-              actionHref="/admin/vendor-contacts/new"
-              actionLabel="Add Contact"
             />
           )}
         </div>

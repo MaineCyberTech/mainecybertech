@@ -69,9 +69,6 @@ export default async function AssetsPage() {
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
           <h2 className="cyber-heading text-lg">Assets</h2>
-          <Link href="/admin/assets/new" className="cyber-button">
-            New Asset
-          </Link>
         </div>
         <div className="mt-6 space-y-3">
           {assets.length > 0 ? (
@@ -101,8 +98,6 @@ export default async function AssetsPage() {
               icon="💻"
               title="No assets registered"
               description="Add hardware, warranties, and lifecycle data."
-              actionHref="/admin/assets/new"
-              actionLabel="New Asset"
             />
           )}
         </div>

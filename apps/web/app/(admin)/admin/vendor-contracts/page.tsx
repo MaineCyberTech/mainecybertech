@@ -52,9 +52,6 @@ export default async function VendorContractsPage() {
       actions={
         <div className="flex flex-wrap gap-2">
           <div className="cyber-pill">{upcoming.length} renewing soon</div>
-          <Link href="/admin/vendor-contracts/new" className="cyber-button">
-            Add Contract
-          </Link>
         </div>
       }
     >
@@ -116,8 +113,6 @@ export default async function VendorContractsPage() {
               icon="📅"
               title="No contracts"
               description="Track vendor contracts and renewal dates."
-              actionHref="/admin/vendor-contracts/new"
-              actionLabel="Add Contract"
             />
           )}
         </div>

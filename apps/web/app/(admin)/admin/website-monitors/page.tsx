@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Website Monitor - Admin" };
 
@@ -36,11 +34,7 @@ export default async function WebsiteMonitorPage() {
       subnav={<AdminSubnav current="website-monitors" />}
       title="Website Uptime & SSL Monitor"
       description="Track uptime, SSL expiry, and performance across client websites."
-      actions={
-        <Link href="/admin/website-monitors/new" className="cyber-button">
-          Add Website
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
@@ -65,8 +59,6 @@ export default async function WebsiteMonitorPage() {
               icon="🌐"
               title="No websites monitored"
               description="Add websites to monitor uptime and SSL."
-              actionHref="/admin/website-monitors/new"
-              actionLabel="Add Website"
             />
           )}
         </div>

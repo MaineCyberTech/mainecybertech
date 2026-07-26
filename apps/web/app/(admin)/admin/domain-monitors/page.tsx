@@ -85,9 +85,6 @@ export default async function DomainMonitorsPage() {
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
           <h2 className="cyber-heading text-lg">Monitored Domains ({stats.total})</h2>
-          <Link href="/admin/domain-monitors/new" className="cyber-button">
-            Add Domain
-          </Link>
         </div>
         <div className="mt-6 space-y-3">
           {monitors.length > 0 ? (
@@ -117,8 +114,6 @@ export default async function DomainMonitorsPage() {
               icon="🌐"
               title="No domains monitored"
               description="Add domains to track SSL, DNS, and email deliverability posture."
-              actionHref="/admin/domain-monitors/new"
-              actionLabel="Add Domain"
             />
           )}
         </div>

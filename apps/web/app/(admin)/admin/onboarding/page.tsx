@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Onboarding - Admin" };
 
@@ -38,11 +36,7 @@ export default async function OnboardingPage() {
       subnav={<AdminSubnav current="onboarding" />}
       title="Client Onboarding Command Center"
       description="Repeatable workspace for client discovery, M365 setup, network baseline, security baseline, and handoff."
-      actions={
-        <Link href="/admin/onboarding/new" className="cyber-button">
-          New Onboarding
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
@@ -61,8 +55,6 @@ export default async function OnboardingPage() {
               icon="🚀"
               title="No onboardings"
               description="Start a client onboarding workflow."
-              actionHref="/admin/onboarding/new"
-              actionLabel="New Onboarding"
             />
           )}
         </div>

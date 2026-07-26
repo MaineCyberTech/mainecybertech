@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Break Glass - Admin" };
 
@@ -36,11 +34,7 @@ export default async function BreakGlassPage() {
       subnav={<AdminSubnav current="break-glass" />}
       title="Emergency Access Break Glass Register"
       description="Track break-glass accounts, custody, rotation, and testing without storing secrets."
-      actions={
-        <Link href="/admin/break-glass/new" className="cyber-button">
-          Register Account
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
@@ -72,8 +66,6 @@ export default async function BreakGlassPage() {
               icon="🔑"
               title="No break-glass accounts"
               description="Register emergency access accounts."
-              actionHref="/admin/break-glass/new"
-              actionLabel="Register Account"
             />
           )}
         </div>

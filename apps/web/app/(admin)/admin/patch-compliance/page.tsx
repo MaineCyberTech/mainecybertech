@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Patch Compliance - Admin" };
 
@@ -45,9 +43,6 @@ export default async function PatchPage() {
         <div className="flex flex-wrap gap-2">
           <div className="cyber-pill">{stats.complianceRate}% Compliant</div>
           <div className="cyber-pill">{stats.criticalPatches} Critical</div>
-          <Link href="/admin/patch-compliance/new" className="cyber-button">
-            Add Group
-          </Link>
         </div>
       }
     >
@@ -74,8 +69,6 @@ export default async function PatchPage() {
               icon="🛡️"
               title="No patch groups"
               description="Track patch compliance by device group."
-              actionHref="/admin/patch-compliance/new"
-              actionLabel="Add Group"
             />
           )}
         </div>

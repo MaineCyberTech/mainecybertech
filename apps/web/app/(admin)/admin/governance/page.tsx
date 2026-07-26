@@ -3,7 +3,6 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Governance - Admin" };
 
@@ -62,16 +61,7 @@ export default async function GovernancePage() {
       subnav={<AdminSubnav current="governance" />}
       title="Governance & Compliance Center"
       description="Change advisory, risk register, data retention, and tabletop exercise planning."
-      actions={
-        <div className="flex flex-wrap gap-2">
-          <Link href="/admin/governance/changes/new" className="cyber-button-sm">
-            New Change
-          </Link>
-          <Link href="/admin/governance/risks/new" className="cyber-button-sm">
-            New Risk
-          </Link>
-        </div>
-      }
+      actions={null}
     >
       <div className="grid gap-4 md:grid-cols-2">
         <section className="cyber-panel">

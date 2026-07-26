@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Service Catalog - Admin - Maine CyberTech" };
 
@@ -45,11 +43,7 @@ export default async function ServiceCatalogPage() {
       subnav={<AdminSubnav current="service-catalog" />}
       title="Client Billing Service Catalog"
       description="Define recurring services, pricing tiers, bundled packages, and billing models."
-      actions={
-        <Link href="/admin/service-catalog/new" className="cyber-button">
-          Add Service
-        </Link>
-      }
+      actions={null}
     >
       {[...byCategory.entries()].map(([category, services]) => (
         <section key={category} className="cyber-panel mb-4">
@@ -81,8 +75,6 @@ export default async function ServiceCatalogPage() {
           icon="💲"
           title="No services defined"
           description="Define your managed services, pricing tiers, and billing models."
-          actionHref="/admin/service-catalog/new"
-          actionLabel="Add Service"
         />
       )}
     </AdminPageShell>

@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status Page - Admin" };
 
@@ -38,11 +36,7 @@ export default async function StatusPage() {
       subnav={<AdminSubnav current="status" />}
       title="Public Status & Maintenance Notices"
       description="Publish maintenance windows and incident updates for client visibility."
-      actions={
-        <Link href="/admin/status/new" className="cyber-button">
-          New Notice
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
@@ -76,8 +70,6 @@ export default async function StatusPage() {
               icon="📢"
               title="No status notices"
               description="Publish maintenance windows or incident updates."
-              actionHref="/admin/status/new"
-              actionLabel="New Notice"
             />
           )}
         </div>

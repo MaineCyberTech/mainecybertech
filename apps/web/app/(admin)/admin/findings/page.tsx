@@ -103,9 +103,6 @@ export default async function FindingsPage() {
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
           <h2 className="cyber-heading text-lg">Findings ({stats.total})</h2>
-          <Link href="/admin/findings/new" className="cyber-button">
-            New Finding
-          </Link>
         </div>
         <div className="mt-6 space-y-3">
           {findings.length > 0 ? (
@@ -137,8 +134,6 @@ export default async function FindingsPage() {
               icon="🔍"
               title="No findings yet"
               description="Record your first security or compliance finding."
-              actionHref="/admin/findings/new"
-              actionLabel="New Finding"
             />
           )}
         </div>

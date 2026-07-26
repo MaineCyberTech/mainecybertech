@@ -4,7 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Endpoint Security" };
 export default async function EndpointPage() {
@@ -33,11 +32,7 @@ export default async function EndpointPage() {
       subnav={<AdminSubnav current="endpoint-security" />}
       title="Endpoint Security Coverage Map"
       description="Track endpoint protection, disk encryption, MDM, and EDR deployment across device groups."
-      actions={
-        <Link href="/admin/endpoint-security/new" className="cyber-button">
-          Add Group
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="grid gap-4 md:grid-cols-2">
@@ -62,8 +57,6 @@ export default async function EndpointPage() {
               icon="💻"
               title="No endpoint groups"
               description="Track endpoint security coverage by device group."
-              actionHref="/admin/endpoint-security/new"
-              actionLabel="Add Group"
             />
           )}
         </div>

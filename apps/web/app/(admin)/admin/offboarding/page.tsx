@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Offboarding - Admin" };
 
@@ -40,11 +38,7 @@ export default async function OffboardingPage() {
       subnav={<AdminSubnav current="offboarding" />}
       title="M365 Offboarding Safety Checklist"
       description="Guided offboarding with account disablement, mailbox handling, OneDrive transfer, license reclamation."
-      actions={
-        <Link href="/admin/offboarding/new" className="cyber-button">
-          New Offboarding
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
@@ -71,8 +65,6 @@ export default async function OffboardingPage() {
               icon="👋"
               title="No offboarding checklists"
               description="Start an offboarding checklist for departing employees."
-              actionHref="/admin/offboarding/new"
-              actionLabel="New Offboarding"
             />
           )}
         </div>

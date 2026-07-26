@@ -4,7 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "M365 Hardening" };
 const chk = (v: boolean) => (v ? "✅" : "⬜");
@@ -34,11 +33,7 @@ export default async function M365Page() {
       subnav={<AdminSubnav current="m365-hardening" />}
       title="M365 Tenant Hardening Scanner"
       description="Guided Microsoft 365 security baseline: MFA, Conditional Access, legacy auth, Defender, DLP."
-      actions={
-        <Link href="/admin/m365-hardening/new" className="cyber-button">
-          New Assessment
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
@@ -57,8 +52,6 @@ export default async function M365Page() {
               icon="🏢"
               title="No M365 assessments"
               description="Assess a Microsoft 365 tenant security posture."
-              actionHref="/admin/m365-hardening/new"
-              actionLabel="New Assessment"
             />
           )}
         </div>

@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Licenses - Admin" };
 
@@ -46,9 +44,6 @@ export default async function LicensesPage() {
         <div className="flex flex-wrap gap-2">
           <div className="cyber-pill">${savings.totalAnnualCost.toLocaleString()}/yr</div>
           <div className="cyber-pill">{savings.unusedSeats} unused</div>
-          <Link href="/admin/licenses/new" className="cyber-button">
-            Add License
-          </Link>
         </div>
       }
     >
@@ -76,8 +71,6 @@ export default async function LicensesPage() {
               icon="📊"
               title="No licenses tracked"
               description="Track software licenses across client organizations."
-              actionHref="/admin/licenses/new"
-              actionLabel="Add License"
             />
           )}
         </div>

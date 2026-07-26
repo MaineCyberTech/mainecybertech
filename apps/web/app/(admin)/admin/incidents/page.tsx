@@ -4,7 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Incidents" };
 export default async function IncidentsPage() {
@@ -34,11 +33,7 @@ export default async function IncidentsPage() {
       subnav={<AdminSubnav current="incidents" />}
       title="Security Incident Response"
       description="Track incidents from detection through containment, eradication, and recovery."
-      actions={
-        <Link href="/admin/incidents/new" className="cyber-button">
-          Report Incident
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
@@ -64,8 +59,6 @@ export default async function IncidentsPage() {
               icon="🚨"
               title="No incidents"
               description="Report a security incident to begin the response workflow."
-              actionHref="/admin/incidents/new"
-              actionLabel="Report Incident"
             />
           )}
         </div>

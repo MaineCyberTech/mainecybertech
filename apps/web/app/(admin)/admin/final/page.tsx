@@ -1,7 +1,6 @@
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import Link from "next/link";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "More Tools - Admin" };
 
@@ -47,13 +46,12 @@ export default function FinalPage() {
           <h2 className="cyber-heading mb-3 text-lg">{sec.title}</h2>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             {sec.items.map((i) => (
-              <Link
+              <div
                 key={i.k}
-                href={`/admin/final/${i.k}`}
-                className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-center transition hover:border-emerald-600/25 hover:bg-[#0A1118]/80"
+                className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-center"
               >
                 <p className="text-sm font-medium text-slate-50">{i.l}</p>
-              </Link>
+              </div>
             ))}
           </div>
         </section>
