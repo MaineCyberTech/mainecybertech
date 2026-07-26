@@ -50,6 +50,21 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
 
     const orgId = extractOrgId(req);
     if (!orgId) {
+      const supabase = getSupabaseAdmin();
+      const { data: memberships } = await supabase
+        .from("memberships")
+        .select("organization_id, roles!inner(id, key)")
+        .eq("user_id", req.authUser.userId)
+        .eq("status", "approved")
+        .order("created_at", { ascending: true })
+        .limit(1);
+
+      if (!memberships || memberships.length === 0) {
+        throw new AppError("FORBIDDEN", "No approved organization membership found", 403);
+      }
+
+      const primaryOrg = memberships[0].organization_id as string;
+      req.query = { ...req.query, organization_id: primaryOrg };
       next();
       return;
     }

@@ -89,6 +89,12 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
         .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: `${path}.updated`,
+        entityType: path,
+        entityId: data.id,
+      });
       res.json(success(data));
     } catch (e) {
       next(e);
