@@ -12,6 +12,10 @@ const NAV_ITEMS = [
   { key: "documents", href: "/portal/documents", label: "Documents" },
   { key: "support", href: "/portal/support", label: "Support" },
   { key: "billing", href: "/portal/billing", label: "Billing" },
+  { key: "assets", href: "/portal/assets", label: "Assets" },
+  { key: "findings", href: "/portal/findings", label: "Findings" },
+  { key: "status", href: "/portal/status", label: "Status" },
+  { key: "file-requests", href: "/portal/file-requests", label: "Files" },
 ];
 
 export default function PortalSubnav({ current }: PortalSubnavProps) {
