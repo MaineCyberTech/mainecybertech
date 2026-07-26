@@ -1,0 +1,73 @@
+import { z } from "zod";
+export const createISPSchema = z.object({
+  organizationId: z.string().min(1),
+  clientName: z.string().min(1).max(500),
+  currentProvider: z.string().max(200).optional().nullable(),
+  currentCost: z.number().min(0).optional().nullable(),
+  recommendedProvider: z.string().max(200).optional().nullable(),
+  recommendedCost: z.number().min(0).optional().nullable(),
+  services: z.string().max(1000).optional().nullable(),
+  bandwidthCurrent: z.string().max(200).optional().nullable(),
+  bandwidthNeeded: z.string().max(200).optional().nullable(),
+  contractStatus: z.string().optional().default("unknown"),
+  phoneLines: z.number().int().min(0).default(0),
+  voipReady: z.boolean().default(false),
+  notes: z.string().max(5000).optional().nullable(),
+});
+export const createUnifiSchema = z.object({
+  organizationId: z.string().min(1),
+  siteName: z.string().min(1).max(500),
+  siteAddress: z.string().max(500).optional().nullable(),
+  accessPoints: z.number().int().min(0).default(0),
+  switches: z.number().int().min(0).default(0),
+  cameras: z.number().int().min(0).default(0),
+  outdoorAps: z.number().int().min(0).default(0),
+  cableRunsEstimated: z.number().int().min(0).default(0),
+  poeBudgetWatts: z.number().int().min(0).optional().nullable(),
+  surveyDate: z.string().optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+});
+export const createPortMapSchema = z.object({
+  organizationId: z.string().min(1),
+  switchName: z.string().min(1).max(200),
+  portNumber: z.number().int().positive(),
+  vlanId: z.number().int().optional().nullable(),
+  vlanName: z.string().max(100).optional().nullable(),
+  wallJackLabel: z.string().max(200).optional().nullable(),
+  connectedDevice: z.string().max(500).optional().nullable(),
+  deviceType: z.string().max(200).optional().nullable(),
+  uplink: z.boolean().default(false),
+  poeEnabled: z.boolean().default(false),
+  speed: z.string().default("1G"),
+  notes: z.string().max(5000).optional().nullable(),
+});
+export const createCameraSchema = z.object({
+  organizationId: z.string().min(1),
+  siteName: z.string().min(1).max(500),
+  cameraCount: z.number().int().min(1),
+  avgBitrateMbps: z.number().min(0.1).default(4),
+  resolution: z.string().default("4MP"),
+  retentionDays: z.number().int().min(1).default(30),
+  estimatedStorageTb: z.number().min(0).optional().nullable(),
+  recommendedNvr: z.string().max(500).optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+});
+export const createStagingSchema = z.object({
+  organizationId: z.string().min(1),
+  deviceType: z.string().min(1).max(200),
+  deviceName: z.string().min(1).max(500),
+  serialNumber: z.string().max(200).optional().nullable(),
+  assetTag: z.string().max(200).optional().nullable(),
+  notes: z.string().max(5000).optional().nullable(),
+});
+export const createNetworkDiagramSchema = z.object({
+  organizationId: z.string().min(1),
+  siteName: z.string().min(1).max(500),
+  deviceCount: z.number().int().min(0).default(0),
+  vlanCount: z.number().int().min(0).default(0),
+  wanCount: z.number().int().min(0).default(0),
+  wirelessZones: z.number().int().min(0).default(0),
+  cameraZones: z.number().int().min(0).default(0),
+  notes: z.string().max(5000).optional().nullable(),
+  diagramData: z.record(z.unknown()).optional().default({}),
+});

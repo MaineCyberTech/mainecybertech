@@ -75,6 +75,7 @@ import {
   type EndpointSecurity,
 } from "./security-suite";
 import { GovernanceApi } from "./governance";
+import { FieldServicesApi } from "./field-services";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -169,6 +170,7 @@ export class MCTClient {
   public securityOps: SecurityOpsApi;
   public securitySuite: SecuritySuiteApi;
   public governance: GovernanceApi;
+  public fieldServices: FieldServicesApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -203,6 +205,7 @@ export class MCTClient {
     this.securityOps = new SecurityOpsApi(client);
     this.securitySuite = new SecuritySuiteApi(client);
     this.governance = new GovernanceApi(client);
+    this.fieldServices = new FieldServicesApi(client);
   }
 
   static create(opts: ClientOptions) {
