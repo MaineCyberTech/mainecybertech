@@ -158,4 +158,100 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     category: "Local Business Technology",
     relatedServiceSlugs: ["networks"],
   },
+  {
+    slug: "what-does-managed-it-provider-do-small-business",
+    title: "What Does a Managed IT Provider Do for a Small Business?",
+    metaTitle: "What Does a Managed IT Provider Do? | Maine CyberTech",
+    metaDescription:
+      "Understand what a managed IT provider actually does for a small business including help desk, Microsoft 365 management, cybersecurity, device support, network maintenance, and backup planning.",
+    primaryKeyword: "what does a managed IT provider do",
+    secondaryKeywords: [
+      "managed IT services Maine",
+      "MSP Maine",
+      "small business IT support",
+      "outsourced IT",
+    ],
+    category: "Managed IT",
+    relatedServiceSlugs: ["it-support", "microsoft-365-support", "cybersecurity"],
+  },
+  {
+    slug: "break-fix-vs-managed-it-maine-small-businesses",
+    title: "Break/Fix IT vs Managed IT: Which Is Better for Maine Small Businesses?",
+    metaTitle: "Break/Fix vs Managed IT for Maine Small Businesses | Maine CyberTech",
+    metaDescription:
+      "Compare break/fix IT support with managed IT services for Maine small businesses. Learn the cost, response time, security, and planning differences.",
+    primaryKeyword: "break fix vs managed IT",
+    secondaryKeywords: [
+      "managed IT services Maine",
+      "MSP vs break fix",
+      "small business IT support",
+      "outsourced IT support",
+    ],
+    category: "Managed IT",
+    relatedServiceSlugs: ["it-support", "cybersecurity"],
+  },
+  {
+    slug: "why-every-business-should-enable-mfa",
+    title: "Why Every Business Should Enable MFA Before Anything Else",
+    metaTitle: "Why Every Business Should Enable MFA | Maine CyberTech",
+    metaDescription:
+      "Multi-factor authentication is the single most effective step a small business can take to protect accounts. Learn why MFA matters and how to enable it.",
+    primaryKeyword: "why enable MFA small business",
+    secondaryKeywords: [
+      "MFA setup",
+      "multi-factor authentication",
+      "account security",
+      "cybersecurity basics",
+    ],
+    category: "Cybersecurity",
+    relatedServiceSlugs: ["cybersecurity", "microsoft-365-support"],
+  },
+  {
+    slug: "common-email-security-mistakes-small-businesses",
+    title: "Common Email Security Mistakes Small Businesses Make",
+    metaTitle: "Common Email Security Mistakes Small Businesses Make | Maine CyberTech",
+    metaDescription:
+      "Avoid the most common email security mistakes small businesses make including weak MFA, missing SPF/DKIM, shared accounts, and lack of staff training.",
+    primaryKeyword: "email security mistakes small business",
+    secondaryKeywords: [
+      "business email security",
+      "phishing prevention",
+      "email protection",
+      "MFA setup",
+    ],
+    category: "Cybersecurity",
+    relatedServiceSlugs: ["cybersecurity", "microsoft-365-support"],
+  },
+  {
+    slug: "outdoor-wifi-planning-guide-maine-properties",
+    title: "Outdoor Wi-Fi Planning Guide for Maine Properties",
+    metaTitle: "Outdoor Wi-Fi Planning Guide for Maine Properties | Maine CyberTech",
+    metaDescription:
+      "Plan outdoor Wi-Fi for Maine campgrounds, marinas, restaurants, warehouses, and facilities. Covers weather-rated access points, coverage zones, cabling, and power.",
+    primaryKeyword: "outdoor Wi-Fi Maine",
+    secondaryKeywords: [
+      "outdoor access points",
+      "weather-rated Wi-Fi",
+      "campground Wi-Fi",
+      "marina Wi-Fi",
+    ],
+    category: "Networking",
+    relatedServiceSlugs: ["networks"],
+  },
+  {
+    slug: "how-many-security-cameras-small-business-needs",
+    title: "How Many Security Cameras Does a Small Business Need?",
+    metaTitle: "How Many Security Cameras for a Small Business? | Maine CyberTech",
+    metaDescription:
+      "A practical guide to determining how many security cameras a small business needs based on coverage areas, camera types, resolution, lighting, and budget.",
+    primaryKeyword: "how many security cameras small business",
+    secondaryKeywords: [
+      "security camera planning",
+      "business security cameras",
+      "camera coverage guide",
+      "NVR setup",
+    ],
+    category: "Security Systems",
+    relatedServiceSlugs: ["security-systems"],
+  },
 ];
