@@ -50,6 +50,7 @@ import {
 } from "./domain-monitors";
 import { QbrApi, type QbrReport } from "./qbr";
 import { FileRequestsApi, type FileRequest } from "./file-requests";
+import { AiApi, type TriageAnalysis, type TicketSummary, type ReplyDraft } from "./ai";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
 
 export { ApiError } from "./client";
@@ -91,6 +92,9 @@ export type {
   DomainStats,
   QbrReport,
   FileRequest,
+  TriageAnalysis,
+  TicketSummary,
+  ReplyDraft,
 };
 
 export class MCTClient {
@@ -119,6 +123,7 @@ export class MCTClient {
   public domainMonitors: DomainMonitorsApi;
   public qbr: QbrApi;
   public fileRequests: FileRequestsApi;
+  public ai: AiApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -146,6 +151,7 @@ export class MCTClient {
     this.domainMonitors = new DomainMonitorsApi(client);
     this.qbr = new QbrApi(client);
     this.fileRequests = new FileRequestsApi(client);
+    this.ai = new AiApi(client);
   }
 
   static create(opts: ClientOptions) {

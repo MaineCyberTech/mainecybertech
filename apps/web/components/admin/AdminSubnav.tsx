@@ -29,6 +29,7 @@ const NAV_ITEMS = [
   { key: "domain-monitors", href: "/admin/domain-monitors", label: "DNS" },
   { key: "qbr", href: "/admin/qbr", label: "QBR" },
   { key: "file-requests", href: "/admin/file-requests", label: "Files" },
+  { key: "ai", href: "/admin/ai", label: "AI Tools" },
   { key: "tickets", href: "/admin/tickets", label: "Tickets" },
   { key: "documents", href: "/admin/documents", label: "Documents" },
   { key: "findings", href: "/admin/findings", label: "Findings" },
