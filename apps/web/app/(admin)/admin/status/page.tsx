@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createStatusItem } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status Page - Admin" };
 
@@ -38,6 +40,22 @@ export default async function StatusPage() {
       description="Publish maintenance windows and incident updates for client visibility."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "title", label: "Title", required: true },
+          {
+            key: "severity",
+            label: "Severity",
+            type: "select",
+            options: ["info", "warning", "critical", "maintenance"],
+            required: true,
+          },
+          { key: "description", label: "Description", type: "textarea" },
+        ]}
+        title="New Status Item"
+        action={createStatusItem}
+      />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

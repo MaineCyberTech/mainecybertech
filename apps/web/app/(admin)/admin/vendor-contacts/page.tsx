@@ -5,6 +5,8 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
+import CrudForm from "@/components/admin/CrudForm";
+import { createVendorContact } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendor Contacts - Admin - Maine CyberTech" };
@@ -38,6 +40,17 @@ export default async function VendorContactsPage() {
       description="Centralized vendor contacts, support portals, account IDs, and escalation paths."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "vendorName", label: "Vendor", required: true },
+          { key: "contactName", label: "Contact", required: true },
+          { key: "email", label: "Email" },
+          { key: "phone", label: "Phone" },
+        ]}
+        title="New Vendor Contact"
+        action={createVendorContact}
+      />
       <section className="cyber-panel">
         <div className="mt-4 grid gap-3 md:grid-cols-2">
           {contacts.length > 0 ? (

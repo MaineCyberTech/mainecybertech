@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createService } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Service Catalog - Admin - Maine CyberTech" };
 
@@ -45,6 +47,18 @@ export default async function ServiceCatalogPage() {
       description="Define recurring services, pricing tiers, bundled packages, and billing models."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "name", label: "Service Name", required: true },
+          { key: "category", label: "Category", required: true },
+          { key: "basePrice", label: "Price", type: "number", required: true },
+          { key: "unit", label: "Unit", required: true },
+          { key: "billingModel", label: "Billing Model", required: true },
+        ]}
+        title="New Service"
+        action={createService}
+      />
       {[...byCategory.entries()].map(([category, services]) => (
         <section key={category} className="cyber-panel mb-4">
           <h2 className="cyber-heading mb-2 text-lg capitalize">

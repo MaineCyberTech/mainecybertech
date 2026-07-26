@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createPatchGroup } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Patch Compliance - Admin" };
 
@@ -46,6 +48,17 @@ export default async function PatchPage() {
         </div>
       }
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "deviceGroup", label: "Device Group", required: true },
+          { key: "totalDevices", label: "Total Devices", type: "number", required: true },
+          { key: "patchedDevices", label: "Patched", type: "number", required: true },
+          { key: "criticalPatches", label: "Critical", type: "number", required: true },
+        ]}
+        title="New Patch Group"
+        action={createPatchGroup}
+      />
       <section className="cyber-panel">
         <div className="grid gap-4 md:grid-cols-2">
           {items.length > 0 ? (

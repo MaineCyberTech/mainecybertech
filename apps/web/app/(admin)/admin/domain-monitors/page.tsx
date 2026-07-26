@@ -5,6 +5,8 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
+import CrudForm from "@/components/admin/CrudForm";
+import { createDomainMonitor } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Domain Monitor - Admin - Maine CyberTech" };
@@ -82,6 +84,15 @@ export default async function DomainMonitorsPage() {
         )
       }
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "domain", label: "Domain", required: true },
+          { key: "displayName", label: "Display Name" },
+        ]}
+        title="New Domain Monitor"
+        action={createDomainMonitor}
+      />
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
           <h2 className="cyber-heading text-lg">Monitored Domains ({stats.total})</h2>

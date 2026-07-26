@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createDmarc } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DMARC Coach - Admin" };
 
@@ -43,6 +45,14 @@ export default async function DmarcPage() {
       description="Guide clients through SPF, DKIM, and DMARC setup for email security."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "domain", label: "Domain", required: true },
+        ]}
+        title="New DMARC"
+        action={createDmarc}
+      />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

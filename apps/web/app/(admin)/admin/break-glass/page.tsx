@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createBreakGlass } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Break Glass - Admin" };
 
@@ -36,6 +38,17 @@ export default async function BreakGlassPage() {
       description="Track break-glass accounts, custody, rotation, and testing without storing secrets."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "accountName", label: "Account Name", required: true },
+          { key: "system", label: "System", required: true },
+          { key: "custodianName", label: "Custodian" },
+          { key: "accessProcedure", label: "Access Procedure", type: "textarea" },
+        ]}
+        title="New Break Glass"
+        action={createBreakGlass}
+      />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

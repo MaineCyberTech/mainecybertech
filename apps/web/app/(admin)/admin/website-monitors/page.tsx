@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createWebsiteMonitor } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Website Monitor - Admin" };
 
@@ -36,6 +38,15 @@ export default async function WebsiteMonitorPage() {
       description="Track uptime, SSL expiry, and performance across client websites."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "url", label: "URL", required: true },
+          { key: "displayName", label: "Display Name" },
+        ]}
+        title="New Website Monitor"
+        action={createWebsiteMonitor}
+      />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

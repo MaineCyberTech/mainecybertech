@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createIncident } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Incidents" };
 export default async function IncidentsPage() {
@@ -35,6 +37,23 @@ export default async function IncidentsPage() {
       description="Track incidents from detection through containment, eradication, and recovery."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "title", label: "Title", required: true },
+          { key: "incidentType", label: "Type", required: true },
+          {
+            key: "severity",
+            label: "Severity",
+            type: "select",
+            options: ["low", "medium", "high", "critical"],
+            required: true,
+          },
+          { key: "description", label: "Description", type: "textarea" },
+        ]}
+        title="New Incident"
+        action={createIncident}
+      />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

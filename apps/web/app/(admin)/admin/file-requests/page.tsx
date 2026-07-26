@@ -5,6 +5,8 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
+import CrudForm from "@/components/admin/CrudForm";
+import { createFileRequest } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "File Requests - Admin - Maine CyberTech" };
@@ -47,6 +49,15 @@ export default async function FileRequestsPage() {
         </div>
       }
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "title", label: "Title", required: true },
+          { key: "description", label: "Description", type: "textarea" },
+        ]}
+        title="New File Request"
+        action={createFileRequest}
+      />
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">File Requests</h2>
         <div className="mt-6 space-y-3">

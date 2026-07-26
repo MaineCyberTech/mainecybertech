@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createIdVerify } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Identity Verification" };
 export default async function IdVerifyPage() {
@@ -32,6 +34,15 @@ export default async function IdVerifyPage() {
       description="Verify requestor identity before privileged actions like MFA reset, password reset, or vendor changes."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "requestorName", label: "Requestor Name", required: true },
+          { key: "verificationMethod", label: "Method", required: true },
+        ]}
+        title="New ID Verification"
+        action={createIdVerify}
+      />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

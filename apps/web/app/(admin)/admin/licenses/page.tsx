@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createLicense } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Licenses - Admin" };
 
@@ -47,6 +49,18 @@ export default async function LicensesPage() {
         </div>
       }
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "vendor", label: "Vendor", required: true },
+          { key: "productName", label: "Product", required: true },
+          { key: "totalSeats", label: "Total Seats", type: "number", required: true },
+          { key: "assignedSeats", label: "Assigned", type: "number", required: true },
+          { key: "annualCost", label: "Annual Cost", type: "number", required: true },
+        ]}
+        title="New License"
+        action={createLicense}
+      />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

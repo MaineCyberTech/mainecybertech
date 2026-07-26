@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createM365Assessment } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "M365 Hardening" };
 const chk = (v: boolean) => (v ? "✅" : "⬜");
@@ -35,6 +37,14 @@ export default async function M365Page() {
       description="Guided Microsoft 365 security baseline: MFA, Conditional Access, legacy auth, Defender, DLP."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "tenantDomain", label: "Tenant Domain", required: true },
+        ]}
+        title="New M365 Assessment"
+        action={createM365Assessment}
+      />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

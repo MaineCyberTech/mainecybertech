@@ -5,6 +5,8 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
+import CrudForm from "@/components/admin/CrudForm";
+import { createAsset } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Assets - Admin - Maine CyberTech" };
@@ -66,6 +68,22 @@ export default async function AssetsPage() {
         </div>
       }
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "name", label: "Name", required: true },
+          { key: "assetType", label: "Type", required: true },
+          { key: "make", label: "Make" },
+          { key: "model", label: "Model" },
+          { key: "serialNumber", label: "Serial" },
+          { key: "assetTag", label: "Tag" },
+          { key: "purchaseDate", label: "Purchase Date", type: "date" },
+          { key: "warrantyExpires", label: "Warranty Expires", type: "date" },
+          { key: "location", label: "Location" },
+        ]}
+        title="New Asset"
+        action={createAsset}
+      />
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
           <h2 className="cyber-heading text-lg">Assets</h2>

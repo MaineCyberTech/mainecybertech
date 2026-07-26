@@ -5,6 +5,8 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
+import CrudForm from "@/components/admin/CrudForm";
+import { createVendorContract } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendor Contracts - Admin - Maine CyberTech" };
@@ -55,6 +57,17 @@ export default async function VendorContractsPage() {
         </div>
       }
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "vendorName", label: "Vendor", required: true },
+          { key: "serviceName", label: "Service", required: true },
+          { key: "renewalDate", label: "Renewal Date", type: "date" },
+          { key: "contractValue", label: "Value", type: "number" },
+        ]}
+        title="New Vendor Contract"
+        action={createVendorContract}
+      />
       {upcoming.length > 0 && (
         <section className="cyber-panel">
           <h2 className="cyber-heading mb-4 text-lg">Upcoming Renewals ({upcoming.length})</h2>

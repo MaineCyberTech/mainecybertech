@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createEndpoint } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Endpoint Security" };
 export default async function EndpointPage() {
@@ -34,6 +36,15 @@ export default async function EndpointPage() {
       description="Track endpoint protection, disk encryption, MDM, and EDR deployment across device groups."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "deviceGroup", label: "Device Group", required: true },
+          { key: "totalEndpoints", label: "Total Endpoints", type: "number", required: true },
+        ]}
+        title="New Endpoint Group"
+        action={createEndpoint}
+      />
       <section className="cyber-panel">
         <div className="grid gap-4 md:grid-cols-2">
           {items.length > 0 ? (

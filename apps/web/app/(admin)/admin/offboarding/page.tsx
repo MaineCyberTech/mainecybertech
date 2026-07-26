@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createOffboarding } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Offboarding - Admin" };
 
@@ -40,6 +42,17 @@ export default async function OffboardingPage() {
       description="Guided offboarding with account disablement, mailbox handling, OneDrive transfer, license reclamation."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "employeeName", label: "Employee Name", required: true },
+          { key: "employeeEmail", label: "Email", required: true },
+          { key: "department", label: "Department" },
+          { key: "offboardingDate", label: "Date", type: "date" },
+        ]}
+        title="New Offboarding"
+        action={createOffboarding}
+      />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

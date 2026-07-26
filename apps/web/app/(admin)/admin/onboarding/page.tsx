@@ -4,6 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { createOnboarding } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Onboarding - Admin" };
 
@@ -38,6 +40,15 @@ export default async function OnboardingPage() {
       description="Repeatable workspace for client discovery, M365 setup, network baseline, security baseline, and handoff."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "clientName", label: "Client Name", required: true },
+          { key: "notes", label: "Notes", type: "textarea" },
+        ]}
+        title="New Onboarding"
+        action={createOnboarding}
+      />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
