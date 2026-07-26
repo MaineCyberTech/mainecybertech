@@ -100,6 +100,23 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
       next(e);
     }
   });
+
+  router.delete(`/${path}/:id`, async (req, res, next) => {
+    try {
+      const sb = getSupabaseAdmin();
+      const { error } = await sb.from(table).delete().eq("id", req.params.id);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: `${path}.deleted`,
+        entityType: path,
+        entityId: String(req.params.id),
+      });
+      res.status(204).send();
+    } catch (e) {
+      next(e);
+    }
+  });
 }
 
 type SchemaMap = Record<string, { schema: z.ZodTypeAny; table: string }>;
