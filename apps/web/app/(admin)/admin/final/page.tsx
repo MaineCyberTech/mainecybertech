@@ -27,6 +27,10 @@ export default function FinalPage() {
         { k: "forms", l: "Forms Builder" },
       ],
     },
+    {
+      title: "Operations",
+      items: [{ k: "backups", l: "BDR" }],
+    },
   ];
 
   return (

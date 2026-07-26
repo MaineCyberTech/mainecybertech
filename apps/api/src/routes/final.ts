@@ -5,7 +5,19 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { sp, dp, saas, quote, dns, pulse, time, budget, runbook, form } from "../validators/final";
+import {
+  sp,
+  dp,
+  saas,
+  quote,
+  dns,
+  pulse,
+  time,
+  budget,
+  runbook,
+  form,
+  backup,
+} from "../validators/final";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -74,7 +86,36 @@ const schemas: Record<string, { schema: z.ZodTypeAny; table: string }> = {
   budgets: { schema: budget, table: "budget_roadmaps" },
   runbooks: { schema: runbook, table: "client_runbooks" },
   forms: { schema: form, table: "custom_forms" },
+  backups: { schema: backup, table: "backup_status" },
 };
 for (const [p, { schema: s, table }] of Object.entries(schemas)) crud(p, table, s);
+
+router.get("/backups/stats", async (req, res, next) => {
+  try {
+    const sb = getSupabaseAdmin();
+    let q = sb.from("backup_status").select("*");
+    const orgId = req.query.organization_id as string;
+    if (orgId) q = q.eq("organization_id", orgId);
+    const { data, error } = await q;
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const items =
+      data ??
+      ([] as Array<{
+        last_backup_status: string;
+        restore_test_result: string | null;
+        offsite_replicated: boolean;
+        encryption_enabled: boolean;
+      }>);
+    const failed = items.filter((b) => b.last_backup_status === "failed").length;
+    const untested = items.filter((b) => !b.restore_test_result).length;
+    const offsite = items.filter((b) => b.offsite_replicated).length;
+    const encrypted = items.filter((b) => b.encryption_enabled).length;
+    res.json(
+      success({ total: items.length, failed, untested, offsiteReplicated: offsite, encrypted }),
+    );
+  } catch (e) {
+    next(e);
+  }
+});
 
 export default router;

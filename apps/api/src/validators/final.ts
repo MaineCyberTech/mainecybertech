@@ -89,3 +89,21 @@ export const form = z.object({
   formFields: z.array(z.unknown()).default([]),
   isActive: z.boolean().default(true),
 });
+
+export const backup = z.object({
+  organizationId: z.string().min(1),
+  systemName: z.string().min(1).max(500),
+  backupType: z.string().default("full"),
+  lastBackupAt: z.string().optional().nullable(),
+  lastBackupStatus: z.string().default("unknown"),
+  lastBackupSizeGb: z.number().min(0).optional().nullable(),
+  nextScheduledAt: z.string().optional().nullable(),
+  recoveryPointObjectiveHours: z.number().int().min(0).optional().nullable(),
+  recoveryTimeObjectiveHours: z.number().int().min(0).optional().nullable(),
+  retentionDays: z.number().int().min(1).default(30),
+  restoreTestedAt: z.string().optional().nullable(),
+  restoreTestResult: z.string().max(5000).optional().nullable(),
+  offsiteReplicated: z.boolean().default(false),
+  encryptionEnabled: z.boolean().default(false),
+  notes: z.string().max(5000).optional().nullable(),
+});

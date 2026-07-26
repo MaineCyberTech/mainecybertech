@@ -57,4 +57,17 @@ export class FinalApi {
       this.c.get<PaginatedResult<unknown>>("/api/v1/final/forms", qp(p)),
     create: (d: Record<string, unknown>) => this.c.post("/api/v1/final/forms", d),
   };
+  backups = {
+    list: (p?: Record<string, string | number | undefined>) =>
+      this.c.get<PaginatedResult<unknown>>("/api/v1/final/backups", qp(p)),
+    create: (d: Record<string, unknown>) => this.c.post("/api/v1/final/backups", d),
+    stats: (p?: Record<string, string | undefined>) =>
+      this.c.get<{
+        total: number;
+        failed: number;
+        untested: number;
+        offsiteReplicated: number;
+        encrypted: number;
+      }>("/api/v1/final/backups/stats", qp(p)),
+  };
 }
