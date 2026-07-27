@@ -74,7 +74,13 @@ import {
   type IdentityVerification,
   type EndpointSecurity,
 } from "./security-suite";
-import { GovernanceApi } from "./governance";
+import {
+  GovernanceApi,
+  type GovernanceChange,
+  type GovernanceRisk,
+  type GovernanceRetention,
+  type GovernanceTabletop,
+} from "./governance";
 import { FieldServicesApi } from "./field-services";
 import { EduAutomationApi } from "./edu-automation";
 import { FinalApi } from "./final";
