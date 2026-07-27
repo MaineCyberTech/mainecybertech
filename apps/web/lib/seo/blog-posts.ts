@@ -1414,6 +1414,700 @@ export const blogPosts: BlogPost[] = [
     ],
     cta: "Maine CyberTech helps Maine small businesses build practical backup and disaster recovery plans, set up cloud backup, and test restores. Contact us for a business continuity assessment.",
   },
+  {
+    slug: "what-to-do-suspicious-login-alert-microsoft-365",
+    title: "What to Do After a Suspicious Login Alert in Microsoft 365",
+    metaTitle: "Suspicious Login Alert Microsoft 365: What to Do | Maine CyberTech",
+    metaDescription:
+      "Step-by-step response to a suspicious login alert in Microsoft 365 including securing the account, reviewing sign-in activity, checking forwarding rules, and preventing recurrence.",
+    primaryKeyword: "suspicious login alert Microsoft 365",
+    category: "Microsoft 365",
+    relatedServices: ["microsoft-365-support", "cybersecurity"],
+    datePublished: "2023-04-19",
+    sections: [
+      {
+        heading: "Immediate steps when you get an alert",
+        items: [
+          "Change the password immediately for the flagged account.",
+          "Sign out of all sessions. Microsoft 365 admin center lets you sign out a user from all devices.",
+          "Enable or reset MFA if it was not already enabled.",
+          "Check recent sign-in activity for unusual locations, devices, and IP addresses.",
+        ],
+      },
+      {
+        heading: "Check for signs of compromise",
+        items: [
+          "Review email forwarding rules. Attackers often create hidden rules to monitor email.",
+          "Check sent items for emails the user did not send.",
+          "Look for new inbox rules that delete or redirect incoming messages.",
+          "Check for unauthorized application registrations or OAuth consent grants.",
+        ],
+      },
+      {
+        heading: "Prevent recurrence",
+        items: [
+          "Enable MFA for all users. The single most effective protection against account compromise.",
+          "Enable security defaults or Conditional Access policies to block sign-ins from unexpected locations.",
+          "Configure alerts for risky sign-ins, impossible travel, and unfamiliar locations.",
+          "Train staff to recognize and report phishing attempts.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "How do I know if a suspicious login alert is real?",
+        answer:
+          "Log into the Microsoft Entra admin center and review the sign-in logs directly. Look at the IP address, location, device, and application used. If the details do not match your expected sign-in patterns, treat it as real and take immediate action.",
+      },
+      {
+        question: "How quickly do I need to respond to a suspicious login alert?",
+        answer:
+          "Immediately. Attackers can send phishing emails, access sensitive data, or change account settings within minutes of gaining access. The faster you respond, the less damage is likely.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine businesses respond to security incidents, review Microsoft 365 security settings, and implement MFA and Conditional Access. Contact us for incident response assistance.",
+  },
+  {
+    slug: "how-to-prepare-for-network-site-survey",
+    title: "How to Prepare for a Network Site Survey",
+    metaTitle: "How to Prepare for a Network Site Survey | Maine CyberTech",
+    metaDescription:
+      "Prepare for a network site survey to get the most accurate Wi-Fi and network design recommendations. What to gather, what to expect, and questions to ask.",
+    primaryKeyword: "prepare for network site survey",
+    category: "Networking",
+    relatedServices: ["networks"],
+    datePublished: "2023-05-17",
+    sections: [
+      {
+        heading: "Before the survey: what to gather",
+        items: [
+          "A floor plan or rough sketch of each building, including dimensions and wall types.",
+          "A list of all areas where Wi-Fi is needed, both indoors and outdoors.",
+          "The number of users and devices in each area during peak usage.",
+          "Any known dead zones or areas with poor performance.",
+          "Information about your internet service: provider, speed, and modem location.",
+          "A list of existing network equipment with models and approximate ages.",
+        ],
+      },
+      {
+        heading: "What the survey covers",
+        items: [
+          "Signal strength measurements across all coverage areas using professional survey tools.",
+          "Identification of interference sources from neighboring networks, electronics, and building materials.",
+          "Cable path assessment: where can cables be run and what obstacles are present.",
+          "Power availability for access points, switches, and outdoor equipment.",
+        ],
+      },
+      {
+        heading: "After the survey",
+        items: [
+          "You should receive a written report with signal heat maps and equipment recommendations.",
+          "The report should explain any limitations, such as building materials that reduce signal.",
+          "You should have a clear understanding of costs, timeline, and what the final network will look like.",
+          "Ask the provider to walk you through the report before you approve any work.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "How long does a site survey take?",
+        answer:
+          "For a small office, typically 1-2 hours. Larger buildings, multiple floors, or outdoor areas may take half a day or more. The surveyor needs time to take measurements in every area that needs coverage.",
+      },
+      {
+        question: "Can I do a site survey myself with a phone app?",
+        answer:
+          "Phone apps provide basic signal strength readings but lack the accuracy and analysis of professional survey tools. For anything beyond a very small, simple space, a professional survey is worth the investment.",
+      },
+    ],
+    cta: "Maine CyberTech provides professional network site surveys for Maine businesses, campgrounds, restaurants, marinas, and facilities. Contact us to schedule a site survey.",
+  },
+  {
+    slug: "what-to-ask-before-installing-business-wifi",
+    title: "What to Ask Before Installing Business Wi-Fi",
+    metaTitle: "What to Ask Before Installing Business Wi-Fi | Maine CyberTech",
+    metaDescription:
+      "Key questions to ask before installing or upgrading business Wi-Fi including equipment choices, coverage planning, guest access, security, cabling, and ongoing support.",
+    primaryKeyword: "questions before installing business Wi-Fi",
+    category: "Networking",
+    relatedServices: ["networks"],
+    datePublished: "2023-06-08",
+    sections: [
+      {
+        heading: "Coverage and capacity",
+        items: [
+          "Will every area where people work, meet, and serve customers have reliable coverage?",
+          "How many users and devices will be connected simultaneously during peak times?",
+          "What is the plan for outdoor areas, patios, parking lots, and detached buildings?",
+          "How will coverage be verified after installation? Ask for a post-installation walk-through.",
+        ],
+      },
+      {
+        heading: "Equipment and installation",
+        items: [
+          "What specific equipment models are being installed and why were they chosen?",
+          "Is the equipment business-grade or consumer-grade? Business equipment costs more upfront but lasts longer.",
+          "Where will access points be mounted? Ceiling-mounted provides the best coverage pattern.",
+          "How will cables be run? Exposed cables along baseboards are an eyesore. Ask about wall and ceiling paths.",
+        ],
+      },
+      {
+        heading: "Security, support, and growth",
+        items: [
+          "How will guest Wi-Fi be separated from business systems? This should be a hard network separation.",
+          "What happens if something stops working? Who do we call and what is the expected response time?",
+          "Can the system be expanded as the business grows or adds locations?",
+          "Will we receive documentation of the network layout and configuration settings?",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Should I buy the equipment myself and have someone install it?",
+        answer:
+          "This can work but comes with risks. If equipment fails, you manage the warranty. Most businesses get better results by having the installer specify and provide the equipment as part of a complete solution with unified support.",
+      },
+      {
+        question: "How long should a business Wi-Fi installation take?",
+        answer:
+          "A small office with 2-3 access points typically installs in one day. Larger spaces or complex cable runs may take 2-3 days. Ask for a timeline upfront that accounts for cable runs, mounting, configuration, and testing.",
+      },
+    ],
+    cta: "Maine CyberTech provides complete business Wi-Fi design, equipment, cabling, and professional installation for Maine organizations. Contact us for a consultation.",
+  },
+  {
+    slug: "outdoor-security-camera-placement-tips-maine-properties",
+    title: "Outdoor Security Camera Placement Tips for Maine Properties",
+    metaTitle: "Outdoor Security Camera Placement Tips for Maine | Maine CyberTech",
+    metaDescription:
+      "Practical outdoor security camera placement tips for Maine properties including camera height, angles, lighting, weather protection, and coverage zones for businesses and facilities.",
+    primaryKeyword: "outdoor security camera placement Maine",
+    category: "Security Systems",
+    relatedServices: ["security-systems", "networks"],
+    datePublished: "2023-07-25",
+    sections: [
+      {
+        heading: "Height and angle",
+        items: [
+          "Mount cameras high enough to be out of easy reach but not so high you only see tops of heads. 8-10 feet is typical.",
+          "Angle cameras slightly downward to capture faces, not the horizon.",
+          "Avoid pointing cameras directly at bright lights or reflective surfaces that cause glare.",
+          "Test the view at different times of day. Glare, shadows, and backlighting change with the sun position.",
+        ],
+      },
+      {
+        heading: "Coverage zones to prioritize",
+        items: [
+          "All entrances and exits: capture faces of everyone entering and leaving.",
+          "Parking lots: wide-angle coverage with enough detail to identify vehicles.",
+          "Loading docks and delivery areas: common theft and accident locations.",
+          "Equipment and storage areas: generators, fuel tanks, tools, and outdoor inventory.",
+          "Gates and fence lines: long-range cameras for perimeter monitoring.",
+        ],
+      },
+      {
+        heading: "Weather and lighting for Maine",
+        items: [
+          "Use cameras rated IP66 or IP67 for outdoor use in rain, snow, and temperature extremes.",
+          "Install cameras under eaves or in weather-protected housings when possible.",
+          "Cold weather affects IR illuminators and camera performance. Choose cameras rated for your temperature range.",
+          "Add motion-activated or always-on lighting in critical areas. Cameras need light to capture useful footage.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Can outdoor cameras work in Maine winters?",
+        answer:
+          "Yes, with proper equipment. Choose cameras rated for your lowest expected temperatures. Many quality outdoor cameras operate down to -22F or lower. Supplemental heating in enclosures is available for extreme cold locations.",
+      },
+      {
+        question: "Should outdoor cameras be visible or hidden?",
+        answer:
+          "Visible cameras deter casual theft and vandalism. Most businesses use a mix: visible cameras at entrances and parking lots as deterrents, with additional coverage in vulnerable areas.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine businesses plan and install outdoor security camera systems. Contact us for a camera placement consultation and system design.",
+  },
+  {
+    slug: "unifi-protect-vs-traditional-camera-systems-small-business",
+    title: "UniFi Protect vs Traditional Camera Systems for Small Businesses",
+    metaTitle: "UniFi Protect vs Traditional Camera Systems | Maine CyberTech",
+    metaDescription:
+      "Compare UniFi Protect with traditional NVR-based security camera systems for small businesses. Learn the differences in cost, features, ease of use, and scalability.",
+    primaryKeyword: "UniFi Protect vs traditional camera systems",
+    category: "Security Systems",
+    relatedServices: ["security-systems", "networks"],
+    datePublished: "2023-08-22",
+    sections: [
+      {
+        heading: "What is UniFi Protect?",
+        items: [
+          "UniFi Protect is a video surveillance system from Ubiquiti that runs on UniFi hardware.",
+          "It integrates with the broader UniFi ecosystem including networking equipment.",
+          "The interface is designed to be simple and user-friendly, accessible from a web browser or mobile app.",
+          "Footage is stored locally on a UniFi NVR or Cloud Key, not in the cloud.",
+        ],
+      },
+      {
+        heading: "Advantages of UniFi Protect",
+        items: [
+          "Simple setup and management. The interface is designed for people who are not security system specialists.",
+          "No monthly subscription fees for video storage or remote access.",
+          "Automatic firmware updates keep cameras and NVR up to date.",
+          "Integration with UniFi network equipment for simplified management from a single dashboard.",
+        ],
+      },
+      {
+        heading: "How to choose",
+        items: [
+          "If you already use UniFi networking equipment, UniFi Protect is a strong choice for a simple, integrated system.",
+          "If you need advanced analytics or a wider range of camera types, a traditional system may be more flexible.",
+          "For most Maine small businesses with straightforward coverage needs, UniFi Protect provides excellent value.",
+          "Consider who will manage the system day to day. UniFi Protect is easier for non-specialists.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Can I use UniFi cameras with a different NVR?",
+        answer:
+          "UniFi cameras are designed for the UniFi Protect ecosystem. If you want flexibility to use cameras with multiple NVR platforms, consider ONVIF-compatible cameras instead.",
+      },
+      {
+        question: "How much does a UniFi Protect system cost compared to traditional systems?",
+        answer:
+          "UniFi Protect cameras and NVRs are competitively priced, and the lack of ongoing subscription fees makes the total cost attractive. Compare total cost over 3-5 years, not just upfront prices.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine businesses evaluate, design, and install security camera systems including UniFi Protect and traditional NVR-based solutions. Contact us for a camera system consultation.",
+  },
+  {
+    slug: "security-camera-mistakes-to-avoid-before-installation",
+    title: "Security Camera Mistakes to Avoid Before Installation",
+    metaTitle: "Security Camera Mistakes to Avoid Before Installation | Maine CyberTech",
+    metaDescription:
+      "Avoid common security camera installation mistakes including poor placement, insufficient storage, network bottlenecks, lighting issues, and lack of testing before finalizing placement.",
+    primaryKeyword: "security camera installation mistakes",
+    category: "Security Systems",
+    relatedServices: ["security-systems"],
+    datePublished: "2023-09-12",
+    sections: [
+      {
+        heading: "Placement mistakes",
+        items: [
+          "Mounting cameras too high. You get great views of the tops of heads but cannot identify faces.",
+          "Pointing cameras at bright lights or reflective surfaces that wash out the image.",
+          "Not checking the view at night. An area well lit during the day may be pitch black after dark.",
+          "Forgetting to account for seasonal changes: foliage in summer, snow accumulation in winter.",
+        ],
+      },
+      {
+        heading: "Storage and network mistakes",
+        items: [
+          "Underestimating storage needs. More cameras and higher resolution all increase storage requirements.",
+          "Using a single hard drive with no redundancy. A drive failure means you lose all footage.",
+          "Not planning network cable routes before mounting cameras, leading to messy exposed wiring.",
+          "Underestimating PoE power requirements. Each camera draws power from the switch.",
+        ],
+      },
+      {
+        heading: "Process mistakes",
+        items: [
+          "Not testing camera views during both day and night before finalizing placement.",
+          "Not documenting camera locations, IP addresses, and NVR settings.",
+          "Not training staff on how to view and export footage. If only one person knows how, the system fails when they are unavailable.",
+          "No remote access plan. Decide who needs remote access and set it up securely.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "What is the most common security camera mistake?",
+        answer:
+          "Poor placement, especially mounting cameras too high or not testing views at night. Test every camera angle during both day and night before finalizing installation.",
+      },
+      {
+        question: "Should I run cables or use wireless cameras?",
+        answer:
+          "Wired PoE cameras are more reliable, do not depend on Wi-Fi signal strength, and deliver power and data through a single cable. For permanent installations, wired is recommended.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine businesses avoid costly security camera mistakes with professional system design, placement planning, and installation. Contact us before you buy equipment.",
+  },
+  {
+    slug: "what-files-should-small-business-back-up",
+    title: "What Files Should a Small Business Back Up?",
+    metaTitle: "What Files Should a Small Business Back Up? | Maine CyberTech",
+    metaDescription:
+      "A practical guide to what files and data a small business should back up including documents, email, financial records, customer data, and application data.",
+    primaryKeyword: "what files should small business back up",
+    category: "Cloud Backup",
+    relatedServices: ["cloud"],
+    datePublished: "2023-10-11",
+    sections: [
+      {
+        heading: "Business documents and files",
+        items: [
+          "Contracts, proposals, invoices, and client deliverables.",
+          "Employee records, policies, and procedures documentation.",
+          "Marketing materials, photos, logos, and brand assets.",
+        ],
+      },
+      {
+        heading: "Email and communication data",
+        items: [
+          "Microsoft 365 does not automatically back up email in a traditional sense. It provides redundancy, not backup.",
+          "Email, calendar, contacts, and Teams messages should be backed up if critical to your business.",
+          "Third-party backup solutions for Microsoft 365 fill this gap affordably.",
+        ],
+      },
+      {
+        heading: "Financial and application data",
+        items: [
+          "Accounting software data files, payroll records, tax filings, and bank statements.",
+          "Reservation systems for campgrounds and restaurants. POS configuration and transaction history.",
+          "Customer relationship management (CRM) data and inventory management systems.",
+          "Industry-specific software. Verify with each vendor what is backed up and how restoration works.",
+        ],
+      },
+      {
+        heading: "What many businesses forget",
+        items: [
+          "Browser bookmarks and saved passwords for critical business services.",
+          "Network equipment configuration backups for firewalls and switches.",
+          "Phone system configuration and recordings if applicable.",
+          "Website content and databases if self-hosted.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Do I need to back up everything or just the important stuff?",
+        answer:
+          "Start with what is critical to operations and work outward. If losing a file would cost you money, time, or customer trust, it belongs in the backup scope.",
+      },
+      {
+        question: "Should employees back up their own computers?",
+        answer:
+          "No. Individual backup responsibility leads to gaps and inconsistency. Move important files to shared storage included in the centralized backup scope.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine small businesses identify what needs to be backed up, set up automated cloud backup, and test restores. Contact us for a backup assessment.",
+  },
+  {
+    slug: "phone-internet-wifi-security-camera-planning-restaurants",
+    title: "Phone, Internet, Wi-Fi, and Security Camera Planning for Restaurants",
+    metaTitle: "Phone, Internet, Wi-Fi, Security Cameras for Restaurants | Maine CyberTech",
+    metaDescription:
+      "Technology planning guide for restaurants covering phone systems, internet reliability, guest and business Wi-Fi, security cameras, point-of-sale connectivity, and seasonal considerations.",
+    primaryKeyword: "restaurant technology planning Maine",
+    category: "Local Business Technology",
+    relatedServices: ["networks", "security-systems"],
+    datePublished: "2023-12-05",
+    sections: [
+      {
+        heading: "Internet: the backbone of restaurant technology",
+        items: [
+          "POS systems, online ordering, reservation platforms, and guest Wi-Fi all depend on reliable internet.",
+          "Consider a backup internet connection or cellular failover. An outage during dinner service costs thousands.",
+          "Separate business internet traffic from guest Wi-Fi. A single consumer router handling both is a security risk.",
+        ],
+      },
+      {
+        heading: "Phone and Wi-Fi for restaurants",
+        items: [
+          "VoIP phone systems can route calls to multiple locations and send voicemail to email.",
+          "Guest Wi-Fi must be on a completely separate network from POS, kitchen displays, and office computers.",
+          "Coverage should include dining areas, bar, outdoor patios, and waiting areas.",
+          "Bandwidth management prevents a few heavy users from degrading the experience for everyone else.",
+        ],
+      },
+      {
+        heading: "Security cameras for restaurants",
+        items: [
+          "Cash handling areas, entrances, exits, and parking lots are the highest priority.",
+          "Kitchen and food prep areas for liability protection and operational oversight.",
+          "Remote access lets managers or owners check footage from anywhere.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "What internet speed does a restaurant need?",
+        answer:
+          "A restaurant with POS, online ordering, guest Wi-Fi, and streaming typically needs at least 100 Mbps download. More important than speed is reliability. A backup connection is strongly recommended.",
+      },
+      {
+        question: "Should restaurant Wi-Fi be open or password protected?",
+        answer:
+          "A simple password on a captive portal page is a good balance. It prevents casual drive-by usage while being easy for guests. Avoid complex login forms that frustrate customers.",
+      },
+    ],
+    cta: "Maine CyberTech provides technology planning, network installation, Wi-Fi, security cameras, and IT support for Maine restaurants. Contact us for a restaurant technology assessment.",
+  },
+  {
+    slug: "network-camera-planning-boat-storage-warehouse-buildings",
+    title: "Network and Camera Planning for Boat Storage and Warehouse Buildings",
+    metaTitle: "Network Camera Planning for Boat Storage Warehouses | Maine CyberTech",
+    metaDescription:
+      "Technology planning guide for boat storage facilities and warehouse buildings covering outdoor Wi-Fi, security cameras, network cabling, remote access, and seasonal shutdown procedures.",
+    primaryKeyword: "boat storage network camera planning",
+    category: "Networking",
+    relatedServices: ["networks", "security-systems"],
+    datePublished: "2024-01-16",
+    sections: [
+      {
+        heading: "Network infrastructure for large metal buildings",
+        items: [
+          "Metal buildings reflect and block Wi-Fi signals. Expect to need more access points than in wood-frame construction.",
+          "Outdoor-rated directional access points can shoot Wi-Fi along aisles between stored boats and equipment.",
+          "Fiber optic cable may be necessary for runs longer than 300 feet between buildings.",
+          "Plan for power at every access point and camera location. PoE simplifies this significantly.",
+        ],
+      },
+      {
+        heading: "Security cameras for boat storage and warehouses",
+        items: [
+          "Cover entrances, exits, loading bays, and gates with cameras that capture license plates or boat registration numbers.",
+          "Wide-angle cameras for large indoor storage areas. Long-range cameras for fence lines and perimeter.",
+          "High ceilings require careful camera placement. A camera 30 feet up needs a longer focal length for useful detail.",
+          "Outdoor storage yards need weather-rated cameras with good low-light performance.",
+        ],
+      },
+      {
+        heading: "Seasonal operations and remote access",
+        items: [
+          "Many boat storage facilities operate seasonally. Plan startup and shutdown procedures for equipment.",
+          "Power down outdoor equipment during winter months to extend equipment life.",
+          "Remote access to cameras lets you check the property during the off-season without driving to the site.",
+          "Battery backup on critical equipment protects against power surges and brief outages during storms.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Can I use Wi-Fi cameras in a metal boat storage building?",
+        answer:
+          "It is possible but challenging. Metal buildings severely attenuate Wi-Fi signals. Wired PoE cameras are far more reliable in metal structures. If you must use wireless, test signal strength at every camera location before finalizing.",
+      },
+      {
+        question: "How do I get internet to multiple buildings on a large property?",
+        answer:
+          "Options include buried fiber or Ethernet (most reliable), point-to-point wireless bridges (good for line-of-sight), or separate internet connections (simplest but highest ongoing cost).",
+      },
+    ],
+    cta: "Maine CyberTech designs and installs network and camera systems for Maine boat storage facilities, warehouses, and large outdoor properties. Contact us for a site survey and system design.",
+  },
+  {
+    slug: "local-backup-cloud-backup-or-both-small-business",
+    title: "Local Backup, Cloud Backup, or Both?",
+    metaTitle: "Local Backup vs Cloud Backup for Small Businesses | Maine CyberTech",
+    metaDescription:
+      "Compare local backup and cloud backup for small businesses. Learn the pros and cons of each approach and when a hybrid backup strategy makes the most sense.",
+    primaryKeyword: "local backup vs cloud backup small business",
+    category: "Cloud Backup",
+    relatedServices: ["cloud"],
+    datePublished: "2024-03-05",
+    sections: [
+      {
+        heading: "Local backup: fast restore, local risk",
+        items: [
+          "Data is stored on an external hard drive, NAS device, or local server in your building.",
+          "Restores are fast because data does not need to travel over the internet.",
+          "Vulnerable to fire, flood, theft, and physical damage that affects both primary and backup data.",
+        ],
+      },
+      {
+        heading: "Cloud backup: offsite protection, slower restore",
+        items: [
+          "Data stored in a secure data center, protected from local physical threats.",
+          "Restores can be slow for large amounts of data since everything downloads over the internet.",
+          "Monthly or annual subscription cost based on storage used. Automatic, continuous backup.",
+          "Data is encrypted in transit and at rest with most reputable providers.",
+        ],
+      },
+      {
+        heading: "The hybrid approach: best of both",
+        items: [
+          "Local backup for fast restore of recent files. Cloud backup for offsite protection against building loss.",
+          "If your server fails, restore quickly from the local backup.",
+          "If the building is destroyed, your cloud backup ensures data is still recoverable.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Is cloud backup safe for sensitive business data?",
+        answer:
+          "Yes, if you choose a reputable provider that encrypts data in transit and at rest. Look for zero-knowledge encryption, meaning the provider cannot access your data.",
+      },
+      {
+        question: "Can I use OneDrive or Dropbox as my backup?",
+        answer:
+          "No. File sync services are not backup. They keep files updated across devices but may not protect against accidental deletion, ransomware, or retention gaps. A proper backup creates separate, versioned copies.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine small businesses evaluate backup options, set up local and cloud backup, and implement regular restore testing. Contact us for a backup strategy consultation.",
+  },
+  {
+    slug: "how-often-should-small-business-test-backups",
+    title: "How Often Should a Small Business Test Backups?",
+    metaTitle: "How Often Should a Business Test Backups? | Maine CyberTech",
+    metaDescription:
+      "Learn how often small businesses should test their backups, what a backup test should include, and how to build a restore testing schedule into regular operations.",
+    primaryKeyword: "how often test backups small business",
+    category: "Cloud Backup",
+    relatedServices: ["cloud"],
+    datePublished: "2024-05-21",
+    sections: [
+      {
+        heading: "Why backup testing matters",
+        items: [
+          "A backup that has never been tested is a hope, not a recovery plan.",
+          "Backups can fail silently: corrupted files, incomplete data, expired credentials, configuration changes.",
+          "Regular testing builds confidence and reduces panic during a real incident.",
+        ],
+      },
+      {
+        heading: "Recommended testing schedule",
+        items: [
+          "Monthly: spot-check a few random files to confirm they can be restored and opened correctly.",
+          "Quarterly: perform a full restore test of a critical system to a non-production location.",
+          "Annually: complete disaster recovery simulation including restoring all critical systems.",
+          "After any major change: new software, server migration, or backup provider change.",
+        ],
+      },
+      {
+        heading: "Making backup testing a habit",
+        items: [
+          "Set calendar reminders for quarterly tests. Make them recurring so they do not slip.",
+          "Assign backup testing as a specific responsibility. Do not assume someone is doing it.",
+          "Keep a simple log of each test: date, what was tested, result, and any issues found.",
+          "If a test fails, fix the issue immediately and re-test.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "What if I do not have a spare computer to test restores to?",
+        answer:
+          "Many cloud backup providers let you restore files through a web browser without dedicated hardware. For system-level restores, you may need temporary hardware. Some providers offer virtual restore environments.",
+      },
+      {
+        question: "What is the most common backup test failure?",
+        answer:
+          "The backup was running but had stopped working weeks earlier due to a credential change, storage full, or configuration error. No one noticed because no one was checking. This is why backup notifications and regular testing are essential.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine small businesses set up verified backup systems and implement regular restore testing. Contact us to review your backup strategy.",
+  },
+  {
+    slug: "how-local-organizations-modernize-technology-phases",
+    title: "How Local Organizations Can Modernize Technology in Phases",
+    metaTitle: "Modernize Technology in Phases for Local Organizations | Maine CyberTech",
+    metaDescription:
+      "A practical phase-based approach for local organizations to modernize their technology including assessment, prioritization, budgeting, and implementation without disrupting operations.",
+    primaryKeyword: "modernize technology in phases small organization",
+    category: "Managed IT",
+    relatedServices: ["it-support", "networks", "cybersecurity"],
+    datePublished: "2024-07-10",
+    sections: [
+      {
+        heading: "Phase 1: Assess and document",
+        items: [
+          "Inventory all technology: computers, servers, network equipment, software subscriptions, cloud services.",
+          "Document what is working well, what is causing problems, and what is end-of-life.",
+          "Identify security gaps: missing MFA, outdated operating systems, no backup strategy.",
+          "This phase costs mostly time and produces a clear picture of where you are starting from.",
+        ],
+      },
+      {
+        heading: "Phase 2: Fix the critical gaps first",
+        items: [
+          "Enable MFA on all accounts that support it. Free and provides immediate security improvement.",
+          "Set up automated backup for critical data. Test a restore.",
+          "Update or replace devices running unsupported operating systems.",
+          "Document admin credentials, vendor contacts, and renewal dates.",
+        ],
+      },
+      {
+        heading: "Phases 3-4: Upgrade and build for the future",
+        items: [
+          "Replace aging network equipment with current, supported models.",
+          "Implement business-grade Wi-Fi if currently using consumer equipment.",
+          "Create a technology budget and replacement schedule so upgrades are planned, not emergencies.",
+          "Establish a relationship with a managed IT provider for ongoing support and planning.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "How long does a phased modernization take?",
+        answer:
+          "Phase 1 can be done in a few weeks. Phase 2 typically takes 1-3 months. Phases 3 and 4 can span 6-18 months depending on budget and pace. The key is starting and making consistent progress.",
+      },
+      {
+        question: "What if our budget is very limited?",
+        answer:
+          "Start with the free or low-cost items: MFA, documentation, backup for critical data. These provide meaningful improvement with minimal investment. A managed IT provider can help you prioritize based on risk and budget.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine organizations assess their current technology, prioritize improvements, and implement modernization in manageable phases. Contact us for a technology assessment.",
+  },
+  {
+    slug: "questions-to-ask-before-upgrading-internet-phones-wifi-cameras",
+    title: "Questions to Ask Before Upgrading Internet, Phones, Wi-Fi, or Cameras",
+    metaTitle: "Questions Before Upgrading Internet Phones Wi-Fi Cameras | Maine CyberTech",
+    metaDescription:
+      "Key questions to ask before upgrading internet service, phone systems, Wi-Fi, or security cameras to avoid costly mistakes and get the right solution for your organization.",
+    primaryKeyword: "questions before upgrading internet phones Wi-Fi cameras",
+    category: "Local Business Technology",
+    relatedServices: ["networks", "security-systems"],
+    datePublished: "2024-09-18",
+    sections: [
+      {
+        heading: "Questions about internet upgrades",
+        items: [
+          "What speed do we actually need versus what we are being sold?",
+          "Is upload speed important for our cloud backups, video calls, and remote access?",
+          "What is the contract term, early termination fee, and price after the promotional period?",
+          "Is there a data cap or throttling after a certain usage level?",
+        ],
+      },
+      {
+        heading: "Questions about phone and Wi-Fi upgrades",
+        items: [
+          "Does our internet connection support VoIP reliably, or do we need to upgrade internet first?",
+          "What features do we actually need: auto attendant, voicemail-to-email, mobile app, call recording?",
+          "Is this Wi-Fi equipment business-grade or consumer-grade?",
+          "How will guest and business networks be properly separated?",
+        ],
+      },
+      {
+        heading: "Questions about security camera upgrades",
+        items: [
+          "What resolution do we need for our coverage goals? Higher is not always better.",
+          "How many days of retention do we need and is the storage sized for that?",
+          "Can we view cameras remotely from phones and computers?",
+          "Will the camera traffic affect our network performance? Should cameras be on a separate VLAN?",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Should I upgrade everything at once or one system at a time?",
+        answer:
+          "One system at a time is usually less disruptive and easier to budget. Prioritize based on what is causing the most problems or posing the most risk. Internet and network upgrades often make the biggest immediate difference.",
+      },
+      {
+        question: "How do I compare quotes from different providers?",
+        answer:
+          "Create a standard list of questions and send the same list to each provider. Compare not just price but equipment specifications, warranty, support terms, and timeline. The cheapest quote is rarely the best value.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine organizations evaluate technology upgrades, compare options, and make informed decisions. Contact us before you sign a contract or buy equipment.",
+  },
 ].sort((a, b) => b.datePublished.localeCompare(a.datePublished)) as BlogPost[];
 
 export function getBlogPost(slug: string): BlogPost | undefined {
