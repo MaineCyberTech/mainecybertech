@@ -2721,6 +2721,621 @@ export const blogPosts: BlogPost[] = [
     ],
     cta: "Maine CyberTech helps Maine businesses implement ransomware prevention measures including MFA, backups, email security, and staff training. Contact us for a cybersecurity assessment.",
   },
+  {
+    slug: "new-year-technology-checklist-maine-small-businesses",
+    title: "New Year Technology Checklist for Maine Small Businesses",
+    metaTitle: "New Year Technology Checklist for Maine Small Businesses | Maine CyberTech",
+    metaDescription:
+      "Start the year with a practical technology review checklist for Maine small businesses including Microsoft 365 audit, backup verification, device inventory, and cybersecurity baseline checks.",
+    primaryKeyword: "new year technology checklist small business",
+    category: "Managed IT",
+    relatedServices: ["it-support", "cybersecurity"],
+    datePublished: "2025-01-08",
+    sections: [
+      {
+        heading: "Accounts and access review",
+        items: [
+          "Review all user accounts. Disable accounts for people who left or changed roles.",
+          "Verify MFA is enabled on every account that supports it.",
+          "Audit admin access. Remove elevated permissions from anyone who no longer needs them.",
+          "Reset passwords for shared accounts and service accounts.",
+        ],
+      },
+      {
+        heading: "Backup and recovery verification",
+        items: [
+          "Run a test restore of at least one critical file or system.",
+          "Review backup scope. Are any new data sources or applications missing?",
+          "Verify offsite or cloud backups are current and accessible.",
+          "Update recovery documentation with any changes from the past year.",
+        ],
+      },
+      {
+        heading: "Hardware and software inventory",
+        items: [
+          "List all business computers with age, warranty status, and operating system version.",
+          "Identify devices that need replacement in the coming year and budget for them.",
+          "Review all software subscriptions. Cancel unused licenses and consolidate where possible.",
+          "Check network equipment age and firmware update status.",
+        ],
+      },
+      {
+        heading: "Planning for the year ahead",
+        items: [
+          "Set a technology budget for the year including planned replacements and projects.",
+          "Schedule quarterly backup tests and security reviews now so they do not get skipped.",
+          "Document goals: new locations, added staff, software changes, or upgrades to plan for.",
+          "Schedule a review with your IT provider to align on priorities for the year.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "How long does a new year technology review take?",
+        answer:
+          "For most small businesses, a thorough review takes 2-4 hours. The time investment is small compared to discovering a missed backup, expired license, or compromised account later in the year when it causes a problem.",
+      },
+      {
+        question: "What is the single most important thing to check?",
+        answer:
+          "Backup verification. Confirm backups are running, complete, and restorable. Everything else can be fixed. Lost data often cannot.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine businesses start the year with a thorough technology review. Contact us to schedule a new year technology assessment.",
+  },
+  {
+    slug: "spring-technology-preparation-seasonal-maine-businesses",
+    title: "Spring Technology Preparation for Seasonal Maine Businesses",
+    metaTitle: "Spring Technology Prep for Seasonal Maine Businesses | Maine CyberTech",
+    metaDescription:
+      "A spring preparation checklist for seasonal Maine businesses including technology startup procedures, system testing, Wi-Fi verification, security camera checks, and staff account setup.",
+    primaryKeyword: "spring technology preparation seasonal Maine business",
+    category: "Managed IT",
+    relatedServices: ["it-support", "networks"],
+    datePublished: "2025-03-22",
+    sections: [
+      {
+        heading: "Start early, not opening day",
+        items: [
+          "Begin technology preparation 2-3 weeks before the season opens.",
+          "Power on equipment gradually. Sudden power applied to equipment that has been off for months can cause failures.",
+          "Check for pest damage, moisture, or corrosion around equipment that was powered down for winter.",
+        ],
+      },
+      {
+        heading: "Systems testing",
+        items: [
+          "Test internet connectivity at every location. Run speed tests and verify they match what you pay for.",
+          "Verify Wi-Fi coverage in all guest and staff areas. Walk the property with a phone or tablet.",
+          "Test POS systems, reservation platforms, and any customer-facing technology.",
+          "Check security cameras: clean lenses, verify recording and retention, test remote access.",
+        ],
+      },
+      {
+        heading: "Accounts and access",
+        items: [
+          "Create or reactivate accounts for returning seasonal staff. Do not reuse accounts from departed staff.",
+          "Reset passwords for seasonal accounts. Enable MFA where supported.",
+          "Review what seasonal staff can access. Limit to what they need for their role.",
+          "Update the list of who has admin access and remove anyone who no longer needs it.",
+        ],
+      },
+      {
+        heading: "Documentation and support readiness",
+        items: [
+          "Update vendor and support contact lists. Verify phone numbers and account numbers.",
+          "Confirm your IT provider knows your season schedule and has current contact information.",
+          "Print a quick-reference sheet with Wi-Fi passwords, support numbers, and basic troubleshooting steps.",
+          "Identify who staff should contact first for technology problems and make sure they know the process.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "What is the most common spring startup problem?",
+        answer:
+          "Internet or Wi-Fi issues that were not tested before opening. Equipment that worked fine in the fall may have been affected by winter conditions, power fluctuations, or configuration changes. Test everything at least a week before opening.",
+      },
+      {
+        question: "Should I leave equipment powered on all winter?",
+        answer:
+          "Critical equipment like firewalls, core switches, and NVRs should stay powered on for remote access and monitoring. Non-essential equipment like access points in seasonal areas can be powered down to extend life and save energy.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine seasonal businesses prepare technology for opening season. Contact us to schedule a spring startup assessment and system testing.",
+  },
+  {
+    slug: "how-to-read-network-assessment-report",
+    title: "How to Read a Network Assessment Report",
+    metaTitle: "How to Read a Network Assessment Report | Maine CyberTech",
+    metaDescription:
+      "Learn how to read and understand a network assessment report including signal heat maps, equipment inventory, identified issues, recommendations, and what to ask your provider about the findings.",
+    primaryKeyword: "how to read network assessment report",
+    category: "Networking",
+    relatedServices: ["networks"],
+    datePublished: "2025-07-28",
+    sections: [
+      {
+        heading: "What a network assessment should include",
+        items: [
+          "An inventory of all network equipment with models, ages, firmware versions, and end-of-support status.",
+          "Signal strength measurements or heat maps showing Wi-Fi coverage across your space.",
+          "Internet speed test results taken at multiple times and locations.",
+          "Identified issues ranked by severity: critical, recommended, and optional.",
+        ],
+      },
+      {
+        heading: "Understanding the Wi-Fi heat map",
+        items: [
+          "Green and yellow areas indicate good to acceptable coverage. Red or blank areas indicate dead zones.",
+          "Coverage should extend to every area where people work, meet, or serve customers.",
+          "A heat map generated at one time of day may not reflect conditions when the building is full of people.",
+          "Ask the provider to explain any coverage gaps and what it would take to address them.",
+        ],
+      },
+      {
+        heading: "Interpreting equipment recommendations",
+        items: [
+          "Equipment nearing end of life or no longer receiving security updates should be prioritized for replacement.",
+          "Recommendations should explain why specific models were chosen, not just what to buy.",
+          "The report should distinguish between what needs immediate attention and what can be planned for future budget cycles.",
+          "Ask about alternatives. There may be different options at different price points.",
+        ],
+      },
+      {
+        heading: "Questions to ask about the report",
+        items: [
+          "What are the top three things we should address first and why?",
+          "What is the risk of not addressing each finding?",
+          "What is the estimated cost and timeline for each recommendation?",
+          "How will the recommended changes affect our daily operations during and after implementation?",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Do I need a network assessment if everything seems to be working?",
+        answer:
+          "An assessment can reveal issues you are not aware of, such as equipment nearing end of support, security vulnerabilities, or coverage gaps in areas you rarely use. It also provides a baseline for future planning and budgeting.",
+      },
+      {
+        question: "How often should a network assessment be done?",
+        answer:
+          "Every 2-3 years for most small businesses, or whenever you are planning significant changes like adding staff, moving locations, or upgrading systems. More frequent assessments may be warranted if you have recurring issues or compliance requirements.",
+      },
+    ],
+    cta: "Maine CyberTech provides network assessments for Maine businesses with clear, understandable reports and practical recommendations. Contact us to schedule a network assessment.",
+  },
+  {
+    slug: "fall-winter-technology-preparation-maine-businesses",
+    title: "Preparing Your Business Technology for Fall and Winter in Maine",
+    metaTitle: "Fall Winter Technology Preparation for Maine Businesses | Maine CyberTech",
+    metaDescription:
+      "Practical steps to prepare your business technology for Maine fall and winter including battery backup testing, remote access planning, equipment protection, and seasonal shutdown procedures.",
+    primaryKeyword: "fall winter technology preparation Maine business",
+    category: "Managed IT",
+    relatedServices: ["it-support", "cloud"],
+    datePublished: "2025-09-20",
+    sections: [
+      {
+        heading: "Power protection and battery backup",
+        items: [
+          "Test all UPS battery backups. Most UPS batteries last 2-3 years. Replace any that fail a self-test.",
+          "Verify that critical equipment is plugged into surge protectors or UPS units, not directly into wall outlets.",
+          "Know how to safely shut down servers and equipment if an extended outage is expected.",
+          "Consider a generator for locations where even brief outages are unacceptable.",
+        ],
+      },
+      {
+        heading: "Remote access and winter weather planning",
+        items: [
+          "Test VPN and remote desktop connections. Make sure key staff can work from home if weather prevents travel.",
+          "Verify that email, files, and critical applications are accessible remotely.",
+          "Forward office phones to cell phones or set up a winter weather voicemail greeting.",
+          "Document the process for remote work so staff know what to do when a storm is forecast.",
+        ],
+      },
+      {
+        heading: "Seasonal shutdown for seasonal businesses",
+        items: [
+          "Document shutdown procedures for all technology equipment.",
+          "Back up all data before shutting systems down for the season.",
+          "Power down non-essential equipment. Leave critical equipment like firewalls running for remote access.",
+          "Protect outdoor equipment from snow, ice, and freezing temperatures where possible.",
+        ],
+      },
+      {
+        heading: "Cybersecurity reminders for the holiday season",
+        items: [
+          "Holiday phishing scams increase significantly. Remind staff to be extra cautious with emails.",
+          "Verify any payment change requests by phone, not just email.",
+          "If staff use personal devices for work during holidays or weather events, make sure they connect through VPN.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "How long do UPS batteries last in a cold environment?",
+        answer:
+          "Cold temperatures reduce battery runtime. A UPS in an unheated area may provide significantly less runtime than its rating. If equipment must be in an unheated space, check battery health more frequently during winter months.",
+      },
+      {
+        question: "What is the most important thing to do before winter?",
+        answer:
+          "Verify backups and test remote access. If winter weather prevents staff from reaching the office, they need to know they can work remotely and that data is protected regardless of what happens to the physical location.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine businesses prepare technology for fall and winter with backup verification, remote access testing, and seasonal planning. Contact us for a winter readiness assessment.",
+  },
+  {
+    slug: "holiday-season-technology-tips-retail-hospitality",
+    title: "Holiday Season Technology Tips for Retail and Hospitality Businesses",
+    metaTitle: "Holiday Technology Tips for Retail and Hospitality | Maine CyberTech",
+    metaDescription:
+      "Technology tips for retail and hospitality businesses during the holiday season including POS reliability, guest Wi-Fi capacity, staffing technology needs, and cybersecurity awareness during peak business periods.",
+    primaryKeyword: "holiday season technology tips retail hospitality",
+    category: "Local Business Technology",
+    relatedServices: ["networks", "security-systems"],
+    datePublished: "2025-11-24",
+    sections: [
+      {
+        heading: "POS and payment systems",
+        items: [
+          "Test POS systems under load before the holiday rush. A slow system on a busy day costs sales.",
+          "Have a backup payment method available if the primary system goes down. A simple card reader connected to a phone can save the day.",
+          "Verify that all POS devices have the latest updates and are connected and functioning.",
+          "Know who to call for POS support and have their number accessible, not buried in an email.",
+        ],
+      },
+      {
+        heading: "Guest Wi-Fi capacity",
+        items: [
+          "Holiday crowds mean more devices on your guest Wi-Fi. Verify your network can handle peak capacity.",
+          "Test Wi-Fi in all guest areas during a busy period, not when the space is empty.",
+          "Make sure the Wi-Fi password is clearly posted where guests can find it quickly.",
+          "Bandwidth limits prevent a few heavy users from degrading the experience for everyone else.",
+        ],
+      },
+      {
+        heading: "Seasonal staffing technology",
+        items: [
+          "Set up accounts for seasonal staff before their first day. Do not share accounts between employees.",
+          "Train seasonal staff on POS, Wi-Fi support for guests, and basic troubleshooting.",
+          "Limit seasonal staff access to only what they need. They do not need admin access to your network or systems.",
+          "Disable seasonal staff accounts promptly after their last shift.",
+        ],
+      },
+      {
+        heading: "Cybersecurity during the busiest time of year",
+        items: [
+          "Attackers know businesses are distracted during the holidays. Be extra vigilant about suspicious emails.",
+          "Verify any urgent payment or vendor change requests by phone before acting.",
+          "Do not let holiday stress override security procedures. If something seems off, it probably is.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "What is the most common holiday technology failure?",
+        answer:
+          "POS or payment system problems during peak hours. Always have a backup payment method and know who to call for support. Test everything the week before your busy season starts.",
+      },
+      {
+        question: "How do I handle Wi-Fi for holiday crowds?",
+        answer:
+          "If your guest Wi-Fi struggled last year, address it before this year. A site survey can identify coverage and capacity gaps. Adding an access point in a high-traffic area is a small investment compared to frustrated customers who cannot connect.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine retail and hospitality businesses prepare technology for the holiday season. Contact us for a pre-holiday technology review.",
+  },
+  {
+    slug: "cyber-insurance-maine-small-businesses-need-to-know",
+    title: "Cyber Insurance: What Maine Small Businesses Need to Know",
+    metaTitle: "Cyber Insurance for Maine Small Businesses | Maine CyberTech",
+    metaDescription:
+      "What Maine small businesses need to know about cyber insurance including what it covers, what insurers require, common application questions about MFA and backups, and how to qualify for coverage.",
+    primaryKeyword: "cyber insurance Maine small business",
+    category: "Cybersecurity",
+    relatedServices: ["cybersecurity", "cloud"],
+    datePublished: "2026-01-28",
+    sections: [
+      {
+        heading: "What cyber insurance covers",
+        items: [
+          "Incident response costs: forensic investigation, legal counsel, customer notification.",
+          "Business interruption: lost revenue while systems are down.",
+          "Data recovery and system restoration.",
+          "Ransom payments, though many policies now limit or exclude this.",
+          "Liability and legal defense costs if customer or employee data is exposed.",
+        ],
+      },
+      {
+        heading: "What insurers are asking about now",
+        items: [
+          "Is MFA enabled on all email accounts and remote access? This is becoming a minimum requirement.",
+          "Do you have offline or cloud backups that are tested regularly?",
+          "Do you have a documented incident response plan?",
+          "Are admin accounts limited and separate from daily-use accounts?",
+          "Do you have endpoint protection and email filtering in place?",
+        ],
+      },
+      {
+        heading: "Preparing for a cyber insurance application",
+        items: [
+          "Document your security controls before applying. Insurers want evidence, not just promises.",
+          "Close gaps before applying. A denied application or exclusion can make it harder to get coverage later.",
+          "Work with your IT provider to ensure controls are in place and documented.",
+          "Understand what is excluded. Not all policies cover the same things.",
+        ],
+      },
+      {
+        heading: "Common mistakes",
+        items: [
+          "Assuming general liability insurance covers cyber incidents. It usually does not.",
+          "Answering application questions with what you intend to implement rather than what is actually in place.",
+          "Not reviewing the policy annually as your technology and threats change.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "How much does cyber insurance cost for a small business?",
+        answer:
+          "Costs vary widely based on industry, revenue, data sensitivity, and security posture. Small business policies often start around $500-1,500 annually. Businesses with strong security controls like MFA and tested backups typically qualify for better rates.",
+      },
+      {
+        question: "Will cyber insurance protect me from everything?",
+        answer:
+          "No. Insurance is one layer of protection, not a substitute for security. Policies have exclusions, deductibles, and limits. The best protection is preventing incidents through good security practices, with insurance as a financial backstop if prevention fails.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine businesses implement the security controls that cyber insurers require including MFA, backups, and incident response planning. Contact us to prepare for your cyber insurance application.",
+  },
+  {
+    slug: "signs-business-needs-network-upgrade",
+    title: "Signs Your Business Needs a Network Upgrade",
+    metaTitle: "Signs Your Business Needs a Network Upgrade | Maine CyberTech",
+    metaDescription:
+      "Recognize the signs that your business network needs an upgrade including slow Wi-Fi, frequent dropouts, security concerns, growth demands, and aging equipment that no longer receives updates.",
+    primaryKeyword: "signs business needs network upgrade",
+    category: "Networking",
+    relatedServices: ["networks"],
+    datePublished: "2026-03-08",
+    sections: [
+      {
+        heading: "Performance signs",
+        items: [
+          "Wi-Fi is consistently slow or drops in certain areas of your building.",
+          "Staff regularly complain about internet speed, video call quality, or file access times.",
+          "You need to reboot your router or access points regularly to keep things working.",
+          "Adding a few new devices noticeably degrades performance for everyone else.",
+        ],
+      },
+      {
+        heading: "Security and support signs",
+        items: [
+          "Your network equipment is more than 5 years old and no longer receives firmware updates.",
+          "You cannot separate guest and business networks because your equipment does not support VLANs.",
+          "Your router was provided by your internet provider and you have no visibility into its security settings.",
+          "You are not sure if your equipment has any known security vulnerabilities.",
+        ],
+      },
+      {
+        heading: "Growth and operational signs",
+        items: [
+          "You have added staff, devices, or locations since your network was last designed.",
+          "You are adding or planning to add security cameras, VoIP phones, or other network-dependent systems.",
+          "Staff working remotely or from multiple locations experience inconsistent access to business systems.",
+          "You have no network documentation and would not know where to start if something failed.",
+        ],
+      },
+      {
+        heading: "When to act",
+        items: [
+          "If two or more signs apply to your business, a network assessment is the logical next step.",
+          "Do not wait for a failure. A proactive upgrade is faster, cheaper, and less disruptive than an emergency replacement.",
+          "Start with an assessment to understand what needs to change, then budget and plan the upgrade.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "How much does a small business network upgrade cost?",
+        answer:
+          "A basic upgrade with a new firewall, switch, and 2-3 access points typically ranges from $1,500-4,000 including equipment and installation. Costs vary with building size, equipment quality, and any cabling work needed.",
+      },
+      {
+        question: "How long does a network upgrade take?",
+        answer:
+          "Most small business network upgrades install in 1-2 days. Your provider should plan the installation to minimize disruption, often doing the physical work during business hours and configuration changes after hours.",
+      },
+    ],
+    cta: "Maine CyberTech provides network assessments and upgrades for Maine businesses. If your network is more than a few years old or showing signs of age, contact us for an assessment.",
+  },
+  {
+    slug: "voip-phone-systems-upgrade-business-phones",
+    title: "VoIP Phone Systems: Is It Time to Upgrade Your Business Phones?",
+    metaTitle: "VoIP Phone Systems: Time to Upgrade Business Phones? | Maine CyberTech",
+    metaDescription:
+      "Evaluate whether your business should upgrade to a VoIP phone system including cost comparison, feature benefits, internet requirements, and practical considerations for Maine businesses.",
+    primaryKeyword: "VoIP phone systems upgrade business",
+    category: "Local Business Technology",
+    relatedServices: ["networks"],
+    datePublished: "2026-05-03",
+    sections: [
+      {
+        heading: "What VoIP offers over traditional phone systems",
+        items: [
+          "Lower monthly costs compared to traditional phone lines, especially for multi-location businesses.",
+          "Features included at no extra cost: auto attendant, voicemail-to-email, call forwarding, mobile apps.",
+          "Easy to add, remove, or move users without a technician visit or wiring changes.",
+          "Calls between locations are free. Remote and mobile staff use the business phone system from anywhere.",
+        ],
+      },
+      {
+        heading: "What you need for VoIP to work well",
+        items: [
+          "Reliable internet with enough upload bandwidth for simultaneous calls. Each call uses about 100 Kbps.",
+          "A network configured to prioritize voice traffic so calls are clear even when the internet is busy.",
+          "PoE switches to power VoIP phones over the network cable, eliminating separate power adapters at each desk.",
+          "A backup internet connection or cellular failover so phones keep working during an internet outage.",
+        ],
+      },
+      {
+        heading: "Questions to ask before switching",
+        items: [
+          "Can we keep our existing phone numbers?",
+          "What happens to phone service if the internet goes down?",
+          "Do we need new phones or can we use softphones on computers and mobile devices?",
+          "How does pricing compare to our current phone bill over 3 years, including any equipment costs?",
+        ],
+      },
+      {
+        heading: "Common VoIP mistakes to avoid",
+        items: [
+          "Switching to VoIP without first verifying your internet connection can support it reliably.",
+          "Not configuring quality of service on your network, leading to choppy calls when the network is busy.",
+          "Forgetting about fax lines, alarm systems, or elevator phones that may still need traditional phone lines.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Is VoIP reliable enough for a business?",
+        answer:
+          "Yes, when properly implemented with a reliable internet connection, quality of service configuration, and backup connectivity. Millions of businesses use VoIP as their primary phone system. Reliability depends more on your network and internet than on VoIP technology itself.",
+      },
+      {
+        question: "How much can a business save by switching to VoIP?",
+        answer:
+          "Savings vary but many businesses reduce their phone costs by 30-60% compared to traditional phone lines, especially when they have multiple lines, long-distance calling, or multiple locations. Features included with VoIP that would cost extra with traditional systems add to the value.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine businesses evaluate, select, and implement VoIP phone systems. Contact us for a phone system assessment and cost comparison.",
+  },
+  {
+    slug: "summer-technology-preparation-seasonal-maine-businesses",
+    title: "Summer Technology Preparation for Seasonal Maine Businesses",
+    metaTitle: "Summer Technology Prep for Seasonal Maine Businesses | Maine CyberTech",
+    metaDescription:
+      "Prepare your seasonal Maine business for summer with technology startup checklists, Wi-Fi testing, POS verification, staff account setup, and outdoor equipment readiness.",
+    primaryKeyword: "summer technology preparation seasonal Maine business",
+    category: "Managed IT",
+    relatedServices: ["it-support", "networks"],
+    datePublished: "2026-06-12",
+    sections: [
+      {
+        heading: "Pre-opening technology checklist",
+        items: [
+          "Power on equipment at least two weeks before opening to allow time for troubleshooting.",
+          "Test internet connectivity and Wi-Fi across all guest and staff areas. Walk the property with a device.",
+          "Verify POS, reservation, and payment systems are working and updated.",
+          "Check security cameras: clean lenses, test recording and remote access.",
+        ],
+      },
+      {
+        heading: "Outdoor equipment readiness",
+        items: [
+          "Inspect outdoor access points, cameras, and cabling for winter damage.",
+          "Clean equipment of dirt, salt residue, and debris that accumulated over the off-season.",
+          "Test power at all outdoor equipment locations. GFCI outlets may have tripped over winter.",
+          "Verify weather sealing and enclosures are intact. Replace any damaged seals or gaskets.",
+        ],
+      },
+      {
+        heading: "Staff and guest technology",
+        items: [
+          "Create accounts for seasonal staff before they arrive. Do not wait until opening day.",
+          "Post Wi-Fi information where guests can find it: at check-in, in welcome materials, on signage.",
+          "Train seasonal staff on basic Wi-Fi troubleshooting for guest questions.",
+          "Set bandwidth limits on guest Wi-Fi to prevent a few heavy users from degrading performance.",
+        ],
+      },
+      {
+        heading: "Have a support plan",
+        items: [
+          "Confirm your IT provider knows your season dates and operating hours.",
+          "Identify who staff should contact first for technology problems.",
+          "Keep a printed quick-reference sheet with Wi-Fi passwords, support numbers, and basic steps.",
+          "Test remote access to cameras and systems from offsite in case you need to troubleshoot remotely.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "How early should I start technology preparation for summer season?",
+        answer:
+          "At least 2-3 weeks before opening. This gives you time to discover and fix issues without the pressure of guests arriving. Major problems like failed equipment may need even more lead time for replacement.",
+      },
+      {
+        question: "What is the most common summer technology failure?",
+        answer:
+          "Wi-Fi coverage problems that were acceptable last year but are inadequate this year as guest expectations and device counts increase. Test coverage during a peak period, not when the property is empty.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine seasonal businesses prepare technology for the summer season with system testing, Wi-Fi verification, and staff setup. Contact us to schedule your pre-season technology review.",
+  },
+  {
+    slug: "endpoint-protection-business-computers-small-business",
+    title: "Endpoint Protection: Keeping Business Computers Secure Without an IT Team",
+    metaTitle: "Endpoint Protection for Small Businesses | Maine CyberTech",
+    metaDescription:
+      "Practical endpoint protection strategies for small businesses without a dedicated IT team including automatic updates, built-in security tools, application allowlisting, and device management basics.",
+    primaryKeyword: "endpoint protection small business computers",
+    category: "Cybersecurity",
+    relatedServices: ["cybersecurity", "it-support"],
+    datePublished: "2026-06-28",
+    sections: [
+      {
+        heading: "What endpoint protection means",
+        items: [
+          "Endpoint protection secures the computers, phones, and tablets that connect to your business network.",
+          "It includes antivirus, firewall, disk encryption, automatic updates, and device management.",
+          "Modern endpoint protection is built into Windows and macOS. You may already have what you need.",
+        ],
+      },
+      {
+        heading: "Built-in tools you should be using",
+        items: [
+          "Windows Defender provides antivirus and firewall protection and is included with Windows 10 and 11.",
+          "macOS includes XProtect antivirus and a built-in firewall. Both should be enabled.",
+          "Automatic updates should be enabled on every device. This patches security vulnerabilities without manual intervention.",
+          "Disk encryption (BitLocker on Windows, FileVault on macOS) protects data if a device is lost or stolen.",
+        ],
+      },
+      {
+        heading: "Beyond the basics",
+        items: [
+          "Application allowlisting prevents unauthorized software from running, including ransomware.",
+          "Centralized device management lets you enforce policies across all business computers from one place.",
+          "Regular vulnerability scanning identifies missing patches and configuration issues.",
+          "Consider third-party endpoint protection if you need advanced features like threat hunting, EDR, or centralized reporting.",
+        ],
+      },
+      {
+        heading: "Practical approach for small businesses",
+        items: [
+          "Start with the built-in tools. Enable Windows Defender, firewall, automatic updates, and disk encryption on every device.",
+          "Use Microsoft 365 Business Premium which includes Intune for device management and advanced security features.",
+          "Create a list of all business devices with purchase dates, assigned users, and operating system versions.",
+          "If a device can no longer receive security updates, replace it. An unsupported device is a security risk.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Do I need to buy third-party antivirus for my business computers?",
+        answer:
+          "For most small businesses, Windows Defender provides sufficient protection when combined with automatic updates, MFA, and safe computing practices. Third-party solutions are most useful when you need centralized management, advanced reporting, or specific compliance features.",
+      },
+      {
+        question: "What about employee personal devices used for work?",
+        answer:
+          "Personal devices should have the same baseline protections as business devices: automatic updates, antivirus, and disk encryption. Ideally, business data should be accessed through secure remote access rather than stored on personal devices.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine businesses implement endpoint protection, device management, and security baselines. Contact us for a device security assessment.",
+  },
 ].sort((a, b) => b.datePublished.localeCompare(a.datePublished)) as BlogPost[];
 
 export function getBlogPost(slug: string): BlogPost | undefined {
