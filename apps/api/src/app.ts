@@ -58,6 +58,12 @@ import finalRouter from "./routes/final";
 import clientOnboardingRouter from "./routes/client-onboarding-command-center";
 import satisfactionPulseWidgetRouter from "./routes/satisfaction-pulse-widget";
 import dynamicClientFormsBuilderRouter from "./routes/dynamic-client-forms-builder";
+import licenseOptimizerRouter from "./routes/license-optimizer";
+import dmarcCoachRouter from "./routes/dmarc-coach";
+import trainingHubRouter from "./routes/training-hub";
+import insuranceBinderRouter from "./routes/insurance-binder";
+import statusPageRouter from "./routes/status-page";
+import uptimeMonitorRouter from "./routes/uptime-monitor";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -164,6 +170,12 @@ export function createApp(): Express {
   app.use("/api/v1/client-onboarding", clientOnboardingRouter);
   app.use("/api/v1/satisfaction-pulse", satisfactionPulseWidgetRouter);
   app.use("/api/v1/dynamic-forms", dynamicClientFormsBuilderRouter);
+  app.use("/api/v1/license-optimizer", licenseOptimizerRouter);
+  app.use("/api/v1/dmarc-coach", dmarcCoachRouter);
+  app.use("/api/v1/training-hub", trainingHubRouter);
+  app.use("/api/v1/insurance-binder", insuranceBinderRouter);
+  app.use("/api/v1/status-page", statusPageRouter);
+  app.use("/api/v1/uptime-monitor", uptimeMonitorRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

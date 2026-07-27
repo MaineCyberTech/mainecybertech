@@ -101,4 +101,25 @@ export class GovernanceApi {
       this.c.patch(`/api/v1/governance/tabletop/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/governance/tabletop/${id}`),
   };
+  sopLibrary = {
+    list: (params?: { page?: number; limit?: number; organizationId?: string }) =>
+      this.c.get(
+        "/api/v1/governance/sop-library",
+        qp({
+          page: params?.page,
+          limit: params?.limit,
+          organization_id: params?.organizationId,
+        }),
+      ),
+    get: (id: string) => this.c.get(`/api/v1/governance/sop-library/${id}`),
+    create: (data: Record<string, unknown>) => this.c.post("/api/v1/governance/sop-library", data),
+    update: (id: string, data: Record<string, unknown>) =>
+      this.c.patch(`/api/v1/governance/sop-library/${id}`, data),
+    remove: (id: string) => this.c.delete(`/api/v1/governance/sop-library/${id}`),
+    complianceMap: (params?: { organizationId: string }) =>
+      this.c.get(
+        "/api/v1/governance/sop-library/compliance-map",
+        qp({ organization_id: params?.organizationId }),
+      ),
+  };
 }

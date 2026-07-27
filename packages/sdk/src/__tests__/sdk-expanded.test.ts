@@ -754,4 +754,77 @@ describe("SDK modules — expanded coverage", () => {
       expect(result.projects).toHaveLength(0);
     });
   });
+
+  describe("StatusPageApi", () => {
+    it("gets public status", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ components: [], activeIncidents: [], upcomingMaintenance: [] }),
+      );
+      const result = await client.statusPage.publicStatus("org-1");
+      expect(result.components).toHaveLength(0);
+    });
+    it("lists components", async () => {
+      mockFetch.mockResolvedValue(mockResponse(paginated([{ id: "c1", name: "API" }])));
+      const result = await client.statusPage.components.list({ organizationId: "org-1" });
+      expect(result.items).toHaveLength(1);
+    });
+    it("creates a component", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "c1" }));
+      await client.statusPage.components.create({ organizationId: "org-1", name: "API" });
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+    });
+    it("lists incidents", async () => {
+      mockFetch.mockResolvedValue(mockResponse(paginated([{ id: "i1" }])));
+      const result = await client.statusPage.incidents.list({ organizationId: "org-1" });
+      expect(result.items).toHaveLength(1);
+    });
+    it("lists maintenance notices", async () => {
+      mockFetch.mockResolvedValue(mockResponse(paginated([{ id: "m1" }])));
+      const result = await client.statusPage.maintenance.list({ organizationId: "org-1" });
+      expect(result.items).toHaveLength(1);
+    });
+  });
+
+  describe("UptimeMonitorApi", () => {
+    it("lists checks", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse(paginated([{ id: "c1", url: "https://example.com" }])),
+      );
+      const result = await client.uptimeMonitor.listChecks({ organizationId: "org-1" });
+      expect(result.items).toHaveLength(1);
+    });
+    it("gets a check", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "c1" }));
+      const result = await client.uptimeMonitor.getCheck("c1");
+      expect(result.id).toBe("c1");
+    });
+    it("creates a check", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "c1" }));
+      await client.uptimeMonitor.createCheck({
+        organizationId: "org-1",
+        url: "https://example.com",
+      });
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+    });
+    it("gets results", async () => {
+      mockFetch.mockResolvedValue(mockResponse([{ id: "r1", is_up: true }]));
+      const result = await client.uptimeMonitor.getResults("c1");
+      expect(result).toHaveLength(1);
+    });
+    it("gets uptime stats", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ "7d": { total: 100, up: 99, pct: 99 } }));
+      const result = await client.uptimeMonitor.getUptime("c1");
+      expect(result["7d"]).toBeDefined();
+    });
+    it("gets dashboard", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          checks: [],
+          summary: { total: 0, up: 0, down: 0, paused: 0, overallUptime: 100 },
+        }),
+      );
+      const result = await client.uptimeMonitor.dashboard();
+      expect(result.summary).toBeDefined();
+    });
+  });
 });

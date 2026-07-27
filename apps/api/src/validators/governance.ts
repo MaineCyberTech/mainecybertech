@@ -40,3 +40,30 @@ export const createTabletopSchema = z.object({
   actionItems: z.string().max(5000).optional().nullable(),
   afterActionReport: z.string().max(10000).optional().nullable(),
 });
+export const createSopSchema = z.object({
+  organizationId: z.string().min(1),
+  title: z.string().min(1).max(200),
+  description: z.string().max(5000).optional().nullable(),
+  sopCategory: z.string().min(1).max(100).default("general"),
+  complianceFramework: z.string().max(100).optional().nullable(),
+  frameworkControlIds: z.array(z.string()).optional().default([]),
+  status: z.string().default("draft"),
+  reviewCycleDays: z.number().int().default(90),
+  ownerUserId: z.string().optional().nullable(),
+  documentUrl: z.string().max(500).optional().nullable(),
+  tags: z.array(z.string()).optional().default([]),
+});
+export const updateSopSchema = z.object({
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  sopCategory: z.string().max(100).optional(),
+  complianceFramework: z.string().max(100).optional().nullable(),
+  frameworkControlIds: z.array(z.string()).optional(),
+  status: z.string().optional(),
+  reviewCycleDays: z.number().int().optional(),
+  lastReviewedAt: z.string().optional().nullable(),
+  nextReviewAt: z.string().optional().nullable(),
+  ownerUserId: z.string().optional().nullable(),
+  documentUrl: z.string().max(500).optional().nullable(),
+  tags: z.array(z.string()).optional(),
+});

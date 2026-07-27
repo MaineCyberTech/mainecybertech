@@ -125,6 +125,12 @@ import type {
 } from "./dynamic-client-forms-builder";
 import { DynamicFormsApi } from "./dynamic-client-forms-builder.api";
 import { BusinessOsApi } from "./business-os.api";
+import { LicenseOptimizerApi } from "./license-optimizer";
+import { DmarcCoachApi } from "./dmarc-coach";
+import { TrainingHubApi } from "./training-hub";
+import { InsuranceBinderApi } from "./insurance-binder";
+import { StatusPageApi } from "./status-page";
+import { UptimeMonitorApi } from "./uptime-monitor";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -242,6 +248,12 @@ export class MCTClient {
   public satisfactionPulse: SatisfactionPulseApi;
   public dynamicForms: DynamicFormsApi;
   public businessOs: BusinessOsApi;
+  public licenseOptimizer: LicenseOptimizerApi;
+  public dmarcCoach: DmarcCoachApi;
+  public trainingHub: TrainingHubApi;
+  public insuranceBinder: InsuranceBinderApi;
+  public statusPage: StatusPageApi;
+  public uptimeMonitor: UptimeMonitorApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -283,6 +295,12 @@ export class MCTClient {
     this.satisfactionPulse = new SatisfactionPulseApi(client);
     this.dynamicForms = new DynamicFormsApi(client);
     this.businessOs = new BusinessOsApi(client);
+    this.licenseOptimizer = new LicenseOptimizerApi(client);
+    this.dmarcCoach = new DmarcCoachApi(client);
+    this.trainingHub = new TrainingHubApi(client);
+    this.insuranceBinder = new InsuranceBinderApi(client);
+    this.statusPage = new StatusPageApi(client);
+    this.uptimeMonitor = new UptimeMonitorApi(client);
   }
 
   static create(opts: ClientOptions) {

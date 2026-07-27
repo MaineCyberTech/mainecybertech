@@ -103,3 +103,55 @@ export const updateProjectUpdateSchema = z.object({
   isInternal: z.boolean().optional(),
   isPinned: z.boolean().optional(),
 });
+
+export const createPhaseSchema = z.object({
+  projectId: z.string().min(1),
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional().nullable(),
+  status: z.string().default("planned"),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+  sortOrder: z.number().int().default(0),
+});
+
+export const updatePhaseSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  status: z.string().optional(),
+  startDate: z.string().optional().nullable(),
+  endDate: z.string().optional().nullable(),
+  sortOrder: z.number().int().optional(),
+});
+
+export const createMilestoneSchema = z.object({
+  projectId: z.string().min(1),
+  phaseId: z.string().optional().nullable(),
+  title: z.string().min(1).max(200),
+  description: z.string().max(2000).optional().nullable(),
+  dueDate: z.string().optional().nullable(),
+  status: z.string().default("pending"),
+});
+
+export const updateMilestoneSchema = z.object({
+  phaseId: z.string().optional().nullable(),
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  dueDate: z.string().optional().nullable(),
+  status: z.string().optional(),
+  completedAt: z.string().optional().nullable(),
+});
+
+export const createDependencySchema = z.object({
+  projectId: z.string().min(1),
+  dependsOnTaskId: z.string().optional().nullable(),
+  dependsOnMilestoneId: z.string().optional().nullable(),
+  blockedByProjectId: z.string().optional().nullable(),
+  dependencyType: z.string().default("finish_to_start"),
+});
+
+export const updateDependencySchema = z.object({
+  dependsOnTaskId: z.string().optional().nullable(),
+  dependsOnMilestoneId: z.string().optional().nullable(),
+  blockedByProjectId: z.string().optional().nullable(),
+  dependencyType: z.string().optional(),
+});

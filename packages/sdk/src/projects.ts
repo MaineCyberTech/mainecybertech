@@ -239,4 +239,36 @@ export class ProjectsApi {
   removeUpdate(projectId: string, updateId: string) {
     return this.client.delete<void>(`/api/v1/projects/${projectId}/updates/${updateId}`);
   }
+
+  phases = {
+    list: (projectId: string) =>
+      this.client.get("/api/v1/projects/phases", { project_id: projectId }),
+    get: (id: string) => this.client.get(`/api/v1/projects/phases/${id}`),
+    create: (data: Record<string, unknown>) => this.client.post("/api/v1/projects/phases", data),
+    update: (id: string, data: Record<string, unknown>) =>
+      this.client.patch(`/api/v1/projects/phases/${id}`, data),
+    remove: (id: string) => this.client.delete(`/api/v1/projects/phases/${id}`),
+  };
+
+  milestones = {
+    list: (projectId: string) =>
+      this.client.get("/api/v1/projects/milestones", { project_id: projectId }),
+    get: (id: string) => this.client.get(`/api/v1/projects/milestones/${id}`),
+    create: (data: Record<string, unknown>) =>
+      this.client.post("/api/v1/projects/milestones", data),
+    update: (id: string, data: Record<string, unknown>) =>
+      this.client.patch(`/api/v1/projects/milestones/${id}`, data),
+    remove: (id: string) => this.client.delete(`/api/v1/projects/milestones/${id}`),
+  };
+
+  dependencies = {
+    list: (projectId: string) =>
+      this.client.get("/api/v1/projects/dependencies", { project_id: projectId }),
+    get: (id: string) => this.client.get(`/api/v1/projects/dependencies/${id}`),
+    create: (data: Record<string, unknown>) =>
+      this.client.post("/api/v1/projects/dependencies", data),
+    update: (id: string, data: Record<string, unknown>) =>
+      this.client.patch(`/api/v1/projects/dependencies/${id}`, data),
+    remove: (id: string) => this.client.delete(`/api/v1/projects/dependencies/${id}`),
+  };
 }

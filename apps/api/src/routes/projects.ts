@@ -20,6 +20,9 @@ import {
   portalTaskCommentSchema,
   addProjectUpdateSchema,
   updateProjectUpdateSchema,
+  createPhaseSchema,
+  createMilestoneSchema,
+  createDependencySchema,
 } from "../validators/project";
 
 const router: ReturnType<typeof Router> = Router();
@@ -98,6 +101,111 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     next(error);
   }
 });
+
+// --- Client Project Tracker (Module 12): phases, milestones, dependencies ---
+
+function camelToSnake(str: string): string {
+  return str.replace(/[A-Z]/g, (l: string) => `_${l.toLowerCase()}`);
+}
+
+function projectSubRoute(
+  resource: string,
+  table: string,
+  createSchema: {
+    parse: (body: unknown) => Record<string, unknown>;
+    partial: () => { parse: (body: unknown) => Record<string, unknown> };
+  },
+) {
+  const updateSchema = createSchema.partial();
+
+  router.get(`/${resource}`, async (req, res, next) => {
+    try {
+      const supabase = getSupabaseAdmin();
+      const projectId = req.query.project_id as string;
+      if (!projectId) throw new AppError("VALIDATION", "project_id required", 400);
+
+      const { data, error, count } = await supabase
+        .from(table)
+        .select("*", { count: "exact" })
+        .eq("project_id", projectId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.json(success({ items: data ?? [], total: count ?? 0 }));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.post(`/${resource}`, async (req, res, next) => {
+    try {
+      const parsed = createSchema.parse(req.body) as Record<string, unknown>;
+      const supabase = getSupabaseAdmin();
+      const fields: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(parsed)) {
+        if (k === "projectId") continue;
+        if (v !== undefined) fields[camelToSnake(k)] = v;
+      }
+      const { data, error } = await supabase
+        .from(table)
+        .insert({ ...fields, project_id: parsed.projectId })
+        .select()
+        .single();
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+      await logAuditEvent({
+        organizationId: req.query.organization_id as string,
+        actorUserId: req.authUser!.userId,
+        action: `${resource}.created`,
+        entityType: resource,
+        entityId: data.id,
+      });
+
+      res.status(201).json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.patch(`/${resource}/:id`, async (req, res, next) => {
+    try {
+      const parsed = updateSchema.parse(req.body) as Record<string, unknown>;
+      const supabase = getSupabaseAdmin();
+      const fields: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(parsed)) {
+        if (v !== undefined) fields[camelToSnake(k)] = v;
+      }
+      const { data, error } = await supabase
+        .from(table)
+        .update(fields)
+        .eq("id", req.params.id)
+        .select()
+        .single();
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.delete(`/${resource}/:id`, async (req, res, next) => {
+    try {
+      const supabase = getSupabaseAdmin();
+      const { error } = await supabase.from(table).delete().eq("id", req.params.id);
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  });
+}
+
+projectSubRoute("phases", "project_phases", createPhaseSchema as any);
+projectSubRoute("milestones", "project_milestones", createMilestoneSchema as any);
+projectSubRoute("dependencies", "project_dependencies", createDependencySchema as any);
 
 router.get("/:id", async (req, res, next) => {
   try {

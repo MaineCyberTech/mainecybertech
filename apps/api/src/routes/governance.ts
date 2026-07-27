@@ -9,6 +9,8 @@ import {
   createRiskSchema,
   createRetentionSchema,
   createTabletopSchema,
+  createSopSchema,
+  updateSopSchema,
 } from "../validators/governance";
 
 const router: ReturnType<typeof Router> = Router();
@@ -19,7 +21,12 @@ function snake(s: string) {
   return s.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
 }
 
-function crudRoute(path: string, table: string, createSchema: Record<string, unknown>) {
+function crudRoute(
+  path: string,
+  table: string,
+  createSchema: Record<string, unknown>,
+  updateSchema?: Record<string, unknown>,
+) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
       const sb = getSupabaseAdmin();
@@ -83,8 +90,14 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.patch(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getSupabaseAdmin();
+      let body: Record<string, unknown> = req.body as Record<string, unknown>;
+      if (updateSchema) {
+        body = (updateSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
+          req.body,
+        ) as Record<string, unknown>;
+      }
       const fields: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
+      for (const [k, v] of Object.entries(body)) {
         if (k === "organizationId") continue;
         if (v !== undefined) fields[snake(k)] = v;
       }
@@ -146,6 +159,37 @@ crudRoute(
   "tabletop",
   "tabletop_exercises",
   createTabletopSchema as unknown as Record<string, unknown>,
+);
+
+router.get("/sop-library/compliance-map", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("sop_library")
+      .select("compliance_framework, framework_control_ids, status")
+      .eq("organization_id", req.query.organization_id as string);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const frameworks: Record<string, { active: number; draft: number; controlIds: string[] }> = {};
+    for (const row of data ?? []) {
+      const fw = row.compliance_framework || "uncategorized";
+      if (!frameworks[fw]) frameworks[fw] = { active: 0, draft: 0, controlIds: [] };
+      if (row.status === "active") frameworks[fw].active++;
+      else frameworks[fw].draft++;
+      for (const cid of row.framework_control_ids ?? []) {
+        if (!frameworks[fw].controlIds.includes(cid)) frameworks[fw].controlIds.push(cid);
+      }
+    }
+    res.json(success({ frameworks, totalSops: (data ?? []).length }));
+  } catch (err) {
+    next(err);
+  }
+});
+
+crudRoute(
+  "sop-library",
+  "sop_library",
+  createSopSchema as unknown as Record<string, unknown>,
+  updateSopSchema as unknown as Record<string, unknown>,
 );
 
 export default router;
