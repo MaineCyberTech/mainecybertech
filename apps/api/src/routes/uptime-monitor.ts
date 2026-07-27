@@ -6,7 +6,7 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 router.use(requireOrgAccess);

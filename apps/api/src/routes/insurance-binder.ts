@@ -44,17 +44,11 @@ router.get("/coverage-report", async (req, res, next) => {
 
     const byCoverageArea: Record<string, { total: number; pending: number; verified: number }> = {};
     for (const area of COVERAGE_AREAS) {
-      const areaItems = items.filter(
-        (r: { coverage_area: string | null }) => r.coverage_area === area,
-      );
+      const areaItems = items.filter((r: any) => (r as any).coverage_area === area);
       byCoverageArea[area] = {
         total: areaItems.length,
-        pending: areaItems.filter(
-          (r: { status?: string }) => (r as Record<string, unknown>).status === "pending",
-        ).length,
-        verified: areaItems.filter(
-          (r: { status?: string }) => (r as Record<string, unknown>).status === "verified",
-        ).length,
+        pending: areaItems.filter((r: any) => (r as any).status === "pending").length,
+        verified: areaItems.filter((r: any) => (r as any).status === "verified").length,
       };
     }
 

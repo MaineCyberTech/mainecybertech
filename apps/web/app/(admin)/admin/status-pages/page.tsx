@@ -39,7 +39,7 @@ export default async function StatusPagesPage() {
   }>;
 
   try {
-    const r = await api.statusPage.components.list({});
+    const r = (await api.statusPage.components.list({})) as any;
     items = r.items as typeof items;
   } catch {
     /* graceful */

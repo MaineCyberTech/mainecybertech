@@ -15,6 +15,12 @@ type AdminSubnavProps = {
     | "sla"
     | "api-keys"
     | "business-os"
+    | "uptime-monitor"
+    | "training-hub"
+    | "license-optimizer"
+    | "dmarc-coach"
+    | "insurance-binder"
+    | "status-pages"
     | string;
 };
 
@@ -53,10 +59,12 @@ const NAV_ITEMS: NavItem[] = [
   { key: "domain-monitors", href: "/admin/domain-monitors", label: "DNS" },
   { key: "website-monitors", href: "/admin/website-monitors", label: "Websites" },
   { key: "dmarc", href: "/admin/dmarc", label: "DMARC" },
+  { key: "dmarc-coach", href: "/admin/dmarc-coach", label: "DMARC Coach" },
   { key: "patch-compliance", href: "/admin/patch-compliance", label: "Patches" },
   { key: "endpoint-security", href: "/admin/endpoint-security", label: "Endpoints" },
   { key: "m365-hardening", href: "/admin/m365-hardening", label: "M365" },
-  { key: "licenses", href: "/admin/licenses", label: "Licenses" },
+  { key: "licenses", href: "/admin/license-optimizer", label: "Licenses" },
+  { key: "uptime-monitor", href: "/admin/uptime-monitor", label: "Uptime" },
   { key: "field-services", href: "/admin/field-services", label: "Field" },
   { type: "divider", key: "div4", label: "" },
 
@@ -67,6 +75,9 @@ const NAV_ITEMS: NavItem[] = [
   { key: "status", href: "/admin/status", label: "Status" },
   { key: "vendor-contracts", href: "/admin/vendor-contracts", label: "Contracts" },
   { key: "vendor-contacts", href: "/admin/vendor-contacts", label: "Vendors" },
+  { key: "training-hub", href: "/admin/training-hub", label: "Training" },
+  { key: "insurance-binder", href: "/admin/insurance-binder", label: "Insurance" },
+  { key: "status-pages", href: "/admin/status-pages", label: "Status Pages" },
   { type: "divider", key: "div5", label: "" },
 
   // Tools
@@ -82,7 +93,7 @@ export default function AdminSubnav({ current }: AdminSubnavProps) {
     <nav className="cyber-subnav-scroll">
       {NAV_ITEMS.map((item) => {
         if (item.type === "divider") {
-          return <hr key={item.key} className="shrink-0 w-full border-t border-white/10 my-2" />;
+          return <hr key={item.key} className="my-2 w-full shrink-0 border-t border-white/10" />;
         }
         return (
           <Link

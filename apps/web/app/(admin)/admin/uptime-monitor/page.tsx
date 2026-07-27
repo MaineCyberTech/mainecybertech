@@ -23,7 +23,7 @@ export default async function UptimeMonitorPage() {
   }>;
 
   try {
-    const r = await api.uptimeMonitor.listChecks({});
+    const r = (await api.uptimeMonitor.listChecks({})) as any;
     items = r.items as typeof items;
   } catch {
     /* graceful */

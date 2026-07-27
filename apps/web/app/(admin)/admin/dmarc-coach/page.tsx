@@ -44,7 +44,7 @@ export default async function DmarcCoachPage() {
   }>;
 
   try {
-    const r = await api.dmarcCoach.list({});
+    const r = (await api.dmarcCoach.list({})) as any;
     items = r.items as typeof items;
   } catch {
     /* graceful */

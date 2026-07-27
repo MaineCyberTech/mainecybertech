@@ -6,7 +6,7 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 
-const router = Router();
+const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
@@ -34,7 +34,7 @@ router.get("/", async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
-    let q = supabase
+    const q = supabase
       .from("license_allocations")
       .select("*", { count: "exact" })
       .eq("organization_id", req.query.organization_id as string)
