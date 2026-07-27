@@ -47,7 +47,7 @@ services:
       redis:
         condition: service_started
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 256m
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
       interval: 30s
@@ -84,7 +84,7 @@ services:
       redis:
         condition: service_started
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 256m
 
   web:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:-latest}
@@ -97,7 +97,7 @@ services:
       api:
         condition: service_started
     restart: unless-stopped
-    mem_limit: 128m
+    mem_limit: 256m
 
   # ===== Reverse Proxy =====
   caddy:
