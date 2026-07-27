@@ -25,9 +25,10 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const sb = getSupabaseAdmin();
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
-      let q = sb.from(table).select("*", { count: "exact" });
-      const orgId = req.query.organization_id as string | undefined;
-      if (orgId) q = q.eq("organization_id", orgId);
+      const q = sb
+        .from(table)
+        .select("*", { count: "exact" })
+        .eq("organization_id", req.query.organization_id as string);
       const { data, error, count } = await q
         .order("created_at", { ascending: false })
         .range((page - 1) * limit, (page - 1) * limit + limit - 1);
@@ -43,7 +44,12 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.get(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getSupabaseAdmin();
-      const { data, error } = await sb.from(table).select("*").eq("id", req.params.id).single();
+      const { data, error } = await sb
+        .from(table)
+        .select("*")
+        .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string)
+        .single();
       if (error || !data) throw new AppError("NOT_FOUND", "Not found", 404);
       res.json(success(data));
     } catch (e) {
@@ -89,6 +95,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
         .from(table)
         .update(fields)
         .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -108,7 +115,11 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.delete(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getSupabaseAdmin();
-      const { error } = await sb.from(table).delete().eq("id", req.params.id);
+      const { error } = await sb
+        .from(table)
+        .delete()
+        .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
         actorUserId: req.authUser!.userId,
@@ -147,9 +158,10 @@ crudRoute(
 router.get("/patch-compliance/stats", async (req, res, next) => {
   try {
     const sb = getSupabaseAdmin();
-    let q = sb.from("patch_compliance").select("*");
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) q = q.eq("organization_id", orgId);
+    const q = sb
+      .from("patch_compliance")
+      .select("*")
+      .eq("organization_id", req.query.organization_id as string);
     const { data, error } = await q;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     const items = data ?? [];

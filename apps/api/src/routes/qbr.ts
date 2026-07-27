@@ -17,9 +17,10 @@ router.get("/", async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
 
-    let q = supabase.from("qbr_reports").select("*", { count: "exact" });
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) q = q.eq("organization_id", orgId);
+    const q = supabase
+      .from("qbr_reports")
+      .select("*", { count: "exact" })
+      .eq("organization_id", req.query.organization_id as string);
 
     const { data, error, count } = await q
       .order("created_at", { ascending: false })
@@ -40,6 +41,7 @@ router.get("/:id", async (req, res, next) => {
       .from("qbr_reports")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Report not found", 404);
     res.json(success(data));
@@ -208,6 +210,7 @@ router.patch("/:id", async (req, res, next) => {
       .from("qbr_reports")
       .update(updateData)
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -230,7 +233,11 @@ router.patch("/:id", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("qbr_reports").delete().eq("id", req.params.id);
+    const { error } = await supabase
+      .from("qbr_reports")
+      .delete()
+      .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

@@ -39,12 +39,11 @@ router.use(requireAuth);
 router.use(requireOrgAccess);
 
 function getOrgId(req: Request): string {
-  const orgId = (req as any).authOrgId ?? req.query.organization_id ?? req.body?.organizationId;
-  return Array.isArray(orgId) ? orgId[0] : orgId;
+  return req.query.organization_id as string;
 }
 
 function getUserId(req: Request): string {
-  return (req as any).authUserId;
+  return req.authUser!.userId;
 }
 
 function getParam(req: Request, name: string): string {

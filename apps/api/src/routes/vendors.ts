@@ -28,9 +28,10 @@ function crudEndpoints(
       const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
       const offset = (page - 1) * limit;
 
-      let q = supabase.from(table).select("*", { count: "exact" });
-      const orgId = req.query.organization_id as string | undefined;
-      if (orgId) q = q.eq("organization_id", orgId);
+      let q = supabase
+        .from(table)
+        .select("*", { count: "exact" })
+        .eq("organization_id", req.query.organization_id as string);
       const status = req.query.status as string | undefined;
       if (status) q = q.eq("status", status);
       const search = req.query.search as string | undefined;
@@ -56,6 +57,7 @@ function crudEndpoints(
         .from(table)
         .select("*")
         .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string)
         .single();
       if (error || !data) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
       res.json(success(data));
@@ -106,6 +108,7 @@ function crudEndpoints(
         .from(table)
         .update(fields)
         .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -127,7 +130,11 @@ function crudEndpoints(
   router.delete(`/${resource}/:id`, async (req, res, next) => {
     try {
       const supabase = getSupabaseAdmin();
-      const { error } = await supabase.from(table).delete().eq("id", req.params.id);
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
         actorUserId: req.authUser!.userId,
@@ -170,8 +177,7 @@ router.get("/vendor-contracts/renewals", async (req, res, next) => {
       .gte("renewal_date", new Date().toISOString().slice(0, 10))
       .eq("status", "active")
       .order("renewal_date", { ascending: true });
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) q = q.eq("organization_id", orgId);
+    q = q.eq("organization_id", req.query.organization_id as string);
     const { data, error } = await q;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success({ items: data ?? [], total: (data ?? []).length }));

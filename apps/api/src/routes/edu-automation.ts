@@ -31,9 +31,10 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
       const sb = getSupabaseAdmin();
       const pg = Math.max(1, parseInt(req.query.page as string) || 1);
       const lm = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
-      let q = sb.from(table).select("*", { count: "exact" });
-      const o = req.query.organization_id as string;
-      if (o) q = q.eq("organization_id", o);
+      const q = sb
+        .from(table)
+        .select("*", { count: "exact" })
+        .eq("organization_id", req.query.organization_id as string);
       const { data, error, count } = await q
         .order("created_at", { ascending: false })
         .range((pg - 1) * lm, (pg - 1) * lm + lm - 1);
@@ -85,6 +86,7 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
         .from(table)
         .update(f)
         .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -104,7 +106,11 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
   router.delete(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getSupabaseAdmin();
-      const { error } = await sb.from(table).delete().eq("id", req.params.id);
+      const { error } = await sb
+        .from(table)
+        .delete()
+        .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
         actorUserId: req.authUser!.userId,

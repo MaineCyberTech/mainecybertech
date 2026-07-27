@@ -118,6 +118,7 @@ import type {
   ExportDynamicFormsInput,
 } from "./dynamic-client-forms-builder";
 import { DynamicFormsApi } from "./dynamic-client-forms-builder.api";
+import { BusinessOsApi } from "./business-os.api";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -234,6 +235,7 @@ export class MCTClient {
   public clientOnboarding: ClientOnboardingApi;
   public satisfactionPulse: SatisfactionPulseApi;
   public dynamicForms: DynamicFormsApi;
+  public businessOs: BusinessOsApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -274,6 +276,7 @@ export class MCTClient {
     this.clientOnboarding = new ClientOnboardingApi(client);
     this.satisfactionPulse = new SatisfactionPulseApi(client);
     this.dynamicForms = new DynamicFormsApi(client);
+    this.businessOs = new BusinessOsApi(client);
   }
 
   static create(opts: ClientOptions) {

@@ -305,8 +305,9 @@ describe("client-onboarding-command-center routes", () => {
 
       const res = await request(app)
         .post("/api/v1/client-onboarding/onboard-1/complete-phase")
+        .query({ organization_id: "org-1" })
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", completedBy: "user-1" });
+        .send({ completedBy: "user-1" });
 
       if (res.status !== 200) {
         console.log("Response status:", res.status);

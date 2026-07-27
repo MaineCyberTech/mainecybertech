@@ -1,28 +1,34 @@
 # Business OS
 
-**Category:** Operations
+**Category:** Admin
 **API Routes:** `apps/api/src/routes/business-os.ts`
-**SDK:** `packages/sdk/src/business-os.ts`
 
 ## Overview
-Internal MSP business operating system dashboard providing aggregated metrics across organizations, tickets, projects, documents, approvals, and users.
+
+Admin-only dashboard aggregation endpoints. Provides a summary of platform-wide stats (organizations, tickets, projects, documents, approvals, users), overdue approvals, recent audit activity, and per-organization health metrics. All endpoints are cached at varying TTLs.
 
 ## Key Features
-- Cross-org summary dashboard with key counts
-- Organization breakdown (total, approved, pending)
-- Open tickets, active projects, and pending approvals counts
-- Document and user totals
-- 30-second response cache for dashboard performance
+
+- Platform summary with counts across all entities
+- Overdue approval requests (past due, still pending)
+- Recent audit activity feed
+- Per-organization health (open tickets + active projects, sorted by ticket count)
+- Varying cache TTLs per endpoint (15s–60s)
 
 ## Endpoints
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | /api/v1/business-os/summary | Get aggregate dashboard summary |
-| GET | /api/v1/business-os/dashboard | Get detailed dashboard metrics |
+
+| Method | Path                                  | Description                                        |
+| ------ | ------------------------------------- | -------------------------------------------------- |
+| GET    | /api/v1/business-os/summary           | Platform-wide stats (cached 30s)                   |
+| GET    | /api/v1/business-os/approvals-overdue | Pending approvals past due (cached 30s)            |
+| GET    | /api/v1/business-os/recent-activity   | Recent audit logs (cached 15s, configurable limit) |
+| GET    | /api/v1/business-os/org-health        | Per-org ticket/project counts (cached 60s)         |
 
 ## Data Model
-Aggregated response from multiple tables: `organizations`, `tickets`, `projects`, `documents`, `approval_requests`, `profiles`
+
+Reads: `organizations`, `tickets`, `projects`, `documents`, `approval_requests`, `profiles`, `audit_logs`
+Writes: none (read-only endpoints)
 
 ## Access Control
-- Admin: full access (requireAdmin middleware)
-- Client: no access (internal MSP operations only)
+
+- Admin only — all endpoints require `requireAuth` + `requireAdmin`
