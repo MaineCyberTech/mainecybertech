@@ -19,7 +19,7 @@
     "ioredis": "^5.6.0",
     "@supabase/supabase-js": "^2.49.1",
     "dotenv": "^16.4.7",
-    "nodemailer": "^8.0.10",
+    "nodemailer": "^9.0.1",
     "pino": "^9.5.0",
     "zod": "^3.24.1"
   },
