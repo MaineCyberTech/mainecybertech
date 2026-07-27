@@ -20,6 +20,7 @@ export default {
     },
   },
   moduleNameMapper: {
+    "^(\\.\\.?\\/.*)\\.js$": "$1",
     "^redis$": "<rootDir>/src/__mocks__/redis.ts",
   },
 };

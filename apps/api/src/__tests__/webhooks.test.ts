@@ -57,6 +57,15 @@ jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
 }));
 
+jest.mock("../lib/idempotency", () => ({
+  checkIdempotencyKey: jest.fn().mockResolvedValue(null),
+  storeIdempotencyKey: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock("../lib/webhook-signature", () => ({
+  verifyWebhookSignature: jest.fn().mockReturnValue(true),
+}));
+
 jest.mock("../lib/logger", () => ({
   logger: {
     info: jest.fn(),
@@ -96,7 +105,7 @@ describe("webhooks routes", () => {
   });
 
   describe("POST /jira", () => {
-    it.skip("processes a Jira webhook", async () => {
+    it("processes a Jira webhook", async () => {
       const res = await request(app)
         .post("/api/v1/webhooks/jira")
         .send({
@@ -108,11 +117,55 @@ describe("webhooks routes", () => {
         });
 
       expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+    });
+
+    it("returns 401 with invalid signature when JIRA_WEBHOOK_SECRET is set", async () => {
+      const { getEnv } = await import("../config/env");
+      (getEnv as jest.Mock).mockReturnValue({
+        NODE_ENV: "test",
+        SUPABASE_URL: "https://test.supabase.co",
+        SUPABASE_ANON_KEY: "test-anon-key",
+        SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
+        CORS_ORIGIN: "*",
+        LOG_LEVEL: "silent",
+        API_PORT: 4000,
+        STRIPE_SECRET_KEY: "sk_test",
+        STRIPE_WEBHOOK_SECRET: "whsec_test",
+        JIRA_WEBHOOK_SECRET: "jira-secret",
+      });
+
+      const { verifyWebhookSignature } = await import("../lib/webhook-signature");
+      (verifyWebhookSignature as jest.Mock).mockReturnValueOnce(false);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/jira")
+        .send({
+          webhookEvent: "issue_updated",
+          issue: {
+            key: "PROJ-456",
+            fields: { status: { name: "Done" }, summary: "Closed issue" },
+          },
+        });
+
+      expect(res.status).toBe(401);
+
+      (getEnv as jest.Mock).mockReturnValue({
+        NODE_ENV: "test",
+        SUPABASE_URL: "https://test.supabase.co",
+        SUPABASE_ANON_KEY: "test-anon-key",
+        SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
+        CORS_ORIGIN: "*",
+        LOG_LEVEL: "silent",
+        API_PORT: 4000,
+        STRIPE_SECRET_KEY: "sk_test",
+        STRIPE_WEBHOOK_SECRET: "whsec_test",
+      });
     });
   });
 
   describe("POST /jsm", () => {
-    it.skip("processes a JSM webhook", async () => {
+    it("processes a JSM webhook", async () => {
       const res = await request(app)
         .post("/api/v1/webhooks/jsm")
         .send({
@@ -125,16 +178,18 @@ describe("webhooks routes", () => {
         });
 
       expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
     });
   });
 
   describe("POST /m365", () => {
-    it.skip("processes an M365 webhook", async () => {
+    it("processes an M365 webhook", async () => {
       const res = await request(app)
         .post("/api/v1/webhooks/m365")
         .send({ resource: "users", changeType: "updated" });
 
       expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
     });
   });
 });

@@ -5,31 +5,34 @@ import { getApiClient } from "./api";
 
 const api = () => getApiClient();
 
-export async function markNotificationRead(id: string) {
+export async function markNotificationRead(id: string): Promise<{ ok: boolean; error?: string }> {
   try {
     await api().notifications.markRead(id);
   } catch {
-    throw new Error("Failed to mark notification read");
+    return { ok: false, error: "Failed to mark notification read" };
   }
   revalidatePath("/", "layout");
+  return { ok: true };
 }
 
-export async function markAllNotificationsRead() {
+export async function markAllNotificationsRead(): Promise<{ ok: boolean; error?: string }> {
   try {
     await api().notifications.markAllRead();
   } catch {
-    throw new Error("Failed to mark all read");
+    return { ok: false, error: "Failed to mark all read" };
   }
   revalidatePath("/", "layout");
+  return { ok: true };
 }
 
-export async function dismissNotification(id: string) {
+export async function dismissNotification(id: string): Promise<{ ok: boolean; error?: string }> {
   try {
     await api().notifications.remove(id);
   } catch {
-    throw new Error("Failed to dismiss notification");
+    return { ok: false, error: "Failed to dismiss notification" };
   }
   revalidatePath("/", "layout");
+  return { ok: true };
 }
 
 export async function getUnreadCount(): Promise<number> {
