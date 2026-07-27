@@ -57,6 +57,7 @@ export class SecuritySuiteApi {
       this.client.post<M365HardeningRecord>("/api/v1/security-suite/m365-hardening", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<M365HardeningRecord>(`/api/v1/security-suite/m365-hardening/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/security-suite/m365-hardening/${id}`),
   };
 
   incidents = {
@@ -67,6 +68,7 @@ export class SecuritySuiteApi {
       this.client.post<IncidentRecord>("/api/v1/security-suite/incidents", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<IncidentRecord>(`/api/v1/security-suite/incidents/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/security-suite/incidents/${id}`),
   };
 
   idVerify = {
@@ -75,6 +77,8 @@ export class SecuritySuiteApi {
         "/api/v1/security-suite/identity-verification",
         qp(p),
       ),
+    get: (id: string) =>
+      this.client.get<IdentityVerification>(`/api/v1/security-suite/identity-verification/${id}`),
     create: (d: Record<string, unknown>) =>
       this.client.post<IdentityVerification>("/api/v1/security-suite/identity-verification", d),
     update: (id: string, d: Record<string, unknown>) =>
@@ -82,6 +86,8 @@ export class SecuritySuiteApi {
         `/api/v1/security-suite/identity-verification/${id}`,
         d,
       ),
+    remove: (id: string) =>
+      this.client.delete(`/api/v1/security-suite/identity-verification/${id}`),
   };
 
   endpoints = {
@@ -96,5 +102,6 @@ export class SecuritySuiteApi {
       this.client.post<EndpointSecurity>("/api/v1/security-suite/endpoint-security", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<EndpointSecurity>(`/api/v1/security-suite/endpoint-security/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/security-suite/endpoint-security/${id}`),
   };
 }

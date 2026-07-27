@@ -54,8 +54,12 @@ export class BatchApi {
   licenses = {
     list: (params?: Record<string, string | number | undefined>) =>
       this.client.get<PaginatedResult<LicenseRecord>>("/api/v1/batch/licenses", qp(params)),
+    get: (id: string) => this.client.get<LicenseRecord>(`/api/v1/batch/licenses/${id}`),
     create: (d: Record<string, unknown>) =>
       this.client.post<LicenseRecord>("/api/v1/batch/licenses", d),
+    update: (id: string, d: Record<string, unknown>) =>
+      this.client.patch<LicenseRecord>(`/api/v1/batch/licenses/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/batch/licenses/${id}`),
     savings: (params?: Record<string, string | undefined>) =>
       this.client.get<{
         totalLicenses: number;
@@ -68,7 +72,11 @@ export class BatchApi {
   status = {
     list: (params?: Record<string, string | number | undefined>) =>
       this.client.get<PaginatedResult<StatusItem>>("/api/v1/batch/status", qp(params)),
+    get: (id: string) => this.client.get<StatusItem>(`/api/v1/batch/status/${id}`),
     create: (d: Record<string, unknown>) => this.client.post<StatusItem>("/api/v1/batch/status", d),
+    update: (id: string, d: Record<string, unknown>) =>
+      this.client.patch<StatusItem>(`/api/v1/batch/status/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/batch/status/${id}`),
     public: () => this.client.get<StatusItem[]>("/api/v1/batch/status/public"),
   };
 
@@ -78,14 +86,22 @@ export class BatchApi {
         "/api/v1/batch/website-monitors",
         qp(params),
       ),
+    get: (id: string) => this.client.get<WebsiteMonitor>(`/api/v1/batch/website-monitors/${id}`),
     create: (d: Record<string, unknown>) =>
       this.client.post<WebsiteMonitor>("/api/v1/batch/website-monitors", d),
+    update: (id: string, d: Record<string, unknown>) =>
+      this.client.patch<WebsiteMonitor>(`/api/v1/batch/website-monitors/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/batch/website-monitors/${id}`),
   };
 
   dmarc = {
     list: (params?: Record<string, string | number | undefined>) =>
       this.client.get<PaginatedResult<DmarcAssessment>>("/api/v1/batch/dmarc", qp(params)),
+    get: (id: string) => this.client.get<DmarcAssessment>(`/api/v1/batch/dmarc/${id}`),
     create: (d: Record<string, unknown>) =>
       this.client.post<DmarcAssessment>("/api/v1/batch/dmarc", d),
+    update: (id: string, d: Record<string, unknown>) =>
+      this.client.patch<DmarcAssessment>(`/api/v1/batch/dmarc/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/batch/dmarc/${id}`),
   };
 }

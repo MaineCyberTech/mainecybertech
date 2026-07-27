@@ -56,6 +56,7 @@ export class SecurityOpsApi {
       this.client.post<OffboardingRecord>("/api/v1/security-ops/offboarding", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<OffboardingRecord>(`/api/v1/security-ops/offboarding/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/security-ops/offboarding/${id}`),
   };
 
   breakGlass = {
@@ -73,6 +74,7 @@ export class SecurityOpsApi {
       this.client.post<BreakGlassAccount>("/api/v1/security-ops/break-glass", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<BreakGlassAccount>(`/api/v1/security-ops/break-glass/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/security-ops/break-glass/${id}`),
   };
 
   onboarding = {
@@ -89,6 +91,7 @@ export class SecurityOpsApi {
       this.client.post<OnboardingClient>("/api/v1/security-ops/onboarding", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<OnboardingClient>(`/api/v1/security-ops/onboarding/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/security-ops/onboarding/${id}`),
   };
 
   patchCompliance = {
@@ -100,10 +103,12 @@ export class SecurityOpsApi {
         qp,
       );
     },
+    get: (id: string) => this.client.get<PatchGroup>(`/api/v1/security-ops/patch-compliance/${id}`),
     create: (d: Record<string, unknown>) =>
       this.client.post<PatchGroup>("/api/v1/security-ops/patch-compliance", d),
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<PatchGroup>(`/api/v1/security-ops/patch-compliance/${id}`, d),
+    remove: (id: string) => this.client.delete(`/api/v1/security-ops/patch-compliance/${id}`),
     stats: (params?: Record<string, string | undefined>) => {
       const qp: Record<string, string | undefined> = {};
       if (params) for (const [k, v] of Object.entries(params)) if (v !== undefined) qp[k] = v;
