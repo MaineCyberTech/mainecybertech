@@ -4,56 +4,14 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import { StatusPill } from "@/components/admin/StatusPill";
+import { SeverityPill } from "@/components/admin/SeverityPill";
 import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
 import { createFinding } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Findings - Admin - Maine CyberTech" };
-
-function severityPill(s: string) {
-  const c = s === "p0" ? "red" : s === "p1" ? "amber" : s === "p2" ? "blue" : "slate";
-  const map = {
-    red: "border-red-500/25 bg-red-500/10 text-red-300",
-    amber: "border-amber-500/25 bg-amber-500/10 text-amber-300",
-    blue: "border-blue-500/25 bg-blue-500/10 text-blue-300",
-    slate: "border-white/10 bg-white/5 text-slate-300",
-  };
-  return (
-    <span
-      className={`inline-flex min-h-8 items-center justify-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase leading-none tracking-[0.12em] ${map[c]}`}
-    >
-      {s.toUpperCase()}
-    </span>
-  );
-}
-
-function statusPill(s: string) {
-  const c =
-    s === "closed" || s === "verified"
-      ? "emerald"
-      : s === "resolved"
-        ? "blue"
-        : s === "in_progress"
-          ? "amber"
-          : s === "wont_fix"
-            ? "slate"
-            : "red";
-  const map = {
-    emerald: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
-    amber: "border-amber-500/25 bg-amber-500/10 text-amber-300",
-    blue: "border-blue-500/25 bg-blue-500/10 text-blue-300",
-    red: "border-red-500/25 bg-red-500/10 text-red-300",
-    slate: "border-white/10 bg-white/5 text-slate-300",
-  };
-  return (
-    <span
-      className={`inline-flex min-h-8 items-center justify-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase leading-none tracking-[0.12em] ${map[c]}`}
-    >
-      {s}
-    </span>
-  );
-}
 
 export default async function FindingsPage() {
   await requireAdminAccess();
@@ -142,8 +100,8 @@ export default async function FindingsPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    {severityPill(f.severity)}
-                    {statusPill(f.status)}
+                    <SeverityPill severity={f.severity} />
+                    <StatusPill status={f.status} />
                   </div>
                 </div>
               </Link>

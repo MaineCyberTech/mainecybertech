@@ -62,3 +62,24 @@
 | [docs/PRODUCTION_VS_TESTING_DOMAINS.md](PRODUCTION_VS_TESTING_DOMAINS.md)                                             | Production vs testing domain configuration                             |
 | [archive/stale-docs/README_WORKFLOWS_AND_ENVIRONMENTS.md](../archive/stale-docs/README_WORKFLOWS_AND_ENVIRONMENTS.md) | [Archived] CI/CD workflows and environment reference                   |
 | [docs/MARKETING_SITE_INTEGRATION.md](MARKETING_SITE_INTEGRATION.md)                                                   | Marketing site domain route plan — public API, frontend, domain config |
+
+### New Module Docs (2026-07-26)
+- `docs/modules/qbr-reports.md` — QBR Reports module (API routes, admin page, worker tasks, tests)
+- `docs/modules/proposals.md` — Proposals module (API routes, admin page, tests)
+- `docs/modules/findings.md` — Findings module (API routes, portal + admin pages, tests)
+- `docs/modules/governance.md` — Governance module (API routes, 4 sub-routes, admin page, tests)
+- `docs/modules/service-catalog.md` — Service Catalog module (API routes, admin page, tests)
+- `docs/modules/business-os.md` — Business OS module (dashboard/summary API, admin page)
+- `docs/modules/assets.md` — Assets module (API routes, portal + admin pages, tests)
+- `docs/modules/domain-monitors.md` — Domain Monitors module (API routes, admin page, worker tasks, tests)
+- `docs/modules/website-monitors.md` — Website Monitors module (API routes, admin page, worker tasks, tests)
+- `docs/modules/security-suite.md` — Security Suite module (API routes, 4 sub-routes, admin page, tests)
+- `docs/modules/security-operations.md` — Security Operations module (API routes, 4 sub-routes, admin page, tests)
+- `docs/modules/field-services.md` — Field Services module (API routes, 6 sub-routes, admin page, tests)
+- `docs/modules/edu-automation.md` — Edu Automation module (API routes, 11 sub-routes, admin page, tests)
+- `docs/modules/file-requests.md` — File Requests module (API routes, portal + admin pages, tests)
+- `docs/modules/approvals.md` — Approvals module (API routes, admin page, tests)
+- `docs/modules/api-keys.md` — API Keys module (API routes, admin page)
+- `docs/modules/ai-tools.md` — AI Tools module (API routes, admin page, tests)
+- `docs/modules/vendors.md` — Vendors module (API routes, admin page, worker tasks, tests)
+- `docs/modules/final.md` — Final multi-module (API routes, 10+ sub-routes, admin page, tests)

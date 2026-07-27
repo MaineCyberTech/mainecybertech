@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import { StatusPill } from "@/components/admin/StatusPill";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -12,31 +13,6 @@ export const metadata = { title: "Proposals - Admin - Maine CyberTech" };
 function fmtCurrency(n: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
-
-function pill(c: "emerald" | "amber" | "blue" | "red" | "slate") {
-  const map = {
-    emerald: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
-    amber: "border-amber-500/25 bg-amber-500/10 text-amber-300",
-    blue: "border-blue-500/25 bg-blue-500/10 text-blue-300",
-    red: "border-red-500/25 bg-red-500/10 text-red-300",
-    slate: "border-white/10 bg-white/5 text-slate-300",
-  } as const;
-  return `inline-flex min-h-8 items-center justify-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] leading-none ${map[c]}`;
-}
-
-const statusPill = (s: string) => {
-  const c =
-    s === "approved"
-      ? "emerald"
-      : s === "sent"
-        ? "blue"
-        : s === "rejected"
-          ? "red"
-          : s === "expired"
-            ? "slate"
-            : "amber";
-  return <span className={pill(c)}>{s}</span>;
-};
 
 export default async function ProposalsPage() {
   await requireAdminAccess();
@@ -102,7 +78,7 @@ export default async function ProposalsPage() {
                       {new Date(p.created_at).toISOString().slice(0, 10)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">{statusPill(p.status)}</div>
+                  <div className="flex items-center gap-3"><StatusPill status={p.status} /></div>
                 </div>
               </Link>
             ))

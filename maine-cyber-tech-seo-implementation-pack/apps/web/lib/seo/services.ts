@@ -1,0 +1,144 @@
+export type ServiceSeoConfig = {
+  slug: string;
+  title: string;
+  metaTitle: string;
+  metaDescription: string;
+  h1: string;
+  primaryKeyword: string;
+  secondaryKeywords: string[];
+  canonicalPath: string;
+  relatedBlogSlugs: string[];
+};
+
+export const serviceSeo: ServiceSeoConfig[] = [
+  {
+    slug: "managed-it-services",
+    title: "Managed IT Services",
+    metaTitle: "Managed IT Services in Maine | Maine Cyber Tech",
+    metaDescription:
+      "Managed IT support for Maine small businesses, nonprofits, churches, marinas, warehouses, and local organizations. Help desk, Microsoft 365, devices, networks, security, and backup planning.",
+    h1: "Managed IT Services in Maine",
+    primaryKeyword: "managed IT services Maine",
+    secondaryKeywords: [
+      "IT support Maine",
+      "MSP Maine",
+      "small business IT support",
+      "outsourced IT support",
+    ],
+    canonicalPath: "/services/managed-it-services",
+    relatedBlogSlugs: [
+      "small-business-it-support-checklist-maine",
+      "break-fix-vs-managed-it-maine",
+      "signs-business-outgrown-diy-it-support",
+    ],
+  },
+  {
+    slug: "cybersecurity",
+    title: "Cybersecurity Services",
+    metaTitle: "Cybersecurity Services for Maine Businesses | Maine Cyber Tech",
+    metaDescription:
+      "Cybersecurity support for Maine organizations, including Microsoft 365 security, MFA, account protection, endpoint guidance, risk reduction, and incident readiness.",
+    h1: "Cybersecurity Services for Maine Businesses",
+    primaryKeyword: "cybersecurity services Maine",
+    secondaryKeywords: [
+      "business cybersecurity",
+      "Microsoft 365 security",
+      "MFA setup",
+      "account protection",
+    ],
+    canonicalPath: "/services/cybersecurity",
+    relatedBlogSlugs: [
+      "cybersecurity-checklist-maine-nonprofits-small-businesses",
+      "why-businesses-should-enable-mfa",
+      "common-email-security-mistakes-small-businesses",
+    ],
+  },
+  {
+    slug: "network-installation",
+    title: "Business Wi-Fi & Network Installation",
+    metaTitle: "Business Wi-Fi & Network Installation in Maine | Maine Cyber Tech",
+    metaDescription:
+      "Professional network installation, Wi-Fi design, UniFi setup, cabling coordination, firewall planning, and connectivity support for Maine offices, churches, marinas, warehouses, and facilities.",
+    h1: "Business Wi-Fi and Network Installation in Maine",
+    primaryKeyword: "network installation Maine",
+    secondaryKeywords: [
+      "business Wi-Fi Maine",
+      "UniFi installation Maine",
+      "office network setup",
+      "outdoor Wi-Fi",
+    ],
+    canonicalPath: "/services/network-installation",
+    relatedBlogSlugs: [
+      "business-wifi-planning-checklist-maine",
+      "improve-wifi-churches-marinas-warehouses-older-buildings",
+      "unifi-network-setup-small-business-planning",
+    ],
+  },
+  {
+    slug: "security-systems",
+    title: "Security Camera Systems",
+    metaTitle: "Security Camera Installation in Maine | Maine Cyber Tech",
+    metaDescription:
+      "Security camera planning, UniFi Protect deployments, network-connected camera systems, NVR planning, and technology support for Maine businesses and organizations.",
+    h1: "Security Camera Systems for Maine Businesses",
+    primaryKeyword: "security camera installation Maine",
+    secondaryKeywords: [
+      "UniFi Protect",
+      "business security cameras",
+      "NVR setup",
+      "PoE cameras",
+    ],
+    canonicalPath: "/services/security-systems",
+    relatedBlogSlugs: [
+      "security-camera-system-planning-checklist-maine-businesses",
+      "unifi-protect-vs-traditional-camera-systems-small-business",
+      "nvr-poe-cameras-cabling-remote-access-guide",
+    ],
+  },
+  {
+    slug: "microsoft-365-support",
+    title: "Microsoft 365 Support",
+    metaTitle: "Microsoft 365 Support in Maine | Maine Cyber Tech",
+    metaDescription:
+      "Microsoft 365 setup, tenant administration, email configuration, MFA, security defaults, user onboarding, device guidance, and business productivity support.",
+    h1: "Microsoft 365 Support and Administration in Maine",
+    primaryKeyword: "Microsoft 365 support Maine",
+    secondaryKeywords: [
+      "M365 administration",
+      "Exchange email support",
+      "MFA setup",
+      "tenant setup",
+    ],
+    canonicalPath: "/services/microsoft-365-support",
+    relatedBlogSlugs: [
+      "microsoft-365-security-checklist-maine-small-business",
+      "suspicious-login-alert-microsoft-365",
+      "security-defaults-mfa-conditional-access-small-business",
+    ],
+  },
+  {
+    slug: "cloud",
+    title: "Cloud, Backup & Disaster Recovery",
+    metaTitle: "Cloud Backup and Disaster Recovery in Maine | Maine Cyber Tech",
+    metaDescription:
+      "Cloud support, backup planning, disaster recovery, hosting guidance, automation, and resilience planning for Maine businesses and organizations.",
+    h1: "Cloud Backup and Disaster Recovery Services in Maine",
+    primaryKeyword: "cloud backup Maine",
+    secondaryKeywords: [
+      "disaster recovery",
+      "business continuity",
+      "backup planning",
+      "cloud support",
+    ],
+    canonicalPath: "/services/cloud",
+    relatedBlogSlugs: [
+      "cloud-backup-checklist-maine-small-businesses",
+      "backup-vs-disaster-recovery-small-business",
+      "local-backup-vs-cloud-backup-small-business",
+    ],
+  },
+];
+
+export function getServiceSeo(slug: string) {
+  return serviceSeo.find((service) => service.slug === slug);
+}

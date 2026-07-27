@@ -18,59 +18,82 @@ type AdminSubnavProps = {
     | string;
 };
 
-const NAV_ITEMS = [
+type NavItem = { type?: "item" | "divider"; key: string; href?: string; label: string };
+
+const NAV_ITEMS: NavItem[] = [
+  // Core
   { key: "home", href: "/admin", label: "Overview" },
-  { key: "business-os", href: "/admin/business-os", label: "Business OS" },
-  { key: "approvals", href: "/admin/approvals", label: "Approvals" },
   { key: "organizations", href: "/admin/organizations", label: "Organizations" },
   { key: "users", href: "/admin/users", label: "Users" },
   { key: "roles", href: "/admin/roles", label: "Roles" },
-  { key: "proposals", href: "/admin/proposals", label: "Proposals" },
-  { key: "domain-monitors", href: "/admin/domain-monitors", label: "DNS" },
-  { key: "qbr", href: "/admin/qbr", label: "QBR" },
-  { key: "file-requests", href: "/admin/file-requests", label: "Files" },
-  { key: "ai", href: "/admin/ai", label: "AI Tools" },
-  { key: "vendor-contracts", href: "/admin/vendor-contracts", label: "Contracts" },
-  { key: "vendor-contacts", href: "/admin/vendor-contacts", label: "Vendors" },
-  { key: "service-catalog", href: "/admin/service-catalog", label: "Services" },
-  { key: "licenses", href: "/admin/licenses", label: "Licenses" },
-  { key: "status", href: "/admin/status", label: "Status" },
-  { key: "website-monitors", href: "/admin/website-monitors", label: "Websites" },
-  { key: "dmarc", href: "/admin/dmarc", label: "DMARC" },
-  { key: "offboarding", href: "/admin/offboarding", label: "Offboarding" },
-  { key: "break-glass", href: "/admin/break-glass", label: "BreakGlass" },
-  { key: "onboarding", href: "/admin/onboarding", label: "Onboarding" },
-  { key: "patch-compliance", href: "/admin/patch-compliance", label: "Patches" },
-  { key: "m365-hardening", href: "/admin/m365-hardening", label: "M365" },
-  { key: "incidents", href: "/admin/incidents", label: "Incidents" },
-  { key: "id-verify", href: "/admin/id-verify", label: "ID Verify" },
-  { key: "endpoint-security", href: "/admin/endpoint-security", label: "Endpoints" },
-  { key: "governance", href: "/admin/governance", label: "Governance" },
-  { key: "field-services", href: "/admin/field-services", label: "Field" },
-  { key: "edu-automation", href: "/admin/edu-automation", label: "Edu/AI" },
-  { key: "final", href: "/admin/final", label: "More" },
   { key: "tickets", href: "/admin/tickets", label: "Tickets" },
   { key: "documents", href: "/admin/documents", label: "Documents" },
-  { key: "findings", href: "/admin/findings", label: "Findings" },
-  { key: "assets", href: "/admin/assets", label: "Assets" },
   { key: "projects", href: "/admin/projects", label: "Projects" },
+  { key: "approvals", href: "/admin/approvals", label: "Approvals" },
+  { type: "divider", key: "div1", label: "" },
+
+  // Business
+  { key: "business-os", href: "/admin/business-os", label: "Business OS" },
+  { key: "qbr", href: "/admin/qbr", label: "QBR" },
+  { key: "proposals", href: "/admin/proposals", label: "Proposals" },
+  { key: "findings", href: "/admin/findings", label: "Findings" },
+  { key: "service-catalog", href: "/admin/service-catalog", label: "Services" },
   { key: "sla", href: "/admin/sla", label: "SLA" },
+  { type: "divider", key: "div2", label: "" },
+
+  // Security
+  { key: "governance", href: "/admin/governance", label: "Governance" },
+  { key: "incidents", href: "/admin/incidents", label: "Incidents" },
+  { key: "break-glass", href: "/admin/break-glass", label: "BreakGlass" },
+  { key: "id-verify", href: "/admin/id-verify", label: "ID Verify" },
+  { type: "divider", key: "div3", label: "" },
+
+  // Operations
+  { key: "assets", href: "/admin/assets", label: "Assets" },
+  { key: "domain-monitors", href: "/admin/domain-monitors", label: "DNS" },
+  { key: "website-monitors", href: "/admin/website-monitors", label: "Websites" },
+  { key: "dmarc", href: "/admin/dmarc", label: "DMARC" },
+  { key: "patch-compliance", href: "/admin/patch-compliance", label: "Patches" },
+  { key: "endpoint-security", href: "/admin/endpoint-security", label: "Endpoints" },
+  { key: "m365-hardening", href: "/admin/m365-hardening", label: "M365" },
+  { key: "licenses", href: "/admin/licenses", label: "Licenses" },
+  { key: "field-services", href: "/admin/field-services", label: "Field" },
+  { type: "divider", key: "div4", label: "" },
+
+  // Clients
+  { key: "onboarding", href: "/admin/onboarding", label: "Onboarding" },
+  { key: "offboarding", href: "/admin/offboarding", label: "Offboarding" },
+  { key: "file-requests", href: "/admin/file-requests", label: "Files" },
+  { key: "status", href: "/admin/status", label: "Status" },
+  { key: "vendor-contracts", href: "/admin/vendor-contracts", label: "Contracts" },
+  { key: "vendor-contacts", href: "/admin/vendor-contacts", label: "Vendors" },
+  { type: "divider", key: "div5", label: "" },
+
+  // Tools
   { key: "api-keys", href: "/admin/api-keys", label: "API Keys" },
   { key: "webhooks", href: "/admin/webhooks", label: "Webhooks" },
+  { key: "ai", href: "/admin/ai", label: "AI Tools" },
+  { key: "edu-automation", href: "/admin/edu-automation", label: "Edu/AI" },
+  { key: "final", href: "/admin/final", label: "More" },
 ];
 
 export default function AdminSubnav({ current }: AdminSubnavProps) {
   return (
     <nav className="cyber-subnav-scroll">
-      {NAV_ITEMS.map((item) => (
-        <Link
-          key={item.key}
-          href={item.href}
-          className={`shrink-0 ${navClass(current === item.key)}`}
-        >
-          {item.label}
-        </Link>
-      ))}
+      {NAV_ITEMS.map((item) => {
+        if (item.type === "divider") {
+          return <hr key={item.key} className="shrink-0 w-full border-t border-white/10 my-2" />;
+        }
+        return (
+          <Link
+            key={item.key}
+            href={item.href!}
+            className={`shrink-0 ${navClass(current === item.key)}`}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

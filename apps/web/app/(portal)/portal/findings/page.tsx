@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
+import { requireAdminAccess } from "@/lib/auth/admin";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
+import { SeverityPill } from "@/components/admin/SeverityPill";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Findings - Portal - Maine CyberTech" };
@@ -16,17 +20,26 @@ export default async function PortalFindingsPage() {
     items = r.items as unknown as typeof items;
   } catch {}
 
-  const sev = (s: string) =>
-    ({
-      p0: "border-red-500/25 bg-red-500/10 text-red-300",
-      p1: "border-amber-500/25 bg-amber-500/10 text-amber-300",
-      p2: "border-blue-500/25 bg-blue-500/10 text-blue-300",
-      p3: "border-white/10 bg-white/5 text-slate-300",
-    })[s] ?? "";
+  let isAdmin = false;
+  try {
+    await requireAdminAccess();
+    isAdmin = true;
+  } catch {
+    isAdmin = false;
+  }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-slate-50">Findings &amp; Remediation</h1>
+    <div className="space-y-6" role="region" aria-label="Findings">
+      <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Findings" }]} />
+      <PortalSubnav current="findings" />
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold text-slate-50">Findings &amp; Remediation</h1>
+        {isAdmin ? (
+          <Link href="/admin/findings" className="cyber-button-secondary">
+            View in Admin
+          </Link>
+        ) : null}
+      </div>
       <p className="text-sm text-slate-400">
         {items.length} findings tracked for your organization.
       </p>
@@ -45,11 +58,7 @@ export default async function PortalFindingsPage() {
                   </p>
                 )}
               </div>
-              <span
-                className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${sev(String(f.severity))}`}
-              >
-                {String(f.severity).toUpperCase()}
-              </span>
+              <SeverityPill severity={String(f.severity)} />
             </div>
           </div>
         ))}

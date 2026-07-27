@@ -4,7 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { requireIfMatch } from "../middleware/optimistic-locking";
+import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import {
   createDomainMonitorSchema,
@@ -211,6 +211,8 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Domain monitor not found", 404);
 
+    checkVersionMatch(current.version, req.ifMatchVersion);
+
     const fieldMap: Record<string, string> = {
       domain: "domain",
       displayName: "display_name",
@@ -230,14 +232,17 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
         updateData[col] = (parsed as Record<string, unknown>)[k];
     }
 
+    updateData.version = current.version + 1;
+
     const { data, error } = await supabase
       .from("domain_monitors")
       .update(updateData)
+      .eq("version", current.version)
       .eq("id", req.params.id)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Domain monitor not found", 404);
+    if (!data) throw new AppError("VERSION_CONFLICT", "Domain monitor was modified by another user", 409);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

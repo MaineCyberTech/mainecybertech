@@ -4,26 +4,11 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import { StatusPill } from "@/components/admin/StatusPill";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "QBR Reports - Admin - Maine CyberTech" };
-
-const statusPill = (s: string) => {
-  const c = s === "draft" ? "amber" : s === "approved" || s === "sent" ? "emerald" : "slate";
-  const m = {
-    emerald: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
-    amber: "border-amber-500/25 bg-amber-500/10 text-amber-300",
-    slate: "border-white/10 bg-white/5 text-slate-300",
-  };
-  return (
-    <span
-      className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${m[c]}`}
-    >
-      {s}
-    </span>
-  );
-};
 
 export default async function QbrPage() {
   await requireAdminAccess();
@@ -77,7 +62,7 @@ export default async function QbrPage() {
                         : `Generated ${new Date(r.created_at).toISOString().slice(0, 10)}`}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">{statusPill(r.status)}</div>
+                  <div className="flex items-center gap-2"><StatusPill status={r.status} /></div>
                 </div>
               </Link>
             ))

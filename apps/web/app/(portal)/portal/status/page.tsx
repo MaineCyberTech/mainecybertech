@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status - Portal - Maine CyberTech" };
@@ -22,7 +24,9 @@ export default async function PortalStatusPage() {
     })[s] ?? "";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Service Status">
+      <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Status" }]} />
+      <PortalSubnav current="status" />
       <h1 className="text-2xl font-semibold text-slate-50">Service Status</h1>
       <div className="space-y-3">
         {items.map((s) => (

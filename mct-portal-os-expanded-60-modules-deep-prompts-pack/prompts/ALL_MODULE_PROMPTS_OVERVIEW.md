@@ -1,0 +1,181 @@
+# Consolidated Module Build Prompts
+
+## 1. Multi-Tenant MSP Client Portal
+See `prompts/module-prompts/01-multi-tenant-msp-client-portal-build.md` and `prompts/module-audit-prompts/01-multi-tenant-msp-client-portal-audit.md`.
+
+## 2. Client Onboarding Command Center
+See `prompts/module-prompts/02-client-onboarding-command-center-build.md` and `prompts/module-audit-prompts/02-client-onboarding-command-center-audit.md`.
+
+## 3. M365 Tenant Hardening Scanner
+See `prompts/module-prompts/03-m365-tenant-hardening-scanner-build.md` and `prompts/module-audit-prompts/03-m365-tenant-hardening-scanner-audit.md`.
+
+## 4. ISP Phone Network Consolidation Assessment
+See `prompts/module-prompts/04-isp-phone-network-consolidation-assessment-build.md` and `prompts/module-audit-prompts/04-isp-phone-network-consolidation-assessment-audit.md`.
+
+## 5. UniFi Site Survey Deployment Planner
+See `prompts/module-prompts/05-unifi-site-survey-deployment-planner-build.md` and `prompts/module-audit-prompts/05-unifi-site-survey-deployment-planner-audit.md`.
+
+## 6. MSP SOP Library Compliance Mapper
+See `prompts/module-prompts/06-msp-sop-library-compliance-mapper-build.md` and `prompts/module-audit-prompts/06-msp-sop-library-compliance-mapper-audit.md`.
+
+## 7. Security Incident Response Runbook App
+See `prompts/module-prompts/07-security-incident-response-runbook-app-build.md` and `prompts/module-audit-prompts/07-security-incident-response-runbook-app-audit.md`.
+
+## 8. Vendor SaaS Subscription Audit Portal
+See `prompts/module-prompts/08-vendor-saas-subscription-audit-portal-build.md` and `prompts/module-audit-prompts/08-vendor-saas-subscription-audit-portal-audit.md`.
+
+## 9. Client Asset Warranty Tracker
+See `prompts/module-prompts/09-client-asset-warranty-tracker-build.md` and `prompts/module-audit-prompts/09-client-asset-warranty-tracker-audit.md`.
+
+## 10. MSP Proposal Builder Pricing Engine
+See `prompts/module-prompts/10-msp-proposal-builder-pricing-engine-build.md` and `prompts/module-audit-prompts/10-msp-proposal-builder-pricing-engine-audit.md`.
+
+## 11. QBR Executive Report Generator
+See `prompts/module-prompts/11-qbr-executive-report-generator-build.md` and `prompts/module-audit-prompts/11-qbr-executive-report-generator-audit.md`.
+
+## 12. Client Project Tracker
+See `prompts/module-prompts/12-client-project-tracker-build.md` and `prompts/module-audit-prompts/12-client-project-tracker-audit.md`.
+
+## 13. MSP Automation Workflow Catalog
+See `prompts/module-prompts/13-msp-automation-workflow-catalog-build.md` and `prompts/module-audit-prompts/13-msp-automation-workflow-catalog-audit.md`.
+
+## 14. DNS Domain Cloudflare Health Monitor
+See `prompts/module-prompts/14-dns-domain-cloudflare-health-monitor-build.md` and `prompts/module-audit-prompts/14-dns-domain-cloudflare-health-monitor-audit.md`.
+
+## 15. Backup Disaster Recovery Review Dashboard
+See `prompts/module-prompts/15-backup-disaster-recovery-review-dashboard-build.md` and `prompts/module-audit-prompts/15-backup-disaster-recovery-review-dashboard-audit.md`.
+
+## 16. Helpdesk Identity Verification Anti-Vishing Tool
+See `prompts/module-prompts/16-helpdesk-identity-verification-anti-vishing-tool-build.md` and `prompts/module-audit-prompts/16-helpdesk-identity-verification-anti-vishing-tool-audit.md`.
+
+## 17. Client Knowledge Base Self-Service Assistant
+See `prompts/module-prompts/17-client-knowledge-base-self-service-assistant-build.md` and `prompts/module-audit-prompts/17-client-knowledge-base-self-service-assistant-audit.md`.
+
+## 18. Compliance Readiness Lite for Small Businesses
+See `prompts/module-prompts/18-compliance-readiness-lite-for-small-businesses-build.md` and `prompts/module-audit-prompts/18-compliance-readiness-lite-for-small-businesses-audit.md`.
+
+## 19. Open Findings Audit Remediation Tracker
+See `prompts/module-prompts/19-open-findings-audit-remediation-tracker-build.md` and `prompts/module-audit-prompts/19-open-findings-audit-remediation-tracker-audit.md`.
+
+## 20. Internal MSP Business OS Dashboard
+See `prompts/module-prompts/20-internal-msp-business-os-dashboard-build.md` and `prompts/module-audit-prompts/20-internal-msp-business-os-dashboard-audit.md`.
+
+## 21. AI Ticket Intake Triage Assistant
+See `prompts/module-prompts/21-ai-ticket-intake-triage-assistant-build.md` and `prompts/module-audit-prompts/21-ai-ticket-intake-triage-assistant-audit.md`.
+
+## 22. License Optimizer Seat Reclaimer
+See `prompts/module-prompts/22-license-optimizer-seat-reclaimer-build.md` and `prompts/module-audit-prompts/22-license-optimizer-seat-reclaimer-audit.md`.
+
+## 23. Email Deliverability DMARC Coach
+See `prompts/module-prompts/23-email-deliverability-dmarc-coach-build.md` and `prompts/module-audit-prompts/23-email-deliverability-dmarc-coach-audit.md`.
+
+## 24. Secure File Request Portal
+See `prompts/module-prompts/24-secure-file-request-portal-build.md` and `prompts/module-audit-prompts/24-secure-file-request-portal-audit.md`.
+
+## 25. Client Training Microlearning Hub
+See `prompts/module-prompts/25-client-training-microlearning-hub-build.md` and `prompts/module-audit-prompts/25-client-training-microlearning-hub-audit.md`.
+
+## 26. Cyber Insurance Evidence Binder
+See `prompts/module-prompts/26-cyber-insurance-evidence-binder-build.md` and `prompts/module-audit-prompts/26-cyber-insurance-evidence-binder-audit.md`.
+
+## 27. Public Status Page Maintenance Notices
+See `prompts/module-prompts/27-public-status-page-maintenance-notices-build.md` and `prompts/module-audit-prompts/27-public-status-page-maintenance-notices-audit.md`.
+
+## 28. Website Uptime SSL Lighthouse Monitor
+See `prompts/module-prompts/28-website-uptime-ssl-lighthouse-monitor-build.md` and `prompts/module-audit-prompts/28-website-uptime-ssl-lighthouse-monitor-audit.md`.
+
+## 29. Network Port Map Patch Panel Tracker
+See `prompts/module-prompts/29-network-port-map-patch-panel-tracker-build.md` and `prompts/module-audit-prompts/29-network-port-map-patch-panel-tracker-audit.md`.
+
+## 30. Camera Retention Storage Calculator
+See `prompts/module-prompts/30-camera-retention-storage-calculator-build.md` and `prompts/module-audit-prompts/30-camera-retention-storage-calculator-audit.md`.
+
+## 31. PowerShell Script Builder Policy Guard
+See `prompts/module-prompts/31-powershell-script-builder-policy-guard-build.md` and `prompts/module-audit-prompts/31-powershell-script-builder-policy-guard-audit.md`.
+
+## 32. Client Runbook Builder
+See `prompts/module-prompts/32-client-runbook-builder-build.md` and `prompts/module-audit-prompts/32-client-runbook-builder-audit.md`.
+
+## 33. Change Advisory Mini-CAB Tool
+See `prompts/module-prompts/33-change-advisory-mini-cab-tool-build.md` and `prompts/module-audit-prompts/33-change-advisory-mini-cab-tool-audit.md`.
+
+## 34. Vendor Contract Renewal Calendar
+See `prompts/module-prompts/34-vendor-contract-renewal-calendar-build.md` and `prompts/module-audit-prompts/34-vendor-contract-renewal-calendar-audit.md`.
+
+## 35. Client Budget Roadmap Planner
+See `prompts/module-prompts/35-client-budget-roadmap-planner-build.md` and `prompts/module-audit-prompts/35-client-budget-roadmap-planner-audit.md`.
+
+## 36. M365 Offboarding Safety Checklist
+See `prompts/module-prompts/36-m365-offboarding-safety-checklist-build.md` and `prompts/module-audit-prompts/36-m365-offboarding-safety-checklist-audit.md`.
+
+## 37. Phishing Simulation Lite
+See `prompts/module-prompts/37-phishing-simulation-lite-build.md` and `prompts/module-audit-prompts/37-phishing-simulation-lite-audit.md`.
+
+## 38. Client Satisfaction Pulse Widget
+See `prompts/module-prompts/38-client-satisfaction-pulse-widget-build.md` and `prompts/module-audit-prompts/38-client-satisfaction-pulse-widget-audit.md`.
+
+## 39. Fun Cyber Scoreboard Mascot
+See `prompts/module-prompts/39-fun-cyber-scoreboard-mascot-build.md` and `prompts/module-audit-prompts/39-fun-cyber-scoreboard-mascot-audit.md`.
+
+## 40. Small Business AI Policy Assistant
+See `prompts/module-prompts/40-small-business-ai-policy-assistant-build.md` and `prompts/module-audit-prompts/40-small-business-ai-policy-assistant-audit.md`.
+
+## 41. AI Service Desk Copilot Console
+See `prompts/module-prompts/41-ai-service-desk-copilot-console-build.md` and `prompts/module-audit-prompts/41-ai-service-desk-copilot-console-audit.md`.
+
+## 42. Dynamic Client Forms Builder
+See `prompts/module-prompts/42-dynamic-client-forms-builder-build.md` and `prompts/module-audit-prompts/42-dynamic-client-forms-builder-audit.md`.
+
+## 43. Approval Workflow Engine
+See `prompts/module-prompts/43-approval-workflow-engine-build.md` and `prompts/module-audit-prompts/43-approval-workflow-engine-audit.md`.
+
+## 44. Procurement Quote Comparison Tool
+See `prompts/module-prompts/44-procurement-quote-comparison-tool-build.md` and `prompts/module-audit-prompts/44-procurement-quote-comparison-tool-audit.md`.
+
+## 45. Hardware Staging Checklist Manager
+See `prompts/module-prompts/45-hardware-staging-checklist-manager-build.md` and `prompts/module-audit-prompts/45-hardware-staging-checklist-manager-audit.md`.
+
+## 46. Device Configuration Profile Library
+See `prompts/module-prompts/46-device-configuration-profile-library-build.md` and `prompts/module-audit-prompts/46-device-configuration-profile-library-audit.md`.
+
+## 47. Client Network Diagram Builder
+See `prompts/module-prompts/47-client-network-diagram-builder-build.md` and `prompts/module-audit-prompts/47-client-network-diagram-builder-audit.md`.
+
+## 48. Vendor Contact Escalation Directory
+See `prompts/module-prompts/48-vendor-contact-escalation-directory-build.md` and `prompts/module-audit-prompts/48-vendor-contact-escalation-directory-audit.md`.
+
+## 49. SLA SLO Tracker
+See `prompts/module-prompts/49-sla-slo-tracker-build.md` and `prompts/module-audit-prompts/49-sla-slo-tracker-audit.md`.
+
+## 50. Patch Compliance Dashboard
+See `prompts/module-prompts/50-patch-compliance-dashboard-build.md` and `prompts/module-audit-prompts/50-patch-compliance-dashboard-audit.md`.
+
+## 51. Endpoint Security Coverage Map
+See `prompts/module-prompts/51-endpoint-security-coverage-map-build.md` and `prompts/module-audit-prompts/51-endpoint-security-coverage-map-audit.md`.
+
+## 52. Risk Acceptance Register
+See `prompts/module-prompts/52-risk-acceptance-register-build.md` and `prompts/module-audit-prompts/52-risk-acceptance-register-audit.md`.
+
+## 53. Data Retention Policy Manager
+See `prompts/module-prompts/53-data-retention-policy-manager-build.md` and `prompts/module-audit-prompts/53-data-retention-policy-manager-audit.md`.
+
+## 54. SharePoint Teams Structure Planner
+See `prompts/module-prompts/54-sharepoint-teams-structure-planner-build.md` and `prompts/module-audit-prompts/54-sharepoint-teams-structure-planner-audit.md`.
+
+## 55. Website DNS Change Request Approvals
+See `prompts/module-prompts/55-website-dns-change-request-approvals-build.md` and `prompts/module-audit-prompts/55-website-dns-change-request-approvals-audit.md`.
+
+## 56. Client Billing Service Catalog
+See `prompts/module-prompts/56-client-billing-service-catalog-build.md` and `prompts/module-audit-prompts/56-client-billing-service-catalog-audit.md`.
+
+## 57. Time Entry Worklog Summarizer
+See `prompts/module-prompts/57-time-entry-worklog-summarizer-build.md` and `prompts/module-audit-prompts/57-time-entry-worklog-summarizer-audit.md`.
+
+## 58. Emergency Access Break Glass Register
+See `prompts/module-prompts/58-emergency-access-break-glass-register-build.md` and `prompts/module-audit-prompts/58-emergency-access-break-glass-register-audit.md`.
+
+## 59. Tabletop Exercise Planner
+See `prompts/module-prompts/59-tabletop-exercise-planner-build.md` and `prompts/module-audit-prompts/59-tabletop-exercise-planner-audit.md`.
+
+## 60. AI Knowledge Base Article Generator
+See `prompts/module-prompts/60-ai-knowledge-base-article-generator-build.md` and `prompts/module-audit-prompts/60-ai-knowledge-base-article-generator-audit.md`.

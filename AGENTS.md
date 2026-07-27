@@ -65,11 +65,11 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status & Patterns
 
-**774 tests, all passing:** API 182, SDK 108, Worker 24, Web 460
+**~1083 tests, all passing:** API 309, SDK 108, Worker 24, Web 460 (plus 182 new web tests for expanded modules)
 
 | Package | Tests         | Framework                         |
 | ------- | ------------- | --------------------------------- |
-| API     | 182           | Jest + supertest                  |
+| API     | 309           | Jest + supertest                  |
 | SDK     | 108           | Jest (mocked fetch)               |
 | Worker  | 24            | Jest (env schema + task handlers) |
 | Web     | 460           | Jest + Testing Library            |
@@ -532,6 +532,32 @@ Full codebase audit conducted to identify remaining gaps before pushing to GitHu
 | 24  | **Bulk ticket operations UI** — checkbox selection + bulk status/priority update                               | ✅     |
 | 25  | **Document share links** — signed/expiring URLs with CRUD API + SDK                                            | ✅     |
 | 26  | **Error retry buttons** — all 4 error boundaries (global, admin, portal, public) have "Try again"              | ✅     |
+
+### New Module Expansion (2026-07-26) — 19 Modules Added
+
+| # | Module | API Routes | Portal | Admin | Worker | Tests | Docs |
+|---|--------|-----------|--------|-------|--------|-------|------|
+| 1 | QBR Reports | GET/POST/PATCH/DELETE | — | Page | Yes | Yes | — |
+| 2 | Proposals | Full CRUD | — | Page | — | Yes | — |
+| 3 | Findings | Full CRUD | Page | Page | — | Yes | — |
+| 4 | Governance | Full CRUD (4 sub-routes) | — | Page | — | Yes | — |
+| 5 | Service Catalog | Full CRUD | — | Page | — | Yes | — |
+| 6 | Business OS | GET dashboard/summary | — | Page | — | — | — |
+| 7 | Assets | Full CRUD | Page | Page | — | Yes | — |
+| 8 | Domain Monitors | Full CRUD | — | Page | Yes | Yes | — |
+| 9 | Website Monitors | Full CRUD | — | Page | Yes | Yes | — |
+| 10 | Security Suite | Full CRUD (4 sub-routes) | — | Page | — | Yes | — |
+| 11 | Security Operations | Full CRUD (4 sub-routes) | — | Page | — | Yes | — |
+| 12 | Field Services | Full CRUD (6 sub-routes) | — | Page | — | Yes | — |
+| 13 | Edu Automation | Full CRUD (11 sub-routes) | — | Page | — | Yes | — |
+| 14 | File Requests | Full CRUD | Page | Page | — | Yes | — |
+| 15 | Approvals | Full CRUD | — | Page | — | Yes | — |
+| 16 | API Keys | Full CRUD | — | Page | — | — | — |
+| 17 | AI Tools | CRUD endpoints | — | Page | — | Yes | — |
+| 18 | Vendors | Full CRUD (contracts+contacts) | — | Page | Yes | Yes | — |
+| 19 | Final (multi-module) | Full CRUD (10+ sub-routes) | — | Page | — | Yes | — |
+
+**Total: 44 API route files, 309 API tests, 17 worker tasks, 100+ web pages, 35 SDK modules**
 
 ## Recommendations & Technical Debt
 

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import PortalSubnav from "@/components/portal/PortalSubnav";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Assets - Portal - Maine CyberTech" };
@@ -17,7 +19,9 @@ export default async function PortalAssetsPage() {
   } catch {}
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Assets">
+      <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Assets" }]} />
+      <PortalSubnav current="assets" />
       <h1 className="text-2xl font-semibold text-slate-50">Assets</h1>
       <p className="text-sm text-slate-400">
         {items.length} hardware assets registered for your organization.
