@@ -803,7 +803,618 @@ export const blogPosts: BlogPost[] = [
     ],
     cta: "Maine CyberTech helps Maine businesses plan and install security camera systems including UniFi Protect, NVRs, PoE cameras, and remote access. Contact us for a camera system consultation.",
   },
-];
+  {
+    slug: "isp-consolidation-checklist-restaurants-local-organizations",
+    title: "ISP Consolidation Checklist for Restaurants and Local Organizations",
+    metaTitle: "ISP Consolidation Checklist for Restaurants | Maine CyberTech",
+    metaDescription:
+      "A practical ISP consolidation checklist for restaurants and local organizations reviewing internet, phone, and connectivity services across multiple locations in Maine.",
+    primaryKeyword: "ISP consolidation checklist",
+    category: "Local Business Technology",
+    relatedServices: ["networks"],
+    datePublished: "2024-07-12",
+    sections: [
+      {
+        heading: "Inventory what you have today",
+        items: [
+          "List every location and what internet, phone, and connectivity services are active there.",
+          "Document account numbers, provider names, and monthly costs for each service.",
+          "Note contract end dates, early termination fees, and auto-renewal terms.",
+          "Identify services that may be redundant across locations.",
+        ],
+      },
+      {
+        heading: "Review actual usage vs what you are paying for",
+        items: [
+          "Compare internet speeds you pay for with what is actually delivered.",
+          "Check whether phone lines, fax numbers, or secondary connections are still in use.",
+          "Look for legacy services like POTS lines that could be replaced with VoIP.",
+          "Identify seasonal locations where services could be paused or reduced during off months.",
+        ],
+      },
+      {
+        heading: "Consolidate where it makes sense",
+        items: [
+          "Multiple locations under one provider can sometimes qualify for better pricing or simplified billing.",
+          "A single managed network across all locations simplifies support, monitoring, and troubleshooting.",
+          "Consolidated billing makes budgeting, renewals, and vendor management easier.",
+          "Be careful not to create a single point of failure. If one provider has an outage, does it affect all locations?",
+        ],
+      },
+      {
+        heading: "Plan for redundancy and backup connectivity",
+        items: [
+          "Consider whether critical locations need a backup internet connection from a different provider.",
+          "Cellular failover can provide affordable backup connectivity for locations that cannot tolerate outages.",
+          "Document what happens at each location if internet goes down: can staff work from elsewhere, use mobile hotspots, or operate offline temporarily?",
+        ],
+      },
+      {
+        heading: "Document and communicate",
+        items: [
+          "Create a single reference document with all provider contacts, account numbers, and support numbers.",
+          "Make sure someone at each location knows who to contact for internet or phone issues.",
+          "Set calendar reminders for contract renewals and end dates.",
+          "Review annually to catch creeping costs, unused services, or new options.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "When should a multi-location organization consolidate ISPs?",
+        answer:
+          "Consolidation makes sense when managing multiple providers becomes a time burden, when costs are rising without corresponding benefit, or when you want unified support and monitoring across locations. It is not always the right answer if a single provider cannot serve all locations well.",
+      },
+      {
+        question: "How do I know if I am overpaying for connectivity?",
+        answer:
+          "Compare your monthly costs against current market rates for similar speeds and services. Many organizations find they are paying for legacy services or speeds they no longer need. A review every 1-2 years can reveal savings opportunities.",
+      },
+      {
+        question: "Is VoIP a good replacement for traditional phone lines?",
+        answer:
+          "For most organizations, yes. VoIP can reduce costs, simplify multi-location phone management, and add features like voicemail-to-email, auto attendants, and mobile apps. It does require reliable internet, so factor that into your planning.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine restaurants, campgrounds, and multi-location organizations review and consolidate internet, phone, and connectivity services. Contact us for an ISP and connectivity assessment.",
+  },
+  {
+    slug: "cloud-backup-checklist-maine-small-businesses",
+    title: "Cloud Backup Checklist for Maine Small Businesses",
+    metaTitle: "Cloud Backup Checklist for Maine Small Businesses",
+    metaDescription:
+      "A practical cloud backup checklist for Maine small businesses covering what to back up, how often, where to store it, restore testing, and validation.",
+    primaryKeyword: "cloud backup Maine",
+    category: "Cloud Backup",
+    relatedServices: ["cloud"],
+    datePublished: "2024-09-03",
+    sections: [
+      {
+        heading: "Identify what needs to be backed up",
+        items: [
+          "Business documents and spreadsheets stored on local computers or servers.",
+          "Email and calendar data. Microsoft 365 does not provide traditional backup by default.",
+          "Accounting software data, payroll records, and financial documents.",
+          "Customer and vendor contact information.",
+          "Line-of-business application data specific to your industry.",
+        ],
+      },
+      {
+        heading: "Decide how often to back up",
+        items: [
+          "Daily backup is the standard for most small businesses.",
+          "More frequent backup may be needed if your data changes throughout the day.",
+          "Consider the cost of losing a day, a week, or a month of data. That helps determine the right frequency.",
+          "Automated backup is more reliable than manual backup. People forget.",
+        ],
+      },
+      {
+        heading: "Choose where to store backups",
+        items: [
+          "Cloud backup stores data offsite, protecting against fire, theft, flood, and local hardware failure.",
+          "A combination of local backup for fast restore and cloud backup for offsite protection is ideal.",
+          "Cloud backup providers vary in cost, features, and restore speed. Choose one that fits your data volume and recovery time requirements.",
+          "Make sure the cloud backup provider encrypts data in transit and at rest.",
+        ],
+      },
+      {
+        heading: "Test your backups",
+        items: [
+          "A backup that has never been tested is a hope, not a plan.",
+          "Perform a test restore at least quarterly to confirm files can be recovered.",
+          "Document the restore process so anyone on your team can follow it.",
+          "Verify that restored files open correctly and contain the expected data.",
+        ],
+      },
+      {
+        heading: "Document and maintain",
+        items: [
+          "Document what is backed up, how often, where it is stored, and who is responsible.",
+          "Review your backup plan when you add new software, services, or data sources.",
+          "Keep backup credentials secure and accessible to more than one person.",
+          "Set up alerts so you know if a backup fails rather than discovering it when you need to restore.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "How much cloud backup storage does a small business need?",
+        answer:
+          "Start by measuring your current data volume and estimating growth. Most small businesses need 50 GB to 500 GB. Cloud backup providers typically charge by the gigabyte, so understanding your data volume helps you budget accurately.",
+      },
+      {
+        question: "Is cloud backup the same as file syncing like OneDrive or Dropbox?",
+        answer:
+          "No. File sync services keep files updated across devices but may not protect against accidental deletion, ransomware, or retention gaps. A proper cloud backup creates separate, versioned copies that can be restored from a point in time before a problem occurred.",
+      },
+      {
+        question: "How long should I keep backups?",
+        answer:
+          "Most small businesses keep 30 to 90 days of daily backups. Consider your industry requirements, the type of data, and how far back you might need to go. Longer retention costs more in storage, so balance cost against realistic recovery needs.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine small businesses set up and manage cloud backup, test restores, and build practical backup plans. Contact us for a backup review and recommendation.",
+  },
+  {
+    slug: "technology-checklist-marinas-warehouses-outdoor-facilities",
+    title: "Technology Checklist for Marinas, Warehouses, and Outdoor Facilities",
+    metaTitle: "Technology Checklist for Marinas, Warehouses | Maine CyberTech",
+    metaDescription:
+      "A technology checklist for marinas, warehouses, and outdoor facilities covering outdoor Wi-Fi, security cameras, network cabling, power, and weather-rated equipment for Maine properties.",
+    primaryKeyword: "marina technology support Maine",
+    category: "Networking",
+    relatedServices: ["networks", "security-systems"],
+    datePublished: "2024-11-18",
+    sections: [
+      {
+        heading: "Outdoor network infrastructure",
+        items: [
+          "Weather-rated access points, switches, and cabling designed for outdoor temperature ranges and moisture.",
+          "Proper grounding and surge protection for outdoor network equipment.",
+          "Conduit or protected cable paths for runs exposed to weather, vehicles, or equipment.",
+          "Distance planning. Ethernet has a 300-foot limit. Fiber may be needed for larger properties or long runs between buildings.",
+        ],
+      },
+      {
+        heading: "Wi-Fi coverage for large or irregular spaces",
+        items: [
+          "Marinas need Wi-Fi along docks, in boat storage areas, at fuel stations, and in offices.",
+          "Warehouses need coverage across high shelving, loading docks, and outdoor yard areas.",
+          "Outdoor facilities need coverage at gates, parking areas, equipment storage, and detached buildings.",
+          "A site survey identifies dead zones, interference sources, and the best access point placement.",
+        ],
+      },
+      {
+        heading: "Security cameras and monitoring",
+        items: [
+          "Identify critical areas: entrances, exits, fuel pumps, equipment storage, loading docks, docks, gates.",
+          "Weather-rated cameras with good low-light performance for outdoor areas with limited lighting.",
+          "NVR storage planning for the number of cameras, resolution, and retention period needed.",
+          "Remote access for viewing footage from the office or offsite.",
+        ],
+      },
+      {
+        heading: "Power and environmental considerations",
+        items: [
+          "Outdoor equipment needs reliable power. Plan for outlets, PoE switches, and UPS battery backup where appropriate.",
+          "Seasonal facilities may need equipment that can be powered down or removed during winter.",
+          "Temperature extremes affect electronics. Enclosures, heaters, or shade may be needed depending on placement.",
+          "Salt air near coastal marinas can accelerate corrosion. Choose equipment rated for coastal environments when applicable.",
+        ],
+      },
+      {
+        heading: "Vendor coordination and documentation",
+        items: [
+          "Marinas and outdoor facilities often have multiple vendors for internet, phone, security, and equipment. Document who supports what.",
+          "Create a network map showing access points, cameras, switches, and cable routes.",
+          "Keep an inventory of equipment models, purchase dates, warranty information, and support contacts.",
+          "Plan for seasonal startup and shutdown procedures if the facility operates part of the year.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Can standard office networking equipment work outdoors?",
+        answer:
+          "No. Standard office equipment is not designed for outdoor temperature ranges, moisture, dust, or UV exposure. Outdoor-rated equipment with appropriate IP ratings is required for reliable outdoor operation in Maine conditions.",
+      },
+      {
+        question: "How do I get Wi-Fi across a large marina or warehouse?",
+        answer:
+          "Large outdoor spaces typically require multiple access points placed strategically, often using directional antennas for long-range coverage. Fiber may be needed to connect distant buildings or access point locations beyond Ethernet distance limits. A site survey is the best starting point.",
+      },
+      {
+        question: "What happens to outdoor equipment during Maine winters?",
+        answer:
+          "Quality outdoor-rated equipment operates through Maine winters if installed correctly. Some facilities choose to power down seasonal equipment to extend its life. Proper grounding, surge protection, and weather-sealed connections are especially important for winter reliability.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine marinas, warehouses, and outdoor facilities plan and install network infrastructure, outdoor Wi-Fi, security cameras, and connectivity. Contact us for a site assessment.",
+  },
+  {
+    slug: "improve-wifi-restaurants-marinas-warehouses-older-buildings",
+    title: "How to Improve Wi-Fi in Restaurants, Marinas, Warehouses, and Older Buildings",
+    metaTitle: "Improve Wi-Fi in Restaurants, Marinas, Warehouses | Maine CyberTech",
+    metaDescription:
+      "Practical guidance for improving Wi-Fi coverage in restaurants, marinas, warehouses, and older Maine buildings with challenging layouts, materials, and outdoor areas.",
+    primaryKeyword: "improve business Wi-Fi Maine",
+    category: "Networking",
+    relatedServices: ["networks"],
+    datePublished: "2025-01-22",
+    sections: [
+      {
+        heading: "Understand what is causing poor Wi-Fi",
+        items: [
+          "Building materials. Brick, concrete, metal, plaster with wire mesh, and thick timber walls all block Wi-Fi signals.",
+          "Distance and obstructions. Long hallways, multiple floors, storage racks, and heavy equipment create dead zones.",
+          "Interference from other electronics, neighboring Wi-Fi networks, and equipment like microwaves and motors.",
+          "Consumer-grade equipment designed for a home or apartment being used in a larger commercial space.",
+        ],
+      },
+      {
+        heading: "Solutions for restaurants and hospitality",
+        items: [
+          "Place access points to cover dining areas, bar areas, outdoor patios, and private rooms.",
+          "Separate guest Wi-Fi from point-of-sale, kitchen display, and back-office systems.",
+          "Consider capacity. A busy restaurant with 60 guests all on phones needs more than a single consumer router.",
+          "Outdoor patios need weather-rated access points or coverage from indoor units placed near windows or under eaves.",
+        ],
+      },
+      {
+        heading: "Solutions for marinas and outdoor properties",
+        items: [
+          "Use outdoor-rated, directional access points for long-range coverage along docks and storage areas.",
+          "Mount access points high to clear boats, vehicles, and equipment that can block signals.",
+          "Plan cable routes carefully. Running Ethernet 300 feet down a dock works. Longer runs need fiber or additional switches.",
+          "Consider seasonal usage. Equipment may be powered down in winter. Plan for easy maintenance access.",
+        ],
+      },
+      {
+        heading: "Solutions for warehouses and industrial buildings",
+        items: [
+          "Mount access points high and use directional antennas to cover aisles between tall shelving.",
+          "Metal racking, inventory, and equipment all absorb or reflect Wi-Fi signals. More access points at lower power often work better than fewer at high power.",
+          "Plan coverage for loading docks, outdoor storage yards, and detached buildings.",
+          "Industrial environments may need dust-resistant or ruggedized equipment.",
+        ],
+      },
+      {
+        heading: "Solutions for older buildings",
+        items: [
+          "Older buildings often have thick walls, plaster with wire mesh, and limited cable pathways.",
+          "Mesh Wi-Fi systems can help where running new cable is difficult, but wired backhaul is always more reliable.",
+          "Look for existing conduit, phone lines, or abandoned cable paths that can be repurposed.",
+          "Multiple smaller access points placed strategically usually outperform one powerful unit in a difficult building.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Can I just buy a more powerful router?",
+        answer:
+          "A more powerful consumer router rarely solves coverage problems in commercial buildings. Better placement, multiple access points, and proper commercial-grade equipment designed for your building type almost always yield better results.",
+      },
+      {
+        question: "Should I use a mesh Wi-Fi system?",
+        answer:
+          "Mesh systems can help where running Ethernet cable is impractical, but each wireless hop reduces speed and adds latency. For business-critical applications, wired access points provide the most reliable performance. A hybrid approach with wired backhaul for key areas and mesh for hard-to-cable spots often works well.",
+      },
+      {
+        question: "How much does improving business Wi-Fi cost?",
+        answer:
+          "Cost depends on building size, construction type, number of users, and coverage areas. A small restaurant might need 2-3 access points and a small switch. A large marina or warehouse could need significantly more equipment and cabling. A site survey provides accurate pricing.",
+      },
+    ],
+    cta: "Maine CyberTech provides Wi-Fi site surveys, equipment recommendations, and professional installation for Maine restaurants, marinas, warehouses, campgrounds, and older buildings. Contact us to schedule a Wi-Fi assessment.",
+  },
+  {
+    slug: "cybersecurity-checklist-maine-campgrounds-small-businesses",
+    title: "Cybersecurity Checklist for Maine Campgrounds and Small Businesses",
+    metaTitle: "Cybersecurity Checklist for Maine Campgrounds and Small Businesses",
+    metaDescription:
+      "A practical cybersecurity checklist for Maine campgrounds and small businesses covering MFA, admin access, email security, devices, backups, and staff training.",
+    primaryKeyword: "cybersecurity services Maine",
+    category: "Cybersecurity",
+    relatedServices: ["cybersecurity", "microsoft-365-support"],
+    datePublished: "2025-03-10",
+    sections: [
+      {
+        heading: "Enable MFA everywhere it is available",
+        items: [
+          "Start with email accounts. This is the most common attack target.",
+          "Enable MFA on financial accounts, payroll systems, and any software holding customer data.",
+          "Use an authenticator app rather than SMS when possible for stronger protection.",
+          "Have a backup method documented for each user in case their primary device is unavailable.",
+        ],
+      },
+      {
+        heading: "Limit and review admin access",
+        items: [
+          "Only give admin access to people who need it for their role.",
+          "Use separate admin accounts for administrative tasks rather than using the same account for daily work.",
+          "Remove access promptly when someone leaves or changes roles.",
+          "Review admin access quarterly. Accounts tend to accumulate permissions over time.",
+        ],
+      },
+      {
+        heading: "Secure email and communications",
+        items: [
+          "Set up SPF, DKIM, and DMARC to protect your email domain from spoofing.",
+          "Enable external email warnings so staff can quickly identify messages from outside the organization.",
+          "Configure anti-phishing and anti-malware protections available in your email platform.",
+          "Train staff to recognize phishing emails, especially urgent payment requests and fake invoice scams.",
+        ],
+      },
+      {
+        heading: "Keep devices and software updated",
+        items: [
+          "Enable automatic updates on computers, phones, and network equipment.",
+          "Replace devices that no longer receive security updates from the manufacturer.",
+          "Maintain a list of all business devices and when they were last updated or reviewed.",
+          "Guest and seasonal worker devices should be on separate networks or have limited access to business systems.",
+        ],
+      },
+      {
+        heading: "Back up your data and test it",
+        items: [
+          "Make sure critical business data is backed up automatically, not manually.",
+          "Store backups separately from the primary data. Cloud backup or an offsite copy protects against local incidents.",
+          "Test a restore at least twice a year. A backup that cannot be restored is not a backup.",
+          "Include reservation systems, accounting data, customer records, and operational documents in your backup scope.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Is cybersecurity really a concern for a small campground or seasonal business?",
+        answer:
+          "Yes. Small and seasonal businesses are frequent targets because attackers know they often have weaker security. Email compromise, ransomware, and fraudulent payment requests can cause significant financial and operational damage regardless of business size.",
+      },
+      {
+        question: "How do I handle cybersecurity for seasonal workers?",
+        answer:
+          "Create separate accounts for seasonal staff, limit their access to only what they need, disable accounts when the season ends, and make sure they have basic training on recognizing phishing and suspicious activity.",
+      },
+      {
+        question: "What is the first thing I should do to improve cybersecurity today?",
+        answer:
+          "Enable MFA on all email accounts and financial system accounts. This single step provides the most protection for the least effort and can be completed in less than an hour for most small organizations.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine campgrounds and small businesses review their cybersecurity posture, enable MFA, secure email, and train staff. Contact us for a cybersecurity assessment.",
+  },
+  {
+    slug: "unifi-network-setup-small-business-planning",
+    title: "UniFi Network Setup for Small Businesses: What to Plan Before Installation",
+    metaTitle: "UniFi Network Setup for Small Businesses | Maine CyberTech",
+    metaDescription:
+      "Plan your UniFi network deployment for a small business including site survey, switch selection, access point placement, controller setup, VLANs, and ongoing management.",
+    primaryKeyword: "UniFi installation Maine",
+    category: "Networking",
+    relatedServices: ["networks"],
+    datePublished: "2025-05-28",
+    sections: [
+      {
+        heading: "Start with a site survey",
+        items: [
+          "Map the building layout, noting walls, floors, and construction materials.",
+          "Identify where users will be concentrated and where coverage is needed.",
+          "Note potential sources of interference: other electronics, neighboring networks, metal shelving.",
+          "Determine outdoor coverage needs and whether weather-rated access points are required.",
+        ],
+      },
+      {
+        heading: "Choose the right UniFi equipment",
+        items: [
+          "Access points: Choose models based on coverage area, user density, and whether indoor or outdoor rated.",
+          "Switches: Select PoE switches with enough ports and power budget for all access points, cameras, and other PoE devices.",
+          "Gateway/console: A UniFi Cloud Gateway or Dream Machine provides the controller, router, and security features in one device.",
+          "Plan for growth. Leave switch ports and PoE budget available for adding cameras, access points, or other equipment later.",
+        ],
+      },
+      {
+        heading: "Plan your network design",
+        items: [
+          "Create separate VLANs for business devices, guest Wi-Fi, security cameras, and IoT equipment.",
+          "Plan IP address ranges and DHCP settings for each VLAN.",
+          "Configure firewall rules between VLANs so business traffic is protected from guest and IoT devices.",
+          "Enable automatic updates for UniFi equipment to receive security patches and feature improvements.",
+        ],
+      },
+      {
+        heading: "Access point placement strategy",
+        items: [
+          "Ceiling-mounted access points provide the best coverage for most indoor spaces.",
+          "One access point per 1,500-2,500 square feet in open areas is a reasonable starting estimate.",
+          "High-density areas like conference rooms or open offices may need closer spacing.",
+          "Use the UniFi design tool or a Wi-Fi analyzer app to verify coverage after installation.",
+        ],
+      },
+      {
+        heading: "Ongoing management",
+        items: [
+          "The UniFi controller provides a single dashboard for monitoring, updates, and configuration.",
+          "Set up alerts for device outages, high utilization, or unauthorized access attempts.",
+          "Schedule regular firmware updates during off-hours to minimize disruption.",
+          "Document your network configuration, VLAN layout, IP ranges, and admin credentials.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Can I set up a UniFi network myself?",
+        answer:
+          "UniFi equipment is designed to be accessible, and many small businesses successfully set up basic configurations. Professional installation ensures the network is designed correctly for coverage, capacity, security, and future growth. Mistakes in VLAN configuration or access point placement are common and can require costly rework.",
+      },
+      {
+        question: "How does UniFi compare to consumer mesh systems?",
+        answer:
+          "UniFi is business-grade equipment with features like VLANs, centralized management, detailed monitoring, and PoE. Consumer mesh systems are simpler but lack the control, scalability, and reliability features that businesses benefit from as they grow.",
+      },
+      {
+        question: "Do I need a UniFi controller running all the time?",
+        answer:
+          "The controller is needed for configuration changes, guest portal features, and statistics. Basic network operation continues without the controller running, but for ongoing management and monitoring, a Cloud Gateway or always-on controller is recommended.",
+      },
+    ],
+    cta: "Maine CyberTech provides UniFi network design, equipment selection, professional installation, and ongoing management for Maine businesses. Contact us to plan your UniFi network deployment.",
+  },
+  {
+    slug: "it-support-restaurants-campgrounds-maine",
+    title: "IT Support for Restaurants and Campgrounds in Maine: What to Review First",
+    metaTitle: "IT Support for Restaurants and Campgrounds in Maine | Maine CyberTech",
+    metaDescription:
+      "A practical guide for Maine restaurants and campgrounds reviewing their IT setup including Microsoft 365, Wi-Fi, security, computers, backups, and internet service.",
+    primaryKeyword: "IT support restaurants Maine",
+    category: "Managed IT",
+    relatedServices: ["it-support", "microsoft-365-support"],
+    datePublished: "2025-07-15",
+    sections: [
+      {
+        heading: "Start with what keeps the business running",
+        items: [
+          "For restaurants: Wi-Fi for POS systems, guest Wi-Fi, online ordering platforms, reservation systems, and kitchen display systems.",
+          "For campgrounds: reservation management software, guest Wi-Fi, office computers, and phone systems.",
+          "Identify what cannot be down for more than an hour without affecting revenue or guest experience.",
+          "Document internet provider, account numbers, and support contacts at each location.",
+        ],
+      },
+      {
+        heading: "Review point-of-sale and payment systems",
+        items: [
+          "POS systems should be on a separate network from guest Wi-Fi to protect payment data.",
+          "Make sure POS devices receive regular updates from the vendor.",
+          "Document who supports the POS system and how to reach them during an outage.",
+          "Have a backup payment method available if the primary system goes down.",
+        ],
+      },
+      {
+        heading: "Guest Wi-Fi done right",
+        items: [
+          "Guest Wi-Fi must be isolated from business systems. A VLAN or separate network prevents guests from accessing POS, office computers, or cameras.",
+          "Coverage should extend to all guest areas: dining rooms, patios, campsites, common areas.",
+          "Consider a simple captive portal with Wi-Fi password, terms of use, or optional email collection for marketing.",
+          "Bandwidth management prevents a few heavy users from degrading the experience for everyone else.",
+        ],
+      },
+      {
+        heading: "Computers, email, and Microsoft 365",
+        items: [
+          "Office computers should have MFA enabled, automatic updates turned on, and passwords or PINs required.",
+          "Email for reservations, vendor communication, and guest inquiries should be backed up and protected with MFA.",
+          "Microsoft 365 can provide email, document storage, and collaboration tools for staff across multiple locations.",
+          "Keep a list of who has access to what and remove access when seasonal staff leave.",
+        ],
+      },
+      {
+        heading: "Backup and continuity planning",
+        items: [
+          "Reservation data, financial records, vendor contacts, and operational documents should be backed up.",
+          "Cloud backup is ideal for seasonal businesses because it does not require onsite hardware maintenance during the off-season.",
+          "Have a plan for what happens if internet goes down: can staff use mobile hotspots, process payments offline, or operate from an alternate location?",
+          "Test backups before the busy season starts. Discovering a backup problem in July is worse than finding it in April.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "Should restaurant guest Wi-Fi be on the same network as the POS system?",
+        answer:
+          "Absolutely not. Guest Wi-Fi and POS systems should be on separate, isolated networks. If guests share the same network as payment systems, a compromised guest device could potentially access sensitive payment data or disrupt operations.",
+      },
+      {
+        question: "How do I handle IT support for seasonal businesses?",
+        answer:
+          "Plan for seasonal startup and shutdown: document procedures for powering equipment on and off, test systems before the season starts, and keep support contacts accessible year-round. Consider cloud-based services that can be managed remotely during the off-season.",
+      },
+      {
+        question: "What internet speed do I need for a restaurant or campground?",
+        answer:
+          "For a restaurant with guest Wi-Fi, online ordering, and POS, 100 Mbps download is a reasonable starting point. Campgrounds with many guests streaming video may need 300 Mbps or more. Upload speed matters for cloud backups, video uploads, and remote access. Your provider can analyze actual usage to recommend the right plan.",
+      },
+    ],
+    cta: "Maine CyberTech provides IT support, Wi-Fi installation, Microsoft 365 setup, and technology planning for Maine restaurants, campgrounds, and seasonal businesses. Contact us to review your technology setup before your next busy season.",
+  },
+  {
+    slug: "backup-vs-disaster-recovery-small-business",
+    title: "Backup vs Disaster Recovery: What Small Businesses Need to Know",
+    metaTitle: "Backup vs Disaster Recovery for Small Businesses | Maine CyberTech",
+    metaDescription:
+      "Understand the difference between backup and disaster recovery, why both matter for small businesses, and how to build a practical continuity plan.",
+    primaryKeyword: "backup vs disaster recovery small business",
+    category: "Cloud Backup",
+    relatedServices: ["cloud", "cybersecurity"],
+    datePublished: "2026-02-08",
+    sections: [
+      {
+        heading: "Backup is not the same as disaster recovery",
+        items: [
+          "Backup means you have a copy of your data stored somewhere safe.",
+          "Disaster recovery means you have a plan to restore operations after an incident, including data, systems, applications, and workspace.",
+          "A backup without a tested recovery plan is like having a spare tire but no jack or lug wrench.",
+          "Many small businesses discover they have backups but no practical way to restore them quickly when it matters.",
+        ],
+      },
+      {
+        heading: "What a backup plan should cover",
+        items: [
+          "What data is backed up: documents, email, databases, financial records, customer information.",
+          "How often: daily is the standard for most small businesses.",
+          "Where it is stored: cloud backup provides offsite protection. Local backup provides fast restore.",
+          "How long it is retained: 30-90 days is typical for daily backups.",
+          "Who is responsible: name the person who checks backups and performs test restores.",
+        ],
+      },
+      {
+        heading: "What a disaster recovery plan should cover",
+        items: [
+          "What counts as a disaster: hardware failure, ransomware, building loss, extended power outage, internet outage.",
+          "How long can the business be down before it becomes critical? An hour? A day? A week?",
+          "What hardware and software are needed to resume operations?",
+          "Where will staff work if the primary location is inaccessible?",
+          "How will customers and vendors be contacted during an outage?",
+        ],
+      },
+      {
+        heading: "Common gaps in small business plans",
+        items: [
+          "Backups exist but have never been tested.",
+          "The backup and the primary data are in the same building.",
+          "Only one person knows how to restore from backup.",
+          "The backup does not include email, accounting software data, or line-of-business applications.",
+          "No one knows the credentials for the backup system.",
+        ],
+      },
+      {
+        heading: "Building a practical plan",
+        items: [
+          "Start simple. A one-page document with key contacts, backup locations, and restore steps is better than no plan.",
+          "Test at least twice a year and after any major system change.",
+          "Keep a printed copy of the plan offsite. If the building is inaccessible, a cloud document is not helpful if you cannot log in.",
+          "Review and update the plan when you add new software, change providers, or move locations.",
+        ],
+      },
+    ],
+    faq: [
+      {
+        question: "How much does disaster recovery planning cost for a small business?",
+        answer:
+          "The cost depends on data volume, recovery time requirements, and whether you need standby hardware or can restore to existing equipment. Cloud backup and a documented recovery plan can be very affordable. The real cost is downtime: a day without email, reservations, or financial systems often costs more than years of backup and recovery planning.",
+      },
+      {
+        question: "Is cloud backup enough for disaster recovery?",
+        answer:
+          "Cloud backup provides excellent offsite data protection. However, restoring large amounts of data from the cloud can take hours or days depending on your internet speed. A combination of local backup for fast restore and cloud backup for offsite protection provides the best balance.",
+      },
+      {
+        question: "What is the most common disaster recovery mistake?",
+        answer:
+          "Having backups that have never been tested. We regularly encounter businesses that assumed backups were working, only to discover during a real incident that the backup was incomplete, corrupted, or inaccessible. Test your restores.",
+      },
+    ],
+    cta: "Maine CyberTech helps Maine small businesses build practical backup and disaster recovery plans, set up cloud backup, and test restores. Contact us for a business continuity assessment.",
+  },
+].sort((a, b) => b.datePublished.localeCompare(a.datePublished)) as BlogPost[];
 
 export function getBlogPost(slug: string): BlogPost | undefined {
   return blogPosts.find((post) => post.slug === slug);

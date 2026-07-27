@@ -14,6 +14,7 @@ export type BlogSeoConfig = {
     | "Cloud Backup"
     | "Local Business Technology";
   relatedServiceSlugs: string[];
+  datePublished: string;
 };
 
 export const blogSeoBacklog: BlogSeoConfig[] = [
@@ -26,6 +27,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     primaryKeyword: "small business IT support Maine",
     secondaryKeywords: ["IT support Maine", "managed IT services Maine", "MSP Maine"],
     category: "Managed IT",
+    datePublished: "2026-07-01",
     relatedServiceSlugs: ["it-support", "microsoft-365-support", "cybersecurity"],
   },
   {
@@ -37,6 +39,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     primaryKeyword: "Microsoft 365 security Maine",
     secondaryKeywords: ["Microsoft 365 support Maine", "MFA setup", "business email security"],
     category: "Microsoft 365",
+    datePublished: "2026-07-01",
     relatedServiceSlugs: ["microsoft-365-support", "cybersecurity"],
   },
   {
@@ -48,6 +51,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     primaryKeyword: "business Wi-Fi Maine",
     secondaryKeywords: ["network installation Maine", "UniFi installation Maine", "outdoor Wi-Fi"],
     category: "Networking",
+    datePublished: "2026-07-01",
     relatedServiceSlugs: ["networks"],
   },
   {
@@ -59,6 +63,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     primaryKeyword: "security camera installation Maine",
     secondaryKeywords: ["business security cameras", "UniFi Protect", "NVR setup"],
     category: "Security Systems",
+    datePublished: "2026-07-01",
     relatedServiceSlugs: ["security-systems", "networks"],
   },
   {
@@ -70,6 +75,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     primaryKeyword: "cybersecurity services Maine",
     secondaryKeywords: ["campground cybersecurity", "small business security", "MFA setup"],
     category: "Cybersecurity",
+    datePublished: "2025-03-10",
     relatedServiceSlugs: ["cybersecurity", "microsoft-365-support"],
   },
   {
@@ -81,6 +87,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     primaryKeyword: "improve business Wi-Fi Maine",
     secondaryKeywords: ["restaurant Wi-Fi", "marina Wi-Fi", "warehouse Wi-Fi", "outdoor Wi-Fi"],
     category: "Networking",
+    datePublished: "2025-01-22",
     relatedServiceSlugs: ["networks"],
   },
   {
@@ -92,6 +99,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     primaryKeyword: "cloud backup Maine",
     secondaryKeywords: ["disaster recovery", "business continuity", "backup planning"],
     category: "Cloud Backup",
+    datePublished: "2024-09-03",
     relatedServiceSlugs: ["cloud"],
   },
   {
@@ -107,6 +115,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
       "managed IT services Maine",
     ],
     category: "Managed IT",
+    datePublished: "2025-07-15",
     relatedServiceSlugs: ["it-support", "microsoft-365-support"],
   },
   {
@@ -118,6 +127,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     primaryKeyword: "marina technology support Maine",
     secondaryKeywords: ["warehouse IT", "outdoor Wi-Fi", "security cameras", "network cabling"],
     category: "Networking",
+    datePublished: "2024-11-18",
     relatedServiceSlugs: ["networks", "security-systems"],
   },
   {
@@ -129,6 +139,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     primaryKeyword: "backup vs disaster recovery small business",
     secondaryKeywords: ["business continuity", "backup planning", "cloud backup"],
     category: "Cloud Backup",
+    datePublished: "2026-02-08",
     relatedServiceSlugs: ["cloud", "cybersecurity"],
   },
   {
@@ -140,6 +151,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
     primaryKeyword: "UniFi installation Maine",
     secondaryKeywords: ["UniFi network setup", "small business network", "access point placement"],
     category: "Networking",
+    datePublished: "2025-05-28",
     relatedServiceSlugs: ["networks"],
   },
   {
@@ -156,6 +168,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
       "connectivity review",
     ],
     category: "Local Business Technology",
+    datePublished: "2024-07-12",
     relatedServiceSlugs: ["networks"],
   },
   {
@@ -172,6 +185,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
       "outsourced IT",
     ],
     category: "Managed IT",
+    datePublished: "2025-08-15",
     relatedServiceSlugs: ["it-support", "microsoft-365-support", "cybersecurity"],
   },
   {
@@ -188,6 +202,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
       "outsourced IT support",
     ],
     category: "Managed IT",
+    datePublished: "2025-10-22",
     relatedServiceSlugs: ["it-support", "cybersecurity"],
   },
   {
@@ -204,6 +219,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
       "cybersecurity basics",
     ],
     category: "Cybersecurity",
+    datePublished: "2025-11-08",
     relatedServiceSlugs: ["cybersecurity", "microsoft-365-support"],
   },
   {
@@ -220,6 +236,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
       "MFA setup",
     ],
     category: "Cybersecurity",
+    datePublished: "2026-01-14",
     relatedServiceSlugs: ["cybersecurity", "microsoft-365-support"],
   },
   {
@@ -236,6 +253,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
       "marina Wi-Fi",
     ],
     category: "Networking",
+    datePublished: "2026-03-29",
     relatedServiceSlugs: ["networks"],
   },
   {
@@ -252,6 +270,7 @@ export const blogSeoBacklog: BlogSeoConfig[] = [
       "NVR setup",
     ],
     category: "Security Systems",
+    datePublished: "2026-05-17",
     relatedServiceSlugs: ["security-systems"],
   },
-];
+].sort((a, b) => b.datePublished.localeCompare(a.datePublished)) as BlogSeoConfig[];

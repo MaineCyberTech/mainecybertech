@@ -21,5 +21,5 @@ export const siteConfig = {
     facebook: "",
     github: "",
   },
-  defaultOgImage: "/og/maine-cyber-tech-og.png",
+  defaultOgImage: "/opengraph-image",
 } as const;
