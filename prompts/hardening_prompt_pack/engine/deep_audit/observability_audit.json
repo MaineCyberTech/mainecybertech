@@ -1,0 +1,16 @@
+{
+  "domain": "observability",
+  "total": 1,
+  "timestamp": "2026-07-27T00:20:26.177038+00:00",
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "observability",
+      "category": "metrics",
+      "file": "apps/worker/src/main.ts",
+      "issue": "Worker has no Prometheus metrics endpoint \u2014 task count, queue depth, error rates invisible",
+      "remediation": "Add prom-client metrics endpoint or expose BullMQ queue stats via health server",
+      "impact": "Queue backlogs and error spikes in worker are invisible until users report issues"
+    }
+  ]
+}

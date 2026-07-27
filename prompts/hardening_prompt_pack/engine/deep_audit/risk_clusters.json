@@ -1,0 +1,46 @@
+{
+  "auth": {
+    "count": 1,
+    "p0": 0
+  },
+  "tenancy": {
+    "count": 3,
+    "p0": 1
+  },
+  "validation": {
+    "count": 1,
+    "p0": 0
+  },
+  "exposure": {
+    "count": 1,
+    "p0": 0
+  },
+  "general": {
+    "count": 1,
+    "p0": 0
+  },
+  "schema_drift": {
+    "count": 1,
+    "p0": 0
+  },
+  "transactions": {
+    "count": 1,
+    "p0": 0
+  },
+  "release": {
+    "count": 2,
+    "p0": 0
+  },
+  "metrics": {
+    "count": 1,
+    "p0": 0
+  },
+  "pii_storage": {
+    "count": 1,
+    "p0": 0
+  },
+  "architecture": {
+    "count": 2,
+    "p0": 0
+  }
+}

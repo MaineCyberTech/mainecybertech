@@ -26,6 +26,7 @@ export function createMockBuilder(result: MockResult) {
     filter: jest.fn(chain),
     not: jest.fn(chain),
     ilike: jest.fn(chain),
+    or: jest.fn(chain),
     limit: jest.fn(chain),
     maybeSingle: jest.fn(chain),
     rpc: jest.fn(chain),

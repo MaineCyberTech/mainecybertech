@@ -79,6 +79,45 @@ import { FieldServicesApi } from "./field-services";
 import { EduAutomationApi } from "./edu-automation";
 import { FinalApi } from "./final";
 import { SearchApi, type SearchResult, type PortalSearchResult } from "./search";
+import type {
+  ClientOnboardingRecord,
+  ChecklistItem,
+  ListOnboardingQuery,
+  CreateOnboardingInput,
+  UpdateOnboardingInput,
+  CompletePhaseInput,
+  ExportOnboardingInput,
+  ChecklistItemInput,
+  UpdateChecklistItemInput,
+} from "./client-onboarding-command-center";
+import { ClientOnboardingApi } from "./client-onboarding-command-center.api";
+import type {
+  SatisfactionPulseRecord,
+  Template,
+  Schedule,
+  ListSatisfactionPulseQuery,
+  CreateSatisfactionPulseInput,
+  UpdateSatisfactionPulseInput,
+  RespondSatisfactionPulseInput,
+  ExportSatisfactionPulseInput,
+  TemplateInput,
+  UpdateTemplateInput,
+  ScheduleInput,
+  UpdateScheduleInput,
+} from "./satisfaction-pulse-widget";
+import { SatisfactionPulseApi } from "./satisfaction-pulse-widget.api";
+
+import type {
+  DynamicFormRecord,
+  DynamicFormField,
+  FormSubmission,
+  ListDynamicFormsQuery,
+  CreateDynamicFormInput,
+  UpdateDynamicFormInput,
+  SubmitDynamicFormInput,
+  ExportDynamicFormsInput,
+} from "./dynamic-client-forms-builder";
+import { DynamicFormsApi } from "./dynamic-client-forms-builder.api";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -137,6 +176,23 @@ export type {
   IncidentRecord,
   IdentityVerification,
   EndpointSecurity,
+  ClientOnboardingRecord,
+  ChecklistItem,
+  ListOnboardingQuery,
+  CreateOnboardingInput,
+  UpdateOnboardingInput,
+  CompletePhaseInput,
+  ExportOnboardingInput,
+  ChecklistItemInput,
+  UpdateChecklistItemInput,
+  DynamicFormRecord,
+  DynamicFormField,
+  FormSubmission,
+  ListDynamicFormsQuery,
+  CreateDynamicFormInput,
+  UpdateDynamicFormInput,
+  SubmitDynamicFormInput,
+  ExportDynamicFormsInput,
 };
 
 export class MCTClient {
@@ -175,6 +231,9 @@ export class MCTClient {
   public fieldServices: FieldServicesApi;
   public eduAutomation: EduAutomationApi;
   public final: FinalApi;
+  public clientOnboarding: ClientOnboardingApi;
+  public satisfactionPulse: SatisfactionPulseApi;
+  public dynamicForms: DynamicFormsApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -212,6 +271,9 @@ export class MCTClient {
     this.fieldServices = new FieldServicesApi(client);
     this.eduAutomation = new EduAutomationApi(client);
     this.final = new FinalApi(client);
+    this.clientOnboarding = new ClientOnboardingApi(client);
+    this.satisfactionPulse = new SatisfactionPulseApi(client);
+    this.dynamicForms = new DynamicFormsApi(client);
   }
 
   static create(opts: ClientOptions) {

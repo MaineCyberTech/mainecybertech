@@ -1,0 +1,54 @@
+{
+  "total": 6,
+  "deduped_from": 6,
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "security",
+      "file": "apps/api/src/routes/users.ts",
+      "issue": "Missing tenant isolation (requireOrgAccess)",
+      "impact": "Users can access cross-org records",
+      "fix": "Add requireOrgAccess middleware to this router"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "file": "apps/api/src/routes/*.ts",
+      "issue": "No Supabase RPC transactions used for multi-step operations",
+      "impact": "Partial writes possible on failure",
+      "fix": "Wrap multi-step mutations in Supabase RPC transactions"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "file": "supabase/migrations/*.sql",
+      "issue": "Tables defined in migrations but never queried in API code: IF, ai_draft_outputs, appointments, chat_messages, chat_threads, comments, contract_signers, contracts, document_permissions, if, onboarding_submissions, portal_module_settings, project_members, webhook_dead_letters",
+      "impact": "Dead schema or incomplete feature implementation",
+      "fix": "Remove unused tables or add API queries"
+    },
+    {
+      "severity": "P1",
+      "domain": "privacy",
+      "file": "apps/api/src/lib/auth.ts",
+      "issue": "Session cookie missing Secure/HttpOnly flags",
+      "impact": "Session token exposed to network sniffing or XSS",
+      "fix": "Set cookie with httpOnly=true, secure=true, sameSite='lax'"
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "file": "apps/api/src/routes/*.ts",
+      "issue": "Possible PII logged via logger calls",
+      "impact": "Sensitive data may appear in log output",
+      "fix": "Add log sanitization wrapper to redact emails/tokens"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "file": "apps/web/app/**/page.tsx",
+      "issue": "Only 111/130 pages have metadata/title tags",
+      "impact": "Poor SEO and tab identification",
+      "fix": "Add export const metadata with title to all pages"
+    }
+  ]
+}

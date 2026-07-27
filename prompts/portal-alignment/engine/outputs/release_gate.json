@@ -1,0 +1,15 @@
+{
+  "decision": "APPROVED_FOR_PROD_DEPLOY",
+  "readiness_score": 91,
+  "blocked": false,
+  "blocked_by": null,
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 3,
+    "P3": 3
+  },
+  "total_findings": 6,
+  "timestamp": "2026-07-27T00:21:19.977444+00:00",
+  "commit": "6cb2ad4 fix: move public endpoints before requireAuth middleware"
+}

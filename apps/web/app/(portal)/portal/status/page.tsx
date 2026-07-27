@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
-import { getApprovedMembership } from "@/lib/auth/membership";
+
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 

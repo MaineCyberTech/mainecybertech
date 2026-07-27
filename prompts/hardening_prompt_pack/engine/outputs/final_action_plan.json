@@ -1,0 +1,53 @@
+{
+  "total_actions": 6,
+  "actions": [
+    {
+      "severity": "P0",
+      "domain": "security",
+      "file": "apps/api/src/routes/users.ts",
+      "issue": "Missing tenant isolation (requireOrgAccess)",
+      "action": "Add requireOrgAccess middleware to this router",
+      "effort": "large"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "file": "apps/api/src/routes/*.ts",
+      "issue": "No Supabase RPC transactions used for multi-step operations",
+      "action": "Wrap multi-step mutations in Supabase RPC transactions",
+      "effort": "medium"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "file": "supabase/migrations/*.sql",
+      "issue": "Tables defined in migrations but never queried in API code: IF, ai_draft_outputs, appointments, chat_messages, chat_threads, comments, contract_signers, contracts, document_permissions, if, onboarding_submissions, portal_module_settings, project_members, webhook_dead_letters",
+      "action": "Remove unused tables or add API queries",
+      "effort": "medium"
+    },
+    {
+      "severity": "P1",
+      "domain": "privacy",
+      "file": "apps/api/src/lib/auth.ts",
+      "issue": "Session cookie missing Secure/HttpOnly flags",
+      "action": "Set cookie with httpOnly=true, secure=true, sameSite='lax'",
+      "effort": "large"
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "file": "apps/api/src/routes/*.ts",
+      "issue": "Possible PII logged via logger calls",
+      "action": "Add log sanitization wrapper to redact emails/tokens",
+      "effort": "small"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "file": "apps/web/app/**/page.tsx",
+      "issue": "Only 111/130 pages have metadata/title tags",
+      "action": "Add export const metadata with title to all pages",
+      "effort": "small"
+    }
+  ]
+}

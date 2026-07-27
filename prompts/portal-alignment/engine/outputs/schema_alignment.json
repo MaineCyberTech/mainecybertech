@@ -1,0 +1,46 @@
+{
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "database",
+      "title": "Tables defined in migrations but unreferenced in API code",
+      "tables": [
+        "ai_draft_outputs",
+        "appointments",
+        "chat_messages",
+        "chat_threads",
+        "contract_signers",
+        "document_permissions",
+        "onboarding_submissions",
+        "portal_module_settings",
+        "project_members",
+        "webhook_dead_letters"
+      ],
+      "detail": "10 table(s) created in migrations but not referenced in API TypeScript source"
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "title": "Migration number gaps detected",
+      "gaps": [
+        "5302026 -> 5302028 (diff=2)",
+        "5302038 -> 5302041 (diff=3)",
+        "5302043 -> 5302050 (diff=7)"
+      ]
+    }
+  ],
+  "migration_count": 42,
+  "unused_tables": [
+    "ai_draft_outputs",
+    "appointments",
+    "chat_messages",
+    "chat_threads",
+    "contract_signers",
+    "document_permissions",
+    "onboarding_submissions",
+    "portal_module_settings",
+    "project_members",
+    "webhook_dead_letters"
+  ],
+  "seed_data_present": true
+}

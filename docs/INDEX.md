@@ -64,6 +64,7 @@
 | [docs/MARKETING_SITE_INTEGRATION.md](MARKETING_SITE_INTEGRATION.md)                                                   | Marketing site domain route plan — public API, frontend, domain config |
 
 ### New Module Docs (2026-07-26)
+
 - `docs/modules/qbr-reports.md` — QBR Reports module (API routes, admin page, worker tasks, tests)
 - `docs/modules/proposals.md` — Proposals module (API routes, admin page, tests)
 - `docs/modules/findings.md` — Findings module (API routes, portal + admin pages, tests)
@@ -72,9 +73,8 @@
 - `docs/modules/business-os.md` — Business OS module (dashboard/summary API, admin page)
 - `docs/modules/assets.md` — Assets module (API routes, portal + admin pages, tests)
 - `docs/modules/domain-monitors.md` — Domain Monitors module (API routes, admin page, worker tasks, tests)
-- `docs/modules/website-monitors.md` — Website Monitors module (API routes, admin page, worker tasks, tests)
 - `docs/modules/security-suite.md` — Security Suite module (API routes, 4 sub-routes, admin page, tests)
-- `docs/modules/security-operations.md` — Security Operations module (API routes, 4 sub-routes, admin page, tests)
+- `docs/modules/security-ops.md` — Security Operations module (API routes, 4 sub-routes, admin page, tests)
 - `docs/modules/field-services.md` — Field Services module (API routes, 6 sub-routes, admin page, tests)
 - `docs/modules/edu-automation.md` — Edu Automation module (API routes, 11 sub-routes, admin page, tests)
 - `docs/modules/file-requests.md` — File Requests module (API routes, portal + admin pages, tests)
@@ -82,4 +82,27 @@
 - `docs/modules/api-keys.md` — API Keys module (API routes, admin page)
 - `docs/modules/ai-tools.md` — AI Tools module (API routes, admin page, tests)
 - `docs/modules/vendors.md` — Vendors module (API routes, admin page, worker tasks, tests)
-- `docs/modules/final.md` — Final multi-module (API routes, 10+ sub-routes, admin page, tests)
+- `docs/modules/final-multi-module.md` — Final multi-module (API routes, 10+ sub-routes, admin page, tests)
+
+### Core Module Docs (2026-07-27)
+
+- `docs/modules/audit.md` — Audit log (admin listing, CSV/JSON export)
+- `docs/modules/auth.md` — Authentication (sign-in, sign-up, PKCE, password reset)
+- `docs/modules/batch.md` — Batch operations (licenses, status items, DMARC assessments)
+- `docs/modules/bulk-invite.md` — Bulk user invite (CSV import)
+- `docs/modules/dashboard.md` — Admin dashboard (aggregate counts)
+- `docs/modules/api-documentation.md` — Swagger UI + OpenAPI spec
+- `docs/modules/documents.md` — Document management (upload, versions, share links)
+- `docs/modules/dynamic-client-forms.md` — Dynamic forms builder (CRUD, publish, responses)
+- `docs/modules/health.md` — Health check endpoint
+- `docs/modules/notification-preferences.md` — Per-module notification toggles
+- `docs/modules/notifications.md` — Notifications (SSE streaming, mark-read, CRUD)
+- `docs/modules/profiles.md` — User profiles (CRUD, avatar upload)
+- `docs/modules/projects.md` — Projects (tasks, comments, approval, timeline)
+- `docs/modules/satisfaction-pulse.md` — Satisfaction surveys (templates, schedules, responses)
+- `docs/modules/search.md` — Admin global search
+- `docs/modules/search-portal.md` — Portal-scoped search
+- `docs/modules/sla-metrics.md` — SLA tracking (breach rates, metrics)
+- `docs/modules/tickets.md` — Support tickets (CRUD, comments, bulk update)
+- `docs/modules/users.md` — User management (roles, permissions, multi-org)
+- `docs/modules/admin-utilities.md` — Admin utilities (test email)

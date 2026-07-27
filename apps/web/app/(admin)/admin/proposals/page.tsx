@@ -78,7 +78,9 @@ export default async function ProposalsPage() {
                       {new Date(p.created_at).toISOString().slice(0, 10)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3"><StatusPill status={p.status} /></div>
+                  <div className="flex items-center gap-3">
+                    <StatusPill status={p.status} />
+                  </div>
                 </div>
               </Link>
             ))

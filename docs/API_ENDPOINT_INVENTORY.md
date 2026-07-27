@@ -327,7 +327,7 @@ Error codes follow HTTP semantics:
 | **Bulk**                     | 1                |
 | **Health**                   | 1                |
 | **API Docs**                 | 1                |
-| **Total**                    | **86 endpoints** |
+| **Total**                    | **95 endpoints** |
 
 All 27+ mutation endpoints have Zod validation. All mutation endpoints log audit events (with 3-retry exponential backoff). 6 GET endpoints have response caching.
 
@@ -335,28 +335,30 @@ All 27+ mutation endpoints have Zod validation. All mutation endpoints log audit
 
 ## New Modules (2026-07-26)
 
-| Route File | Endpoints | Key Operations |
-|------------|-----------|----------------|
-| proposals | GET/POST /, GET/PATCH/DELETE /:id, GET/POST /:id/line-items, PATCH/DELETE /:id/line-items/:lid | CRUD proposals + line items |
-| findings | GET/POST /, GET/PATCH/DELETE /:id | CRUD findings (P0-P3) |
-| qbr | GET/POST /, GET/PATCH/DELETE /:id, POST /:id/generate | QBR reports |
-| governance | GET/POST /change-requests, /risks, /retention, /tabletop + PATCH/DELETE | Change/risk/retention/tabletop CRUD |
-| security-suite | GET/POST /overview, /assessments, /incidents, /reports + PATCH/DELETE | Security suite CRUD |
-| security-ops | GET/POST /alerts, /response, /forensics, /remediation + PATCH/DELETE | Security operations CRUD |
-| field-services | GET/POST /unifi, /staging, /port-maps, /network-diagrams, /isp, /camera-calc + PATCH/DELETE | Field services CRUD |
-| edu-automation | GET/POST /training, /phishing, /sop, /kb + PATCH/DELETE | Education automation CRUD |
-| domain-monitors | GET/POST /, GET/PATCH/DELETE /:id | Domain/DNS monitoring |
-| website-monitors | GET/POST /, GET/PATCH/DELETE /:id | Website uptime/SSL/Lighthouse |
-| file-requests | GET/POST /, GET/PATCH/DELETE /:id, GET /public/:token | Secure file requests |
-| service-catalog | GET/POST /, GET/PATCH/DELETE /:id | Service catalog CRUD |
-| assets | GET/POST /, GET/PATCH/DELETE /:id | Hardware/asset tracking |
-| vendors | GET/POST /contracts, /contacts, GET/PATCH/DELETE /:id | Vendor management |
-| approvals | GET/POST /, GET/PATCH/:id, POST /:id/approve, /:id/reject, GET /timeline/:entity | Approval workflow |
-| api-keys | GET/POST /, GET/DELETE /:id | API key management |
-| ai | GET/POST /, GET/PATCH/DELETE /:id, POST /:id/execute | AI tool management |
-| batch | GET /status, POST /process, DELETE /cleanup | Batch operations |
-| sla | GET /metrics | SLA tracking metrics |
-| admin | POST /test-email | Admin test email |
-| business-os | GET /summary, GET /approvals-overdue, GET /recent-activity, GET /org-health | Business OS dashboard |
-| search-portal | GET / | Portal search |
-| final | GET/POST /backups, /budgets, /device-profiles, /dns-changes, /forms, /procurement, /runbooks, /saas-audit, /satisfaction, /sharepoint, /time-entries + PATCH/DELETE | Multi-module CRUD |
+| Route File                       | Endpoints                                                                                                                                                           | Key Operations                                              |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| proposals                        | GET/POST /, GET/PATCH/DELETE /:id, GET/POST /:id/line-items, PATCH/DELETE /:id/line-items/:lid                                                                      | CRUD proposals + line items                                 |
+| findings                         | GET/POST /, GET/PATCH/DELETE /:id                                                                                                                                   | CRUD findings (P0-P3)                                       |
+| qbr                              | GET/POST /, GET/PATCH/DELETE /:id, POST /:id/generate                                                                                                               | QBR reports                                                 |
+| governance                       | GET/POST /change-requests, /risks, /retention, /tabletop + PATCH/DELETE                                                                                             | Change/risk/retention/tabletop CRUD                         |
+| security-suite                   | GET/POST /overview, /assessments, /incidents, /reports + PATCH/DELETE                                                                                               | Security suite CRUD                                         |
+| security-ops                     | GET/POST /alerts, /response, /forensics, /remediation + PATCH/DELETE                                                                                                | Security operations CRUD                                    |
+| field-services                   | GET/POST /unifi, /staging, /port-maps, /network-diagrams, /isp, /camera-calc + PATCH/DELETE                                                                         | Field services CRUD                                         |
+| edu-automation                   | GET/POST /training, /phishing, /sop, /kb + PATCH/DELETE                                                                                                             | Education automation CRUD                                   |
+| domain-monitors                  | GET/POST /, GET/PATCH/DELETE /:id                                                                                                                                   | Domain/DNS monitoring                                       |
+| website-monitors                 | GET/POST /, GET/PATCH/DELETE /:id                                                                                                                                   | Website uptime/SSL/Lighthouse                               |
+| file-requests                    | GET/POST /, GET/PATCH/DELETE /:id, GET /public/:token                                                                                                               | Secure file requests                                        |
+| service-catalog                  | GET/POST /, GET/PATCH/DELETE /:id                                                                                                                                   | Service catalog CRUD                                        |
+| assets                           | GET/POST /, GET/PATCH/DELETE /:id                                                                                                                                   | Hardware/asset tracking                                     |
+| vendors                          | GET/POST /contracts, /contacts, GET/PATCH/DELETE /:id                                                                                                               | Vendor management                                           |
+| approvals                        | GET/POST /, GET/PATCH/:id, POST /:id/approve, /:id/reject, GET /timeline/:entity                                                                                    | Approval workflow                                           |
+| api-keys                         | GET/POST /, GET/DELETE /:id                                                                                                                                         | API key management                                          |
+| ai                               | GET/POST /, GET/PATCH/DELETE /:id, POST /:id/execute                                                                                                                | AI tool management                                          |
+| batch                            | GET /status, POST /process, DELETE /cleanup                                                                                                                         | Batch operations                                            |
+| sla                              | GET /metrics                                                                                                                                                        | SLA tracking metrics                                        |
+| admin                            | POST /test-email                                                                                                                                                    | Admin test email                                            |
+| business-os                      | GET /summary, GET /approvals-overdue, GET /recent-activity, GET /org-health                                                                                         | Business OS dashboard                                       |
+| search-portal                    | GET /                                                                                                                                                               | Portal search                                               |
+| final                            | GET/POST /backups, /budgets, /device-profiles, /dns-changes, /forms, /procurement, /runbooks, /saas-audit, /satisfaction, /sharepoint, /time-entries + PATCH/DELETE | Multi-module CRUD                                           |
+| client-onboarding-command-center | GET/POST /, GET/PATCH/DELETE /:id, POST /:id/complete-phase, GET/POST /:id/checklist, PATCH /:id/checklist/:itemId, GET /export.csv                                 | Client onboarding CRUD + phases + checklist                 |
+| dynamic-forms                    | GET/POST /, GET/PATCH/DELETE /:id, POST /:id/publish, POST /:id/submit, GET /:id/submissions, GET /export.csv                                                       | Dynamic forms builder CRUD + publish + submit + submissions |

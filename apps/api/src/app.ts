@@ -55,6 +55,9 @@ import governanceRouter from "./routes/governance";
 import fieldServicesRouter from "./routes/field-services";
 import eduAutomationRouter from "./routes/edu-automation";
 import finalRouter from "./routes/final";
+import clientOnboardingRouter from "./routes/client-onboarding-command-center";
+import satisfactionPulseWidgetRouter from "./routes/satisfaction-pulse-widget";
+import dynamicClientFormsBuilderRouter from "./routes/dynamic-client-forms-builder";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -158,6 +161,9 @@ export function createApp(): Express {
   app.use("/api/v1/field-services", fieldServicesRouter);
   app.use("/api/v1/edu-automation", eduAutomationRouter);
   app.use("/api/v1/final", finalRouter);
+  app.use("/api/v1/client-onboarding", clientOnboardingRouter);
+  app.use("/api/v1/satisfaction-pulse", satisfactionPulseWidgetRouter);
+  app.use("/api/v1/dynamic-forms", dynamicClientFormsBuilderRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

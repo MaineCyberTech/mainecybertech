@@ -1,0 +1,14 @@
+{
+  "domain": "evolution",
+  "findings": [
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "file": "apps/web/app/**/page.tsx",
+      "issue": "Only 111/130 pages have metadata/title tags",
+      "impact": "Poor SEO and tab identification",
+      "fix": "Add export const metadata with title to all pages"
+    }
+  ],
+  "count": 1
+}

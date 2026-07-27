@@ -1,0 +1,25 @@
+{
+  "domain": "data",
+  "total": 2,
+  "timestamp": "2026-07-27T00:20:24.375639+00:00",
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "schema_drift",
+      "file": "supabase/migrations/",
+      "issue": "Tables defined in migrations but never queried in API code: IF, if",
+      "remediation": "Either add API endpoints for these tables or remove them from migrations",
+      "impact": "Dead schema increases migration complexity and storage cost"
+    },
+    {
+      "severity": "P2",
+      "domain": "data",
+      "category": "transactions",
+      "file": "apps/api/src/routes/bulk.ts",
+      "issue": "Bulk invite operations not wrapped in a Supabase RPC transaction \u2014 partial invite failure leaves inconsistent state",
+      "remediation": "Move bulk invite logic into a Supabase RPC function with BEGIN/COMMIT/ROLLBACK",
+      "impact": "If one invite fails mid-batch, earlier invites are already committed \u2014 org membership state is inconsistent"
+    }
+  ]
+}

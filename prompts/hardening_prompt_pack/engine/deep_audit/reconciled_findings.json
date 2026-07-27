@@ -1,0 +1,110 @@
+{
+  "total": 15,
+  "action_plan": [
+    {
+      "priority": "P0",
+      "domain": "security",
+      "file": "apps/api/src/routes/users.ts",
+      "issue": "Users router has no requireOrgAccess \u2014 any authenticated user can access any user's data",
+      "action": "Add requireOrgAccess middleware or per-route org membership checks on users router"
+    },
+    {
+      "priority": "P1",
+      "domain": "security",
+      "file": "apps/api/src/middleware/auth.ts",
+      "issue": "JWT fallback to Supabase getUser() has no timeout",
+      "action": "Add AbortSignal.timeout(5000) to supabase.auth.getUser(token) call in the fallback path"
+    },
+    {
+      "priority": "P1",
+      "domain": "security",
+      "file": "apps/api/src/routes/search.ts",
+      "issue": "Admin search has no org scope \u2014 returns results across all organizations",
+      "action": "Add organization_id filter to search queries or requireOrgAccess middleware"
+    },
+    {
+      "priority": "P1",
+      "domain": "security",
+      "file": "apps/api/src/routes/profiles.ts",
+      "issue": "Profiles router has no org check \u2014 any authenticated user can access any profile",
+      "action": "Add requireOrgAccess or limit profile reads to user's own org members"
+    },
+    {
+      "priority": "P1",
+      "domain": "security",
+      "file": "apps/api/src/lib/auth.ts",
+      "issue": "Session cookie may lack proper SameSite=Strict and Secure flags \u2014 CSRF token not confirmed",
+      "action": "Explicitly set cookie with httpOnly=true, secure=true, sameSite='strict', path='/'"
+    },
+    {
+      "priority": "P2",
+      "domain": "data",
+      "file": "supabase/migrations/",
+      "issue": "Tables defined in migrations but never queried in API code: IF, if",
+      "action": "Either add API endpoints for these tables or remove them from migrations"
+    },
+    {
+      "priority": "P2",
+      "domain": "data",
+      "file": "apps/api/src/routes/bulk.ts",
+      "issue": "Bulk invite operations not wrapped in a Supabase RPC transaction \u2014 partial invite failure leaves inconsistent state",
+      "action": "Move bulk invite logic into a Supabase RPC function with BEGIN/COMMIT/ROLLBACK"
+    },
+    {
+      "priority": "P2",
+      "domain": "observability",
+      "file": "apps/worker/src/main.ts",
+      "issue": "Worker has no Prometheus metrics endpoint \u2014 task count, queue depth, error rates invisible",
+      "action": "Add prom-client metrics endpoint or expose BullMQ queue stats via health server"
+    },
+    {
+      "priority": "P2",
+      "domain": "privacy",
+      "file": "supabase/migrations/",
+      "issue": "PII fields (email, phone, full_name) stored in profiles table without encryption at rest",
+      "action": "Enable Transparent Column Encryption (TCE) or Supabase Vault for PII columns"
+    },
+    {
+      "priority": "P2",
+      "domain": "resilience",
+      "file": "admin\\BulkInviteForm.tsx",
+      "issue": "Bulk operation in 1 file(s) uses catch+console.error instead of checking per-item .ok status",
+      "action": "Return {ok, error} per item from API and surface partial failures in UI with detailed error list"
+    },
+    {
+      "priority": "P2",
+      "domain": "security",
+      "file": "apps/api/src/middleware/rate-limit.ts",
+      "issue": "Auth rate limit is per-IP only \u2014 attacker can rotate IPs via botnet to brute-force passwords",
+      "action": "Add per-email rate limiting (max 5 attempts per email per 15min) in addition to per-IP limit"
+    },
+    {
+      "priority": "P3",
+      "domain": "ci_cd",
+      "file": ".github/workflows/alignment-pr-comment.yml",
+      "issue": "PR alignment comments use sample_data.json (static demo data) instead of real analysis output",
+      "action": "Point to real engine output files: engine/outputs/global_findings.json"
+    },
+    {
+      "priority": "P3",
+      "domain": "ci_cd",
+      "file": ".github/workflows/terraform-do.yml",
+      "issue": "Prod terraform apply gated by prod-approval environment but no required E2E/test workflow_call dependency before apply",
+      "action": "Add needs: [validate, e2e] to terraform-apply-prod job"
+    },
+    {
+      "priority": "P3",
+      "domain": "evolution",
+      "file": "apps/web/middleware.ts",
+      "issue": "Domain routing middleware runs on every request \u2014 adds JWT decode overhead even on static assets",
+      "action": "Use Next.js matcher config to exclude _next/static, favicon.ico from middleware execution (already done in config)"
+    },
+    {
+      "priority": "P3",
+      "domain": "evolution",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker state changes are not exported as Prometheus metrics",
+      "action": "Add prom-client Gauge to track circuit breaker state (0=closed, 1=open, 2=half-open)"
+    }
+  ]
+}
