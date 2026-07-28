@@ -535,27 +535,27 @@ Full codebase audit conducted to identify remaining gaps before pushing to GitHu
 
 ### New Module Expansion (2026-07-26) — 19 Modules Added
 
-| # | Module | API Routes | Portal | Admin | Worker | Tests | Docs |
-|---|--------|-----------|--------|-------|--------|-------|------|
-| 1 | QBR Reports | GET/POST/PATCH/DELETE | — | Page | Yes | Yes | — |
-| 2 | Proposals | Full CRUD | — | Page | — | Yes | — |
-| 3 | Findings | Full CRUD | Page | Page | — | Yes | — |
-| 4 | Governance | Full CRUD (4 sub-routes) | — | Page | — | Yes | — |
-| 5 | Service Catalog | Full CRUD | — | Page | — | Yes | — |
-| 6 | Business OS | GET dashboard/summary | — | Page | — | — | — |
-| 7 | Assets | Full CRUD | Page | Page | — | Yes | — |
-| 8 | Domain Monitors | Full CRUD | — | Page | Yes | Yes | — |
-| 9 | Website Monitors | Full CRUD | — | Page | Yes | Yes | — |
-| 10 | Security Suite | Full CRUD (4 sub-routes) | — | Page | — | Yes | — |
-| 11 | Security Operations | Full CRUD (4 sub-routes) | — | Page | — | Yes | — |
-| 12 | Field Services | Full CRUD (6 sub-routes) | — | Page | — | Yes | — |
-| 13 | Edu Automation | Full CRUD (11 sub-routes) | — | Page | — | Yes | — |
-| 14 | File Requests | Full CRUD | Page | Page | — | Yes | — |
-| 15 | Approvals | Full CRUD | — | Page | — | Yes | — |
-| 16 | API Keys | Full CRUD | — | Page | — | — | — |
-| 17 | AI Tools | CRUD endpoints | — | Page | — | Yes | — |
-| 18 | Vendors | Full CRUD (contracts+contacts) | — | Page | Yes | Yes | — |
-| 19 | Final (multi-module) | Full CRUD (10+ sub-routes) | — | Page | — | Yes | — |
+| #   | Module               | API Routes                     | Portal | Admin | Worker | Tests | Docs |
+| --- | -------------------- | ------------------------------ | ------ | ----- | ------ | ----- | ---- |
+| 1   | QBR Reports          | GET/POST/PATCH/DELETE          | —      | Page  | Yes    | Yes   | —    |
+| 2   | Proposals            | Full CRUD                      | —      | Page  | —      | Yes   | —    |
+| 3   | Findings             | Full CRUD                      | Page   | Page  | —      | Yes   | —    |
+| 4   | Governance           | Full CRUD (4 sub-routes)       | —      | Page  | —      | Yes   | —    |
+| 5   | Service Catalog      | Full CRUD                      | —      | Page  | —      | Yes   | —    |
+| 6   | Business OS          | GET dashboard/summary          | —      | Page  | —      | —     | —    |
+| 7   | Assets               | Full CRUD                      | Page   | Page  | —      | Yes   | —    |
+| 8   | Domain Monitors      | Full CRUD                      | —      | Page  | Yes    | Yes   | —    |
+| 9   | Website Monitors     | Full CRUD                      | —      | Page  | Yes    | Yes   | —    |
+| 10  | Security Suite       | Full CRUD (4 sub-routes)       | —      | Page  | —      | Yes   | —    |
+| 11  | Security Operations  | Full CRUD (4 sub-routes)       | —      | Page  | —      | Yes   | —    |
+| 12  | Field Services       | Full CRUD (6 sub-routes)       | —      | Page  | —      | Yes   | —    |
+| 13  | Edu Automation       | Full CRUD (11 sub-routes)      | —      | Page  | —      | Yes   | —    |
+| 14  | File Requests        | Full CRUD                      | Page   | Page  | —      | Yes   | —    |
+| 15  | Approvals            | Full CRUD                      | —      | Page  | —      | Yes   | —    |
+| 16  | API Keys             | Full CRUD                      | —      | Page  | —      | —     | —    |
+| 17  | AI Tools             | CRUD endpoints                 | —      | Page  | —      | Yes   | —    |
+| 18  | Vendors              | Full CRUD (contracts+contacts) | —      | Page  | Yes    | Yes   | —    |
+| 19  | Final (multi-module) | Full CRUD (10+ sub-routes)     | —      | Page  | —      | Yes   | —    |
 
 **Total: 44 API route files, 309 API tests, 17 worker tasks, 100+ web pages, 35 SDK modules**
 
@@ -1289,3 +1289,37 @@ All 3 critical blockers were **already implemented** at time of audit:
 | **P1** | Simplify root scripts + add shared test utilities            | Days 3-7  | ✅ Done                    |
 | **P2** | Refactor test setup (mock builder) + date-based migrations   | Weeks 2-4 | 🟡 In progress             |
 | **P3** | Evaluate routing/TS convergence (optional)                   | Quarterly | ⬜ Not started             |
+
+## 60-Module Comprehensive Audit (2026-07-27)
+
+A complete audit of all 60 modules against their specification prompts was conducted. Each module was evaluated for API routes, database migrations, validators, SDK wrappers, admin pages, portal pages, tests, and feature docs.
+
+### Module Status Summary
+
+| Category                   | Count | Description                               |
+| -------------------------- | ----- | ----------------------------------------- |
+| COMPLETE                   | 26    | Full CRUD + admin + portal + tests + docs |
+| USABLE (no business logic) | 23    | CRUD exists, missing core spec features   |
+| PARTIAL (significant gaps) | 11    | API exists, missing major pieces          |
+| NOT IMPLEMENTED            | 0     | —                                         |
+
+### 26 COMPLETE Modules
+
+01, 02, 09, 10, 11, 12, 14, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 34, 38, 41, 42, 43, 49, 50, 56
+
+### 23 USABLE (CRUD Without Business Logic)
+
+03 M365 Tenant Hardening, 04 ISP Phone, 05 UniFi Survey, 08 Vendor SaaS, 13 MSP Automation Workflow, 15 Backup DR, 17 Client KB, 18 Compliance Readiness, 29 Port Maps, 30 Camera Calc, 31 PowerShell Guard, 32 Runbook Builder, 33 CAB Tool, 35 Budget Roadmap, 36 Offboarding, 37 Phishing Sim, 39 Scoreboard, 44 Procurement, 45 Hardware Staging, 46 Device Profiles, 47 Network Diagrams, 48 Vendor Contacts, 51 Endpoint Security
+
+### 11 PARTIAL (Significant Gaps)
+
+06 SOP Library, 07 Incident Response, 16 Identity Verify, 40 AI Policy, 52 Risk Register, 53 Data Retention, 54 SharePoint, 55 DNS Changes, 57 Time Entries, 58 Break Glass, 59 Tabletop, 60 KB Generator
+
+### Common Gaps Across All Modules
+
+1. **23 modules lack domain-specific business logic** — CRUD only (scanner engines, AI, workflow automation, calculators, comparison logic)
+2. **16 modules lack portal pages** — admin-only, no client self-service
+3. **~20 modules lack feature docs** — no `docs/modules/*.md`
+4. **Most modules lack dedicated web tests** — only 580 web tests for 100+ pages
+5. **No E2E tests for new modules** — only file-requests has one
+6. **Zero worker tasks for automated scanning** — modules 03, 15, 22, 23, 27, 28, 37 need background workers
