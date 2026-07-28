@@ -1,5 +1,16 @@
 import { ApiClient } from "./client";
 import type { PaginatedResult } from "./types";
+
+export interface GovernanceSop {
+  id: string;
+  organization_id: string;
+  title: string;
+  category: string;
+  version: string;
+  status: string;
+  updated_at: string | null;
+  created_at: string;
+}
 function qp(p?: Record<string, string | number | undefined>) {
   const r: Record<string, string | number | undefined> = {};
   if (p) for (const [k, v] of Object.entries(p)) if (v !== undefined) r[k] = v;
@@ -103,7 +114,7 @@ export class GovernanceApi {
   };
   sopLibrary = {
     list: (params?: { page?: number; limit?: number; organizationId?: string }) =>
-      this.c.get(
+      this.c.get<PaginatedResult<GovernanceSop>>(
         "/api/v1/governance/sop-library",
         qp({
           page: params?.page,

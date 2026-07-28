@@ -2,6 +2,8 @@ import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
 import type { TaskHandler, TaskResult } from "../task-registry";
 
+type AnyRecord = Record<string, unknown>;
+
 export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResult> => {
   try {
     const supabase = getSupabaseAdmin();
@@ -21,11 +23,10 @@ export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResu
       return { ok: true };
     }
 
-    const ids = records.map((r) => r.id);
+    const ids = (records as AnyRecord[]).map((r) => r.id);
     const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { error: updateError } = await supabase
-      .from("m365_hardening")
+    const { error: updateError } = await (supabase.from("m365_hardening") as any)
       .update({
         last_scanned_at: now,
         scan_status: "completed",
@@ -72,26 +73,34 @@ export const backupDrCheck: TaskHandler = async (_payload): Promise<TaskResult> 
     const warningIds: string[] = [];
     const criticalIds: string[] = [];
 
-    for (const record of records) {
+    for (const record of records as AnyRecord[]) {
       if (!record.last_backup) {
-        criticalIds.push(record.id);
-      } else if (record.last_backup < fortyEightHoursAgo) {
-        criticalIds.push(record.id);
-      } else if (record.last_backup < twentyFourHoursAgo) {
-        warningIds.push(record.id);
+        criticalIds.push(record.id as string);
+      } else if ((record.last_backup as string) < fortyEightHoursAgo) {
+        criticalIds.push(record.id as string);
+      } else if ((record.last_backup as string) < twentyFourHoursAgo) {
+        warningIds.push(record.id as string);
       }
     }
 
     if (warningIds.length > 0) {
-      await supabase.from("backup_status").update({ status: "warning" }).in("id", warningIds);
+      await (supabase.from("backup_status") as any)
+        .update({ status: "warning" })
+        .in("id", warningIds);
     }
 
     if (criticalIds.length > 0) {
-      await supabase.from("backup_status").update({ status: "critical" }).in("id", criticalIds);
+      await (supabase.from("backup_status") as any)
+        .update({ status: "critical" })
+        .in("id", criticalIds);
     }
 
     logger.info(
-      { warnings: warningIds.length, criticals: criticalIds.length, total: records.length },
+      {
+        warnings: warningIds.length,
+        criticals: criticalIds.length,
+        total: (records as AnyRecord[]).length,
+      },
       "backup-dr-check: completed",
     );
     return { ok: true };
@@ -119,13 +128,13 @@ export const licenseOptimizerCheck: TaskHandler = async (_payload): Promise<Task
       return { ok: true };
     }
 
-    const underutilized = allocations.filter(
-      (a) => a.total_seats > 0 && a.used_seats < a.total_seats * 0.7,
+    const underutilized = (allocations as AnyRecord[]).filter(
+      (a) => Number(a.total_seats) > 0 && Number(a.used_seats) < Number(a.total_seats) * 0.7,
     );
 
     const potentialSavings = underutilized.reduce((sum, a) => {
-      const unusedSeats = a.total_seats - a.used_seats;
-      const monthlyCost = (a.monthly_cost_per_seat || 0) * unusedSeats;
+      const unusedSeats = Number(a.total_seats) - Number(a.used_seats);
+      const monthlyCost = (Number(a.monthly_cost_per_seat) || 0) * unusedSeats;
       return sum + monthlyCost;
     }, 0);
 
@@ -164,9 +173,8 @@ export const dmarcCoachCheck: TaskHandler = async (_payload): Promise<TaskResult
       return { ok: true };
     }
 
-    const ids = analyses.map((a) => a.id);
-    const { error: updateError } = await supabase
-      .from("dmarc_analyses")
+    const ids = (analyses as AnyRecord[]).map((a) => a.id);
+    const { error: updateError } = await (supabase.from("dmarc_analyses") as any)
       .update({ status: "stale" })
       .in("id", ids);
 
@@ -205,9 +213,8 @@ export const statusMaintenanceCheck: TaskHandler = async (_payload): Promise<Tas
       return { ok: true };
     }
 
-    const ids = notices.map((n) => n.id);
-    const { error: updateError } = await supabase
-      .from("maintenance_notices")
+    const ids = (notices as AnyRecord[]).map((n) => n.id);
+    const { error: updateError } = await (supabase.from("maintenance_notices") as any)
       .update({ status: "upcoming" })
       .in("id", ids);
 
@@ -244,9 +251,11 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
 
     let performed = 0;
 
-    for (const check of checks) {
-      const intervalMs = (check.check_interval_minutes || 5) * 60 * 1000;
-      const lastChecked = check.last_checked_at ? new Date(check.last_checked_at).getTime() : 0;
+    for (const check of checks as AnyRecord[]) {
+      const intervalMs = (Number(check.check_interval_minutes) || 5) * 60 * 1000;
+      const lastChecked = check.last_checked_at
+        ? new Date(check.last_checked_at as string).getTime()
+        : 0;
       const due = Date.now() - lastChecked >= intervalMs;
 
       if (!due) continue;
@@ -260,7 +269,7 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
         const start = performance.now();
-        const response = await fetch(check.url, { signal: controller.signal });
+        const response = await fetch(check.url as string, { signal: controller.signal });
         responseTimeMs = Math.round(performance.now() - start);
         statusCode = response.status;
         clearTimeout(timeout);
@@ -268,7 +277,7 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
         errorMsg = err instanceof Error ? err.message : String(err);
       }
 
-      await supabase.from("uptime_results").insert({
+      await (supabase.from("uptime_results") as any).insert({
         uptime_check_id: check.id,
         status_code: statusCode,
         response_time_ms: responseTimeMs,
@@ -276,10 +285,9 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
         checked_at: now,
       });
 
-      await supabase
-        .from("uptime_checks")
+      await (supabase.from("uptime_checks") as any)
         .update({ last_checked_at: now, last_status_code: statusCode })
-        .eq("id", check.id);
+        .eq("id", check.id as string);
     }
 
     logger.info(
@@ -314,9 +322,8 @@ export const phishingCampaignSend: TaskHandler = async (_payload): Promise<TaskR
       return { ok: true };
     }
 
-    const ids = campaigns.map((c) => c.id);
-    const { error: updateError } = await supabase
-      .from("phishing_campaigns")
+    const ids = (campaigns as AnyRecord[]).map((c) => c.id);
+    const { error: updateError } = await (supabase.from("phishing_campaigns") as any)
       .update({ status: "completed" })
       .in("id", ids);
 

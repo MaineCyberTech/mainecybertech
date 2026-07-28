@@ -38,7 +38,7 @@ export default async function PortalComplianceReadinessPage() {
             <p className="mt-1 text-xs text-slate-400">
               Score: {String(a.score ?? a.readiness_pct ?? "N/A")}%
             </p>
-            {a.last_assessment_date && (
+            {(a.last_assessment_date as string | null) && (
               <p className="mt-1 text-xs text-slate-400">
                 Last assessed: {new Date(String(a.last_assessment_date)).toISOString().slice(0, 10)}
               </p>

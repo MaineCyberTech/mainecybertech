@@ -14,7 +14,7 @@ export default async function PortalEndpointSecurityPage() {
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
   try {
-    const r = await api.securitySuite.endpointSecurity.list({ organizationId: orgId });
+    const r = await api.securitySuite.endpoints.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
   } catch {}
 

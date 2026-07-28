@@ -38,7 +38,7 @@ export default async function PortalBackupDrPage() {
               Type: {String(a.type || a.backup_type || "N/A")} &bull; Target:{" "}
               {String(a.target || a.destination || "N/A")}
             </p>
-            {a.last_run && (
+            {(a.last_run as string | null) && (
               <p className="mt-1 text-xs text-slate-400">
                 Last run: {new Date(String(a.last_run)).toISOString().slice(0, 10)}
               </p>
