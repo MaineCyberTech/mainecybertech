@@ -158,6 +158,28 @@ const schemas: Record<string, { schema: z.ZodTypeAny; table: string }> = {
 };
 for (const [p, { schema: s, table }] of Object.entries(schemas)) crud(p, table, s);
 
+router.get("/sharepoint/structure-summary", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("sharepoint_plans")
+      .select("*")
+      .eq("organization_id", req.query.organization_id as string);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const items = data ?? [];
+    res.json(
+      success({
+        totalPlans: items.length,
+        plannedSites: items.filter((s: any) => s.status === "planned").length,
+        activeSites: items.filter((s: any) => s.status === "active").length,
+        teamsWithExternalSharing: items.filter((s: any) => s.external_sharing === "enabled").length,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get("/backups/stats", async (req, res, next) => {
   try {
     const sb = getSupabaseAdmin();

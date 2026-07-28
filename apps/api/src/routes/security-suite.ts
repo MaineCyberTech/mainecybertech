@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
@@ -149,6 +150,29 @@ crudRoute(
   "identity_verifications",
   createIdVerifySchema as unknown as Record<string, unknown>,
 );
+router.post("/identity-verification/:id/verify", async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({ verificationPass: z.boolean(), notes: z.string().optional() })
+      .parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("identity_verifications")
+      .update({
+        verification_pass: parsed.verificationPass,
+        verified_at: new Date().toISOString(),
+        verified_by: req.authUser!.userId,
+        notes: parsed.notes,
+      })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
 crudRoute(
   "endpoint-security",
   "endpoint_security",

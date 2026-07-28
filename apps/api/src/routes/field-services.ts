@@ -267,5 +267,21 @@ crudRoute(
   "network_diagrams",
   createNetworkDiagramSchema as unknown as Record<string, unknown>,
 );
+router.get("/network-diagrams/:id/export", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("network_diagrams")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+    if (error || !data) throw new AppError("NOT_FOUND", "Not found", 404);
+    res.setHeader("Content-Type", "application/json");
+    res.setHeader("Content-Disposition", "attachment; filename=network-diagram.json");
+    res.json(JSON.stringify(data, null, 2));
+  } catch (err) {
+    next(err);
+  }
+});
 
 export default router;

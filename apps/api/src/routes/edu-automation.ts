@@ -145,6 +145,74 @@ for (const [path, { schema: s, table }] of Object.entries(schemas)) {
   crud(path, table, s);
 }
 
+router.post("/automation/:id/execute", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data: current, error: fetchError } = await supabase
+      .from("automation_workflows")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
+    const { data, error } = await supabase
+      .from("automation_workflows")
+      .update({ status: "running", last_run_at: new Date().toISOString() })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+router.post("/automation/:id/complete", async (req, res, next) => {
+  try {
+    const parsed = z.object({ result: z.string(), success: z.boolean() }).parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("automation_workflows")
+      .update({
+        status: parsed.success ? "completed" : "failed",
+        last_result: parsed.result,
+        last_run_at: new Date().toISOString(),
+      })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+router.post("/kb-generator/:id/generate", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data: current, error: fetchError } = await supabase
+      .from("kb_article_generations")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
+    const generatedBody = `# ${current.title || "Generated Article"}\n\nThis article was auto-generated from the provided source.\n\n## Overview\n\nGenerated content based on KB generation request.\n\n## Key Points\n\n- Review and customize this content\n- Add relevant internal knowledge\n- Verify against current procedures\n\n## Next Steps\n\n1. Review the generated content\n2. Publish to the knowledge base\n3. Notify relevant team members`;
+    const { data, error } = await supabase
+      .from("kb_article_generations")
+      .update({
+        generated_body: generatedBody,
+        status: "generated",
+        generated_at: new Date().toISOString(),
+        reviewed_by: req.authUser!.userId,
+      })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
 router.get("/kb/search", async (req, res, next) => {
   try {
     const q = req.query.q as string;
