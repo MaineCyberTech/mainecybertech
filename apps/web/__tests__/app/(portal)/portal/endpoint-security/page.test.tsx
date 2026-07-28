@@ -13,7 +13,7 @@ jest.mock("next/link", () => ({
 
 jest.mock("@/lib/api", () => ({
   getApiClient: jest.fn().mockReturnValue({
-    securitySuite: { endpointSecurity: { list: mockList } },
+    securitySuite: { endpoints: { list: mockList } },
   }),
 }));
 
