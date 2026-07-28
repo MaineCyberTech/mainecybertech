@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import ServiceCard from "../../components/marketing/ServiceCard";
 import LocalBusinessJsonLd from "../../components/seo/LocalBusinessJsonLd";
@@ -6,6 +7,7 @@ import JsonLd from "../../components/seo/JsonLd";
 import { buildOrganizationSchema, buildWebsiteSchema } from "../../lib/seo/schema";
 import { siteConfig } from "../../lib/seo/site";
 import { buildMetadata } from "../../lib/seo/metadata";
+import { blogPosts } from "../../lib/seo/blog-posts";
 
 export const metadata: Metadata = buildMetadata({
   description:
@@ -258,6 +260,42 @@ export default function HomePage() {
                 {tech}
               </span>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="font-orbitron text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+            Recent <span className="text-emerald-500">Blog Posts</span>
+          </h2>
+          <p className="mt-4 text-center text-lg text-slate-400">
+            Practical IT, cybersecurity, and technology guides for Maine organizations.
+          </p>
+          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {blogPosts.slice(0, 4).map((post) => (
+              <Link
+                key={post.slug}
+                href={`/blog/${post.slug}`}
+                className="group rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-5 backdrop-blur-sm transition hover:border-emerald-600/30"
+              >
+                <span className="rounded bg-emerald-600/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-400">
+                  {post.category}
+                </span>
+                <h3 className="font-orbitron mt-3 text-sm font-bold text-slate-100 transition group-hover:text-emerald-400">
+                  {post.title}
+                </h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">{post.datePublished}</p>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-10 text-center">
+            <Link
+              href="/blog"
+              className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            >
+              View All Blog Posts
+            </Link>
           </div>
         </div>
       </section>
