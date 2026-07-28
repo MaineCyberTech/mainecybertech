@@ -1303,6 +1303,8 @@ A full remediation session was conducted after the 60-module audit. All major ga
 | **Feature docs**   | Created 20 new feature documentation files for modules that lacked them                                                                                                                                                                                                                                                                                                    |
 | **Web tests**      | Added web test coverage for all 20 new portal pages (+120 tests across 20 suites)                                                                                                                                                                                                                                                                                          |
 | **Infrastructure** | Fixed Web container OOM kills (128MB→256MB), fixed HEALTHCHECK IPv4/IPv6 issue, fixed GHCR pull auth in docker-compose                                                                                                                                                                                                                                                     |
+| **Worker tasks**   | Implemented real worker tasks for 7 scanning modules (M365 hardening, backup DR, license optimizer, DMARC coach, status page, uptime monitor, phishing campaigns)                                                                                                                                                                                                          |
+| **E2E tests**      | Added 20 E2E portal page test files (60 tests across 20 suites)                                                                                                                                                                                                                                                                                                            |
 
 ### Updated Module Status
 
@@ -1324,6 +1326,4 @@ All 60 modules now have: API CRUD + business logic + SDK + admin page + portal p
 
 ### Remaining Work
 
-1. **E2E tests** — Only file-requests has E2E coverage (26 spec files exist, but none cover the 20 new portal pages or new module business logic)
-2. **Worker tasks** — Modules 03 (M365 scan), 22 (license check), 23 (DMARC check), 27 (status), 28 (uptime), 37 (phishing) need worker task implementations
-3. **Dependabot alerts** — 11 vulnerabilities remain (elliptic low - no fix, uuid medium - dev-only, pre-existing alerts not re-scanned after fixes)
+1. **Dependabot alerts** — 11 vulnerabilities remain (elliptic low - no fix available, uuid medium - dev-only via storybook, pre-existing alerts not re-scanned after fixes)
