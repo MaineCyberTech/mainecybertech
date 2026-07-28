@@ -1,4 +1,5 @@
 import Script from "next/script";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
 import MarketingHeader from "../../components/marketing/MarketingHeader";
 import ParticleBackground from "../../components/marketing/ParticleBackground";
@@ -44,7 +45,10 @@ export const metadata: Metadata = {
 };
 const TAWKTO_ID = process.env.NEXT_PUBLIC_TAWKTO_ID;
 
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const headersList = await headers();
+  const nonce = headersList.get("x-nonce") ?? "";
+
   return (
     <>
       <LocalBusinessJsonLd />
@@ -53,8 +57,9 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
             strategy="afterInteractive"
+            nonce={nonce}
           />
-          <Script id="ga-init" strategy="afterInteractive">
+          <Script id="ga-init" strategy="afterInteractive" nonce={nonce}>
             {`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${GA_ID}');`}
           </Script>
         </>
@@ -65,6 +70,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           src={`https://embed.tawk.to/${TAWKTO_ID}`}
           strategy="afterInteractive"
           crossOrigin="anonymous"
+          nonce={nonce}
         />
       )}
 
