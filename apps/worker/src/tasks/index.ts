@@ -18,6 +18,7 @@ import {
   endpointSecurityCheck,
   saasAuditScan,
   statusMaintenanceCheck,
+  dmarcCoachCheck,
 } from "./module-tasks";
 
 export function registerAllTasks(): void {
@@ -40,4 +41,5 @@ export function registerAllTasks(): void {
   registerTask("endpoint-security-check", endpointSecurityCheck);
   registerTask("saas-audit-scan", saasAuditScan);
   registerTask("status-maintenance-check", statusMaintenanceCheck);
+  registerTask("dmarc-coach-check", dmarcCoachCheck);
 }
