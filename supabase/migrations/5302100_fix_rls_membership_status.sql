@@ -933,6 +933,7 @@ create policy "satisfaction_pulses_delete_admin" on public.satisfaction_pulses
 -- time_entries (named: te_org, te_org_i)
 drop policy if exists "te_org" on public.time_entries;
 drop policy if exists "te_org_i" on public.time_entries;
+drop policy if exists "te_org_u" on public.time_entries;
 create policy "te_org" on public.time_entries
   for select using (public.is_org_member(organization_id));
 create policy "te_org_i" on public.time_entries
