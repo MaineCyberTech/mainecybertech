@@ -3,7 +3,7 @@ import { logger } from "./logger";
 import { getRegisteredTaskTypes } from "./task-registry";
 import { isShuttingDown } from "./shutdown";
 
-export function startHealthServer(port: number = 3001): void {
+export function startHealthServer(port: number = 3001): http.Server {
   const server = http.createServer((req, res) => {
     if (req.url === "/health") {
       res.statusCode = 200;
@@ -28,4 +28,5 @@ export function startHealthServer(port: number = 3001): void {
     logger.info({ port }, "Health check server started");
   });
   server.unref();
+  return server;
 }
