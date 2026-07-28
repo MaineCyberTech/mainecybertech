@@ -24,6 +24,22 @@ jest.mock("@/components/admin/AdminSubnav", () => {
   };
 });
 
+jest.mock("@/components/EmptyState", () => {
+  return function MockEmptyState({ title, actionLabel }: any) {
+    return (
+      <div data-testid="empty-state">
+        {title} {actionLabel}
+      </div>
+    );
+  };
+});
+
+jest.mock("@/components/admin/StatusPill", () => ({
+  StatusPill: function MockStatusPill({ status }: any) {
+    return <span data-testid="status-pill">{status}</span>;
+  },
+}));
+
 jest.mock("next/link", () => {
   return ({ children, href, ...rest }: any) => (
     <a href={href} {...rest}>
@@ -53,55 +69,85 @@ describe("ProposalsPage", () => {
     expect(screen.getByTestId("subnav")).toHaveTextContent("proposals");
   });
 
-  it("renders status counts as zero", async () => {
-    const Page = (await import("@/app/(admin)/admin/proposals/page")).default;
-    render(await Page());
-    expect(screen.getByText("0 Draft")).toBeInTheDocument();
-    expect(screen.getByText("0 Sent")).toBeInTheDocument();
-    expect(screen.getByText("0 Approved")).toBeInTheDocument();
-  });
-
-  it("renders New Proposal link", async () => {
-    const Page = (await import("@/app/(admin)/admin/proposals/page")).default;
-    render(await Page());
-    expect(screen.getByRole("link", { name: "New Proposal" })).toBeInTheDocument();
-  });
-
-  it("renders Quick Actions section", async () => {
-    const Page = (await import("@/app/(admin)/admin/proposals/page")).default;
-    render(await Page());
-    expect(screen.getByText("Quick Actions")).toBeInTheDocument();
-    expect(screen.getByText("Select Client")).toBeInTheDocument();
-    expect(screen.getByText("Approval Queue")).toBeInTheDocument();
-    expect(screen.getByText("Projects")).toBeInTheDocument();
-  });
-
   it("renders empty state when no proposals", async () => {
     const Page = (await import("@/app/(admin)/admin/proposals/page")).default;
     render(await Page());
-    expect(screen.getByText("No proposals yet")).toBeInTheDocument();
+    expect(screen.getByTestId("empty-state")).toHaveTextContent("No proposals yet");
   });
 
-  it("renders proposals list when proposals exist", async () => {
+  it("renders proposals when they exist", async () => {
     mockProposalsList.mockResolvedValue({
       items: [
-        { id: "p1", title: "Security Audit Proposal", status: "draft", grand_total: 5000, created_at: "2026-07-01T00:00:00Z" },
-        { id: "p2", title: "MSP Onboarding", status: "sent", grand_total: 12000, created_at: "2026-07-15T00:00:00Z" },
+        {
+          id: "p1",
+          title: "Acme Security Package",
+          status: "draft",
+          grand_total: 5000,
+          created_at: "2026-06-01T00:00:00Z",
+        },
+        {
+          id: "p2",
+          title: "Beta Compliance Suite",
+          status: "sent",
+          grand_total: 12000,
+          created_at: "2026-06-15T00:00:00Z",
+        },
       ],
     });
     const Page = (await import("@/app/(admin)/admin/proposals/page")).default;
     render(await Page());
-    expect(screen.getByText("Security Audit Proposal")).toBeInTheDocument();
-    expect(screen.getByText("MSP Onboarding")).toBeInTheDocument();
+    expect(screen.getByText("Acme Security Package")).toBeInTheDocument();
+    expect(screen.getByText("Beta Compliance Suite")).toBeInTheDocument();
   });
 
-  it("shows correct status counts when proposals loaded", async () => {
+  it("shows currency totals", async () => {
     mockProposalsList.mockResolvedValue({
       items: [
-        { id: "p1", title: "Draft 1", status: "draft", grand_total: 100, created_at: "2026-01-01T00:00:00Z" },
-        { id: "p2", title: "Draft 2", status: "draft", grand_total: 200, created_at: "2026-01-01T00:00:00Z" },
-        { id: "p3", title: "Sent 1", status: "sent", grand_total: 300, created_at: "2026-01-01T00:00:00Z" },
-        { id: "p4", title: "Approved 1", status: "approved", grand_total: 400, created_at: "2026-01-01T00:00:00Z" },
+        {
+          id: "p1",
+          title: "Test Proposal",
+          status: "approved",
+          grand_total: 7500,
+          created_at: "2026-06-01T00:00:00Z",
+        },
+      ],
+    });
+    const Page = (await import("@/app/(admin)/admin/proposals/page")).default;
+    render(await Page());
+    expect(screen.getByText(/\$7,500/)).toBeInTheDocument();
+  });
+
+  it("shows draft/sent/approved counts in pills", async () => {
+    mockProposalsList.mockResolvedValue({
+      items: [
+        {
+          id: "p1",
+          title: "P1",
+          status: "draft",
+          grand_total: 1000,
+          created_at: "2026-06-01T00:00:00Z",
+        },
+        {
+          id: "p2",
+          title: "P2",
+          status: "draft",
+          grand_total: 2000,
+          created_at: "2026-06-01T00:00:00Z",
+        },
+        {
+          id: "p3",
+          title: "P3",
+          status: "sent",
+          grand_total: 3000,
+          created_at: "2026-06-01T00:00:00Z",
+        },
+        {
+          id: "p4",
+          title: "P4",
+          status: "approved",
+          grand_total: 4000,
+          created_at: "2026-06-01T00:00:00Z",
+        },
       ],
     });
     const Page = (await import("@/app/(admin)/admin/proposals/page")).default;
@@ -109,6 +155,16 @@ describe("ProposalsPage", () => {
     expect(screen.getByText("2 Draft")).toBeInTheDocument();
     expect(screen.getByText("1 Sent")).toBeInTheDocument();
     expect(screen.getByText("1 Approved")).toBeInTheDocument();
+  });
+
+  it("renders quick action links", async () => {
+    const Page = (await import("@/app/(admin)/admin/proposals/page")).default;
+    render(await Page());
+    const links = screen.getAllByRole("link");
+    const quickActionTexts = links.map((l) => l.textContent).join(" ");
+    expect(quickActionTexts).toContain("Select Client");
+    expect(quickActionTexts).toContain("Approval Queue");
+    expect(quickActionTexts).toContain("Projects");
   });
 
   it("calls requireAdminAccess", async () => {
@@ -121,6 +177,6 @@ describe("ProposalsPage", () => {
     mockProposalsList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/proposals/page")).default;
     render(await Page());
-    expect(screen.getByText("No proposals yet")).toBeInTheDocument();
+    expect(screen.getByTestId("empty-state")).toHaveTextContent("No proposals yet");
   });
 });
