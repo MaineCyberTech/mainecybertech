@@ -5,8 +5,6 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import { StatusPill } from "@/components/admin/StatusPill";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Uptime Monitor - Admin - Maine CyberTech" };
 
@@ -37,26 +35,16 @@ export default async function UptimeMonitorPage() {
       subnav={<AdminSubnav current="uptime-monitor" />}
       title="Uptime Monitor"
       description="Monitor website availability, response times, and SSL certificate expiry."
-      actions={
-        <Link href="/admin/uptime-monitor/new" className="cyber-button">
-          Add Monitor
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="cyber-heading text-lg">Monitors</h2>
-          <Link href="/admin/uptime-monitor/new" className="cyber-button">
-            Add Monitor
-          </Link>
-        </div>
+        <h2 className="cyber-heading text-lg">Monitors</h2>
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
             items.map((item) => (
-              <Link
+              <div
                 key={item.id}
-                href={`/admin/uptime-monitor/${item.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -70,15 +58,15 @@ export default async function UptimeMonitorPage() {
                     <StatusPill status={item.status} />
                   </div>
                 </div>
-              </Link>
+              </div>
             ))
           ) : (
             <EmptyState
               icon="📡"
               title="No monitors configured"
               description="Add your first uptime monitor to track website availability, response times, and SSL certificate health."
-              actionHref="/admin/uptime-monitor/new"
-              actionLabel="Add Monitor"
+              actionHref="/admin/uptime-monitor"
+              actionLabel="Refresh"
             />
           )}
         </div>

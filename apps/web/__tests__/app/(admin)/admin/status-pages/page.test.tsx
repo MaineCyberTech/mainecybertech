@@ -59,10 +59,10 @@ describe("StatusPagesPage", () => {
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
   });
 
-  it("shows 'Add Component' button", async () => {
+  it("does not show removed action buttons", async () => {
     const Page = (await import("@/app/(admin)/admin/status-pages/page")).default;
     render(await Page());
-    expect(screen.getAllByText("Add Component").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("Add Component")).toBeNull();
   });
 
   it("shows empty state when no items", async () => {

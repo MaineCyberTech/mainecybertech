@@ -59,10 +59,10 @@ describe("InsuranceBinderPage", () => {
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
   });
 
-  it("shows 'Add Evidence' button", async () => {
+  it("does not show removed action buttons", async () => {
     const Page = (await import("@/app/(admin)/admin/insurance-binder/page")).default;
     render(await Page());
-    expect(screen.getAllByText("Add Evidence").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("Add Evidence")).toBeNull();
   });
 
   it("shows empty state when no items", async () => {

@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status Pages - Admin - Maine CyberTech" };
 
@@ -53,26 +51,16 @@ export default async function StatusPagesPage() {
       subnav={<AdminSubnav current="status-pages" />}
       title="Status Pages"
       description="Manage public status components, active incidents, and scheduled maintenance."
-      actions={
-        <Link href="/admin/status-pages/new" className="cyber-button">
-          Add Component
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="cyber-heading text-lg">Components</h2>
-          <Link href="/admin/status-pages/new" className="cyber-button">
-            Add Component
-          </Link>
-        </div>
+        <h2 className="cyber-heading text-lg">Components</h2>
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
             items.map((item) => (
-              <Link
+              <div
                 key={item.id}
-                href={`/admin/status-pages/${item.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -86,15 +74,15 @@ export default async function StatusPagesPage() {
                     <ComponentStatusPill status={item.status} />
                   </div>
                 </div>
-              </Link>
+              </div>
             ))
           ) : (
             <EmptyState
               icon="📊"
               title="No status components defined"
               description="Add your first status component to start building your public status page."
-              actionHref="/admin/status-pages/new"
-              actionLabel="Add Component"
+              actionHref="/admin/status-pages"
+              actionLabel="Refresh"
             />
           )}
         </div>

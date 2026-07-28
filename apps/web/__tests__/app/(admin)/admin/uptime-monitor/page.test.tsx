@@ -59,10 +59,10 @@ describe("UptimeMonitorPage", () => {
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
   });
 
-  it("shows 'Add Monitor' button", async () => {
+  it("does not show removed action buttons", async () => {
     const Page = (await import("@/app/(admin)/admin/uptime-monitor/page")).default;
     render(await Page());
-    expect(screen.getAllByText("Add Monitor").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("Add Monitor")).toBeNull();
   });
 
   it("shows empty state when no items", async () => {

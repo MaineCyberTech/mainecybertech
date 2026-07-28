@@ -4,8 +4,6 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DMARC Coach - Admin - Maine CyberTech" };
 
@@ -58,26 +56,16 @@ export default async function DmarcCoachPage() {
       subnav={<AdminSubnav current="dmarc-coach" />}
       title="DMARC Coach"
       description="Analyze DMARC, SPF, and DKIM records with automated grading and remediation recommendations."
-      actions={
-        <Link href="/admin/dmarc-coach/new" className="cyber-button">
-          Analyze Domain
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="cyber-heading text-lg">Analyzed Domains</h2>
-          <Link href="/admin/dmarc-coach/new" className="cyber-button">
-            Analyze Domain
-          </Link>
-        </div>
+        <h2 className="cyber-heading text-lg">Analyzed Domains</h2>
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
             items.map((item) => (
-              <Link
+              <div
                 key={item.id}
-                href={`/admin/dmarc-coach/${item.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -93,15 +81,15 @@ export default async function DmarcCoachPage() {
                     <GradePill grade={item.overall_grade} />
                   </div>
                 </div>
-              </Link>
+              </div>
             ))
           ) : (
             <EmptyState
               icon="🛡️"
               title="No domains analyzed yet"
               description="Run your first DMARC analysis to grade email security posture and get remediation recommendations."
-              actionHref="/admin/dmarc-coach/new"
-              actionLabel="Analyze Domain"
+              actionHref="/admin/dmarc-coach"
+              actionLabel="Refresh"
             />
           )}
         </div>

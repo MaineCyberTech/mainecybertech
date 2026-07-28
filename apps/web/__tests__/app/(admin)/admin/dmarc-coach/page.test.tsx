@@ -59,10 +59,10 @@ describe("DmarcCoachPage", () => {
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
   });
 
-  it("shows 'Analyze Domain' button", async () => {
+  it("does not show removed action buttons", async () => {
     const Page = (await import("@/app/(admin)/admin/dmarc-coach/page")).default;
     render(await Page());
-    expect(screen.getAllByText("Analyze Domain").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("Analyze Domain")).toBeNull();
   });
 
   it("shows empty state when no items", async () => {

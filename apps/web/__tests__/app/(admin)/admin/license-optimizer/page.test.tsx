@@ -59,10 +59,10 @@ describe("LicenseOptimizerPage", () => {
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
   });
 
-  it("shows 'Add License' button", async () => {
+  it("does not show removed action buttons", async () => {
     const Page = (await import("@/app/(admin)/admin/license-optimizer/page")).default;
     render(await Page());
-    expect(screen.getAllByText("Add License").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("Add License")).toBeNull();
   });
 
   it("shows empty state when no items", async () => {

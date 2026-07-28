@@ -59,10 +59,10 @@ describe("TrainingHubPage", () => {
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
   });
 
-  it("shows 'Create Course' button", async () => {
+  it("does not show removed action buttons", async () => {
     const Page = (await import("@/app/(admin)/admin/training-hub/page")).default;
     render(await Page());
-    expect(screen.getAllByText("Create Course").length).toBeGreaterThanOrEqual(2);
+    expect(screen.queryByText("Create Course")).toBeNull();
   });
 
   it("shows empty state when no items", async () => {

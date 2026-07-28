@@ -5,8 +5,6 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import { StatusPill } from "@/components/admin/StatusPill";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Training Hub - Admin - Maine CyberTech" };
 
@@ -39,26 +37,16 @@ export default async function TrainingHubPage() {
       subnav={<AdminSubnav current="training-hub" />}
       title="Training Hub"
       description="Manage microlearning courses, lessons, and track client enrollment progress."
-      actions={
-        <Link href="/admin/training-hub/new" className="cyber-button">
-          Create Course
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="cyber-heading text-lg">Courses</h2>
-          <Link href="/admin/training-hub/new" className="cyber-button">
-            Create Course
-          </Link>
-        </div>
+        <h2 className="cyber-heading text-lg">Courses</h2>
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
             items.map((item) => (
-              <Link
+              <div
                 key={item.id}
-                href={`/admin/training-hub/${item.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -72,15 +60,15 @@ export default async function TrainingHubPage() {
                     <StatusPill status={item.status} />
                   </div>
                 </div>
-              </Link>
+              </div>
             ))
           ) : (
             <EmptyState
               icon="🎓"
               title="No courses created yet"
               description="Build your first microlearning course with lessons, quizzes, and enrollment tracking."
-              actionHref="/admin/training-hub/new"
-              actionLabel="Create Course"
+              actionHref="/admin/training-hub"
+              actionLabel="Refresh"
             />
           )}
         </div>

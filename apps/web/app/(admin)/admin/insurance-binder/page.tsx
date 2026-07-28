@@ -5,8 +5,6 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import { StatusPill } from "@/components/admin/StatusPill";
-import Link from "next/link";
-
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Insurance Evidence Binder - Admin - Maine CyberTech" };
 
@@ -41,26 +39,16 @@ export default async function InsuranceBinderPage() {
       subnav={<AdminSubnav current="insurance-binder" />}
       title="Insurance Evidence Binder"
       description="Organize and track evidence for cyber insurance audits across 8 coverage areas."
-      actions={
-        <Link href="/admin/insurance-binder/new" className="cyber-button">
-          Add Evidence
-        </Link>
-      }
+      actions={null}
     >
       <section className="cyber-panel">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="cyber-heading text-lg">Evidence Records</h2>
-          <Link href="/admin/insurance-binder/new" className="cyber-button">
-            Add Evidence
-          </Link>
-        </div>
+        <h2 className="cyber-heading text-lg">Evidence Records</h2>
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
             items.map((item) => (
-              <Link
+              <div
                 key={item.id}
-                href={`/admin/insurance-binder/${item.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -77,15 +65,15 @@ export default async function InsuranceBinderPage() {
                     <StatusPill status={item.status} />
                   </div>
                 </div>
-              </Link>
+              </div>
             ))
           ) : (
             <EmptyState
               icon="📁"
               title="No evidence collected yet"
               description="Start building your cyber insurance evidence binder by adding your first piece of evidence."
-              actionHref="/admin/insurance-binder/new"
-              actionLabel="Add Evidence"
+              actionHref="/admin/insurance-binder"
+              actionLabel="Refresh"
             />
           )}
         </div>
