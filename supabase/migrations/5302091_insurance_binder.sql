@@ -15,6 +15,19 @@ create table if not exists public.insurance_evidence (
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+-- Add columns that may not exist (table was created by 5302073 without these)
+alter table public.insurance_evidence add column if not exists evidence_type text not null default 'document';
+alter table public.insurance_evidence add column if not exists title text not null default '';
+alter table public.insurance_evidence add column if not exists description text;
+alter table public.insurance_evidence add column if not exists file_url text;
+alter table public.insurance_evidence add column if not exists status text default 'pending';
+alter table public.insurance_evidence add column if not exists coverage_area text;
+alter table public.insurance_evidence add column if not exists insurance_provider text;
+alter table public.insurance_evidence add column if not exists policy_number text;
+alter table public.insurance_evidence add column if not exists expiry_date date;
+alter table public.insurance_evidence add column if not exists last_verified_at timestamptz;
+
 create index if not exists idx_insurance_evidence_org on public.insurance_evidence (organization_id);
 create index if not exists idx_insurance_evidence_coverage on public.insurance_evidence (coverage_area);
 alter table public.insurance_evidence enable row level security;
