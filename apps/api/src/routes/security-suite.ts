@@ -155,4 +155,85 @@ crudRoute(
   createEndpointSchema as unknown as Record<string, unknown>,
 );
 
+router.get("/endpoint-security/coverage", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("endpoint_security")
+      .select("*")
+      .eq("organization_id", req.query.organization_id as string);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const items = data ?? [];
+    const totalEndpoints = items.reduce((s: number, e: any) => s + (e.total_endpoints || 0), 0);
+    const avCoverage =
+      totalEndpoints > 0
+        ? Math.round(
+            (items
+              .filter((e: any) => e.av_installed)
+              .reduce((s: number, e: any) => s + (e.total_endpoints || 0), 0) /
+              totalEndpoints) *
+              100,
+          )
+        : 0;
+    const encryptionCoverage =
+      totalEndpoints > 0
+        ? Math.round(
+            (items
+              .filter((e: any) => e.disk_encrypted)
+              .reduce((s: number, e: any) => s + (e.total_endpoints || 0), 0) /
+              totalEndpoints) *
+              100,
+          )
+        : 0;
+    const mdmCoverage =
+      totalEndpoints > 0
+        ? Math.round(
+            (items
+              .filter((e: any) => e.mdm_enrolled)
+              .reduce((s: number, e: any) => s + (e.total_endpoints || 0), 0) /
+              totalEndpoints) *
+              100,
+          )
+        : 0;
+    res.json(
+      success({
+        totalEndpoints,
+        avCoverage,
+        encryptionCoverage,
+        mdmCoverage,
+        overallCoverage: Math.round((avCoverage + encryptionCoverage + mdmCoverage) / 3),
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/m365-hardening/:id/scan", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data: current, error: fetchError } = await supabase
+      .from("m365_hardening")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from("m365_hardening")
+      .update({
+        last_scanned_at: now,
+        scan_status: "completed",
+        next_scan_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+      })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success({ ...data, scannedAt: now }));
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

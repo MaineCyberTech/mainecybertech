@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { Router } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
@@ -149,7 +150,126 @@ crudRoute(
   "change_requests",
   createChangeSchema as unknown as Record<string, unknown>,
 );
+
+router.post("/change-requests/:id/submit", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("change_requests")
+      .update({ status: "pending_review", submitted_at: new Date().toISOString() })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+router.post("/change-requests/:id/approve", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("change_requests")
+      .update({
+        status: "approved",
+        approved_by: req.authUser!.userId,
+        approved_at: new Date().toISOString(),
+      })
+      .eq("id", req.params.id)
+      .eq("status", "pending_review")
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+router.post("/change-requests/:id/reject", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("change_requests")
+      .update({ status: "rejected" })
+      .eq("id", req.params.id)
+      .eq("status", "pending_review")
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+router.post("/change-requests/:id/implement", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("change_requests")
+      .update({ status: "implemented", implemented_at: new Date().toISOString() })
+      .eq("id", req.params.id)
+      .eq("status", "approved")
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+router.post("/change-requests/:id/verify", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("change_requests")
+      .update({ status: "verified", verified_at: new Date().toISOString() })
+      .eq("id", req.params.id)
+      .eq("status", "implemented")
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
 crudRoute("risks", "risk_register", createRiskSchema as unknown as Record<string, unknown>);
+
+router.post("/risks/:id/assess", async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({
+        likelihood: z.number().int().min(1).max(5),
+        impact: z.number().int().min(1).max(5),
+        mitigatingControls: z.string().optional(),
+        acceptingControls: z.string().optional(),
+      })
+      .parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const riskScore = parsed.likelihood * parsed.impact;
+    const riskLevel =
+      riskScore >= 15 ? "critical" : riskScore >= 10 ? "high" : riskScore >= 5 ? "medium" : "low";
+    const { data, error } = await supabase
+      .from("risk_register")
+      .update({
+        likelihood: parsed.likelihood,
+        impact: parsed.impact,
+        risk_score: riskScore,
+        risk_level: riskLevel,
+        mitigating_controls: parsed.mitigatingControls,
+        accepting_controls: parsed.acceptingControls,
+        assessed_at: new Date().toISOString(),
+      })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
 crudRoute(
   "retention",
   "retention_policies",
@@ -180,6 +300,47 @@ router.get("/sop-library/compliance-map", async (req, res, next) => {
       }
     }
     res.json(success({ frameworks, totalSops: (data ?? []).length }));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/sop-library/framework-gaps", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("sop_library")
+      .select("compliance_framework, framework_control_ids, status")
+      .eq("organization_id", req.query.organization_id as string);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const frameworks = [
+      "NIST 800-53",
+      "ISO 27001",
+      "CIS Controls",
+      "HIPAA",
+      "CMMC",
+      "PCI DSS",
+      "SOC 2",
+    ];
+    const coverage = frameworks.map((fw) => {
+      const sops = (data ?? []).filter((s: any) => s.compliance_framework === fw);
+      const active = sops.filter((s: any) => s.status === "active").length;
+      const controlIds = [...new Set(sops.flatMap((s: any) => s.framework_control_ids ?? []))];
+      return {
+        framework: fw,
+        totalSops: sops.length,
+        activeSops: active,
+        coveragePercent: active > 0 ? Math.min(100, Math.round((controlIds.length / 20) * 100)) : 0,
+      };
+    });
+    res.json(
+      success({
+        frameworks: coverage,
+        overallCompliance: Math.round(
+          coverage.reduce((s: number, f: any) => s + f.coveragePercent, 0) / coverage.length,
+        ),
+      }),
+    );
   } catch (err) {
     next(err);
   }

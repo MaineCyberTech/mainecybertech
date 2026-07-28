@@ -187,4 +187,97 @@ router.get("/backups/stats", async (req, res, next) => {
   }
 });
 
+router.get("/backups/risk-analysis", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("backup_status")
+      .select("*")
+      .eq("organization_id", req.query.organization_id as string);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const items = data ?? [];
+    const total = items.length;
+    const failed = items.filter((b: any) => b.status === "failed").length;
+    const untested = items.filter((b: any) => b.last_restore_test === null).length;
+    const riskScore = total > 0 ? Math.round(((failed * 3 + untested * 2) / (total * 3)) * 100) : 0;
+    res.json(
+      success({
+        total,
+        failed,
+        untested,
+        riskScore,
+        riskLevel: riskScore > 50 ? "high" : riskScore > 25 ? "medium" : "low",
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/budgets/analysis", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("budget_roadmaps")
+      .select("*")
+      .eq("organization_id", req.query.organization_id as string);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const items = data ?? [];
+    const totalProjected = items.reduce((s: number, b: any) => s + (b.projected || 0), 0);
+    const totalActual = items.reduce((s: number, b: any) => s + (b.actual || 0), 0);
+    const variance =
+      totalProjected > 0 ? Math.round(((totalActual - totalProjected) / totalProjected) * 100) : 0;
+    res.json(
+      success({
+        totalProjected,
+        totalActual,
+        variance,
+        totalCategories: items.length,
+        categories: items.map((b: any) => ({
+          category: b.category,
+          projected: b.projected,
+          actual: b.actual,
+          variance:
+            b.projected > 0 ? Math.round((((b.actual || 0) - b.projected) / b.projected) * 100) : 0,
+        })),
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/procurement/compare", async (req, res, next) => {
+  try {
+    const parsed = z.object({ quoteIds: z.array(z.string()).min(2).max(10) }).parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("procurement_quotes")
+      .select("*")
+      .in("id", parsed.quoteIds);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const quotes = data ?? [];
+    const lowestPrice = Math.min(...quotes.map((q: any) => q.total_price || 0));
+    const highestPrice = Math.max(...quotes.map((q: any) => q.total_price || 0));
+    res.json(
+      success({
+        quotes: quotes.map((q: any) => ({
+          ...q,
+          savings: q.total_price ? Math.round((1 - q.total_price / highestPrice) * 100) : 0,
+          isLowest: q.total_price === lowestPrice,
+        })),
+        lowestPrice,
+        highestPrice,
+        averagePrice:
+          Math.round(
+            (quotes.reduce((s: number, q: any) => s + (q.total_price || 0), 0) / quotes.length) *
+              100,
+          ) / 100,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

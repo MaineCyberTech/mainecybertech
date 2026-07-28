@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
@@ -118,14 +119,149 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
 }
 
 crudRoute("isp", "isp_assessments", createISPSchema as unknown as Record<string, unknown>);
+
+router.post("/isp/:id/score", async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({
+        monthlyCost: z.number().min(0),
+        contractLength: z.number().int().min(1),
+      })
+      .parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const { data: current, error: fetchError } = await supabase
+      .from("isp_assessments")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
+    const consolidationScore = Math.max(
+      0,
+      Math.min(100, 100 - (parsed.monthlyCost * parsed.contractLength) / 100),
+    );
+    const recommendation =
+      consolidationScore > 70
+        ? "Renegotiate contract"
+        : consolidationScore > 40
+          ? "Explore alternative providers"
+          : "Current terms acceptable";
+    const { data, error } = await supabase
+      .from("isp_assessments")
+      .update({
+        monthly_cost: parsed.monthlyCost,
+        contract_length_months: parsed.contractLength,
+        consolidation_score: consolidationScore,
+        recommendation,
+      })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+
 crudRoute("unifi", "unifi_surveys", createUnifiSchema as unknown as Record<string, unknown>);
+
+router.post("/unifi/:id/plan", async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({
+        squareFootage: z.number().int().min(100),
+        floors: z.number().int().min(1).max(10),
+        userCount: z.number().int().min(1),
+      })
+      .parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const apCount = Math.max(1, Math.ceil((parsed.squareFootage / 2000) * parsed.floors));
+    const switchCount = Math.max(1, Math.ceil(apCount / 24));
+    const estimatedCost = apCount * 150 + switchCount * 500;
+    const { data, error } = await supabase
+      .from("unifi_surveys")
+      .update({ ap_count: apCount, switch_count: switchCount, estimated_cost: estimatedCost })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success({ ...data, apCount, switchCount, estimatedCost }));
+  } catch (err) {
+    next(err);
+  }
+});
 crudRoute("port-maps", "port_maps", createPortMapSchema as unknown as Record<string, unknown>);
 crudRoute(
   "camera-calc",
   "camera_calculations",
   createCameraSchema as unknown as Record<string, unknown>,
 );
+
+router.post("/camera-calc/calculate", async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({
+        organizationId: z.string().min(1),
+        cameraCount: z.number().int().min(1),
+        bitrateMbps: z.number().min(0.1).max(1000).default(4),
+        resolution: z.string().default("1080p"),
+        retentionDays: z.number().int().min(1).max(365),
+        fps: z.number().int().min(1).max(60).default(15),
+      })
+      .parse(req.body);
+
+    const dailyStorageGB =
+      (parsed.cameraCount * parsed.bitrateMbps * parsed.retentionDays * 86400) / 8 / 1024;
+    const totalStorageTB = dailyStorageGB / 1024;
+    const recommendedNVR =
+      totalStorageTB > 10 ? "Enterprise" : totalStorageTB > 2 ? "Business" : "Standard";
+
+    res.json(
+      success({
+        dailyStorageGB: Math.round(dailyStorageGB * 100) / 100,
+        totalStorageTB: Math.round(totalStorageTB * 100) / 100,
+        recommendedNVR,
+        cameraCount: parsed.cameraCount,
+        retentionDays: parsed.retentionDays,
+        bitrateMbps: parsed.bitrateMbps,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
 crudRoute("staging", "hardware_staging", createStagingSchema as unknown as Record<string, unknown>);
+
+router.post("/staging/:id/checklist", async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({ itemName: z.string().min(1), completed: z.boolean() })
+      .parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const { data: current, error: fetchError } = await supabase
+      .from("hardware_staging")
+      .select("checklist_items, completed_items")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
+    const items: string[] = current.checklist_items || [];
+    const completed: string[] = current.completed_items || [];
+    const updatedItems = parsed.completed ? [...new Set([...items, parsed.itemName])] : items;
+    const updatedCompleted = parsed.completed
+      ? [...new Set([...completed, parsed.itemName])]
+      : completed.filter((i: string) => i !== parsed.itemName);
+    const { data, error } = await supabase
+      .from("hardware_staging")
+      .update({ checklist_items: updatedItems, completed_items: updatedCompleted })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
 crudRoute(
   "network-diagrams",
   "network_diagrams",

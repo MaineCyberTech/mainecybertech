@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
@@ -139,6 +140,35 @@ crudRoute(
   "offboarding_checklists",
   createOffboardingSchema as unknown as Record<string, unknown>,
 );
+
+router.post("/offboarding/:id/complete-step", async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({ stepName: z.string().min(1), completed: z.boolean() })
+      .parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const { data: current, error: fetchError } = await supabase
+      .from("offboarding_checklists")
+      .select("completed_steps")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchError || !current) throw new AppError("NOT_FOUND", "Checklist not found", 404);
+    const steps = (current.completed_steps as string[]) || [];
+    const updatedSteps = parsed.completed
+      ? [...new Set([...steps, parsed.stepName])]
+      : steps.filter((s: string) => s !== parsed.stepName);
+    const { data, error } = await supabase
+      .from("offboarding_checklists")
+      .update({ completed_steps: updatedSteps })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
 crudRoute(
   "break-glass",
   "break_glass_accounts",

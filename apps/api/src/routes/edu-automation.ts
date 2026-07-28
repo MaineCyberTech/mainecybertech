@@ -145,6 +145,108 @@ for (const [path, { schema: s, table }] of Object.entries(schemas)) {
   crud(path, table, s);
 }
 
+router.get("/kb/search", async (req, res, next) => {
+  try {
+    const q = req.query.q as string;
+    if (!q) throw new AppError("VALIDATION", "Search query required", 400);
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("knowledge_articles")
+      .select("*")
+      .or(`title.ilike.%${q}%,body.ilike.%${q}%,category.ilike.%${q}%`)
+      .eq("organization_id", req.query.organization_id as string)
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success({ items: data ?? [], total: (data ?? []).length }));
+  } catch (err) {
+    next(err);
+  }
+});
+router.post("/kb/:id/rate", async (req, res, next) => {
+  try {
+    const parsed = z.object({ helpful: z.boolean() }).parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const field = parsed.helpful ? "helpful_count" : "not_helpful_count";
+    await supabase.rpc("increment_article_count", { article_id: req.params.id, field_name: field });
+    res.json(success({ rated: true }));
+  } catch (err) {
+    next(err);
+  }
+});
+router.post("/compliance/score", async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({
+        organizationId: z.string().min(1),
+        framework: z.string().min(1).max(100),
+        responses: z.array(z.object({ questionId: z.string(), passed: z.boolean() })).min(1),
+      })
+      .parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const totalQuestions = parsed.responses.length;
+    const passed = parsed.responses.filter((r) => r.passed).length;
+    const score = Math.round((passed / totalQuestions) * 100);
+    const { data, error } = await supabase
+      .from("compliance_readiness")
+      .insert({
+        organization_id: parsed.organizationId,
+        framework: parsed.framework,
+        score,
+        total_questions: totalQuestions,
+        passed_questions: passed,
+        assessed_at: new Date().toISOString(),
+        created_by: req.authUser!.userId,
+      })
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.status(201).json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/phishing/:id/launch", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("phishing_campaigns")
+      .update({ status: "active", launched_at: new Date().toISOString() })
+      .eq("id", req.params.id)
+      .eq("status", "draft")
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+router.get("/phishing/:id/results", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("phishing_campaigns")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+    if (error || !data) throw new AppError("NOT_FOUND", "Campaign not found", 404);
+    const sent = data.target_count || 0;
+    const clicked = data.click_count || 0;
+    const reported = data.reported_count || 0;
+    res.json(
+      success({
+        ...data,
+        clickRate: sent > 0 ? Math.round((clicked / sent) * 100) : 0,
+        reportRate: sent > 0 ? Math.round((reported / sent) * 100) : 0,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
 const DANGEROUS_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /\binvoke-expression\b|\biex\b/gi, label: "Invoke-Expression / iex" },
   { pattern: /remove-item\b.*-recurse.*-force/gi, label: "Remove-Item -Recurse -Force" },
@@ -437,6 +539,34 @@ router.get("/scorecards/summary", async (req, res, next) => {
     );
   } catch (e) {
     next(e);
+  }
+});
+
+router.get("/scorecards/overview", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("cyber_scorecards")
+      .select("*")
+      .eq("organization_id", req.query.organization_id as string);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    const items = data ?? [];
+    const overallScore =
+      items.length > 0
+        ? Math.round(items.reduce((s: number, c: any) => s + (c.score || 0), 0) / items.length)
+        : 0;
+    const badges = [...new Set(items.map((c: any) => c.badge).filter(Boolean))];
+    const categories = items.map((c: any) => ({
+      category: c.category,
+      score: c.score,
+      maxScore: c.max_score,
+      badge: c.badge,
+    }));
+    res.json(
+      success({ overallScore, totalCategories: items.length, badgesEarned: badges, categories }),
+    );
+  } catch (err) {
+    next(err);
   }
 });
 
