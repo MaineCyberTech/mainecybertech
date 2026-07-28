@@ -7,7 +7,33 @@ import JsonLd from "../../components/seo/JsonLd";
 import { buildOrganizationSchema, buildWebsiteSchema } from "../../lib/seo/schema";
 import { siteConfig } from "../../lib/seo/site";
 import { buildMetadata } from "../../lib/seo/metadata";
-import { blogPosts } from "../../lib/seo/blog-posts";
+
+const recentPosts = [
+  {
+    slug: "endpoint-protection-business-computers-small-business",
+    title: "Endpoint Protection: Keeping Business Computers Secure Without an IT Team",
+    category: "Cybersecurity",
+    datePublished: "2026-06-28",
+  },
+  {
+    slug: "ransomware-prevention-practical-steps-small-business",
+    title: "Ransomware Prevention: Practical Steps That Do Not Require a Security Team",
+    category: "Cybersecurity",
+    datePublished: "2026-04-08",
+  },
+  {
+    slug: "real-cost-it-downtime-small-business",
+    title: "The Real Cost of IT Downtime for a Small Business",
+    category: "Managed IT",
+    datePublished: "2025-12-12",
+  },
+  {
+    slug: "holiday-season-technology-tips-retail-hospitality",
+    title: "Holiday Season Technology Tips for Retail and Hospitality Businesses",
+    category: "Local Business Technology",
+    datePublished: "2025-11-24",
+  },
+];
 
 export const metadata: Metadata = buildMetadata({
   description:
@@ -273,7 +299,7 @@ export default function HomePage() {
             Practical IT, cybersecurity, and technology guides for Maine organizations.
           </p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {blogPosts.slice(0, 4).map((post) => (
+            {recentPosts.map((post) => (
               <Link
                 key={post.slug}
                 href={`/blog/${post.slug}`}
