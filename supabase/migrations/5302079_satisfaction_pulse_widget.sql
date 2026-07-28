@@ -25,6 +25,13 @@ create table if not exists satisfaction_pulses (
   updated_at timestamptz not null default now()
 );
 
+-- Add columns that may not exist (table was created by 5302074 without these)
+alter table satisfaction_pulses add column if not exists status text not null default 'pending';
+alter table satisfaction_pulses add column if not exists source_entity_type text;
+alter table satisfaction_pulses add column if not exists respondent_user_id uuid references auth.users(id);
+alter table satisfaction_pulses add column if not exists respondent_organization_id uuid references organizations(id);
+alter table satisfaction_pulses add column if not exists updated_at timestamptz not null default now();
+
 create index if not exists idx_satisfaction_pulses_org on satisfaction_pulses(organization_id);
 create index if not exists idx_satisfaction_pulses_status on satisfaction_pulses(status);
 create index if not exists idx_satisfaction_pulses_source on satisfaction_pulses(source, source_entity_id);
