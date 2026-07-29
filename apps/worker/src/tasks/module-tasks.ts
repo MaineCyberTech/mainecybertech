@@ -341,31 +341,253 @@ export const phishingCampaignSend: TaskHandler = async (_payload): Promise<TaskR
 };
 
 export const domainMonitorCheck: TaskHandler = async (_payload): Promise<TaskResult> => {
-  logger.info("domain-monitor-check: periodic DNS/SSL/DMARC health scan");
-  return { ok: true };
+  try {
+    const supabase = getSupabaseAdmin();
+    const now = new Date().toISOString();
+
+    const { data: records, error: fetchError } = await supabase
+      .from("domain_monitors")
+      .select("id, domain, ssl_expires, spf_status, dkim_status, dmarc_status")
+      .or(
+        `ssl_expires.lte.${now.split("T")[0]},spf_status.eq.unknown,dkim_status.eq.unknown,dmarc_status.eq.unknown`,
+      );
+
+    if (fetchError) {
+      return { ok: false, error: `Failed to fetch domain_monitors: ${fetchError.message}` };
+    }
+
+    if (!records || records.length === 0) {
+      logger.info("domain-monitor-check: no issues found");
+      return { ok: true };
+    }
+
+    const ids = (records as AnyRecord[]).map((r) => r.id);
+    const { error: updateError } = await (supabase.from("domain_monitors") as any)
+      .update({ last_checked_at: now })
+      .in("id", ids);
+
+    if (updateError) {
+      return { ok: false, error: `Failed to update domain_monitors: ${updateError.message}` };
+    }
+
+    logger.info({ count: records.length, issues: ids.length }, "domain-monitor-check: completed");
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ error: msg }, "domain-monitor-check failed");
+    return { ok: false, error: msg };
+  }
 };
 
 export const vendorContractRenewalCheck: TaskHandler = async (_payload): Promise<TaskResult> => {
-  logger.info("vendor-contract-renewal-check: scanning upcoming contract renewals");
-  return { ok: true };
+  try {
+    const supabase = getSupabaseAdmin();
+    const sixtyDaysFromNow = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+
+    const { data: contracts, error: fetchError } = await supabase
+      .from("vendor_contracts")
+      .select(
+        "id, organization_id, vendor_name, service_name, renewal_date, auto_renews, renewal_notice_days, status",
+      )
+      .eq("status", "active")
+      .lte("renewal_date", sixtyDaysFromNow)
+      .gte("renewal_date", new Date().toISOString().split("T")[0]);
+
+    if (fetchError) {
+      return { ok: false, error: `Failed to fetch vendor_contracts: ${fetchError.message}` };
+    }
+
+    if (!contracts || contracts.length === 0) {
+      logger.info("vendor-contract-renewal-check: no upcoming renewals");
+      return { ok: true };
+    }
+
+    logger.info(
+      {
+        count: contracts.length,
+        upcoming: (contracts as AnyRecord[]).map((c) => `${c.vendor_name}/${c.service_name}`),
+      },
+      "vendor-contract-renewal-check: upcoming renewals found",
+    );
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ error: msg }, "vendor-contract-renewal-check failed");
+    return { ok: false, error: msg };
+  }
 };
 
 export const patchComplianceCheck: TaskHandler = async (_payload): Promise<TaskResult> => {
-  logger.info("patch-compliance-check: scheduled patch compliance verification");
-  return { ok: true };
+  try {
+    const supabase = getSupabaseAdmin();
+    const now = new Date().toISOString();
+
+    const { data: records, error: fetchError } = await supabase
+      .from("patch_compliance")
+      .select(
+        "id, organization_id, device_group, total_devices, patched_devices, critical_patches, compliance_pct, status",
+      )
+      .eq("status", "active");
+
+    if (fetchError) {
+      return { ok: false, error: `Failed to fetch patch_compliance: ${fetchError.message}` };
+    }
+
+    if (!records || records.length === 0) {
+      logger.info("patch-compliance-check: no active records");
+      return { ok: true };
+    }
+
+    let lowCompliance = 0;
+    for (const record of records as AnyRecord[]) {
+      const total = Number(record.total_devices) || 0;
+      const patched = Number(record.patched_devices) || 0;
+      const pct = total > 0 ? Math.round((patched / total) * 10000) / 100 : 0;
+      if (pct < 80) lowCompliance++;
+    }
+
+    const ids = (records as AnyRecord[]).map((r) => r.id);
+    const { error: updateError } = await (supabase.from("patch_compliance") as any)
+      .update({ last_checked_at: now })
+      .in("id", ids);
+
+    if (updateError) {
+      return { ok: false, error: `Failed to update patch_compliance: ${updateError.message}` };
+    }
+
+    logger.info({ count: records.length, lowCompliance }, "patch-compliance-check: completed");
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ error: msg }, "patch-compliance-check failed");
+    return { ok: false, error: msg };
+  }
 };
 
 export const qbrScheduledGenerate: TaskHandler = async (_payload): Promise<TaskResult> => {
-  logger.info("qbr-scheduled-generate: automated quarterly report generation");
-  return { ok: true };
+  try {
+    const supabase = getSupabaseAdmin();
+    const now = new Date().toISOString();
+
+    const { data: reports, error: fetchError } = await supabase
+      .from("qbr_reports")
+      .select("id, organization_id, title, period_end, status")
+      .eq("status", "draft")
+      .lte("period_end", now);
+
+    if (fetchError) {
+      return { ok: false, error: `Failed to fetch qbr_reports: ${fetchError.message}` };
+    }
+
+    if (!reports || reports.length === 0) {
+      logger.info("qbr-scheduled-generate: no pending draft reports");
+      return { ok: true };
+    }
+
+    const ids = (reports as AnyRecord[]).map((r) => r.id);
+    const { error: updateError } = await (supabase.from("qbr_reports") as any)
+      .update({ status: "generated", generated_at: now })
+      .in("id", ids);
+
+    if (updateError) {
+      return { ok: false, error: `Failed to update qbr_reports: ${updateError.message}` };
+    }
+
+    logger.info({ count: reports.length }, "qbr-scheduled-generate: completed");
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ error: msg }, "qbr-scheduled-generate failed");
+    return { ok: false, error: msg };
+  }
 };
 
 export const endpointSecurityCheck: TaskHandler = async (_payload): Promise<TaskResult> => {
-  logger.info("endpoint-security-check: periodic endpoint coverage verification");
-  return { ok: true };
+  try {
+    const supabase = getSupabaseAdmin();
+    const now = new Date().toISOString();
+
+    const { data: records, error: fetchError } = await supabase
+      .from("endpoint_security")
+      .select(
+        "id, organization_id, device_group, total_endpoints, av_installed, disk_encrypted, mdm_enrolled, local_admin_removed, firewall_enabled, edr_deployed, coverage_pct, status",
+      )
+      .eq("status", "active");
+
+    if (fetchError) {
+      return { ok: false, error: `Failed to fetch endpoint_security: ${fetchError.message}` };
+    }
+
+    if (!records || records.length === 0) {
+      logger.info("endpoint-security-check: no active records");
+      return { ok: true };
+    }
+
+    let lowCoverage = 0;
+    for (const record of records as AnyRecord[]) {
+      const total = Number(record.total_endpoints) || 0;
+      const av = Number(record.av_installed) || 0;
+      const pct = total > 0 ? Math.round((av / total) * 10000) / 100 : 0;
+      if (pct < 80) lowCoverage++;
+    }
+
+    const ids = (records as AnyRecord[]).map((r) => r.id);
+    const { error: updateError } = await (supabase.from("endpoint_security") as any)
+      .update({ last_checked_at: now })
+      .in("id", ids);
+
+    if (updateError) {
+      return { ok: false, error: `Failed to update endpoint_security: ${updateError.message}` };
+    }
+
+    logger.info({ count: records.length, lowCoverage }, "endpoint-security-check: completed");
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ error: msg }, "endpoint-security-check failed");
+    return { ok: false, error: msg };
+  }
 };
 
 export const saasAuditScan: TaskHandler = async (_payload): Promise<TaskResult> => {
-  logger.info("saas-audit-scan: automated vendor SaaS subscription review");
-  return { ok: true };
+  try {
+    const supabase = getSupabaseAdmin();
+    const sixtyDaysFromNow = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0];
+
+    const { data: audits, error: fetchError } = await supabase
+      .from("saas_audits")
+      .select(
+        "id, organization_id, vendor_name, service_name, monthly_cost, annual_cost, renewal_date, cancellation_risk, has_data_access",
+      )
+      .lte("renewal_date", sixtyDaysFromNow)
+      .gte("renewal_date", new Date().toISOString().split("T")[0]);
+
+    if (fetchError) {
+      return { ok: false, error: `Failed to fetch saas_audits: ${fetchError.message}` };
+    }
+
+    if (!audits || audits.length === 0) {
+      logger.info("saas-audit-scan: no upcoming renewals");
+      return { ok: true };
+    }
+
+    const totalAnnual = (audits as AnyRecord[]).reduce(
+      (sum, a) => sum + (Number(a.annual_cost) || Number(a.monthly_cost || 0) * 12 || 0),
+      0,
+    );
+
+    logger.info(
+      { count: audits.length, totalAnnualCost: totalAnnual },
+      "saas-audit-scan: upcoming renewals found",
+    );
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ error: msg }, "saas-audit-scan failed");
+    return { ok: false, error: msg };
+  }
 };
