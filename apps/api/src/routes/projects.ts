@@ -209,8 +209,10 @@ projectSubRoute("dependencies", "project_dependencies", createDependencySchema a
 
 router.get("/:id", async (req, res, next) => {
   try {
+    const orgId = req.query.organization_id as string;
+    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
     const supabase = getSupabaseAdmin();
-    const { data: project, error: pErr } = await supabase
+    const { data, error } = await supabase
       .from("projects")
       .select("*")
       .eq("id", req.params.id)
