@@ -173,7 +173,7 @@
       "when": {
         "primary_concern": "m365"
       },
-      "quickWin": "microsoft_365_tenant_health_check",
+      "quickWin": "microsoft_365_tenant_setup",
       "bundle": "m365_secure_bundle",
       "monthlyPlan": "m365_managed_bundle"
     },
@@ -181,7 +181,7 @@
       "when": {
         "primary_concern": "wifi_network"
       },
-      "quickWin": "wifi_coverage_check",
+      "quickWin": "wi_fi_coverage_check",
       "bundle": "business_network_foundation",
       "monthlyPlan": "mct_complete_care"
     },
@@ -205,7 +205,7 @@
       "when": {
         "primary_concern": "new_business"
       },
-      "quickWin": "domain_dns_safety_check",
+      "quickWin": "domain_registrar_security_setup",
       "bundle": "small_business_it_starter_pack",
       "monthlyPlan": "mct_essential_care"
     }

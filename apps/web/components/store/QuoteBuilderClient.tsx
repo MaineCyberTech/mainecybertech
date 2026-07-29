@@ -1,7 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import type { CatalogProduct } from "@/lib/catalog/types";
+import {
+  getQuoteItems,
+  addToQuote,
+  removeFromQuote,
+  clearQuote,
+} from "@/lib/catalog/quote-storage";
 
 interface QuoteBuilderClientProps {
   products: CatalogProduct[];
@@ -33,6 +40,17 @@ function isConsultRequired(purchaseMode: string): boolean {
   return purchaseMode === "consultation_required" || purchaseMode === "consultation_or_checkout";
 }
 
+function productToQuoteItem(product: CatalogProduct): QuoteItem {
+  return {
+    productId: product.id,
+    name: product.name,
+    priceRange: product.priceRange,
+    riskLevel: product.riskLevel,
+    purchaseMode: product.purchaseMode,
+    tags: product.tags,
+  };
+}
+
 export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps) {
   const quickWins = products.filter((p) => p.tags.includes("quick-win") && p.display);
   const bundles = products.filter((p) => p.tags.includes("bundle") && p.display);
@@ -45,17 +63,40 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    const merged: QuoteItem[] = [];
+    const seen = new Set<string>();
+
+    // Load from legacy mct_quote (full objects)
     try {
       const raw = localStorage.getItem("mct_quote");
       if (raw) {
         const parsed = JSON.parse(raw) as QuoteItem[];
-        if (Array.isArray(parsed)) setItems(parsed);
+        if (Array.isArray(parsed)) {
+          for (const item of parsed) {
+            if (!seen.has(item.productId)) {
+              seen.add(item.productId);
+              merged.push(item);
+            }
+          }
+        }
       }
     } catch {
       /* ignore */
     }
+
+    // Load from shared mct_quote_items (slugs) and resolve to full objects
+    const slugs = getQuoteItems();
+    for (const slug of slugs) {
+      const product = products.find((p) => p.slug === slug);
+      if (product && !seen.has(product.id)) {
+        seen.add(product.id);
+        merged.push(productToQuoteItem(product));
+      }
+    }
+
+    setItems(merged);
     setLoaded(true);
-  }, []);
+  }, [products]);
 
   useEffect(() => {
     if (loaded) {
@@ -66,23 +107,21 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
   const addItem = useCallback((product: CatalogProduct) => {
     setItems((prev) => {
       if (prev.some((i) => i.productId === product.id)) return prev;
-      return [
-        ...prev,
-        {
-          productId: product.id,
-          name: product.name,
-          priceRange: product.priceRange,
-          riskLevel: product.riskLevel,
-          purchaseMode: product.purchaseMode,
-          tags: product.tags,
-        },
-      ];
+      addToQuote(product.slug);
+      return [...prev, productToQuoteItem(product)];
     });
   }, []);
 
-  const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((i) => i.productId !== productId));
-  }, []);
+  const removeItem = useCallback(
+    (productId: string) => {
+      setItems((prev) => {
+        const product = products.find((p) => p.id === productId);
+        if (product) removeFromQuote(product.slug);
+        return prev.filter((i) => i.productId !== productId);
+      });
+    },
+    [products],
+  );
 
   function renderProductList(label: string, list: CatalogProduct[]) {
     if (list.length === 0) return null;
@@ -160,6 +199,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
         setItems([]);
         setForm({ name: "", email: "", phone: "", notes: "" });
         localStorage.removeItem("mct_quote");
+        clearQuote();
       } else {
         setStatus({
           type: "error",
@@ -200,7 +240,11 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
 
               {items.length === 0 ? (
                 <p className="text-xs text-slate-500">
-                  Select services from the left to build your quote.
+                  Select services from the left or browse the{" "}
+                  <Link href="/store" className="text-emerald-400 underline">
+                    store
+                  </Link>{" "}
+                  to build your quote.
                 </p>
               ) : (
                 <div className="space-y-2">
@@ -247,6 +291,13 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                 </div>
               )}
             </div>
+
+            <Link
+              href="/store"
+              className="font-orbitron block w-full rounded border border-emerald-600/30 bg-emerald-600/10 px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:bg-emerald-600/20"
+            >
+              + Add More Products
+            </Link>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

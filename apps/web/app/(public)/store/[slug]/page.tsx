@@ -78,7 +78,12 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
           <span className="mx-2">/</span>
           {category && (
             <>
-              <span className="text-slate-400">{category.name}</span>
+              <Link
+                href={`/store/category/${category.slug}`}
+                className="text-slate-400 no-underline transition hover:text-emerald-400"
+              >
+                {category.name}
+              </Link>
               <span className="mx-2">/</span>
             </>
           )}

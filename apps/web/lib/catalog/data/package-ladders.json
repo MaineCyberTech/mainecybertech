@@ -15,7 +15,7 @@
     },
     {
       "category": "Wi-Fi & Networking",
-      "good": "wifi_coverage_check",
+      "good": "wi_fi_coverage_check",
       "better": "small_office_wifi_bundle",
       "best": "business_network_foundation"
     },

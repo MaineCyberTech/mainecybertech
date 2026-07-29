@@ -8,7 +8,7 @@ import {
 import StoreProductCard from "@/components/store/StoreProductCard";
 import StoreCategoryCard from "@/components/store/StoreCategoryCard";
 import CampaignBanner from "@/components/store/CampaignBanner";
-import PackageLadder from "@/components/store/PackageLadder";
+import PackageLadderGrid from "@/components/store/PackageLadderGrid";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -51,6 +51,62 @@ export default function StorePage() {
         </div>
       </section>
 
+      {/* Page anchor navigation */}
+      <section className="px-4 pb-8 sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-12 flex flex-wrap gap-2">
+            <a
+              href="#categories"
+              className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-400 transition hover:bg-emerald-600/20"
+            >
+              Browse by Category
+            </a>
+            <a
+              href="#quick-wins"
+              className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-400 transition hover:bg-emerald-600/20"
+            >
+              Quick Wins
+            </a>
+            <a
+              href="#monthly-plans"
+              className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-400 transition hover:bg-emerald-600/20"
+            >
+              Monthly Plans
+            </a>
+            <a
+              href="#emergency"
+              className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-400 transition hover:bg-emerald-600/20"
+            >
+              Emergency
+            </a>
+            <a
+              href="#ladders"
+              className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-400 transition hover:bg-emerald-600/20"
+            >
+              Compare Packages
+            </a>
+            <Link
+              href="/store/quiz"
+              className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-400 transition hover:bg-emerald-600/20"
+            >
+              Service Finder
+            </Link>
+            <Link
+              href="/store/compare"
+              className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-400 transition hover:bg-emerald-600/20"
+            >
+              Compare
+            </Link>
+            <Link
+              href="/store/quote"
+              className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-emerald-400 transition hover:bg-emerald-600/20"
+            >
+              Quote Builder
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <section className="px-4 pb-24 sm:px-6 sm:pb-32">
         <div className="mx-auto max-w-4xl">
           <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 backdrop-blur-sm">
@@ -76,9 +132,12 @@ export default function StorePage() {
 
       <CampaignBanner />
 
-      <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
+      <section id="categories" className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-7xl">
-          <h2 className="font-orbitron mb-12 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2
+            id="categories"
+            className="font-orbitron mb-12 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl"
+          >
             Browse by <span className="text-emerald-500">Category</span>
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -96,7 +155,7 @@ export default function StorePage() {
       </section>
 
       {featured.length > 0 && (
-        <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
+        <section id="quick-wins" className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
           <div className="mx-auto max-w-7xl">
             <h2 className="font-orbitron mb-4 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
               Quick <span className="text-emerald-500">Wins</span>
@@ -122,7 +181,7 @@ export default function StorePage() {
         </section>
       )}
 
-      <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
+      <section id="ladders" className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-7xl">
           <h2 className="font-orbitron mb-4 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Compare <span className="text-emerald-500">Packages</span>
@@ -131,23 +190,12 @@ export default function StorePage() {
             Not sure which tier fits? See how our packages compare across Cybersecurity and
             Microsoft 365 — from essential protection to full coverage.
           </p>
-          <div className="mb-12">
-            <h3 className="font-orbitron mb-6 text-center text-lg font-bold uppercase tracking-wider text-slate-400">
-              Cybersecurity
-            </h3>
-            <PackageLadder category="Cybersecurity" />
-          </div>
-          <div>
-            <h3 className="font-orbitron mb-6 text-center text-lg font-bold uppercase tracking-wider text-slate-400">
-              Microsoft 365
-            </h3>
-            <PackageLadder category="Microsoft 365" />
-          </div>
+          <PackageLadderGrid />
         </div>
       </section>
 
       {monthlyPlans.length > 0 && (
-        <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
+        <section id="monthly-plans" className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
           <div className="mx-auto max-w-7xl">
             <h2 className="font-orbitron mb-12 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
               Monthly IT <span className="text-emerald-500">Plans</span>
@@ -174,7 +222,7 @@ export default function StorePage() {
       )}
 
       {emergency.length > 0 && (
-        <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
+        <section id="emergency" className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
           <div className="mx-auto max-w-7xl">
             <h2 className="font-orbitron mb-4 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
               Emergency <span className="text-emerald-500">Support</span>

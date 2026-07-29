@@ -36,7 +36,7 @@ describe("StoreCategoryCard", () => {
   it("links to correct category filter", () => {
     render(<StoreCategoryCard {...PROPS} />);
     const link = screen.getByRole("link");
-    expect(link).toHaveAttribute("href", `/store?category=${PROPS.slug}`);
+    expect(link).toHaveAttribute("href", `/store/category/${PROPS.slug}`);
   });
 
   it('has accessible "Browse" text', () => {

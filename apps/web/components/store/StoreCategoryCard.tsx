@@ -15,7 +15,7 @@ export default function StoreCategoryCard({
 }: StoreCategoryCardProps) {
   return (
     <Link
-      href={`/store?category=${slug}`}
+      href={`/store/category/${slug}`}
       className="glass-card glass-card-hover group flex flex-col p-8 no-underline sm:p-10"
     >
       <div className="mb-4 flex items-center justify-between">

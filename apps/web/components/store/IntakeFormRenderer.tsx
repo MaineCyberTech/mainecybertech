@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { submitLead } from "../../app/(public)/contact/actions";
 import TrustBadgeList from "./TrustBadgeList";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 interface IntakeField {
   id: string;
@@ -41,8 +40,6 @@ export default function IntakeFormRenderer({
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [consent, setConsent] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState("");
-  const turnstileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/public/init`)
@@ -52,18 +49,6 @@ export default function IntakeFormRenderer({
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!TURNSTILE_SITE_KEY || !turnstileRef.current) return;
-    const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-    script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-    return () => {
-      document.head.removeChild(script);
-    };
   }, []);
 
   function validate(): boolean {
@@ -133,7 +118,6 @@ export default function IntakeFormRenderer({
         urgency: "Medium - Planning Phase",
         message,
         consent,
-        captchaToken: captchaToken || undefined,
       });
 
       if (res.success) {
@@ -252,16 +236,7 @@ export default function IntakeFormRenderer({
 
       {fields.map(renderField)}
 
-      {TURNSTILE_SITE_KEY && (
-        <div className="flex items-start gap-3">
-          <div
-            ref={turnstileRef}
-            className="cf-turnstile"
-            data-sitekey={TURNSTILE_SITE_KEY}
-            data-callback={(token: string) => setCaptchaToken(token)}
-          />
-        </div>
-      )}
+      {/* Anti-spam protection is handled server-side */}
 
       <div className="flex items-start gap-3">
         <input
@@ -285,7 +260,7 @@ export default function IntakeFormRenderer({
 
       <button
         type="submit"
-        disabled={loading || submitting || !consent || (!!TURNSTILE_SITE_KEY && !captchaToken)}
+        disabled={loading || submitting || !consent}
         className="font-orbitron w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
       >
         {loading
