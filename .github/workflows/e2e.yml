@@ -92,12 +92,12 @@ jobs:
           curl --retry 10 --retry-delay 2 --retry-connrefused http://localhost:4000/health
         env:
           NODE_ENV: production
-          SUPABASE_URL: http://127.0.0.1:54321
-          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgICAgICJpc3MiOiAic3VwYWJhc2UtZGV2byIsICAgICAgImV4cCI6IDE5Mjg2OTQ0MDAsICAgICAgIm5hbWUiOiAiYW5vbiIsICAgICAgImFkbWluIjogdHJ1ZSAgICB9.anonymous-key
-          SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZXZpbyIsImV4cCI6MTkyODY5NDQwMCwicm9sZSI6InNlcnZpY2Vfcm9sZSJ9.service-role-key
+          SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL || 'http://127.0.0.1:54321' }}
+          SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY || 'e2e-anon-key' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY || 'e2e-service-role-key' }}
           CORS_ORIGIN: "*"
           LOG_LEVEL: silent
-          JWT_SECRET: e2e-test-secret
+          JWT_SECRET: ${{ secrets.E2E_JWT_SECRET || 'e2e-test-secret' }}
 
       - name: Build web app
         run: pnpm --filter=web build

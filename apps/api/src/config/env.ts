@@ -40,8 +40,9 @@ export function getEnv(): Env {
   if (!_env) {
     const result = envSchema.safeParse(process.env);
     if (!result.success) {
-      console.error("Invalid environment variables:", result.error.flatten().fieldErrors);
-      process.exit(1);
+      throw new Error(
+        `Invalid environment variables: ${JSON.stringify(result.error.flatten().fieldErrors)}`,
+      );
     }
     _env = result.data;
   }

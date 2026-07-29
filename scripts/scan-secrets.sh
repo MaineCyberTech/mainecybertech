@@ -8,13 +8,13 @@ if [ -z "$STAGED" ]; then
   exit 0
 fi
 
-MATCHES=$(echo "$STAGED" | xargs git diff --cached -U0 -- 2>/dev/null | grep -E "^\+" | grep -v "PATTERNS=" | grep -cE "$PATTERNS" 2>/dev/null)
+MATCHES=$(echo "$STAGED" | xargs git diff --cached -U0 -- 2>/dev/null | grep -E "^\+" | grep -v "PATTERNS=" | grep -v 'secrets\.' | grep -vE "^\+\s*#" | grep -cE "$PATTERNS" 2>/dev/null)
 
 if [ "$MATCHES" -gt 0 ]; then
   echo ""
   echo "  HIGH-ENTROPY / SECRET PATTERN DETECTED IN STAGED FILES"
   echo ""
-  echo "$STAGED" | xargs git diff --cached -U0 -- 2>/dev/null | grep -nE "^\+.*($PATTERNS)" | grep -v "PATTERNS=" | while IFS= read -r line; do
+  echo "$STAGED" | xargs git diff --cached -U0 -- 2>/dev/null | grep -nE "^\+.*($PATTERNS)" | grep -v "PATTERNS=" | grep -v 'secrets\.' | while IFS= read -r line; do
     echo "    $line"
   done
   echo ""

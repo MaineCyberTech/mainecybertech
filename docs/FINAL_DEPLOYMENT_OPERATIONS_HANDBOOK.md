@@ -37,6 +37,22 @@ Pipeline:
 4. **Deploy** — SSH into droplet, write `.env` from GitHub secrets, pull images from GHCR, copy compose file and per-environment Caddyfile, set up Cloudflare Origin CA certs, `docker compose up -d` with `IMAGE_TAG=<sha>`
 5. **Health check** — Poll `https://api.<domain>/health` (200/526) and `https://app.<domain>/login` (non-000)
 
+### Deploy Gates
+
+Before any deployment proceeds, the following gates must pass:
+
+| Gate           | Workflow                  | Purpose                                          | Required For      |
+| -------------- | ------------------------- | ------------------------------------------------ | ----------------- |
+| **Validate**   | `validate.yml`            | Runs test + lint + typecheck in parallel         | All builds        |
+| **E2E**        | `e2e.yml`                 | Runs Playwright E2E tests against local Supabase | Production deploy |
+| **Migrations** | `supabase-migrations.yml` | Applies pending DB migrations                    | All deploys       |
+
+The build jobs (`build-api`, `build-worker`, `build-web`) depend on `validate`. The deploy job depends on all three builds + `e2e` + `migrations`. If any gate fails, the deployment is blocked.
+
+### Concurrency
+
+The deploy workflow uses `concurrency: deploy-do-${{ github.ref }}` with `cancel-in-progress: true`. This ensures only one deploy runs per branch at a time. If a second push happens while a deploy is in progress, the first deploy is cancelled.
+
 ### Speed optimization
 
 Images are **not** piped over SSH anymore. The deploy step pulls directly from GHCR on the droplet. Builder cache pruning is deferred to post-deploy to avoid SSH timeouts. Old MCT images are cleaned up via `docker image prune -af`.

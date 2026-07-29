@@ -10,9 +10,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run database backup script
+        id: backup
         run: bash scripts/backup-database.sh
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+      - name: Notify on failure
+        if: failure()
+        run: |
+          curl -sf -X POST -H "Content-Type: application/json" \
+            -d '{"text":"❌ Database backup failed for develop branch. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
+            "${{ secrets.SLACK_WEBHOOK_URL }}" 2>/dev/null || true
