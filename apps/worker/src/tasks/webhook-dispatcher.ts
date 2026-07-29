@@ -79,7 +79,7 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
 
       const duration = Date.now() - start;
 
-      await supabase.from("webhook_deliveries").insert({
+      await (supabase.from("webhook_deliveries") as any).insert({
         webhook_id: endpoint.id,
         event,
         status: error
@@ -96,8 +96,7 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
 
       if (error || responseStatus >= 400) {
         failCount++;
-        await supabase
-          .from("webhook_endpoints")
+        await (supabase.from("webhook_endpoints") as any)
           .update({
             last_failure_at: new Date().toISOString(),
             last_error: error || `HTTP ${responseStatus}`,
@@ -105,8 +104,7 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
           .eq("id", endpoint.id);
       } else {
         successCount++;
-        await supabase
-          .from("webhook_endpoints")
+        await (supabase.from("webhook_endpoints") as any)
           .update({ last_success_at: new Date().toISOString(), last_error: null })
           .eq("id", endpoint.id);
       }
