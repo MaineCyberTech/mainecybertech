@@ -1,6 +1,6 @@
 import { z } from "zod";
 export const createChangeSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   title: z.string().min(1).max(500),
   description: z.string().max(10000).optional().nullable(),
   changeType: z.string().default("standard"),
@@ -10,7 +10,7 @@ export const createChangeSchema = z.object({
   verificationSteps: z.string().max(5000).optional().nullable(),
 });
 export const createRiskSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   riskDescription: z.string().min(1).max(2000),
   riskCategory: z.string().default("security"),
   likelihood: z.string().default("medium"),
@@ -20,7 +20,7 @@ export const createRiskSchema = z.object({
   acceptanceExpires: z.string().optional().nullable(),
 });
 export const createRetentionSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   dataCategory: z.string().min(1).max(500),
   systemName: z.string().min(1).max(500),
   retentionPeriodDays: z.number().int().positive(),
@@ -30,7 +30,7 @@ export const createRetentionSchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 export const createTabletopSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   title: z.string().min(1).max(500),
   scenario: z.string().min(1).max(5000),
   scenarioType: z.string().default("cyber_incident"),
@@ -41,7 +41,7 @@ export const createTabletopSchema = z.object({
   afterActionReport: z.string().max(10000).optional().nullable(),
 });
 export const createSopSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   title: z.string().min(1).max(200),
   description: z.string().max(5000).optional().nullable(),
   sopCategory: z.string().min(1).max(100).default("general"),

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createVendorContractSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   vendorName: z.string().min(1).max(500),
   serviceName: z.string().min(1).max(500),
   contractNumber: z.string().max(100).optional().nullable(),
@@ -14,7 +14,7 @@ export const createVendorContractSchema = z.object({
   renewalNoticeDays: z.number().int().min(1).optional().default(60),
   contractType: z.string().optional().default("software"),
   notes: z.string().max(5000).optional().nullable(),
-  ownerUserId: z.string().min(1).optional().nullable(),
+  ownerUserId: z.string().uuid().optional().nullable(),
   visibility: z.enum(["internal", "client_visible"]).optional().default("internal"),
 });
 
@@ -23,7 +23,7 @@ export const updateVendorContractSchema = createVendorContractSchema
   .omit({ organizationId: true });
 
 export const createVendorContactSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   vendorName: z.string().min(1).max(500),
   contactName: z.string().max(500).optional().nullable(),
   roleTitle: z.string().max(200).optional().nullable(),

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const listFindingsQuerySchema = z.object({
-  organizationId: z.string().min(1).optional(),
+  organizationId: z.string().uuid().optional(),
   status: z.enum(["open", "in_progress", "resolved", "verified", "closed", "wont_fix"]).optional(),
   severity: z.enum(["p0", "p1", "p2", "p3"]).optional(),
   source: z.string().optional(),
@@ -11,7 +11,7 @@ export const listFindingsQuerySchema = z.object({
 });
 
 export const createFindingSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   title: z.string().min(1, "Title is required").max(500),
   description: z.string().max(10000).optional().nullable(),
   severity: z.enum(["p0", "p1", "p2", "p3"]).default("p2"),
@@ -22,7 +22,7 @@ export const createFindingSchema = z.object({
   verificationSteps: z.string().max(10000).optional().nullable(),
   affectedSystems: z.string().max(2000).optional().nullable(),
   controlsImpacted: z.string().max(2000).optional().nullable(),
-  assignedTo: z.string().min(1).optional().nullable(),
+  assignedTo: z.string().uuid().optional().nullable(),
   visibility: z.enum(["internal", "client_visible"]).optional().default("internal"),
   metadata: z.record(z.unknown()).optional().default({}),
 });
@@ -39,16 +39,16 @@ export const updateFindingSchema = z.object({
   verificationSteps: z.string().max(10000).optional().nullable(),
   affectedSystems: z.string().max(2000).optional().nullable(),
   controlsImpacted: z.string().max(2000).optional().nullable(),
-  assignedTo: z.string().min(1).optional().nullable(),
+  assignedTo: z.string().uuid().optional().nullable(),
   visibility: z.enum(["internal", "client_visible"]).optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 
 export const verifyFindingSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
 });
 
 export const resolveFindingSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   resolutionNotes: z.string().max(10000).optional().nullable(),
 });

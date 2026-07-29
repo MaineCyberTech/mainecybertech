@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const listSatisfactionPulseQuerySchema = z.object({
-  organizationId: z.string().min(1).optional(),
+  organizationId: z.string().uuid().optional(),
   status: z.enum(["pending", "sent", "responded", "expired", "cancelled"]).optional(),
   source: z.string().optional(),
   sourceEntityId: z.string().optional(),
@@ -10,7 +10,7 @@ export const listSatisfactionPulseQuerySchema = z.object({
 });
 
 export const createSatisfactionPulseSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   subject: z.string().min(1).max(500),
   question: z.string().max(1000).optional().nullable(),
   rating: z.number().int().min(0).max(10).optional().default(5),
@@ -37,20 +37,20 @@ export const updateSatisfactionPulseSchema = z.object({
 });
 
 export const respondSatisfactionPulseSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   rating: z.number().int().min(0).max(10),
   feedback: z.string().max(5000).optional().nullable(),
 });
 
 export const exportSatisfactionPulseSchema = z.object({
-  organizationId: z.string().min(1).optional(),
+  organizationId: z.string().uuid().optional(),
   status: z.enum(["pending", "sent", "responded", "expired", "cancelled"]).optional(),
   source: z.string().optional(),
   format: z.enum(["csv", "json"]).optional().default("csv"),
 });
 
 export const templateSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   name: z.string().min(1).max(255),
   subject: z.string().min(1).max(500),
   question: z.string().max(1000).optional().nullable(),
@@ -67,7 +67,7 @@ export const updateTemplateSchema = z.object({
 });
 
 export const scheduleSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   templateId: z.string().optional().nullable(),
   name: z.string().min(1).max(255),
   triggerType: z

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createDocumentSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   name: z.string().min(1, "Document name is required").max(500),
   description: z.string().max(10000).optional().nullable(),
   visibility: z.enum(["private", "org", "internal", "public"]).default("org"),
@@ -31,20 +31,13 @@ export const updateDocumentSchema = z.object({
 });
 
 export const bulkFolderSchema = z.object({
-  documentIds: z
-    .array(z.string().min(1))
-    .min(1, "Select at least one document"),
+  documentIds: z.array(z.string().uuid()).min(1, "Select at least one document"),
   folderPath: z.string().min(1, "Folder path is required").max(500),
 });
 
 export const bulkMetadataSchema = z.object({
-  documentIds: z
-    .array(z.string().min(1))
-    .min(1, "Select at least one document"),
+  documentIds: z.array(z.string().uuid()).min(1, "Select at least one document"),
   description: z.string().max(10000).optional().nullable(),
   folderPath: z.string().max(500).optional().nullable(),
-  visibility: z
-    .enum(["private", "org", "internal", "public"])
-    .optional()
-    .nullable(),
+  visibility: z.enum(["private", "org", "internal", "public"]).optional().nullable(),
 });

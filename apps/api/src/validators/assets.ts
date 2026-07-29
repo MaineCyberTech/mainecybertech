@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const listAssetsQuerySchema = z.object({
-  organizationId: z.string().min(1).optional(),
+  organizationId: z.string().uuid().optional(),
   status: z.enum(["active", "retired", "decommissioned", "lost", "repair"]).optional(),
   assetType: z.string().optional(),
   search: z.string().optional(),
@@ -11,7 +11,7 @@ export const listAssetsQuerySchema = z.object({
 });
 
 export const createAssetSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   name: z.string().min(1, "Name is required").max(500),
   assetType: z.string().default("hardware"),
   make: z.string().max(200).optional().nullable(),
@@ -26,7 +26,7 @@ export const createAssetSchema = z.object({
   warrantyExpires: z.string().optional().nullable(),
   replacementRecommended: z.string().optional().nullable(),
   lifecycleScore: z.number().min(0).max(100).optional().default(100),
-  assignedTo: z.string().min(1).optional().nullable(),
+  assignedTo: z.string().uuid().optional().nullable(),
   maintenanceNotes: z.string().max(10000).optional().nullable(),
   supportedUntil: z.string().optional().nullable(),
   vendorSupportStatus: z.string().default("supported"),
@@ -41,5 +41,5 @@ export const createAssetSchema = z.object({
 export const updateAssetSchema = createAssetSchema.partial().omit({ organizationId: true });
 
 export const assetStatsSchema = z.object({
-  organizationId: z.string().min(1).optional(),
+  organizationId: z.string().uuid().optional(),
 });

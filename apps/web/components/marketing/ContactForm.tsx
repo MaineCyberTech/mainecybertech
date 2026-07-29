@@ -34,6 +34,7 @@ export default function ContactForm() {
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [form, setForm] = useState<FormData>(initialForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [consent, setConsent] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/public/init`)
@@ -67,7 +68,7 @@ export default function ContactForm() {
     setStatus(null);
 
     try {
-      const res = await submitLead({ ...form, trackingId });
+      const res = await submitLead({ ...form, trackingId, consent });
       if (res.success) {
         setStatus({
           type: "success",
@@ -208,9 +209,29 @@ export default function ContactForm() {
         {errors.message && <p className="mt-1 text-xs text-red-400">{errors.message}</p>}
       </div>
 
+      <div className="flex items-start gap-3">
+        <input
+          id="consent"
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          className="mt-1 h-4 w-4 shrink-0 rounded border border-white/10 bg-[#0A1118]/60 text-emerald-600 focus:ring-emerald-600"
+        />
+        <label htmlFor="consent" className="text-xs leading-relaxed text-slate-400">
+          I agree to the{" "}
+          <a
+            href="/privacy"
+            className="text-emerald-400 underline transition hover:text-emerald-300"
+          >
+            Privacy Policy
+          </a>{" "}
+          and consent to my data being processed.
+        </label>
+      </div>
+
       <button
         type="submit"
-        disabled={loading || submitting}
+        disabled={loading || submitting || !consent}
         className="font-orbitron w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
       >
         {loading

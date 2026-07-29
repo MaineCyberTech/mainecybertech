@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const listDynamicFormsQuerySchema = z.object({
-  organizationId: z.string().min(1).optional(),
+  organizationId: z.string().uuid().optional(),
   status: z.string().optional(),
   formType: z.string().optional(),
   page: z.coerce.number().int().positive().optional().default(1),
@@ -33,7 +33,7 @@ const formFieldSchema = z.object({
 });
 
 export const createDynamicFormSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   title: z.string().min(1).max(255),
   description: z.string().max(5000).optional().nullable(),
   formType: z.string().optional().default("intake"),
@@ -63,7 +63,7 @@ export const submitDynamicFormSchema = z.object({
 });
 
 export const exportDynamicFormsSchema = z.object({
-  organizationId: z.string().min(1).optional(),
+  organizationId: z.string().uuid().optional(),
   status: z.string().optional(),
   formType: z.string().optional(),
   format: z.string().optional().default("csv"),

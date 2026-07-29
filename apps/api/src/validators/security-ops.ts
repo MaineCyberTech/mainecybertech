@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createOffboardingSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   employeeName: z.string().min(1).max(500),
   employeeEmail: z.string().email().optional().nullable(),
   department: z.string().max(200).optional().nullable(),
@@ -16,7 +16,7 @@ export const createOffboardingSchema = z.object({
 });
 
 export const createBreakGlassSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   accountName: z.string().min(1).max(500),
   system: z.string().min(1).max(500),
   custodianName: z.string().max(500).optional().nullable(),
@@ -27,13 +27,13 @@ export const createBreakGlassSchema = z.object({
 });
 
 export const createOnboardingSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   clientName: z.string().min(1).max(500),
   notes: z.string().max(5000).optional().nullable(),
 });
 
 export const createPatchSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   deviceGroup: z.string().min(1).max(500),
   totalDevices: z.number().int().min(0).default(0),
   patchedDevices: z.number().int().min(0).default(0),

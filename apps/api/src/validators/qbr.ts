@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createQbrReportSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   title: z.string().min(1, "Title is required").max(500),
   periodStart: z.string().optional().nullable(),
   periodEnd: z.string().optional().nullable(),

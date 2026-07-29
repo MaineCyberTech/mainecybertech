@@ -12,12 +12,17 @@ export async function submitLead(data: {
   employees: string;
   urgency: string;
   message: string;
+  consent: boolean;
 }): Promise<{ success: boolean; error?: string }> {
   try {
+    if (!data.consent) {
+      return { success: false, error: "You must consent to the Privacy Policy." };
+    }
+
+    const { consent: _, ...payload } = data;
     const res = await fetch(`${API_BASE}/api/v1/public/submit`, {
-      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
     const json = await res.json();
     if (!res.ok) return { success: false, error: json.error?.message || "Submission failed" };

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createLicenseSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   vendor: z.string().min(1).max(500),
   productName: z.string().min(1).max(500),
   totalSeats: z.number().int().min(0).default(0),
@@ -15,7 +15,7 @@ export const createLicenseSchema = z.object({
 });
 
 export const createStatusItemSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   title: z.string().min(1).max(500),
   description: z.string().max(5000).optional().nullable(),
   severity: z.enum(["info", "warning", "critical", "maintenance"]).default("info"),
@@ -26,7 +26,7 @@ export const createStatusItemSchema = z.object({
 });
 
 export const createWebsiteMonitorSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   url: z.string().min(1).max(2000),
   displayName: z.string().max(500).optional().nullable(),
   checkIntervalHours: z.number().int().min(1).max(168).default(6),
@@ -34,7 +34,7 @@ export const createWebsiteMonitorSchema = z.object({
 });
 
 export const createDmarcAssessmentSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   domain: z.string().min(1).max(253),
   spfRecord: z.string().max(1000).optional().nullable(),
   spfValid: z.boolean().default(false),

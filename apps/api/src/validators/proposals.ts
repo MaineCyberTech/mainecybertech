@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const listProposalsQuerySchema = z.object({
-  organizationId: z.string().min(1).optional(),
+  organizationId: z.string().uuid().optional(),
   status: z.enum(["draft", "sent", "approved", "rejected", "expired"]).optional(),
   search: z.string().optional(),
   page: z.coerce.number().int().positive().optional().default(1),
@@ -9,11 +9,11 @@ export const listProposalsQuerySchema = z.object({
 });
 
 export const createProposalSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   title: z.string().min(1, "Title is required").max(500),
   description: z.string().max(10000).optional().nullable(),
   validUntil: z.string().optional().nullable(),
-  ownerUserId: z.string().min(1).optional().nullable(),
+  ownerUserId: z.string().uuid().optional().nullable(),
   visibility: z.enum(["internal", "client_visible"]).optional().default("internal"),
   metadata: z.record(z.unknown()).optional().default({}),
   phases: z
@@ -53,7 +53,7 @@ export const updateProposalSchema = z.object({
   description: z.string().max(10000).optional().nullable(),
   status: z.enum(["draft", "sent", "approved", "rejected", "expired"]).optional(),
   validUntil: z.string().optional().nullable(),
-  ownerUserId: z.string().min(1).optional().nullable(),
+  ownerUserId: z.string().uuid().optional().nullable(),
   visibility: z.enum(["internal", "client_visible"]).optional(),
   metadata: z.record(z.unknown()).optional(),
 });
@@ -69,7 +69,7 @@ export const createPhaseSchema = z.object({
 export const updatePhaseSchema = createPhaseSchema.partial();
 
 export const createLineItemSchema = z.object({
-  phaseId: z.string().min(1).optional().nullable(),
+  phaseId: z.string().uuid().optional().nullable(),
   itemType: z.enum(["labor", "materials", "recurring", "one_time"]).default("labor"),
   name: z.string().min(1).max(500),
   description: z.string().max(10000).optional().nullable(),
@@ -86,10 +86,10 @@ export const createLineItemSchema = z.object({
 export const updateLineItemSchema = createLineItemSchema.partial();
 
 export const submitForApprovalSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
 });
 
 export const publishProposalSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   validityDays: z.number().int().positive().optional().default(30),
 });

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createProjectSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   name: z.string().min(1, "Name is required").max(500),
   description: z.string().max(10000).optional().nullable(),
   status: z
@@ -76,19 +76,19 @@ export const updateTaskCommentSchema = z.object({
 });
 
 export const reorderTasksSchema = z.object({
-  order: z.array(z.string().min(1)).min(1),
+  order: z.array(z.string().uuid()).min(1),
 });
 
 export const markTaskReadSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
 });
 
 export const approveTaskSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
 });
 
 export const portalTaskCommentSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   body: z.string().min(1, "Comment body is required").max(10000),
 });
 
@@ -105,7 +105,7 @@ export const updateProjectUpdateSchema = z.object({
 });
 
 export const createPhaseSchema = z.object({
-  projectId: z.string().min(1),
+  projectId: z.string().uuid(),
   name: z.string().min(1).max(200),
   description: z.string().max(2000).optional().nullable(),
   status: z.string().default("planned"),
@@ -124,7 +124,7 @@ export const updatePhaseSchema = z.object({
 });
 
 export const createMilestoneSchema = z.object({
-  projectId: z.string().min(1),
+  projectId: z.string().uuid(),
   phaseId: z.string().optional().nullable(),
   title: z.string().min(1).max(200),
   description: z.string().max(2000).optional().nullable(),
@@ -142,7 +142,7 @@ export const updateMilestoneSchema = z.object({
 });
 
 export const createDependencySchema = z.object({
-  projectId: z.string().min(1),
+  projectId: z.string().uuid(),
   dependsOnTaskId: z.string().optional().nullable(),
   dependsOnMilestoneId: z.string().optional().nullable(),
   blockedByProjectId: z.string().optional().nullable(),

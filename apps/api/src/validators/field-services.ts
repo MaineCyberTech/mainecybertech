@@ -1,6 +1,6 @@
 import { z } from "zod";
 export const createISPSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   clientName: z.string().min(1).max(500),
   currentProvider: z.string().max(200).optional().nullable(),
   currentCost: z.number().min(0).optional().nullable(),
@@ -15,7 +15,7 @@ export const createISPSchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 export const createUnifiSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   siteName: z.string().min(1).max(500),
   siteAddress: z.string().max(500).optional().nullable(),
   accessPoints: z.number().int().min(0).default(0),
@@ -28,7 +28,7 @@ export const createUnifiSchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 export const createPortMapSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   switchName: z.string().min(1).max(200),
   portNumber: z.number().int().positive(),
   vlanId: z.number().int().optional().nullable(),
@@ -42,7 +42,7 @@ export const createPortMapSchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 export const createCameraSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   siteName: z.string().min(1).max(500),
   cameraCount: z.number().int().min(1),
   avgBitrateMbps: z.number().min(0.1).default(4),
@@ -53,7 +53,7 @@ export const createCameraSchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 export const createStagingSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   deviceType: z.string().min(1).max(200),
   deviceName: z.string().min(1).max(500),
   serialNumber: z.string().max(200).optional().nullable(),
@@ -61,7 +61,7 @@ export const createStagingSchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 export const createNetworkDiagramSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   siteName: z.string().min(1).max(500),
   deviceCount: z.number().int().min(0).default(0),
   vlanCount: z.number().int().min(0).default(0),

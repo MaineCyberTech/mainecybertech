@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const listOnboardingQuerySchema = z.object({
-  organizationId: z.string().min(1).optional(),
+  organizationId: z.string().uuid().optional(),
   status: z.string().optional(),
   phase: z.string().optional(),
   riskLevel: z.string().optional(),
@@ -11,7 +11,7 @@ export const listOnboardingQuerySchema = z.object({
 });
 
 export const createOnboardingSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   clientName: z.string().min(1).max(255),
   clientDomain: z.string().max(255).optional().nullable(),
   clientContactEmail: z.string().email().optional().nullable(),
@@ -70,13 +70,13 @@ export const updateOnboardingSchema = z.object({
 });
 
 export const completePhaseSchema = z.object({
-  organizationId: z.string().min(1),
-  completedBy: z.string().min(1),
+  organizationId: z.string().uuid(),
+  completedBy: z.string().uuid(),
   notes: z.string().max(5000).optional().nullable(),
 });
 
 export const exportOnboardingSchema = z.object({
-  organizationId: z.string().min(1).optional(),
+  organizationId: z.string().uuid().optional(),
   status: z.string().optional(),
   phase: z.string().optional(),
   riskLevel: z.string().optional(),
