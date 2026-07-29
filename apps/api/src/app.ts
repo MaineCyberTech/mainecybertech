@@ -98,7 +98,14 @@ export function createApp(): Express {
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 300,
-    message: "Too many requests from this IP, please try again later.",
+    message: JSON.stringify({
+      success: false,
+      error: {
+        code: "RATE_LIMIT",
+        message: "Too many requests from this IP, please try again later.",
+        status: 429,
+      },
+    }),
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) =>

@@ -1,6 +1,7 @@
 {
   "name": "client-portal",
   "private": true,
+  "license": "ISC",
   "packageManager": "pnpm@10.34.3",
   "engines": {
     "node": ">=18.0.0"

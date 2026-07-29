@@ -2,6 +2,7 @@
   "name": "@mct/config",
   "version": "1.0.0",
   "private": true,
+  "license": "ISC",
   "exports": {
     "./eslint": "./eslint.mjs",
     "./typescript": "./tsconfig.json",

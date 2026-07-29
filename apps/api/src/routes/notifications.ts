@@ -27,6 +27,12 @@ router.get("/stream", async (req, res, next) => {
     // Send initial heartbeat
     res.write(`data: ${JSON.stringify({ type: "connected", userId })}\n\n`);
 
+    // Send keepalive every 30 seconds to prevent proxy idle connection drops
+    const keepaliveInterval = setInterval(() => {
+      res.write(": keepalive\n\n");
+    }, 30_000);
+    keepaliveInterval.unref();
+
     // Use Supabase realtime subscription for real-time notifications
     const channel = supabase
       .channel(`notifications:${userId}`)
@@ -39,9 +45,7 @@ router.get("/stream", async (req, res, next) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          res.write(
-            `event: notification\ndata: ${JSON.stringify(payload.new)}\n\n`,
-          );
+          res.write(`event: notification\ndata: ${JSON.stringify(payload.new)}\n\n`);
         },
       )
       .on(
@@ -53,9 +57,7 @@ router.get("/stream", async (req, res, next) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          res.write(
-            `event: notification_update\ndata: ${JSON.stringify(payload.new)}\n\n`,
-          );
+          res.write(`event: notification_update\ndata: ${JSON.stringify(payload.new)}\n\n`);
         },
       )
       .subscribe((status) => {
@@ -79,6 +81,7 @@ router.get("/stream", async (req, res, next) => {
       });
 
     req.on("close", () => {
+      clearInterval(keepaliveInterval);
       supabase.removeChannel(channel);
       res.end();
     });
@@ -110,10 +113,7 @@ router.get("/", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(req.query.limit as string) || 20),
-    );
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
     const unreadOnly = req.query.unread === "true";
 
@@ -162,8 +162,7 @@ router.post("/:id/read", async (req, res, next) => {
       .select()
       .single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Notification not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Notification not found", 404);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

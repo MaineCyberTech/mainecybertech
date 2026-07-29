@@ -1,6 +1,7 @@
 {
   "name": "api",
   "private": true,
+  "license": "ISC",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",

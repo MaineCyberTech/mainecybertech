@@ -1,378 +1,244 @@
-# Maine CyberTech Final Deployment Operations Handbook
+# Maine CyberTech — DigitalOcean Deployment Operations Handbook
 
-## Purpose
+## Architecture Overview
 
-This handbook consolidates the final operating model for:
+The MCT platform runs on a single DigitalOcean droplet (s-2vcpu-2gb, Ubuntu 24.04) behind Cloudflare CDN. All services are Docker containers managed by docker compose:
 
-- **Terraform infrastructure** rooted at `infra/terraform`
-- **GitHub Actions workflows** for validation, testing/dev deployment, and production deployment
-- **Cloudflare DNS** for production and testing domains
-- **Vercel** for web deployments
-- **AWS ECS / ALB** for API and worker runtime deployment
-- **Supabase** project provisioning and migration workflow awareness
+| Container | Image (GHCR)           | Port   | Purpose                                                  |
+| --------- | ---------------------- | ------ | -------------------------------------------------------- |
+| caddy     | caddy:2-alpine         | 80/443 | TLS reverse proxy (Let's Encrypt / Cloudflare Origin CA) |
+| web       | ghcr.io/.../mct-web    | 3000   | Next.js standalone (marketing + portal)                  |
+| api       | ghcr.io/.../mct-api    | 4000   | Express API server                                       |
+| worker    | ghcr.io/.../mct-worker | 3001   | BullMQ job consumer                                      |
+| redis     | redis:7-alpine         | 6379   | BullMQ queue backend                                     |
 
-This document is intended to be the operator-facing manual for day-to-day deployment, environment management, promotion, validation, and rollback.
+Supabase is **hosted** (cloud.supabase.com) — not self-hosted on the droplet. All secrets are stored as GitHub Environment Secrets and written to `/opt/mct-portal/.env` at deploy time.
 
----
+## Environment Mapping
 
-## Final Environment Model
+| Branch    | Environment | Domains                                                                | Droplet         |
+| --------- | ----------- | ---------------------------------------------------------------------- | --------------- |
+| `develop` | dev         | app.mainecybertech.us, api.mainecybertech.us, www.mainecybertech.us    | mct-portal-dev  |
+| `main`    | prod        | app.mainecybertech.com, api.mainecybertech.com, www.mainecybertech.com | mct-portal-prod |
 
-### Production
-- Web app hostname: `app.mainecybertech.com`
-- API hostname: `api.mainecybertech.com`
-- DNS provider: Cloudflare
-- Web hosting: Vercel production deployment
-- API runtime: AWS ECS + ALB
-- Terraform working directory: `infra/terraform`
-- Terraform backend: `env/backend.prod.hcl`
-- Terraform variable file: `env/prod.tfvars`
-- Expected deployment branch: `main`
+Domain routing via middleware: `www.*` → marketing homepage, `app.*` → portal login. `api.*` → API. All records proxied through Cloudflare (orange cloud).
 
-### Development / Testing
-- Web app hostname: `app.mainecybertech.us`
-- API hostname: `api.mainecybertech.us`
-- DNS provider: Cloudflare
-- Web hosting: Vercel preview/non-production deployment flow
-- API runtime: AWS ECS + ALB using testing/dev values
-- Terraform working directory: `infra/terraform`
-- Terraform backend: `env/backend.dev.hcl`
-- Terraform variable file: `env/dev.tfvars`
-- Expected deployment branch: `develop`
+## Deploy Workflow
 
----
+### Automatic deploys (`deploy-do.yml`)
 
-## Final Repository Structure
+Triggered on push to `main` or `develop` when apps/, packages/, infra/digitalocean/, or the workflow itself changes. Also available via `workflow_dispatch` with target selection.
 
-```text
-.github/workflows/
-├── lint.yml
-├── test.yml
-├── validate.yml
-├── typecheck.yml
-├── e2e.yml
-├── web-preview.yml
-├── supabase-migrations.yml
-├── terraform-plan.dev.yml
-├── terraform-apply.dev.yml
-├── terraform-plan.prod.yml
-├── terraform-apply.prod.yml
-├── api-deploy-ecs.dev.yml
-├── api-deploy-ecs.prod.yml
-├── worker-deploy-ecs.dev.yml
-├── worker-deploy-ecs.prod.yml
-├── web-dev-vercel.yml
-└── web-prod-vercel.yml
+Pipeline:
 
-infra/terraform/
-├── README.md
-├── variables.tf
-├── terraform.tfvars.example
-├── providers.tf
-├── backend.tf
-├── supabase.tf
-├── secrets.tf
-├── vercel.tf
-├── network.tf
-├── compute.tf
-├── runtime.tf
-├── dns.cloudflare.tf
-├── github-oidc.tf
-├── outputs.tf
-├── env/
-│   ├── dev.tfvars
-│   ├── dev.tfvars.example
-│   ├── prod.tfvars
-│   ├── prod.tfvars.example
-│   ├── backend.dev.hcl
-│   ├── backend.dev.hcl.example
-│   ├── backend.prod.hcl
-│   └── backend.prod.hcl.example
-└── scripts/
-    ├── quickstart_terraform_deploy.ps1
-    └── quickstart_terraform_deploy.sh
+1. **Setup** — Determine environment from branch (develop→dev, main→prod) or manual input, resolve domains, compute CORS_ORIGIN
+2. **Resolve IP** — Query DO API to get the droplet's public IPv4
+3. **Build 3 images** (parallel) — Build and push API, worker, and web images to GHCR with SHA tag (`ghcr.io/mainecybertech/mainecybertech/mct-{api,worker,web}:<sha>`)
+4. **Deploy** — SSH into droplet, write `.env` from GitHub secrets, pull images from GHCR, copy compose file and per-environment Caddyfile, set up Cloudflare Origin CA certs, `docker compose up -d` with `IMAGE_TAG=<sha>`
+5. **Health check** — Poll `https://api.<domain>/health` (200/526) and `https://app.<domain>/login` (non-000)
+
+### Speed optimization
+
+Images are **not** piped over SSH anymore. The deploy step pulls directly from GHCR on the droplet. Builder cache pruning is deferred to post-deploy to avoid SSH timeouts. Old MCT images are cleaned up via `docker image prune -af`.
+
+## Manual Operations
+
+All commands run via SSH as root on the droplet.
+
+```bash
+# SSH into dev droplet
+ssh root@$(doctl compute droplet get mct-portal-dev --format PublicIPv4 --no-header)
+
+# SSH into prod droplet
+ssh root@$(doctl compute droplet get mct-portal-prod --format PublicIPv4 --no-header)
+
+# View all container status
+docker compose -p mct-portal ps
+
+# Stream logs for a specific service
+docker compose -p mct-portal logs -f api
+docker compose -p mct-portal logs -f worker
+docker compose -p mct-portal logs --tail=50 web
+
+# Restart a single service
+docker compose -p mct-portal restart api
+
+# Full container restart (zero-downtime not guaranteed on single droplet)
+docker compose -p mct-portal down --remove-orphans
+docker compose -p mct-portal up -d --remove-orphans
 ```
 
----
+### Health check endpoints
 
-## Terraform Root Responsibilities
+- `https://api.mainecybertech.com/health` — API health (includes Supabase connectivity)
+- `https://api.mainecybertech.us/health` — Dev API health
+- Worker health: `curl http://localhost:3001/health` (internal, on droplet)
+- Redis health: `redis-cli -a <password> ping` (internal, on droplet)
 
-### Core infrastructure files
-- `variables.tf` defines the input surface for AWS, Vercel, Supabase, Cloudflare, ECS runtime, autoscaling, and GitHub OIDC.
-- `providers.tf` configures AWS, Vercel, Supabase, and Cloudflare providers.
-- `supabase.tf` creates the Supabase project.
-- `network.tf` creates the VPC, subnets, NAT gateway, API task security group, and ECS execution role.
-- `compute.tf` creates the SQS queue and ECR repositories.
+## Secrets Management
 
-### Runtime files
-- `runtime.tf` creates the ECS cluster, public ALB, target group, HTTP→HTTPS redirect, HTTPS listener, CloudWatch log groups, hardened task definitions, ECS services, and autoscaling.
+### Required GitHub Environments
 
-### DNS and CI/CD integration files
-- `dns.cloudflare.tf` manages production and testing app/API hostnames through Cloudflare.
-- `github-oidc.tf` creates the AWS GitHub OIDC provider and OIDC roles for GitHub Actions.
-- `outputs.tf` provides operator-facing outputs such as ALB DNS name, ECS service names, log groups, role ARNs, and final hostnames.
+- `dev` — dev/develop deploys (no approval)
+- `prod` — prod deploys (requires 1+ reviewers via `prod-approval` gate)
 
----
+### GitHub Environment Secrets (written to `/opt/mct-portal/.env`)
 
-## Required GitHub Environments
+The deploy workflow writes 25+ secrets to `.env` on the droplet via SSH heredoc. Key secrets:
 
-Create three GitHub Environments:
-- `dev` — dev/develop deploys (no approval required)
-- `prod` — prod Terraform and Supabase migrations
-- `prod-approval` — prod deployment gate (requires 1+ reviewers)
+| Secret                              | Purpose                               |
+| ----------------------------------- | ------------------------------------- |
+| SUPABASE_URL                        | Hosted Supabase project URL           |
+| SUPABASE_ANON_KEY                   | Supabase anon key                     |
+| SUPABASE_SERVICE_ROLE_KEY           | Supabase service role key             |
+| JWT_SECRET                          | Local JWT signing/verification        |
+| STRIPE_SECRET_KEY                   | Stripe API key                        |
+| STRIPE_WEBHOOK_SECRET               | Stripe webhook signing secret         |
+| SENTRY_DSN                          | Sentry error tracking                 |
+| SMTP_HOST/PASS                      | Email (password reset, notifications) |
+| JIRA*\* / JSM*\*                    | Jira/JSM integration                  |
+| M365\_\*                            | Microsoft 365 integration             |
+| PUBLIC\_{TRAFFIC,LEAD}\_WEBHOOK_URL | Teams webhooks for leads              |
+| CF_ORIGIN_CERT/KEY                  | Cloudflare Origin CA certs            |
 
-Use environment-scoped secrets and environment-scoped variables so the workflow names can stay consistent while values differ safely between development/testing and production.
+### Required GitHub Variables
 
----
+| Variable           | Purpose                                     |
+| ------------------ | ------------------------------------------- |
+| DO_API_TOKEN       | DigitalOcean API token (resolve droplet IP) |
+| CI_SSH_PRIVATE_KEY | SSH key for root access to droplet          |
 
-## Required GitHub Secrets
+## Terraform Infrastructure
 
-### Terraform workflows (`dev` and `prod`)
-- `AWS_TERRAFORM_ROLE_ARN`
-- `CLOUDFLARE_API_TOKEN`
-- `TF_VAR_DB_PASSWORD`
-- `VERCEL_API_TOKEN`
-- `SUPABASE_ACCESS_TOKEN`
+Terraform lives at `infra/terraform/digitalocean/`. It manages:
 
-### Deployment workflows (`dev` and `prod`)
-- `AWS_DEPLOY_ROLE_ARN`
-- `VERCEL_TOKEN`
+| File             | Purpose                                                               |
+| ---------------- | --------------------------------------------------------------------- |
+| `providers.tf`   | DigitalOcean + Cloudflare providers                                   |
+| `variables.tf`   | 12 variables (DO token, region, size, SSH key, Cloudflare zones, env) |
+| `droplet.tf`     | Droplet resource with cloud-init, `prevent_destroy` lifecycle         |
+| `firewall.tf`    | DO Cloud Firewall: ports 22/80/443/2376, full egress                  |
+| `dns.tf`         | A records per domain (dev→.us, prod→.com), proxied via Cloudflare     |
+| `outputs.tf`     | Droplet IP, ID, URN                                                   |
+| `cloud-init.yml` | Docker install, docker compose, data directories                      |
 
----
+### Terraform workflow
 
-## Required GitHub Variables
+Triggered on push to main/develop when `infra/terraform/digitalocean/**` changes. Apply is gated: dev applies directly, prod requires validate + e2e + supabase-migrations + prod-approval.
 
-### Shared variable names per environment
-- `AWS_REGION`
-- `ECS_CLUSTER_NAME`
-- `API_ECS_SERVICE`
-- `WORKER_ECS_SERVICE`
-- `API_ECR_REPOSITORY`
-- `WORKER_ECR_REPOSITORY`
-- `TF_BACKEND_CONFIG`
-- `TF_VAR_FILE`
+```bash
+# Manual Terraform apply (dev)
+cd infra/terraform/digitalocean
+terraform init -backend-config=env/backend.dev.hcl
+terraform apply -var-file=env/dev.tfvars
 
-### Recommended environment-specific values
+# Manual Terraform apply (prod)
+terraform init -backend-config=env/backend.prod.hcl
+terraform apply -var-file=env/prod.tfvars
+```
 
-#### `dev`
-- `TF_BACKEND_CONFIG=env/backend.dev.hcl`
-- `TF_VAR_FILE=env/dev.tfvars`
-- `ECS_CLUSTER_NAME` should refer to the testing/dev cluster
-- `API_ECS_SERVICE` should refer to the testing/dev API service
-- `WORKER_ECS_SERVICE` should refer to the testing/dev worker service
+## Rollback
 
-#### `prod`
-- `TF_BACKEND_CONFIG=env/backend.prod.hcl`
-- `TF_VAR_FILE=env/prod.tfvars`
-- `ECS_CLUSTER_NAME` should refer to the production cluster
-- `API_ECS_SERVICE` should refer to the production API service
-- `WORKER_ECS_SERVICE` should refer to the production worker service
+### Automated rollback (via workflow_dispatch)
 
----
+1. Go to GitHub Actions → `deploy-do.yml` → "Run workflow"
+2. Set `deploy_target` (dev or prod)
+3. The workflow deploys the HEAD of the selected branch
 
-## Development Workflow from Local to Production
+To deploy a specific SHA, use the manual method below.
 
-### 1) Local development
-Developers work locally, run the application locally, and validate changes before pushing.
+### Manual rollback via SSH
 
-Recommended local activities before PR:
-- install dependencies
-- run local build/lint/test
-- validate local app behavior
-- validate local Terraform changes with `terraform fmt` and `terraform validate` if infra changes were made
+```bash
+ssh root@<droplet-ip>
+cd /opt/mct-portal
+IMAGE_TAG=<previous-sha> docker compose -p mct-portal up -d
+```
 
-### 2) Branch and PR flow
-- Developer creates a feature branch.
-- Developer opens a PR into `develop` for testing/dev promotion or into `main` if using a direct production promotion model.
+The compose file defaults to `latest` tag if `IMAGE_TAG` is unset, but the deploy workflow always pins to the commit SHA. Old images are pruned periodically, so you may need to pull the specific tag first:
 
-### 3) CI validation on PR
-The workflow set validates:
-- workspace build
-- linting
-- tests
-- web preview build validation
-- Terraform plan against the target environment branch when infra changes are included
+```bash
+docker pull ghcr.io/mainecybertech/mainecybertech/mct-api:<sha>
+IMAGE_TAG=<sha> docker compose -p mct-portal up -d
+```
 
-This provides a gate before deployment.
+### Terraform rollback
 
----
+Use Terraform state carefully. Review the plan before applying rollback changes. `prevent_destroy` is set on the droplet to prevent accidental deletion.
 
-## Testing / Dev Deployment Workflow
+## Monitoring
 
-### Trigger path
-Testing/dev deployment begins when code is merged into `develop`.
+### Sentry
 
-### What runs on `develop`
-- `terraform-apply.dev.yml`
-- `api-deploy-ecs.dev.yml`
-- `worker-deploy-ecs.dev.yml`
-- `web-dev-vercel.yml`
-- `supabase-migrations.yml` when `supabase/**` changes
+Error tracking is configured for both API and Web. Sentry DSN is optional — skipped if unset. Worker also has Sentry integration for background job errors.
 
-### Terraform dev provisioning
-The dev Terraform workflow:
-1. checks out the repo
-2. configures AWS credentials using OIDC
-3. initializes Terraform with `env/backend.dev.hcl`
-4. validates Terraform
-5. applies Terraform with `env/dev.tfvars`
+### Health checks
 
-### Web dev deployment
-The dev web workflow:
-1. installs dependencies
-2. runs `vercel pull` using preview/non-production mode
-3. builds Vercel artifacts
-4. deploys a non-production Vercel build
+- Each deploy workflow runs a 2-minute health check against API and Web
+- All 5 containers have Docker HEALTHCHECK directives (redis ping, API wget /health, web wget /login, Caddy checks its own process)
+- Worker exposes `/health` on port 3001 (internal only)
 
-### API dev deployment
-The dev API workflow:
-1. builds the API Docker image from `apps/api/Dockerfile`
-2. tags and pushes the image to the configured ECR repository
-3. forces a new ECS deployment for the testing/dev API service
+### Logs
 
-### Worker dev deployment
-The dev worker workflow:
-1. builds the worker Docker image from `apps/worker/Dockerfile`
-2. tags and pushes the image to the configured ECR repository
-3. forces a new ECS deployment for the testing/dev worker service
+All container logs are accessible via `docker compose logs`. There is no external log shipping — operators SSH in to debug.
 
-### Testing/dev validation checklist
-After a successful `develop` deployment:
-- confirm `app.mainecybertech.us` resolves and loads correctly
-- confirm `api.mainecybertech.us` resolves and is healthy
-- confirm Cloudflare testing DNS points to the intended targets
-- confirm ECS dev services stabilize
-- confirm ALB health checks are passing
-- confirm logs are flowing to CloudWatch
+### DO monitoring
 
----
+The DigitalOcean dashboard provides CPU, memory, disk, and network graphs for the droplet. Set up alerts in the DO control panel for CPU > 80% or disk > 85%.
 
-## Production Deployment Workflow
+## Troubleshooting
 
-### Trigger path
-Production deployment begins when code is merged into `main`.
+### Container won't start
 
-### What runs on `main`
-- `terraform-apply.prod.yml`
-- `api-deploy-ecs.prod.yml`
-- `worker-deploy-ecs.prod.yml`
-- `web-prod-vercel.yml`
-- `supabase-migrations.yml` when `supabase/**` changes
+```bash
+docker compose -p mct-portal logs <service>
+```
 
-### Terraform production provisioning
-The prod Terraform workflow:
-1. checks out the repo
-2. configures AWS credentials using OIDC
-3. initializes Terraform with `env/backend.prod.hcl`
-4. validates Terraform
-5. applies Terraform with `env/prod.tfvars`
+Common issues:
 
-### Web production deployment
-The prod web workflow:
-1. installs dependencies
-2. runs `vercel pull --project mainecybertech-portal-prod --environment=production`
-3. deploys source to Vercel production via `vercel deploy --project mainecybertech-portal-prod --prod`
-4. Vercel builds from `apps/web/` (project `rootDirectory` setting) using install command from `apps/web/vercel.json`
+- **Web OOM**: If web exits with code 137, increase `mem_limit` in docker-compose.yml (current: 256MB)
+- **API can't connect to Supabase**: Verify `SUPABASE_URL` and keys in `/opt/mct-portal/.env`
+- **Worker can't connect to Redis**: Verify `REDIS_PASSWORD` matches between `.env` and docker-compose
+- **Caddy TLS errors**: Check `fullchain.pem` and `privkey.pem` in `/opt/mct-portal/certs/`. If empty, the deploy falls back to `tls internal` (dev) or will fail (prod)
 
-### API production deployment
-The prod API workflow:
-1. builds the API Docker image from `apps/api/Dockerfile`
-2. pushes the image to the production ECR repository
-3. forces a new ECS deployment for the production API service
+### Deploy pipeline fails
 
-### Worker production deployment
-The prod worker workflow:
-1. builds the worker Docker image from `apps/worker/Dockerfile`
-2. pushes the image to the production ECR repository
-3. forces a new ECS deployment for the production worker service
+1. Check **Setup** step output for env name and domain values
+2. Check **Resolve IP** — is the droplet name correct? Run `doctl compute droplet list`
+3. Check **Build** steps — image tag mismatch or Docker build failure
+4. Check **Deploy** step — SSH connectivity or `.env` write failure
+5. Check **Health check** — API returned non-200 or web unreachable
 
-### Production validation checklist
-After a successful `main` deployment:
-- confirm `app.mainecybertech.com` resolves and loads correctly
-- confirm `api.mainecybertech.com` resolves and is healthy
-- confirm Cloudflare production DNS points to the intended targets
-- confirm ECS production services stabilize
-- confirm ALB HTTPS is healthy
-- confirm logs are flowing to CloudWatch
-- confirm critical user flows work in production
+### Full droplet reinstall
 
----
+If the droplet needs to be rebuilt:
 
-## Terraform Plan Workflows
+1. Run `terraform apply` (creates new droplet with cloud-init)
+2. Run the deploy workflow (populates app code and containers)
+3. Run `supabase-migrations.yml` (applies latest DB migrations)
 
-### `terraform-plan.dev.yml`
-Runs when a pull request targets `develop` and Terraform files changed. It formats and validates Terraform, initializes the **dev/testing state backend**, and runs a Terraform plan using `env/dev.tfvars`.
+### Common commands
 
-### `terraform-plan.prod.yml`
-Runs when a pull request targets `main` and Terraform files changed. It formats and validates Terraform, initializes the **production state backend**, and runs a Terraform plan using `env/prod.tfvars`.
+```bash
+# Check if API is responding internally
+curl -s http://localhost:4000/health
 
-This gives you environment-specific Terraform previews before code lands on either branch.
+# Check nginx-style logs for web
+docker compose -p mct-portal exec web cat /var/log/nextjs/access.log 2>/dev/null || true
 
----
+# Restart everything
+docker compose -p mct-portal down && docker compose -p mct-portal up -d
 
-## How Cloudflare, Vercel, and AWS fit together
+# Wipe and reload from scratch
+docker compose -p mct-portal down -v && docker compose -p mct-portal up -d
 
-### App domains
-- `app.mainecybertech.com` should point to the exact Vercel target returned for the production app domain.
-- `app.mainecybertech.us` should point to the exact Vercel target returned for the testing/dev app domain.
-
-### API domains
-- `api.mainecybertech.com` should point to the production ALB/public API target.
-- `api.mainecybertech.us` should point to the testing/dev ALB/public API target.
-
-### Cloudflare management
-Cloudflare DNS is managed through Terraform, which makes record changes reviewable and repeatable.
-
-### Vercel management
-Vercel handles the web deployment lifecycle; the Actions workflows drive the deployment path.
-
-### AWS management
-AWS hosts the API and worker containers, load balancing, and runtime logging/scaling.
-
----
+# View env file contents (contains secrets — be careful)
+cat /opt/mct-portal/.env | grep -v PASSWORD | grep -v SECRET | grep -v TOKEN | grep -v KEY
+```
 
 ## Promotion Rules
 
-1. **Feature branches** only validate.
-2. **`develop`** deploys to testing/dev.
-3. **`main`** deploys to production.
-4. Only promote to `main` after testing/dev validation succeeds.
-
-This keeps testing and production separated, gives you a real promotion checkpoint, and keeps Terraform state and DNS targets isolated by environment.
-
----
-
-## Rollback Guidance
-
-### Web rollback
-- redeploy the previous known-good Vercel build if needed
-- confirm the production or testing hostname still points to the intended Vercel domain target
-
-### API rollback
-- restore the previous known-good image tag if you keep prior tags available
-- force a new ECS deployment to the prior image/task definition state
-- validate ALB health and endpoint behavior
-
-### Terraform rollback
-- use Terraform state and version control carefully
-- review the plan before applying rollback-related Terraform changes
-- never assume backend state or environment var files are interchangeable between dev and prod
-
----
-
-## Operator Checklist
-
-### Before enabling the full workflow set
-- create `dev`, `prod`, and `prod-approval` GitHub Environments
-- populate all required secrets and variables in both environments
-- verify the active Terraform root is finalized at `infra/terraform`
-- create real `env/dev.tfvars` and `env/prod.tfvars`
-- create real `env/backend.dev.hcl` and `env/backend.prod.hcl`
-- confirm Cloudflare zone IDs and app/API targets are correct
-- confirm Vercel domains are assigned
-- confirm ECS cluster/service values are correct per environment
-
-### Before the first production deployment
-- validate the testing/dev environment end to end
-- validate `terraform-plan.prod.yml` output on a PR into `main`
-- confirm production DNS targets
-- confirm production ACM and ALB health
+1. **Feature branches** — only validate (lint, test, typecheck)
+2. **develop** — deploys to dev (.us domains)
+3. **main** — deploys to prod (.com domains), gated by prod-approval
+4. Only promote to `main` after dev validation succeeds

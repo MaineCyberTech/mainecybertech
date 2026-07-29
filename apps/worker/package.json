@@ -1,6 +1,7 @@
 {
   "name": "worker",
   "private": true,
+  "license": "ISC",
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "build": "tsup src/main.ts --format esm,cjs --out-dir dist",
