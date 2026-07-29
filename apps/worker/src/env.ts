@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 import { z } from "zod";
-import { logger } from "./logger";
 
 export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
@@ -43,9 +42,11 @@ export function parseEnv(raw: Record<string, string | undefined>): Env {
 let env: Env;
 try {
   env = parseEnv(process.env);
-  logger.info("Environment validation passed");
+  // eslint-disable-next-line no-console
+  console.log("Environment validation passed");
 } catch (error) {
-  logger.error(error, "Invalid environment variables");
+  // eslint-disable-next-line no-console
+  console.error("Invalid environment variables", error);
   process.exit(1);
 }
 
