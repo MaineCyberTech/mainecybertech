@@ -5,6 +5,7 @@ import { jsmSync } from "./jsm-sync";
 import { m365CalendarSync } from "./m365-calendar-sync";
 import { scheduledNotifications } from "./scheduled-notifications";
 import { retentionTask } from "./retention";
+import { webhookDispatcher } from "./webhook-dispatcher";
 import {
   domainMonitorCheck,
   websiteMonitorCheck,
@@ -28,6 +29,7 @@ export function registerAllTasks(): void {
   registerTask("m365-calendar-sync", m365CalendarSync);
   registerTask("scheduled-notifications", scheduledNotifications);
   registerTask("retention", retentionTask);
+  registerTask("webhook-dispatcher", webhookDispatcher);
 
   registerTask("domain-monitor-check", domainMonitorCheck);
   registerTask("website-monitor-check", websiteMonitorCheck);

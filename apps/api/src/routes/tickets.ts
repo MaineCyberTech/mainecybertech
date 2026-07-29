@@ -7,6 +7,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { createNotification, notifyAndEmail } from "../lib/notify";
+import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import {
   createTicketSchema,
   updateTicketSchema,
@@ -146,6 +147,13 @@ router.post("/", async (req, res, next) => {
       entityType: "ticket",
       entityId: data.id,
       metadata: { title: parsed.title },
+    });
+
+    dispatchWebhook("ticket.created", parsed.organizationId, {
+      ticketId: data.id,
+      title: parsed.title,
+      priority: parsed.priority,
+      status: "new",
     });
 
     const { data: adminMembers } = await supabase

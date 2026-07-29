@@ -7,6 +7,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { responseCacheNoRenew } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
+import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import {
   createProjectSchema,
   updateProjectSchema,
@@ -353,6 +354,12 @@ router.post("/", async (req, res, next) => {
       entityType: "project",
       entityId: data.id,
       metadata: { name: parsed.name },
+    });
+
+    dispatchWebhook("project.created", parsed.organizationId, {
+      projectId: data.id,
+      name: parsed.name,
+      status: parsed.status,
     });
 
     res.status(201).json(success(data));
