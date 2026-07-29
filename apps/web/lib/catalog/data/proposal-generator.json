@@ -1,0 +1,33 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "outputs": [
+    "internal_quote_review",
+    "client_proposal_draft",
+    "scope_of_work",
+    "assumptions",
+    "exclusions",
+    "optional_addons",
+    "monthly_care_recommendation",
+    "follow_up_email",
+    "service_agreement_checklist"
+  ],
+  "proposalSections": [
+    "Executive summary",
+    "Current situation",
+    "Recommended services",
+    "Scope by phase",
+    "What is included",
+    "What is not included",
+    "Assumptions",
+    "Customer responsibilities",
+    "Optional add-ons",
+    "Monthly care path",
+    "Next steps"
+  ],
+  "guardrails": [
+    "Mark generated proposals as drafts",
+    "Require human review before sending",
+    "Do not guarantee compliance/security outcomes",
+    "Do not include secrets or sensitive intake text unnecessarily"
+  ]
+}

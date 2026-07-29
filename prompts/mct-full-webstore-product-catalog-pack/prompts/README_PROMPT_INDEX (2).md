@@ -1,0 +1,16 @@
+# Prompt Index - V4 Conversion Modules
+
+Run prompts in this order:
+
+1. `00_MASTER_CONVERSION_MODULES_IMPLEMENTATION.md`
+2. `01_PROMOTION_ADMIN_CENTER.md`
+3. `02_BUNDLE_SAVINGS_CALCULATOR.md`
+4. `03_SERVICE_FINDER_QUIZ.md`
+5. `04_SEASONAL_CAMPAIGNS.md`
+6. `05_VISUAL_ASSET_ADMIN.md`
+7. `06_TRUST_BADGES.md`
+8. `07_CART_QUOTE_BUILDER.md`
+9. `08_DATABASE_AND_API_OPTIONAL.md`
+10. `09_TESTING_RELEASE_QA.md`
+
+Then run every audit prompt in `prompts/audits/`.

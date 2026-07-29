@@ -1,0 +1,100 @@
+{
+  "version": "2026-07-29.v4-conversion-modules",
+  "module": "featured_seasonal_campaigns",
+  "campaigns": [
+    {
+      "id": "marina_preseason_readiness",
+      "name": "Marina Pre-Season Readiness",
+      "audience": "Marinas, boatyards, outdoor storage, and seasonal waterfront businesses",
+      "headline": "Get Wi-Fi, cameras, guest access, and network documentation ready before the busy season.",
+      "recommendedProducts": [
+        "marina_connectivity_pack",
+        "outdoor_wi_fi_planning_for_marinas",
+        "security_camera_planning_for_marinas",
+        "seasonal_business_it_readiness"
+      ],
+      "trustBadges": ["local_maine_support", "scoped_deliverables", "plain_english_report"],
+      "promoEligibility": ["seasonal_offer", "bundle_savings"],
+      "visual": {
+        "icon": "Anchor",
+        "accent": "teal"
+      }
+    },
+    {
+      "id": "church_nonprofit_cyber_checkup",
+      "name": "Church / Nonprofit Cyber Checkup",
+      "audience": "Churches, nonprofits, community organizations, and volunteer-led teams",
+      "headline": "Protect email, volunteers, giving platforms, Wi-Fi, and basic technology operations.",
+      "recommendedProducts": [
+        "church_technology_health_check",
+        "volunteer_account_cleanup",
+        "nonprofit_cyber_readiness_review",
+        "church_it_foundation"
+      ],
+      "trustBadges": ["no_secret_intake", "plain_english_report", "scoped_deliverables"],
+      "promoEligibility": ["new_client_intro", "bundle_savings"],
+      "visual": {
+        "icon": "HeartHandshake",
+        "accent": "blue"
+      }
+    },
+    {
+      "id": "cyber_insurance_renewal_readiness",
+      "name": "Cyber Insurance Renewal Readiness",
+      "audience": "Businesses preparing for cyber insurance applications or renewals",
+      "headline": "Prepare evidence and understand gaps before insurance questions slow you down.",
+      "recommendedProducts": [
+        "cyber_insurance_questionnaire_help",
+        "cyber_insurance_readiness_bundle",
+        "m365_secure_bundle",
+        "backup_restore_test"
+      ],
+      "trustBadges": [
+        "consult_required_sensitive",
+        "plain_english_report",
+        "upgrade_path_available"
+      ],
+      "promoEligibility": ["starter_credit", "bundle_savings"],
+      "visual": {
+        "icon": "FileCheck2",
+        "accent": "purple"
+      }
+    },
+    {
+      "id": "website_local_seo_refresh",
+      "name": "Website / Local SEO Refresh",
+      "audience": "Local businesses that want better online presence and fewer website surprises",
+      "headline": "Improve local visibility, website health, domain safety, and review momentum.",
+      "recommendedProducts": [
+        "google_business_profile_optimization",
+        "website_health_check",
+        "local_seo_starter",
+        "domain_protection_pack"
+      ],
+      "trustBadges": ["local_maine_support", "plain_english_report", "upgrade_path_available"],
+      "promoEligibility": ["included_addon", "bundle_savings"],
+      "visual": {
+        "icon": "TrendingUp",
+        "accent": "green"
+      }
+    },
+    {
+      "id": "back_to_business_cleanup",
+      "name": "Back-to-Business Technology Cleanup",
+      "audience": "Small businesses cleaning up accounts, devices, licenses, and access",
+      "headline": "Clean up devices, Microsoft 365, admin access, passwords, backups, and recurring support needs.",
+      "recommendedProducts": [
+        "pc_tune_up_cleanup",
+        "m365_license_optimization",
+        "admin_account_cleanup",
+        "small_business_it_starter_pack"
+      ],
+      "trustBadges": ["scoped_deliverables", "plain_english_report", "upgrade_path_available"],
+      "promoEligibility": ["starter_credit", "new_client_intro"],
+      "visual": {
+        "icon": "Sparkles",
+        "accent": "cyan"
+      }
+    }
+  ]
+}

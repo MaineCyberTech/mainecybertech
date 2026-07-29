@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "name", "type", "status", "badgeText", "terms"],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "status": {
+      "enum": ["draft", "active", "paused", "expired", "archived"]
+    },
+    "badgeText": {
+      "type": "string"
+    },
+    "terms": {
+      "type": "string"
+    },
+    "eligibleProductIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "eligibleCategoryIds": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "startsAt": {
+      "type": "string"
+    },
+    "endsAt": {
+      "type": "string"
+    }
+  }
+}

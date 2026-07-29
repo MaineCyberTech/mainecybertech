@@ -1,0 +1,74 @@
+{
+  "version": "2026-07-29.v4-conversion-modules",
+  "module": "visual_asset_admin",
+  "assetTypes": [
+    "lucide_icon",
+    "generated_illustration",
+    "stock_photo",
+    "uploaded_image",
+    "abstract_gradient"
+  ],
+  "fields": [
+    "id",
+    "linkedEntityType",
+    "linkedEntityId",
+    "assetType",
+    "iconName",
+    "accentColor",
+    "imageUrl",
+    "altText",
+    "decorative",
+    "provenance",
+    "licenseNotes",
+    "createdBy",
+    "updatedAt"
+  ],
+  "accentPalette": [
+    {
+      "id": "cyan",
+      "hex": "#06b6d4"
+    },
+    {
+      "id": "blue",
+      "hex": "#2563eb"
+    },
+    {
+      "id": "teal",
+      "hex": "#14b8a6"
+    },
+    {
+      "id": "green",
+      "hex": "#22c55e"
+    },
+    {
+      "id": "purple",
+      "hex": "#7c3aed"
+    },
+    {
+      "id": "amber",
+      "hex": "#f59e0b"
+    },
+    {
+      "id": "slate",
+      "hex": "#475569"
+    },
+    {
+      "id": "rose",
+      "hex": "#e11d48"
+    }
+  ],
+  "provenanceTypes": [
+    "generated_by_ai",
+    "unsplash",
+    "pexels",
+    "uploaded_by_admin",
+    "internal_brand_asset"
+  ],
+  "guardrails": [
+    "No unauthorized vendor logos",
+    "Alt text required for meaningful images",
+    "Decorative images must be marked decorative",
+    "Stock provenance should be recorded",
+    "Do not imply stock person/brand endorsement"
+  ]
+}

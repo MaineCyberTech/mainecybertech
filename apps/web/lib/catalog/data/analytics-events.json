@@ -1,0 +1,54 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "eventNames": [
+    "store_view",
+    "category_view",
+    "product_card_view",
+    "product_detail_view",
+    "product_cta_click",
+    "promo_badge_view",
+    "promo_badge_click",
+    "quiz_start",
+    "quiz_step_complete",
+    "quiz_complete",
+    "quote_builder_start",
+    "quote_item_add",
+    "quote_item_remove",
+    "quote_submit",
+    "campaign_view",
+    "campaign_click",
+    "comparison_view",
+    "proposal_generated_admin",
+    "lead_score_updated_admin",
+    "portal_service_view"
+  ],
+  "eventShape": {
+    "event": "string",
+    "anonymousId": "string optional",
+    "userId": "string optional",
+    "sessionId": "string",
+    "timestamp": "iso string",
+    "path": "string",
+    "referrer": "string optional",
+    "entityType": "product|category|campaign|quote|quiz|proposal optional",
+    "entityId": "string optional",
+    "metadata": "object"
+  },
+  "privacyRules": [
+    "Do not track secrets",
+    "Avoid capturing full intake free text in analytics metadata",
+    "Hash or omit IP/user-agent if not needed",
+    "Respect consent/cookie approach already used by the site",
+    "Keep public analytics separate from internal audit logs"
+  ],
+  "adminDashboardCards": [
+    "Top viewed products",
+    "Top CTA clicks",
+    "Quiz completion rate",
+    "Quote submissions",
+    "Campaign clicks",
+    "Promo engagement",
+    "Abandoned quote items",
+    "High-intent product views"
+  ]
+}
