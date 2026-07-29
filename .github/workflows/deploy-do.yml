@@ -95,8 +95,22 @@ jobs:
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
           echo "Using droplet IP: $IP"
 
-  build-api:
+  validate:
+    uses: ./.github/workflows/validate.yml
+    secrets: inherit
+
+  e2e:
+    needs: validate
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+
+  migrations:
     needs: setup
+    uses: ./.github/workflows/supabase-migrations.yml
+    secrets: inherit
+
+  build-api:
+    needs: [setup, validate]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -117,7 +131,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-worker:
-    needs: setup
+    needs: [setup, validate]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -138,7 +152,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-web:
-    needs: setup
+    needs: [setup, validate]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -164,7 +178,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    needs: [setup, resolve-ip, build-api, build-worker, build-web]
+    needs: [setup, resolve-ip, build-api, build-worker, build-web, e2e, migrations]
     if: always() && needs.setup.result == 'success' && needs.resolve-ip.result == 'success' && needs.build-api.result == 'success' && needs.build-worker.result == 'success' && needs.build-web.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -287,6 +301,10 @@ jobs:
             echo "Attempt $i/30: $CODE"; sleep 4
           done
           if [ "$CODE" = "000" ]; then echo "API health check failed (no connection)"; exit 1; fi
+          echo "Worker health check via SSH..."
+          ssh -o StrictHostKeyChecking=no root@${{ needs.resolve-ip.outputs.droplet_ip }} \
+            "curl -sf --connect-timeout 5 --max-time 10 http://localhost:3001/health" 2>/dev/null || \
+            echo "Warning: Worker health check failed (non-fatal)"
           for i in $(seq 1 15); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null || echo "000")
             if [ "$CODE" != "000" ]; then echo "Web ready after $((i*4))s (HTTP $CODE)"; break; fi
