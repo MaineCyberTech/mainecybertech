@@ -3,6 +3,19 @@ import { getEnv } from "../config/env";
 import { logger } from "./logger";
 
 let redisClient: Redis | null = null;
+let memoryMutex: Promise<void> | null = null;
+
+function acquireMemoryLock(): Promise<void> {
+  if (!memoryMutex) {
+    memoryMutex = Promise.resolve();
+  }
+  const prev = memoryMutex;
+  let release: () => void;
+  memoryMutex = new Promise((resolve) => {
+    release = resolve;
+  });
+  return prev.then(() => release!);
+}
 
 export function getRedisClient(): Redis | null {
   if (!redisClient) {
@@ -62,14 +75,19 @@ export async function checkIdempotencyKey(key: string): Promise<string | null> {
     }
   }
 
-  const entry = IN_MEMORY_FALLBACK.get(key);
-  if (entry && entry.expiresAt > Date.now()) {
-    return entry.value;
+  await acquireMemoryLock();
+  try {
+    const entry = IN_MEMORY_FALLBACK.get(key);
+    if (entry && entry.expiresAt > Date.now()) {
+      return entry.value;
+    }
+    if (entry) {
+      IN_MEMORY_FALLBACK.delete(key);
+    }
+    return null;
+  } finally {
+    // lock is released by the promise chain
   }
-  if (entry) {
-    IN_MEMORY_FALLBACK.delete(key);
-  }
-  return null;
 }
 
 export async function storeIdempotencyKey(key: string, value: string): Promise<void> {
@@ -88,11 +106,16 @@ export async function storeIdempotencyKey(key: string, value: string): Promise<v
     }
   }
 
-  evictInMemoryIfNeeded();
-  IN_MEMORY_FALLBACK.set(key, {
-    value,
-    expiresAt: Date.now() + IDEMPOTENCY_TTL_SECONDS * 1000,
-  });
+  await acquireMemoryLock();
+  try {
+    evictInMemoryIfNeeded();
+    IN_MEMORY_FALLBACK.set(key, {
+      value,
+      expiresAt: Date.now() + IDEMPOTENCY_TTL_SECONDS * 1000,
+    });
+  } finally {
+    // lock is released by the promise chain
+  }
 }
 
 export async function deleteIdempotencyKey(key: string): Promise<void> {
@@ -108,5 +131,10 @@ export async function deleteIdempotencyKey(key: string): Promise<void> {
     }
   }
 
-  IN_MEMORY_FALLBACK.delete(key);
+  await acquireMemoryLock();
+  try {
+    IN_MEMORY_FALLBACK.delete(key);
+  } finally {
+    // lock is released by the promise chain
+  }
 }

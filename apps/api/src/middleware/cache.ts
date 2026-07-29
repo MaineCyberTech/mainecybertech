@@ -16,6 +16,8 @@ interface CacheEntry {
   expires: number;
 }
 
+const MAX_MEMORY_ENTRIES = 5_000;
+
 class CacheBackend {
   private redis: RedisClientType | null = null;
   private memoryCache = new Map<string, { data: unknown; expires: number }>();
@@ -46,6 +48,11 @@ class CacheBackend {
         if (entry.expires < now) {
           this.memoryCache.delete(key);
         }
+      }
+      while (this.memoryCache.size > MAX_MEMORY_ENTRIES) {
+        const oldest = this.memoryCache.keys().next();
+        if (oldest.done) break;
+        this.memoryCache.delete(oldest.value);
       }
     }, 60_000).unref();
   }
