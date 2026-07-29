@@ -85,11 +85,14 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
+    const orgId = req.query.organization_id as string;
+    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("proposals")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", orgId)
       .single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Proposal not found", 404);
@@ -245,18 +248,16 @@ router.post("/", async (req, res, next) => {
       req.authUser!.userId,
     );
 
-    res
-      .status(201)
-      .json(
-        success({
-          ...data,
-          grand_total: grandTotal,
-          total_labor: totalLabor,
-          total_materials: totalMaterials,
-          total_recurring: totalRecurring,
-          total_one_time: totalOneTime,
-        }),
-      );
+    res.status(201).json(
+      success({
+        ...data,
+        grand_total: grandTotal,
+        total_labor: totalLabor,
+        total_materials: totalMaterials,
+        total_recurring: totalRecurring,
+        total_one_time: totalOneTime,
+      }),
+    );
   } catch (error) {
     next(error);
   }

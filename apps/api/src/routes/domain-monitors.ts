@@ -135,11 +135,14 @@ router.get("/stats", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
+    const orgId = req.query.organization_id as string;
+    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("domain_monitors")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", orgId)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Domain monitor not found", 404);
 
@@ -242,7 +245,8 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("VERSION_CONFLICT", "Domain monitor was modified by another user", 409);
+    if (!data)
+      throw new AppError("VERSION_CONFLICT", "Domain monitor was modified by another user", 409);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

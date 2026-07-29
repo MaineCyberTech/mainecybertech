@@ -47,14 +47,16 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-// Get single
 router.get("/:id", async (req, res, next) => {
   try {
+    const orgId = req.query.organization_id as string;
+    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("license_allocations")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", orgId)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "License not found", 404);
     res.json(success(data));

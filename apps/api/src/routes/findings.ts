@@ -112,11 +112,14 @@ router.get("/stats", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
+    const orgId = req.query.organization_id as string;
+    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("findings")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", orgId)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Finding not found", 404);
 
