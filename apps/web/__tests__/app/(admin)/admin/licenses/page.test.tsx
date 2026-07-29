@@ -5,10 +5,10 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
 }));
 
-const mockContractsList = jest.fn();
-const mockContractRenewals = jest.fn();
+const mockLicensesList = jest.fn();
+const mockLicensesSavings = jest.fn();
 jest.mock("@/lib/api", () => () => ({
-  vendors: { contracts: { list: mockContractsList, renewals: mockContractRenewals } },
+  batch: { licenses: { list: mockLicensesList, savings: mockLicensesSavings } },
 }));
 
 jest.mock("@/components/Breadcrumbs", () => {
@@ -31,65 +31,69 @@ jest.mock("next/link", () => {
   );
 });
 
-describe("VendorContractsPage", () => {
+describe("LicensesPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRequireAdminAccess.mockResolvedValue(undefined);
-    mockContractsList.mockResolvedValue({ items: [] });
-    mockContractRenewals.mockResolvedValue({ items: [] });
+    mockLicensesList.mockResolvedValue({ items: [] });
+    mockLicensesSavings.mockResolvedValue({
+      totalAnnualCost: 0,
+      reclaimableSavings: 0,
+      unusedSeats: 0,
+    });
   });
 
   it("renders page title", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/licenses/page")).default;
     render(await Page());
     expect(
-      screen.getByRole("heading", { name: /vendor contract renewal calendar/i }),
+      screen.getByRole("heading", { name: /license optimizer & seat reclaimer/i }),
     ).toBeInTheDocument();
   });
 
   it("renders breadcrumbs and subnav", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/licenses/page")).default;
     render(await Page());
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
-    expect(screen.getByTestId("subnav")).toHaveTextContent("vendor-contracts");
+    expect(screen.getByTestId("subnav")).toHaveTextContent("licenses");
   });
 
   it("shows empty state when no data", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/licenses/page")).default;
     render(await Page());
-    expect(screen.getByText(/no contracts/i)).toBeInTheDocument();
+    expect(screen.getByText(/no licenses tracked/i)).toBeInTheDocument();
   });
 
   it("renders items when data exists", async () => {
-    mockContractsList.mockResolvedValue({
+    mockLicensesList.mockResolvedValue({
       items: [
         {
           id: "1",
-          vendor_name: "Acme Corp",
-          service_name: "Internet",
-          status: "active",
-          renewal_date: null,
-          end_date: null,
-          contract_value: 12000,
-          auto_renews: true,
+          vendor: "Microsoft",
+          product_name: "Office 365",
+          total_seats: 50,
+          assigned_seats: 30,
+          unused_seats: 20,
+          annual_cost: 12000,
+          reclaimable_savings: 4800,
         },
       ],
     });
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/licenses/page")).default;
     render(await Page());
-    expect(screen.getByText(/Acme Corp.*Internet/)).toBeInTheDocument();
+    expect(screen.getByText(/Microsoft.*Office 365/)).toBeInTheDocument();
   });
 
   it("calls requireAdminAccess", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/licenses/page")).default;
     render(await Page());
     expect(mockRequireAdminAccess).toHaveBeenCalled();
   });
 
   it("handles API error gracefully", async () => {
-    mockContractsList.mockRejectedValue(new Error("API down"));
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    mockLicensesList.mockRejectedValue(new Error("API down"));
+    const Page = (await import("@/app/(admin)/admin/licenses/page")).default;
     render(await Page());
-    expect(screen.getByText(/no contracts/i)).toBeInTheDocument();
+    expect(screen.getByText(/no licenses tracked/i)).toBeInTheDocument();
   });
 });

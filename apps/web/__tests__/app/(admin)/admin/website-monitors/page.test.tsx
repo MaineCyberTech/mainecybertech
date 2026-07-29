@@ -5,10 +5,9 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
 }));
 
-const mockContractsList = jest.fn();
-const mockContractRenewals = jest.fn();
+const mockWebsiteMonitorsList = jest.fn();
 jest.mock("@/lib/api", () => () => ({
-  vendors: { contracts: { list: mockContractsList, renewals: mockContractRenewals } },
+  batch: { websiteMonitors: { list: mockWebsiteMonitorsList } },
 }));
 
 jest.mock("@/components/Breadcrumbs", () => {
@@ -31,65 +30,63 @@ jest.mock("next/link", () => {
   );
 });
 
-describe("VendorContractsPage", () => {
+describe("WebsiteMonitorPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRequireAdminAccess.mockResolvedValue(undefined);
-    mockContractsList.mockResolvedValue({ items: [] });
-    mockContractRenewals.mockResolvedValue({ items: [] });
+    mockWebsiteMonitorsList.mockResolvedValue({ items: [] });
   });
 
   it("renders page title", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/website-monitors/page")).default;
     render(await Page());
     expect(
-      screen.getByRole("heading", { name: /vendor contract renewal calendar/i }),
+      screen.getByRole("heading", { name: /website uptime & ssl monitor/i }),
     ).toBeInTheDocument();
   });
 
   it("renders breadcrumbs and subnav", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/website-monitors/page")).default;
     render(await Page());
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
-    expect(screen.getByTestId("subnav")).toHaveTextContent("vendor-contracts");
+    expect(screen.getByTestId("subnav")).toHaveTextContent("website-monitors");
   });
 
   it("shows empty state when no data", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/website-monitors/page")).default;
     render(await Page());
-    expect(screen.getByText(/no contracts/i)).toBeInTheDocument();
+    expect(screen.getByText(/no websites monitored/i)).toBeInTheDocument();
   });
 
   it("renders items when data exists", async () => {
-    mockContractsList.mockResolvedValue({
+    mockWebsiteMonitorsList.mockResolvedValue({
       items: [
         {
           id: "1",
-          vendor_name: "Acme Corp",
-          service_name: "Internet",
-          status: "active",
-          renewal_date: null,
-          end_date: null,
-          contract_value: 12000,
-          auto_renews: true,
+          url: "https://example.com",
+          display_name: "Example Site",
+          last_status: "up",
+          last_response_ms: 200,
+          ssl_valid: true,
+          lighthouse_score: 85,
         },
       ],
     });
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/website-monitors/page")).default;
     render(await Page());
-    expect(screen.getByText(/Acme Corp.*Internet/)).toBeInTheDocument();
+    expect(screen.getByText("Example Site")).toBeInTheDocument();
   });
 
   it("calls requireAdminAccess", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/website-monitors/page")).default;
     render(await Page());
     expect(mockRequireAdminAccess).toHaveBeenCalled();
   });
 
   it("handles API error gracefully", async () => {
-    mockContractsList.mockRejectedValue(new Error("API down"));
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    mockWebsiteMonitorsList.mockRejectedValue(new Error("API down"));
+    const Page = (await import("@/app/(admin)/admin/website-monitors/page")).default;
     render(await Page());
-    expect(screen.getByText(/no contracts/i)).toBeInTheDocument();
+    expect(screen.getByText(/no websites monitored/i)).toBeInTheDocument();
   });
 });

@@ -5,10 +5,9 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
 }));
 
-const mockContractsList = jest.fn();
-const mockContractRenewals = jest.fn();
+const mockFileRequestsList = jest.fn();
 jest.mock("@/lib/api", () => () => ({
-  vendors: { contracts: { list: mockContractsList, renewals: mockContractRenewals } },
+  fileRequests: { list: mockFileRequestsList },
 }));
 
 jest.mock("@/components/Breadcrumbs", () => {
@@ -31,65 +30,64 @@ jest.mock("next/link", () => {
   );
 });
 
-describe("VendorContractsPage", () => {
+describe("FileRequestsPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRequireAdminAccess.mockResolvedValue(undefined);
-    mockContractsList.mockResolvedValue({ items: [] });
-    mockContractRenewals.mockResolvedValue({ items: [] });
+    mockFileRequestsList.mockResolvedValue({ items: [] });
   });
 
   it("renders page title", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/file-requests/page")).default;
     render(await Page());
     expect(
-      screen.getByRole("heading", { name: /vendor contract renewal calendar/i }),
+      screen.getByRole("heading", { name: /secure file request portal/i }),
     ).toBeInTheDocument();
   });
 
   it("renders breadcrumbs and subnav", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/file-requests/page")).default;
     render(await Page());
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
-    expect(screen.getByTestId("subnav")).toHaveTextContent("vendor-contracts");
+    expect(screen.getByTestId("subnav")).toHaveTextContent("file-requests");
   });
 
   it("shows empty state when no data", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/file-requests/page")).default;
     render(await Page());
-    expect(screen.getByText(/no contracts/i)).toBeInTheDocument();
+    expect(screen.getByText(/no file requests/i)).toBeInTheDocument();
   });
 
   it("renders items when data exists", async () => {
-    mockContractsList.mockResolvedValue({
+    mockFileRequestsList.mockResolvedValue({
       items: [
         {
           id: "1",
-          vendor_name: "Acme Corp",
-          service_name: "Internet",
+          title: "Test Request",
           status: "active",
-          renewal_date: null,
-          end_date: null,
-          contract_value: 12000,
-          auto_renews: true,
+          token: "tok_abc123",
+          expires_at: "2026-12-31T00:00:00Z",
+          upload_count: 3,
+          max_files: 10,
+          created_at: "2026-01-01T00:00:00Z",
         },
       ],
     });
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/file-requests/page")).default;
     render(await Page());
-    expect(screen.getByText(/Acme Corp.*Internet/)).toBeInTheDocument();
+    expect(screen.getByText("Test Request")).toBeInTheDocument();
   });
 
   it("calls requireAdminAccess", async () => {
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    const Page = (await import("@/app/(admin)/admin/file-requests/page")).default;
     render(await Page());
     expect(mockRequireAdminAccess).toHaveBeenCalled();
   });
 
   it("handles API error gracefully", async () => {
-    mockContractsList.mockRejectedValue(new Error("API down"));
-    const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
+    mockFileRequestsList.mockRejectedValue(new Error("API down"));
+    const Page = (await import("@/app/(admin)/admin/file-requests/page")).default;
     render(await Page());
-    expect(screen.getByText(/no contracts/i)).toBeInTheDocument();
+    expect(screen.getByText(/no file requests/i)).toBeInTheDocument();
   });
 });
