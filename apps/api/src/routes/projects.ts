@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requireAdmin } from "../middleware/admin";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { responseCacheNoRenew } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -241,7 +242,7 @@ router.get("/:id/detail", async (req, res, next) => {
 
     if (projError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
 
-    const orgId = project.organization_id as string;
+    const projectOrgId = project.organization_id as string;
 
     const [
       { data: memberships, error: memError },

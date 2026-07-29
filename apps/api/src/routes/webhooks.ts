@@ -7,6 +7,7 @@ import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
 import { verifyWebhookSignature } from "../lib/webhook-signature";
 import { checkIdempotencyKey, storeIdempotencyKey } from "../lib/idempotency";
+import { recordWebhookDelivery } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
 

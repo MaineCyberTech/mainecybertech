@@ -227,7 +227,15 @@ router.post("/:id/test", requireAdmin, async (req, res, next) => {
     let error: string | null = null;
 
     try {
-      const res = await httpClients.default.post(webhook.url, payload, { headers });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(webhook.url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
       responseStatus = res.status;
       responseBody = await res.text().catch(() => "");
     } catch (e) {

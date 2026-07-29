@@ -27,17 +27,21 @@ router.use(requireAuth);
 router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    let query = supabase
-      .from("organizations")
-      .select("*")
-      .in(
-        "id",
-        supabase
-          .from("memberships")
-          .select("organization_id")
-          .eq("user_id", req.authUser!.userId)
-          .eq("status", "approved"),
-      );
+
+    const { data: memberships } = await supabase
+      .from("memberships")
+      .select("organization_id")
+      .eq("user_id", req.authUser!.userId)
+      .eq("status", "approved");
+
+    const orgIds = (memberships ?? []).map((m: any) => m.organization_id).filter(Boolean);
+    let query = supabase.from("organizations").select("*");
+
+    if (orgIds.length > 0) {
+      query = query.in("id", orgIds);
+    } else {
+      query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+    }
 
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter);

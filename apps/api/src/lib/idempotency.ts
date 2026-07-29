@@ -10,11 +10,10 @@ function acquireMemoryLock(): Promise<void> {
     memoryMutex = Promise.resolve();
   }
   const prev = memoryMutex;
-  let release: () => void;
-  memoryMutex = new Promise((resolve) => {
-    release = resolve;
+  memoryMutex = new Promise<void>((resolve) => {
+    prev.then(() => resolve());
   });
-  return prev.then(() => release!);
+  return memoryMutex;
 }
 
 export function getRedisClient(): Redis | null {
