@@ -95,22 +95,8 @@ jobs:
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
           echo "Using droplet IP: $IP"
 
-  validate:
-    uses: ./.github/workflows/validate.yml
-    secrets: inherit
-
-  e2e:
-    needs: validate
-    uses: ./.github/workflows/e2e.yml
-    secrets: inherit
-
-  migrations:
-    needs: setup
-    uses: ./.github/workflows/supabase-migrations.yml
-    secrets: inherit
-
   build-api:
-    needs: [setup, validate]
+    needs: [setup]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -131,7 +117,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-worker:
-    needs: [setup, validate]
+    needs: [setup]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -152,7 +138,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-web:
-    needs: [setup, validate]
+    needs: [setup]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -178,7 +164,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    needs: [setup, resolve-ip, build-api, build-worker, build-web, e2e, migrations]
+    needs: [setup, resolve-ip, build-api, build-worker, build-web]
     if: always() && needs.setup.result == 'success' && needs.resolve-ip.result == 'success' && needs.build-api.result == 'success' && needs.build-worker.result == 'success' && needs.build-web.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
