@@ -57,8 +57,8 @@ function mockFrom(result: MockResult) {
 }
 
 const FORM_RECORD = {
-  id: "form-1",
-  organization_id: "org-1",
+  id: "00000000-0000-0000-0000-000000000130",
+  organization_id: "00000000-0000-0000-0000-000000000001",
   title: "Client Intake Form",
   description: "New client intake",
   form_type: "intake",
@@ -97,8 +97,8 @@ const FORM_RECORD = {
 
 const SUBMISSION_RECORD = {
   id: "sub-1",
-  form_id: "form-1",
-  organization_id: "org-1",
+  form_id: "00000000-0000-0000-0000-000000000130",
+  organization_id: "00000000-0000-0000-0000-000000000001",
   respondent_id: null,
   respondent_email: "client@test.com",
   answers: { name: "John Doe", email: "john@test.com" },
@@ -125,7 +125,7 @@ describe("Dynamic Client Forms Builder API", () => {
       const res = await request(app)
         .get("/api/v1/dynamic-forms")
         .set("Authorization", "Bearer test-token")
-        .query({ organizationId: "org-1" });
+        .query({ organizationId: "00000000-0000-0000-0000-000000000001" });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -142,7 +142,7 @@ describe("Dynamic Client Forms Builder API", () => {
       const res = await request(app)
         .get("/api/v1/dynamic-forms/form-1")
         .set("Authorization", "Bearer test-token")
-        .query({ organizationId: "org-1" });
+        .query({ organizationId: "00000000-0000-0000-0000-000000000001" });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -152,7 +152,7 @@ describe("Dynamic Client Forms Builder API", () => {
     it("requires auth", async () => {
       const res = await request(app)
         .post("/api/v1/dynamic-forms")
-        .send({ organizationId: "org-1", title: "Test" });
+        .send({ organizationId: "00000000-0000-0000-0000-000000000001", title: "Test" });
       expect(res.status).toBe(401);
     });
 
@@ -160,7 +160,7 @@ describe("Dynamic Client Forms Builder API", () => {
       const res = await request(app)
         .post("/api/v1/dynamic-forms")
         .set("Authorization", "Bearer test-token")
-        .send({ organizationId: "org-1" });
+        .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
       expect(res.status).toBe(400);
     });
 
@@ -170,7 +170,7 @@ describe("Dynamic Client Forms Builder API", () => {
         .post("/api/v1/dynamic-forms")
         .set("Authorization", "Bearer test-token")
         .send({
-          organizationId: "org-1",
+          organizationId: "00000000-0000-0000-0000-000000000001",
           title: "Client Intake Form",
           formType: "intake",
           fields: [{ key: "name", label: "Full Name", type: "text", required: true }],
@@ -212,7 +212,7 @@ describe("Dynamic Client Forms Builder API", () => {
       const res = await request(app)
         .delete("/api/v1/dynamic-forms/form-1")
         .set("Authorization", "Bearer test-token")
-        .query({ organizationId: "org-1" });
+        .query({ organizationId: "00000000-0000-0000-0000-000000000001" });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(logAuditEvent).toHaveBeenCalled();
@@ -260,7 +260,7 @@ describe("Dynamic Client Forms Builder API", () => {
       const res = await request(app)
         .get("/api/v1/dynamic-forms/form-1/submissions")
         .set("Authorization", "Bearer test-token")
-        .query({ organizationId: "org-1" });
+        .query({ organizationId: "00000000-0000-0000-0000-000000000001" });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
@@ -270,7 +270,7 @@ describe("Dynamic Client Forms Builder API", () => {
     it("requires auth", async () => {
       const res = await request(app)
         .get("/api/v1/dynamic-forms/export.csv")
-        .query({ organizationId: "org-1" });
+        .query({ organizationId: "00000000-0000-0000-0000-000000000001" });
       expect(res.status).toBe(401);
     });
 
@@ -279,7 +279,7 @@ describe("Dynamic Client Forms Builder API", () => {
       const res = await request(app)
         .get("/api/v1/dynamic-forms/export.csv")
         .set("Authorization", "Bearer test-token")
-        .query({ organizationId: "org-1", format: "csv" });
+        .query({ organizationId: "00000000-0000-0000-0000-000000000001", format: "csv" });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(logAuditEvent).toHaveBeenCalled();

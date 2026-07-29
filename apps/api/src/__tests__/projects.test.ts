@@ -42,26 +42,34 @@ function mockAuth() {
 }
 
 const PROJECT = {
-  id: "proj-1",
+  id: "00000000-0000-0000-0000-000000000030",
   name: "Test Project",
   status: "active",
-  organization_id: "org-1",
+  organization_id: "00000000-0000-0000-0000-000000000001",
 };
 const TASK = {
-  id: "task-1",
-  project_id: "proj-1",
+  id: "00000000-0000-0000-0000-000000000031",
+  project_id: "00000000-0000-0000-0000-000000000030",
   title: "Test Task",
   status: "todo",
   sort_order: 1,
 };
 const COMMENT = {
-  id: "cmt-1",
-  task_id: "task-1",
+  id: "00000000-0000-0000-0000-000000000041",
+  task_id: "00000000-0000-0000-0000-000000000031",
   body: "Test",
   is_internal: false,
 };
-const UPDATE = { id: "upd-1", project_id: "proj-1", body: "Update content" };
-const READ_STATE = { id: "rs-1", user_id: "user-1", task_id: "task-1" };
+const UPDATE = {
+  id: "00000000-0000-0000-0000-000000000042",
+  project_id: "00000000-0000-0000-0000-000000000030",
+  body: "Update content",
+};
+const READ_STATE = {
+  id: "00000000-0000-0000-0000-000000000043",
+  user_id: "user-1",
+  task_id: "00000000-0000-0000-0000-000000000031",
+};
 
 const app = createTestApp();
 app.use("/api/v1/projects", projectsRouter);
@@ -95,7 +103,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects?organization_id=org-1")
+        .get("/api/v1/projects?organization_id=00000000-0000-0000-0000-000000000001")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -110,7 +118,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -123,7 +131,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects/missing")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000999")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
@@ -141,7 +149,7 @@ describe("projects routes", () => {
         .post("/api/v1/projects")
         .set("Authorization", "Bearer token-123")
         .send({
-          organizationId: "org-1",
+          organizationId: "00000000-0000-0000-0000-000000000001",
           name: "Test Project",
           status: "active",
           priority: "normal",
@@ -159,7 +167,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/projects/proj-1")
+        .patch("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123")
         .send({ name: "Updated" });
 
@@ -173,7 +181,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/projects/missing")
+        .patch("/api/v1/projects/00000000-0000-0000-0000-000000000999")
         .set("Authorization", "Bearer token-123")
         .send({ name: "Updated" });
 
@@ -189,7 +197,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .delete("/api/v1/projects/proj-1")
+        .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
@@ -204,7 +212,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1/tasks")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -220,7 +228,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .post("/api/v1/projects/proj-1/tasks")
+        .post("/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks")
         .set("Authorization", "Bearer token-123")
         .send({
           title: "New Task",
@@ -241,7 +249,9 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/projects/proj-1/tasks/task-1")
+        .patch(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031",
+        )
         .set("Authorization", "Bearer token-123")
         .send({ title: "Updated Task" });
 
@@ -255,7 +265,9 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/projects/proj-1/tasks/missing")
+        .patch(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000999",
+        )
         .set("Authorization", "Bearer token-123")
         .send({ title: "Updated" });
 
@@ -271,7 +283,9 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .delete("/api/v1/projects/proj-1/tasks/task-1")
+        .delete(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031",
+        )
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
@@ -286,7 +300,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1/tasks/comments")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/comments")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -299,7 +313,9 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1/tasks/comments?organization_id=org-1")
+        .get(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/comments?organization_id=00000000-0000-0000-0000-000000000001",
+        )
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -314,7 +330,9 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .post("/api/v1/projects/proj-1/tasks/task-1/comments")
+        .post(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/comments",
+        )
         .set("Authorization", "Bearer token-123")
         .send({ body: "New comment", isInternal: false });
 
@@ -330,7 +348,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1/updates")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030/updates")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -345,7 +363,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .post("/api/v1/projects/proj-1/updates")
+        .post("/api/v1/projects/00000000-0000-0000-0000-000000000030/updates")
         .set("Authorization", "Bearer token-123")
         .send({ body: "Update", isInternal: false, isPinned: false });
 
@@ -361,7 +379,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/projects/proj-1/updates/upd-1")
+        .patch("/api/v1/projects/00000000-0000-0000-0000-000000000030/updates/upd-1")
         .set("Authorization", "Bearer token-123")
         .send({ body: "Updated content" });
 
@@ -375,7 +393,9 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/projects/proj-1/updates/missing")
+        .patch(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/updates/00000000-0000-0000-0000-000000000999",
+        )
         .set("Authorization", "Bearer token-123")
         .send({ body: "Updated" });
 
@@ -391,7 +411,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .delete("/api/v1/projects/proj-1/updates/upd-1")
+        .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030/updates/upd-1")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
@@ -406,7 +426,9 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/projects/proj-1/tasks/task-1/comments/cmt-1")
+        .patch(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/comments/cmt-1",
+        )
         .set("Authorization", "Bearer token-123")
         .send({ body: "Updated comment" });
 
@@ -420,7 +442,9 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/projects/proj-1/tasks/task-1/comments/missing")
+        .patch(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/comments/00000000-0000-0000-0000-000000000999",
+        )
         .set("Authorization", "Bearer token-123")
         .send({ body: "Updated" });
 
@@ -436,7 +460,9 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .delete("/api/v1/projects/proj-1/tasks/task-1/comments/cmt-1")
+        .delete(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/comments/cmt-1",
+        )
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
@@ -451,7 +477,7 @@ describe("projects routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1/tasks/read-states")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/read-states")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -461,14 +487,14 @@ describe("projects routes", () => {
   describe("POST /:id/tasks/reorder", () => {
     it("reorders tasks", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(
-        createMockBuilder({ data: null, error: null }),
-      );
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
-        .post("/api/v1/projects/proj-1/tasks/reorder")
+        .post("/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/reorder")
         .set("Authorization", "Bearer token-123")
-        .send({ order: ["task-1", "task-2"] });
+        .send({
+          order: ["00000000-0000-0000-0000-000000000031", "00000000-0000-0000-0000-000000000032"],
+        });
 
       expect(res.status).toBe(200);
       expect(res.body.data.reordered).toBe(2);
@@ -478,14 +504,14 @@ describe("projects routes", () => {
   describe("POST /:id/tasks/:taskId/read", () => {
     it("marks a task as read", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(
-        createMockBuilder({ data: null, error: null }),
-      );
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
-        .post("/api/v1/projects/proj-1/tasks/task-1/read")
+        .post(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/read",
+        )
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1" });
+        .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
 
       expect(res.status).toBe(200);
       expect(res.body.data.marked).toBe(true);
@@ -498,9 +524,11 @@ describe("projects routes", () => {
       supabase.rpc.mockResolvedValue({ data: null, error: null });
 
       const res = await request(app)
-        .post("/api/v1/projects/proj-1/tasks/task-1/approve")
+        .post(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/approve",
+        )
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1" });
+        .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
 
       expect(res.status).toBe(200);
       expect(res.body.data.approved).toBe(true);
@@ -513,9 +541,11 @@ describe("projects routes", () => {
       supabase.rpc.mockResolvedValue({ data: null, error: null });
 
       const res = await request(app)
-        .post("/api/v1/projects/proj-1/tasks/task-1/portal-comment")
+        .post(
+          "/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/portal-comment",
+        )
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", body: "Portal comment" });
+        .send({ organizationId: "00000000-0000-0000-0000-000000000001", body: "Portal comment" });
 
       expect(res.status).toBe(201);
     });
@@ -527,7 +557,7 @@ describe("projects routes", () => {
       const projectWithTasks = {
         ...PROJECT,
         project_tasks: [TASK],
-        organization_id: "org-1",
+        organization_id: "00000000-0000-0000-0000-000000000001",
       };
 
       const projectBuilder = createMockBuilder({
@@ -535,9 +565,7 @@ describe("projects routes", () => {
         error: null,
       });
       const membershipBuilder = createMockBuilder({
-        data: [
-          { id: "m1", user_id: "user-1", role_id: "r1", status: "approved" },
-        ],
+        data: [{ id: "m1", user_id: "user-1", role_id: "r1", status: "approved" }],
         error: null,
       });
       const taskBuilder = createMockBuilder({ data: [TASK], error: null });
@@ -571,7 +599,7 @@ describe("projects routes", () => {
       });
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1/detail")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030/detail")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -594,7 +622,7 @@ describe("projects routes", () => {
       supabase.from.mockReturnValue(projectBuilder);
 
       const res = await request(app)
-        .get("/api/v1/projects/nonexistent/detail")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000999/detail")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);

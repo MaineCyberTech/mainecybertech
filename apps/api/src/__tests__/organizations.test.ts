@@ -18,7 +18,6 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
 }));
 
 jest.mock("../services/audit", () => ({
@@ -39,16 +38,26 @@ function mockAuth() {
 
 function mockAdmin() {
   const supabase = mockAuth();
-  supabase.from
-    .mockReturnValueOnce(createMockBuilder({
+  supabase.from.mockReturnValueOnce(
+    createMockBuilder({
       data: [{ roles: { id: "role-admin", key: "admin" } }],
       error: null,
-    }));
+    }),
+  );
   return supabase;
 }
 
-const ORG = { id: "org-1", name: "Test Org", slug: "test-org", status: "active" };
-const DOMAIN = { id: "dom-1", organization_id: "org-1", domain: "example.com" };
+const ORG = {
+  id: "00000000-0000-0000-0000-000000000001",
+  name: "Test Org",
+  slug: "test-org",
+  status: "active",
+};
+const DOMAIN = {
+  id: "dom-1",
+  organization_id: "00000000-0000-0000-0000-000000000001",
+  domain: "example.com",
+};
 
 const app = createTestApp();
 app.use("/api/v1/organizations", organizationsRouter);
@@ -62,7 +71,9 @@ describe("organizations routes", () => {
   describe("GET /", () => {
     it("returns organizations", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [ORG], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [ORG], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations")
@@ -74,7 +85,9 @@ describe("organizations routes", () => {
 
     it("filters by status", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [ORG], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [ORG], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations?status=active")
@@ -85,7 +98,9 @@ describe("organizations routes", () => {
 
     it("filters by ids", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [ORG], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [ORG], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations?ids=org-1,org-2")
@@ -98,19 +113,23 @@ describe("organizations routes", () => {
   describe("GET /:id", () => {
     it("returns an organization", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: ORG, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: ORG, error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations/org-1")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
-      expect(res.body.data.id).toBe("org-1");
+      expect(res.body.data.id).toBe("00000000-0000-0000-0000-000000000001");
     });
 
     it("returns 404 when not found", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: new Error("Not found") }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("Not found") }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations/missing")
@@ -123,8 +142,7 @@ describe("organizations routes", () => {
   describe("POST /", () => {
     it("creates an organization (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: ORG, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: ORG, error: null }));
 
       const res = await request(app)
         .post("/api/v1/organizations")
@@ -138,8 +156,7 @@ describe("organizations routes", () => {
   describe("PATCH /:id", () => {
     it("updates an organization (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: ORG, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: ORG, error: null }));
 
       const res = await request(app)
         .patch("/api/v1/organizations/org-1")
@@ -153,8 +170,7 @@ describe("organizations routes", () => {
   describe("DELETE /:id", () => {
     it("deletes an organization (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/organizations/org-1")
@@ -167,7 +183,9 @@ describe("organizations routes", () => {
   describe("GET /:id/domains", () => {
     it("returns domains for an organization", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [DOMAIN], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [DOMAIN], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations/org-1/domains")
@@ -181,8 +199,7 @@ describe("organizations routes", () => {
   describe("POST /:id/domains", () => {
     it("adds a domain (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
 
       const res = await request(app)
         .post("/api/v1/organizations/org-1/domains")
@@ -196,8 +213,7 @@ describe("organizations routes", () => {
   describe("PATCH /:id/domains/:domainId", () => {
     it("updates a domain (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
 
       const res = await request(app)
         .patch("/api/v1/organizations/org-1/domains/dom-1")
@@ -211,8 +227,7 @@ describe("organizations routes", () => {
   describe("DELETE /:id/domains/:domainId", () => {
     it("deletes a domain (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/organizations/org-1/domains/dom-1")
@@ -225,11 +240,26 @@ describe("organizations routes", () => {
   describe("GET /:id/detail", () => {
     it("returns compound organization detail in a single call", async () => {
       const supabase = mockAuth();
-      const orgBuilder = createMockBuilder({ data: { id: "org-1", name: "Test Org", status: "active" }, error: null });
-      const domainBuilder = createMockBuilder({ data: [{ id: "dom-1", domain: "test.com" }], error: null });
-      const membershipBuilder = createMockBuilder({ data: [{ id: "m1", user_id: "user-1", role_id: "r1", status: "approved" }], error: null });
-      const profileBuilder = createMockBuilder({ data: [{ id: "user-1", full_name: "Test", email: "t@t.com" }], error: null });
-      const roleBuilder = createMockBuilder({ data: [{ id: "r1", key: "admin", name: "Admin" }], error: null });
+      const orgBuilder = createMockBuilder({
+        data: { id: "00000000-0000-0000-0000-000000000001", name: "Test Org", status: "active" },
+        error: null,
+      });
+      const domainBuilder = createMockBuilder({
+        data: [{ id: "dom-1", domain: "test.com" }],
+        error: null,
+      });
+      const membershipBuilder = createMockBuilder({
+        data: [{ id: "m1", user_id: "user-1", role_id: "r1", status: "approved" }],
+        error: null,
+      });
+      const profileBuilder = createMockBuilder({
+        data: [{ id: "user-1", full_name: "Test", email: "t@t.com" }],
+        error: null,
+      });
+      const roleBuilder = createMockBuilder({
+        data: [{ id: "r1", key: "admin", name: "Admin" }],
+        error: null,
+      });
 
       let callCount = 0;
       supabase.from.mockImplementation(() => {
@@ -256,7 +286,9 @@ describe("organizations routes", () => {
 
     it("returns 404 when organization not found", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: { message: "Not found" } }));
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: { message: "Not found" } }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations/nonexistent/detail")

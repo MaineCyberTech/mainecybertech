@@ -36,7 +36,7 @@ function mockAuth() {
   return supabase;
 }
 
-const ROLE = { id: "role-1", key: "admin", name: "Admin" };
+const ROLE = { id: "00000000-0000-0000-0000-000000000020", key: "admin", name: "Admin" };
 
 const app = createTestApp();
 app.use("/api/v1/roles", rolesRouter);
@@ -51,13 +51,9 @@ describe("roles routes", () => {
     it("returns a list of roles", async () => {
       mockAuth();
       const result: MockResult = { data: [ROLE], error: null };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
-        createMockBuilder(result),
-      );
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
 
-      const res = await request(app)
-        .get("/api/v1/roles")
-        .set("Authorization", "Bearer token-123");
+      const res = await request(app).get("/api/v1/roles").set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -67,9 +63,7 @@ describe("roles routes", () => {
     it("filters by ids", async () => {
       mockAuth();
       const result: MockResult = { data: [ROLE], error: null };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
-        createMockBuilder(result),
-      );
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app)
         .get("/api/v1/roles?ids=role-1,role-2")
@@ -88,16 +82,14 @@ describe("roles routes", () => {
       });
       if (forbidden) {
         testApp.use((_req: any, res: any, _next: any) => {
-          res
-            .status(403)
-            .json({
-              success: false,
-              error: {
-                code: "FORBIDDEN",
-                message: "Admin access required",
-                status: 403,
-              },
-            });
+          res.status(403).json({
+            success: false,
+            error: {
+              code: "FORBIDDEN",
+              message: "Admin access required",
+              status: 403,
+            },
+          });
         });
       }
       testApp.get("/api/v1/roles/with-permissions", async (req, res, next) => {
@@ -188,24 +180,20 @@ describe("roles routes", () => {
     it("returns a role by id", async () => {
       mockAuth();
       const result: MockResult = { data: ROLE, error: null };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
-        createMockBuilder(result),
-      );
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app)
         .get("/api/v1/roles/role-1")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
-      expect(res.body.data.id).toBe("role-1");
+      expect(res.body.data.id).toBe("00000000-0000-0000-0000-000000000020");
     });
 
     it("returns 404 when not found", async () => {
       mockAuth();
       const result: MockResult = { data: null, error: new Error("Not found") };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
-        createMockBuilder(result),
-      );
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app)
         .get("/api/v1/roles/missing")

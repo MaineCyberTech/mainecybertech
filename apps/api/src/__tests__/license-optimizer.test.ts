@@ -73,7 +73,7 @@ describe("License Optimizer API", () => {
     supabase.from.mockReturnValue(
       createMockBuilder({
         data: {
-          id: "lic-1",
+          id: "00000000-0000-0000-0000-000000000100",
           software_name: "Microsoft 365",
           license_type: "per_seat",
           total_seats: 50,
@@ -101,7 +101,7 @@ describe("License Optimizer API", () => {
     supabase.from.mockReturnValue(
       createMockBuilder({
         data: {
-          id: "lic-1",
+          id: "00000000-0000-0000-0000-000000000100",
           software_name: "Microsoft 365",
           total_seats: 50,
           used_seats: 30,
@@ -111,7 +111,7 @@ describe("License Optimizer API", () => {
       }),
     );
     const res = await request(app)
-      .get("/api/v1/license-optimizer/lic-1")
+      .get("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000100")
       .set("Authorization", authToken);
     expect(res.status).toBe(200);
     expect(res.body.data.software_name).toBe("Microsoft 365");
@@ -121,12 +121,17 @@ describe("License Optimizer API", () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(
       createMockBuilder({
-        data: { id: "lic-1", software_name: "Microsoft 365", used_seats: 35, status: "active" },
+        data: {
+          id: "00000000-0000-0000-0000-000000000100",
+          software_name: "Microsoft 365",
+          used_seats: 35,
+          status: "active",
+        },
         error: null,
       }),
     );
     const res = await request(app)
-      .patch("/api/v1/license-optimizer/lic-1")
+      .patch("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000100")
       .set("Authorization", authToken)
       .send({ usedSeats: 35 });
     expect(res.status).toBe(200);
@@ -137,7 +142,7 @@ describe("License Optimizer API", () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(createMockBuilder({ error: null }));
     const res = await request(app)
-      .delete("/api/v1/license-optimizer/lic-1")
+      .delete("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000100")
       .set("Authorization", authToken);
     expect(res.status).toBe(204);
   });
@@ -148,7 +153,7 @@ describe("License Optimizer API", () => {
       createMockBuilder({
         data: [
           {
-            id: "lic-1",
+            id: "00000000-0000-0000-0000-000000000100",
             software_name: "Zoom",
             total_seats: 100,
             used_seats: 30,
@@ -156,7 +161,7 @@ describe("License Optimizer API", () => {
             status: "active",
           },
           {
-            id: "lic-2",
+            id: "00000000-0000-0000-0000-000000000101",
             software_name: "Slack",
             total_seats: 50,
             used_seats: 50,
@@ -182,7 +187,7 @@ describe("License Optimizer API", () => {
       createMockBuilder({
         data: [
           {
-            id: "lic-1",
+            id: "00000000-0000-0000-0000-000000000100",
             software_name: "M365",
             total_seats: 100,
             used_seats: 30,
@@ -190,7 +195,7 @@ describe("License Optimizer API", () => {
             status: "active",
           },
           {
-            id: "lic-2",
+            id: "00000000-0000-0000-0000-000000000101",
             software_name: "Zoom",
             total_seats: 50,
             used_seats: 50,
@@ -221,7 +226,7 @@ describe("License Optimizer API", () => {
       createMockBuilder({ data: null, error: { message: "Not found" } }),
     );
     const res = await request(app)
-      .get("/api/v1/license-optimizer/non-existent")
+      .get("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000999")
       .set("Authorization", authToken);
     expect(res.status).toBe(404);
   });

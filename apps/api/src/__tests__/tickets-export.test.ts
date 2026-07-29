@@ -64,7 +64,7 @@ describe("Ticket export endpoint", () => {
             title: "Test ticket",
             status: "new",
             priority: "normal",
-            organization_id: "org-1",
+            organization_id: "00000000-0000-0000-0000-000000000001",
             created_at: "2026-01-01T00:00:00Z",
             updated_at: "2026-01-01T00:00:00Z",
           },
@@ -106,11 +106,14 @@ describe("Ticket export endpoint", () => {
     supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null } as MockResult));
 
     await request(app)
-      .get("/api/v1/tickets/export?organization_id=org-1")
+      .get("/api/v1/tickets/export?organization_id=00000000-0000-0000-0000-000000000001")
       .set("Authorization", "Bearer token");
 
     const chain = supabase.from.mock.results[0].value;
-    expect(chain.eq).toHaveBeenCalledWith("organization_id", "org-1");
+    expect(chain.eq).toHaveBeenCalledWith(
+      "organization_id",
+      "00000000-0000-0000-0000-000000000001",
+    );
   });
 
   it("GET /export filters by status", async () => {

@@ -55,7 +55,12 @@ describe("business OS routes", () => {
     it("returns business summary with all metrics", async () => {
       const supabase = mockAuth();
       const mockOrgs = [
-        { id: "org-1", name: "Org One", status: "approved", created_at: "2025-01-01T00:00:00Z" },
+        {
+          id: "00000000-0000-0000-0000-000000000001",
+          name: "Org One",
+          status: "approved",
+          created_at: "2025-01-01T00:00:00Z",
+        },
         { id: "org-2", name: "Org Two", status: "pending", created_at: "2025-02-01T00:00:00Z" },
       ];
       supabase.from.mockReturnValue(createMockBuilder({ data: mockOrgs, error: null, count: 10 }));

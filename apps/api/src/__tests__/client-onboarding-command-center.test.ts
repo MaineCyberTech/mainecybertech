@@ -57,8 +57,8 @@ function mockFrom(result: MockResult) {
 }
 
 const ONBOARDING_RECORD = {
-  id: "onboard-1",
-  organization_id: "org-1",
+  id: "00000000-0000-0000-0000-000000000120",
+  organization_id: "00000000-0000-0000-0000-000000000001",
   client_name: "Test Client",
   client_domain: "test.com",
   client_contact_email: "contact@test.com",
@@ -93,9 +93,9 @@ const ONBOARDING_RECORD = {
 };
 
 const CHECKLIST_ITEM = {
-  id: "item-1",
-  organization_id: "org-1",
-  onboarding_record_id: "onboard-1",
+  id: "00000000-0000-0000-0000-000000000121",
+  organization_id: "00000000-0000-0000-0000-000000000001",
+  onboarding_record_id: "00000000-0000-0000-0000-000000000120",
   phase: "discovery",
   item_key: "initial_meeting",
   label: "Initial Kickoff Meeting",
@@ -191,7 +191,7 @@ describe("client-onboarding-command-center routes", () => {
       mockFrom(result);
 
       const res = await request(app)
-        .get("/api/v1/client-onboarding/onboard-1")
+        .get("/api/v1/client-onboarding/00000000-0000-0000-0000-000000000120")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -204,7 +204,7 @@ describe("client-onboarding-command-center routes", () => {
       mockFrom(result);
 
       const res = await request(app)
-        .get("/api/v1/client-onboarding/nonexistent")
+        .get("/api/v1/client-onboarding/00000000-0000-0000-0000-000000000999")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
@@ -221,7 +221,7 @@ describe("client-onboarding-command-center routes", () => {
         .post("/api/v1/client-onboarding")
         .set("Authorization", "Bearer token-123")
         .send({
-          organizationId: "org-1",
+          organizationId: "00000000-0000-0000-0000-000000000001",
           clientName: "New Client",
           clientDomain: "newclient.com",
           clientContactEmail: "new@client.com",
@@ -258,7 +258,7 @@ describe("client-onboarding-command-center routes", () => {
         .mockReturnValueOnce(createMockBuilder({ data: updatedRecord, error: null }));
 
       const res = await request(app)
-        .patch("/api/v1/client-onboarding/onboard-1")
+        .patch("/api/v1/client-onboarding/00000000-0000-0000-0000-000000000120")
         .set("Authorization", "Bearer token-123")
         .send({ clientName: "Updated Client" });
 
@@ -280,7 +280,7 @@ describe("client-onboarding-command-center routes", () => {
         .mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
-        .delete("/api/v1/client-onboarding/onboard-1")
+        .delete("/api/v1/client-onboarding/00000000-0000-0000-0000-000000000120")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -304,8 +304,8 @@ describe("client-onboarding-command-center routes", () => {
         .mockReturnValueOnce(createMockBuilder({ data: null, error: null })); // service's checklist update
 
       const res = await request(app)
-        .post("/api/v1/client-onboarding/onboard-1/complete-phase")
-        .query({ organization_id: "org-1" })
+        .post("/api/v1/client-onboarding/00000000-0000-0000-0000-000000000120/complete-phase")
+        .query({ organization_id: "00000000-0000-0000-0000-000000000001" })
         .set("Authorization", "Bearer token-123")
         .send({ completedBy: "user-1" });
 
@@ -324,7 +324,7 @@ describe("client-onboarding-command-center routes", () => {
       mockFrom(result);
 
       const res = await request(app)
-        .get("/api/v1/client-onboarding/onboard-1/checklist")
+        .get("/api/v1/client-onboarding/00000000-0000-0000-0000-000000000120/checklist")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -349,7 +349,9 @@ describe("client-onboarding-command-center routes", () => {
         .mockReturnValueOnce(createMockBuilder({ data: updatedItem, error: null }));
 
       const res = await request(app)
-        .patch("/api/v1/client-onboarding/onboard-1/checklist/item-1")
+        .patch(
+          "/api/v1/client-onboarding/00000000-0000-0000-0000-000000000120/checklist/00000000-0000-0000-0000-000000000121",
+        )
         .set("Authorization", "Bearer token-123")
         .send({ isCompleted: true, completedBy: "user-1" });
 

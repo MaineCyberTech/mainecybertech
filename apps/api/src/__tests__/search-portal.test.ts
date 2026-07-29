@@ -85,11 +85,16 @@ describe("search portal routes", () => {
     it("returns search results", async () => {
       const supabase = mockAuth();
       const mockTickets = [{ id: "t1", title: "Test Ticket", status: "open", priority: "high" }];
-      const mockProjects = [{ id: "p1", name: "Test Project", status: "active", priority: "medium" }];
+      const mockProjects = [
+        { id: "p1", name: "Test Project", status: "active", priority: "medium" },
+      ];
 
       supabase.from.mockImplementation((table: string) => {
         if (table === "memberships") {
-          return createMockBuilder({ data: [{ organization_id: "org-1" }], error: null });
+          return createMockBuilder({
+            data: [{ organization_id: "00000000-0000-0000-0000-000000000001" }],
+            error: null,
+          });
         }
         const builder = createMockBuilder({
           data: table === "tickets" ? mockTickets : mockProjects,

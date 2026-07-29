@@ -37,7 +37,12 @@ function mockAuth() {
   return supabase;
 }
 
-const PROJECT = { id: "proj-1", name: "Test Project", status: "active", organization_id: "org-1" };
+const PROJECT = {
+  id: "00000000-0000-0000-0000-000000000030",
+  name: "Test Project",
+  status: "active",
+  organization_id: "00000000-0000-0000-0000-000000000001",
+};
 
 const app = createTestApp();
 app.use("/api/v1/projects", projectsRouter);
@@ -51,7 +56,11 @@ describe("API edge cases", () => {
   describe("database failure scenarios", () => {
     it("returns 500 when DB query fails", async () => {
       const supabase = mockAuth();
-      const builder = createMockBuilder({ data: null, error: { message: "Connection refused" }, count: 0 });
+      const builder = createMockBuilder({
+        data: null,
+        error: { message: "Connection refused" },
+        count: 0,
+      });
       supabase.from.mockReturnValue(builder);
 
       const res = await request(app)
@@ -66,12 +75,14 @@ describe("API edge cases", () => {
       const supabase = mockAuth();
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ data: null, error: { message: "relation does not exist" } }),
+          eq: jest
+            .fn()
+            .mockResolvedValue({ data: null, error: { message: "relation does not exist" } }),
         }),
       });
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(500);
@@ -88,7 +99,7 @@ describe("API edge cases", () => {
       });
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(500);
@@ -101,13 +112,18 @@ describe("API edge cases", () => {
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: null, error: { message: "new row violates row-level security policy" } }),
+            single: jest
+              .fn()
+              .mockResolvedValue({
+                data: null,
+                error: { message: "new row violates row-level security policy" },
+              }),
           }),
         }),
       });
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
@@ -115,11 +131,18 @@ describe("API edge cases", () => {
 
     it("returns 403 when user is not authorized for mutation", async () => {
       const supabase = mockAuth();
-      supabase.from
-        .mockReturnValueOnce({ select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ data: [], error: null }) }) }) });
+      supabase.from.mockReturnValueOnce({
+        select: jest
+          .fn()
+          .mockReturnValue({
+            eq: jest
+              .fn()
+              .mockReturnValue({ eq: jest.fn().mockResolvedValue({ data: [], error: null }) }),
+          }),
+      });
 
       const res = await request(app)
-        .delete("/api/v1/projects/proj-1")
+        .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect([403, 500]).toContain(res.status);
@@ -131,16 +154,23 @@ describe("API edge cases", () => {
       mockAuth();
       (getSupabaseAdmin as jest.Mock)().from.mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ data: null, error: { message: "invalid input syntax for type uuid" } }),
+          eq: jest
+            .fn()
+            .mockResolvedValue({
+              data: null,
+              error: { message: "invalid input syntax for type uuid" },
+            }),
         }),
-        insert: jest.fn(), update: jest.fn(), delete: jest.fn(),
+        insert: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
       });
 
       const res = await request(app)
         .get("/api/v1/projects/not-a-uuid")
         .set("Authorization", "Bearer token-123");
 
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(400);
     });
   });
 });

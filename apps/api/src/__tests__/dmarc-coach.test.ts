@@ -73,7 +73,7 @@ describe("DMARC Coach API", () => {
     supabase.from.mockReturnValue(
       createMockBuilder({
         data: {
-          id: "dmarc-1",
+          id: "00000000-0000-0000-0000-000000000110",
           domain: "example.com",
           dmarc_record: "v=DMARC1; p=none;",
           overall_grade: "C",
@@ -94,7 +94,7 @@ describe("DMARC Coach API", () => {
     supabase.from.mockReturnValue(
       createMockBuilder({
         data: {
-          id: "dmarc-1",
+          id: "00000000-0000-0000-0000-000000000110",
           domain: "example.com",
           overall_grade: "B",
           issues: [],
@@ -104,7 +104,7 @@ describe("DMARC Coach API", () => {
       }),
     );
     const res = await request(app)
-      .get("/api/v1/dmarc-coach/dmarc-1")
+      .get("/api/v1/dmarc-coach/00000000-0000-0000-0000-000000000110")
       .set("Authorization", authToken);
     expect(res.status).toBe(200);
     expect(res.body.data.overall_grade).toBe("B");
@@ -115,7 +115,7 @@ describe("DMARC Coach API", () => {
     supabase.from.mockReturnValue(
       createMockBuilder({
         data: {
-          id: "dmarc-1",
+          id: "00000000-0000-0000-0000-000000000110",
           domain: "example.com",
           dmarc_record: "v=DMARC1; p=quarantine;",
           overall_grade: "B",
@@ -124,7 +124,7 @@ describe("DMARC Coach API", () => {
       }),
     );
     const res = await request(app)
-      .patch("/api/v1/dmarc-coach/dmarc-1")
+      .patch("/api/v1/dmarc-coach/00000000-0000-0000-0000-000000000110")
       .set("Authorization", authToken)
       .send({ dmarcRecord: "v=DMARC1; p=quarantine;" });
     expect(res.status).toBe(200);
@@ -134,7 +134,7 @@ describe("DMARC Coach API", () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(createMockBuilder({ error: null }));
     const res = await request(app)
-      .delete("/api/v1/dmarc-coach/dmarc-1")
+      .delete("/api/v1/dmarc-coach/00000000-0000-0000-0000-000000000110")
       .set("Authorization", authToken);
     expect(res.status).toBe(204);
   });
@@ -211,7 +211,7 @@ describe("DMARC Coach API", () => {
       createMockBuilder({ data: null, error: { message: "Not found" } }),
     );
     const res = await request(app)
-      .get("/api/v1/dmarc-coach/non-existent")
+      .get("/api/v1/dmarc-coach/00000000-0000-0000-0000-000000000999")
       .set("Authorization", authToken);
     expect(res.status).toBe(404);
   });

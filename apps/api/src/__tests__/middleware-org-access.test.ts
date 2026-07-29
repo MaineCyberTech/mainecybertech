@@ -104,7 +104,11 @@ describe("requireOrgAccess middleware", () => {
       });
       const next = jest.fn();
 
-      await requireOrgAccess(mockReq({ userId: "user-1", orgId: "org-1" }), mockRes(), next);
+      await requireOrgAccess(
+        mockReq({ userId: "user-1", orgId: "00000000-0000-0000-0000-000000000001" }),
+        mockRes(),
+        next,
+      );
 
       expect(next).toHaveBeenCalledWith();
     });
@@ -116,7 +120,11 @@ describe("requireOrgAccess middleware", () => {
       });
       const next = jest.fn();
 
-      await requireOrgAccess(mockReq({ userId: "user-1", orgId: "org-1" }), mockRes(), next);
+      await requireOrgAccess(
+        mockReq({ userId: "user-1", orgId: "00000000-0000-0000-0000-000000000001" }),
+        mockRes(),
+        next,
+      );
 
       expect(next).toHaveBeenCalledWith();
     });
@@ -128,7 +136,11 @@ describe("requireOrgAccess middleware", () => {
       });
       const next = jest.fn();
 
-      await requireOrgAccess(mockReq({ userId: "user-1", orgId: "org-1" }), mockRes(), next);
+      await requireOrgAccess(
+        mockReq({ userId: "user-1", orgId: "00000000-0000-0000-0000-000000000001" }),
+        mockRes(),
+        next,
+      );
 
       expect(next).toHaveBeenCalledWith();
     });
@@ -140,7 +152,11 @@ describe("requireOrgAccess middleware", () => {
       });
       const next = jest.fn();
 
-      await requireOrgAccess(mockReq({ userId: "user-1", orgId: "org-1" }), mockRes(), next);
+      await requireOrgAccess(
+        mockReq({ userId: "user-1", orgId: "00000000-0000-0000-0000-000000000001" }),
+        mockRes(),
+        next,
+      );
 
       expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
     });
@@ -152,7 +168,11 @@ describe("requireOrgAccess middleware", () => {
       });
       const next = jest.fn();
 
-      await requireOrgAccess(mockReq({ userId: "user-1", orgId: "org-1" }), mockRes(), next);
+      await requireOrgAccess(
+        mockReq({ userId: "user-1", orgId: "00000000-0000-0000-0000-000000000001" }),
+        mockRes(),
+        next,
+      );
 
       expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
     });
@@ -165,7 +185,11 @@ describe("requireOrgAccess middleware", () => {
       });
       const next = jest.fn();
 
-      await requireOrgAccess(mockReq({ userId: "user-1", bodyOrgId: "org-1" }), mockRes(), next);
+      await requireOrgAccess(
+        mockReq({ userId: "user-1", bodyOrgId: "00000000-0000-0000-0000-000000000001" }),
+        mockRes(),
+        next,
+      );
 
       expect(next).toHaveBeenCalledWith();
     });
@@ -174,7 +198,7 @@ describe("requireOrgAccess middleware", () => {
   describe("without org ID (auto-assign primary)", () => {
     it("calls next() when user has a primary org", async () => {
       mockSupabase({
-        primaryMembership: { organization_id: "org-1" },
+        primaryMembership: { organization_id: "00000000-0000-0000-0000-000000000001" },
       });
       const next = jest.fn();
       const req = mockReq({ userId: "user-1" });
@@ -217,7 +241,7 @@ describe("requireOrgAccessByParam middleware", () => {
     const next = jest.fn();
 
     await requireOrgAccessByParam(
-      mockReq({ userId: "user-1", paramsId: "org-1" }),
+      mockReq({ userId: "user-1", paramsId: "00000000-0000-0000-0000-000000000001" }),
       mockRes(),
       next,
     );
@@ -233,7 +257,7 @@ describe("requireOrgAccessByParam middleware", () => {
     const next = jest.fn();
 
     await requireOrgAccessByParam(
-      mockReq({ userId: "user-1", paramsId: "org-1" }),
+      mockReq({ userId: "user-1", paramsId: "00000000-0000-0000-0000-000000000001" }),
       mockRes(),
       next,
     );
@@ -249,7 +273,7 @@ describe("requireOrgAccessByParam middleware", () => {
     const next = jest.fn();
 
     await requireOrgAccessByParam(
-      mockReq({ userId: "user-1", paramsId: "org-1" }),
+      mockReq({ userId: "user-1", paramsId: "00000000-0000-0000-0000-000000000001" }),
       mockRes(),
       next,
     );
@@ -260,7 +284,11 @@ describe("requireOrgAccessByParam middleware", () => {
   it("returns 401 when no authUser", async () => {
     const next = jest.fn();
 
-    await requireOrgAccessByParam(mockReq({ paramsId: "org-1" }), mockRes(), next);
+    await requireOrgAccessByParam(
+      mockReq({ paramsId: "00000000-0000-0000-0000-000000000001" }),
+      mockRes(),
+      next,
+    );
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 }));
   });

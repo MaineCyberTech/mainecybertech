@@ -18,7 +18,6 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
 }));
 
 jest.mock("../services/audit", () => ({
@@ -37,8 +36,17 @@ function mockAuth() {
   return supabase;
 }
 
-const TICKET = { id: "ticket-1", title: "Test Ticket", status: "open", priority: "medium" };
-const COMMENT = { id: "comment-1", ticket_id: "ticket-1", body: "Test comment" };
+const TICKET = {
+  id: "00000000-0000-0000-0000-000000000010",
+  title: "Test Ticket",
+  status: "open",
+  priority: "medium",
+};
+const COMMENT = {
+  id: "comment-1",
+  ticket_id: "00000000-0000-0000-0000-000000000010",
+  body: "Test comment",
+};
 
 const app = createTestApp();
 app.use("/api/v1/tickets", ticketsRouter);
@@ -52,7 +60,9 @@ describe("tickets routes", () => {
   describe("GET /", () => {
     it("returns paginated tickets", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [TICKET], error: null, count: 1 }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [TICKET], error: null, count: 1 }),
+      );
 
       const res = await request(app)
         .get("/api/v1/tickets")
@@ -65,10 +75,12 @@ describe("tickets routes", () => {
 
     it("filters by organization_id", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [], error: null, count: 0 }),
+      );
 
       const res = await request(app)
-        .get("/api/v1/tickets?organization_id=org-1")
+        .get("/api/v1/tickets?organization_id=00000000-0000-0000-0000-000000000001")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -78,22 +90,26 @@ describe("tickets routes", () => {
   describe("GET /:id", () => {
     it("returns a ticket with relations", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: TICKET, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: TICKET, error: null }),
+      );
 
       const res = await request(app)
-        .get("/api/v1/tickets/ticket-1")
+        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000010")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
-      expect(res.body.data.id).toBe("ticket-1");
+      expect(res.body.data.id).toBe("00000000-0000-0000-0000-000000000010");
     });
 
     it("returns 404 when not found", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: new Error("Not found") }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("Not found") }),
+      );
 
       const res = await request(app)
-        .get("/api/v1/tickets/missing")
+        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000999")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
@@ -103,12 +119,19 @@ describe("tickets routes", () => {
   describe("POST /", () => {
     it("creates a ticket", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: TICKET, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: TICKET, error: null }),
+      );
 
       const res = await request(app)
         .post("/api/v1/tickets")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", title: "Test Ticket", priority: "normal", source: "portal" });
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          title: "Test Ticket",
+          priority: "normal",
+          source: "portal",
+        });
 
       expect(res.status).toBe(201);
     });
@@ -117,10 +140,12 @@ describe("tickets routes", () => {
   describe("PATCH /:id", () => {
     it("updates a ticket", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: TICKET, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: TICKET, error: null }),
+      );
 
       const res = await request(app)
-        .patch("/api/v1/tickets/ticket-1")
+        .patch("/api/v1/tickets/00000000-0000-0000-0000-000000000010")
         .set("Authorization", "Bearer token-123")
         .send({ title: "Updated Title" });
 
@@ -131,10 +156,12 @@ describe("tickets routes", () => {
   describe("GET /:id/comments", () => {
     it("returns comments for a ticket", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [COMMENT], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [COMMENT], error: null }),
+      );
 
       const res = await request(app)
-        .get("/api/v1/tickets/ticket-1/comments")
+        .get("/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -145,12 +172,18 @@ describe("tickets routes", () => {
   describe("POST /:id/comments", () => {
     it("adds a comment to a ticket", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: COMMENT, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: COMMENT, error: null }),
+      );
 
       const res = await request(app)
-        .post("/api/v1/tickets/ticket-1/comments")
+        .post("/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", body: "New comment", isInternal: false });
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          body: "New comment",
+          isInternal: false,
+        });
 
       expect(res.status).toBe(201);
     });

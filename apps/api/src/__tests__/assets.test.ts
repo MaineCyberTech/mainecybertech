@@ -44,12 +44,10 @@ function mockAuth() {
   const supabase = {
     from: jest.fn(),
     auth: {
-      getUser: jest
-        .fn()
-        .mockResolvedValue({
-          data: { user: { id: "user-1", email: "test@example.com" } },
-          error: null,
-        }),
+      getUser: jest.fn().mockResolvedValue({
+        data: { user: { id: "user-1", email: "test@example.com" } },
+        error: null,
+      }),
     },
   };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
@@ -105,7 +103,9 @@ describe("Assets API", () => {
   it("returns 404 for non-existent asset", async () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
-    const res = await request(app).get("/api/v1/assets/no-id").set("Authorization", authToken);
+    const res = await request(app)
+      .get("/api/v1/assets/00000000-0000-0000-0000-000000000999")
+      .set("Authorization", authToken);
     expect(res.status).toBe(404);
   });
 

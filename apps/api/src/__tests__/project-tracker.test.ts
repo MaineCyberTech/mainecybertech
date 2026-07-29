@@ -42,23 +42,23 @@ function mockAuth() {
 }
 
 const PHASE = {
-  id: "phase-1",
-  project_id: "proj-1",
+  id: "00000000-0000-0000-0000-000000000050",
+  project_id: "00000000-0000-0000-0000-000000000030",
   name: "Phase 1",
   status: "planned",
   sort_order: 0,
 };
 
 const MILESTONE = {
-  id: "ms-1",
-  project_id: "proj-1",
+  id: "00000000-0000-0000-0000-000000000051",
+  project_id: "00000000-0000-0000-0000-000000000030",
   title: "Milestone 1",
   status: "pending",
 };
 
 const DEPENDENCY = {
-  id: "dep-1",
-  project_id: "proj-1",
+  id: "00000000-0000-0000-0000-000000000052",
+  project_id: "00000000-0000-0000-0000-000000000030",
   dependency_type: "finish_to_start",
 };
 
@@ -80,7 +80,7 @@ describe("project tracker routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects/phases?project_id=proj-1")
+        .get("/api/v1/projects/phases?project_id=00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -110,7 +110,7 @@ describe("project tracker routes", () => {
         .post("/api/v1/projects/phases")
         .set("Authorization", "Bearer token-123")
         .send({
-          projectId: "proj-1",
+          projectId: "00000000-0000-0000-0000-000000000030",
           name: "Phase 1",
           status: "planned",
           sortOrder: 0,
@@ -128,7 +128,7 @@ describe("project tracker routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/projects/phases/phase-1")
+        .patch("/api/v1/projects/phases/00000000-0000-0000-0000-000000000050")
         .set("Authorization", "Bearer token-123")
         .send({ name: "Updated Phase" });
 
@@ -144,7 +144,7 @@ describe("project tracker routes", () => {
       );
 
       const res = await request(app)
-        .delete("/api/v1/projects/phases/phase-1")
+        .delete("/api/v1/projects/phases/00000000-0000-0000-0000-000000000050")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
@@ -159,7 +159,7 @@ describe("project tracker routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects/milestones?project_id=proj-1")
+        .get("/api/v1/projects/milestones?project_id=00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -188,7 +188,7 @@ describe("project tracker routes", () => {
         .post("/api/v1/projects/milestones")
         .set("Authorization", "Bearer token-123")
         .send({
-          projectId: "proj-1",
+          projectId: "00000000-0000-0000-0000-000000000030",
           title: "Milestone 1",
           status: "pending",
         });
@@ -205,7 +205,7 @@ describe("project tracker routes", () => {
       );
 
       const res = await request(app)
-        .get("/api/v1/projects/dependencies?project_id=proj-1")
+        .get("/api/v1/projects/dependencies?project_id=00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -234,7 +234,7 @@ describe("project tracker routes", () => {
         .post("/api/v1/projects/dependencies")
         .set("Authorization", "Bearer token-123")
         .send({
-          projectId: "proj-1",
+          projectId: "00000000-0000-0000-0000-000000000030",
           dependencyType: "finish_to_start",
         });
 
@@ -250,7 +250,7 @@ describe("project tracker routes", () => {
       );
 
       const res = await request(app)
-        .patch("/api/v1/projects/milestones/ms-1")
+        .patch("/api/v1/projects/milestones/00000000-0000-0000-0000-000000000051")
         .set("Authorization", "Bearer token-123")
         .send({ status: "completed" });
 
@@ -266,7 +266,7 @@ describe("project tracker routes", () => {
       );
 
       const res = await request(app)
-        .delete("/api/v1/projects/milestones/ms-1")
+        .delete("/api/v1/projects/milestones/00000000-0000-0000-0000-000000000051")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
@@ -275,7 +275,9 @@ describe("project tracker routes", () => {
 
   describe("auth required", () => {
     it("returns 401 when no auth token is provided", async () => {
-      const res = await request(app).get("/api/v1/projects/phases?project_id=proj-1");
+      const res = await request(app).get(
+        "/api/v1/projects/phases?project_id=00000000-0000-0000-0000-000000000030",
+      );
 
       expect(res.status).toBe(401);
     });

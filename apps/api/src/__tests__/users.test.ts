@@ -18,7 +18,6 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
 }));
 
 jest.mock("../services/audit", () => ({
@@ -39,11 +38,12 @@ function mockAuth() {
 
 function mockAdmin() {
   const supabase = mockAuth();
-  supabase.from
-    .mockReturnValueOnce(createMockBuilder({
+  supabase.from.mockReturnValueOnce(
+    createMockBuilder({
       data: [{ roles: { id: "role-admin", key: "admin" } }],
       error: null,
-    }));
+    }),
+  );
   return supabase;
 }
 
@@ -64,9 +64,7 @@ describe("users routes", () => {
       const result: MockResult = { data: [USER], error: null };
       supabase.from.mockReturnValue(createMockBuilder(result));
 
-      const res = await request(app)
-        .get("/api/v1/users")
-        .set("Authorization", "Bearer token-123");
+      const res = await request(app).get("/api/v1/users").set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveLength(1);
@@ -74,12 +72,9 @@ describe("users routes", () => {
 
     it("returns 403 when not an admin", async () => {
       const supabase = mockAuth();
-      supabase.from
-        .mockReturnValueOnce(createMockBuilder({ data: [], error: null }));
+      supabase.from.mockReturnValueOnce(createMockBuilder({ data: [], error: null }));
 
-      const res = await request(app)
-        .get("/api/v1/users")
-        .set("Authorization", "Bearer token-123");
+      const res = await request(app).get("/api/v1/users").set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(403);
     });
@@ -115,8 +110,7 @@ describe("users routes", () => {
   describe("PATCH /:id/role", () => {
     it("updates a user role (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .patch("/api/v1/users/user-1/role")
@@ -142,11 +136,34 @@ describe("users routes", () => {
   describe("GET /:id/detail", () => {
     it("returns compound user detail in a single call", async () => {
       const supabase = mockAuth();
-      const profileBuilder = createMockBuilder({ data: { id: "user-1", full_name: "Test User", email: "test@example.com" }, error: null });
-      const membershipBuilder = createMockBuilder({ data: [{ id: "m1", organization_id: "org-1", user_id: "user-1", role_id: "r1", status: "approved" }], error: null });
-      const orgBuilder = createMockBuilder({ data: [{ id: "org-1", name: "Test Org" }], error: null });
-      const roleBuilder = createMockBuilder({ data: [{ id: "r1", key: "admin", name: "Admin" }], error: null });
-      const allRolesBuilder = createMockBuilder({ data: [{ id: "r1", key: "admin", name: "Admin" }], error: null });
+      const profileBuilder = createMockBuilder({
+        data: { id: "user-1", full_name: "Test User", email: "test@example.com" },
+        error: null,
+      });
+      const membershipBuilder = createMockBuilder({
+        data: [
+          {
+            id: "m1",
+            organization_id: "00000000-0000-0000-0000-000000000001",
+            user_id: "user-1",
+            role_id: "r1",
+            status: "approved",
+          },
+        ],
+        error: null,
+      });
+      const orgBuilder = createMockBuilder({
+        data: [{ id: "00000000-0000-0000-0000-000000000001", name: "Test Org" }],
+        error: null,
+      });
+      const roleBuilder = createMockBuilder({
+        data: [{ id: "r1", key: "admin", name: "Admin" }],
+        error: null,
+      });
+      const allRolesBuilder = createMockBuilder({
+        data: [{ id: "r1", key: "admin", name: "Admin" }],
+        error: null,
+      });
 
       let callCount = 0;
       supabase.from.mockImplementation(() => {
@@ -174,7 +191,9 @@ describe("users routes", () => {
 
     it("returns 404 when user not found", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: { message: "Not found" } }));
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: { message: "Not found" } }),
+      );
 
       const res = await request(app)
         .get("/api/v1/users/nonexistent/detail")

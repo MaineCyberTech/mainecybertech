@@ -82,7 +82,11 @@ describe("Bulk API", () => {
     const res = await request(app)
       .post("/api/v1/bulk/invite")
       .set("Authorization", authToken)
-      .send({ csv: "not-an-email\n", organizationId: testOrgId, roleId: "role-1" });
+      .send({
+        csv: "not-an-email\n",
+        organizationId: testOrgId,
+        roleId: "00000000-0000-0000-0000-000000000020",
+      });
     expect(res.status).toBe(200);
     expect(res.body.data.results[0].status).toBe("error");
   });
@@ -106,7 +110,11 @@ describe("Bulk API", () => {
     const res = await request(app)
       .post("/api/v1/bulk/invite")
       .set("Authorization", authToken)
-      .send({ csv: "new@example.com,New User\n", organizationId: testOrgId, roleId: "role-1" });
+      .send({
+        csv: "new@example.com,New User\n",
+        organizationId: testOrgId,
+        roleId: "00000000-0000-0000-0000-000000000020",
+      });
     expect(res.status).toBe(200);
     expect(res.body.data.results).toBeDefined();
     expect(Array.isArray(res.body.data.results)).toBe(true);
@@ -131,7 +139,7 @@ describe("Bulk API", () => {
       .send({
         csv: "existing@example.com,Existing User\n",
         organizationId: testOrgId,
-        roleId: "role-1",
+        roleId: "00000000-0000-0000-0000-000000000020",
       });
     expect(res.status).toBe(200);
     expect(res.body.data.results[0].status).toBe("exists");
@@ -140,7 +148,11 @@ describe("Bulk API", () => {
   it("returns 401 without auth token", async () => {
     const res = await request(app)
       .post("/api/v1/bulk/invite")
-      .send({ csv: "test@test.com\n", organizationId: testOrgId, roleId: "role-1" });
+      .send({
+        csv: "test@test.com\n",
+        organizationId: testOrgId,
+        roleId: "00000000-0000-0000-0000-000000000020",
+      });
     expect(res.status).toBe(401);
   });
 });

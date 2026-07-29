@@ -160,9 +160,9 @@ describe("Scorecards Gamification", () => {
       const s = mockSb();
       const scorecards = [
         {
-          organization_id: "org-1",
+          organization_id: "00000000-0000-0000-0000-000000000001",
           score: 90,
-          organizations: { id: "org-1", name: "Alpha Corp" },
+          organizations: { id: "00000000-0000-0000-0000-000000000001", name: "Alpha Corp" },
         },
         {
           organization_id: "org-2",
@@ -170,9 +170,9 @@ describe("Scorecards Gamification", () => {
           organizations: { id: "org-2", name: "Beta Inc" },
         },
         {
-          organization_id: "org-1",
+          organization_id: "00000000-0000-0000-0000-000000000001",
           score: 80,
-          organizations: { id: "org-1", name: "Alpha Corp" },
+          organizations: { id: "00000000-0000-0000-0000-000000000001", name: "Alpha Corp" },
         },
         {
           organization_id: "org-3",

@@ -174,7 +174,7 @@ describe("webhooks routes", () => {
             key: "HELP-1",
             fields: { status: { name: "Open" }, summary: "Test JSM issue" },
           },
-          organizationId: "org-1",
+          organizationId: "00000000-0000-0000-0000-000000000001",
         });
 
       expect(res.status).toBe(200);

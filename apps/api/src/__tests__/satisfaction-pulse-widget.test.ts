@@ -57,14 +57,14 @@ function mockFrom(result: MockResult) {
 }
 
 const PULSE = {
-  id: "pulse-1",
-  organization_id: "org-1",
+  id: "00000000-0000-0000-0000-000000000140",
+  organization_id: "00000000-0000-0000-0000-000000000001",
   subject: "Test Pulse",
   question: "How satisfied are you?",
   rating: 5,
   feedback: "Great service!",
   source: "ticket",
-  source_entity_id: "ticket-1",
+  source_entity_id: "00000000-0000-0000-0000-000000000010",
   template_id: null,
   status: "pending",
   sent_at: null,
@@ -78,7 +78,7 @@ const PULSE = {
 
 const TEMPLATE = {
   id: "template-1",
-  organization_id: "org-1",
+  organization_id: "00000000-0000-0000-0000-000000000001",
   name: "Test Template",
   subject: "Test Subject",
   question: "Test question",
@@ -91,7 +91,7 @@ const TEMPLATE = {
 
 const SCHEDULE = {
   id: "schedule-1",
-  organization_id: "org-1",
+  organization_id: "00000000-0000-0000-0000-000000000001",
   template_id: "template-1",
   name: "Test Schedule",
   trigger_type: "ticket_closed",
@@ -194,7 +194,7 @@ describe("satisfaction-pulse-widget routes", () => {
         .post("/api/v1/satisfaction-pulse")
         .set("Authorization", "Bearer token-123")
         .send({
-          organizationId: "org-1",
+          organizationId: "00000000-0000-0000-0000-000000000001",
           subject: "New Pulse",
           question: "Test question",
         });
@@ -213,7 +213,7 @@ describe("satisfaction-pulse-widget routes", () => {
       const res = await request(app)
         .post("/api/v1/satisfaction-pulse")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1" });
+        .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
 
       expect(res.status).toBe(400);
     });
@@ -256,7 +256,11 @@ describe("satisfaction-pulse-widget routes", () => {
       const res = await request(app)
         .post("/api/v1/satisfaction-pulse/pulse-1/respond")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", rating: 8, feedback: "Good!" });
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          rating: 8,
+          feedback: "Good!",
+        });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -338,7 +342,7 @@ describe("satisfaction-pulse-widget routes", () => {
         .post("/api/v1/satisfaction-pulse/templates")
         .set("Authorization", "Bearer token-123")
         .send({
-          organizationId: "org-1",
+          organizationId: "00000000-0000-0000-0000-000000000001",
           name: "New Template",
           subject: "Test Subject",
         });
@@ -377,7 +381,7 @@ describe("satisfaction-pulse-widget routes", () => {
         .post("/api/v1/satisfaction-pulse/schedules")
         .set("Authorization", "Bearer token-123")
         .send({
-          organizationId: "org-1",
+          organizationId: "00000000-0000-0000-0000-000000000001",
           name: "New Schedule",
           triggerType: "ticket_closed",
         });

@@ -50,12 +50,10 @@ function mockAuth() {
   const supabase = {
     from: jest.fn(),
     auth: {
-      getUser: jest
-        .fn()
-        .mockResolvedValue({
-          data: { user: { id: "user-1", email: "test@example.com" } },
-          error: null,
-        }),
+      getUser: jest.fn().mockResolvedValue({
+        data: { user: { id: "user-1", email: "test@example.com" } },
+        error: null,
+      }),
     },
   };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
@@ -139,7 +137,7 @@ describe("Proposals API", () => {
       const supabase = mockAuth();
       supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
       const res = await request(app)
-        .get("/api/v1/proposals/no-such-id")
+        .get("/api/v1/proposals/00000000-0000-0000-0000-000000000999")
         .set("Authorization", authToken);
       expect(res.status).toBe(404);
     });
@@ -149,7 +147,7 @@ describe("Proposals API", () => {
     it("validates organizationId is required", async () => {
       mockAuth();
       const res = await request(app)
-        .post("/api/v1/proposals/pro-1/submit-approval")
+        .post("/api/v1/proposals/00000000-0000-0000-0000-000000000070/submit-approval")
         .set("Authorization", authToken)
         .send({});
       expect(res.status).toBe(400);

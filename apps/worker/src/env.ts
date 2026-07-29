@@ -45,9 +45,9 @@ try {
   // eslint-disable-next-line no-console
   console.log("Environment validation passed");
 } catch (error) {
-  // eslint-disable-next-line no-console
-  console.error("Invalid environment variables", error);
-  process.exit(1);
+  throw new Error(
+    `Invalid environment variables: ${error instanceof Error ? error.message : String(error)}`,
+  );
 }
 
 export { env };

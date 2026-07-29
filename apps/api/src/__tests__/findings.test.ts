@@ -43,12 +43,10 @@ function mockAuth() {
   const supabase = {
     from: jest.fn(),
     auth: {
-      getUser: jest
-        .fn()
-        .mockResolvedValue({
-          data: { user: { id: "user-1", email: "test@example.com" } },
-          error: null,
-        }),
+      getUser: jest.fn().mockResolvedValue({
+        data: { user: { id: "user-1", email: "test@example.com" } },
+        error: null,
+      }),
     },
   };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
@@ -114,7 +112,9 @@ describe("Findings API", () => {
     it("returns 404", async () => {
       const supabase = mockAuth();
       supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
-      const res = await request(app).get("/api/v1/findings/no-id").set("Authorization", authToken);
+      const res = await request(app)
+        .get("/api/v1/findings/00000000-0000-0000-0000-000000000999")
+        .set("Authorization", authToken);
       expect(res.status).toBe(404);
     });
   });
@@ -123,7 +123,7 @@ describe("Findings API", () => {
     it("validates organizationId", async () => {
       mockAuth();
       const res = await request(app)
-        .post("/api/v1/findings/f-1/resolve")
+        .post("/api/v1/findings/00000000-0000-0000-0000-000000000060/resolve")
         .set("Authorization", authToken)
         .send({});
       expect(res.status).toBe(400);

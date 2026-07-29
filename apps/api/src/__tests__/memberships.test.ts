@@ -18,7 +18,6 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
 }));
 
 jest.mock("../services/audit", () => ({
@@ -39,15 +38,22 @@ function mockAuth() {
 
 function mockAdmin() {
   const supabase = mockAuth();
-  supabase.from
-    .mockReturnValueOnce(createMockBuilder({
+  supabase.from.mockReturnValueOnce(
+    createMockBuilder({
       data: [{ roles: { id: "role-admin", key: "admin" } }],
       error: null,
-    }));
+    }),
+  );
   return supabase;
 }
 
-const MEMBERSHIP = { id: "mem-1", organization_id: "org-1", user_id: "user-1", role_id: "role-1", status: "approved" };
+const MEMBERSHIP = {
+  id: "mem-1",
+  organization_id: "00000000-0000-0000-0000-000000000001",
+  user_id: "user-1",
+  role_id: "00000000-0000-0000-0000-000000000020",
+  status: "approved",
+};
 
 const app = createTestApp();
 app.use("/api/v1/memberships", membershipsRouter);
@@ -74,7 +80,9 @@ describe("memberships routes", () => {
 
     it("filters by organization_id", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/memberships?organization_id=org-1")
@@ -87,7 +95,9 @@ describe("memberships routes", () => {
   describe("GET /mine", () => {
     it("returns current user memberships", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [MEMBERSHIP], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [MEMBERSHIP], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/memberships/mine")
@@ -108,20 +118,27 @@ describe("memberships routes", () => {
       const res = await request(app)
         .post("/api/v1/memberships/invite")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", email: "invitee@example.com", roleId: "role-1" });
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          email: "invitee@example.com",
+          roleId: "00000000-0000-0000-0000-000000000020",
+        });
 
       expect(res.status).toBe(201);
     });
 
     it("returns 404 when user email not found", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .post("/api/v1/memberships/invite")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", email: "missing@example.com", roleId: "role-1" });
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          email: "missing@example.com",
+          roleId: "00000000-0000-0000-0000-000000000020",
+        });
 
       expect(res.status).toBe(404);
     });
@@ -135,7 +152,11 @@ describe("memberships routes", () => {
       const res = await request(app)
         .post("/api/v1/memberships/invite")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", email: "invitee@example.com", roleId: "role-1" });
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          email: "invitee@example.com",
+          roleId: "00000000-0000-0000-0000-000000000020",
+        });
 
       expect(res.status).toBe(409);
     });
@@ -144,13 +165,14 @@ describe("memberships routes", () => {
   describe("PATCH /:id", () => {
     it("updates a membership (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: { ...MEMBERSHIP, status: "approved" }, error: null }));
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { ...MEMBERSHIP, status: "approved" }, error: null }),
+      );
 
       const res = await request(app)
         .patch("/api/v1/memberships/mem-1")
         .set("Authorization", "Bearer token-123")
-        .send({ roleId: "role-1", status: "approved" });
+        .send({ roleId: "00000000-0000-0000-0000-000000000020", status: "approved" });
 
       expect(res.status).toBe(200);
     });
@@ -159,8 +181,7 @@ describe("memberships routes", () => {
   describe("DELETE /:id", () => {
     it("deletes a membership (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/memberships/mem-1")
