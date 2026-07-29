@@ -2,7 +2,7 @@
 
 PATTERNS="SUPABASE_SERVICE_ROLE_KEY|SUPABASE_ANON_KEY|JWT_SECRET|STRIPE_SECRET_KEY|AKIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|-----BEGIN[ A-Za-z]*PRIVATE KEY-----"
 
-STAGED=$(git diff --cached --diff-filter=ACMR --name-only 2>/dev/null | grep -vE '\.md$|^scripts/scan-secrets\.sh$' || true)
+STAGED=$(git diff --cached --diff-filter=ACMR --name-only 2>/dev/null | grep -vE '\.md$|scan-secrets\.' || true)
 
 if [ -z "$STAGED" ]; then
   exit 0

@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logger } from "./logger";
+import { checkIdempotencyKey, storeIdempotencyKey } from "./idempotency";
 
 export async function dispatchWebhook(
   event: string,
@@ -28,9 +29,14 @@ export async function dispatchWebhook(
       secret: string | null;
       events: string[];
     }>) {
+      const idempotencyKey = `wh-out-${endpoint.id}-${event}-${Date.now()}`;
+      const existing = await checkIdempotencyKey(idempotencyKey);
+      if (existing) continue;
+
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "X-Webhook-Event": event,
+        "Idempotency-Key": idempotencyKey,
       };
 
       if (endpoint.secret) {
@@ -74,7 +80,12 @@ export async function dispatchWebhook(
         response_body: responseBody || null,
         error,
         duration_ms: duration,
+        idempotency_key: idempotencyKey,
       });
+
+      if (responseStatus >= 200 && responseStatus < 300) {
+        await storeIdempotencyKey(idempotencyKey, "done");
+      }
 
       if (error || responseStatus >= 400) {
         await supabase
