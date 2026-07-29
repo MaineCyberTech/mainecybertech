@@ -40,7 +40,7 @@ function mockSupabase() {
     from: jest.fn(),
     auth: {
       getUser: jest.fn().mockResolvedValue({
-        data: { user: { id: "user-1", email: "test@example.com" } },
+        data: { user: { id: "00000000-0000-0000-0000-000000000777", email: "test@example.com" } },
         error: null,
       }),
     },
@@ -63,7 +63,7 @@ const ONBOARDING_RECORD = {
   client_domain: "test.com",
   client_contact_email: "contact@test.com",
   client_contact_phone: "555-1234",
-  onboarding_lead_id: "user-1",
+  onboarding_lead_id: "00000000-0000-0000-0000-000000000777",
   status: "discovery",
   phase: "discovery",
   risk_level: "medium",
@@ -307,7 +307,7 @@ describe("client-onboarding-command-center routes", () => {
         .post("/api/v1/client-onboarding/00000000-0000-0000-0000-000000000120/complete-phase")
         .query({ organization_id: "00000000-0000-0000-0000-000000000001" })
         .set("Authorization", "Bearer token-123")
-        .send({ completedBy: "user-1" });
+        .send({ completedBy: "00000000-0000-0000-0000-000000000777" });
 
       if (res.status !== 200) {
         console.log("Response status:", res.status);

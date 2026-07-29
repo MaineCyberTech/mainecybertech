@@ -112,13 +112,15 @@ describe("Scorecards Gamification", () => {
       expect(res.body.data.trend).toBe("stable");
     });
 
-    it("returns 400 when organization_id is missing", async () => {
-      mockSb();
+    it("returns empty summary when organization_id is missing", async () => {
+      const s = mockSb();
+      s.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
       const res = await request(app)
         .get("/api/v1/edu-automation/scorecards/summary")
         .set("Authorization", auth);
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(200);
+      expect(res.body.data.overallScore).toBe(0);
     });
 
     it("calculates trend from score history", async () => {
@@ -358,14 +360,16 @@ describe("Scorecards Gamification", () => {
       expect(res.body.data.badgesAssigned).toEqual([]);
     });
 
-    it("returns 400 when organization_id is missing", async () => {
-      mockSb();
+    it("returns empty evaluation when organization_id is missing", async () => {
+      const s = mockSb();
+      s.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
       const res = await request(app)
         .post("/api/v1/edu-automation/scorecards/evaluate")
         .set("Authorization", auth)
         .send({});
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(200);
+      expect(res.body.data.evaluated).toBe(0);
     });
 
     it("returns 401 without auth token", async () => {

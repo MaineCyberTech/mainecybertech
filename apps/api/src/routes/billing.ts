@@ -18,9 +18,7 @@ router.get("/summary", async (req, res, next) => {
     const supabase = getSupabaseAdmin();
     const orgId = req.query.organization_id as string | undefined;
 
-    const baseQuery = orgId
-      ? (qb: any) => qb.eq("organization_id", orgId)
-      : (qb: any) => qb;
+    const baseQuery = orgId ? (qb: any) => qb.eq("organization_id", orgId) : (qb: any) => qb;
 
     const [
       { count: activeSubs },
@@ -73,10 +71,7 @@ router.get("/invoices", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(req.query.limit as string) || 20),
-    );
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
     const orgId = req.query.organization_id as string | undefined;
     const statusFilter = req.query.status as string | undefined;
@@ -104,8 +99,7 @@ router.get("/invoices/:id", async (req, res, next) => {
       .select("*")
       .eq("id", req.params.id)
       .single();
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Invoice not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Invoice not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -134,10 +128,7 @@ router.get("/payments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(req.query.limit as string) || 20),
-    );
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
     const orgId = req.query.organization_id as string | undefined;
 
@@ -160,16 +151,11 @@ router.get("/billing-customer", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const orgId = req.query.organization_id as string | undefined;
-    if (!orgId)
-      throw new AppError("VALIDATION", "organization_id is required", 400);
 
-    const { data, error } = await supabase
-      .from("billing_customers")
-      .select("*")
-      .eq("organization_id", orgId)
-      .single();
-    if (error && error.code !== "PGRST116")
-      throw new AppError("DB_ERROR", error.message, 500);
+    let query = supabase.from("billing_customers").select("*");
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.single();
+    if (error && error.code !== "PGRST116") throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data ?? null));
   } catch (error) {
     next(error);
@@ -185,17 +171,14 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
 
     const env = getEnv();
     const stripeKey = env.STRIPE_SECRET_KEY;
-    if (!stripeKey)
-      throw new AppError("CONFIG", "STRIPE_SECRET_KEY not configured", 500);
+    if (!stripeKey) throw new AppError("CONFIG", "STRIPE_SECRET_KEY not configured", 500);
 
     const stripeHeaders = {
       Authorization: `Bearer ${stripeKey}`,
       "Content-Type": "application/x-www-form-urlencoded",
     };
 
-    let query = supabase
-      .from("billing_customers")
-      .select("stripe_customer_id, organization_id");
+    let query = supabase.from("billing_customers").select("stripe_customer_id, organization_id");
     if (organizationId) query = query.eq("organization_id", organizationId);
 
     const { data: customers } = await query;
@@ -232,22 +215,16 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
               stripe_invoice_id: inv.id,
               invoice_number: inv.number,
               status,
-              subtotal_cents: Math.round(
-                inv.subtotal * (inv.currency === "usd" ? 100 : 100),
-              ),
+              subtotal_cents: Math.round(inv.subtotal * (inv.currency === "usd" ? 100 : 100)),
               tax_cents: Math.round((inv.tax ?? 0) * 100),
               total_cents: Math.round(inv.total * 100),
               currency: inv.currency,
               hosted_invoice_url: inv.hosted_invoice_url,
               invoice_pdf_url: inv.invoice_pdf,
-              due_at: inv.due_date
-                ? new Date(inv.due_date * 1000).toISOString()
-                : null,
+              due_at: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
               paid_at:
                 inv.status === "paid"
-                  ? new Date(
-                      inv.status_transitions?.paid_at * 1000,
-                    ).toISOString()
+                  ? new Date(inv.status_transitions?.paid_at * 1000).toISOString()
                   : null,
             },
             { onConflict: "stripe_invoice_id" },

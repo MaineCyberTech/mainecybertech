@@ -31,7 +31,7 @@ function mockAuth() {
   const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn() };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
   supabase.auth.getUser.mockResolvedValue({
-    data: { user: { id: "user-1", email: "test@example.com" } },
+    data: { user: { id: "00000000-0000-0000-0000-000000000777", email: "test@example.com" } },
     error: null,
   });
   return supabase;
@@ -112,12 +112,10 @@ describe("API edge cases", () => {
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest
-              .fn()
-              .mockResolvedValue({
-                data: null,
-                error: { message: "new row violates row-level security policy" },
-              }),
+            single: jest.fn().mockResolvedValue({
+              data: null,
+              error: { message: "new row violates row-level security policy" },
+            }),
           }),
         }),
       });
@@ -132,13 +130,11 @@ describe("API edge cases", () => {
     it("returns 403 when user is not authorized for mutation", async () => {
       const supabase = mockAuth();
       supabase.from.mockReturnValueOnce({
-        select: jest
-          .fn()
-          .mockReturnValue({
-            eq: jest
-              .fn()
-              .mockReturnValue({ eq: jest.fn().mockResolvedValue({ data: [], error: null }) }),
-          }),
+        select: jest.fn().mockReturnValue({
+          eq: jest
+            .fn()
+            .mockReturnValue({ eq: jest.fn().mockResolvedValue({ data: [], error: null }) }),
+        }),
       });
 
       const res = await request(app)
@@ -150,16 +146,16 @@ describe("API edge cases", () => {
   });
 
   describe("malformed input scenarios", () => {
-    it("returns 400 for invalid UUID format in params", async () => {
+    it("returns 404 for invalid UUID format in params", async () => {
       mockAuth();
       (getSupabaseAdmin as jest.Mock)().from.mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest
-            .fn()
-            .mockResolvedValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
               data: null,
               error: { message: "invalid input syntax for type uuid" },
             }),
+          }),
         }),
         insert: jest.fn(),
         update: jest.fn(),
@@ -170,7 +166,7 @@ describe("API edge cases", () => {
         .get("/api/v1/projects/not-a-uuid")
         .set("Authorization", "Bearer token-123");
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(404);
     });
   });
 });

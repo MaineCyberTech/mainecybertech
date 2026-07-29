@@ -211,15 +211,11 @@ projectSubRoute("dependencies", "project_dependencies", createDependencySchema a
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const orgId = req.query.organization_id as string;
-    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
+    const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("projects")
-      .select("*")
-      .eq("id", req.params.id)
-      .eq("organization_id", orgId)
-      .single();
+    let query = supabase.from("projects").select("*, project_tasks(*)").eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Project not found", 404);
     res.json(success(data));
@@ -230,15 +226,12 @@ router.get("/:id", async (req, res, next) => {
 
 router.get("/:id/detail", async (req, res, next) => {
   try {
-    const orgId = req.query.organization_id as string;
-    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
+    const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
 
-    const { data: project, error: projError } = await supabase
-      .from("projects")
-      .select("*, project_tasks(*)")
-      .eq("id", req.params.id)
-      .single();
+    let query = supabase.from("projects").select("*, project_tasks(*)").eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data: project, error: projError } = await query.single();
 
     if (projError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
 

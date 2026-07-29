@@ -41,7 +41,7 @@ function mockSupabase() {
     from: jest.fn(),
     auth: {
       getUser: jest.fn().mockResolvedValue({
-        data: { user: { id: "user-1", email: "test@example.com" } },
+        data: { user: { id: "00000000-0000-0000-0000-000000000777", email: "test@example.com" } },
         error: null,
       }),
     },
@@ -209,6 +209,12 @@ describe("documents routes", () => {
       supabase.from
         .mockReturnValueOnce(
           createMockBuilder({
+            data: [{ roles: { id: "role-1", key: "admin" } }],
+            error: null,
+          } as MockResult),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({
             data: {
               storage_bucket: "documents",
               storage_path: "orgs/org-1/file.pdf",
@@ -231,12 +237,19 @@ describe("documents routes", () => {
 
     it("deletes without storage cleanup when no storage references", async () => {
       const supabase = mockSupabase();
-      supabase.from.mockReturnValue(
-        createMockBuilder({
-          data: { storage_bucket: null, storage_path: null },
-          error: null,
-        } as MockResult),
-      );
+      supabase.from
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [{ roles: { id: "role-1", key: "admin" } }],
+            error: null,
+          } as MockResult),
+        )
+        .mockReturnValue(
+          createMockBuilder({
+            data: { storage_bucket: null, storage_path: null },
+            error: null,
+          } as MockResult),
+        );
 
       const res = await request(app)
         .delete("/api/v1/documents/00000000-0000-0000-0000-000000000040")
@@ -246,7 +259,13 @@ describe("documents routes", () => {
     });
 
     it("returns 404 when document not found", async () => {
-      mockFrom({ data: null, error: new Error("Not found") } as MockResult);
+      const { mock } = mockFrom({ data: null, error: new Error("Not found") } as MockResult);
+      mock.from.mockReturnValueOnce(
+        createMockBuilder({
+          data: [{ roles: { id: "role-1", key: "admin" } }],
+          error: null,
+        } as MockResult),
+      );
 
       const res = await request(app)
         .delete("/api/v1/documents/00000000-0000-0000-0000-000000000999")

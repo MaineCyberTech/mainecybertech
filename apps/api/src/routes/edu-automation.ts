@@ -528,15 +528,11 @@ psRoute("reject", async (req, res, next) => {
 router.get("/scorecards/summary", async (req, res, next) => {
   try {
     const sb = getSupabaseAdmin();
-    const orgId = req.query.organization_id as string;
-    if (!orgId) throw new AppError("BAD_REQUEST", "organization_id is required", 400);
+    const orgId = req.query.organization_id as string | undefined;
 
-    const { data: scorecards, error } = await sb
-      .from("cyber_scorecards")
-      .select("category, score, badge")
-      .eq("organization_id", orgId);
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    let query = sb.from("cyber_scorecards").select("category, score, badge");
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data: scorecards, error } = await query;
     if (!scorecards || scorecards.length === 0) {
       return res.json(
         success({
@@ -685,15 +681,11 @@ router.get("/scorecards/leaderboard", requireAdmin, async (_req, res, next) => {
 router.post("/scorecards/evaluate", async (req, res, next) => {
   try {
     const sb = getSupabaseAdmin();
-    const orgId = (req.body as Record<string, unknown>).organization_id as string;
-    if (!orgId) throw new AppError("BAD_REQUEST", "organization_id is required", 400);
+    const orgId = (req.body as Record<string, unknown>).organization_id as string | undefined;
 
-    const { data: scorecards, error } = await sb
-      .from("cyber_scorecards")
-      .select("id, category, score")
-      .eq("organization_id", orgId);
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    let query = sb.from("cyber_scorecards").select("id, category, score");
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data: scorecards, error } = await query;
     if (!scorecards || scorecards.length === 0) {
       return res.json(success({ evaluated: 0, badgesAssigned: [] }));
     }

@@ -35,7 +35,7 @@ function mockAuth() {
   };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
   supabase.auth.getUser.mockResolvedValue({
-    data: { user: { id: "user-1", email: "test@example.com" } },
+    data: { user: { id: "00000000-0000-0000-0000-000000000777", email: "test@example.com" } },
     error: null,
   });
   return supabase;
@@ -191,10 +191,15 @@ describe("projects routes", () => {
 
   describe("DELETE /:id", () => {
     it("deletes a project", async () => {
-      mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
-        createMockBuilder({ data: null, error: null }),
-      );
+      const supabase = mockAuth();
+      supabase.from
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [{ roles: { id: "role-1", key: "admin" } }],
+            error: null,
+          }),
+        )
+        .mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
