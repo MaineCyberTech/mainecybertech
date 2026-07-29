@@ -193,6 +193,7 @@ router.post("/stripe", async (req, res, next) => {
     });
 
     await logWebhookDelivery(`stripe.${event.type}`, req.body, `stripe-${event.id}`);
+    recordWebhookDelivery("success", `stripe.${event.type}`);
 
     res.json(success({ received: true }));
   } catch (error) {
@@ -256,6 +257,7 @@ router.post("/jira", async (req, res, next) => {
     });
 
     await logWebhookDelivery(`jira.${event.webhookEvent ?? "unknown"}`, req.body, jiraKey);
+    recordWebhookDelivery("success", `jira.${event.webhookEvent ?? "unknown"}`);
 
     res.json(success({ received: true }));
   } catch (error) {
@@ -324,6 +326,7 @@ router.post("/jsm", async (req, res, next) => {
     });
 
     await logWebhookDelivery(`jsm.${event.webhookEvent ?? "unknown"}`, req.body, jsmKey);
+    recordWebhookDelivery("success", `jsm.${event.webhookEvent ?? "unknown"}`);
 
     res.json(success({ received: true }));
   } catch (error) {
@@ -361,6 +364,7 @@ router.post("/m365", async (req, res, next) => {
     });
 
     await logWebhookDelivery("m365.webhook", req.body, m365Key);
+    recordWebhookDelivery("success", "m365.webhook");
 
     res.json(success({ received: true }));
   } catch (error) {

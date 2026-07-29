@@ -1,6 +1,7 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { randomUUID } from "crypto";
 import { logger as rootLogger } from "../lib/logger";
+import { httpRequestsTotal, httpRequestDuration } from "../lib/metrics";
 
 declare global {
   namespace Express {
@@ -35,6 +36,16 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
         ip: req.ip,
       },
       "Request completed",
+    );
+
+    httpRequestsTotal.inc({
+      method: req.method,
+      route: req.path,
+      status_code: String(res.statusCode),
+    });
+    httpRequestDuration.observe(
+      { method: req.method, route: req.path, status_code: String(res.statusCode) },
+      duration / 1000,
     );
   });
 

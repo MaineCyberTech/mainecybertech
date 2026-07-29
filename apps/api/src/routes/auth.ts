@@ -8,6 +8,7 @@ import { requireAuth } from "../middleware/auth";
 import { logAuditEvent } from "../services/audit";
 import { logger } from "../lib/logger";
 import { rateLimitAuth } from "../middleware/rate-limit";
+import { recordAuthAttempt } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -71,6 +72,7 @@ router.post("/sign-in", rateLimitAuth, async (req, res, next) => {
     });
 
     if (error) {
+      recordAuthAttempt("failure");
       logAuditEvent({
         action: "auth.sign-in.failed",
         entityType: "user",
@@ -86,6 +88,7 @@ router.post("/sign-in", rateLimitAuth, async (req, res, next) => {
       entityId: data.user.id,
       metadata: { email },
     });
+    recordAuthAttempt("success");
 
     res.json(
       success({
