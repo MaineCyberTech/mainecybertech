@@ -29,6 +29,7 @@ const envSchema = z.object({
   JIRA_WEBHOOK_SECRET: z.string().optional(),
   JSM_WEBHOOK_SECRET: z.string().optional(),
   M365_WEBHOOK_SECRET: z.string().optional(),
+  TURNSTILE_SECRET_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

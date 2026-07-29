@@ -13,6 +13,7 @@ export async function submitLead(data: {
   urgency: string;
   message: string;
   consent: boolean;
+  captchaToken?: string;
 }): Promise<{ success: boolean; error?: string }> {
   try {
     if (!data.consent) {

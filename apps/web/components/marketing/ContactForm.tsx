@@ -1,9 +1,10 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { submitLead } from "../../app/(public)/contact/actions";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 interface FormData {
   company: string;
@@ -35,6 +36,8 @@ export default function ContactForm() {
   const [form, setForm] = useState<FormData>(initialForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [consent, setConsent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/public/init`)
@@ -44,6 +47,18 @@ export default function ContactForm() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY || !turnstileRef.current) return;
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+    return () => {
+      document.head.removeChild(script);
+    };
   }, []);
 
   function validate(): boolean {
@@ -68,7 +83,7 @@ export default function ContactForm() {
     setStatus(null);
 
     try {
-      const res = await submitLead({ ...form, trackingId, consent });
+      const res = await submitLead({ ...form, trackingId, consent, captchaToken });
       if (res.success) {
         setStatus({
           type: "success",
@@ -209,6 +224,17 @@ export default function ContactForm() {
         {errors.message && <p className="mt-1 text-xs text-red-400">{errors.message}</p>}
       </div>
 
+      {TURNSTILE_SITE_KEY && (
+        <div className="flex items-start gap-3">
+          <div
+            ref={turnstileRef}
+            className="cf-turnstile"
+            data-sitekey={TURNSTILE_SITE_KEY}
+            data-callback={(token: string) => setCaptchaToken(token)}
+          />
+        </div>
+      )}
+
       <div className="flex items-start gap-3">
         <input
           id="consent"
@@ -231,7 +257,7 @@ export default function ContactForm() {
 
       <button
         type="submit"
-        disabled={loading || submitting || !consent}
+        disabled={loading || submitting || !consent || (!!TURNSTILE_SITE_KEY && !captchaToken)}
         className="font-orbitron w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
       >
         {loading
