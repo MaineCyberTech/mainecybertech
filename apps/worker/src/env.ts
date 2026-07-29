@@ -4,20 +4,16 @@ import { z } from "zod";
 import { logger } from "./logger";
 
 export const envSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "production", "test"])
-    .default("development"),
-  LOG_LEVEL: z
-    .enum(["debug", "info", "warn", "error", "silent"])
-    .default("info"),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
   WORKER_CONCURRENCY: z.coerce.number().default(10),
   WORKER_TIMEOUT: z.coerce.number().default(30000),
   QUEUE_BACKEND: z.enum(["bullmq", "sqs"]).default("bullmq"),
   REDIS_URL: z.string().default("redis://redis:6379"),
   SQS_QUEUE_URL: z.string().optional(),
-  SUPABASE_URL: z.string().url().optional(),
-  SUPABASE_ANON_KEY: z.string().optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_URL: z.string().url(),
+  SUPABASE_ANON_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   STRIPE_SECRET_KEY: z.string().optional(),
   JIRA_BASE_URL: z.string().optional(),
   JIRA_EMAIL: z.string().optional(),

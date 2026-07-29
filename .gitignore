@@ -23,7 +23,9 @@ storybook-static/
 !.vscode/launch.json
 !.vscode/settings.json
 .idea/
-*.swp *.swo *~
+*.swp
+*.swo
+*~
 .DS_Store
 Thumbs.db
 .vercel/
@@ -36,11 +38,15 @@ scripts/*.local.sh
 scripts/*.local.ps1
 tmp/
 temp/
+# Terraform
 terraform.exe
 /terraform
 **/.terraform/*
 *.tfstate
 *.tfstate.*
+!infra/terraform/digitalocean/terraform.tfstate
+infra/terraform/digitalocean/terraform.tfstate
+infra/terraform/digitalocean/terraform.tfstate.backup
 crash.log
 crash.*.log
 override.tf

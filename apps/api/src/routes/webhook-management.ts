@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import crypto from "crypto";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
@@ -7,6 +8,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
+import { httpClients } from "../lib/http-client";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -211,7 +213,13 @@ router.post("/:id/test", requireAdmin, async (req, res, next) => {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (webhook.secret) headers["X-Webhook-Signature"] = webhook.secret;
+    if (webhook.secret) {
+      const hmac = crypto
+        .createHmac("sha256", webhook.secret)
+        .update(JSON.stringify(payload))
+        .digest("hex");
+      headers["X-Webhook-Signature"] = `sha256=${hmac}`;
+    }
 
     const start = Date.now();
     let responseStatus = 0;
@@ -219,11 +227,7 @@ router.post("/:id/test", requireAdmin, async (req, res, next) => {
     let error: string | null = null;
 
     try {
-      const res = await fetch(webhook.url, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
+      const res = await httpClients.default.post(webhook.url, payload, { headers });
       responseStatus = res.status;
       responseBody = await res.text().catch(() => "");
     } catch (e) {

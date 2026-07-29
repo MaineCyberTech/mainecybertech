@@ -210,10 +210,11 @@ projectSubRoute("dependencies", "project_dependencies", createDependencySchema a
 router.get("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
+    const { data: project, error: pErr } = await supabase
       .from("projects")
-      .select("*, project_tasks(*)")
+      .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", orgId)
       .single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Project not found", 404);
@@ -225,6 +226,8 @@ router.get("/:id", async (req, res, next) => {
 
 router.get("/:id/detail", async (req, res, next) => {
   try {
+    const orgId = req.query.organization_id as string;
+    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
     const supabase = getSupabaseAdmin();
 
     const { data: project, error: projError } = await supabase
@@ -410,7 +413,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("projects").delete().eq("id", req.params.id);

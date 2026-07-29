@@ -26,6 +26,10 @@ permissions:
 env:
   IMAGE_TAG: ${{ github.sha }}
 
+concurrency:
+  group: deploy-do-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -161,6 +165,7 @@ jobs:
 
   deploy:
     needs: [setup, resolve-ip, build-api, build-worker, build-web]
+    if: always() && needs.setup.result == 'success' && needs.resolve-ip.result == 'success' && needs.build-api.result == 'success' && needs.build-worker.result == 'success' && needs.build-web.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: ${{ needs.setup.outputs.name }}

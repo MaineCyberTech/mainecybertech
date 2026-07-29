@@ -15,9 +15,10 @@ const DANGEROUS_PATTERNS = [
 ];
 
 const SQL_INJECTION_PATTERNS = [
-  /(\b(union|select|insert|update|delete|drop|alter|create|exec|execute|xp_|sp_|0x)\b)/i,
-  /(--|;|\/\*|\*\/|@@|char|nchar|varchar|nvarchar|alter|begin|cast|create|cursor|declare|exec|execute|fetch|kill|sys|sysobjects|syscolumns)/i,
-  /('(\s|%20)*(or|and)(\s|%20)')/i,
+  /((?:UNION\s+ALL\s+SELECT|UNION\s+SELECT|UNION\s+ALL\s+VALUES)\s+)/i,
+  /(--[\s\S]*$|;\s*$)/im,
+  /(\/\*[\s\S]*?\*\/)/i,
+  /('(\s|%20)*(or|and)(\s|%20)'[\s\S]*=)/i,
 ];
 
 function containsDangerousContent(value: unknown): boolean {

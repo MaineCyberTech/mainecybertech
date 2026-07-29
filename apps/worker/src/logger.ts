@@ -1,7 +1,8 @@
 import pino from "pino";
+import { env } from "./env";
 
 export const logger = pino({
-  level: process.env.LOG_LEVEL || "info",
+  level: env.LOG_LEVEL,
   redact: {
     paths: [
       "password",
@@ -14,13 +15,19 @@ export const logger = pino({
       "*.authorization",
       "cookie",
       "*.cookie",
+      "email",
+      "phone",
+      "fullName",
+      "full_name",
+      "*.email",
+      "*.phone",
       "req.headers.authorization",
       "req.headers.cookie",
     ],
     censor: "[REDACTED]",
   },
   transport:
-    process.env.NODE_ENV !== "production"
+    env.NODE_ENV !== "production"
       ? {
           target: "pino-pretty",
           options: {
