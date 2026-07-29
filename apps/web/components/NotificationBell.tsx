@@ -26,6 +26,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [prefs, setPrefs] = useState<Record<string, boolean>>({});
   const [loadingPrefs, setLoadingPrefs] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -33,8 +34,10 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     try {
       const result = await getClientApi().notifications.unreadCount();
       setUnread(result.count);
+      setConnectionError(false);
     } catch {
-      /* ignore */
+      console.warn("NotificationBell: failed to fetch unread count");
+      setConnectionError(true);
     }
   }, []);
 
@@ -46,7 +49,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
       });
       setNotifications(result.items as NotificationItem[]);
     } catch {
-      /* ignore */
+      console.warn("NotificationBell: failed to fetch recent notifications");
     }
   }, []);
 
@@ -64,7 +67,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.3);
     } catch {
-      /* ignore */
+      console.warn("NotificationBell: audio chime unavailable");
     }
   }, []);
 
@@ -87,7 +90,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
           playNotificationChime();
         }
       } catch {
-        /* ignore */
+        console.warn("NotificationBell: failed to parse SSE notification data");
       }
     });
 
@@ -116,7 +119,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
       }
       setPrefs(map);
     } catch {
-      /* ignore */
+      console.warn("NotificationBell: failed to load preferences");
     }
     setLoadingPrefs(false);
   }, []);
@@ -140,7 +143,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     try {
       await getClientApi().notifications.markAllRead();
     } catch {
-      /* ignore */
+      console.warn("NotificationBell: failed to mark all read");
     }
     await fetchUnread();
     await fetchRecent();
@@ -150,7 +153,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     try {
       await getClientApi().notifications.markRead(id);
     } catch {
-      /* ignore */
+      console.warn("NotificationBell: failed to mark notification read");
     }
     await fetchUnread();
     await fetchRecent();
@@ -163,7 +166,8 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
         preferences: [{ moduleKey, channel: "email", enabled }],
       });
     } catch {
-      /* ignore */
+      console.warn("NotificationBell: failed to update preference");
+      setPrefs((prev) => ({ ...prev, [moduleKey]: !enabled }));
     }
   }
 
@@ -216,7 +220,11 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
           </div>
 
           <div className="max-h-80 overflow-y-auto">
-            {notifications.length === 0 ? (
+            {connectionError ? (
+              <div className="px-4 py-8 text-center text-sm text-amber-400">
+                Unable to load notifications
+              </div>
+            ) : notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-slate-400">
                 No new notifications
               </div>

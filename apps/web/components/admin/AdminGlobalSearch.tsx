@@ -47,7 +47,7 @@ export default function AdminGlobalSearch() {
         setResults(result);
         setOpen(true);
       } catch {
-        /* ignore */
+        console.warn("AdminGlobalSearch: search failed");
       } finally {
         setLoading(false);
       }
