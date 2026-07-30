@@ -68,11 +68,6 @@ router.get("/export", async (req, res, next) => {
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) {
       query = query.eq("organization_id", orgId);
-    } else {
-      const adminOrgIds = await getAdminOrgIds(req.authUser!.userId);
-      if (adminOrgIds.length > 0) {
-        query = query.in("organization_id", adminOrgIds);
-      }
     }
 
     const actionFilter = req.query.action as string | undefined;

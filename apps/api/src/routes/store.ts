@@ -180,7 +180,7 @@ router.delete("/promotions/:id", requireAuth, requireAdmin, async (req, res, nex
     await logAuditEvent({
       action: "store.promotion.delete",
       entityType: "store_promotion",
-      entityId: req.params.id,
+      entityId: req.params.id as string,
     });
 
     res.json(success({ deleted: true }));
@@ -244,7 +244,7 @@ router.get("/quotes", requireAuth, requireAdmin, async (_req, res, next) => {
 
 // GET /api/v1/store/products - list products (public)
 router.get("/products", (req, res) => {
-  const category = req.query.category as string | undefined;
+  const category = String(req.query.category ?? "");
   const allProducts = getProducts();
   const result = category ? allProducts.filter((p) => p.category === category) : allProducts;
   res.json(success(result));

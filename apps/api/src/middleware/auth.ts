@@ -72,9 +72,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
 
     const supabase = getSupabaseAdmin();
 
-    const { data, error } = await supabase.auth.getUser(token, {
-      signal: AbortSignal.timeout(5000),
-    });
+    const { data, error } = await supabase.auth.getUser(token);
     if (error || !data.user) {
       throw new AppError("UNAUTHORIZED", "Invalid or expired session", 401);
     }

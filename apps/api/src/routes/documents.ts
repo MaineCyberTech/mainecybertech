@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+import crypto from "node:crypto";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
@@ -617,7 +618,7 @@ router.post("/:id/shares", async (req, res, next) => {
 
     if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
 
-    const token = crypto.randomBytes(32).toString("hex");
+    const token = crypto.randomBytes(32).toString("hex") as string;
     const { data: share, error } = await supabase
       .from("document_shares")
       .insert({

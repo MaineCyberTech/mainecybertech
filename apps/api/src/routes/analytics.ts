@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
-import { requireAuth, type AuthRequest } from "../middleware/auth";
+import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { AppError, success, failure } from "../types";
 import { ZodError } from "zod";
