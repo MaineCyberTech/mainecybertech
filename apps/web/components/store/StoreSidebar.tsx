@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getCategories } from "@/lib/catalog/loader";
-import { useState } from "react";
 
-export default function StoreSidebar() {
-  const [open, setOpen] = useState(false);
+export default function StoreSidebarContent() {
   const pathname = usePathname();
   const categories = getCategories();
 
@@ -14,7 +12,7 @@ export default function StoreSidebar() {
 
   const currentCategory = pathname.match(/^\/store\/category\/(.+)/)?.[1];
 
-  const sidebarContent = (
+  return (
     <nav aria-label="Service categories">
       <div className="mb-4">
         <Link
@@ -59,58 +57,5 @@ export default function StoreSidebar() {
         ))}
       </div>
     </nav>
-  );
-
-  return (
-    <>
-      {/* Desktop sidebar */}
-      <div className="rounded-lg border border-white/10 bg-[#0F172A]/60 p-4 backdrop-blur-sm">
-        {sidebarContent}
-      </div>
-
-      {/* Mobile hamburger */}
-      <button
-        onClick={() => setOpen(true)}
-        className="mb-3 mt-20 flex w-full items-center gap-2 rounded border border-white/10 bg-[#0A1118]/60 px-4 py-3 text-sm text-slate-300"
-        aria-label="Browse categories"
-      >
-        <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
-        Browse Categories
-      </button>
-
-      {/* Mobile drawer */}
-      {open && (
-        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
-          <div className="fixed inset-0 bg-black/60" onClick={() => setOpen(false)} />
-          <div className="relative ml-auto flex h-full w-72 flex-col bg-[#0F172A] p-4 shadow-xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <span className="text-sm font-semibold text-slate-200">Store</span>
-              <button
-                onClick={() => setOpen(false)}
-                className="text-slate-400 hover:text-white"
-                aria-label="Close menu"
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="mt-4 flex-1 overflow-y-auto">{sidebarContent}</div>
-          </div>
-        </div>
-      )}
-    </>
   );
 }
