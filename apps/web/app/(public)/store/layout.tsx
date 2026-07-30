@@ -16,16 +16,15 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col lg:flex-row lg:gap-8">
-      {/* Mobile: fixed left sidebar toggle strip */}
-      <div className="fixed left-0 top-0 z-40 flex h-full flex-col lg:hidden">
-        {/* Toggle button - always visible, sticky at top */}
+      {/* Mobile: fixed left sidebar toggle - overlays content */}
+      <div className="pointer-events-none fixed left-0 top-0 z-40 flex h-full flex-col lg:hidden">
         <button
           onClick={() => setDrawerOpen(true)}
-          className="flex w-10 flex-col items-center gap-1.5 rounded-r-lg border border-l-0 border-white/10 bg-[#0F172A]/90 px-2 py-4 text-xs font-bold uppercase tracking-widest text-emerald-400 shadow-lg backdrop-blur-md transition hover:bg-[#0F172A]"
+          className="pointer-events-auto flex w-9 flex-col items-center gap-1 rounded-r-lg border border-l-0 border-white/10 bg-[#0F172A]/80 px-1.5 py-3 text-xs font-bold uppercase tracking-widest text-emerald-400 shadow-lg backdrop-blur-sm transition hover:bg-[#0F172A]"
           style={{ marginTop: "80px" }}
           aria-label="Browse categories"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -33,7 +32,7 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
               d="M4 6h16M4 12h16M4 18h16"
             />
           </svg>
-          <span className="text-[9px] tracking-[0.2em] [writing-mode:vertical-rl]">Menu</span>
+          <span className="text-[8px] tracking-[0.15em] [writing-mode:vertical-rl]">Menu</span>
         </button>
       </div>
 
@@ -75,7 +74,7 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 pl-12 lg:pl-0">{children}</main>
+      <main className="min-w-0 flex-1">{children}</main>
     </div>
   );
 }
