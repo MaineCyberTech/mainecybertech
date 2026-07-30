@@ -19,3 +19,28 @@ export function verifyWebhookSignature(
     return false;
   }
 }
+
+const TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000; // 5 minutes
+
+function extractTimestamp(payload: Record<string, unknown>): number | null {
+  // Check common timestamp fields in webhook payloads
+  const ts =
+    (payload as any).timestamp ??
+    (payload as any).timestampMillis ??
+    (payload as any).created_at ??
+    (payload as any).occurred_at ??
+    (payload as any).event_date;
+  if (!ts) return null;
+
+  const parsed = typeof ts === "number" ? ts : Date.parse(String(ts));
+  return isNaN(parsed) ? null : parsed;
+}
+
+export function validateWebhookTimestamp(
+  payload: Record<string, unknown>,
+  toleranceMs: number = TIMESTAMP_TOLERANCE_MS,
+): boolean {
+  const ts = extractTimestamp(payload);
+  if (ts === null) return true; // no timestamp to validate — skip
+  return Math.abs(Date.now() - ts) <= toleranceMs;
+}

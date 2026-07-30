@@ -7,8 +7,10 @@ jest.mock("@/lib/auth/admin", () => ({
 
 const mockLicensesList = jest.fn();
 const mockLicensesSavings = jest.fn();
-jest.mock("@/lib/api", () => () => ({
-  batch: { licenses: { list: mockLicensesList, savings: mockLicensesSavings } },
+jest.mock("@/lib/api", () => ({
+  getApiClient: jest.fn().mockReturnValue({
+    batch: { licenses: { list: mockLicensesList, savings: mockLicensesSavings } },
+  }),
 }));
 
 jest.mock("@/components/Breadcrumbs", () => {

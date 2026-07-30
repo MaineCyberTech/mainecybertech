@@ -1,6 +1,6 @@
 {
-  "last_run": "2026-07-27T00:21:19.977444+00:00",
-  "commit": "6cb2ad4 fix: move public endpoints before requireAuth middleware",
+  "last_run": "2026-07-30T06:49:23.412351+00:00",
+  "commit": "62da92c fix: remove duplicate Everything lines in top tiers",
   "readiness_score": 91,
   "p0": 0,
   "p1": 0,

@@ -39,6 +39,14 @@ describe("webhook-management routes", () => {
     expect(res.status).toBe(200);
   });
 
+  it("GET / masks secret in response", async () => {
+    supabase.from.mockReturnValue(createMockBuilder({ data: { id: "wh1", name: "Test", secret: "my-super-secret-key-12345" }, error: null } as MockResult));
+    const res = await request(app).get("/api/v1/webhook-endpoints/wh1").set("Authorization", "Bearer token");
+    expect(res.status).toBe(200);
+    expect(res.body.data.secret).toBe("my-s****2345");
+    expect(res.body.data.secret).not.toContain("super-secret-key");
+  });
+
   it("GET /:id returns single endpoint", async () => {
     supabase.from.mockReturnValue(createMockBuilder({ data: { id: "wh1", name: "Test" }, error: null } as MockResult));
     const res = await request(app).get("/api/v1/webhook-endpoints/wh1").set("Authorization", "Bearer token");

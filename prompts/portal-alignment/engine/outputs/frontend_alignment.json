@@ -11,7 +11,7 @@
       "severity": "P3",
       "domain": "frontend",
       "title": "Route groups missing loading/error boundaries",
-      "count": 133,
+      "count": 248,
       "examples": [
         {
           "route": "",
@@ -30,11 +30,11 @@
         },
         {
           "route": "(admin)\\admin\\ai",
-          "missing_loading": true,
+          "missing_loading": false,
           "missing_error": true
         },
         {
-          "route": "(admin)\\admin\\api-keys",
+          "route": "(admin)\\admin\\ai\\triage",
           "missing_loading": true,
           "missing_error": true
         }
@@ -42,11 +42,15 @@
     }
   ],
   "component_counts": {
-    "admin": 23,
+    "admin": 26,
     "portal": 12,
     "marketing": 4,
-    "total": 50
+    "total": 71
   },
-  "route_groups": ["(admin)", "(portal)", "(public)"],
-  "page_count": 143
+  "route_groups": [
+    "(admin)",
+    "(portal)",
+    "(public)"
+  ],
+  "page_count": 279
 }

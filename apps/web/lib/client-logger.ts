@@ -67,8 +67,9 @@ function logWithLevel(level: LogLevel, message: string, ...args: unknown[]): voi
     );
   }
 
-  if (typeof window !== "undefined" && (window as any).__LOG_ENDPOINT__) {
-    fetch((window as any).__LOG_ENDPOINT__, {
+  const logEndpoint = process.env.NEXT_PUBLIC_LOG_ENDPOINT;
+  if (logEndpoint) {
+    fetch(logEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(logEntry),

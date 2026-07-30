@@ -7,11 +7,12 @@ import { getEnv } from "./config/env";
 import { errorHandler } from "./middleware/error";
 import { notFoundHandler } from "./middleware/not-found";
 import { requestId, requestLogger } from "./middleware/request-id";
-import { rateLimitByUser } from "./middleware/rate-limit";
+import { rateLimitByUser, rateLimitMetrics } from "./middleware/rate-limit";
 import { inputSanitizer } from "./middleware/security";
 import { securityHeaders } from "./middleware/security-headers";
 import { csrfProtection } from "./middleware/csrf";
 import { idempotencyMiddleware } from "./middleware/idempotency";
+import { requestTimeout } from "./middleware/request-timeout";
 import healthRouter from "./routes/health";
 import authRouter from "./routes/auth";
 import organizationsRouter from "./routes/organizations";
@@ -64,6 +65,8 @@ import trainingHubRouter from "./routes/training-hub";
 import insuranceBinderRouter from "./routes/insurance-binder";
 import statusPageRouter from "./routes/status-page";
 import uptimeMonitorRouter from "./routes/uptime-monitor";
+import storeRouter from "./routes/store";
+import analyticsRouter from "./routes/analytics";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -121,9 +124,10 @@ export function createApp(): Express {
   app.use(requestLogger);
   app.use(idempotencyMiddleware);
   app.use(csrfProtection);
+  app.use(requestTimeout(30000));
 
   app.use("/health", healthRouter);
-  app.use("/metrics", async (_req, res) => {
+  app.use("/metrics", rateLimitMetrics, async (_req, res) => {
     try {
       res.set("Content-Type", register.contentType);
       res.end(await register.metrics());
@@ -183,6 +187,8 @@ export function createApp(): Express {
   app.use("/api/v1/insurance-binder", insuranceBinderRouter);
   app.use("/api/v1/status-page", statusPageRouter);
   app.use("/api/v1/uptime-monitor", uptimeMonitorRouter);
+  app.use("/api/v1/store", storeRouter);
+  app.use("/api/v1/analytics", analyticsRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requireActiveSubscription } from "../middleware/require-active-subscription";
 import { requireAdmin } from "../middleware/admin";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { responseCacheNoRenew } from "../middleware/cache";
@@ -31,6 +32,7 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 router.use(requireOrgAccess);
+router.use(requireActiveSubscription);
 
 const projectExportColumns: CsvColumn[] = [
   { key: "id" },
@@ -75,7 +77,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("projects").select("*", { count: "exact" });
+    let query = supabase.from("projects").select("*", { count: "exact" }).is("deleted_at", null);
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -213,7 +215,11 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    let query = supabase.from("projects").select("*, project_tasks(*)").eq("id", req.params.id);
+    let query = supabase
+      .from("projects")
+      .select("*, project_tasks(*)")
+      .eq("id", req.params.id)
+      .is("deleted_at", null);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -419,7 +425,19 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("projects").delete().eq("id", req.params.id);
+    const { data: project, error: fetchError } = await supabase
+      .from("projects")
+      .select("id, organization_id")
+      .eq("id", req.params.id)
+      .is("deleted_at", null)
+      .single();
+
+    if (fetchError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
+
+    const { error } = await supabase
+      .from("projects")
+      .update({ deleted_at: new Date().toISOString(), deleted_by: req.authUser!.userId })
+      .eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

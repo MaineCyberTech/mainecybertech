@@ -3,7 +3,7 @@ export default {
   testEnvironment: "node",
   roots: ["<rootDir>/src"],
   testMatch: ["**/__tests__/**/*.ts", "**/?(*.)+(spec|test).ts"],
-  testPathIgnorePatterns: ["/node_modules/", "helpers\\.ts$"],
+  testPathIgnorePatterns: ["/node_modules/", "helpers\\.ts$", "/openapi/"],
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
   collectCoverageFrom: [
     "src/**/*.ts",

@@ -18,6 +18,9 @@ storybook-static/
 .env.*
 !.env.example
 !.env.*.example
+.playwright-auth.json
+.playwright-report/
+.playwright-results/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/launch.json
@@ -44,9 +47,6 @@ terraform.exe
 **/.terraform/*
 *.tfstate
 *.tfstate.*
-!infra/terraform/digitalocean/terraform.tfstate
-infra/terraform/digitalocean/terraform.tfstate
-infra/terraform/digitalocean/terraform.tfstate.backup
 crash.log
 crash.*.log
 override.tf

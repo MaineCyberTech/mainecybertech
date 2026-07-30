@@ -1,17 +1,8 @@
 {
   "domain": "ci_cd",
-  "total": 2,
-  "timestamp": "2026-07-27T00:20:24.454714+00:00",
+  "total": 1,
+  "timestamp": "2026-07-30T06:49:20.870558+00:00",
   "findings": [
-    {
-      "severity": "P3",
-      "domain": "ci_cd",
-      "category": "release",
-      "file": ".github/workflows/alignment-pr-comment.yml",
-      "issue": "PR alignment comments use sample_data.json (static demo data) instead of real analysis output",
-      "remediation": "Point to real engine output files: engine/outputs/global_findings.json",
-      "impact": "PR comments show fake P0/P1 counts \u2014 no actual gating"
-    },
     {
       "severity": "P3",
       "domain": "ci_cd",

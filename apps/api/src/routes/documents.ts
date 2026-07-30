@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requireActiveSubscription } from "../middleware/require-active-subscription";
 import { requireAdmin } from "../middleware/admin";
 import { getEnv } from "../config/env";
 import { responseCacheNoRenew } from "../middleware/cache";
@@ -53,14 +54,57 @@ const updateShareSchema = z.object({
   revoked: z.boolean().optional(),
 });
 
+const BLOCKED_EXTENSIONS = new Set([
+  ".exe", ".msi", ".bat", ".cmd", ".com", ".scr", ".pif",
+  ".vbs", ".vbe", ".js", ".jse", ".wsf", ".wsh",
+  ".ps1", ".psm1", ".psd1", ".ps2", ".psc1",
+  ".sh", ".bash", ".dll", ".ocx", ".sys",
+  ".app", ".gadget", ".msu", ".msp", ".jar",
+  ".htm", ".html", ".svg",
+]);
+
+const ALLOWED_MIME_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/plain",
+  "text/csv",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/gzip",
+  "application/json",
+  "application/rtf",
+];
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = "." + file.originalname.split(".").pop()?.toLowerCase();
+    if (BLOCKED_EXTENSIONS.has(ext)) {
+      cb(new AppError("VALIDATION", `File type ${ext} is not allowed`, 400));
+      return;
+    }
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      cb(new AppError("VALIDATION", `File type ${file.mimetype} is not allowed`, 400));
+      return;
+    }
+    cb(null, true);
+  },
 });
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 router.use(requireOrgAccess);
+router.use(requireActiveSubscription);
 
 router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   try {
@@ -69,7 +113,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("documents").select("*", { count: "exact" });
+    let query = supabase.from("documents").select("*", { count: "exact" }).is("deleted_at", null);
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -102,7 +146,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    let query = supabase.from("documents").select("*").eq("id", req.params.id);
+    let query = supabase.from("documents").select("*").eq("id", req.params.id).is("deleted_at", null);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -154,27 +198,6 @@ router.post("/", async (req, res, next) => {
     next(error);
   }
 });
-
-const ALLOWED_MIME_TYPES = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-powerpoint",
-  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  "text/plain",
-  "text/csv",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "application/zip",
-  "application/x-zip-compressed",
-  "application/gzip",
-  "application/json",
-  "application/rtf",
-];
 
 router.post("/upload", upload.single("file"), async (req, res, next) => {
   try {
@@ -385,17 +408,21 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
     const supabase = getSupabaseAdmin();
     const { data: doc, error: fetchError } = await supabase
       .from("documents")
-      .select("storage_bucket, storage_path")
+      .select("id, organization_id, storage_bucket, storage_path")
       .eq("id", req.params.id)
+      .is("deleted_at", null)
       .single();
 
-    if (fetchError) throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (fetchError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
 
     if (doc.storage_bucket && doc.storage_path) {
       await supabase.storage.from(doc.storage_bucket).remove([doc.storage_path]);
     }
 
-    const { error } = await supabase.from("documents").delete().eq("id", req.params.id);
+    const { error } = await supabase
+      .from("documents")
+      .update({ deleted_at: new Date().toISOString(), deleted_by: req.authUser!.userId })
+      .eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -590,7 +617,7 @@ router.post("/:id/shares", async (req, res, next) => {
 
     if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
 
-    const token = crypto.randomUUID();
+    const token = crypto.randomBytes(32).toString("hex");
     const { data: share, error } = await supabase
       .from("document_shares")
       .insert({

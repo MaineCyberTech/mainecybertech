@@ -7,6 +7,17 @@ import { logger } from "./lib/logger";
 const env = getEnv();
 const app = createApp();
 
+if (env.NODE_ENV === "production") {
+  const missing = [];
+  if (!env.SMTP_HOST) missing.push("SMTP_HOST");
+  if (!env.SMTP_PORT) missing.push("SMTP_PORT");
+  if (!env.SMTP_USER) missing.push("SMTP_USER");
+  if (!env.SMTP_PASS) missing.push("SMTP_PASS");
+  if (missing.length > 0) {
+    logger.warn({ missing }, "SMTP not fully configured — email notifications will fail silently");
+  }
+}
+
 const server = app.listen(env.API_PORT, () => {
   logger.info(`API listening on http://localhost:${env.API_PORT}`);
 });

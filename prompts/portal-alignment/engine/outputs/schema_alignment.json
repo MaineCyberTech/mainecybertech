@@ -25,11 +25,12 @@
       "gaps": [
         "5302026 -> 5302028 (diff=2)",
         "5302038 -> 5302041 (diff=3)",
-        "5302043 -> 5302050 (diff=7)"
+        "5302043 -> 5302050 (diff=7)",
+        "5302083 -> 5302085 (diff=2)"
       ]
     }
   ],
-  "migration_count": 42,
+  "migration_count": 68,
   "unused_tables": [
     "ai_draft_outputs",
     "appointments",

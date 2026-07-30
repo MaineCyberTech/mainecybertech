@@ -8,6 +8,11 @@ on:
         type: choice
         options: [dev, prod]
         default: dev
+      rollback_sha:
+        description: "Rollback to this SHA (leave empty for normal deploy)"
+        type: string
+        required: false
+        default: ""
   push:
     branches: [main, develop]
     paths:
@@ -24,7 +29,7 @@ permissions:
   id-token: write
 
 env:
-  IMAGE_TAG: ${{ github.sha }}
+  IMAGE_TAG: ${{ github.event.inputs.rollback_sha || github.sha }}
 
 concurrency:
   group: deploy-do-${{ github.ref }}
@@ -97,6 +102,7 @@ jobs:
 
   build-api:
     needs: [setup]
+    if: ${{ github.event_name == 'push' || github.event.inputs.rollback_sha == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -118,6 +124,7 @@ jobs:
 
   build-worker:
     needs: [setup]
+    if: ${{ github.event_name == 'push' || github.event.inputs.rollback_sha == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -139,6 +146,7 @@ jobs:
 
   build-web:
     needs: [setup]
+    if: ${{ github.event_name == 'push' || github.event.inputs.rollback_sha == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -163,9 +171,74 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  security-scan:
+    needs: [setup, build-api, build-worker, build-web]
+    if: always() && needs.setup.result == 'success' && (needs.build-api.result == 'success' || needs.build-worker.result == 'success' || needs.build-web.result == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate SBOM (api)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
+          format: spdx-json
+          output-file: sbom-api.spdx.json
+
+      - name: Generate SBOM (worker)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
+          format: spdx-json
+          output-file: sbom-worker.spdx.json
+
+      - name: Generate SBOM (web)
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
+          format: spdx-json
+          output-file: sbom-web.spdx.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: "*.spdx.json"
+
+      - name: Scan API image for vulnerabilities
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
+          format: sarif
+          output: trivy-api.sarif
+          severity: HIGH,CRITICAL
+
+      - name: Scan worker image for vulnerabilities
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
+          format: sarif
+          output: trivy-worker.sarif
+          severity: HIGH,CRITICAL
+
+      - name: Scan web image for vulnerabilities
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
+          format: sarif
+          output: trivy-web.sarif
+          severity: HIGH,CRITICAL
+
+      - name: Upload Trivy scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-reports
+          path: "*.sarif"
+
   deploy:
-    needs: [setup, resolve-ip, build-api, build-worker, build-web]
-    if: always() && needs.setup.result == 'success' && needs.resolve-ip.result == 'success' && needs.build-api.result == 'success' && needs.build-worker.result == 'success' && needs.build-web.result == 'success'
+    needs: [setup, resolve-ip, build-api, build-worker, build-web, security-scan]
+    if: always() && needs.setup.result == 'success' && needs.resolve-ip.result == 'success' && (needs.build-api.result == 'success' || needs.build-api.result == 'skipped') && (needs.build-worker.result == 'success' || needs.build-worker.result == 'skipped') && (needs.build-web.result == 'success' || needs.build-web.result == 'skipped') && needs.security-scan.result != 'failure'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: ${{ needs.setup.outputs.name }}

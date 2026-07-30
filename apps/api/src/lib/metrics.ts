@@ -96,10 +96,6 @@ export const idempotencyKeyHits = new Counter({
   registers: [register],
 });
 
-export function recordDbQuery(operation: string, table: string, durationSeconds: number) {
-  dbQueryDuration.observe({ operation, table }, durationSeconds);
-}
-
 export function recordWebhookDelivery(status: "success" | "failed", event: string) {
   webhookDeliveriesTotal.inc({ status, event });
 }

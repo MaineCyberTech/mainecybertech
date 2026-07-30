@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
+import { rateLimitEmail } from "../middleware/rate-limit";
 import { sendEmail } from "../lib/email";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
@@ -11,7 +12,7 @@ router.use(requireAuth);
 router.use(requireAdmin);
 
 // POST /api/v1/admin/test-email — send a test email to verify SMTP config
-router.post("/test-email", async (req, res, next) => {
+router.post("/test-email", rateLimitEmail, async (req, res, next) => {
   try {
     const { to } = z.object({ to: z.string().email() }).parse(req.body);
 

@@ -1,22 +1,26 @@
 {
   "apps": {
     "api": {
-      "entry_points": ["src/main.ts"],
+      "entry_points": [
+        "src/main.ts"
+      ],
       "has_routes": true,
       "routes_dir": "C:\\temp\\mainecybertech-portal\\apps\\api\\src\\routes",
-      "file_count": 5795
+      "file_count": 5840
     },
     "web": {
       "entry_points": [],
       "has_routes": false,
       "routes_dir": null,
-      "file_count": 23531
+      "file_count": 21752
     },
     "worker": {
-      "entry_points": ["src/main.ts"],
+      "entry_points": [
+        "src/main.ts"
+      ],
       "has_routes": false,
       "routes_dir": null,
-      "file_count": 4406
+      "file_count": 4902
     }
   },
   "packages": {
@@ -35,7 +39,7 @@
   },
   "infra": {
     "infra\\digitalocean\\.env.example": 641,
-    "infra\\digitalocean\\Caddyfile": 1419,
+    "infra\\digitalocean\\Caddyfile": 2435,
     "infra\\digitalocean\\Caddyfile.dev": 604,
     "infra\\digitalocean\\Caddyfile.prod": 711,
     "infra\\digitalocean\\deploy.sh": 1029,
@@ -279,27 +283,46 @@
     },
     {
       "file": "5302029_create_notifications_table.sql",
-      "tables": ["notifications", "notifications"]
+      "tables": [
+        "notifications",
+        "notifications"
+      ]
     },
     {
       "file": "5302030_add_jira_fields.sql",
-      "tables": ["projects", "project_tasks", "tickets"]
+      "tables": [
+        "projects",
+        "project_tasks",
+        "tickets"
+      ]
     },
     {
       "file": "5302031_org_branding.sql",
-      "tables": ["organizations"]
+      "tables": [
+        "organizations"
+      ]
     },
     {
       "file": "5302032_webhook_endpoints.sql",
-      "tables": ["if", "webhook_endpoints", "if", "webhook_deliveries"]
+      "tables": [
+        "if",
+        "webhook_endpoints",
+        "if",
+        "webhook_deliveries"
+      ]
     },
     {
       "file": "5302033_public_interactions.sql",
-      "tables": ["IF", "public_interactions"]
+      "tables": [
+        "IF",
+        "public_interactions"
+      ]
     },
     {
       "file": "5302034_ticket_comment_editing.sql",
-      "tables": ["ticket_comments"]
+      "tables": [
+        "ticket_comments"
+      ]
     },
     {
       "file": "5302035_bootstrap_portal_access.sql",
@@ -315,23 +338,38 @@
     },
     {
       "file": "5302038_disable_rls_public_interactions.sql",
-      "tables": ["public_interactions"]
+      "tables": [
+        "public_interactions"
+      ]
     },
     {
       "file": "5302041_sla_logs.sql",
-      "tables": ["if", "sla_logs"]
+      "tables": [
+        "if",
+        "sla_logs"
+      ]
     },
     {
       "file": "5302042_api_keys.sql",
-      "tables": ["if", "api_keys"]
+      "tables": [
+        "if",
+        "api_keys"
+      ]
     },
     {
       "file": "5302043_document_shares.sql",
-      "tables": ["if", "document_shares"]
+      "tables": [
+        "if",
+        "document_shares"
+      ]
     },
     {
       "file": "5302050_webhook_retry_dlq.sql",
-      "tables": ["if", "if", "webhook_dead_letters"]
+      "tables": [
+        "if",
+        "if",
+        "webhook_dead_letters"
+      ]
     },
     {
       "file": "5302051_optimistic_locking_version_columns.sql",
@@ -353,7 +391,10 @@
     },
     {
       "file": "5302053_webhook_idempotency.sql",
-      "tables": ["if", "webhook_deliveries"]
+      "tables": [
+        "if",
+        "webhook_deliveries"
+      ]
     },
     {
       "file": "5302054_bulk_update_with_results.sql",
@@ -361,7 +402,9 @@
     },
     {
       "file": "5302055_cleanup_dead_tables.sql",
-      "tables": ["memberships"]
+      "tables": [
+        "memberships"
+      ]
     },
     {
       "file": "5302056_add_missing_indexes.sql",
@@ -369,7 +412,11 @@
     },
     {
       "file": "5302057_fix_bootstrap_rls_fk_indexes.sql",
-      "tables": ["memberships", "memberships", "memberships"]
+      "tables": [
+        "memberships",
+        "memberships",
+        "memberships"
+      ]
     },
     {
       "file": "5302058_shared_module_tables.sql",
@@ -390,39 +437,72 @@
     },
     {
       "file": "5302059_proposal_builder.sql",
-      "tables": ["if", "proposals", "if", "proposal_phases", "if", "proposal_line_items"]
+      "tables": [
+        "if",
+        "proposals",
+        "if",
+        "proposal_phases",
+        "if",
+        "proposal_line_items"
+      ]
     },
     {
       "file": "5302060_findings_tracker.sql",
-      "tables": ["if", "findings"]
+      "tables": [
+        "if",
+        "findings"
+      ]
     },
     {
       "file": "5302061_asset_tracker.sql",
-      "tables": ["if", "assets"]
+      "tables": [
+        "if",
+        "assets"
+      ]
     },
     {
       "file": "5302062_domain_monitor.sql",
-      "tables": ["if", "domain_monitors"]
+      "tables": [
+        "if",
+        "domain_monitors"
+      ]
     },
     {
       "file": "5302063_qbr_reports.sql",
-      "tables": ["if", "qbr_reports"]
+      "tables": [
+        "if",
+        "qbr_reports"
+      ]
     },
     {
       "file": "5302064_file_requests.sql",
-      "tables": ["if", "file_requests"]
+      "tables": [
+        "if",
+        "file_requests"
+      ]
     },
     {
       "file": "5302065_ticket_triage.sql",
-      "tables": ["if", "ticket_triage_drafts"]
+      "tables": [
+        "if",
+        "ticket_triage_drafts"
+      ]
     },
     {
       "file": "5302066_vendor_contracts_contacts.sql",
-      "tables": ["if", "vendor_contracts", "if", "vendor_contacts"]
+      "tables": [
+        "if",
+        "vendor_contracts",
+        "if",
+        "vendor_contacts"
+      ]
     },
     {
       "file": "5302067_service_catalog.sql",
-      "tables": ["if", "service_catalog"]
+      "tables": [
+        "if",
+        "service_catalog"
+      ]
     },
     {
       "file": "5302068_batch_modules.sql",
@@ -547,11 +627,239 @@
     },
     {
       "file": "5302075_backup_dr.sql",
-      "tables": ["if", "backup_status"]
+      "tables": [
+        "if",
+        "backup_status"
+      ]
     },
     {
       "file": "5302076_delete_rls_policies.sql",
       "tables": []
+    },
+    {
+      "file": "5302077_missing_rls_policies.sql",
+      "tables": []
+    },
+    {
+      "file": "5302078_client_onboarding_command_center.sql",
+      "tables": [
+        "if",
+        "client_onboarding_command_center_records",
+        "if",
+        "client_onboarding_checklist_items"
+      ]
+    },
+    {
+      "file": "5302079_satisfaction_pulse_widget.sql",
+      "tables": [
+        "if",
+        "satisfaction_pulses",
+        "satisfaction_pulses",
+        "satisfaction_pulses",
+        "satisfaction_pulses",
+        "satisfaction_pulses",
+        "satisfaction_pulses",
+        "if",
+        "satisfaction_pulse_templates",
+        "if",
+        "satisfaction_pulse_schedules"
+      ]
+    },
+    {
+      "file": "5302080_dynamic_client_forms_builder.sql",
+      "tables": [
+        "if",
+        "dynamic_client_forms",
+        "if",
+        "dynamic_form_submissions"
+      ]
+    },
+    {
+      "file": "5302081_fix_rls_policies.sql",
+      "tables": []
+    },
+    {
+      "file": "5302082_add_performance_indexes.sql",
+      "tables": []
+    },
+    {
+      "file": "5302083_powershell_policy_guard.sql",
+      "tables": [
+        "powershell_scripts",
+        "powershell_scripts",
+        "powershell_scripts"
+      ]
+    },
+    {
+      "file": "5302085_scorecards_gamification.sql",
+      "tables": [
+        "if",
+        "score_history",
+        "if",
+        "badges_earned"
+      ]
+    },
+    {
+      "file": "5302086_sop_library_compliance.sql",
+      "tables": [
+        "if",
+        "sop_library"
+      ]
+    },
+    {
+      "file": "5302087_project_tracker.sql",
+      "tables": [
+        "if",
+        "project_phases",
+        "if",
+        "project_milestones",
+        "if",
+        "project_dependencies"
+      ]
+    },
+    {
+      "file": "5302088_license_optimizer.sql",
+      "tables": [
+        "if",
+        "license_allocations"
+      ]
+    },
+    {
+      "file": "5302089_dmarc_coach.sql",
+      "tables": [
+        "if",
+        "dmarc_analyses"
+      ]
+    },
+    {
+      "file": "5302090_training_hub.sql",
+      "tables": [
+        "if",
+        "training_courses",
+        "if",
+        "training_lessons",
+        "if",
+        "training_enrollments"
+      ]
+    },
+    {
+      "file": "5302091_insurance_binder.sql",
+      "tables": [
+        "if",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence",
+        "insurance_evidence"
+      ]
+    },
+    {
+      "file": "5302092_status_page.sql",
+      "tables": [
+        "if",
+        "status_components",
+        "if",
+        "status_incidents",
+        "if",
+        "maintenance_notices"
+      ]
+    },
+    {
+      "file": "5302093_uptime_monitor.sql",
+      "tables": [
+        "if",
+        "uptime_checks",
+        "if",
+        "uptime_results"
+      ]
+    },
+    {
+      "file": "5302094_camera_calculation_fields.sql",
+      "tables": [
+        "if",
+        "if",
+        "if",
+        "if",
+        "if"
+      ]
+    },
+    {
+      "file": "5302095_offboarding_checklist_fields.sql",
+      "tables": [
+        "if",
+        "if",
+        "if"
+      ]
+    },
+    {
+      "file": "5302096_phishing_campaign_fields.sql",
+      "tables": [
+        "if",
+        "if",
+        "if",
+        "if"
+      ]
+    },
+    {
+      "file": "5302097_isp_unifi_scoring_fields.sql",
+      "tables": [
+        "isp_assessments",
+        "isp_assessments",
+        "isp_assessments",
+        "isp_assessments",
+        "unifi_surveys",
+        "unifi_surveys",
+        "unifi_surveys"
+      ]
+    },
+    {
+      "file": "5302098_article_feedback_fields.sql",
+      "tables": [
+        "knowledge_articles",
+        "knowledge_articles"
+      ]
+    },
+    {
+      "file": "5302099_automation_log_fields.sql",
+      "tables": [
+        "if",
+        "if",
+        "if",
+        "if",
+        "if",
+        "if",
+        "if",
+        "if"
+      ]
+    },
+    {
+      "file": "5302100_fix_rls_membership_status.sql",
+      "tables": []
+    },
+    {
+      "file": "5302101_fix_missing_rls_policies.sql",
+      "tables": []
+    },
+    {
+      "file": "5302102_add_performance_indexes.sql",
+      "tables": []
+    },
+    {
+      "file": "5302103_add_check_constraints.sql",
+      "tables": [
+        "sla_logs",
+        "satisfaction_pulses",
+        "score_history",
+        "patch_compliance",
+        "endpoint_security",
+        "vendor_contracts"
+      ]
     }
   ],
   "routes": [
@@ -780,8 +1088,68 @@
       "path": "/org-health"
     },
     {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/export.csv"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id/complete-phase"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id/checklist"
+    },
+    {
+      "file": "client-onboarding-command-center.ts",
+      "path": "/:id/checklist/:itemId"
+    },
+    {
       "file": "dashboard.ts",
       "path": "/summary"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dmarc-coach.ts",
+      "path": "/analyze"
     },
     {
       "file": "docs.ts",
@@ -884,6 +1252,110 @@
       "path": "/:id"
     },
     {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/export.csv"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id/publish"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id/submit"
+    },
+    {
+      "file": "dynamic-client-forms-builder.ts",
+      "path": "/:id/submissions"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/automation/:id/execute"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/automation/:id/complete"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/kb-generator/:id/generate"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/kb/search"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/kb/:id/rate"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/compliance/score"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/phishing/:id/launch"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/phishing/:id/results"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/scorecards/summary"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/scorecards/overview"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/scorecards/leaderboard"
+    },
+    {
+      "file": "edu-automation.ts",
+      "path": "/scorecards/evaluate"
+    },
+    {
+      "file": "field-services.ts",
+      "path": "/isp/:id/score"
+    },
+    {
+      "file": "field-services.ts",
+      "path": "/unifi/:id/plan"
+    },
+    {
+      "file": "field-services.ts",
+      "path": "/camera-calc/calculate"
+    },
+    {
+      "file": "field-services.ts",
+      "path": "/staging/:id/checklist"
+    },
+    {
+      "file": "field-services.ts",
+      "path": "/network-diagrams/:id/export"
+    },
+    {
       "file": "file-requests.ts",
       "path": "/public/:token"
     },
@@ -909,7 +1381,23 @@
     },
     {
       "file": "final.ts",
+      "path": "/sharepoint/structure-summary"
+    },
+    {
+      "file": "final.ts",
       "path": "/backups/stats"
+    },
+    {
+      "file": "final.ts",
+      "path": "/backups/risk-analysis"
+    },
+    {
+      "file": "final.ts",
+      "path": "/budgets/analysis"
+    },
+    {
+      "file": "final.ts",
+      "path": "/procurement/compare"
     },
     {
       "file": "findings.ts",
@@ -960,8 +1448,92 @@
       "path": "/:id/timeline"
     },
     {
+      "file": "governance.ts",
+      "path": "/change-requests/:id/submit"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/change-requests/:id/approve"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/change-requests/:id/reject"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/change-requests/:id/implement"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/change-requests/:id/verify"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/risks/:id/assess"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/sop-library/compliance-map"
+    },
+    {
+      "file": "governance.ts",
+      "path": "/sop-library/framework-gaps"
+    },
+    {
       "file": "health.ts",
       "path": "/"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/coverage-report"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "insurance-binder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/reclaimable/license-list"
+    },
+    {
+      "file": "license-optimizer.ts",
+      "path": "/summary/data"
     },
     {
       "file": "memberships.ts",
@@ -1292,6 +1864,70 @@
       "path": "/:id/permissions"
     },
     {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/export"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/:id/respond"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/templates"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/templates/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/templates"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/templates/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/templates/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/schedules"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/schedules"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/schedules/:id"
+    },
+    {
+      "file": "satisfaction-pulse-widget.ts",
+      "path": "/schedules/:id"
+    },
+    {
       "file": "search-portal.ts",
       "path": "/"
     },
@@ -1301,7 +1937,23 @@
     },
     {
       "file": "security-ops.ts",
+      "path": "/offboarding/:id/complete-step"
+    },
+    {
+      "file": "security-ops.ts",
       "path": "/patch-compliance/stats"
+    },
+    {
+      "file": "security-suite.ts",
+      "path": "/identity-verification/:id/verify"
+    },
+    {
+      "file": "security-suite.ts",
+      "path": "/endpoint-security/coverage"
+    },
+    {
+      "file": "security-suite.ts",
+      "path": "/m365-hardening/:id/scan"
     },
     {
       "file": "service-catalog.ts",
@@ -1326,6 +1978,10 @@
     {
       "file": "sla.ts",
       "path": "/metrics"
+    },
+    {
+      "file": "status-page.ts",
+      "path": "/public/:orgId"
     },
     {
       "file": "tickets.ts",
@@ -1362,6 +2018,90 @@
     {
       "file": "tickets.ts",
       "path": "/bulk"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/my-courses"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses/:id"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses/:id"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses/:id"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses/:id/enroll"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/courses/:id/progress"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/lessons"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/lessons"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/lessons/:id"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/lessons/:id"
+    },
+    {
+      "file": "training-hub.ts",
+      "path": "/lessons/:id"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/dashboard"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks/:id"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks/:id"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks/:id"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks/:id/results"
+    },
+    {
+      "file": "uptime-monitor.ts",
+      "path": "/checks/:id/uptime"
     },
     {
       "file": "users.ts",
@@ -1448,6 +2188,7 @@
     "HealthDashboardClient.tsx",
     "NotificationBell.tsx",
     "NotificationsPageClient.tsx",
+    "StatusPill.tsx",
     "version-badge.tsx",
     "admin\\AdminApiKeysClient.tsx",
     "admin\\AdminDocumentsBulkControls.tsx",
@@ -1472,6 +2213,9 @@
     "admin\\ProjectTaskListV5.tsx",
     "admin\\RecordDetail.tsx",
     "admin\\RolePermissionsEditor.tsx",
+    "admin\\SeverityPill.tsx",
+    "admin\\StatusPill.tsx",
+    "admin\\TriageAnalyzeClient.tsx",
     "marketing\\ContactForm.tsx",
     "marketing\\MarketingHeader.tsx",
     "marketing\\ParticleBackground.tsx",
@@ -1490,27 +2234,48 @@
     "portal\\SupportCenterClient.tsx",
     "seo\\BreadcrumbJsonLd.tsx",
     "seo\\JsonLd.tsx",
-    "seo\\LocalBusinessJsonLd.tsx"
+    "seo\\LocalBusinessJsonLd.tsx",
+    "store\\BundleValuePanel.tsx",
+    "store\\CampaignBanner.tsx",
+    "store\\CampaignsManagerClient.tsx",
+    "store\\CategoryVisualHeader.tsx",
+    "store\\FAQSection.tsx",
+    "store\\IncludedItemsList.tsx",
+    "store\\IntakeFormRenderer.tsx",
+    "store\\PackageLadder.tsx",
+    "store\\PackageLadderGrid.tsx",
+    "store\\PromoBadge.tsx",
+    "store\\QuoteBuilderClient.tsx",
+    "store\\ServiceFinderQuiz.tsx",
+    "store\\StoreCategoryCard.tsx",
+    "store\\StoreIconTile.tsx",
+    "store\\StoreProductCard.tsx",
+    "store\\StoreSidebar.tsx",
+    "store\\TrustBadgeList.tsx"
   ],
   "tests": {
-    "api": 135,
+    "api": 213,
     "web": 0,
     "sdk": 0,
     "worker": 6,
     "e2e": 0
   },
-  "total_files": 2105,
-  "total_lines": 125197,
+  "total_files": 2943,
+  "total_lines": 353787,
   "git": {
-    "commit": "6cb2ad4 fix: move public endpoints before requireAuth middleware",
+    "commit": "62da92c fix: remove duplicate Everything lines in top tiers",
     "branch": "develop"
   },
   "summary": {
-    "apps": ["api", "web", "worker"],
-    "migrations": 42,
-    "api_routes": 221,
-    "components": 50,
-    "total_files": 2105,
-    "total_lines": 125197
+    "apps": [
+      "api",
+      "web",
+      "worker"
+    ],
+    "migrations": 68,
+    "api_routes": 329,
+    "components": 71,
+    "total_files": 2943,
+    "total_lines": 353787
   }
 }

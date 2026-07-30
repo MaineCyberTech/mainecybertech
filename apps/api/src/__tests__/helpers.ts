@@ -18,6 +18,7 @@ export function createMockBuilder(result: MockResult) {
     order: jest.fn(chain),
     eq: jest.fn(chain),
     in: jest.fn(chain),
+    is: jest.fn(chain),
     range: jest.fn(chain),
     single: jest.fn(chain),
     neq: jest.fn(chain),

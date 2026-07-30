@@ -1,6 +1,6 @@
 {
   "total": 6,
-  "generated_at": "2026-07-27T00:20:26.255479+00:00",
+  "generated_at": "2026-07-30T06:49:21.404116+00:00",
   "findings": [
     {
       "severity": "P0",
@@ -46,7 +46,7 @@
       "severity": "P3",
       "domain": "evolution",
       "file": "apps/web/app/**/page.tsx",
-      "issue": "Only 111/130 pages have metadata/title tags",
+      "issue": "Only 221/242 pages have metadata/title tags",
       "impact": "Poor SEO and tab identification",
       "fix": "Add export const metadata with title to all pages"
     }

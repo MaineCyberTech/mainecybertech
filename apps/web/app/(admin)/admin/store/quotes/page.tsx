@@ -2,6 +2,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Quote Requests - Store - Admin - Maine CyberTech" };
@@ -45,11 +46,14 @@ export default async function AdminStoreQuotesPage() {
 
   let quotes: Quote[] = [];
   try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("mct_session")?.value;
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/v1/public/quotes`,
+      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"}/api/v1/store/quotes`,
       {
-        headers: { Authorization: `Bearer ${process.env.INTERNAL_API_KEY || ""}` },
+        headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         signal: AbortSignal.timeout(5000),
+        cache: "no-store",
       },
     );
     if (res.ok) {

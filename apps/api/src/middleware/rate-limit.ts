@@ -46,3 +46,13 @@ export const rateLimitEmail = rateLimit({
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
+
+export const rateLimitMetrics = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  message: "Too many requests to metrics endpoint",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `ip:${req.ip}`,
+  skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
+});

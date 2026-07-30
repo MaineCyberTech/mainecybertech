@@ -1,19 +1,17 @@
 ## Portal Alignment Engine v3 Results
 
 ### Readiness Score: 91/100
-
 ### Decision: APPROVED_FOR_PROD_DEPLOY
 
-| Severity  | Count |
-| --------- | ----- |
-| P0        | 0     |
-| P1        | 0     |
-| P2        | 3     |
-| P3        | 3     |
+| Severity | Count |
+|----------|-------|
+| P0 | 0 |
+| P1 | 0 |
+| P2 | 3 |
+| P3 | 3 |
 | **Total** | **6** |
 
 ### Detailed Findings
-
 - **[P2]** database: Tables defined in migrations but unreferenced in API code
 - **[P3]** database: Migration number gaps detected
 - **[P2]** api: SDK methods defined but unreferenced in frontend

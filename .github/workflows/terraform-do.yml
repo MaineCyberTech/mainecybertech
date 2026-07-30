@@ -71,7 +71,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: terraform init -input=false
+        run: terraform init -input=false -backend-config=env/backend.${{ steps.env.outputs.name }}.hcl
 
       - name: Terraform Validate
         env:
@@ -144,7 +144,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: terraform init -input=false
+        run: terraform init -input=false -backend-config=env/backend.prod.hcl
 
       - name: Terraform Apply
         id: apply
@@ -184,7 +184,7 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: terraform init -input=false
+        run: terraform init -input=false -backend-config=env/backend.dev.hcl
 
       - name: Terraform Apply
         id: apply

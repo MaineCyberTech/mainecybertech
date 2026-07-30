@@ -1,5 +1,5 @@
 {
-  "total": 15,
+  "total": 14,
   "action_plan": [
     {
       "priority": "P0",
@@ -77,13 +77,6 @@
       "file": "apps/api/src/middleware/rate-limit.ts",
       "issue": "Auth rate limit is per-IP only \u2014 attacker can rotate IPs via botnet to brute-force passwords",
       "action": "Add per-email rate limiting (max 5 attempts per email per 15min) in addition to per-IP limit"
-    },
-    {
-      "priority": "P3",
-      "domain": "ci_cd",
-      "file": ".github/workflows/alignment-pr-comment.yml",
-      "issue": "PR alignment comments use sample_data.json (static demo data) instead of real analysis output",
-      "action": "Point to real engine output files: engine/outputs/global_findings.json"
     },
     {
       "priority": "P3",

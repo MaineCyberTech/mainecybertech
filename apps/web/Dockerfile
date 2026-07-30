@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS base
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10 --activate
 
@@ -27,7 +27,7 @@ COPY apps/web ./apps/web
 RUN pnpm --filter=./apps/web build && rm -rf /app/apps/web/.next/cache
 
 # Runtime
-FROM base AS runner
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-https://api.mainecybertech.com}

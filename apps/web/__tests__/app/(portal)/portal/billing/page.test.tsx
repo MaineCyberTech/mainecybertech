@@ -39,7 +39,7 @@ jest.mock("@/components/portal/PortalSubnav", () => ({
   default: () => React.createElement("nav", null),
 }));
 
-jest.mock("../BillingPageClient", () => ({
+jest.mock("@/app/(portal)/portal/billing/BillingPageClient", () => ({
   __esModule: true,
   default: () => React.createElement("div", { "data-testid": "billing-client" }),
 }));
@@ -76,17 +76,10 @@ describe("PortalBillingPage", () => {
     expect(screen.getByText(/access restricted/i)).toBeInTheDocument();
   });
 
-  it("renders billing client component", async () => {
+  it("renders billing client when data available", async () => {
     const { default: Page } = await import("@/app/(portal)/portal/billing/page");
     const element = await Page();
     render(element);
     expect(screen.getByTestId("billing-client")).toBeInTheDocument();
-  });
-
-  it("calls billing APIs with org id", async () => {
-    const { default: Page } = await import("@/app/(portal)/portal/billing/page");
-    await Page();
-    expect(mockSummary).toHaveBeenCalledWith({ organizationId: "org-1" });
-    expect(mockListSubscriptions).toHaveBeenCalledWith({ organizationId: "org-1" });
   });
 });

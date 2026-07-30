@@ -42,6 +42,19 @@ router.post("/invite", async (req, res, next) => {
 
     const supabase = getSupabaseAdmin();
     const lines = csv.split("\n").filter((l) => l.trim());
+
+    if (lines.length > 500) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: "VALIDATION",
+          message: "Maximum 500 invites per request",
+          status: 400,
+        },
+      });
+      return;
+    }
+
     const results: Array<{ email: string; status: string; message: string }> = [];
 
     for (const line of lines) {

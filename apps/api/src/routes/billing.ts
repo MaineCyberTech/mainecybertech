@@ -8,6 +8,7 @@ import { requireAdmin } from "../middleware/admin";
 import { AppError, success } from "../types";
 import { getEnv } from "../config/env";
 import { httpClients } from "../lib/http-client";
+import { logger } from "../lib/logger";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -267,6 +268,64 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
     });
 
     res.json(success({ synced }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/create-portal-session", async (req, res, next) => {
+  try {
+    const env = getEnv();
+    const stripeKey = env.STRIPE_SECRET_KEY;
+    if (!stripeKey) throw new AppError("CONFIG", "STRIPE_SECRET_KEY not configured", 500);
+
+    const supabase = getSupabaseAdmin();
+    const orgId = req.query.organization_id as string | undefined;
+    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
+
+    const { data: customer, error } = await supabase
+      .from("billing_customers")
+      .select("stripe_customer_id")
+      .eq("organization_id", orgId)
+      .single();
+
+    if (error || !customer?.stripe_customer_id) {
+      throw new AppError("NOT_FOUND", "No Stripe customer found for this organization", 404);
+    }
+
+    const body = new URLSearchParams({
+      customer: customer.stripe_customer_id,
+      return_url: `${env.APP_BASE_URL}/portal/billing`,
+    });
+
+    const portalRes = await httpClients.stripe.fetch(
+      "https://api.stripe.com/v1/billing_portal/sessions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${stripeKey}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: body.toString(),
+      },
+    );
+
+    if (!portalRes.ok) {
+      const errorText = await portalRes.text().catch(() => "Unknown error");
+      logger.error({ status: portalRes.status, error: errorText }, "Stripe portal session failed");
+      throw new AppError("STRIPE_ERROR", "Failed to create billing portal session", 500);
+    }
+
+    const session = (await portalRes.json()) as { url: string };
+
+    await logAuditEvent({
+      organizationId: orgId,
+      actorUserId: req.authUser!.userId,
+      action: "billing.portal_session",
+      entityType: "billing_customer",
+    });
+
+    res.json(success({ url: session.url }));
   } catch (error) {
     next(error);
   }

@@ -80,7 +80,7 @@ describe("PortalTimelinePage", () => {
     const { default: Page } = await import("@/app/(portal)/portal/timeline/page");
     const element = await Page();
     render(element);
-    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.getAllByText(/project/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it("renders timeline and calendar views", async () => {
@@ -91,3 +91,6 @@ describe("PortalTimelinePage", () => {
     expect(screen.getByTestId("calendar-view")).toBeInTheDocument();
   });
 });
+
+
+

@@ -88,6 +88,7 @@ describe("Search API", () => {
     expect(res.body.data).toHaveProperty("organizations");
     expect(res.body.data).toHaveProperty("tickets");
     expect(res.body.data).toHaveProperty("projects");
+    expect(res.body.data).toHaveProperty("documents");
   });
 
   it("returns 401 without auth token", async () => {

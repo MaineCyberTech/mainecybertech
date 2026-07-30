@@ -6,8 +6,10 @@ jest.mock("@/lib/auth/admin", () => ({
 }));
 
 const mockLicenseOptimizerList = jest.fn();
-jest.mock("@/lib/api", () => () => ({
-  licenseOptimizer: { list: mockLicenseOptimizerList },
+jest.mock("@/lib/api", () => ({
+  getApiClient: jest.fn().mockReturnValue({
+    licenseOptimizer: { list: mockLicenseOptimizerList },
+  }),
 }));
 
 jest.mock("@/components/Breadcrumbs", () => {

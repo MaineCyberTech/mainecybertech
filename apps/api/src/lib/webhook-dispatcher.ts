@@ -29,7 +29,7 @@ export async function dispatchWebhook(
       secret: string | null;
       events: string[];
     }>) {
-      const idempotencyKey = `wh-out-${endpoint.id}-${event}-${Date.now()}`;
+      const idempotencyKey = `wh-out-${endpoint.id}-${event}-${crypto.createHash("sha256").update(body).digest("hex").slice(0, 16)}`;
       const existing = await checkIdempotencyKey(idempotencyKey);
       if (existing) continue;
 

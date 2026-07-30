@@ -199,6 +199,12 @@ describe("projects routes", () => {
             error: null,
           }),
         )
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { id: "proj-1", organization_id: "org-1" },
+            error: null,
+          }),
+        )
         .mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)

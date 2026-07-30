@@ -6,8 +6,10 @@ jest.mock("@/lib/auth/admin", () => ({
 }));
 
 const mockFileRequestsList = jest.fn();
-jest.mock("@/lib/api", () => () => ({
-  fileRequests: { list: mockFileRequestsList },
+jest.mock("@/lib/api", () => ({
+  getApiClient: jest.fn().mockReturnValue({
+    fileRequests: { list: mockFileRequestsList },
+  }),
 }));
 
 jest.mock("@/components/Breadcrumbs", () => {

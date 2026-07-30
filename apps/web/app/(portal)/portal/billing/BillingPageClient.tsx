@@ -32,6 +32,7 @@ type BillingCustomer = {
   id: string;
   billing_email?: string | null;
   default_payment_method?: string | null;
+  stripe_customer_id?: string | null;
 } | null;
 
 type BillingSummary = {
@@ -83,6 +84,7 @@ function statusColor(status: string) {
 export default function BillingPageClient({ summary, subscriptions, invoices, customer }: Props) {
   const [syncing, setSyncing] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   async function handleSync() {
     setSyncing(true);
@@ -94,6 +96,17 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
       setSyncMsg("Sync error.");
     }
     setSyncing(false);
+  }
+
+  async function handleManageBilling() {
+    setPortalLoading(true);
+    try {
+      const result = await getClientApi().billing.createPortalSession();
+      window.location.href = result.url;
+    } catch {
+      setSyncMsg("Could not open billing portal. Try again later.");
+      setPortalLoading(false);
+    }
   }
 
   const activeSub = subscriptions.find((s) => s.status === "active" || s.status === "trialing");
@@ -166,6 +179,21 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
               </div>
             ) : null}
           </div>
+          {customer.stripe_customer_id ? (
+            <div className="mt-6">
+              <button
+                onClick={handleManageBilling}
+                disabled={portalLoading}
+                className="cyber-button text-sm"
+              >
+                {portalLoading ? "Opening..." : "Manage Billing"}
+              </button>
+              <p className="mt-2 text-xs text-slate-400">
+                Securely manage your subscription, payment methods, and billing history in the Stripe
+                Customer Portal.
+              </p>
+            </div>
+          ) : null}
         </section>
       ) : null}
 

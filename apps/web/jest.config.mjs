@@ -1,6 +1,6 @@
 export default {
   preset: "ts-jest",
-  testEnvironment: "jsdom",
+  testEnvironment: "./jest-custom-environment.js",
   roots: ["<rootDir>/"],
   testMatch: [
     "**/__tests__/**/*.ts",

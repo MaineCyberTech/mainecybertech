@@ -112,9 +112,11 @@ describe("API edge cases", () => {
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: null,
-              error: { message: "new row violates row-level security policy" },
+            is: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: null,
+                error: { message: "new row violates row-level security policy" },
+              }),
             }),
           }),
         }),
@@ -151,9 +153,11 @@ describe("API edge cases", () => {
       (getSupabaseAdmin as jest.Mock)().from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: null,
-              error: { message: "invalid input syntax for type uuid" },
+            is: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: null,
+                error: { message: "invalid input syntax for type uuid" },
+              }),
             }),
           }),
         }),

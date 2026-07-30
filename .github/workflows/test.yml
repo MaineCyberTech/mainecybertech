@@ -49,3 +49,6 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+
+      - name: Validate OpenAPI spec
+        run: pnpm --filter=api exec tsx src/scripts/validate-openapi.ts

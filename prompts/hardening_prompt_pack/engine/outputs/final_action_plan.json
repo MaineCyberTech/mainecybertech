@@ -45,7 +45,7 @@
       "severity": "P3",
       "domain": "evolution",
       "file": "apps/web/app/**/page.tsx",
-      "issue": "Only 111/130 pages have metadata/title tags",
+      "issue": "Only 221/242 pages have metadata/title tags",
       "action": "Add export const metadata with title to all pages",
       "effort": "small"
     }

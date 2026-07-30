@@ -23,7 +23,7 @@
       "severity": "P2",
       "domain": "api",
       "title": "SDK methods defined but unreferenced in frontend",
-      "recommended_action": "5 SDK method(s) exist but are not called from web code",
+      "recommended_action": "27 SDK method(s) exist but are not called from web code",
       "effort": "medium"
     },
     {
@@ -44,7 +44,7 @@
       "severity": "P2",
       "domain": "cross-domain",
       "title": "Database tables never queried in API code",
-      "recommended_action": "55 table(s) defined in migrations but never used in any .from() call",
+      "recommended_action": "35 table(s) defined in migrations but never used in any .from() call",
       "effort": "medium"
     }
   ],

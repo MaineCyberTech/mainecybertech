@@ -11,7 +11,7 @@
     "privacy": 2,
     "evolution": 1
   },
-  "timestamp": "2026-07-27T00:20:26.273600+00:00",
-  "commit": "6cb2ad4 fix: move public endpoints before requireAuth middleware",
+  "timestamp": "2026-07-30T06:49:21.416251+00:00",
+  "commit": "62da92c fix: remove duplicate Everything lines in top tiers",
   "blocked": true
 }

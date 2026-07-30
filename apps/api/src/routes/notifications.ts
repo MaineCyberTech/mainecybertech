@@ -6,10 +6,23 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
+import { getEnv } from "../config/env";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+
+function sanitizeNotification(n: Record<string, unknown>): Record<string, unknown> {
+  return {
+    id: n.id,
+    title: n.title,
+    module: n.module,
+    module_id: n.module_id,
+    action: n.action,
+    read: n.read,
+    created_at: n.created_at,
+  };
+}
 
 // SSE stream for real-time notifications using Supabase realtime
 router.get("/stream", async (req, res, next) => {
@@ -33,6 +46,18 @@ router.get("/stream", async (req, res, next) => {
     }, 30_000);
     keepaliveInterval.unref();
 
+    // Re-validate auth every 5 minutes to catch revoked sessions
+    const authValidationInterval = setInterval(async () => {
+      const { data: user, error } = await supabase.auth.getUser(
+        req.headers.authorization?.replace("Bearer ", "") || "",
+      );
+      if (error || !user?.user) {
+        res.write(`event: auth_expired\ndata: ${JSON.stringify({ type: "auth_expired" })}\n\n`);
+        res.end();
+      }
+    }, 5 * 60 * 1000);
+    authValidationInterval.unref();
+
     // Use Supabase realtime subscription for real-time notifications
     const channel = supabase
       .channel(`notifications:${userId}`)
@@ -45,7 +70,8 @@ router.get("/stream", async (req, res, next) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          res.write(`event: notification\ndata: ${JSON.stringify(payload.new)}\n\n`);
+          const safe = sanitizeNotification(payload.new as Record<string, unknown>);
+          res.write(`event: notification\ndata: ${JSON.stringify(safe)}\n\n`);
         },
       )
       .on(
@@ -57,7 +83,8 @@ router.get("/stream", async (req, res, next) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          res.write(`event: notification_update\ndata: ${JSON.stringify(payload.new)}\n\n`);
+          const safe = sanitizeNotification(payload.new as Record<string, unknown>);
+          res.write(`event: notification_update\ndata: ${JSON.stringify(safe)}\n\n`);
         },
       )
       .subscribe((status) => {
@@ -76,7 +103,8 @@ router.get("/stream", async (req, res, next) => {
       .limit(5)
       .then(({ data, error }) => {
         if (!error && data && data.length > 0) {
-          res.write(`event: initial\ndata: ${JSON.stringify(data)}\n\n`);
+          const safe = data.map((n: Record<string, unknown>) => sanitizeNotification(n));
+          res.write(`event: initial\ndata: ${JSON.stringify(safe)}\n\n`);
         }
       });
 
@@ -91,7 +119,7 @@ router.get("/stream", async (req, res, next) => {
 });
 
 const createNotificationSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().min(1),
   organizationId: z.string().uuid().optional(),
   title: z.string().min(1).max(200),
   body: z.string().min(1).max(2000),
@@ -212,6 +240,20 @@ router.post("/", requireAdmin, async (req, res, next) => {
     const parsed = createNotificationSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
+    const notificationKey = `${parsed.userId}-${parsed.module}-${parsed.moduleId || "none"}-${parsed.action}`;
+
+    // Dedup: check if identical notification already exists
+    const { data: existing } = await supabase
+      .from("notifications")
+      .select("id, title, body, read, created_at")
+      .eq("notification_key", notificationKey)
+      .maybeSingle();
+
+    if (existing) {
+      res.status(200).json(success(existing));
+      return;
+    }
+
     const { data, error } = await supabase
       .from("notifications")
       .insert({
@@ -222,6 +264,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
         module: parsed.module,
         module_id: parsed.moduleId,
         action: parsed.action,
+        notification_key: notificationKey,
       })
       .select()
       .single();

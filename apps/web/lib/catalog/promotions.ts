@@ -16,19 +16,8 @@ export interface Promotion {
   updatedAt: string;
 }
 
-let promotions: Promotion[] = [];
-let nextId = 1;
-
-export function getPromotions(): Promotion[] {
-  return promotions;
-}
-
 export function getPromoRulesFromData(): PromoRules {
   return promoData as PromoRules;
-}
-
-export function getActivePromotions(): Promotion[] {
-  return promotions.filter((p) => p.status === "active");
 }
 
 export interface ValidationResult {
@@ -58,67 +47,4 @@ export function validatePromotion(
   }
 
   return { valid: errors.length === 0, errors };
-}
-
-export function createPromotion(
-  input: Omit<Promotion, "id" | "createdAt" | "updatedAt">,
-): { ok: true; data: Promotion } | { ok: false; error: string } {
-  const validation = validatePromotion(input);
-  if (!validation.valid) {
-    return { ok: false, error: validation.errors.join("; ") };
-  }
-
-  const promo: Promotion = {
-    id: String(nextId++),
-    ...input,
-    startDate: input.startDate || "",
-    endDate: input.endDate || "",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  promotions.push(promo);
-  return { ok: true, data: promo };
-}
-
-export function updatePromotion(
-  id: string,
-  input: Partial<Omit<Promotion, "id">>,
-): { ok: true; data: Promotion } | { ok: false; error: string } {
-  const idx = promotions.findIndex((p) => p.id === id);
-  if (idx === -1) {
-    return { ok: false, error: "Promotion not found" };
-  }
-
-  const updated = { ...promotions[idx], ...input, updatedAt: new Date().toISOString() };
-  const validation = validatePromotion({
-    name: updated.name,
-    badgeText: updated.badgeText,
-    detailText: updated.detailText,
-    promoType: updated.promoType,
-    status: updated.status,
-    terms: updated.terms,
-    eligibilityTargets: updated.eligibilityTargets,
-    startDate: updated.startDate,
-    endDate: updated.endDate,
-  });
-  if (!validation.valid) {
-    return { ok: false, error: validation.errors.join("; ") };
-  }
-
-  promotions[idx] = updated;
-  return { ok: true, data: updated };
-}
-
-export function deletePromotion(id: string): { ok: true } | { ok: false; error: string } {
-  const idx = promotions.findIndex((p) => p.id === id);
-  if (idx === -1) {
-    return { ok: false, error: "Promotion not found" };
-  }
-  promotions.splice(idx, 1);
-  return { ok: true };
-}
-
-export function __resetPromotionsForTest(): void {
-  promotions = [];
-  nextId = 1;
 }

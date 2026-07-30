@@ -2,6 +2,7 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import webhooksRouter from "../routes/webhooks";
 import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { getEnv } from "../config/env";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("stripe", () => {
@@ -27,7 +28,7 @@ jest.mock("../config/env", () => ({
     STRIPE_WEBHOOK_SECRET: "whsec_test",
     JIRA_WEBHOOK_SECRET: "jira-secret",
     JSM_WEBHOOK_SECRET: "jsm-secret",
-    M365_WEBHOOK_SECRET: "m365-secret",
+    M365_CLIENT_STATE: "m365-client-state",
   }),
 }));
 
@@ -67,6 +68,7 @@ jest.mock("../lib/idempotency", () => ({
 
 jest.mock("../lib/webhook-signature", () => ({
   verifyWebhookSignature: jest.fn().mockReturnValue(true),
+  validateWebhookTimestamp: jest.fn().mockReturnValue(true),
 }));
 
 jest.mock("../lib/logger", () => ({
@@ -180,11 +182,52 @@ describe("webhooks routes", () => {
     it("processes an M365 webhook", async () => {
       const res = await request(app)
         .post("/api/v1/webhooks/m365")
-        .set("x-hub-signature", "sig_123")
-        .send({ resource: "users", changeType: "updated" });
+        .send({
+          value: [
+            {
+              resource: "users",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionId: "sub-123",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+            },
+          ],
+        });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
+    });
+
+    it("rejects M365 webhook with wrong clientState", async () => {
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users",
+              changeType: "updated",
+              clientState: "wrong-state",
+            },
+          ],
+        });
+
+      expect(res.status).toBe(401);
+    });
+  });
+
+  describe("GET /m365", () => {
+    it("echoes validationToken for Microsoft Graph subscription validation", async () => {
+      const res = await request(app)
+        .get("/api/v1/webhooks/m365?validationToken=abc123");
+
+      expect(res.status).toBe(200);
+      expect(res.text).toBe("abc123");
+    });
+
+    it("returns 400 when validationToken is missing", async () => {
+      const res = await request(app).get("/api/v1/webhooks/m365");
+
+      expect(res.status).toBe(400);
     });
   });
 });

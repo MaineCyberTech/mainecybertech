@@ -5,7 +5,7 @@ import { logger } from "../lib/logger";
 import { failure, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
-import { verifyWebhookSignature } from "../lib/webhook-signature";
+import { verifyWebhookSignature, validateWebhookTimestamp } from "../lib/webhook-signature";
 import { checkIdempotencyKey, storeIdempotencyKey } from "../lib/idempotency";
 import { recordWebhookDelivery } from "../lib/metrics";
 
@@ -233,6 +233,12 @@ router.post("/jira", async (req, res, next) => {
       return;
     }
 
+    if (!validateWebhookTimestamp(event)) {
+      logger.warn({ event: event.webhookEvent, issueKey }, "Jira webhook timestamp outside tolerance");
+      res.status(400).json(failure("BAD_REQUEST", "Webhook timestamp outside tolerance", 400));
+      return;
+    }
+
     const jiraKey = `jira-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}`;
     if (await dedupWebhook(jiraKey)) {
       res.json(success({ received: true }));
@@ -305,6 +311,12 @@ router.post("/jsm", async (req, res, next) => {
       return;
     }
 
+    if (!validateWebhookTimestamp(event)) {
+      logger.warn({ event: event.webhookEvent, issueKey }, "JSM webhook timestamp outside tolerance");
+      res.status(400).json(failure("BAD_REQUEST", "Webhook timestamp outside tolerance", 400));
+      return;
+    }
+
     const jsmKey = `jsm-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}`;
     if (await dedupWebhook(jsmKey)) {
       res.json(success({ received: true }));
@@ -351,31 +363,52 @@ router.post("/jsm", async (req, res, next) => {
   }
 });
 
+router.get("/m365", (req, res) => {
+  const validationToken = req.query.validationToken as string | undefined;
+  if (validationToken) {
+    res.set("Content-Type", "text/plain");
+    res.send(validationToken);
+    return;
+  }
+  res.status(400).json(failure("VALIDATION", "Missing validationToken", 400));
+});
+
 router.post("/m365", async (req, res, next) => {
   try {
     const event = req.body;
     logger.info({ resource: event.resource }, "M365 webhook received");
 
-    const m365Secret = getEnv().M365_WEBHOOK_SECRET;
-    if (!m365Secret) {
-      logger.warn("M365 webhook secret not configured");
+    const clientState = getEnv().M365_CLIENT_STATE;
+    if (!clientState) {
+      logger.warn("M365 webhook clientState not configured");
       res.status(501).json(failure("NOT_IMPLEMENTED", "M365 webhook not configured", 501));
       return;
     }
-    const sig = req.headers["x-hub-signature"] as string | undefined;
-    if (!sig) {
-      logger.warn("M365 webhook missing x-hub-signature header");
-      res.status(401).json(failure("UNAUTHORIZED", "Missing webhook signature", 401));
-      return;
-    }
-    const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
-    if (!verifyWebhookSignature(rawBody, sig, m365Secret)) {
-      logger.warn("M365 webhook signature verification failed");
-      res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
+
+    const value = event.value;
+    if (!Array.isArray(value) || value.length === 0) {
+      logger.warn("M365 webhook received with no value array");
+      res.json(success({ received: true }));
       return;
     }
 
-    const m365Key = `m365-${event.resource}-${event.changeType}`;
+    for (const notification of value) {
+      if (notification.clientState && notification.clientState !== clientState) {
+        logger.warn({ resource: notification.resource }, "M365 webhook clientState mismatch");
+        res.status(401).json(failure("UNAUTHORIZED", "Invalid clientState", 401));
+        return;
+      }
+    }
+
+    if (!validateWebhookTimestamp(event)) {
+      logger.warn({ resource: event.resource }, "M365 webhook timestamp outside tolerance");
+      res.status(400).json(failure("BAD_REQUEST", "Webhook timestamp outside tolerance", 400));
+      return;
+    }
+
+    const resource = value[0]?.resource;
+    const changeType = value[0]?.changeType;
+    const m365Key = `m365-${resource ?? "unknown"}-${changeType ?? "unknown"}`;
     if (await dedupWebhook(m365Key)) {
       res.json(success({ received: true }));
       return;
@@ -385,7 +418,7 @@ router.post("/m365", async (req, res, next) => {
       actorType: "system",
       action: "m365.webhook",
       entityType: "m365_event",
-      metadata: { resource: event.resource, changeType: event.changeType },
+      metadata: { resource, changeType, notificationCount: value.length },
     });
 
     await logWebhookDelivery("m365.webhook", req.body, m365Key);

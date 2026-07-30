@@ -107,4 +107,8 @@ export class BillingApi {
   syncFromStripe(data?: { organizationId?: string }) {
     return this.client.post<{ synced: number }>("/api/v1/billing/sync", data);
   }
+
+  createPortalSession(data?: { organizationId?: string }) {
+    return this.client.post<{ url: string }>("/api/v1/billing/create-portal-session", data);
+  }
 }

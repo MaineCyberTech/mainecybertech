@@ -13,13 +13,61 @@ router.use(requireAuth);
 router.get("/", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
+    let orgId = req.query.organization_id as string | undefined;
+
+    if (!orgId) {
+      const { data: membership } = await supabase
+        .from("memberships")
+        .select("organization_id")
+        .eq("user_id", req.authUser!.userId)
+        .eq("status", "approved")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .single();
+
+      if (membership) {
+        orgId = membership.organization_id as string;
+      }
+    }
+
+    let query = supabase
       .from("profiles")
       .select(
         "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
-      )
-      .order("email");
+      );
 
+    if (orgId) {
+      const { data: membership } = await supabase
+        .from("memberships")
+        .select("id, roles!inner(id, key)")
+        .eq("user_id", req.authUser!.userId)
+        .eq("organization_id", orgId)
+        .eq("status", "approved")
+        .maybeSingle();
+
+      if (
+        !membership ||
+        !["admin", "super_admin"].includes((membership.roles as unknown as { key: string }).key)
+      ) {
+        throw new AppError("FORBIDDEN", "You do not have access to users in this organization", 403);
+      }
+
+      const { data: userIds } = await supabase
+        .from("memberships")
+        .select("user_id")
+        .eq("organization_id", orgId)
+        .eq("status", "approved");
+
+      const ids = (userIds ?? []).map((u) => u.user_id as string);
+      if (ids.length > 0) {
+        query = query.in("id", ids);
+      } else {
+        res.json(success([]));
+        return;
+      }
+    }
+
+    const { data, error } = await query.order("email");
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
   } catch (error) {
@@ -31,14 +79,64 @@ router.get("/", requireAdmin, async (req, res, next) => {
 router.get("/compound", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    let orgId = req.query.organization_id as string | undefined;
 
-    // Fetch all users with their profiles and memberships
-    const { data: profiles, error: profilesError } = await supabase
+    if (!orgId) {
+      const { data: membership } = await supabase
+        .from("memberships")
+        .select("organization_id")
+        .eq("user_id", req.authUser!.userId)
+        .eq("status", "approved")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .single();
+
+      if (membership) {
+        orgId = membership.organization_id as string;
+      }
+    }
+
+    if (orgId) {
+      const { data: membership } = await supabase
+        .from("memberships")
+        .select("id, roles!inner(id, key)")
+        .eq("user_id", req.authUser!.userId)
+        .eq("organization_id", orgId)
+        .eq("status", "approved")
+        .maybeSingle();
+
+      if (
+        !membership ||
+        !["admin", "super_admin"].includes((membership.roles as unknown as { key: string }).key)
+      ) {
+        throw new AppError("FORBIDDEN", "You do not have access to users in this organization", 403);
+      }
+    }
+
+    // Fetch all profiles scoped to the org
+    let profileQuery = supabase
       .from("profiles")
       .select(
         "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
-      )
-      .order("email");
+      );
+
+    if (orgId) {
+      const { data: userIds } = await supabase
+        .from("memberships")
+        .select("user_id")
+        .eq("organization_id", orgId)
+        .eq("status", "approved");
+
+      const ids = (userIds ?? []).map((u) => u.user_id as string);
+      if (ids.length > 0) {
+        profileQuery = profileQuery.in("id", ids);
+      } else {
+        res.json(success([]));
+        return;
+      }
+    }
+
+    const { data: profiles, error: profilesError } = await profileQuery.order("email");
 
     if (profilesError) throw new AppError("DB_ERROR", profilesError.message, 500);
 
@@ -50,12 +148,18 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
     const userIds = profiles.map((p) => p.id);
 
     // Fetch all memberships for these users
-    const { data: memberships, error: memError } = await supabase
+    let memQuery = supabase
       .from("memberships")
       .select(
         "id, organization_id, user_id, role_id, status, is_billing_contact, is_security_contact, created_at",
       )
       .in("user_id", userIds);
+
+    if (orgId) {
+      memQuery = memQuery.eq("organization_id", orgId);
+    }
+
+    const { data: memberships, error: memError } = await memQuery;
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
 
@@ -248,6 +352,22 @@ router.patch("/:id/role", requireAdmin, async (req, res, next) => {
       .parse(req.body);
 
     const supabase = getSupabaseAdmin();
+
+    const { data: targetRole } = await supabase
+      .from("roles")
+      .select("key")
+      .eq("id", roleId)
+      .single();
+    if (targetRole?.key === "super_admin") {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_super_admin")
+        .eq("id", req.authUser!.userId)
+        .single();
+      if (!profile?.is_super_admin) {
+        throw new AppError("FORBIDDEN", "Only super admins can assign the super_admin role", 403);
+      }
+    }
 
     let query = supabase
       .from("memberships")

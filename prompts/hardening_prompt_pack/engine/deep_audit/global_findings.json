@@ -1,6 +1,6 @@
 {
-  "total": 15,
-  "generated_at": "2026-07-27T00:20:26.244517+00:00",
+  "total": 14,
+  "generated_at": "2026-07-30T06:49:21.154872+00:00",
   "findings": [
     {
       "severity": "P1",
@@ -101,15 +101,6 @@
       "issue": "Bulk invite operations not wrapped in a Supabase RPC transaction \u2014 partial invite failure leaves inconsistent state",
       "remediation": "Move bulk invite logic into a Supabase RPC function with BEGIN/COMMIT/ROLLBACK",
       "impact": "If one invite fails mid-batch, earlier invites are already committed \u2014 org membership state is inconsistent"
-    },
-    {
-      "severity": "P3",
-      "domain": "ci_cd",
-      "category": "release",
-      "file": ".github/workflows/alignment-pr-comment.yml",
-      "issue": "PR alignment comments use sample_data.json (static demo data) instead of real analysis output",
-      "remediation": "Point to real engine output files: engine/outputs/global_findings.json",
-      "impact": "PR comments show fake P0/P1 counts \u2014 no actual gating"
     },
     {
       "severity": "P3",

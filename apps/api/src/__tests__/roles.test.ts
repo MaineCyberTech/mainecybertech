@@ -26,13 +26,19 @@ jest.mock("../services/audit", () => ({
 
 import { getSupabaseAdmin } from "../services/supabase";
 
-function mockAuth() {
+function mockAuth(isAdmin = false) {
   const supabase = { from: jest.fn(), auth: { getUser: jest.fn() } };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
   supabase.auth.getUser.mockResolvedValue({
     data: { user: { id: "user-1", email: "test@example.com" } },
     error: null,
   });
+  if (isAdmin) {
+    supabase.from.mockReturnValue(createMockBuilder({
+      data: [{ roles: { id: "role-1", key: "admin" } }],
+      error: null,
+    }));
+  }
   return supabase;
 }
 
@@ -50,8 +56,9 @@ describe("roles routes", () => {
   describe("GET /", () => {
     it("returns a list of roles", async () => {
       mockAuth();
-      const result: MockResult = { data: [ROLE], error: null };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+      (getSupabaseAdmin as jest.Mock)().from
+        .mockReturnValueOnce(createMockBuilder({ data: [{ roles: { id: "role-1", key: "admin" } }], error: null }))
+        .mockReturnValue(createMockBuilder({ data: [ROLE], error: null }));
 
       const res = await request(app).get("/api/v1/roles").set("Authorization", "Bearer token-123");
 
@@ -62,8 +69,9 @@ describe("roles routes", () => {
 
     it("filters by ids", async () => {
       mockAuth();
-      const result: MockResult = { data: [ROLE], error: null };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+      (getSupabaseAdmin as jest.Mock)().from
+        .mockReturnValueOnce(createMockBuilder({ data: [{ roles: { id: "role-1", key: "admin" } }], error: null }))
+        .mockReturnValue(createMockBuilder({ data: [ROLE], error: null }));
 
       const res = await request(app)
         .get("/api/v1/roles?ids=role-1,role-2")

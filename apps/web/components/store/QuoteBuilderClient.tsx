@@ -184,7 +184,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
     };
 
     try {
-      const res = await fetch("/api/v1/public/quotes", {
+      const res = await fetch("/api/v1/store/quotes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -2,7 +2,6 @@ terraform {
   required_version = ">= 1.5"
 
   backend "s3" {
-    bucket                      = "portal-terraform-state-development"
     key                         = "digitalocean/terraform.tfstate"
     region                      = "us-east-1"
     endpoints = {

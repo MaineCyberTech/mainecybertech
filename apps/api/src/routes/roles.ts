@@ -11,7 +11,7 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 
-router.get("/", responseCacheNoRenew(120), async (req, res, next) => {
+router.get("/", requireAdmin, responseCacheNoRenew(120), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     let query = supabase.from("roles").select("id, key, name, description, is_system");
@@ -75,7 +75,7 @@ router.get("/with-permissions", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get("/:id/permissions", async (req, res, next) => {
+router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
 

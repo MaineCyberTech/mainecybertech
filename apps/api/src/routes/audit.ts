@@ -21,11 +21,10 @@ router.get("/", async (req, res, next) => {
 
     let query = supabase.from("audit_logs").select("*", { count: "exact" });
 
-    const actorUserId = req.query.actor_user_id as string | undefined;
-    if (actorUserId) query = query.eq("actor_user_id", actorUserId);
-
     const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    if (orgId) {
+      query = query.eq("organization_id", orgId);
+    }
 
     const actionFilter = req.query.action as string | undefined;
     if (actionFilter) query = query.eq("action", actionFilter);
@@ -66,11 +65,15 @@ router.get("/export", async (req, res, next) => {
 
     let query = supabase.from("audit_logs").select("*");
 
-    const actorUserId = req.query.actor_user_id as string | undefined;
-    if (actorUserId) query = query.eq("actor_user_id", actorUserId);
-
     const orgId = req.query.organization_id as string | undefined;
-    if (orgId) query = query.eq("organization_id", orgId);
+    if (orgId) {
+      query = query.eq("organization_id", orgId);
+    } else {
+      const adminOrgIds = await getAdminOrgIds(req.authUser!.userId);
+      if (adminOrgIds.length > 0) {
+        query = query.in("organization_id", adminOrgIds);
+      }
+    }
 
     const actionFilter = req.query.action as string | undefined;
     if (actionFilter) query = query.eq("action", actionFilter);

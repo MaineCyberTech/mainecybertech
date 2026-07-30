@@ -1,7 +1,7 @@
 {
   "domain": "security",
   "total": 6,
-  "timestamp": "2026-07-27T00:20:23.580463+00:00",
+  "timestamp": "2026-07-30T06:49:20.589255+00:00",
   "findings": [
     {
       "severity": "P1",

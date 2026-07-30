@@ -15,6 +15,20 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
+function maskSecret(secret: string | null | undefined): string | null {
+  if (!secret) return null;
+  if (secret.length <= 8) return "****";
+  return secret.slice(0, 4) + "****" + secret.slice(-4);
+}
+
+function maskWebhookData(data: Record<string, unknown> | null): Record<string, unknown> | null {
+  if (!data) return null;
+  if (data.secret) {
+    data.secret = maskSecret(data.secret as string);
+  }
+  return data;
+}
+
 const createSchema = z.object({
   organizationId: z.string().uuid(),
   name: z.string().min(1).max(200),
@@ -43,7 +57,8 @@ router.get("/", async (req, res, next) => {
       ascending: false,
     });
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data ?? []));
+    const masked = (data ?? []).map(maskWebhookData);
+    res.json(success(masked));
   } catch (error) {
     next(error);
   }
@@ -58,7 +73,7 @@ router.get("/:id", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Webhook not found", 404);
-    res.json(success(data));
+    res.json(success(maskWebhookData(data)));
   } catch (error) {
     next(error);
   }
