@@ -215,14 +215,22 @@ router.post("/jira", async (req, res, next) => {
     );
 
     const jiraSecret = getEnv().JIRA_WEBHOOK_SECRET;
-    if (jiraSecret) {
-      const sig = req.headers["x-hub-signature"] as string | undefined;
-      const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
-      if (!verifyWebhookSignature(rawBody, sig, jiraSecret)) {
-        logger.warn("Jira webhook signature verification failed");
-        res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
-        return;
-      }
+    if (!jiraSecret) {
+      logger.warn("Jira webhook secret not configured");
+      res.status(501).json(failure("NOT_IMPLEMENTED", "Jira webhook not configured", 501));
+      return;
+    }
+    const sig = req.headers["x-hub-signature"] as string | undefined;
+    if (!sig) {
+      logger.warn("Jira webhook missing x-hub-signature header");
+      res.status(401).json(failure("UNAUTHORIZED", "Missing webhook signature", 401));
+      return;
+    }
+    const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
+    if (!verifyWebhookSignature(rawBody, sig, jiraSecret)) {
+      logger.warn("Jira webhook signature verification failed");
+      res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
+      return;
     }
 
     const jiraKey = `jira-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}`;
@@ -279,14 +287,22 @@ router.post("/jsm", async (req, res, next) => {
     );
 
     const jsmSecret = getEnv().JSM_WEBHOOK_SECRET;
-    if (jsmSecret) {
-      const sig = req.headers["x-hub-signature"] as string | undefined;
-      const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
-      if (!verifyWebhookSignature(rawBody, sig, jsmSecret)) {
-        logger.warn("JSM webhook signature verification failed");
-        res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
-        return;
-      }
+    if (!jsmSecret) {
+      logger.warn("JSM webhook secret not configured");
+      res.status(501).json(failure("NOT_IMPLEMENTED", "JSM webhook not configured", 501));
+      return;
+    }
+    const sig = req.headers["x-hub-signature"] as string | undefined;
+    if (!sig) {
+      logger.warn("JSM webhook missing x-hub-signature header");
+      res.status(401).json(failure("UNAUTHORIZED", "Missing webhook signature", 401));
+      return;
+    }
+    const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
+    if (!verifyWebhookSignature(rawBody, sig, jsmSecret)) {
+      logger.warn("JSM webhook signature verification failed");
+      res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
+      return;
     }
 
     const jsmKey = `jsm-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}`;
@@ -341,14 +357,22 @@ router.post("/m365", async (req, res, next) => {
     logger.info({ resource: event.resource }, "M365 webhook received");
 
     const m365Secret = getEnv().M365_WEBHOOK_SECRET;
-    if (m365Secret) {
-      const sig = req.headers["x-hub-signature"] as string | undefined;
-      const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
-      if (!verifyWebhookSignature(rawBody, sig, m365Secret)) {
-        logger.warn("M365 webhook signature verification failed");
-        res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
-        return;
-      }
+    if (!m365Secret) {
+      logger.warn("M365 webhook secret not configured");
+      res.status(501).json(failure("NOT_IMPLEMENTED", "M365 webhook not configured", 501));
+      return;
+    }
+    const sig = req.headers["x-hub-signature"] as string | undefined;
+    if (!sig) {
+      logger.warn("M365 webhook missing x-hub-signature header");
+      res.status(401).json(failure("UNAUTHORIZED", "Missing webhook signature", 401));
+      return;
+    }
+    const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
+    if (!verifyWebhookSignature(rawBody, sig, m365Secret)) {
+      logger.warn("M365 webhook signature verification failed");
+      res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
+      return;
     }
 
     const m365Key = `m365-${event.resource}-${event.changeType}`;

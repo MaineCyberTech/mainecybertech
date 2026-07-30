@@ -40,8 +40,7 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
       )
       .order("email");
 
-    if (profilesError)
-      throw new AppError("DB_ERROR", profilesError.message, 500);
+    if (profilesError) throw new AppError("DB_ERROR", profilesError.message, 500);
 
     if (!profiles || profiles.length === 0) {
       res.json(success([]));
@@ -62,17 +61,9 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
 
     // Collect unique org and role IDs
     const orgIds = [
-      ...new Set(
-        (memberships ?? []).map(
-          (m: { organization_id: string }) => m.organization_id,
-        ),
-      ),
+      ...new Set((memberships ?? []).map((m: { organization_id: string }) => m.organization_id)),
     ];
-    const roleIds = [
-      ...new Set(
-        (memberships ?? []).map((m: { role_id: string }) => m.role_id),
-      ),
-    ];
+    const roleIds = [...new Set((memberships ?? []).map((m: { role_id: string }) => m.role_id))];
 
     // Fetch organizations, roles, and all roles in parallel
     const [
@@ -83,9 +74,7 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
       orgIds.length > 0
         ? supabase
             .from("organizations")
-            .select(
-              "id, name, slug, status, primary_domain, support_plan, created_at, updated_at",
-            )
+            .select("id, name, slug, status, primary_domain, support_plan, created_at, updated_at")
             .in("id", orgIds)
         : { data: [], error: null },
       roleIds.length > 0
@@ -96,30 +85,17 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
 
     if (orgsError) throw new AppError("DB_ERROR", orgsError.message, 500);
     if (rolesError) throw new AppError("DB_ERROR", rolesError.message, 500);
-    if (allRolesError)
-      throw new AppError("DB_ERROR", allRolesError.message, 500);
+    if (allRolesError) throw new AppError("DB_ERROR", allRolesError.message, 500);
 
     // Build the compound response
-    const userIdsWithMemberships = new Set(
-      (memberships ?? []).map((m) => m.user_id),
-    );
+    const userIdsWithMemberships = new Set((memberships ?? []).map((m) => m.user_id));
     const compound = profiles
       .filter((p) => userIdsWithMemberships.has(p.id))
       .map((profile) => {
-        const userMemberships = (memberships ?? []).filter(
-          (m) => m.user_id === profile.id,
-        );
-        const orgIdsForUser = [
-          ...new Set(userMemberships.map((m) => m.organization_id)),
-        ];
-        const userOrganizations = (organizations ?? []).filter((o) =>
-          orgIdsForUser.includes(o.id),
-        );
-        const userRoles = [
-          ...new Set(
-            userMemberships.map((m: { role_id: string }) => m.role_id),
-          ),
-        ];
+        const userMemberships = (memberships ?? []).filter((m) => m.user_id === profile.id);
+        const orgIdsForUser = [...new Set(userMemberships.map((m) => m.organization_id))];
+        const userOrganizations = (organizations ?? []).filter((o) => orgIdsForUser.includes(o.id));
+        const userRoles = [...new Set(userMemberships.map((m: { role_id: string }) => m.role_id))];
 
         return {
           user: {
@@ -142,9 +118,7 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
             default_organization_id: profile.default_organization_id,
             created_at: profile.created_at,
           },
-          memberships: (memberships ?? []).filter(
-            (m) => m.user_id === profile.id,
-          ),
+          memberships: (memberships ?? []).filter((m) => m.user_id === profile.id),
           organizations: userOrganizations,
           roles: (roles ?? []).filter((r) => userRoles.includes(r.id)),
           allRoles: allRoles ?? [],
@@ -159,6 +133,17 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
+    if (req.authUser?.userId !== req.params.id) {
+      const supabase = getSupabaseAdmin();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_super_admin")
+        .eq("id", req.authUser!.userId)
+        .single();
+      if (!profile?.is_super_admin) {
+        throw new AppError("FORBIDDEN", "Admin access required to view other users", 403);
+      }
+    }
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("profiles")
@@ -177,6 +162,17 @@ router.get("/:id", async (req, res, next) => {
 
 router.get("/:id/detail", async (req, res, next) => {
   try {
+    if (req.authUser?.userId !== req.params.id) {
+      const supabase = getSupabaseAdmin();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_super_admin")
+        .eq("id", req.authUser!.userId)
+        .single();
+      if (!profile?.is_super_admin) {
+        throw new AppError("FORBIDDEN", "Admin access required to view other users", 403);
+      }
+    }
     const supabase = getSupabaseAdmin();
 
     const { data: user, error: userError } = await supabase
@@ -187,8 +183,7 @@ router.get("/:id/detail", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
 
-    if (userError || !user)
-      throw new AppError("NOT_FOUND", "User not found", 404);
+    if (userError || !user) throw new AppError("NOT_FOUND", "User not found", 404);
 
     const { data: memberships, error: memError } = await supabase
       .from("memberships")
@@ -200,34 +195,24 @@ router.get("/:id/detail", async (req, res, next) => {
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
 
     const orgIds = [
-      ...new Set(
-        (memberships ?? []).map(
-          (m: { organization_id: string }) => m.organization_id,
-        ),
-      ),
+      ...new Set((memberships ?? []).map((m: { organization_id: string }) => m.organization_id)),
     ];
-    const roleIds = [
-      ...new Set(
-        (memberships ?? []).map((m: { role_id: string }) => m.role_id),
-      ),
-    ];
+    const roleIds = [...new Set((memberships ?? []).map((m: { role_id: string }) => m.role_id))];
 
-    const [
-      { data: organizations, error: orgsError },
-      { data: roles, error: rolesError },
-    ] = await Promise.all([
-      orgIds.length > 0
-        ? supabase
-            .from("organizations")
-            .select(
-              "id, name, slug, status, primary_domain, support_plan, created_at, updated_at",
-            )
-            .in("id", orgIds)
-        : { data: [], error: null },
-      roleIds.length > 0
-        ? supabase.from("roles").select("id, key, name").in("id", roleIds)
-        : { data: [], error: null },
-    ]);
+    const [{ data: organizations, error: orgsError }, { data: roles, error: rolesError }] =
+      await Promise.all([
+        orgIds.length > 0
+          ? supabase
+              .from("organizations")
+              .select(
+                "id, name, slug, status, primary_domain, support_plan, created_at, updated_at",
+              )
+              .in("id", orgIds)
+          : { data: [], error: null },
+        roleIds.length > 0
+          ? supabase.from("roles").select("id, key, name").in("id", roleIds)
+          : { data: [], error: null },
+      ]);
 
     if (orgsError) throw new AppError("DB_ERROR", orgsError.message, 500);
     if (rolesError) throw new AppError("DB_ERROR", rolesError.message, 500);
@@ -236,8 +221,7 @@ router.get("/:id/detail", async (req, res, next) => {
       .from("roles")
       .select("id, key, name");
 
-    if (allRolesError)
-      throw new AppError("DB_ERROR", allRolesError.message, 500);
+    if (allRolesError) throw new AppError("DB_ERROR", allRolesError.message, 500);
 
     res.json(
       success({
@@ -293,6 +277,17 @@ router.patch("/:id/role", requireAdmin, async (req, res, next) => {
 
 router.get("/:id/permissions", async (req, res, next) => {
   try {
+    if (req.authUser?.userId !== req.params.id) {
+      const supabase = getSupabaseAdmin();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_super_admin")
+        .eq("id", req.authUser!.userId)
+        .single();
+      if (!profile?.is_super_admin) {
+        throw new AppError("FORBIDDEN", "Admin access required to view other users", 403);
+      }
+    }
     const supabase = getSupabaseAdmin();
     const userId = req.params.id;
 
@@ -303,9 +298,7 @@ router.get("/:id/permissions", async (req, res, next) => {
     ] = await Promise.all([
       supabase
         .from("memberships")
-        .select(
-          "id, organization_id, role_id, status, roles(key, name), organizations(name)",
-        )
+        .select("id, organization_id, role_id, status, roles(key, name), organizations(name)")
         .eq("user_id", userId),
       supabase
         .from("permissions")
@@ -333,19 +326,13 @@ router.get("/:id/permissions", async (req, res, next) => {
       : { data: [] as any[], error: null };
 
     if (rolePermissions.error)
-      throw new AppError(
-        "DB_ERROR",
-        (rolePermissions.error as any).message,
-        500,
-      );
+      throw new AppError("DB_ERROR", (rolePermissions.error as any).message, 500);
 
     res.json(
       success({
         memberships: memberships ?? [],
         permissions: allPermissions ?? [],
-        rolePermissionIds: (rolePermissions.data ?? []).map(
-          (rp: any) => rp.permission_id,
-        ),
+        rolePermissionIds: (rolePermissions.data ?? []).map((rp: any) => rp.permission_id),
         overrides: overrides ?? [],
       }),
     );
@@ -384,14 +371,12 @@ router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
     } else {
-      const { error } = await supabase
-        .from("user_permission_overrides")
-        .insert({
-          user_id: userId,
-          organization_id: organizationId,
-          permission_id: permissionId,
-          is_allowed: isAllowed,
-        });
+      const { error } = await supabase.from("user_permission_overrides").insert({
+        user_id: userId,
+        organization_id: organizationId,
+        permission_id: permissionId,
+        is_allowed: isAllowed,
+      });
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
     }

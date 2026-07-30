@@ -7,7 +7,7 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { logAuditEvent } from "../services/audit";
 import { logger } from "../lib/logger";
-import { rateLimitAuth } from "../middleware/rate-limit";
+import { rateLimitAuth, rateLimitEmail } from "../middleware/rate-limit";
 import { recordAuthAttempt } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
@@ -266,7 +266,7 @@ router.post("/sign-out", requireAuth, async (req, res, next) => {
   }
 });
 
-router.post("/forgot-password", rateLimitAuth, async (req, res, next) => {
+router.post("/forgot-password", rateLimitAuth, rateLimitEmail, async (req, res, next) => {
   try {
     const { email } = z.object({ email: z.string().email() }).parse(req.body);
 
@@ -291,7 +291,7 @@ router.post("/forgot-password", rateLimitAuth, async (req, res, next) => {
   }
 });
 
-router.post("/reset-password", rateLimitAuth, async (req, res, next) => {
+router.post("/reset-password", rateLimitAuth, rateLimitEmail, async (req, res, next) => {
   try {
     const { email, password } = z
       .object({

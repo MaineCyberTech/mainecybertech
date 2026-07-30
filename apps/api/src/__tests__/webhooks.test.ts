@@ -25,6 +25,9 @@ jest.mock("../config/env", () => ({
     API_PORT: 4000,
     STRIPE_SECRET_KEY: "sk_test",
     STRIPE_WEBHOOK_SECRET: "whsec_test",
+    JIRA_WEBHOOK_SECRET: "jira-secret",
+    JSM_WEBHOOK_SECRET: "jsm-secret",
+    M365_WEBHOOK_SECRET: "m365-secret",
   }),
 }));
 
@@ -108,6 +111,7 @@ describe("webhooks routes", () => {
     it("processes a Jira webhook", async () => {
       const res = await request(app)
         .post("/api/v1/webhooks/jira")
+        .set("x-hub-signature", "sig_123")
         .send({
           webhookEvent: "issue_created",
           issue: {
@@ -120,24 +124,7 @@ describe("webhooks routes", () => {
       expect(res.body.success).toBe(true);
     });
 
-    it("returns 401 with invalid signature when JIRA_WEBHOOK_SECRET is set", async () => {
-      const { getEnv } = await import("../config/env");
-      (getEnv as jest.Mock).mockReturnValue({
-        NODE_ENV: "test",
-        SUPABASE_URL: "https://test.supabase.co",
-        SUPABASE_ANON_KEY: "test-anon-key",
-        SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
-        CORS_ORIGIN: "*",
-        LOG_LEVEL: "silent",
-        API_PORT: 4000,
-        STRIPE_SECRET_KEY: "sk_test",
-        STRIPE_WEBHOOK_SECRET: "whsec_test",
-        JIRA_WEBHOOK_SECRET: "jira-secret",
-      });
-
-      const { verifyWebhookSignature } = await import("../lib/webhook-signature");
-      (verifyWebhookSignature as jest.Mock).mockReturnValueOnce(false);
-
+    it("returns 401 when signature header missing", async () => {
       const res = await request(app)
         .post("/api/v1/webhooks/jira")
         .send({
@@ -149,18 +136,24 @@ describe("webhooks routes", () => {
         });
 
       expect(res.status).toBe(401);
+    });
 
-      (getEnv as jest.Mock).mockReturnValue({
-        NODE_ENV: "test",
-        SUPABASE_URL: "https://test.supabase.co",
-        SUPABASE_ANON_KEY: "test-anon-key",
-        SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
-        CORS_ORIGIN: "*",
-        LOG_LEVEL: "silent",
-        API_PORT: 4000,
-        STRIPE_SECRET_KEY: "sk_test",
-        STRIPE_WEBHOOK_SECRET: "whsec_test",
-      });
+    it("returns 401 with invalid signature", async () => {
+      const { verifyWebhookSignature } = await import("../lib/webhook-signature");
+      (verifyWebhookSignature as jest.Mock).mockReturnValueOnce(false);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/jira")
+        .set("x-hub-signature", "bad_sig")
+        .send({
+          webhookEvent: "issue_updated",
+          issue: {
+            key: "PROJ-456",
+            fields: { status: { name: "Done" }, summary: "Closed issue" },
+          },
+        });
+
+      expect(res.status).toBe(401);
     });
   });
 
@@ -168,6 +161,7 @@ describe("webhooks routes", () => {
     it("processes a JSM webhook", async () => {
       const res = await request(app)
         .post("/api/v1/webhooks/jsm")
+        .set("x-hub-signature", "sig_123")
         .send({
           webhookEvent: "customer_added",
           issue: {
@@ -186,6 +180,7 @@ describe("webhooks routes", () => {
     it("processes an M365 webhook", async () => {
       const res = await request(app)
         .post("/api/v1/webhooks/m365")
+        .set("x-hub-signature", "sig_123")
         .send({ resource: "users", changeType: "updated" });
 
       expect(res.status).toBe(200);

@@ -33,3 +33,16 @@ export const rateLimitAuth = rateLimit({
   },
   skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
 });
+
+export const rateLimitEmail = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: "Too many requests for this email, please try again later.",
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = (req.body as Record<string, unknown> | undefined)?.email as string | undefined;
+    return email ? `email-action:${email.toLowerCase()}` : `ip:${req.ip}`;
+  },
+  skip: (req) => req.ip === "127.0.0.1" || req.ip === "::1",
+});

@@ -61,6 +61,17 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
+    if (req.authUser!.userId !== req.params.id) {
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("is_super_admin")
+        .eq("id", req.authUser!.userId)
+        .single();
+      if (!profile?.is_super_admin) {
+        throw new AppError("FORBIDDEN", "You can only view your own profile", 403);
+      }
+    }
     const supabase = getSupabaseUser(req.userJwt!);
     const { data, error } = await supabase
       .from("profiles")
@@ -140,6 +151,10 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
 router.post("/:id/avatar", upload.single("avatar"), async (req, res, next) => {
   try {
+    if (req.authUser!.userId !== req.params.id) {
+      throw new AppError("FORBIDDEN", "You can only upload your own avatar", 403);
+    }
+
     const file = req.file;
     if (!file) throw new AppError("VALIDATION", "Avatar file is required", 400);
 

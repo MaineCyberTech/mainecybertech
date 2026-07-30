@@ -83,10 +83,27 @@ describe("profiles routes", () => {
   });
 
   describe("GET /:id", () => {
-    it("returns a profile by id", async () => {
-      mockAuth();
+    it("returns a profile by id (own profile)", async () => {
+      const supabase = mockAuth();
+      // authUser is user-1, requesting user-1 (own profile) — no admin check needed
       const result: MockResult = { data: PROFILE, error: null };
       (getSupabaseUser as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+
+      const res = await request(app)
+        .get("/api/v1/profiles/user-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.id).toBe("prof-1");
+    });
+
+    it("returns a profile by id (admin viewing another user)", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({ data: { is_super_admin: true }, error: null }),
+      );
+      const result: MockResult = { data: PROFILE, error: null };
+      (getSupabaseUser as jest.Mock)().from.mockReturnValueOnce(createMockBuilder(result));
 
       const res = await request(app)
         .get("/api/v1/profiles/prof-1")
@@ -96,19 +113,34 @@ describe("profiles routes", () => {
       expect(res.body.data.id).toBe("prof-1");
     });
 
-    it("returns 404 when not found", async () => {
-      mockAuth();
+    it("returns 404 when not found (admin viewing)", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({ data: { is_super_admin: true }, error: null }),
+      );
       const result: MockResult = {
         data: null,
         error: { message: "Not found", code: "PGRST116" },
       };
-      (getSupabaseUser as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+      (getSupabaseUser as jest.Mock)().from.mockReturnValueOnce(createMockBuilder(result));
 
       const res = await request(app)
         .get("/api/v1/profiles/missing")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
+    });
+
+    it("returns 403 when non-admin views another user", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({ data: { is_super_admin: false }, error: null }),
+      );
+      const res = await request(app)
+        .get("/api/v1/profiles/prof-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
     });
   });
 

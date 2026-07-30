@@ -94,10 +94,13 @@ describe("users routes", () => {
       expect(res.body.data.id).toBe("user-1");
     });
 
-    it("returns 404 when not found", async () => {
-      mockAuth();
+    it("returns 404 when not found (admin viewing other user)", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({ data: { is_super_admin: true }, error: null }),
+      );
       const result: MockResult = { data: null, error: new Error("Not found") };
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder(result));
+      supabase.from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app)
         .get("/api/v1/users/missing")
@@ -191,9 +194,11 @@ describe("users routes", () => {
 
     it("returns 404 when user not found", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(
-        createMockBuilder({ data: null, error: { message: "Not found" } }),
-      );
+      supabase.from
+        .mockReturnValueOnce(createMockBuilder({ data: { is_super_admin: true }, error: null }))
+        .mockReturnValue(
+          createMockBuilder({ data: null, error: { message: "Not found", code: "PGRST116" } }),
+        );
 
       const res = await request(app)
         .get("/api/v1/users/nonexistent/detail")

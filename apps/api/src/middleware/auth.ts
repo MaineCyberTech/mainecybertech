@@ -25,11 +25,7 @@ function getJwtSecrets(): string[] {
     .filter(Boolean);
 }
 
-export async function requireAuth(
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-) {
+export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   try {
     let token: string | null = null;
 
@@ -43,11 +39,7 @@ export async function requireAuth(
     }
 
     if (!token) {
-      throw new AppError(
-        "UNAUTHORIZED",
-        "Missing or invalid authorization header",
-        401,
-      );
+      throw new AppError("UNAUTHORIZED", "Missing or invalid authorization header", 401);
     }
 
     req.userJwt = token;
@@ -75,14 +67,14 @@ export async function requireAuth(
           // Try next secret
         }
       }
-      logger.warn(
-        "All JWT secrets failed verification, falling back to Supabase",
-      );
+      logger.warn("All JWT secrets failed verification, falling back to Supabase");
     }
 
     const supabase = getSupabaseAdmin();
 
-    const { data, error } = await supabase.auth.getUser(token);
+    const { data, error } = await supabase.auth.getUser(token, {
+      signal: AbortSignal.timeout(5000),
+    });
     if (error || !data.user) {
       throw new AppError("UNAUTHORIZED", "Invalid or expired session", 401);
     }

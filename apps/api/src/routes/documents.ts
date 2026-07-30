@@ -155,11 +155,40 @@ router.post("/", async (req, res, next) => {
   }
 });
 
+const ALLOWED_MIME_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/plain",
+  "text/csv",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/gzip",
+  "application/json",
+  "application/rtf",
+];
+
 router.post("/upload", upload.single("file"), async (req, res, next) => {
   try {
     const file = req.file;
     if (!file) {
       throw new AppError("VALIDATION", "File is required", 400);
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new AppError(
+        "VALIDATION",
+        `File type ${file.mimetype} is not allowed. Allowed types: PDF, Word, Excel, PowerPoint, text, CSV, images (JPEG/PNG/WebP/GIF), archives, JSON, RTF`,
+        400,
+      );
     }
 
     const organizationId = String(req.body.organizationId ?? "").trim();
