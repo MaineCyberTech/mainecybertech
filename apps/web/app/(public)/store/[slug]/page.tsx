@@ -2,6 +2,7 @@ import { getCategories, getAllProducts, getProductsByCategory } from "@/lib/cata
 import { getRecommendationsForProduct } from "@/lib/catalog/bundles";
 import StoreProductCard from "@/components/store/StoreProductCard";
 import FAQSection from "@/components/store/FAQSection";
+import IncludedItemsList from "@/components/store/IncludedItemsList";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -124,14 +125,7 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
 
           {product.whatIsIncluded.length > 0 && (
             <SectionCard title="What Is Included">
-              <ul className="space-y-2">
-                {product.whatIsIncluded.map((item, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                    <span className="mt-0.5 text-emerald-500">✓</span>
-                    {item}
-                  </li>
-                ))}
-              </ul>
+              <IncludedItemsList items={product.whatIsIncluded} />
             </SectionCard>
           )}
 
