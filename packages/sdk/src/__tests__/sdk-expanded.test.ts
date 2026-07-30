@@ -827,4 +827,81 @@ describe("SDK modules — expanded coverage", () => {
       expect(result.summary).toBeDefined();
     });
   });
+
+  describe("BillingApi", () => {
+    const subscription = {
+      id: "sub1",
+      organization_id: "o1",
+      plan_name: "Premium",
+      status: "active",
+      amount_cents: 249900,
+      currency: "usd",
+      created_at: "",
+    };
+
+    it("listSubscriptions fetches subscriptions", async () => {
+      mockFetch.mockResolvedValue(mockResponse([subscription]));
+      const result = await client.billing.listSubscriptions({ organizationId: "o1" });
+      expect(result).toHaveLength(1);
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/billing/subscriptions");
+    });
+
+    it("summary fetches billing summary with org param", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          activeSubscriptions: 1,
+          overdueInvoices: 0,
+          paidInvoices: 5,
+          totalInvoices: 10,
+          recentInvoices: [],
+        }),
+      );
+      const result = await client.billing.summary({ organizationId: "o1" });
+      expect(result.activeSubscriptions).toBe(1);
+      expect(mockFetch.mock.calls[0][0]).toContain("organization_id=o1");
+    });
+
+    it("createPortalSession posts and returns a URL", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ url: "https://billing.stripe.com/session" }));
+      const result = await client.billing.createPortalSession({ organizationId: "o1" });
+      expect(result.url).toBe("https://billing.stripe.com/session");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/billing/create-portal-session");
+    });
+
+    it("createPortalSession works without params", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ url: "https://billing.stripe.com/session" }));
+      const result = await client.billing.createPortalSession();
+      expect(result.url).toBeDefined();
+    });
+
+    it("listSubscriptions returns empty array", async () => {
+      mockFetch.mockResolvedValue(mockResponse([]));
+      const result = await client.billing.listSubscriptions();
+      expect(result).toEqual([]);
+    });
+
+    it("listPayments fetches paginated payments", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse(paginated([{ id: "p1", amount_cents: 5000, currency: "usd", status: "succeeded", created_at: "" }])),
+      );
+      const result = await client.billing.listPayments({ organizationId: "o1", page: 1, limit: 10 });
+      expect(result.items).toHaveLength(1);
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/billing/payments");
+    });
+
+    it("getBillingCustomer fetches customer info", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ id: "bc1", organization_id: "o1", billing_email: "billing@test.com", created_at: "" }),
+      );
+      const result = await client.billing.getBillingCustomer({ organizationId: "o1" });
+      expect(result.billing_email).toBe("billing@test.com");
+    });
+
+    it("getBillingCustomer returns null when no customer", async () => {
+      mockFetch.mockResolvedValue(mockResponse(null));
+      const result = await client.billing.getBillingCustomer();
+      expect(result).toBeNull();
+    });
+  });
 });

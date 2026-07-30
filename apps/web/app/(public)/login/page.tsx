@@ -47,6 +47,7 @@ export default function LoginPage() {
               </label>
               <input
                 id="email"
+                aria-label="Work Email"
                 className="w-full rounded-md border border-white/10 bg-[#0A1118]/60 px-4 py-3 text-slate-50 outline-none transition focus:border-emerald-600"
                 type="email"
                 value={email}
@@ -65,6 +66,7 @@ export default function LoginPage() {
               </label>
               <input
                 id="password"
+                aria-label="Password"
                 className="w-full rounded-md border border-white/10 bg-[#0A1118]/60 px-4 py-3 text-slate-50 outline-none transition focus:border-emerald-600"
                 type="password"
                 value={password}
@@ -89,7 +91,7 @@ export default function LoginPage() {
               </div>
             ) : null}
 
-            <Button type="submit" disabled={loading} loading={loading} className="w-full">
+            <Button type="submit" disabled={loading} loading={loading} className="w-full" aria-label="Secure Login">
               {loading ? "Signing In..." : "Secure Login"}
             </Button>
           </form>
