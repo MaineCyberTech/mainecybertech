@@ -87,7 +87,7 @@ export async function runWorkerTasks(): Promise<void> {
   }
 
   if (backend !== "sqs") {
-    logger.warn({ backend }, `Unknown QUEUE_BACKEND "${backend}", defaulting to sqs`);
+    logger.warn(`Unknown QUEUE_BACKEND "${backend}", defaulting to sqs`);
   }
 
   queueUrl = env.SQS_QUEUE_URL!;
