@@ -19,8 +19,6 @@ export const metadata: Metadata = {
   description: "Secure MSP client and admin portal",
   icons: {
     icon: "/favicon.svg",
-    shortcut: "/favicon-16x16.png",
-    apple: "/apple-touch-icon.png",
   },
 };
 
