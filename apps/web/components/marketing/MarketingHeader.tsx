@@ -19,8 +19,13 @@ export default function MarketingHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [isAppDomain, setIsAppDomain] = useState(false);
   const [wwwBase, setWwwBase] = useState("");
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const hamburgerBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (menuOpen) {
@@ -62,7 +67,7 @@ export default function MarketingHeader() {
   };
 
   const linkHref = (href: string) => {
-    if (isAppDomain && wwwBase) return `${wwwBase}${href}`;
+    if (mounted && isAppDomain && wwwBase) return `${wwwBase}${href}`;
     return href;
   };
 
