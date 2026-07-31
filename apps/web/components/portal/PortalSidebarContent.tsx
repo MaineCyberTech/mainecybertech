@@ -80,8 +80,6 @@ export default function PortalSidebarContent({ mobile }: { mobile?: boolean }) {
         return (
           <div key={group.label} className="relative">
             <button
-              onMouseEnter={() => setActiveGroup(group.label)}
-              onFocus={() => setActiveGroup(group.label)}
               onClick={() => setActiveGroup(isOpen ? null : group.label)}
               className={`flex w-full items-center justify-between gap-2 rounded px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
                 isOpen

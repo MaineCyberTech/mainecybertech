@@ -20,7 +20,6 @@ export default function AdminPageShell({
   return (
     <div className="cyber-section">
       {breadcrumbs}
-      {_subnav ? <div className="lg:hidden">{_subnav}</div> : null}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
