@@ -1,258 +1,418 @@
 const fs = require("fs");
 const products = JSON.parse(fs.readFileSync("apps/web/lib/catalog/data/products.json", "utf8"));
 
-// Custom procedure overrides for products that are too similar
-const customProcedures = {
-  "Admin Account Cleanup":
-    "Audit all administrative accounts across M365, local systems, and cloud platforms. Identify stale accounts, shared credentials, and excessive privileges. Present removal recommendations for customer approval before making changes.",
-  "PC Tune-Up / Cleanup":
-    "Remotely access workstation, audit disk usage, startup programs, and running services. Remove temporary files, disable unnecessary startup items, update software. Benchmark performance before and after.",
-  "Microsoft 365 Tenant Cleanup":
-    "Audit M365 tenant for stale users, unlicensed mailboxes, orphaned groups, and inactive shared mailboxes. Present inventory and cleanup recommendations. Execute approved removals and document final state.",
-  "Shared Mailbox Cleanup":
-    "Inventory all shared mailboxes in the tenant. Identify stale or unused mailboxes by checking last activity and size. Recommend retention or removal. Clean up permissions and document ownership.",
-  "Teams Cleanup Mini Project":
-    "Audit all Teams channels, memberships, and permissions. Identify inactive teams, orphaned channels, and excessive permissions. Archive or remove stale items. Standardize naming conventions.",
-  "Patch Panel Cleanup":
-    "Visit customer site and trace all patch panel cables using a toner and probe. Label each cable with source and destination. Dress cables for organization. Document final patch panel layout.",
-  "UniFi Network Cleanup":
-    "Audit UniFi controller for device inventory, SSIDs, network settings, and firmware versions. Standardize device naming, remove unused SSIDs, update firmware, and document final configuration.",
-  "NVR Cleanup":
-    "Audit NVR storage capacity, recording schedules, retention settings, and camera assignments. Optimize recording settings for storage efficiency. Configure retention policies and document capacity planning.",
-  "DNS Cleanup":
-    "Export all DNS records for the domain. Review each record for relevance and accuracy. Identify stale A, CNAME, MX, and TXT records. Remove obsolete records and document final DNS configuration.",
-  "Volunteer Account Cleanup":
-    "Audit user accounts identifying volunteer vs staff status. Cross-reference with current volunteer roster. Disable or remove accounts for volunteers no longer active. Document account management process.",
+// ============================================================
+// Detailed runbook steps for each product
+// ============================================================
+const runbooks = {
+  // ==================== QUICK FIXES ====================
+  "Password Security Checkup": {
+    triage: [
+      "1. Confirm purchase scope: password security checkup for [business name] with [N] users",
+      "2. Schedule 45-60 minute remote session with customer contact",
+      "3. Request list of business accounts and platforms used (M365, Google, CRM, banking, etc.)",
+      "4. Verify customer has admin access to M365 or Google Workspace before proceeding",
+      "5. Create ticket with product ID, customer details, scope boundaries, and follow-up path",
+    ],
+    delivery: [
+      "1. Start remote session and review current password practices with the contact person",
+      "2. Audit M365 tenant: check password policy settings (Password expiration, lockout threshold, complexity requirements) via https://admin.microsoft.com -> Settings -> Org settings -> Security & Privacy",
+      "3. Run HaveIBeenPwned domain scan at https://haveibeenpwned.com/DomainSearch using the business email domain to identify compromised accounts",
+      "4. Review shared password practices: check for shared mailboxes, shared M365 accounts, or password spreadsheets",
+      "5. Assess password manager readiness: check if any password manager is already in use, evaluate business needs against Bitwarden, 1Password, or Keeper",
+      "6. Document all findings in a password security scorecard",
+      "7. Present findings to customer and discuss recommended next steps",
+    ],
+    documentation: [
+      "1. Create Password Security Report including: password policy settings review, compromised account scan results, shared account inventory, password manager readiness assessment, prioritized recommendations",
+      "2. Include screenshots of M365 password policy settings and HaveIBeenPwned results",
+      "3. Write plain-English summary: what was checked, what was found, what to do next",
+      "4. Never store actual passwords, password hashes, or login credentials in documentation",
+    ],
+    qa: [
+      "1. Verify all findings are documented and categorized by severity",
+      "2. Confirm customer received the report and understands the recommendations",
+      "3. Verify no passwords or credentials were stored in any documentation",
+      "4. Check that follow-up recommendations include specific next steps with estimated effort",
+    ],
+    closeout: [
+      "1. Send final Password Security Report via secure delivery method",
+      "2. Recommend password manager rollout as next step if not already deployed",
+      "3. Recommend MFA Setup Session if MFA is not fully enabled",
+      "4. Recommend Cyber Insurance Readiness Package if customer is applying for insurance",
+      "5. Close temporary access to customer systems and confirm revocation",
+      "6. Add internal notes for future reference",
+    ],
+  },
 
-  "Security Awareness Lunch & Learn":
-    "Prepare 45-60 minute interactive presentation with real-world phishing examples and security scenarios. Schedule session at customer location or via video conference. Deliver training with Q&A. Provide take-home reference cards.",
-  "Owner/Admin Security Training":
-    "Prepare executive-level briefing covering business risk, liability, security investment prioritization, and vendor management. Schedule 60-90 minute session. Deliver with focus on business impact rather than technical details.",
-  "Microsoft 365 Basics Training":
-    "Prepare 60-minute hands-on training covering Outlook email and calendar, Teams chat and meetings, and OneDrive file access. Customize examples to customer's actual workflows. Deliver live session with practice exercises.",
-  "Teams and SharePoint Training":
-    "Prepare 90-minute training covering Teams channels, chats, file sharing, meetings, and SharePoint document libraries. Customize to customer's existing Teams structure. Deliver with hands-on practice and Q&A.",
+  "MFA Setup Session": {
+    triage: [
+      "1. Confirm purchase scope: MFA setup session for [business name] identifying [N] critical accounts",
+      "2. Schedule 60-minute remote session with customer contact who has admin access",
+      "3. Request list of business-critical accounts and platforms (M365, Google, banking, payroll, CRM, etc.)",
+      "4. Verify customer has admin privileges to enable MFA on identified platforms",
+      "5. Create ticket with product ID, customer details, and list of target platforms",
+    ],
+    delivery: [
+      "1. Start remote session and audit current MFA status across all identified platforms",
+      "2. For M365: navigate to https://admin.microsoft.com -> Users -> Active Users -> Multi-factor authentication. Check each user's MFA status. Enable MFA for users who are ready",
+      "3. For M365: configure Conditional Access policies at https://portal.azure.com -> Azure Active Directory -> Security -> Conditional Access. Create policy requiring MFA for all users",
+      "4. For Google Workspace: navigate to https://admin.google.com -> Security -> 2-Step Verification. Enforce 2SV for all users",
+      "5. For banking/payroll platforms: guide customer through enabling MFA in each platform's security settings",
+      "6. Configure MFA methods: prefer authenticator app (Microsoft Authenticator, Google Authenticator, or Authy) over SMS where possible",
+      "7. For each user: demonstrate the MFA enrollment process and provide step-by-step instructions",
+      "8. Test MFA on at least one account per platform to verify it works correctly",
+      "9. Document backup/recovery codes per platform and store in customer's secure location",
+    ],
+    documentation: [
+      "1. Create MFA Setup Summary including: platforms reviewed, MFA status before/after, users enrolled, MFA methods configured, recovery code storage location",
+      "2. Create user-facing MFA enrollment guide with screenshots for each platform",
+      "3. Include instructions for what to do if phone is lost (recovery codes, backup methods)",
+      "4. Never store MFA recovery codes, backup codes, or TOTP seeds in documentation",
+    ],
+    qa: [
+      "1. Verify MFA is enabled and enforced on at least the most critical accounts",
+      "2. Test MFA login on each platform to confirm it works",
+      "3. Confirm customer has recovery codes stored in a safe location",
+      "4. Verify no MFA recovery codes or secrets are stored in documentation",
+    ],
+    closeout: [
+      "1. Send MFA Setup Summary and user enrollment guide",
+      "2. Recommend Password Manager Rollout if customer doesn't have one",
+      "3. Recommend Security Awareness Training for staff on phishing and MFA best practices",
+      "4. Schedule follow-up in 30 days to verify MFA is still active and no issues arose",
+      "5. Close remote access and confirm revocation",
+    ],
+  },
 
-  "Cyber Insurance Questionnaire Help":
-    "Review customer's cyber insurance application. Map current security controls to each question. Identify gaps where answers need improvement. Provide guidance on accurate and favorable responses. Document recommendations for addressing identified gaps.",
-  "Acceptable Use Policy Starter":
-    "Review customer's business context, industry, and employee technology usage patterns. Customize AUP template with appropriate rules for internet, email, devices, and social media. Present draft for feedback. Deliver final editable document.",
-  "Password Policy Starter":
-    "Assess customer's current password practices and any insurance requirements. Customize password policy template with complexity, length, rotation, and MFA requirements aligned to their risk profile. Deliver final editable document.",
-  "Data Backup Policy Starter":
-    "Review customer's current backup infrastructure and data criticality. Customize backup policy template with retention schedules, restore testing requirements, and off-site storage policies. Deliver final editable document.",
-  "Incident Response Policy Starter":
-    "Review customer's business size, industry, and risk profile. Customize IR policy template with incident classification, escalation procedures, notification requirements, and post-incident review process. Deliver final editable document.",
-  "Vendor Access Policy Starter":
-    "Review customer's third-party vendor relationships and access requirements. Customize vendor access policy template with onboarding, review, termination, and security requirements. Deliver final editable document.",
-  "Employee Offboarding Checklist":
-    "Review customer's current offboarding process and identify gaps. Create customized checklist covering account removal, data preservation, device recovery, and access audit. Deliver final checklist and implementation guidance.",
-  "Asset Inventory Starter":
-    "Conduct on-site or remote asset discovery across workstations, servers, network equipment, and peripherals. Document make, model, serial number, warranty, and assignment. Provide inventory in organized format with management recommendations.",
-  "Security Awareness Policy Starter":
-    "Review customer's training requirements and any compliance obligations. Customize security awareness policy with training frequency, content requirements, and phishing simulation guidelines. Deliver final editable document.",
-  "Remote Work Policy Starter":
-    "Review customer's remote work arrangements and security concerns. Customize remote work policy covering device requirements, connection security, data protection, and incident reporting. Deliver final editable document.",
-  "Risk Register Starter":
-    "Facilitate risk assessment workshop with customer stakeholders. Identify technology risks, score by likelihood and impact, document existing controls, and recommend treatment plans. Deliver risk register in editable format.",
-  "Quarterly Access Review":
-    "Review user access across M365, line-of-business applications, and critical systems. Identify excessive permissions, stale accounts, and inappropriate access. Present findings with removal recommendations. Document review for audit trail.",
-  "Data Handling Checklist":
-    "Map customer's data flows — collection, storage, processing, sharing, and disposal. Create data classification guidelines. Document handling procedures for each data type. Provide staff training guidance.",
-  "PCI/Payment Handling Readiness Review":
-    "Review customer's payment processing flow — card entry, transmission, storage, and disposal. Assess against PCI DSS requirements. Identify gaps and document remediation recommendations with estimated effort.",
-  "HIPAA-Oriented IT Readiness Review":
-    "Review customer's IT environment against HIPAA Security Rule requirements — administrative, physical, and technical safeguards. Identify compliance gaps and document remediation recommendations.",
-  "CMMC/NIST Starter Gap Review":
-    "Review customer's security controls against applicable CMMC level or NIST SP 800-171 requirements. Identify compliance gaps and document remediation roadmap with priority levels.",
+  "Phishing Readiness Mini Audit": {
+    triage: [
+      "1. Confirm purchase scope: phishing readiness mini audit for [business name] with [N] users",
+      "2. Schedule 30-minute pre-audit call to understand current email security setup",
+      "3. Request email domain name and list of all user email addresses for the audit",
+      "4. Verify customer has admin access to email security platforms (M365 Exchange Admin, Google Admin, etc.)",
+      "5. Create ticket with product ID, customer details, and audit scope",
+    ],
+    delivery: [
+      "1. Review email security configuration: check SPF, DKIM, and DMARC records using https://mxtoolbox.com for the customer's domain",
+      "2. Check M365 anti-phish policy: navigate to https://security.microsoft.com -> Policies & Rules -> Threat Policies -> Anti-phishing. Review impersonation protection and spoof intelligence settings",
+      "3. Check M365 anti-spam policy: navigate to https://security.microsoft.com -> Policies & Rules -> Threat Policies -> Anti-spam. Review spam threshold and action settings",
+      "4. If using a third-party email security gateway (Mimecast, Proofpoint, Barracuda), review its phishing protection settings",
+      "5. Review mailbox rules: sample 3-5 user mailboxes and check for suspicious forwarding rules that could indicate compromise",
+      "6. Conduct a basic phishing simulation: craft a safe test email (e.g., 'You have a voicemail') and send to a small test group via a controlled platform or manual send. Track how many click/reply",
+      "7. Document findings: email security gaps, staff awareness level, and risk rating",
+    ],
+    documentation: [
+      "1. Create Phishing Readiness Report including: email security configuration review, SPF/DKIM/DMARC status, anti-phishing policy settings, mailbox rule audit results, phishing simulation results (if conducted), prioritized recommendations",
+      "2. Include screenshots of key security settings and any identified gaps",
+      "3. Provide clear risk ratings: Critical, High, Medium, Low for each finding",
+    ],
+    qa: [
+      "1. Verify all email security settings have been reviewed and documented",
+      "2. Confirm phishing simulation was conducted safely with no real risk to the customer",
+      "3. Verify recommendations are prioritized and actionable",
+      "4. Check that no sensitive email content was exposed in documentation",
+    ],
+    closeout: [
+      "1. Send Phishing Readiness Report to customer",
+      "2. Recommend Security Awareness Training Setup as next step",
+      "3. Recommend Email Security Hardening for any identified email configuration gaps",
+      "4. Offer to conduct a full phishing simulation campaign as a follow-up service",
+      "5. Close temporary access to email systems",
+    ],
+  },
 };
 
-const productDetails = {
-  "Backup Restore Test":
-    "Access backup system and select representative files or systems for test restore. Execute restore to isolated location. Verify file integrity and data completeness. Measure restore time and document procedure.",
-  "M365 Launch Bundle":
-    "Coordinate tenant setup, domain verification, user creation, basic migration from previous platform, and staff training session. Deliver as a coordinated project with single point of contact.",
-  "M365 Secure Bundle":
-    "Implement security baseline configuration, MFA enforcement, Conditional Access policies, and threat protection. Build on top of M365 Launch Bundle components. Verify all security controls are working.",
-  "M365 Cleanup Bundle":
-    "Execute full tenant audit, license optimization, shared mailbox and Teams cleanup, and permission structure documentation. Deliver as coordinated project.",
-  "M365 Managed Bundle":
-    "Provide ongoing monthly admin tasks, quarterly security reviews, help desk support, and strategic guidance. Build on top of cleaned and organized tenant from Cleanup Bundle.",
-  "Workstation Refresh Pack":
-    "Coordinate hardware procurement, setup, data transfer from old devices, and old device wipe. Deliver as coordinated project with schedule aligned to minimize business disruption.",
-  "Network Documentation Package":
-    "Audit network infrastructure, create topology diagram, document equipment inventory with model/serial/warranty, document IP scheme and VLANs. Deliver complete documentation package in digital format.",
-  "Small Office Wi-Fi Bundle":
-    "Provide access point hardware, install and configure, set up guest network, verify coverage. Deliver as coordinated installation project with testing.",
-  "Outdoor Coverage Bundle":
-    "Install weather-rated outdoor access points, configure for outdoor coverage, integrate with indoor network, verify coverage in target areas. Use appropriate outdoor-rated cabling and enclosures.",
-  "Camera and Wi-Fi Bundle":
-    "Install Wi-Fi access points and camera system together. Configure PoE switch for both. Ensure network has sufficient bandwidth for camera traffic. Verify both systems working.",
-  "Camera Signage Package":
-    "Provide and install professional security camera warning signs at entry points and visible locations. Install required privacy notices if applicable. Document sign locations with photos.",
-  "Camera Starter Bundle":
-    "Install 2-4 cameras with NVR, configure motion detection and recording schedules, set up remote access via mobile app. Verify all cameras are recording and accessible remotely.",
-  "Camera Business Bundle":
-    "Install 4-8 cameras with analytics-capable NVR, configure smart motion detection and alerts, set up remote access and notification rules. Build on starter bundle components.",
-  "Camera Complete Bundle":
-    "Install 8+ cameras with enterprise NVR or server-based system, configure AI-powered analytics and advanced detection rules, set up comprehensive remote access and maintenance schedule. Build on business bundle.",
-  "Backup Starter Bundle":
-    "Configure cloud backup for critical data, set up computer backup for workstations, enable basic monitoring, and perform initial restore test. Deliver as coordinated package.",
-  "Backup Business Bundle":
-    "Configure server and workstation backup, add cloud data backup for M365, enable monitoring and alerting, and perform quarterly restore testing. Build on starter bundle.",
-  "Backup Resilience Bundle":
-    "Implement full backup solution for servers, workstations, and cloud data. Develop disaster recovery plan and business continuity procedures. Perform quarterly restore testing and plan reviews. Build on business bundle.",
-  "Small Business Resilience Pack":
-    "Combine cloud backup, DR planning, business continuity preparation, and quarterly reviews into comprehensive package. Ensure all components are integrated and tested.",
-  "Local Service Page Pack":
-    "Research local keywords for each target location. Create unique content for each location page. Implement local business schema markup. Build internal linking structure between pages.",
-  "Blog Starter Pack":
-    "Set up blog platform on customer's website, design blog layout, create SEO-optimized structure, develop content strategy, and write 3 starter posts. Deliver with editorial calendar.",
-  "Technical SEO Fix Pack":
-    "Run technical SEO audit using industry tools. Identify crawl errors, broken links, page speed issues, duplicate content, and schema problems. Fix all identified issues. Verify fixes with follow-up scan.",
-  "Website Safety Bundle":
-    "Configure website backup, enable security monitoring, verify SSL/TLS configuration, and set up monthly security scans. Deliver as coordinated security package.",
-  "Website Growth Bundle":
-    "Execute technical SEO fixes, develop content strategy, configure analytics with goals, and provide monthly performance reviews. Build on website safety bundle foundation.",
-  "Domain Protection Pack":
-    "Audit all domains, enable auto-renewal, configure domain locks and transfer protection, set up expiration monitoring alerts. Document complete domain portfolio with renewal dates.",
-  "Cyber Insurance Readiness Bundle":
-    "Assist with insurance questionnaire, create required policy documents (AUP, password, backup, incident response), perform security gap assessment, and provide remediation recommendations. Coordinate all components.",
-  "Small Business Policy Pack":
-    "Customize acceptable use, password, data backup, and incident response policy templates for customer's business. Deliver all four policies as coordinated document set with implementation guidance.",
-  "Compliance Foundation Bundle":
-    "Create policy documents, conduct asset inventory, establish access review process, and perform compliance gap assessment. Coordinate all components into a comprehensive foundation.",
-  "Small Business IT Starter Pack":
-    "Set up M365 tenant for up to 5 users, configure basic security settings, apply workstation security baseline, and perform backup readiness check. Coordinate all components as a single project.",
-  "Business Owner Peace of Mind Pack":
-    "Execute full security assessment, verify backup systems, perform network health check, and provide 30 days of priority support. Coordinate all diagnostics into a single health report.",
-  "Local Business Online Presence Pack":
-    "Perform website health check, optimize Google Business Profile, set up local SEO foundation, and configure review request system. Coordinate all online presence improvements.",
-  "New Employee Setup Bundle":
-    "Provision computer or coordinate procurement, create M365 accounts with appropriate licenses, install required software, apply security baseline. Deliver configured workstation to customer.",
-  "Employee Exit Lockdown Bundle":
-    "Remove all account access, forward email and preserve mailbox, transfer OneDrive files, recover company devices, wipe personal data. Document complete offboarding for audit trail.",
-  "Vendor Transition Package":
-    "Review current vendor documentation and contracts, inventory all systems and access, transfer administrative access to new provider, coordinate transition timeline. Document final state.",
-  "Marina Connectivity Pack":
-    "Perform outdoor Wi-Fi site survey of marina property. Install weather-resistant access points at dock and common areas. Configure guest network with captive portal. Verify coverage at all target locations.",
-  "Wellness Office Security Pack":
-    "Perform basic security assessment focused on patient data handling. Review privacy policies and procedures. Provide recommendations for HIPAA-oriented security improvements.",
-  "Pine Tree Protection Pack":
-    "Configure MFA on critical business accounts, install endpoint protection on workstations, harden email security settings with SPF/DKIM/DMARC, and verify backup configuration. Deliver as essential security bundle.",
-  "Harbor Wi-Fi Bundle":
-    "Perform harbor Wi-Fi coverage assessment. Install weather-resistant equipment at optimal locations. Configure guest network with simple access for boaters. Verify coverage at all slip locations.",
-  "New Business Technology Setup":
-    "Set up M365 tenant, coordinate business internet installation, configure workstations with security baseline, and create basic website or landing page. Coordinate all components.",
-  "New Business IT Setup":
-    "Set up M365 tenant, install business internet and Wi-Fi, procure and configure workstations, apply basic security configuration. Coordinate as complete IT infrastructure project.",
-  "New Client Foundation":
-    "Perform full technology assessment, security baseline review, and backup verification as part of managed services onboarding. Document current state and immediate action items.",
-  "IT Documentation Rebuild":
-    "Audit current network infrastructure, systems, accounts, and procedures. Create network topology diagrams, system inventory, password documentation, and procedure guides. Deliver complete documentation package.",
-  "Asset Inventory Buildout":
-    "Conduct on-site asset discovery across all technology categories. Build asset database with make, model, serial, warranty, and assignment. Provide management recommendations for lifecycle tracking.",
-  "IT Roadmap Session":
-    "Facilitate strategy session with customer stakeholders. Review current state, business goals, and technology needs. Create 12-24 month technology roadmap with prioritized initiatives and budget estimates.",
-  "Quarterly Business Review":
-    "Review IT performance metrics, project status, support trends, and technology roadmap. Provide strategic recommendations for next quarter. Update roadmap based on changing business needs.",
-  "Office Move IT Planning":
-    "Conduct site survey of new location. Design network infrastructure layout. Coordinate internet service installation. Plan move-day activities for minimal disruption. Provide support during transition.",
-  "Church IT Foundation":
-    "Assess church technology needs. Install or upgrade Wi-Fi network. Configure basic security. Train volunteer IT staff on basic maintenance and troubleshooting.",
-  "Guest Wi-Fi for Churches":
-    "Configure separate guest Wi-Fi network isolated from church administrative systems. Apply content filtering appropriate for family environment. Provide simple access instructions for visitors.",
-  "Church Technology Health Check":
-    "Assess church technology across Wi-Fi, sound system, livestreaming, volunteer accounts, and security. Provide practical, budget-conscious recommendations prioritized by impact.",
-  "Livestream Setup Support":
-    "Configure livestream platform (YouTube, Facebook, or Vimeo). Integrate audio from sound system and video from cameras. Test stream quality. Provide simple instructions for volunteer operators.",
-  "Seasonal Business IT Readiness":
-    "Review seasonal staffing plans, equipment needs, and technology capacity. Prepare systems for increased demand. Create pre-season readiness checklist. Implement any needed changes.",
-  "Contractor Digital Office":
-    "Set up M365 Business Basic with custom domain. Configure cloud file storage with job folder structure. Set up mobile devices for field access. Provide basic workflow guidance for digital operations.",
-  "Field Laptop Setup":
-    "Configure laptop with offline file access, mobile hotspot or LTE connectivity, VPN or remote access, and security baseline. Install field-specific software. Test all connectivity and access.",
-  "Cloud File Setup for Job Photos":
-    "Configure cloud storage (OneDrive or Google Drive) with organized folder structure for job sites. Install and configure mobile app on field devices. Set up automatic photo backup. Test sharing with clients.",
-  "Mobile Device Security Setup":
-    "Configure MDM or mobile device policies. Enforce passcode, encryption, and remote wipe. Install required business apps. Test remote management capabilities. Document procedures for lost devices.",
-  "Blueberry Business Starter":
-    "Set up M365 tenant for agricultural business. Configure basic internet and Wi-Fi at farm office. Set up work device with security baseline. Provide recommendations for agricultural technology tools.",
-  "Anchor Backup Plan":
-    "Configure cloud backup for marina business critical data. Set up automated backup monitoring. Perform initial restore test. Document backup configuration and recovery procedures.",
-  "North Star Cyber Plan":
-    "Execute full security assessment. Implement priority security controls based on findings. Set up security monitoring. Develop incident response plan. Provide comprehensive security program documentation.",
-  "Laptop Procurement":
-    "Research laptop models matching customer's performance, durability, and budget requirements. Obtain competitive quotes from vendors. Recommend top options with rationale. Coordinate ordering and delivery.",
-  "Desktop Procurement":
-    "Research desktop models matching customer's performance, reliability, and budget requirements. Obtain competitive quotes. Recommend best options. Coordinate ordering and delivery.",
-  "Printer Procurement Help":
-    "Assess customer's printing volume, quality needs, and budget. Research reliable business printer models. Provide recommendation with total cost of ownership analysis including supplies.",
-};
+// ============================================================
+// Generate runbook for any product not in the manual map
+// ============================================================
+function generateRunbook(p) {
+  const name = p.name;
+  const cat = p.category;
+  const summary = p.summary || "";
+  const isCheck =
+    name.includes("Check") ||
+    name.includes("Snapshot") ||
+    name.includes("Audit") ||
+    name.includes("Assessment") ||
+    name.includes("Review");
+  const isSetup =
+    name.includes("Setup") ||
+    name.includes("Install") ||
+    name.includes("Rollout") ||
+    name.includes("Deployment") ||
+    name.includes("Enforcement");
+  const isCleanup = name.includes("Cleanup") || name.includes("Clean");
+  const isBundle = name.includes("Bundle") || name.includes("Pack");
+  const isPlan = cat === "Monthly IT Plans";
+  const isEmergency = cat === "Emergency Support";
+  const isPolicy = cat === "Compliance & Policies";
+  const isTraining = name.includes("Training") || name.includes("Lunch") || name.includes("Learn");
+  const isMigration = name.includes("Migration");
+  const isProcurement =
+    name.includes("Procurement") ||
+    name.includes("Replacement") ||
+    name.includes("Lifecycle") ||
+    name.includes("Refresh");
+  const isWebsite = cat === "Website & SEO";
+  const isCamera = cat === "Security Cameras";
+  const isNetwork = cat === "Wi-Fi & Networking";
+  const isBackup = cat === "Backup & Recovery";
+  const isM365 = cat === "Microsoft 365";
+  const isCyber = cat === "Cybersecurity";
 
-// Apply custom delivery steps to make each product unique
-let changed = 0;
-for (const p of products) {
-  const custom = customProcedures[p.name];
-  const details = productDetails[p.name];
+  // Determine tools and systems
+  let tools = [];
+  if (isM365 || name.includes("M365") || name.includes("Microsoft"))
+    tools = [
+      "M365 Admin Center (https://admin.microsoft.com)",
+      "Azure AD (https://portal.azure.com)",
+      "Exchange Admin Center (https://admin.exchange.microsoft.com)",
+      "M365 Defender (https://security.microsoft.com)",
+    ];
+  else if (isNetwork)
+    tools = [
+      "UniFi Controller (https://unifi.ui.com)",
+      "Wi-Fi analyzer (Ekahau or NetSpot)",
+      "Cable tester",
+      "Toner and probe",
+      "Laptop with management access",
+    ];
+  else if (isCamera)
+    tools = [
+      "UniFi Protect or NVR web interface",
+      "Mobile app (UniFi Protect or vendor app)",
+      "Ladder and tools for camera mounting",
+      "PoE tester",
+      "Ethernet cabling tools",
+    ];
+  else if (isBackup)
+    tools = [
+      "Backup software console (Veeam, Acronis, or cloud backup portal)",
+      "Test restore environment",
+      "Backup monitoring dashboard",
+    ];
+  else if (isWebsite)
+    tools = [
+      "Google Search Console",
+      "Google Analytics",
+      "PageSpeed Insights (https://pagespeed.web.dev)",
+      "GTmetrix",
+      "SSL Labs (https://ssllabs.com/ssltest/)",
+      "Screaming Frog SEO Spider",
+    ];
+  else if (isCyber)
+    tools = [
+      "Microsoft Defender for Business",
+      "HaveIBeenPwned (https://haveibeenpwned.com)",
+      "MXToolbox (https://mxtoolbox.com)",
+      "Nessus or OpenVAS vulnerability scanner",
+      "Microsoft Secure Score dashboard",
+    ];
+  else if (isPolicy)
+    tools = ["Policy template library", "Word processor", "Customer current policy documents"];
+  else if (isSetup)
+    tools = [
+      "Remote desktop tools (ScreenConnect, TeamViewer, or RMM)",
+      "Software installation media",
+      "Windows deployment tools",
+      "Antivirus/EDR management console",
+    ];
+  else
+    tools = [
+      "Remote access tools",
+      "Administrative access to customer systems",
+      "Documentation templates",
+    ];
 
-  if (custom) {
-    // Replace the first delivery step with custom text
-    p.internalProcedure.delivery[0] = custom;
-    changed++;
+  // Generate triage steps
+  const triage = [
+    `1. Confirm purchase scope: ${name} for [business name]. Verify customer expectations and boundaries`,
+    `2. Schedule engagement with customer contact who has authority to make decisions`,
+    `3. Verify customer has necessary admin access and credentials available before starting`,
+    `4. Gather any existing documentation or configuration information from the customer`,
+    `5. Create ticket with product ID, customer details, scope boundaries, and expected deliverables`,
+  ];
+
+  // Generate delivery steps
+  const delivery = [];
+  if (isCheck) {
+    delivery.push(`1. Access customer systems per authorization using least privilege`);
+    delivery.push(`2. Perform ${name} assessment: ${summary}`);
+    if (tools.length > 0)
+      delivery.push(`3. Use the following tools for assessment: ${tools.join(", ")}`);
+    delivery.push(`4. Document all findings, configurations reviewed, and identified issues`);
+    delivery.push(`5. Categorize findings by severity: Critical, High, Medium, Low`);
+    delivery.push(`6. Prepare findings report with prioritized recommendations`);
+  } else if (isSetup) {
+    delivery.push(`1. Access customer systems and verify current state before making changes`);
+    delivery.push(`2. Execute ${name} per scope: ${summary}`);
+    if (tools.length > 0)
+      delivery.push(`3. Use the following tools for implementation: ${tools.join(", ")}`);
+    delivery.push(`4. Test all configurations and verify functionality`);
+    delivery.push(`5. Document setup details, configuration notes, and any changes made`);
+    delivery.push(`6. Verify customer can use the configured system before closing`);
+  } else if (isCleanup) {
+    delivery.push(`1. Audit current state and inventory all items within scope`);
+    delivery.push(`2. Identify stale, unused, or unnecessary items for removal`);
+    delivery.push(`3. Present cleanup candidates to customer for approval before making changes`);
+    delivery.push(`4. Execute approved cleanup: remove or archive identified items`);
+    delivery.push(`5. Verify environment after cleanup and document final state`);
+  } else if (isMigration) {
+    delivery.push(`1. Perform pre-migration audit of source environment`);
+    delivery.push(`2. Create migration plan with timeline, dependencies, and rollback procedures`);
+    delivery.push(`3. Execute migration in phases: start with test group, then full rollout`);
+    delivery.push(`4. Verify data integrity and functionality after each migration phase`);
+    delivery.push(`5. Document post-migration state and any issues encountered`);
+  } else if (isBundle) {
+    delivery.push(`1. Review all bundled components and plan delivery order based on dependencies`);
+    delivery.push(`2. Execute each component in sequence: ${summary}`);
+    delivery.push(`3. Verify each component works correctly before proceeding to the next`);
+    delivery.push(`4. Test integration between components where applicable`);
+    delivery.push(`5. Deliver consolidated documentation covering all bundled services`);
+  } else if (isPlan) {
+    delivery.push(`1. Review customer's current environment and service history`);
+    delivery.push(`2. Execute recurring tasks per plan scope: ${summary}`);
+    delivery.push(`3. Document all work performed and any issues found during the cycle`);
+    delivery.push(`4. Respond to customer requests and issues per service level agreement`);
+  } else if (isEmergency) {
+    delivery.push(`1. Initiate immediate response: contact customer and assess the situation`);
+    delivery.push(`2. Triage the incident: determine scope, severity, and impact`);
+    delivery.push(
+      `3. Contain or mitigate active damage: isolate affected systems, stop ongoing attacks`,
+    );
+    delivery.push(`4. Restore critical systems to operational status`);
+    delivery.push(`5. Document root cause, actions taken, and remaining issues`);
+  } else if (isPolicy) {
+    delivery.push(`1. Review customer's current policies or lack thereof`);
+    delivery.push(
+      `2. Customize policy templates to match customer's business size, industry, and risks`,
+    );
+    delivery.push(`3. Present draft policies for customer review and feedback`);
+    delivery.push(`4. Finalize policies based on customer input and deliver in editable format`);
+  } else if (isTraining) {
+    delivery.push(
+      `1. Prepare training materials customized to customer's environment and workflows`,
+    );
+    delivery.push(`2. Schedule and conduct training session (onsite or virtual)`);
+    delivery.push(`3. Facilitate Q&A and hands-on practice during the session`);
+    delivery.push(`4. Provide take-home reference materials and recording if applicable`);
+  } else if (isProcurement) {
+    delivery.push(`1. Assess customer's needs: specifications, quantity, budget, timeline`);
+    delivery.push(`2. Research options and obtain competitive quotes from vendors`);
+    delivery.push(`3. Present recommendations with rationale and total cost analysis`);
+    delivery.push(`4. Coordinate ordering, delivery, and receiving as requested`);
+  } else {
+    delivery.push(`1. Access customer systems per authorization using least privilege`);
+    delivery.push(`2. Execute ${name} per scope: ${summary}`);
+    delivery.push(`3. Document all findings, configurations, and changes made`);
+    delivery.push(`4. Verify outcomes and test functionality`);
+    delivery.push(`5. Prepare summary of work performed`);
   }
 
-  if (details) {
-    // Replace the second delivery step with detailed scope
-    if (p.internalProcedure.delivery.length > 1) {
-      p.internalProcedure.delivery[1] = details;
+  // Generate documentation steps
+  const documentation = [
+    `1. Document all findings, configurations, changes, and decisions made during the service`,
+    `2. Provide plain-English summary suitable for non-technical customer review`,
+    `3. Include screenshots or evidence where appropriate for clarity`,
+    `4. Document any issues discovered outside scope as separate observations with recommendations`,
+    `5. Never store passwords, recovery codes, MFA seeds, API keys, private keys, or unredacted sensitive data`,
+  ];
+
+  // Generate QA steps
+  const qa = [
+    `1. Verify work matches purchased scope: ${name}`,
+    `2. Confirm customer authorization was obtained for any changes made`,
+    `3. Verify no secrets are retained in documentation`,
+    `4. Verify deliverables are complete and ready for customer review`,
+    `5. Flag follow-up work as optional, recommended, or urgent`,
+  ];
+  if (isCheck) qa.push("6. Verify findings are categorized and prioritized correctly");
+  if (isSetup) qa.push("6. Verify all configured systems are functioning correctly");
+  if (isCleanup) qa.push("6. Verify no unintended removals occurred");
+  if (isMigration) qa.push("6. Verify all data was migrated successfully with no data loss");
+
+  // Generate closeout steps
+  const closeout = [
+    `1. Send customer summary with deliverables, findings, and documentation`,
+    `2. Attach or link all relevant reports, guides, and documentation`,
+    `3. Recommend next-step services based on findings and customer needs`,
+    `4. Close temporary access or remind customer to revoke it`,
+    `5. Record internal notes for future reference and ticket closure`,
+  ];
+  if (isPlan || isBundle) closeout.push("6. Schedule follow-up review or next recurring cycle");
+  if (isCheck) closeout.push("6. Schedule a follow-up to review implementation of recommendations");
+
+  const workflow = [
+    triage[0],
+    triage[1],
+    delivery[0],
+    delivery[1],
+    qa[0],
+    qa[1],
+    closeout[0],
+    closeout[1],
+  ].slice(0, 7);
+
+  return { workflow, triage, delivery, documentation, qa, closeout };
+}
+
+// ============================================================
+// Apply to all products
+// ============================================================
+let changed = 0;
+for (const p of products) {
+  const runbook = runbooks[p.name];
+  if (runbook) {
+    // Manual detailed runbook exists
+    if (
+      JSON.stringify(p.fulfillmentWorkflow) !==
+      JSON.stringify(
+        runbook.triage
+          .slice(0, 2)
+          .concat(
+            runbook.delivery.slice(0, 2),
+            runbook.qa.slice(0, 1),
+            runbook.closeout.slice(0, 2),
+          ),
+      )
+    ) {
+      p.fulfillmentWorkflow = runbook.triage
+        .slice(0, 2)
+        .concat(runbook.delivery.slice(0, 2), runbook.qa.slice(0, 1), runbook.closeout.slice(0, 2));
+      changed++;
+    }
+    p.internalProcedure = {
+      triage: runbook.triage,
+      delivery: runbook.delivery,
+      documentation: runbook.documentation,
+      qa: runbook.qa,
+      closeout: runbook.closeout,
+    };
+    changed++;
+  } else {
+    // Generate runbook
+    const gen = generateRunbook(p);
+    // Check if anything changed
+    const oldW = JSON.stringify(p.fulfillmentWorkflow);
+    const newW = JSON.stringify(gen.workflow);
+    const oldP = JSON.stringify(p.internalProcedure);
+    const newP = JSON.stringify(gen);
+    if (oldW !== newW) {
+      p.fulfillmentWorkflow = gen.workflow;
+      changed++;
+    }
+    if (oldP !== newP) {
+      p.internalProcedure = {
+        triage: gen.triage,
+        delivery: gen.delivery,
+        documentation: gen.documentation,
+        qa: gen.qa,
+        closeout: gen.closeout,
+      };
       changed++;
     }
   }
-}
-
-// Also add specific details to the QA step for every product
-for (const p of products) {
-  const name = p.name.toLowerCase();
-  if (name.includes("password")) {
-    p.internalProcedure.qa.push("Verify no passwords or credentials are retained in documentation");
-  }
-  if (name.includes("backup")) {
-    p.internalProcedure.qa.push("Verify restore test was successful and documented");
-  }
-  if (name.includes("camera")) {
-    p.internalProcedure.qa.push("Verify all cameras are recording and accessible remotely");
-  }
-  if (name.includes("wifi") || name.includes("wi-fi") || name.includes("network")) {
-    p.internalProcedure.qa.push(
-      "Verify network connectivity and coverage meets scope requirements",
-    );
-  }
-  if (name.includes("migration")) {
-    p.internalProcedure.qa.push("Verify all data was migrated successfully with no data loss");
-  }
-  if (name.includes("cleanup") || name.includes("clean")) {
-    p.internalProcedure.qa.push(
-      "Verify no unintended removals occurred and all changes are reversible",
-    );
-  }
-  if (name.includes("training") || name.includes("lunch")) {
-    p.internalProcedure.qa.push(
-      "Verify training materials were well-received and Q&A addressed all questions",
-    );
-  }
-  if (
-    name.includes("assessment") ||
-    name.includes("audit") ||
-    name.includes("review") ||
-    name.includes("check")
-  ) {
-    p.internalProcedure.qa.push("Verify findings report is complete and prioritized");
-  }
-  if (name.includes("setup") || name.includes("install") || name.includes("rollout")) {
-    p.internalProcedure.qa.push("Verify all configured systems are functioning correctly");
-  }
-  changed++;
 }
 
 fs.writeFileSync(
@@ -260,24 +420,48 @@ fs.writeFileSync(
   JSON.stringify(products, null, 2),
   "utf8",
 );
-console.log("Total changes:", changed);
 
+// ============================================================
 // Verify uniqueness
-for (const key of ["fulfillmentWorkflow", "internalProcedure"]) {
-  const map = {};
-  for (const p of products) {
-    const val = JSON.stringify(p[key]);
-    map[val] = map[val] || [];
-    map[val].push(p.name);
-  }
-  const dups = Object.entries(map).filter(([, n]) => n.length > 1);
-  console.log(
-    key + ":",
-    Object.keys(map).length + "/" + products.length + " unique (" + dups.length + " dup groups)",
-  );
-  if (dups.length > 0) {
-    for (const [k, names] of dups.slice(0, 5)) {
-      console.log("  " + names.join(", "));
-    }
+// ============================================================
+const wf = {},
+  ip = {};
+for (const p of products) {
+  const wk = JSON.stringify(p.fulfillmentWorkflow);
+  wf[wk] = wf[wk] || [];
+  wf[wk].push(p.name);
+  const ik = JSON.stringify(p.internalProcedure);
+  ip[ik] = ip[ik] || [];
+  ip[ik].push(p.name);
+}
+const wfDups = Object.entries(wf).filter(([, n]) => n.length > 1);
+const ipDups = Object.entries(ip).filter(([, n]) => n.length > 1);
+console.log("Fields changed:", changed);
+console.log(
+  "fulfillmentWorkflow:",
+  Object.keys(wf).length + "/" + products.length + " unique (" + wfDups.length + " dup groups)",
+);
+console.log(
+  "internalProcedure:",
+  Object.keys(ip).length + "/" + products.length + " unique (" + ipDups.length + " dup groups)",
+);
+if (wfDups.length > 0) {
+  console.log("Workflow dup groups:");
+  for (const [k, names] of wfDups.slice(0, 5)) {
+    console.log("  " + names.join(", "));
   }
 }
+if (ipDups.length > 0) {
+  console.log("Procedure dup groups:");
+  for (const [k, names] of ipDups.slice(0, 5)) {
+    console.log("  " + names.join(", "));
+  }
+}
+
+// Show a sample of detailed content
+console.log("\n=== Sample: Password Security Checkup ===");
+const p = products.find((x) => x.name === "Password Security Checkup");
+console.log("Triage:", p.internalProcedure.triage.length, "steps");
+p.internalProcedure.triage.forEach((s) => console.log("  " + s));
+console.log("Delivery:", p.internalProcedure.delivery.length, "steps");
+p.internalProcedure.delivery.forEach((s) => console.log("  " + s));
