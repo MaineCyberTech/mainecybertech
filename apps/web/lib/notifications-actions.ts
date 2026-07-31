@@ -36,7 +36,12 @@ export async function dismissNotification(id: string): Promise<{ ok: boolean; er
 }
 
 export async function getUnreadCount(): Promise<number> {
-  return 0;
+  try {
+    const result = await api().notifications.unreadCount();
+    return result.count;
+  } catch {
+    return 0;
+  }
 }
 
 export async function getRecentNotifications() {

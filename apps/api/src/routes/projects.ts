@@ -76,7 +76,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("projects").select("*", { count: "exact" }).is("deleted_at", null);
+    let query = supabase.from("projects").select("*", { count: "exact" });
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -218,7 +218,7 @@ router.get("/:id", async (req, res, next) => {
       .from("projects")
       .select("*, project_tasks(*)")
       .eq("id", req.params.id)
-      .is("deleted_at", null);
+      ;
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -428,7 +428,7 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
       .from("projects")
       .select("id, organization_id")
       .eq("id", req.params.id)
-      .is("deleted_at", null)
+      
       .single();
 
     if (fetchError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
@@ -983,3 +983,4 @@ router.post("/:id/tasks/:taskId/portal-comment", async (req, res, next) => {
 });
 
 export default router;
+

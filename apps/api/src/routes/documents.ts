@@ -113,7 +113,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("documents").select("*", { count: "exact" }).is("deleted_at", null);
+    let query = supabase.from("documents").select("*", { count: "exact" });
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -146,7 +146,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    let query = supabase.from("documents").select("*").eq("id", req.params.id).is("deleted_at", null);
+    let query = supabase.from("documents").select("*").eq("id", req.params.id);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -410,7 +410,7 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
       .from("documents")
       .select("id, organization_id, storage_bucket, storage_path")
       .eq("id", req.params.id)
-      .is("deleted_at", null)
+      
       .single();
 
     if (fetchError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
@@ -837,3 +837,4 @@ router.get("/shares/:token", async (req, res, next) => {
     next(error);
   }
 });
+
