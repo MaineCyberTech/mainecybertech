@@ -9,6 +9,7 @@ import OrgSwitcher from "@/components/portal/OrgSwitcher";
 import PortalGlobalSearch from "@/components/portal/PortalGlobalSearch";
 import { getUnreadCount } from "@/lib/notifications-actions";
 import { setActiveOrg } from "@/lib/org-actions";
+import PortalSidebarLayout from "@/components/portal/PortalSidebarLayout";
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   // Run independent calls in parallel
@@ -115,7 +116,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         </div>
       </header>
 
-      <main className="cyber-main">{children}</main>
-    </div>
-  );
-}
+<div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <PortalSidebarLayout>{children}</PortalSidebarLayout>
+        </div>
+      </div>
+    );
+  }
