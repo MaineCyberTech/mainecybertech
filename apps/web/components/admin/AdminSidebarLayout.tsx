@@ -50,7 +50,7 @@ export default function AdminSidebarLayout({ children }: { children: ReactNode }
               </button>
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-4" onClick={() => setDrawerOpen(false)}>
-              <AdminSidebarContent />
+              <AdminSidebarContent mobile />
             </div>
           </div>
         </div>
@@ -58,8 +58,8 @@ export default function AdminSidebarLayout({ children }: { children: ReactNode }
 
       {/* Desktop: sticky sidebar */}
       <aside className="hidden w-56 shrink-0 lg:block">
-        <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg border border-white/10 bg-[#0F172A]/60 p-4 backdrop-blur-sm">
-          <AdminSidebarContent />
+        <div className="sticky top-28 rounded-lg border border-white/10 bg-[#0F172A]/60 p-4 backdrop-blur-sm">
+          <AdminSidebarContent mobile />
         </div>
       </aside>
 
