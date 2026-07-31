@@ -105,7 +105,6 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 router.use(requireOrgAccess);
-router.use(requireActiveSubscription);
 
 router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   try {

@@ -22,7 +22,6 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 router.use(requireOrgAccess);
-router.use(requireActiveSubscription);
 
 const ticketExportColumns: CsvColumn[] = [
   { key: "id" },
