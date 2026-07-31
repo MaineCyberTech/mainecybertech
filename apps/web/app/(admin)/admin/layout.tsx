@@ -17,14 +17,19 @@ export default async function AdminLayout({
   try {
     user = await getApiClient().users.me();
   } catch {
-    redirect("/login");
+    user = null;
   }
 
   if (!user?.userId) {
     redirect("/login");
   }
 
-  const unreadCount = await getUnreadCount();
+  let unreadCount = 0;
+  try {
+    unreadCount = await getUnreadCount();
+  } catch {
+    unreadCount = 0;
+  }
 
   return (
     <div className="min-h-screen bg-[#0A1118] text-slate-50">
