@@ -409,8 +409,7 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
     const { data: doc, error: fetchError } = await supabase
       .from("documents")
       .select("id, organization_id, storage_bucket, storage_path")
-      .eq("id", req.params.id)
-      
+.eq("id", req.params.id)
       .single();
 
     if (fetchError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
@@ -421,7 +420,7 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
 
     const { error } = await supabase
       .from("documents")
-      .update({ deleted_at: new Date().toISOString(), deleted_by: req.authUser!.userId })
+      .delete()
       .eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

@@ -428,14 +428,13 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
       .from("projects")
       .select("id, organization_id")
       .eq("id", req.params.id)
-      
       .single();
 
     if (fetchError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
 
     const { error } = await supabase
       .from("projects")
-      .update({ deleted_at: new Date().toISOString(), deleted_by: req.authUser!.userId })
+      .delete()
       .eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
