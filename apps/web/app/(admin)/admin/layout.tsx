@@ -5,7 +5,6 @@ import AdminHeaderActions from "@/components/admin/AdminHeaderActions";
 import AdminGlobalSearch from "@/components/admin/AdminGlobalSearch";
 import NotificationBell from "@/components/NotificationBell";
 import { getUnreadCount } from "@/lib/notifications-actions";
-import AdminSidebar from "@/components/admin/AdminSidebarContent";
 
 export const dynamic = "force-dynamic";
 
@@ -56,16 +55,7 @@ export default async function AdminLayout({
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="flex flex-col lg:flex-row lg:gap-8">
-          <aside className="hidden w-56 shrink-0 py-6 lg:block">
-            <div className="sticky top-28">
-              <AdminSidebar />
-            </div>
-          </aside>
-          <main className="min-w-0 flex-1 py-6">{children}</main>
-        </div>
-      </div>
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">{children}</main>
     </div>
   );
 }
