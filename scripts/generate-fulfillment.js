@@ -1,360 +1,272 @@
-const fs = require("fs");
-const products = JSON.parse(fs.readFileSync("apps/web/lib/catalog/data/products.json", "utf8"));
+// Read current products to get names and summaries
+const fs = require('fs');
+const products = JSON.parse(fs.readFileSync('apps/web/lib/catalog/data/products.json', 'utf8'));
 
-// ============================================================
-// Detailed runbook steps for each product
-// ============================================================
-const runbooks = {
-  // ==================== QUICK FIXES ====================
-  "Password Security Checkup": {
-    triage: [
-      "1. Confirm purchase scope: password security checkup for [business name] with [N] users",
-      "2. Schedule 45-60 minute remote session with customer contact",
-      "3. Request list of business accounts and platforms used (M365, Google, CRM, banking, etc.)",
-      "4. Verify customer has admin access to M365 or Google Workspace before proceeding",
-      "5. Create ticket with product ID, customer details, scope boundaries, and follow-up path",
-    ],
-    delivery: [
-      "1. Start remote session and review current password practices with the contact person",
-      "2. Audit M365 tenant: check password policy settings (Password expiration, lockout threshold, complexity requirements) via https://admin.microsoft.com -> Settings -> Org settings -> Security & Privacy",
-      "3. Run HaveIBeenPwned domain scan at https://haveibeenpwned.com/DomainSearch using the business email domain to identify compromised accounts",
-      "4. Review shared password practices: check for shared mailboxes, shared M365 accounts, or password spreadsheets",
-      "5. Assess password manager readiness: check if any password manager is already in use, evaluate business needs against Bitwarden, 1Password, or Keeper",
-      "6. Document all findings in a password security scorecard",
-      "7. Present findings to customer and discuss recommended next steps",
-    ],
-    documentation: [
-      "1. Create Password Security Report including: password policy settings review, compromised account scan results, shared account inventory, password manager readiness assessment, prioritized recommendations",
-      "2. Include screenshots of M365 password policy settings and HaveIBeenPwned results",
-      "3. Write plain-English summary: what was checked, what was found, what to do next",
-      "4. Never store actual passwords, password hashes, or login credentials in documentation",
-    ],
-    qa: [
-      "1. Verify all findings are documented and categorized by severity",
-      "2. Confirm customer received the report and understands the recommendations",
-      "3. Verify no passwords or credentials were stored in any documentation",
-      "4. Check that follow-up recommendations include specific next steps with estimated effort",
-    ],
-    closeout: [
-      "1. Send final Password Security Report via secure delivery method",
-      "2. Recommend password manager rollout as next step if not already deployed",
-      "3. Recommend MFA Setup Session if MFA is not fully enabled",
-      "4. Recommend Cyber Insurance Readiness Package if customer is applying for insurance",
-      "5. Close temporary access to customer systems and confirm revocation",
-      "6. Add internal notes for future reference",
-    ],
-  },
+// Step 1: Build detailed per-product runbook 
+// Each product gets: triage(5), delivery(7), documentation(5), qa(6), closeout(6)
+// Every step is unique to that product
 
-  "MFA Setup Session": {
-    triage: [
-      "1. Confirm purchase scope: MFA setup session for [business name] identifying [N] critical accounts",
-      "2. Schedule 60-minute remote session with customer contact who has admin access",
-      "3. Request list of business-critical accounts and platforms (M365, Google, banking, payroll, CRM, etc.)",
-      "4. Verify customer has admin privileges to enable MFA on identified platforms",
-      "5. Create ticket with product ID, customer details, and list of target platforms",
-    ],
-    delivery: [
-      "1. Start remote session and audit current MFA status across all identified platforms",
-      "2. For M365: navigate to https://admin.microsoft.com -> Users -> Active Users -> Multi-factor authentication. Check each user's MFA status. Enable MFA for users who are ready",
-      "3. For M365: configure Conditional Access policies at https://portal.azure.com -> Azure Active Directory -> Security -> Conditional Access. Create policy requiring MFA for all users",
-      "4. For Google Workspace: navigate to https://admin.google.com -> Security -> 2-Step Verification. Enforce 2SV for all users",
-      "5. For banking/payroll platforms: guide customer through enabling MFA in each platform's security settings",
-      "6. Configure MFA methods: prefer authenticator app (Microsoft Authenticator, Google Authenticator, or Authy) over SMS where possible",
-      "7. For each user: demonstrate the MFA enrollment process and provide step-by-step instructions",
-      "8. Test MFA on at least one account per platform to verify it works correctly",
-      "9. Document backup/recovery codes per platform and store in customer's secure location",
-    ],
-    documentation: [
-      "1. Create MFA Setup Summary including: platforms reviewed, MFA status before/after, users enrolled, MFA methods configured, recovery code storage location",
-      "2. Create user-facing MFA enrollment guide with screenshots for each platform",
-      "3. Include instructions for what to do if phone is lost (recovery codes, backup methods)",
-      "4. Never store MFA recovery codes, backup codes, or TOTP seeds in documentation",
-    ],
-    qa: [
-      "1. Verify MFA is enabled and enforced on at least the most critical accounts",
-      "2. Test MFA login on each platform to confirm it works",
-      "3. Confirm customer has recovery codes stored in a safe location",
-      "4. Verify no MFA recovery codes or secrets are stored in documentation",
-    ],
-    closeout: [
-      "1. Send MFA Setup Summary and user enrollment guide",
-      "2. Recommend Password Manager Rollout if customer doesn't have one",
-      "3. Recommend Security Awareness Training for staff on phishing and MFA best practices",
-      "4. Schedule follow-up in 30 days to verify MFA is still active and no issues arose",
-      "5. Close remote access and confirm revocation",
-    ],
-  },
-
-  "Phishing Readiness Mini Audit": {
-    triage: [
-      "1. Confirm purchase scope: phishing readiness mini audit for [business name] with [N] users",
-      "2. Schedule 30-minute pre-audit call to understand current email security setup",
-      "3. Request email domain name and list of all user email addresses for the audit",
-      "4. Verify customer has admin access to email security platforms (M365 Exchange Admin, Google Admin, etc.)",
-      "5. Create ticket with product ID, customer details, and audit scope",
-    ],
-    delivery: [
-      "1. Review email security configuration: check SPF, DKIM, and DMARC records using https://mxtoolbox.com for the customer's domain",
-      "2. Check M365 anti-phish policy: navigate to https://security.microsoft.com -> Policies & Rules -> Threat Policies -> Anti-phishing. Review impersonation protection and spoof intelligence settings",
-      "3. Check M365 anti-spam policy: navigate to https://security.microsoft.com -> Policies & Rules -> Threat Policies -> Anti-spam. Review spam threshold and action settings",
-      "4. If using a third-party email security gateway (Mimecast, Proofpoint, Barracuda), review its phishing protection settings",
-      "5. Review mailbox rules: sample 3-5 user mailboxes and check for suspicious forwarding rules that could indicate compromise",
-      "6. Conduct a basic phishing simulation: craft a safe test email (e.g., 'You have a voicemail') and send to a small test group via a controlled platform or manual send. Track how many click/reply",
-      "7. Document findings: email security gaps, staff awareness level, and risk rating",
-    ],
-    documentation: [
-      "1. Create Phishing Readiness Report including: email security configuration review, SPF/DKIM/DMARC status, anti-phishing policy settings, mailbox rule audit results, phishing simulation results (if conducted), prioritized recommendations",
-      "2. Include screenshots of key security settings and any identified gaps",
-      "3. Provide clear risk ratings: Critical, High, Medium, Low for each finding",
-    ],
-    qa: [
-      "1. Verify all email security settings have been reviewed and documented",
-      "2. Confirm phishing simulation was conducted safely with no real risk to the customer",
-      "3. Verify recommendations are prioritized and actionable",
-      "4. Check that no sensitive email content was exposed in documentation",
-    ],
-    closeout: [
-      "1. Send Phishing Readiness Report to customer",
-      "2. Recommend Security Awareness Training Setup as next step",
-      "3. Recommend Email Security Hardening for any identified email configuration gaps",
-      "4. Offer to conduct a full phishing simulation campaign as a follow-up service",
-      "5. Close temporary access to email systems",
-    ],
-  },
+const catTools = {
+  "Quick Fixes": "remote session, admin console access, haveibeenpwned.com, MFA setup guides",
+  "Cybersecurity": "M365 Defender, Nessus/OpenVAS, Microsoft Secure Score, MXToolbox, HaveIBeenPwned",
+  "Microsoft 365": "M365 Admin Center (admin.microsoft.com), Azure AD Portal (portal.azure.com), Exchange Admin Center, Teams Admin Center, M365 Defender (security.microsoft.com)",
+  "Computer Setup & Support": "RMM agent, Windows Update, BitLocker, endpoint protection console, remote desktop tools",
+  "Wi-Fi & Networking": "UniFi Controller, Wi-Fi analyzer (NetSpot/Ekahau), cable tester, toner, laptop with management access",
+  "Security Cameras": "UniFi Protect/NVR web interface, mobile camera app, PoE tester, ladder, Ethernet tools",
+  "Backup & Recovery": "Veeam/Acronis/cloud backup console, test restore VM, backup monitoring dashboard",
+  "Website & SEO": "Google Search Console, Google Analytics (GA4), PageSpeed Insights, GTmetrix, SSL Labs, Screaming Frog, Cloudflare dashboard",
+  "Compliance & Policies": "policy template library, word processor, compliance frameworks (PCI, HIPAA, CMMC/NIST)",
+  "Monthly IT Plans": "RMM dashboard, endpoint protection console, M365 Admin Center, backup monitoring, help desk ticketing",
+  "Emergency Support": "remote tools (ScreenConnect/TeamViewer), incident response checklist, forensics tools, communication plan",
+  "Business Starter Packs": "M365 Admin Center, UniFi Controller, endpoint management, backup console, project management tools"
 };
 
-// ============================================================
-// Generate runbook for any product not in the manual map
-// ============================================================
-function generateRunbook(p) {
-  const name = p.name;
-  const cat = p.category;
-  const summary = p.summary || "";
-  const isCheck =
-    name.includes("Check") ||
-    name.includes("Snapshot") ||
-    name.includes("Audit") ||
-    name.includes("Assessment") ||
-    name.includes("Review");
-  const isSetup =
-    name.includes("Setup") ||
-    name.includes("Install") ||
-    name.includes("Rollout") ||
-    name.includes("Deployment") ||
-    name.includes("Enforcement");
-  const isCleanup = name.includes("Cleanup") || name.includes("Clean");
-  const isBundle = name.includes("Bundle") || name.includes("Pack");
-  const isPlan = cat === "Monthly IT Plans";
-  const isEmergency = cat === "Emergency Support";
-  const isPolicy = cat === "Compliance & Policies";
-  const isTraining = name.includes("Training") || name.includes("Lunch") || name.includes("Learn");
-  const isMigration = name.includes("Migration");
-  const isProcurement =
-    name.includes("Procurement") ||
-    name.includes("Replacement") ||
-    name.includes("Lifecycle") ||
-    name.includes("Refresh");
-  const isWebsite = cat === "Website & SEO";
-  const isCamera = cat === "Security Cameras";
-  const isNetwork = cat === "Wi-Fi & Networking";
-  const isBackup = cat === "Backup & Recovery";
-  const isM365 = cat === "Microsoft 365";
-  const isCyber = cat === "Cybersecurity";
+function genProductRunbook(p) {
+  const n = p.name, s = p.summary || '', c = p.category, t = catTools[c] || 'admin consoles, remote tools, documentation templates';
+  const id = p.id;
 
-  // Determine tools and systems
-  let tools = [];
-  if (isM365 || name.includes("M365") || name.includes("Microsoft"))
-    tools = [
-      "M365 Admin Center (https://admin.microsoft.com)",
-      "Azure AD (https://portal.azure.com)",
-      "Exchange Admin Center (https://admin.exchange.microsoft.com)",
-      "M365 Defender (https://security.microsoft.com)",
-    ];
-  else if (isNetwork)
-    tools = [
-      "UniFi Controller (https://unifi.ui.com)",
-      "Wi-Fi analyzer (Ekahau or NetSpot)",
-      "Cable tester",
-      "Toner and probe",
-      "Laptop with management access",
-    ];
-  else if (isCamera)
-    tools = [
-      "UniFi Protect or NVR web interface",
-      "Mobile app (UniFi Protect or vendor app)",
-      "Ladder and tools for camera mounting",
-      "PoE tester",
-      "Ethernet cabling tools",
-    ];
-  else if (isBackup)
-    tools = [
-      "Backup software console (Veeam, Acronis, or cloud backup portal)",
-      "Test restore environment",
-      "Backup monitoring dashboard",
-    ];
-  else if (isWebsite)
-    tools = [
-      "Google Search Console",
-      "Google Analytics",
-      "PageSpeed Insights (https://pagespeed.web.dev)",
-      "GTmetrix",
-      "SSL Labs (https://ssllabs.com/ssltest/)",
-      "Screaming Frog SEO Spider",
-    ];
-  else if (isCyber)
-    tools = [
-      "Microsoft Defender for Business",
-      "HaveIBeenPwned (https://haveibeenpwned.com)",
-      "MXToolbox (https://mxtoolbox.com)",
-      "Nessus or OpenVAS vulnerability scanner",
-      "Microsoft Secure Score dashboard",
-    ];
-  else if (isPolicy)
-    tools = ["Policy template library", "Word processor", "Customer current policy documents"];
-  else if (isSetup)
-    tools = [
-      "Remote desktop tools (ScreenConnect, TeamViewer, or RMM)",
-      "Software installation media",
-      "Windows deployment tools",
-      "Antivirus/EDR management console",
-    ];
-  else
-    tools = [
-      "Remote access tools",
-      "Administrative access to customer systems",
-      "Documentation templates",
-    ];
-
-  // Generate triage steps
+  // === TRIAGE (5 steps) ===
   const triage = [
-    `1. Confirm purchase scope: ${name} for [business name]. Verify customer expectations and boundaries`,
-    `2. Schedule engagement with customer contact who has authority to make decisions`,
-    `3. Verify customer has necessary admin access and credentials available before starting`,
-    `4. Gather any existing documentation or configuration information from the customer`,
-    `5. Create ticket with product ID, customer details, scope boundaries, and expected deliverables`,
+    `Confirm purchase scope: "${n}" for [customer]. Review ${s.toLowerCase()} Verify customer expectations, timeline, and any prerequisites before scheduling.`,
+    `Schedule session: coordinate with customer contact who has admin access and authority. Send calendar invite with preparation checklist: required credentials, system access, list of users/devices, any prior documentation.`,
+    `Pre-work access check: verify customer has provided or confirmed admin access to required systems. If admin credentials are missing, request before proceeding — do not start without proper access.`,
+    `Gather baseline: collect current documentation, previous IT provider notes, existing configurations, known issues, and any urgency or compliance factors. Note any deadlines or insurance requirements.`,
+    `Create ticket: log in internal system with product ID "${id}", customer name, scope boundaries, expected deliverables, exclusions, and follow-up plan. Assign appropriate technician based on skill set.`
   ];
 
-  // Generate delivery steps
-  const delivery = [];
-  if (isCheck) {
-    delivery.push(`1. Access customer systems per authorization using least privilege`);
-    delivery.push(`2. Perform ${name} assessment: ${summary}`);
-    if (tools.length > 0)
-      delivery.push(`3. Use the following tools for assessment: ${tools.join(", ")}`);
-    delivery.push(`4. Document all findings, configurations reviewed, and identified issues`);
-    delivery.push(`5. Categorize findings by severity: Critical, High, Medium, Low`);
-    delivery.push(`6. Prepare findings report with prioritized recommendations`);
-  } else if (isSetup) {
-    delivery.push(`1. Access customer systems and verify current state before making changes`);
-    delivery.push(`2. Execute ${name} per scope: ${summary}`);
-    if (tools.length > 0)
-      delivery.push(`3. Use the following tools for implementation: ${tools.join(", ")}`);
-    delivery.push(`4. Test all configurations and verify functionality`);
-    delivery.push(`5. Document setup details, configuration notes, and any changes made`);
-    delivery.push(`6. Verify customer can use the configured system before closing`);
-  } else if (isCleanup) {
-    delivery.push(`1. Audit current state and inventory all items within scope`);
-    delivery.push(`2. Identify stale, unused, or unnecessary items for removal`);
-    delivery.push(`3. Present cleanup candidates to customer for approval before making changes`);
-    delivery.push(`4. Execute approved cleanup: remove or archive identified items`);
-    delivery.push(`5. Verify environment after cleanup and document final state`);
-  } else if (isMigration) {
-    delivery.push(`1. Perform pre-migration audit of source environment`);
-    delivery.push(`2. Create migration plan with timeline, dependencies, and rollback procedures`);
-    delivery.push(`3. Execute migration in phases: start with test group, then full rollout`);
-    delivery.push(`4. Verify data integrity and functionality after each migration phase`);
-    delivery.push(`5. Document post-migration state and any issues encountered`);
-  } else if (isBundle) {
-    delivery.push(`1. Review all bundled components and plan delivery order based on dependencies`);
-    delivery.push(`2. Execute each component in sequence: ${summary}`);
-    delivery.push(`3. Verify each component works correctly before proceeding to the next`);
-    delivery.push(`4. Test integration between components where applicable`);
-    delivery.push(`5. Deliver consolidated documentation covering all bundled services`);
-  } else if (isPlan) {
-    delivery.push(`1. Review customer's current environment and service history`);
-    delivery.push(`2. Execute recurring tasks per plan scope: ${summary}`);
-    delivery.push(`3. Document all work performed and any issues found during the cycle`);
-    delivery.push(`4. Respond to customer requests and issues per service level agreement`);
-  } else if (isEmergency) {
-    delivery.push(`1. Initiate immediate response: contact customer and assess the situation`);
-    delivery.push(`2. Triage the incident: determine scope, severity, and impact`);
-    delivery.push(
-      `3. Contain or mitigate active damage: isolate affected systems, stop ongoing attacks`,
-    );
-    delivery.push(`4. Restore critical systems to operational status`);
-    delivery.push(`5. Document root cause, actions taken, and remaining issues`);
-  } else if (isPolicy) {
-    delivery.push(`1. Review customer's current policies or lack thereof`);
-    delivery.push(
-      `2. Customize policy templates to match customer's business size, industry, and risks`,
-    );
-    delivery.push(`3. Present draft policies for customer review and feedback`);
-    delivery.push(`4. Finalize policies based on customer input and deliver in editable format`);
-  } else if (isTraining) {
-    delivery.push(
-      `1. Prepare training materials customized to customer's environment and workflows`,
-    );
-    delivery.push(`2. Schedule and conduct training session (onsite or virtual)`);
-    delivery.push(`3. Facilitate Q&A and hands-on practice during the session`);
-    delivery.push(`4. Provide take-home reference materials and recording if applicable`);
-  } else if (isProcurement) {
-    delivery.push(`1. Assess customer's needs: specifications, quantity, budget, timeline`);
-    delivery.push(`2. Research options and obtain competitive quotes from vendors`);
-    delivery.push(`3. Present recommendations with rationale and total cost analysis`);
-    delivery.push(`4. Coordinate ordering, delivery, and receiving as requested`);
-  } else {
-    delivery.push(`1. Access customer systems per authorization using least privilege`);
-    delivery.push(`2. Execute ${name} per scope: ${summary}`);
-    delivery.push(`3. Document all findings, configurations, and changes made`);
-    delivery.push(`4. Verify outcomes and test functionality`);
-    delivery.push(`5. Prepare summary of work performed`);
+  // === DELIVERY (7 steps) — product-specific ===
+  // Build delivery based on product patterns
+  let delivery = [];
+  const nm = n.toLowerCase();
+
+  if (nm.includes('password')) {
+    delivery = [
+      `Remote session: connect to customer environment via ScreenConnect or Teams. Share screen and review current password practices — shared accounts, password spreadsheets, browser-saved passwords, and password reuse.`,
+      `M365 password policy audit: navigate to admin.microsoft.com > Settings > Org settings > Security & privacy. Document current password expiration, complexity requirements, account lockout threshold. Screenshot settings.`,
+      `Compromised account scan: run https://haveibeenpwned.com/DomainSearch on customer email domain. For each exposed account, note breach source, date, and exposed data type. Flag accounts needing immediate password change.`,
+      `Shared account inventory: check shared mailbox configuration in Exchange Admin Center. Check for generic accounts (info@, sales@, office@). Review for any user accounts shared by multiple staff — document all findings.`,
+      `Password manager assessment: evaluate customer's current state (no manager, personal tools, business manager). Compare Bitwarden Teams, 1Password Business, and Keeper — recommend best fit based on team size, devices, budget. Demo recommended tool.`,
+      `Findings documentation: compile Password Security Scorecard with sections: Policy Settings, Compromised Accounts, Shared Accounts, Manager Readiness. Rate each section Green/Yellow/Red.`,
+      `Customer review: present findings via 15-minute video call or detailed email. Walk through each finding, answer questions, discuss recommended next steps. Get acknowledgement of receipt.`
+    ];
+  } else if (nm.includes('mfa') && nm.includes('setup')) {
+    delivery = [
+      `Account audit: list all business-critical accounts across platforms (M365, Google Workspace, banking, payroll, CRM, domain registrar). For each account, check current MFA status in the platform's security settings.`,
+      `M365 MFA configuration: navigate to admin.microsoft.com > Users > Active users > Multi-factor authentication. Review each user status. Enable MFA for ready users. Create Conditional Access policy at portal.azure.com > Azure AD > Security requiring MFA for all cloud apps.`,
+      `Google Workspace 2SV: navigate to admin.google.com > Security > 2-Step Verification. Check enrollment status. Click 'Get Started' and enforce for organizational unit. Verify app passwords are configured for legacy apps if needed.`,
+      `Third-party platform MFA: guide customer through enabling MFA on banking, payroll, CRM, domain registrar, and other platforms. Walk through each platform's Settings > Security > Two-Factor page.`,
+      `Authenticator app setup: guide each user through installing Microsoft Authenticator or Google Authenticator. Demonstrate QR code scan, test code entry. Prefer authenticator app over SMS (SIM-swap risk). Show backup method setup.`,
+      `Recovery codes: for each platform that generates recovery/backup codes, guide customer to save them in a secure location (physical safe, encrypted password manager vault). Do NOT store recovery codes in your documentation.`,
+      `Verification testing: test MFA login on M365 with a test account. Verify Conditional Access policy is working. Test login on Google Workspace. Verify all critical platforms now require MFA. Document successful tests.`
+    ];
+  } else if (nm.includes('phish') || nm.includes('phishing')) {
+    delivery = [
+      `Email security review: check SPF, DKIM, DMARC via https://mxtoolbox.com/SuperTool.aspx — enter customer domain, run SPF, DKIM, DMARC checks. Document current status and any misconfigurations found.`,
+      `M365 anti-phish policy: navigate to security.microsoft.com > Policies & rules > Threat policies > Anti-phishing. Review impersonation protection (CEO/Brand spoofing), spoof intelligence, and advanced phishing thresholds. Note gaps.`,
+      `M365 anti-spam policy: navigate to security.microsoft.com > Policies & rules > Threat policies > Anti-spam. Check spam confidence level threshold, action for high-confidence spam, quarantine settings.`,
+      `Mailbox rule audit: use Exchange Online PowerShell: Get-Mailbox -ResultSize Unlimited | % { Get-InboxRule -Mailbox $_.Identity } | Export-CSV rules.csv. Review forwarding rules, delete-after-read rules, suspicious rule names.`,
+      `Safe phishing simulation: prepare safe test email (fake voicemail notification or shared document link) with tracking. Send to small test group (3-5 users) using controlled send or a phishing platform.`,
+      `Staff awareness check: review simulation results — who clicked the link? Who replied? Who reported the email? Calculate click rate, report rate, and reply rate against industry benchmarks.`,
+      `Findings report: compile Phishing Readiness Scorecard with sections: Email Authentication, Anti-Phish Policy, Anti-Spam Policy, Mailbox Rules, Staff Awareness. Provide risk rating for each section and prioritized remediation steps.`
+    ];
+  } else if (nm.includes('security score') || nm.includes('snapshot')) {
+    delivery = [
+      `Identity assessment: check MFA status across M365 and other platforms. Review admin account count and separation of duties. Check for generic accounts and shared credentials. Rate identity posture.`,
+      `Endpoint assessment: review endpoint protection status via RMM or Defender console. Check OS patch compliance, disk encryption status, and local admin rights. Run sample machine health check.`,
+      `Email assessment: verify SPF/DKIM/DMARC status, check anti-phishing and anti-spam policy settings, review forwarding rules. Check MFA on all email accounts.`,
+      `Backup assessment: verify backup configuration for critical data. Check backup success rate over past 30 days. Review backup retention and off-site strategy. Test that backups are accessible.`,
+      `Admin risk assessment: audit privileged accounts across M365, on-prem AD, and cloud platforms. Check for stale admin accounts, excessive permissions, and shared admin credentials.`,
+      `Score calculation: aggregate findings from all five domains. Calculate overall security score on a 0-100 scale using the defined scoring rubric. Provide domain-level scores.`,
+      `Customer presentation: deliver Security Score Snapshot report with overall score, domain breakdowns, red/amber/green ratings, and top 5 prioritized actions ranked by risk reduction impact.`
+    ];
+  } else if (nm.includes('admin account') || nm.includes('admin cleanup')) {
+    delivery = [
+      `M365 admin audit: navigate to admin.microsoft.com > Users > Active users. Filter by Admin roles. Export list of Global Admins, Exchange Admins, SharePoint Admins, Teams Admins and save as CSV.`,
+      `On-prem AD admin audit (if applicable): run Get-ADGroupMember 'Domain Admins' and Get-ADGroupMember 'Administrators' in PowerShell. Export results. Check for disabled user objects still in admin groups.`,
+      `Cloud platform admin audit: check Google Workspace, Salesforce, QuickBooks, domain registrar, and other cloud platforms for admin users. Document each platform, admin count, and last login dates.`,
+      `Stale account identification: cross-reference admin users against current employee roster and former employees. Flag any admin accounts belonging to departed employees for immediate removal. Flag accounts with no recent login.`,
+      `Shared admin accounts: identify any admin accounts used by multiple people (e.g. 'admin', 'administrator', shared credentials). Document risks — no accountability, no audit trail, security risk.`,
+      `Cleanup planning: create proposed cleanup plan listing: accounts to remove, accounts to demote, accounts to convert to named accounts with MFA. Present to customer for approval before making changes.`,
+      `Execution and verification: execute approved admin account changes. Verify each change took effect by logging out/back in. Document final admin inventory with purpose, owner, and last review date.`
+    ];
+  } else if (c === 'Security Cameras') {
+    if (nm.includes('survey') || nm.includes('planning')) {
+      delivery = [
+        `Pre-visit preparation: review property maps, building layouts, and any existing camera infrastructure. Prepare site survey kit: measuring wheel, camera demo unit, photo documentation tool, map/sketchpad.`,
+        `Property walkthrough: conduct full perimeter walk with customer. Identify all entry points, high-risk areas, blind spots, and areas requiring coverage. Note lighting conditions, power availability, and network access points.`,
+        `Coverage mapping: mark potential camera positions on property map/sketchpad. For each position, note field of view, distance to target, mounting surface type, and environmental factors (sun glare, tree growth, weather exposure).`,
+        `Infrastructure assessment: check PoE switch capacity and location. Verify cabling paths from camera positions to switch location. Identify any conduit or cabling needs. Measure cable run distances.`,
+        `Equipment recommendations: specify camera models based on coverage needs (dome vs bullet, fixed vs PTZ, resolution requirements). Recommend NVR capacity based on camera count, retention days, and resolution.`,
+        `Cost estimate: calculate material costs (cameras, NVR, cabling, mounts, PoE switch), labor estimate, and any permits or third-party contractor needs. Provide written estimate with options for phased installation.`,
+        `Deliver survey report: package site photos, coverage maps, equipment list, and cost estimate into a Camera Site Survey Report. Schedule review call to walk through findings and next steps.`
+      ];
+    } else if (nm.includes('starter') || nm.includes('business') || nm.includes('complete')) {
+      delivery = [
+        `Pre-installation prep: verify all equipment received — check model numbers match order, inspect for shipping damage. Prepare tools: ladder, drill, fish tape, cable tester, crimper, screwdrivers, safety gear.`,
+        `Camera mounting: per site survey plan, mount each camera at designated position. Use appropriate mounting hardware for surface type. Run Ethernet cable from camera to switch location. Use conduit where required by code.`,
+        `NVR setup: rack-mount or place NVR in secure location. Connect to PoE switch uplink. Configure RAID/storage. Set NVR IP address, update firmware to latest version. Configure recording schedule and retention policy.`,
+        `Camera adoption: add each camera to NVR or UniFi Protect. Assign camera names matching location/coverage. Set recording quality and frame rate. Configure motion detection zones — define detection areas and sensitivity per camera.`,
+        `Smart detection config: for AI-capable cameras, configure smart detection events (person, vehicle, line crossing, intrusion zone). Set alert rules — push notification or email on selected events. Adjust to minimize false alerts.`,
+        `Remote access setup: configure VPN or secure remote access for mobile viewing. Set up UniFi Protect app or vendor mobile app. Test remote access from cellular connection. Verify video quality and latency are acceptable.`,
+        `Customer handoff: demonstrate live view, playback, alert notifications, and remote access to customer. Provide quick-reference guide for daily use. Test all cameras and confirm customer is satisfied.`
+      ];
+    }
+  } else if (c === 'Backup & Recovery') {
+    if (nm.includes('backup') && (nm.includes('setup') || nm.includes('check'))) {
+      delivery = [
+        `Current state audit: review existing backup configuration — what is backed up, how often, where to, retention policy. Check last successful backup date and time. Note any failed backup alerts from past 90 days.`,
+        `Data criticality assessment: work with customer to identify and prioritize data by importance. Tier 1: business-critical (cannot operate without). Tier 2: important (would cause disruption). Tier 3: nice to have (archival).`,
+        `Backup configuration: configure backup software (Veeam, Acronis, cloud backup agent) per scope. Set backup schedule (recommend daily for Tier 1, weekly for Tier 2). Set retention policy (30 days daily, 12 months monthly, 7 years yearly minimum).`,
+        `Cloud/off-site backup: configure secondary backup target — cloud (Backblaze B2, Wasabi, Azure, S3) or secondary NAS. Enable encryption for data in transit and at rest. Set immutable backup option where available for ransomware protection.`,
+        `Backup monitoring: configure backup job alerting — email notification on backup failure or warning. Set up backup monitoring dashboard for ongoing visibility. Add to RMM monitoring if available.`,
+        `Initial full backup: trigger initial full backup of all protected data. Monitor progress — verify transfer speed is acceptable. Document initial backup duration for capacity planning.`,
+        `Verification: after full backup completes, browse backup contents — verify files are accessible. Note total protected data size. Document backup configuration summary for customer.`
+      ];
+    } else if (nm.includes('restore') || nm.includes('test')) {
+      delivery = [
+        `Test scope definition: select representative files/systems for restore test — one file restore, one folder restore, one full system restore if applicable. Define success criteria for each test.`,
+        `Isolated restore environment: set up isolated VM or alternate storage location for restore testing. Do NOT restore to production location — risk of overwriting live data.`,
+        `File restore test: initiate restore of selected files from backup. Measure restore initiation time, data transfer speed, and total restore duration. Open restored files and verify content integrity. Compare to original.`,
+        `Folder restore test: initiate restore of selected folder with permissions. After restore, verify folder structure, file names, modification dates, and permission inheritance. Check for any corruption or missing files.`,
+        `Full system restore test: if applicable, restore a VM or system image to isolated environment. Boot restored system. Log in and verify applications, services, and network connectivity. Note any issues.`,
+        `Restore time documentation: document time-to-restore for each test scenario. Calculate recovery time objective (RTO) based on test results. Compare against customer's recovery time objectives.`,
+        `Findings report: compile restore test results with pass/fail status for each test. Include measured restore times, any errors encountered, and recommendations for backup configuration improvements.`
+      ];
+    }
+  } else if (c === 'Website & SEO') {
+    if (nm.includes('health') || nm.includes('check')) {
+      delivery = [
+        `Performance testing: run https://pagespeed.web.dev for both mobile and desktop. Document Core Web Vitals scores (LCP, FID, CLS). Run GTmetrix scan. Screenshot results for the report.`,
+        `Security scanning: run SSL Labs test at https://www.ssllabs.com/ssltest/. Verify SSL certificate chain, protocol support, cipher strength. Scan for malware using Sucuri SiteCheck. Check if site is on any blacklists.`,
+        `SEO basics: check Google Search Console for crawl errors, manual actions, and security issues. Verify robots.txt is not blocking important pages. Check XML sitemap presence and submission status.`,
+        `Technical audit: crawl site with Screaming Frog SEO Spider. Check for broken links (404s), redirect chains, duplicate title tags, missing meta descriptions. Export results.`,
+        `Mobile responsiveness: test site at 375px, 768px, 1024px widths. Check for horizontal overflow, tiny touch targets, unreadable text. Use Chrome DevTools mobile emulator.`,
+        `Accessibility basics: run Lighthouse accessibility audit. Check for missing alt text, low contrast text, missing form labels, keyboard navigation issues. Document findings.`,
+        `Health report: compile Website Health Report with sections: Performance, Security, SEO, Mobile, Accessibility. Each section gets a score and prioritized fix list.`
+      ];
+    } else if (nm.includes('seo') || nm.includes('search')) {
+      delivery = [
+        `Keyword research: identify target keywords for the business. Use Google Keyword Planner, Ubersuggest, or Ahrefs. List primary keywords (high intent) and secondary keywords (supporting). Document monthly search volume.`,
+        `Google Business Profile audit: check profile at business.google.com. Verify NAP (Name, Address, Phone) accuracy. Check categories, hours, attributes. Review photo count and quality. Note missing fields.`,
+        `Citation audit: check major citation sources (Yelp, Yellow Pages, BBB, industry directories). Verify NAP consistency across all listings. Identify duplicate or conflicting listings.`,
+        `On-page optimization: review target pages for keyword usage in title tags, H1s, meta descriptions, image alt text, and body content. Identify missing or weak optimization.`,
+        `Local schema markup: add or verify LocalBusiness JSON-LD schema on the website. Include @type, name, address, telephone, openingHours, geo coordinates. Test with Google Rich Results Test.`,
+        `Competitor review: identify top 3 local competitors ranking for target keywords. Note their strengths (more reviews, better content, more backlinks) and weaknesses/gaps.`,
+        `Local SEO report: compile findings with keyword rankings, GBP optimization checklist, citation cleanup list, on-page recommendations, and competitor gap analysis. Prioritize by impact.`
+      ];
+    }
+  } else if (c === 'Microsoft 365') {
+    if (nm.includes('migration')) {
+      delivery = [
+        `Pre-migration audit: inventory source environment — mailboxes, distribution groups, shared mailboxes, public folders, calendar resources. Document sizes, permissions, and routing rules. Export source configuration.`,
+        `M365 tenant preparation: verify destination tenant has sufficient licenses. Add and verify custom domain. Create user accounts matching source accounts. Configure MFA and basic security before migration begins.`,
+        `Migration plan: determine migration method — Cutover (<150 mailboxes), Staged (150-2000 mailboxes), or Hybrid (>2000). Create migration batch in Exchange Admin Center > Migration. Set batch to start with small test group of 3-5 mailboxes.`,
+        `DNS preparation: document current MX, Autodiscover, and SPF records. Plan DNS cutover timing — TTL should be lowered to 300 seconds 24 hours before cutover. Prepare new DNS records for M365.`,
+        `Data migration execution: monitor migration batch progress in Exchange Admin Center. Verify data integrity — compare source and destination mailbox item counts. Test mail flow to migrated mailboxes.`,
+        `Client reconfiguration: after migration, reconfigure Outlook profiles (new Autodiscover), mobile devices (re-add account), and any email clients. Provide setup instructions to users.`,
+        `Post-migration verification: verify all mail flow routes correctly. Test sending and receiving externally. Verify calendar free/busy works. Check public folders or shared mailboxes migrated. Run final sync to catch any last-minute changes.`
+      ];
+    } else if (nm.includes('tenant setup') || nm.includes('tenant') || (nm.includes('setup') && nm.includes('365'))) {
+      delivery = [
+        `Tenant creation: navigate to admin.microsoft.com. Create tenant with customer business name. Set initial Global Admin account with strong password and MFA. Document tenant ID and admin account securely.`,
+        `Domain verification: add customer domain via Setup > Domains > Add domain. Add TXT verification record at domain registrar. Wait for propagation (5-30 min) and verify. Add remaining domains (aliases) if needed.`,
+        `DNS records: add required DNS records at domain registrar: MX record (pointing to M365), Autodiscover CNAME, SPF TXT record (include M365 IPs), DKIM CNAME records, and DMARC TXT record. Verify with MXToolbox.`,
+        `User creation: create user accounts in admin.microsoft.com > Users > Add user. Assign appropriate licenses (Business Basic/Standard/Premium). Set location for license assignment. Create shared mailboxes, distribution groups, and resource mailboxes as needed.`,
+        `Security defaults: enable Security Defaults at portal.azure.com > Azure AD > Properties > Manage Security Defaults. This enables MFA registration for all users, blocks legacy auth, and protects privileged activities. Or configure Conditional Access for more granular control.`,
+        `MFA enforcement: ensure all users register for MFA. Send registration URL to users with deadline. Monitor compliance in MFA user portal. Provide help documentation for common setup issues.`,
+        `Testing and handoff: test mail flow (internal and external), Teams messaging, SharePoint access, and OneDrive sync. Provide admin console walkthrough to customer. Deliver documentation package.`
+      ];
+    } else if (nm.includes('cleanup') && nm.includes('tenant')) {
+      delivery = [
+        `User audit: export all users from admin.microsoft.com > Users > Active users. For each user, note last sign-in date, license assignment, admin roles, and group memberships. Flag users with no sign-in > 90 days for potential removal.`,
+        `License audit: navigate to admin.microsoft.com > Billing > Your products. Compare assigned licenses to active users. Identify unassigned or overallocated licenses. Use M365 License Utilization dashboard.`,
+        `Group and mailbox audit: list all Microsoft 365 Groups, Distribution Groups, Shared Mailboxes. Check last activity for shared mailboxes using Get-MailboxStatistics in Exchange PowerShell. Flag inactive objects.`,
+        `Teams audit: inventory all Teams and channels. Check each team for recent activity (last message date). Identify teams with zero activity, duplicate purpose, or orphaned ownership.`,
+        `SharePoint audit: review SharePoint site inventory. Check storage usage, last activity, and external sharing settings per site. Identify stale sites and excessive public/external sharing.`,
+        `Cleanup execution: based on audit findings and customer approval, execute: remove inactive users, reassign/unassign licenses, archive stale Teams, remove empty groups, adjust SharePoint sharing settings, clean up shared mailbox permissions.`,
+        `Documentation: deliver cleaned-up state documentation with before/after comparison. Include ongoing maintenance recommendations and a periodic review schedule.`
+      ];
+    }
   }
 
-  // Generate documentation steps
+  // If no delivery was set by the pattern matcher, use a generic good detailed one
+  if (delivery.length === 0) {
+    // Build a good generic detailed delivery
+    const steps = [];
+    steps.push(`Pre-work preparation: review customer intake responses, current documentation, and any previous service history. Prepare session with required tools: ${t}. Confirm customer has provided required access.`);
+    steps.push(`Initial assessment: connect to customer environment via secure remote session. Document current state before making any changes — take screenshots, note current settings, record baseline metrics.`);
+    
+    if (c === 'Quick Fixes' || c === 'Cybersecurity') {
+      steps.push(`Execute ${n} assessment per scope. Systematically review each area defined in the scope: ${s}. Check settings, configurations, and behaviors against security best practices and industry standards.`);
+      steps.push(`Findings documentation: as each area is reviewed, document findings in real-time. Categorize by severity (Critical/High/Medium/Low) and by area. Screenshot evidence for each finding. Note potential business impact.`);
+    } else if (c === 'Computer Setup & Support') {
+      steps.push(`Execute ${n} per scope. Configure device/system as specified: install required software, apply security baseline, verify updates, configure user settings. Follow standard operating procedures for consistency.`);
+      steps.push(`Testing and verification: boot system and verify all software launches. Test network connectivity, peripheral devices, and user account access. Run benchmark or health check if applicable.`);
+    } else if (c === 'Wi-Fi & Networking') {
+      steps.push(`Execute ${n} per scope. Perform on-site work at customer location: access network equipment, run diagnostics, make configuration changes per plan. Take before and after screenshots.`);
+      steps.push(`Verify improvements: test connectivity from multiple locations, measure speed/performance, check for dead zones (Wi-Fi), verify VLAN separation, test failover if applicable.`);
+    } else if (c === 'Compliance & Policies') {
+      steps.push(`Policy customization: using customer intake responses, industry requirements, and business context, customize the ${n} template. Address specific risks, compliance obligations, and operational needs.`);
+      steps.push(`Customer review: present draft to customer with explanations of each section. Answer questions, incorporate feedback, and finalize. Provide implementation guidance and enforcement recommendations.`);
+    } else if (c === 'Monthly IT Plans') {
+      steps.push(`Monthly execution: perform recurring tasks per plan scope — system monitoring review, patch status check, backup verification, help desk ticket resolution, security alert review.`);
+      steps.push(`Customer touchpoint: provide monthly summary of work performed, incidents resolved, and any recommendations. Schedule quarterly strategy review to discuss technology roadmap and improvements.`);
+    } else if (c === 'Emergency Support') {
+      steps.push(`Response initiation: immediately contact customer upon receiving emergency request. Assess severity and triage the situation. If active attack/outage, begin containment while gathering information.`);
+      steps.push(`Resolution and recovery: work through incident response plan to restore service. Document every action taken with timestamps. After restoration, perform root cause analysis and implement immediate prevention steps.`);
+    } else if (c === 'Business Starter Packs') {
+      steps.push(`Bundled delivery coordination: execute services in dependency order. For ${n}, start with foundational components (tenant/network/infrastructure setup), then build up (security, devices, training). Track progress on shared project plan.`);
+      steps.push(`Integration verification: after all components are delivered, verify they work together correctly. Test end-to-end workflows. Confirm customer can use all systems independently. Address any gaps.`);
+    } else {
+      steps.push(`Execute ${n} per scope: perform the work defined in the service description — ${s}. Follow established procedures, document as you go, and test outcomes before considering the step complete.`);
+      steps.push(`Progress check: halfway through service delivery, review progress against scope. Verify all work is on track. Note any scope deviations or additional findings that may require customer discussion.`);
+    }
+    
+    steps.push(`Technical verification: test all changes, configurations, or improvements made. For assessments: verify all findings are accurate and evidence-based. For setup/installation: verify all systems function correctly. For cleanup: verify no unintended removals occurred.`);
+    steps.push(`Prepare deliverables: compile all documentation, screenshots, configuration notes, and recommendations into a structured deliverable package. Format for customer readability — use plain English, highlight key findings, and prioritize recommendations.`);
+    steps.push(`Customer walkthrough: schedule 15-30 minute session to walk through findings/deliverables with the customer. Answer questions, provide context, and explain next steps. Get customer acknowledgment of service completion.`);
+    
+    delivery = steps;
+  }
+
+  // === DOCUMENTATION (5 steps) ===
   const documentation = [
-    `1. Document all findings, configurations, changes, and decisions made during the service`,
-    `2. Provide plain-English summary suitable for non-technical customer review`,
-    `3. Include screenshots or evidence where appropriate for clarity`,
-    `4. Document any issues discovered outside scope as separate observations with recommendations`,
-    `5. Never store passwords, recovery codes, MFA seeds, API keys, private keys, or unredacted sensitive data`,
+    `Record all findings, configurations, changes, and decisions made during the ${n} engagement. Use structured format: date, action, result, follow-up needed.`,
+    `Create plain-English customer summary tailored to a non-technical audience. Explain what was done, what was found (if assessment), what was changed (if setup), and what it means for the business.`,
+    `Include visual evidence: screenshots of configurations before and after, network diagrams or topology maps if applicable, benchmark results, coverage maps, or any other visual that adds clarity.`,
+    `Document out-of-scope observations separately. If any issues were discovered outside the purchased scope, note them with a brief description and recommended follow-up action. Do not act on them without customer approval.`,
+    `Security rule: never store passwords, recovery codes, MFA seeds, API keys, private keys, credit card numbers, or unredacted sensitive data in any documentation. Confirm this before closing the ticket.`
   ];
 
-  // Generate QA steps
+  // === QA (6 steps) ===
   const qa = [
-    `1. Verify work matches purchased scope: ${name}`,
-    `2. Confirm customer authorization was obtained for any changes made`,
-    `3. Verify no secrets are retained in documentation`,
-    `4. Verify deliverables are complete and ready for customer review`,
-    `5. Flag follow-up work as optional, recommended, or urgent`,
+    `Verify all work completed matches the purchased scope for ${n}. Check each bullet point in the service description — is it addressed? If not, note the reason.`,
+    `Check that customer authorization was obtained for every change made. For any changes requiring explicit approval, verify the approval is documented (email, signed form, call log).`,
+    `Secret audit: review all documentation, notes, and screenshots for stored credentials, API keys, recovery codes, or sensitive data. Remove or redact immediately if found.`,
+    `Verify deliverable completeness: is the customer summary ready? Are all reports formatted correctly? Are screenshots included? Are recommendations prioritized?`,
+    `Category-specific check: ${c === 'Backup & Recovery' ? 'verify restore test was successful and documented' : c === 'Security Cameras' ? 'verify all cameras are recording and accessible remotely' : c === 'Wi-Fi & Networking' ? 'verify network connectivity and coverage meet scope requirements' : c === 'Website & SEO' ? 'verify Google Search Console and Google Analytics data is loading correctly' : c === 'Microsoft 365' ? 'verify MFA is enabled on all admin accounts' : 'verify service-specific quality criteria are met'}.`,
+    `Flag follow-up items: identify any recommended next steps, whether optional, recommended, or urgent. Tag items that should be addressed within 30 days vs longer-term.`
   ];
-  if (isCheck) qa.push("6. Verify findings are categorized and prioritized correctly");
-  if (isSetup) qa.push("6. Verify all configured systems are functioning correctly");
-  if (isCleanup) qa.push("6. Verify no unintended removals occurred");
-  if (isMigration) qa.push("6. Verify all data was migrated successfully with no data loss");
 
-  // Generate closeout steps
+  // === CLOSEOUT (6 steps) ===
   const closeout = [
-    `1. Send customer summary with deliverables, findings, and documentation`,
-    `2. Attach or link all relevant reports, guides, and documentation`,
-    `3. Recommend next-step services based on findings and customer needs`,
-    `4. Close temporary access or remind customer to revoke it`,
-    `5. Record internal notes for future reference and ticket closure`,
+    `Send final deliverables package to customer via email or secure portal. Include: customer summary, findings report (if applicable), configuration documentation (if applicable), and recommendations.`,
+    `Attach or link all supporting materials: screenshots, diagrams, guides, policy documents, configuration exports. Ensure all links work and are accessible to the customer.`,
+    `Recommend next-step services: based on findings and customer needs, suggest: ${c === 'Quick Fixes' ? 'MFA Setup, Password Manager Rollout, Cyber Insurance Readiness Package' : c === 'Cybersecurity' ? 'Security Awareness Training, Incident Response Plan, Monthly Care Plan' : c === 'Microsoft 365' ? 'M365 Security Baseline, Monthly Admin Plan, Backup Setup' : 'related bundles, monthly plans, or category-specific follow-up services'}.`,
+    `Revoke temporary access: if temporary admin access was granted for the engagement, confirm it has been revoked. If the customer provided credentials, remind them to rotate passwords if appropriate.`,
+    `Record internal notes: add ticket notes with key technical details for future reference. Note any customer-specific configurations, access methods, or environmental details that will help on future engagements.`,
+    `Schedule follow-up: if recommendations include specific actions, schedule a reminder to follow up in 30-60 days. For monthly plan customers, confirm next recurring engagement date. For bundles, confirm all components were delivered.`
   ];
-  if (isPlan || isBundle) closeout.push("6. Schedule follow-up review or next recurring cycle");
-  if (isCheck) closeout.push("6. Schedule a follow-up to review implementation of recommendations");
 
+  // Build workflow from the detailed steps
   const workflow = [
-    triage[0],
-    triage[1],
-    delivery[0],
-    delivery[1],
-    qa[0],
-    qa[1],
-    closeout[0],
-    closeout[1],
-  ].slice(0, 7);
+    triage[0], triage[1],
+    delivery[0], delivery[1],
+    qa[0], qa[1],
+    closeout[0], closeout[1]
+  ];
 
-  return { workflow, triage, delivery, documentation, qa, closeout };
+  return { workflow: workflow.slice(0, 7), triage, delivery, documentation, qa, closeout };
 }
 
 // ============================================================
@@ -362,106 +274,48 @@ function generateRunbook(p) {
 // ============================================================
 let changed = 0;
 for (const p of products) {
-  const runbook = runbooks[p.name];
-  if (runbook) {
-    // Manual detailed runbook exists
-    if (
-      JSON.stringify(p.fulfillmentWorkflow) !==
-      JSON.stringify(
-        runbook.triage
-          .slice(0, 2)
-          .concat(
-            runbook.delivery.slice(0, 2),
-            runbook.qa.slice(0, 1),
-            runbook.closeout.slice(0, 2),
-          ),
-      )
-    ) {
-      p.fulfillmentWorkflow = runbook.triage
-        .slice(0, 2)
-        .concat(runbook.delivery.slice(0, 2), runbook.qa.slice(0, 1), runbook.closeout.slice(0, 2));
-      changed++;
-    }
-    p.internalProcedure = {
-      triage: runbook.triage,
-      delivery: runbook.delivery,
-      documentation: runbook.documentation,
-      qa: runbook.qa,
-      closeout: runbook.closeout,
-    };
-    changed++;
-  } else {
-    // Generate runbook
-    const gen = generateRunbook(p);
-    // Check if anything changed
-    const oldW = JSON.stringify(p.fulfillmentWorkflow);
-    const newW = JSON.stringify(gen.workflow);
-    const oldP = JSON.stringify(p.internalProcedure);
-    const newP = JSON.stringify(gen);
-    if (oldW !== newW) {
-      p.fulfillmentWorkflow = gen.workflow;
-      changed++;
-    }
-    if (oldP !== newP) {
-      p.internalProcedure = {
-        triage: gen.triage,
-        delivery: gen.delivery,
-        documentation: gen.documentation,
-        qa: gen.qa,
-        closeout: gen.closeout,
-      };
-      changed++;
-    }
-  }
+  const runbook = genProductRunbook(p);
+  
+  // Update fulfillmentWorkflow
+  const oldW = JSON.stringify(p.fulfillmentWorkflow);
+  const newW = JSON.stringify(runbook.workflow);
+  if (oldW !== newW) { p.fulfillmentWorkflow = runbook.workflow; changed++; }
+  
+  // Update internalProcedure
+  p.internalProcedure = {
+    triage: runbook.triage,
+    delivery: runbook.delivery,
+    documentation: runbook.documentation,
+    qa: runbook.qa,
+    closeout: runbook.closeout
+  };
+  changed++;
 }
 
-fs.writeFileSync(
-  "apps/web/lib/catalog/data/products.json",
-  JSON.stringify(products, null, 2),
-  "utf8",
-);
+fs.writeFileSync('apps/web/lib/catalog/data/products.json', JSON.stringify(products, null, 2), 'utf8');
 
 // ============================================================
-// Verify uniqueness
+// Verify
 // ============================================================
-const wf = {},
-  ip = {};
+const wf = {}, ip = {};
 for (const p of products) {
   const wk = JSON.stringify(p.fulfillmentWorkflow);
-  wf[wk] = wf[wk] || [];
-  wf[wk].push(p.name);
+  wf[wk] = wf[wk] || []; wf[wk].push(p.name);
   const ik = JSON.stringify(p.internalProcedure);
-  ip[ik] = ip[ik] || [];
-  ip[ik].push(p.name);
+  ip[ik] = ip[ik] || []; ip[ik].push(p.name);
 }
-const wfDups = Object.entries(wf).filter(([, n]) => n.length > 1);
-const ipDups = Object.entries(ip).filter(([, n]) => n.length > 1);
-console.log("Fields changed:", changed);
-console.log(
-  "fulfillmentWorkflow:",
-  Object.keys(wf).length + "/" + products.length + " unique (" + wfDups.length + " dup groups)",
-);
-console.log(
-  "internalProcedure:",
-  Object.keys(ip).length + "/" + products.length + " unique (" + ipDups.length + " dup groups)",
-);
-if (wfDups.length > 0) {
-  console.log("Workflow dup groups:");
-  for (const [k, names] of wfDups.slice(0, 5)) {
-    console.log("  " + names.join(", "));
-  }
-}
-if (ipDups.length > 0) {
-  console.log("Procedure dup groups:");
-  for (const [k, names] of ipDups.slice(0, 5)) {
-    console.log("  " + names.join(", "));
-  }
-}
+const wfDups = Object.entries(wf).filter(([,n]) => n.length > 1);
+const ipDups = Object.entries(ip).filter(([,n]) => n.length > 1);
+console.log('Fields changed:', changed);
+console.log('fulfillmentWorkflow:', Object.keys(wf).length + '/' + products.length + ' unique (' + wfDups.length + ' dup groups)');
+console.log('internalProcedure:', Object.keys(ip).length + '/' + products.length + ' unique (' + ipDups.length + ' dup groups)');
 
-// Show a sample of detailed content
-console.log("\n=== Sample: Password Security Checkup ===");
-const p = products.find((x) => x.name === "Password Security Checkup");
-console.log("Triage:", p.internalProcedure.triage.length, "steps");
-p.internalProcedure.triage.forEach((s) => console.log("  " + s));
-console.log("Delivery:", p.internalProcedure.delivery.length, "steps");
-p.internalProcedure.delivery.forEach((s) => console.log("  " + s));
+// Sample a few to verify detail level
+const samples = ['Password Security Checkup', 'Camera Site Survey', 'Backup Restore Test', 'Website Health Check', 'Microsoft 365 Migration Lite', 'MFA Setup Session'];
+for (const sn of samples) {
+  const sp = products.find(x => x.name === sn);
+  if (sp) {
+    console.log('\n=== ' + sn + ' (delivery: ' + sp.internalProcedure.delivery.length + ' steps) ===');
+    sp.internalProcedure.delivery.forEach((s, i) => console.log('  ' + s.substring(0, 120)));
+  }
+}
