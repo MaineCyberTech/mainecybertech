@@ -114,6 +114,27 @@ jobs:
           NEXT_PUBLIC_API_URL: http://localhost:4000
           PORT: 3000
 
+      - name: Diagnose API login flow
+        run: |
+          echo "=== API health ==="
+          curl -sS -o /dev/null -w "health: %{http_code}\n" http://localhost:4000/health || echo "API DOWN"
+          echo "=== Sign-in ==="
+          RESP=$(curl -sS -w "\n%{http_code}" -X POST http://localhost:4000/api/v1/auth/sign-in \
+            -H "Content-Type: application/json" \
+            -d '{"email":"superadmin.real@mainecybertech.local","password":"1"}')
+          CODE=$(echo "$RESP" | tail -1)
+          BODY=$(echo "$RESP" | head -1)
+          echo "sign-in HTTP: $CODE"
+          echo "sign-in body: ${BODY:0:200}"
+          TOKEN=$(echo "$BODY" | jq -r '.data.accessToken // empty' 2>/dev/null)
+          if [ -n "$TOKEN" ]; then
+            echo "=== /auth/me ==="
+            curl -sS -w "\n%{http_code}" http://localhost:4000/api/v1/auth/me -H "Authorization: Bearer $TOKEN" | head -1 | cut -c1-200
+            echo ""
+            echo "=== memberships ==="
+            curl -sS -w "\n%{http_code}" "http://localhost:4000/api/v1/memberships?status=approved&user_id=$(curl -sS http://localhost:4000/api/v1/auth/me -H "Authorization: Bearer $TOKEN" | jq -r '.data.userId')" -H "Authorization: Bearer $TOKEN" | head -1 | cut -c1-300
+          fi
+
       - name: Run Playwright tests
         run: pnpm --filter=web e2e
         env:
