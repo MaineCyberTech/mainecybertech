@@ -90,10 +90,11 @@ jobs:
       - name: Start API server
         run: |
           cat apps/api/.env.local | sed 's/=.*/=<redacted>/'
-          echo "--- supabase status json ---"
-          supabase status --output json | head -c 600
-          echo ""
-          echo "--- starting API ---"
+          echo "--- starting API (sourcing .env.local) ---"
+          set -a
+          . ./apps/api/.env.local
+          set +a
+          echo "SUPABASE_URL check: ${SUPABASE_URL:0:30}..."
           pnpm --filter=api start > api.log 2>&1 &
           sleep 3
           echo "--- api.log ---"
