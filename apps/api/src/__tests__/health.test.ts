@@ -18,10 +18,10 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
+  getSupabaseAdminNoBreaker: jest.fn(),
 }));
 
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdminNoBreaker } from "../services/supabase";
 
 const app = createTestApp();
 app.use("/health", healthRouter);
@@ -38,7 +38,7 @@ describe("health check", () => {
         select: jest.fn().mockResolvedValue({ error: null }),
       }),
     };
-    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
+    (getSupabaseAdminNoBreaker as jest.Mock).mockReturnValue(supabase);
 
     const res = await request(app).get("/health");
 
@@ -55,7 +55,7 @@ describe("health check", () => {
         select: jest.fn().mockRejectedValue(new Error("Connection refused")),
       }),
     };
-    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
+    (getSupabaseAdminNoBreaker as jest.Mock).mockReturnValue(supabase);
 
     const res = await request(app).get("/health");
 
@@ -70,7 +70,7 @@ describe("health check", () => {
         select: jest.fn().mockResolvedValue({ error: { message: "relation not found" } }),
       }),
     };
-    (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
+    (getSupabaseAdminNoBreaker as jest.Mock).mockReturnValue(supabase);
 
     const res = await request(app).get("/health");
 

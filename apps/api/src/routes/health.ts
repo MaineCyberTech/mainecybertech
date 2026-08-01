@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { success } from "../types";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdminNoBreaker } from "../services/supabase";
 import { getEnv } from "../config/env";
 
 const router: ReturnType<typeof Router> = Router();
@@ -11,7 +11,7 @@ router.get("/", async (_req, res) => {
 
   const dbStart = Date.now();
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getSupabaseAdminNoBreaker();
     const { error } = await supabase.from("roles").select("id", { count: "exact", head: true });
     checks.database = {
       status: error ? "unhealthy" : "healthy",

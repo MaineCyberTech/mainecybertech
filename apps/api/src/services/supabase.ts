@@ -52,6 +52,30 @@ export function getSupabaseAdmin(): SupabaseClient {
   return _adminClient;
 }
 
+/**
+ * Unwrapped admin client for health probes and other non-request paths.
+ * Circuit-breaker failures must NOT be counted from liveness/readiness probes —
+ * a cold-starting dependency would otherwise trip the breaker and wedge the
+ * whole API behind fail-fast "Circuit breaker is OPEN" errors.
+ */
+let _adminClientNoBreaker: SupabaseClient | null = null;
+
+export function getSupabaseAdminNoBreaker(): SupabaseClient {
+  if (!_adminClientNoBreaker) {
+    const env = getEnv();
+    _adminClientNoBreaker = createClient(
+      env.SUPABASE_URL,
+      env.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        db: { timeout: 30_000 },
+        auth: { autoRefreshToken: false, persistSession: false },
+        realtime: { transport: WebSocket as any },
+      },
+    );
+  }
+  return _adminClientNoBreaker;
+}
+
 export function getSupabaseUser(jwt: string): SupabaseClient {
   const env = getEnv();
   return createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
