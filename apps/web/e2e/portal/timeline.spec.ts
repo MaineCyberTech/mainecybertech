@@ -51,7 +51,7 @@ test.describe("portal project task views", () => {
   });
 
   test("timeline page link is in subnav", async ({ page }) => {
-    await page.goto("/portal/dashboard");
+    await page.goto("/portal/timeline");
     await expect(page.getByRole("link", { name: /timeline/i })).toBeVisible();
   });
 });

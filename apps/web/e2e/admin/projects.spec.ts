@@ -27,7 +27,7 @@ test.describe("admin projects list", () => {
 test.describe("admin project detail", () => {
   test("shows not-found for unknown project", async ({ page }) => {
     await page.goto("/admin/projects/does-not-exist");
-    await expect(page.getByText(/not found/i)).toBeVisible();
+    await expect(page.getByText("Project not found.", { exact: true })).toBeVisible({ timeout: 10000 });
   });
 
   test("shows project name and status when project exists", async ({ page }) => {

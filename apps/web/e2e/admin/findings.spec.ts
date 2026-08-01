@@ -3,7 +3,7 @@ import { test, expect } from "../fixtures";
 test.describe("admin findings page", () => {
   test("renders findings heading", async ({ page }) => {
     await page.goto("/admin/findings");
-    await expect(page.getByRole("heading", { name: /findings/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /open findings & remediation/i })).toBeVisible();
   });
 
   test("shows severity stats or empty state", async ({ page }) => {

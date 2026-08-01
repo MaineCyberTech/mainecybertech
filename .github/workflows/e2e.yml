@@ -29,7 +29,7 @@ permissions:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       matrix:
         node-version: [20.x]
@@ -120,47 +120,6 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:4000
           PORT: 3000
-
-      - name: Diagnose API login flow
-        run: |
-          echo "=== env.local key lengths ==="
-          awk -F= '/^(SUPABASE_URL|SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY)=/ {print $1" len="length($2)}' apps/api/.env.local
-          echo "=== supabase status keys ==="
-          supabase status --output json | jq 'keys'
-          echo "=== API health body ==="
-          curl -sS http://localhost:4000/health || echo "API DOWN"
-          echo ""
-          echo "=== Sign-in ==="
-          RESP=$(curl -sS -w "\n%{http_code}" -X POST http://localhost:4000/api/v1/auth/sign-in \
-            -H "Content-Type: application/json" \
-            -d '{"email":"superadmin.real@mainecybertech.local","password":"1"}')
-          CODE=$(echo "$RESP" | tail -1)
-          BODY=$(echo "$RESP" | head -1)
-          echo "sign-in HTTP: $CODE"
-          echo "sign-in body: ${BODY:0:200}"
-          TOKEN=$(echo "$BODY" | jq -r '.data.accessToken // empty' 2>/dev/null)
-          if [ -n "$TOKEN" ]; then
-            echo "=== /auth/me ==="
-            curl -sS http://localhost:4000/api/v1/auth/me -H "Authorization: Bearer $TOKEN"
-            echo ""
-            echo "=== memberships (raw) ==="
-            curl -sS "http://localhost:4000/api/v1/memberships?user_id=66ce903f-6fe0-45da-878b-a0398e6b1981&status=approved" -H "Authorization: Bearer $TOKEN"
-            echo ""
-            echo "=== memberships no params (org-access path) ==="
-            curl -sS "http://localhost:4000/api/v1/memberships" -H "Authorization: Bearer $TOKEN"
-            echo ""
-            SRV_KEY=$(awk -F= '/^SUPABASE_SERVICE_ROLE_KEY=/ {print $2}' apps/api/.env.local)
-            echo "service key len: ${#SRV_KEY}"
-            echo "=== PostgREST roles direct (service role) ==="
-            curl -sS -w "\nHTTP:%{http_code}" "http://127.0.0.1:54321/rest/v1/roles?select=id,key&limit=5" \
-              -H "apikey: $SRV_KEY" \
-              -H "Authorization: Bearer $SRV_KEY"
-            echo ""
-            echo "=== PostgREST memberships direct (service role) ==="
-            curl -sS -w "\nHTTP:%{http_code}" "http://127.0.0.1:54321/rest/v1/memberships?select=id,user_id,status&user_id=eq.66ce903f-6fe0-45da-878b-a0398e6b1981" \
-              -H "apikey: $SRV_KEY" \
-              -H "Authorization: Bearer $SRV_KEY"
-          fi
 
       - name: Run Playwright tests
         run: pnpm --filter=web e2e

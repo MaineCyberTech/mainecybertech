@@ -35,7 +35,7 @@ test.describe("admin users list", () => {
 test.describe("admin user detail", () => {
   test("shows not-found for unknown user", async ({ page }) => {
     await page.goto("/admin/users/does-not-exist");
-    await expect(page.getByText(/not found/i)).toBeVisible();
+    await expect(page.getByText("User not found.", { exact: true })).toBeVisible({ timeout: 10000 });
   });
 
   test("navigates back to users list", async ({ page }) => {

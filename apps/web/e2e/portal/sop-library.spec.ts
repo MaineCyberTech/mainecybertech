@@ -15,6 +15,8 @@ test.describe("portal sop library page", () => {
 
   test("shows breadcrumbs", async ({ page }) => {
     await page.goto("/portal/sop-library");
-    await expect(page.getByRole("link", { name: /portal/i })).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: /portal/i }),
+    ).toBeVisible();
   });
 });

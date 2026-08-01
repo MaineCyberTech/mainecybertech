@@ -287,7 +287,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
               + Add More Products
             </Link>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
               <div>
                 <label
                   htmlFor="quote-name"

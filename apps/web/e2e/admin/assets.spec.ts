@@ -3,7 +3,7 @@ import { test, expect } from "../fixtures";
 test.describe("admin assets page", () => {
   test("renders assets heading", async ({ page }) => {
     await page.goto("/admin/assets");
-    await expect(page.getByRole("heading", { name: /asset/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Assets", exact: true }).first()).toBeVisible();
   });
 
   test("shows asset list or empty state", async ({ page }) => {

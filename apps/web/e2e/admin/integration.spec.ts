@@ -42,7 +42,9 @@ test.describe("notification preferences", () => {
   test("preferences page shows modules", async ({ page }) => {
     await page.goto("/portal/notifications/preferences");
     await expect(page.getByRole("heading", { name: /preferences/i })).toBeVisible({ timeout: 5000 });
-    await expect(page.getByText(/tickets/i).or(page.getByText(/projects/i))).toBeVisible({ timeout: 15000 });
+    await expect(
+      page.getByText(/tickets/i).or(page.getByText(/projects/i)).first(),
+    ).toBeVisible({ timeout: 15000 });
   });
 });
 

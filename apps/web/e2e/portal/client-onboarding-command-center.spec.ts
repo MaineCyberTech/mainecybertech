@@ -10,7 +10,7 @@ test.describe("Client Onboarding Command Center - Portal", () => {
     await expect(
       page.getByRole("heading", { name: "Client Onboarding Command Center" }),
     ).toBeVisible();
-    await expect(page.getByText("No onboarding records yet")).toBeVisible();
+    await expect(page.getByText("No onboarding records yet", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Create Onboarding" })).toBeVisible();
   });
 
@@ -27,8 +27,10 @@ test.describe("Client Onboarding Command Center - Portal", () => {
   });
 
   test("breadcrumbs are present", async ({ page }) => {
-    await expect(page.getByRole("link", { name: "Portal" })).toBeVisible();
-    await expect(page.getByText("Client Onboarding")).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: "Portal" }),
+    ).toBeVisible();
+    await expect(page.getByText("Client Onboarding", { exact: true }).first()).toBeVisible();
   });
 });
 

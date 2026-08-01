@@ -15,6 +15,8 @@ test.describe("portal file requests page", () => {
 
   test("shows breadcrumbs", async ({ page }) => {
     await page.goto("/portal/file-requests");
-    await expect(page.getByRole("link", { name: /portal/i })).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Breadcrumb" }).getByRole("link", { name: /portal/i }),
+    ).toBeVisible();
   });
 });
