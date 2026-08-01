@@ -92,9 +92,11 @@ jobs:
           curl --retry 10 --retry-delay 2 --retry-connrefused http://localhost:4000/health
         env:
           NODE_ENV: production
-          SUPABASE_URL: ${{ secrets.E2E_SUPABASE_URL || 'http://127.0.0.1:54321' }}
-          SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY || 'e2e-anon-key' }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY || 'e2e-service-role-key' }}
+          # NOTE: do NOT set SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY
+          # here — the "Sync Supabase env to API" step writes the REAL local Supabase
+          # keys into apps/api/.env.local (and root .env.local), which dotenv loads
+          # in main.ts. Process env would override dotenv with placeholder values
+          # and every PostgREST query would fail (health 503, memberships 403).
           CORS_ORIGIN: "*"
           LOG_LEVEL: silent
           JWT_SECRET: ${{ secrets.E2E_JWT_SECRET || 'e2e-test-secret' }}
