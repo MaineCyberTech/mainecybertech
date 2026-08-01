@@ -149,15 +149,16 @@ jobs:
             echo "=== memberships no params (org-access path) ==="
             curl -sS "http://localhost:4000/api/v1/memberships" -H "Authorization: Bearer $TOKEN"
             echo ""
+            SRV_KEY=$(awk -F= '/^SUPABASE_SERVICE_ROLE_KEY=/ {print $2}' apps/api/.env.local)
             echo "=== PostgREST roles direct (service role) ==="
             curl -sS "http://127.0.0.1:54321/rest/v1/roles?select=id,key&limit=5" \
-              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY"
+              -H "apikey: $SRV_KEY" \
+              -H "Authorization: Bearer $SRV_KEY"
             echo ""
             echo "=== PostgREST memberships direct (service role) ==="
             curl -sS "http://127.0.0.1:54321/rest/v1/memberships?select=id,user_id,status&user_id=eq.66ce903f-6fe0-45da-878b-a0398e6b1981" \
-              -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
-              -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY"
+              -H "apikey: $SRV_KEY" \
+              -H "Authorization: Bearer $SRV_KEY"
           fi
 
       - name: Run Playwright tests
