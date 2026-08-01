@@ -87,12 +87,15 @@ jobs:
 
       - name: Start API server
         run: |
-          export SUPABASE_URL="$(supabase status --output json | jq -r '.api_url')"
-          export SUPABASE_ANON_KEY="$(supabase status --output json | jq -r '.anon_key')"
-          export SUPABASE_SERVICE_ROLE_KEY="$(supabase status --output json | jq -r '.service_role_key')"
-          echo "API URL: $SUPABASE_URL"
-          pnpm --filter=api start &
+          cat apps/api/.env.local | sed 's/=.*/=<redacted>/'
+          echo "--- supabase status json ---"
+          supabase status --output json | head -c 600
+          echo ""
+          echo "--- starting API ---"
+          pnpm --filter=api start > api.log 2>&1 &
           sleep 3
+          echo "--- api.log ---"
+          cat api.log
           curl --retry 10 --retry-delay 2 --retry-connrefused http://localhost:4000/health
         env:
           NODE_ENV: production
