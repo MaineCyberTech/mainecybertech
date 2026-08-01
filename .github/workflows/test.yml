@@ -88,7 +88,10 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           severity: CRITICAL,HIGH
-          skip-dirs: node_modules,.pnpm-store,dist,.next,coverage
+          skip-dirs: node_modules,.pnpm-store,dist,.next,coverage,prompts,apps/web/.next
+          skip-files: pnpm-lock.yaml,package-lock.json,yarn.lock
+          # Dependency vulnerabilities are gated by `pnpm audit --audit-level=high`
+          # above; trivy focuses on source/config findings and Go/Rust binaries.
 
       - name: Upload Trivy SARIF report
         if: always()
@@ -111,7 +114,7 @@ jobs:
       - name: Scan diff for secrets
         run: |
           set -e
-          PATTERNS='SUPABASE_SERVICE_ROLE_KEY|SUPABASE_ANON_KEY|JWT_SECRET|STRIPE_SECRET_KEY|AKIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|github_pat_[0-9a-zA-Z_]{22,}|sk_(live|test)_[0-9a-zA-Z]{16,}|-----BEGIN [A-Za-z ]*PRIVATE KEY-----'
+          PATTERNS='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|ghu_[0-9a-zA-Z]{36}|github_pat_[0-9a-zA-Z_]{22,}|sk_(live|test)_[0-9a-zA-Z]{16,}|xox[baprs]-[0-9a-zA-Z-]{10,}|-----BEGIN [A-Za-z ]*PRIVATE KEY-----|eyJhbGciOi[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{20,}\.[A-Za-z0-9._-]{20,}'
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             BASE="${{ github.event.pull_request.base.sha }}"
           else

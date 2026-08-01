@@ -10,7 +10,7 @@
 #   ghp_ (GitHub PAT), gho_ (GitHub OAuth), github_pat_ (fine-grained PAT),
 #   sk_live_/sk_test_ (Stripe), AKIA (AWS access key).
 
-PATTERNS="SUPABASE_SERVICE_ROLE_KEY|SUPABASE_ANON_KEY|JWT_SECRET|STRIPE_SECRET_KEY|AKIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|github_pat_[0-9a-zA-Z_]{22,}|sk_(live|test)_[0-9a-zA-Z]{16,}|-----BEGIN[ A-Za-z]*PRIVATE KEY-----"
+PATTERNS="AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|ghu_[0-9a-zA-Z]{36}|github_pat_[0-9a-zA-Z_]{22,}|sk_(live|test)_[0-9a-zA-Z]{16,}|xox[baprs]-[0-9a-zA-Z-]{10,}|-----BEGIN[ A-Za-z]*PRIVATE KEY-----|eyJhbGciOi[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{20,}\.[A-Za-z0-9._-]{20,}"
 
 STAGED=$(git diff --cached --diff-filter=ACMR --name-only 2>/dev/null | grep -vE '\.md$|scan-secrets\.|__tests__|jest\.setup|\.test\.' || true)
 
