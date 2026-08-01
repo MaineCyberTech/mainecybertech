@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test.describe("Client Onboarding Command Center - Portal", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/portal/client-onboarding-command-center");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("page loads and shows empty state when no onboarding records", async ({ page }) => {
@@ -37,7 +37,7 @@ test.describe("Client Onboarding Command Center - Portal", () => {
 test.describe("Client Onboarding Detail Page", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/portal/client-onboarding-command-center/test-id");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
   });
 
   test("shows not found or detail view", async ({ page }) => {

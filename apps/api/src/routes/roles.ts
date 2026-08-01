@@ -30,22 +30,6 @@ router.get("/", requireAdmin, responseCacheNoRenew(120), async (req, res, next) 
   }
 });
 
-router.get("/:id", async (req, res, next) => {
-  try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("roles")
-      .select("id, key, name, description, is_system")
-      .eq("id", req.params.id)
-      .single();
-
-    if (error || !data) throw new AppError("NOT_FOUND", "Role not found", 404);
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
-
 router.get("/with-permissions", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
@@ -70,6 +54,22 @@ router.get("/with-permissions", requireAdmin, async (req, res, next) => {
     }));
 
     res.json(success(result));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:id", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("roles")
+      .select("id, key, name, description, is_system")
+      .eq("id", req.params.id)
+      .single();
+
+    if (error || !data) throw new AppError("NOT_FOUND", "Role not found", 404);
+    res.json(success(data));
   } catch (error) {
     next(error);
   }
