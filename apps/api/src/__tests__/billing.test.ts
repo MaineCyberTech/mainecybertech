@@ -91,6 +91,39 @@ describe("billing routes", () => {
     expect(res.body.data).toBeNull();
   });
 
+  it("GET /invoices/:id scopes the query to the caller's organization", async () => {
+    supabase.from.mockReturnValue(
+      createMockBuilder({ data: { id: "inv1", total_cents: 5000 }, error: null } as MockResult),
+    );
+    const res = await request(app)
+      .get(
+        "/api/v1/billing/invoices/inv1?organization_id=00000000-0000-0000-0000-000000000001",
+      )
+      .set("Authorization", "Bearer token");
+    expect(res.status).toBe(200);
+    expect(res.body.data.id).toBe("inv1");
+
+    const builder = supabase.from.mock.results[0].value as ReturnType<
+      typeof createMockBuilder
+    >;
+    expect(builder.eq).toHaveBeenCalledWith(
+      "organization_id",
+      "00000000-0000-0000-0000-000000000001",
+    );
+  });
+
+  it("GET /invoices/:id returns 404 for an invoice in another org", async () => {
+    supabase.from.mockReturnValue(
+      createMockBuilder({ data: null, error: new Error("No rows") } as MockResult),
+    );
+    const res = await request(app)
+      .get(
+        "/api/v1/billing/invoices/inv-other?organization_id=00000000-0000-0000-0000-000000000002",
+      )
+      .set("Authorization", "Bearer token");
+    expect(res.status).toBe(404);
+  });
+
   it("GET / returns 401 without auth", async () => {
     const res = await request(app).get("/api/v1/billing/invoices");
     expect(res.status).toBe(401);

@@ -68,9 +68,10 @@ export default function CrudForm({ fields, title, action, onSuccess }: CrudFormP
 
       {fields.map((f) => (
         <div key={f.key}>
-          <label className="mb-1 block text-xs font-medium text-slate-400">{f.label}</label>
+          <label htmlFor={`crud-${f.key}`} className="mb-1 block text-xs font-medium text-slate-400">{f.label}</label>
           {f.type === "textarea" ? (
             <textarea
+              id={`crud-${f.key}`}
               name={f.key}
               required={f.required}
               placeholder={f.placeholder}
@@ -79,6 +80,7 @@ export default function CrudForm({ fields, title, action, onSuccess }: CrudFormP
             />
           ) : f.type === "select" && f.options ? (
             <select
+              id={`crud-${f.key}`}
               name={f.key}
               required={f.required}
               className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
@@ -91,12 +93,14 @@ export default function CrudForm({ fields, title, action, onSuccess }: CrudFormP
             </select>
           ) : f.type === "checkbox" ? (
             <input
+              id={`crud-${f.key}`}
               type="checkbox"
               name={f.key}
               className="h-4 w-4 rounded border-white/10 bg-[#0A1118] text-emerald-500 focus:ring-emerald-500/50"
             />
           ) : (
             <input
+              id={`crud-${f.key}`}
               type={f.type ?? "text"}
               name={f.key}
               required={f.required}

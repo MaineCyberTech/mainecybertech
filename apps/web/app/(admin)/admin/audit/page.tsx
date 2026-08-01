@@ -133,6 +133,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
           <select
             name="action"
             defaultValue={params.action ?? ""}
+            aria-label="Filter by action"
             className="rounded-md border border-white/10 bg-[#0A1118]/60 px-3 py-3 text-sm text-slate-50 outline-none focus:border-emerald-600"
           >
             <option value="">All Actions</option>
@@ -145,6 +146,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
           <select
             name="entityType"
             defaultValue={params.entityType ?? ""}
+            aria-label="Filter by entity type"
             className="rounded-md border border-white/10 bg-[#0A1118]/60 px-3 py-3 text-sm text-slate-50 outline-none focus:border-emerald-600"
           >
             <option value="">All Entity Types</option>
@@ -158,12 +160,14 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
             name="userId"
             defaultValue={params.userId ?? ""}
             placeholder="User ID"
+            aria-label="Filter by user ID"
             className="cyber-input"
           />
           <input
             name="orgId"
             defaultValue={params.orgId ?? ""}
             placeholder="Org ID"
+            aria-label="Filter by organization ID"
             className="cyber-input"
           />
           <button type="submit" className="cyber-button">

@@ -1,4 +1,42 @@
+import crypto from "crypto";
 import rateLimit from "express-rate-limit";
+
+/**
+ * Derives a stable per-user rate-limit key from a Bearer token.
+ * HS256 JWTs all share the same constant header (base64 of alg/typ) — keying
+ * off `auth.slice(7, 27)` bucket every authenticated user into one global
+ * counter, so a single user could DoS the whole API. Prefer the decoded `sub`
+ * claim; fall back to a full-token hash (stable across requests, unique per
+ * token); last resort is the client IP.
+ */
+export function userRateLimitKeyGenerator(
+  authorization: string | string[] | undefined,
+  ip: string | undefined,
+): string {
+  const clientIp = ip ?? "unknown";
+  const header = Array.isArray(authorization) ? authorization[0] : authorization;
+  if (header?.startsWith("Bearer ")) {
+    const token = header.slice(7);
+    if (!token) return `ip:${clientIp}`;
+    try {
+      const payload = token.split(".")[1];
+      if (payload) {
+        const json = Buffer.from(
+          payload.replace(/-/g, "+").replace(/_/g, "/"),
+          "base64",
+        ).toString("utf8");
+        const parsed = JSON.parse(json) as { sub?: unknown };
+        if (typeof parsed.sub === "string" && parsed.sub.length > 0) {
+          return `user:${parsed.sub}`;
+        }
+      }
+    } catch {
+      // fall through to token hash
+    }
+    return `user:${crypto.createHash("sha256").update(token).digest("hex").slice(0, 32)}`;
+  }
+  return `ip:${clientIp}`;
+}
 
 export const rateLimitByUser = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -6,13 +44,7 @@ export const rateLimitByUser = rateLimit({
   message: "Too many requests from this user, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    const auth = req.headers.authorization;
-    if (auth?.startsWith("Bearer ")) {
-      return `user:${auth.slice(7, 27)}`;
-    }
-    return `ip:${req.ip}`;
-  },
+  keyGenerator: (req) => userRateLimitKeyGenerator(req.headers.authorization, req.ip),
   skip: (req) =>
     req.path === "/health" ||
     req.path === "/api/v1/docs" ||

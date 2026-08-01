@@ -1,5 +1,5 @@
 {
-  "total": 14,
+  "total": 13,
   "action_plan": [
     {
       "priority": "P0",
@@ -49,13 +49,6 @@
       "file": "apps/api/src/routes/bulk.ts",
       "issue": "Bulk invite operations not wrapped in a Supabase RPC transaction \u2014 partial invite failure leaves inconsistent state",
       "action": "Move bulk invite logic into a Supabase RPC function with BEGIN/COMMIT/ROLLBACK"
-    },
-    {
-      "priority": "P2",
-      "domain": "observability",
-      "file": "apps/worker/src/main.ts",
-      "issue": "Worker has no Prometheus metrics endpoint \u2014 task count, queue depth, error rates invisible",
-      "action": "Add prom-client metrics endpoint or expose BullMQ queue stats via health server"
     },
     {
       "priority": "P2",

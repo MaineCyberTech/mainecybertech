@@ -204,17 +204,15 @@ describe("reset-password", () => {
     jest.clearAllMocks();
   });
 
-  it("resets password", async () => {
+  it("resets password when authenticated with matching email", async () => {
     const supabase = mockSupabase();
     supabase.auth.admin = {
       updateUserById: jest.fn().mockResolvedValue({ data: {}, error: null }),
     };
-    supabase.from = jest
-      .fn()
-      .mockReturnValue(createMockBuilder({ data: { id: "user-1" }, error: null }));
 
     const res = await request(app)
       .post("/api/v1/auth/reset-password")
+      .set("Authorization", "Bearer token-123")
       .send({ email: "test@example.com", password: "StrongP@ss1" });
 
     expect(res.status).toBe(200);
@@ -224,11 +222,34 @@ describe("reset-password", () => {
     });
   });
 
+  it("returns 403 when email does not match authenticated user", async () => {
+    mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .set("Authorization", "Bearer token-123")
+      .send({ email: "other@example.com", password: "StrongP@ss1" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBeDefined();
+  });
+
+  it("returns 401 without auth", async () => {
+    mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .send({ email: "test@example.com", password: "StrongP@ss1" });
+
+    expect(res.status).toBe(401);
+  });
+
   it("returns 400 for weak password", async () => {
     mockSupabase();
 
     const res = await request(app)
       .post("/api/v1/auth/reset-password")
+      .set("Authorization", "Bearer token-123")
       .send({ email: "test@example.com", password: "weak" });
 
     expect(res.status).toBe(400);
@@ -239,7 +260,10 @@ describe("reset-password", () => {
   it("returns 400 for missing fields", async () => {
     mockSupabase();
 
-    const res = await request(app).post("/api/v1/auth/reset-password").send({});
+    const res = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .set("Authorization", "Bearer token-123")
+      .send({});
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBeDefined();

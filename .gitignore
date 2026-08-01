@@ -18,6 +18,7 @@ storybook-static/
 .env.*
 !.env.example
 !.env.*.example
+.env.local
 .playwright-auth.json
 .playwright-report/
 .playwright-results/

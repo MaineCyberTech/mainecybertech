@@ -91,4 +91,38 @@ describe("CSRF protection", () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
   });
+
+  it("sets Domain attribute on csrf_token cookie for subdomain hosts", async () => {
+    const app = createTestApp();
+    const res = await request(app).get("/test").set("Host", "api.mainecybertech.us");
+    expect(res.status).toBe(200);
+    const cookies = res.headers["set-cookie"] as string[];
+    const csrfCookie = cookies.find((c) => c.startsWith("csrf_token="));
+    expect(csrfCookie).toBeDefined();
+    expect(csrfCookie).toContain("Domain=.mainecybertech.us");
+  });
+
+  it("does not set Domain attribute for localhost", async () => {
+    const app = createTestApp();
+    const res = await request(app).get("/test").set("Host", "localhost:4000");
+    const cookies = res.headers["set-cookie"] as string[];
+    const csrfCookie = cookies.find((c) => c.startsWith("csrf_token="));
+    expect(csrfCookie).toBeDefined();
+    expect(csrfCookie).not.toContain("Domain=");
+  });
+
+  it("double-submit works cross-subdomain: cookie readable on app origin, sent to api origin", async () => {
+    const app = createTestApp();
+    const getRes = await request(app).get("/test").set("Host", "api.mainecybertech.us");
+    const cookies = getRes.headers["set-cookie"] as string[];
+    const csrfCookie = cookies.find((c) => c.startsWith("csrf_token="));
+    const csrfToken = csrfCookie.split(";")[0].split("=")[1];
+
+    const postRes = await request(app)
+      .post("/test")
+      .set("Host", "api.mainecybertech.us")
+      .set("Cookie", csrfCookie)
+      .set("X-CSRF-Token", csrfToken);
+    expect(postRes.status).toBe(200);
+  });
 });

@@ -19,7 +19,26 @@ if (env.SENTRY_DSN) {
 
 // ============= Register Integration Tasks =============
 import { registerAllTasks } from "./tasks";
+import { enqueueTask } from "./producer";
+import { markShuttingDown } from "./shutdown";
 registerAllTasks();
+
+// ============= Uncaught Error Handling =============
+process.on("uncaughtException", (error) => {
+  logger.error({ err: error }, "Uncaught exception — shutting down");
+  Sentry.captureException(error, { extra: { phase: "uncaught-exception" } });
+  markShuttingDown();
+  process.exit(1);
+});
+
+// ============= Scheduled Tasks =============
+async function runScheduledTask(type: string, payload: Record<string, unknown> = {}) {
+  const enqueued = await enqueueTask(type, payload);
+  if (!enqueued) {
+    logger.info({ type }, "Queue unavailable — running scheduled task directly");
+    await executeTask({ type, payload });
+  }
+}
 
 // ============= Main =============
 if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test") {
@@ -27,11 +46,23 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
 
   // Schedule stripe-reconcile to run daily
   const RECONCILE_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const reconcileInterval = setInterval(async () => {
+  const reconcileInterval = setInterval(() => {
     logger.info("Running scheduled stripe-reconcile");
-    await executeTask({ type: "stripe-reconcile", payload: {} });
+    runScheduledTask("stripe-reconcile").catch((error) => {
+      logger.error({ error }, "Scheduled stripe-reconcile failed");
+    });
   }, RECONCILE_INTERVAL_MS);
   reconcileInterval.unref();
+
+  // Schedule webhook-retry (with DLQ) to run every 5 minutes
+  const WEBHOOK_RETRY_INTERVAL_MS = 5 * 60 * 1000;
+  const webhookRetryInterval = setInterval(() => {
+    logger.info("Running scheduled webhook-retry");
+    runScheduledTask("webhook-retry").catch((error) => {
+      logger.error({ error }, "Scheduled webhook-retry failed");
+    });
+  }, WEBHOOK_RETRY_INTERVAL_MS);
+  webhookRetryInterval.unref();
 
   runWorkerTasks().catch((error) => {
     logger.error(error, "Worker crashed");

@@ -68,8 +68,9 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="cyber-label">Full Name</label>
+              <label htmlFor="user-fullName" className="cyber-label">Full Name</label>
               <input
+                id="user-fullName"
                 name="fullName"
                 defaultValue={profile.full_name ?? ""}
                 className="cyber-input"
@@ -77,8 +78,9 @@ export default async function UserDetailPage({ params }: UserPageProps) {
             </div>
 
             <div>
-              <label className="cyber-label">Email</label>
+              <label htmlFor="user-email" className="cyber-label">Email</label>
               <input
+                id="user-email"
                 value={profile.email ?? ""}
                 readOnly
                 className="w-full rounded-lg border border-white/10 bg-[#0A1118]/40 px-4 py-3 text-slate-400 outline-none"
@@ -86,13 +88,13 @@ export default async function UserDetailPage({ params }: UserPageProps) {
             </div>
 
             <div>
-              <label className="cyber-label">Phone</label>
-              <input name="phone" defaultValue={profile.phone ?? ""} className="cyber-input" />
+              <label htmlFor="user-phone" className="cyber-label">Phone</label>
+              <input id="user-phone" name="phone" defaultValue={profile.phone ?? ""} className="cyber-input" />
             </div>
 
             <div>
-              <label className="cyber-label">Title</label>
-              <input name="title" defaultValue={profile.title ?? ""} className="cyber-input" />
+              <label htmlFor="user-title" className="cyber-label">Title</label>
+              <input id="user-title" name="title" defaultValue={profile.title ?? ""} className="cyber-input" />
             </div>
           </div>
 

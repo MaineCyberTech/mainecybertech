@@ -1,7 +1,8 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
+import { getClientEnv } from "@/lib/env";
 
 export async function createAsset(formData: FormData) {
   const api = getApiClient();
@@ -314,7 +315,7 @@ export async function createWebsiteMonitor(formData: FormData) {
   }
 }
 
-// ── Field Services ──────────────────────────────────────────────
+// â”€â”€ Field Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createIsp(formData: FormData) {
   const api = getApiClient();
@@ -429,7 +430,7 @@ export async function createNetworkDiagram(formData: FormData) {
   }
 }
 
-// ── Edu-Automation ──────────────────────────────────────────────
+// â”€â”€ Edu-Automation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createSop(formData: FormData) {
   const api = getApiClient();
@@ -613,7 +614,7 @@ export async function createKbGen(formData: FormData) {
   }
 }
 
-// ── Final (More Tools) ──────────────────────────────────────────
+// â”€â”€ Final (More Tools) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createSharePoint(formData: FormData) {
   const api = getApiClient();
@@ -806,7 +807,7 @@ export async function createBackup(formData: FormData) {
   }
 }
 
-// ── Governance ──────────────────────────────────────────────────
+// â”€â”€ Governance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createChangeRequest(formData: FormData) {
   const api = getApiClient();
@@ -863,7 +864,7 @@ export async function createRetention(formData: FormData) {
   }
 }
 
-// ── Update Actions ──────────────────────────────────────────────
+// â”€â”€ Update Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function updateAsset(id: string, formData: FormData) {
   const api = getApiClient();
@@ -911,7 +912,7 @@ export async function updateBreakGlass(id: string, formData: FormData) {
 
 export async function updateDmarc(id: string, formData: FormData) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+    const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
     const res = await fetch(`${baseUrl}/api/v1/batch/dmarc/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -1047,7 +1048,7 @@ export async function updateIncident(id: string, formData: FormData) {
 
 export async function updateLicense(id: string, formData: FormData) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+    const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
     const res = await fetch(`${baseUrl}/api/v1/batch/licenses/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -1169,7 +1170,7 @@ export async function updateService(id: string, formData: FormData) {
 
 export async function updateStatusItem(id: string, formData: FormData) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+    const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
     const res = await fetch(`${baseUrl}/api/v1/batch/status/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -1232,7 +1233,7 @@ export async function updateVendorContact(id: string, formData: FormData) {
 
 export async function updateWebsiteMonitor(id: string, formData: FormData) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+    const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
     const res = await fetch(`${baseUrl}/api/v1/batch/website-monitors/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -1251,7 +1252,7 @@ export async function updateWebsiteMonitor(id: string, formData: FormData) {
   }
 }
 
-// ── Governance ──────────────────────────────────────────────────
+// â”€â”€ Governance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createTabletop(formData: FormData) {
   const api = getApiClient();

@@ -927,6 +927,7 @@ export default function AdminDocumentsCenterClient({
           }
           if (e.key === "Escape") setInlineRenameId(null);
         }}
+        aria-label="Rename document"
         className="cyber-input h-10"
         autoFocus
         disabled={Boolean(busyId?.endsWith(doc.id))}
@@ -950,6 +951,7 @@ export default function AdminDocumentsCenterClient({
     return (
       <select
         autoFocus
+        aria-label="Document visibility"
         className="cyber-input h-10 min-w-[140px]"
         defaultValue={docVisibility(doc)}
         onBlur={() => setInlineVisibilityId(null)}
@@ -1259,6 +1261,7 @@ export default function AdminDocumentsCenterClient({
                   <select
                     value={bulkVisibilityValue}
                     onChange={(e) => setBulkVisibilityValue(e.target.value as VisibilityValue | "")}
+                    aria-label="Bulk visibility"
                     className="cyber-input min-w-[180px]"
                   >
                     <option value="">Set visibility...</option>
@@ -1401,6 +1404,7 @@ export default function AdminDocumentsCenterClient({
                           className="h-4 w-4"
                           checked={selectedSet.has(document.id)}
                           onChange={() => toggleSelection(document.id)}
+                          aria-label="Select document"
                         />
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -1511,6 +1515,7 @@ export default function AdminDocumentsCenterClient({
                       className="mt-1 h-4 w-4"
                       checked={selectedSet.has(document.id)}
                       onChange={() => toggleSelection(document.id)}
+                      aria-label="Select document"
                     />
                   </div>
                   <div className="mt-4 space-y-3">
@@ -1596,6 +1601,7 @@ export default function AdminDocumentsCenterClient({
                       className="mt-1 h-4 w-4"
                       checked={selectedSet.has(document.id)}
                       onChange={() => toggleSelection(document.id)}
+                      aria-label="Select document"
                     />
                     <FileThumb doc={document} />
                     <div className="flex-1 space-y-3">

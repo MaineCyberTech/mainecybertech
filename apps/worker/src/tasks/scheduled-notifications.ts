@@ -1,9 +1,7 @@
-import pino from "pino";
 import { env } from "../env";
+import { logger } from "../logger";
 import { sendEmail } from "../email";
 import type { TaskHandler, TaskResult } from "../task-registry";
-
-const logger = pino({ level: env.LOG_LEVEL });
 
 interface NotificationPayload {
   type?: "task-due" | "membership-approved" | "ticket-responded" | "custom";

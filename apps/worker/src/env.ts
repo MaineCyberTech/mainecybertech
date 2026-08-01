@@ -9,6 +9,8 @@ export const envSchema = z.object({
   WORKER_TIMEOUT: z.coerce.number().default(30000),
   QUEUE_BACKEND: z.enum(["bullmq", "sqs"]).default("bullmq"),
   REDIS_URL: z.string().default("redis://redis:6379"),
+  TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),
+  REDIS_PASSWORD: z.string().optional(),
   SQS_QUEUE_URL: z.string().optional(),
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
@@ -35,6 +37,24 @@ export const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+/**
+ * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
+ * does not already carry credentials. Used by the BullMQ connection.
+ */
+export function resolveRedisUrl(url: string, password?: string): string {
+  if (!password) return url;
+  try {
+    const parsed = new URL(url);
+    if (!parsed.username && !parsed.password) {
+      parsed.password = password;
+      return parsed.toString();
+    }
+  } catch {
+    // Malformed URL — leave as-is, the client will surface the error.
+  }
+  return url;
+}
+
 export function parseEnv(raw: Record<string, string | undefined>): Env {
   return envSchema.parse(raw);
 }
@@ -42,7 +62,6 @@ export function parseEnv(raw: Record<string, string | undefined>): Env {
 let env: Env;
 try {
   env = parseEnv(process.env);
-  // eslint-disable-next-line no-console
   console.log("Environment validation passed");
 } catch (error) {
   throw new Error(

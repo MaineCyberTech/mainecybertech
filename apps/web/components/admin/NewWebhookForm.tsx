@@ -42,8 +42,8 @@ export default function NewWebhookForm({ organizations }: Props) {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label className="cyber-label">Organization</label>
-          <select name="organizationId" required className="cyber-input">
+          <label htmlFor="webhook-organization" className="cyber-label">Organization</label>
+          <select id="webhook-organization" name="organizationId" required className="cyber-input">
             <option value="">Select...</option>
             {organizations.map((org) => (
               <option key={org.id} value={org.id}>{org.name}</option>
@@ -51,21 +51,21 @@ export default function NewWebhookForm({ organizations }: Props) {
           </select>
         </div>
         <div>
-          <label className="cyber-label">Name</label>
-          <input name="name" required className="cyber-input" placeholder="My Webhook" />
+          <label htmlFor="webhook-name" className="cyber-label">Name</label>
+          <input id="webhook-name" name="name" required className="cyber-input" placeholder="My Webhook" />
         </div>
       </div>
       <div>
-        <label className="cyber-label">URL</label>
-        <input name="url" type="url" required className="cyber-input font-mono text-sm" placeholder="https://example.com/webhook" />
+        <label htmlFor="webhook-url" className="cyber-label">URL</label>
+        <input id="webhook-url" name="url" type="url" required className="cyber-input font-mono text-sm" placeholder="https://example.com/webhook" />
       </div>
       <div>
-        <label className="cyber-label">Secret (optional)</label>
-        <input name="secret" className="cyber-input font-mono text-sm" placeholder="Shared secret for HMAC signing" />
+        <label htmlFor="webhook-secret" className="cyber-label">Secret (optional)</label>
+        <input id="webhook-secret" name="secret" className="cyber-input font-mono text-sm" placeholder="Shared secret for HMAC signing" />
       </div>
       <div>
-        <label className="cyber-label">Events</label>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <label htmlFor="webhook-events" className="cyber-label">Events</label>
+        <div id="webhook-events" className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {EVENT_OPTIONS.map((event) => (
             <label key={event} className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" name="events" value={event} className="accent-emerald-600" />

@@ -1,6 +1,8 @@
 "use server";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+import { getClientEnv } from "@/lib/env";
+
+const API_BASE = getClientEnv().NEXT_PUBLIC_API_URL;
 
 export async function submitLead(data: {
   trackingId: string;

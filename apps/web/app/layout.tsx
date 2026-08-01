@@ -17,9 +17,12 @@ const orbitron = Orbitron({
 export const metadata: Metadata = {
   title: "Maine CyberTech Portal",
   description: "Secure MSP client and admin portal",
+  applicationName: "MCT Portal",
   icons: {
     icon: "/favicon.svg",
   },
+  manifest: "/manifest.webmanifest",
+  themeColor: "#059669",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

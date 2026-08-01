@@ -260,6 +260,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                     <textarea
                       name="body"
                       rows={3}
+                      aria-label="Add a comment"
                       className="cyber-input"
                       placeholder="Add a comment..."
                       required

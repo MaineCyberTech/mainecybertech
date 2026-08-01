@@ -2,11 +2,13 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import HealthDashboardClient from "@/components/HealthDashboardClient";
+import { requireAdminAccess } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Health Dashboard - Admin - Maine CyberTech" };
 
-export default function AdminHealthPage() {
+export default async function AdminHealthPage() {
+  await requireAdminAccess();
   return (
     <AdminPageShell
       breadcrumbs={

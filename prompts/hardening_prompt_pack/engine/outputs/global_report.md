@@ -1,7 +1,7 @@
 # Global Risk Report
 
-**Generated:** 2026-07-30T06:49:21.416251+00:00
-**Commit:** 62da92c fix: remove duplicate Everything lines in top tiers
+**Generated:** 2026-08-01T06:31:16.294550+00:00
+**Commit:** a585f1d feat: comprehensive detailed runbook procedures for all 245 products
 **Risk Score:** 50/100
 **Status:** BLOCKED
 

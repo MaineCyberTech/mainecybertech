@@ -131,6 +131,19 @@ import { TrainingHubApi } from "./training-hub";
 import { InsuranceBinderApi } from "./insurance-binder";
 import { StatusPageApi } from "./status-page";
 import { UptimeMonitorApi } from "./uptime-monitor";
+import {
+  StoreApi,
+  type StorePromotion,
+  type StorePromotionStatus,
+  type CreateStorePromotionInput,
+  type UpdateStorePromotionInput,
+  type StoreProduct,
+  type StoreCategory,
+  type StoreCategoryDetail,
+  type StoreQuote,
+  type StoreQuoteItem,
+  type SubmitStoreQuoteInput,
+} from "./store";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -206,8 +219,17 @@ export type {
   UpdateDynamicFormInput,
   SubmitDynamicFormInput,
   ExportDynamicFormsInput,
+  StorePromotion,
+  StorePromotionStatus,
+  CreateStorePromotionInput,
+  UpdateStorePromotionInput,
+  StoreProduct,
+  StoreCategory,
+  StoreCategoryDetail,
+  StoreQuote,
+  StoreQuoteItem,
+  SubmitStoreQuoteInput,
 };
-
 export class MCTClient {
   public auth: AuthApi;
   public organizations: OrganizationsApi;
@@ -254,6 +276,7 @@ export class MCTClient {
   public insuranceBinder: InsuranceBinderApi;
   public statusPage: StatusPageApi;
   public uptimeMonitor: UptimeMonitorApi;
+  public store: StoreApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -301,6 +324,7 @@ export class MCTClient {
     this.insuranceBinder = new InsuranceBinderApi(client);
     this.statusPage = new StatusPageApi(client);
     this.uptimeMonitor = new UptimeMonitorApi(client);
+    this.store = new StoreApi(client);
   }
 
   static create(opts: ClientOptions) {

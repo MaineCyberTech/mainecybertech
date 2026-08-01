@@ -2,10 +2,12 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import Link from "next/link";
+import { requireAdminAccess } from "@/lib/auth/admin";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "More Tools - Admin" };
 
-export default function FinalPage() {
+export default async function FinalPage() {
+  await requireAdminAccess();
   const sections = [
     {
       title: "M365 & Procurement",

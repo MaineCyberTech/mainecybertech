@@ -4,6 +4,7 @@ import { jiraSync } from "./jira-sync";
 import { jsmSync } from "./jsm-sync";
 import { m365CalendarSync } from "./m365-calendar-sync";
 import { scheduledNotifications } from "./scheduled-notifications";
+import { notificationEmail } from "./notification-email";
 import { retentionTask } from "./retention";
 import { webhookDispatcher } from "./webhook-dispatcher";
 import { webhookRetry } from "./webhook-retry";
@@ -30,6 +31,7 @@ export function registerAllTasks(): void {
   registerTask("jsm-sync", jsmSync);
   registerTask("m365-calendar-sync", m365CalendarSync);
   registerTask("scheduled-notifications", scheduledNotifications);
+  registerTask("notification-email", notificationEmail);
   registerTask("retention", retentionTask);
   registerTask("webhook-dispatcher", webhookDispatcher);
   registerTask("webhook-retry", webhookRetry);

@@ -458,6 +458,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                       <textarea
                         name="body"
                         rows={3}
+                        aria-label="Edit comment"
                         className="cyber-input"
                         defaultValue={commentBody(comment)}
                         required

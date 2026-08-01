@@ -19,7 +19,12 @@ const config: Config = {
     extend: {
       colors: {
         cyber: colors.cyber,
-        slate: colors.slate,
+        slate: {
+          ...colors.slate,
+          400: "#c7d3e0",
+          500: "#94a3b8",
+          600: "#7a8ba0",
+        },
         emerald: colors.emerald,
         amber: colors.amber,
         red: colors.red,

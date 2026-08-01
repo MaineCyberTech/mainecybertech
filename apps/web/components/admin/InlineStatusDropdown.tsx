@@ -34,6 +34,7 @@ export function InlineStatusDropdown({ ticketId, current }: { ticketId: string; 
           });
         }
       }}
+      aria-label="Ticket status"
       className={pillClass(
         "appearance-none text-center",
         STATUS_COLORS[current] ??
@@ -77,6 +78,7 @@ export function InlinePriorityDropdown({
           });
         }
       }}
+      aria-label="Ticket priority"
       className={pillClass("appearance-none text-center", color)}
     >
       {PRIORITIES.map((p) => (

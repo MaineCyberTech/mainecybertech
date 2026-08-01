@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const GROUPS = [
   {
@@ -82,10 +82,41 @@ const GROUPS = [
 export default function AdminSidebarContent({ mobile }: { mobile?: boolean }) {
   const pathname = usePathname();
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const groupButtons = useRef<Record<string, HTMLButtonElement | null>>({});
+  const groupLinks = useRef<Record<string, HTMLAnchorElement | null>>({});
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
+  };
+
+  const groupFlyoutId = (label: string) => `admin-sidebar-flyout-${label.toLowerCase().replace(/\s+/g, "-")}`;
+
+  const handleGroupKeyDown = (
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    label: string,
+    isOpen: boolean,
+  ) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (!isOpen) setActiveGroup(label);
+      setTimeout(() => groupLinks.current[`${label}-0`]?.focus(), 0);
+    } else if (e.key === "Escape" && isOpen) {
+      e.preventDefault();
+      setActiveGroup(null);
+      groupButtons.current[label]?.focus();
+    }
+  };
+
+  const handleFlyoutKeyDown = (
+    e: React.KeyboardEvent<HTMLDivElement>,
+    label: string,
+  ) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setActiveGroup(null);
+      groupButtons.current[label]?.focus();
+    }
   };
 
   // Auto-expand the group containing the current route
@@ -101,6 +132,10 @@ export default function AdminSidebarContent({ mobile }: { mobile?: boolean }) {
           <div key={group.label} className="relative">
             <button
               onClick={() => setActiveGroup(isOpen ? null : group.label)}
+              onKeyDown={(e) => handleGroupKeyDown(e, group.label, isOpen)}
+              ref={(el) => {
+                groupButtons.current[group.label] = el;
+              }}
               className={`flex w-full items-center justify-between gap-2 rounded px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.15em] transition ${
                 isOpen
                   ? "bg-emerald-600/15 text-emerald-400"
@@ -108,6 +143,7 @@ export default function AdminSidebarContent({ mobile }: { mobile?: boolean }) {
               }`}
               aria-expanded={isOpen}
               aria-haspopup="true"
+              aria-controls={groupFlyoutId(group.label)}
             >
               <span>{group.label}</span>
               <svg
@@ -123,12 +159,19 @@ export default function AdminSidebarContent({ mobile }: { mobile?: boolean }) {
             {/* Flyout on desktop, inline on mobile */}
             {isOpen &&
               (mobile ? (
-                <div className="ml-3 space-y-0.5 border-l border-white/10">
-                  {group.items.map((item) => (
+                <div
+                  id={groupFlyoutId(group.label)}
+                  onKeyDown={(e) => handleFlyoutKeyDown(e, group.label)}
+                  className="ml-3 space-y-0.5 border-l border-white/10"
+                >
+                  {group.items.map((item, itemIndex) => (
                     <Link
                       key={item.key}
                       href={item.href}
                       onClick={() => setActiveGroup(null)}
+                      ref={(el) => {
+                        groupLinks.current[`${group.label}-${itemIndex}`] = el;
+                      }}
                       className={`block border-l-2 px-3 py-1.5 text-xs transition ${
                         isActive(item.href)
                           ? "border-emerald-500 bg-emerald-500/5 text-emerald-400 font-medium"
@@ -140,15 +183,22 @@ export default function AdminSidebarContent({ mobile }: { mobile?: boolean }) {
                   ))}
                 </div>
               ) : (
-                <div className="absolute left-full top-0 z-30 ml-2 w-52 rounded-lg border border-white/10 bg-[#0F172A] p-2 shadow-2xl backdrop-blur-sm">
+                <div
+                  id={groupFlyoutId(group.label)}
+                  onKeyDown={(e) => handleFlyoutKeyDown(e, group.label)}
+                  className="absolute left-full top-0 z-30 ml-2 w-52 rounded-lg border border-white/10 bg-[#0F172A] p-2 shadow-2xl backdrop-blur-sm"
+                >
                   <p className="mb-1.5 px-3 pt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
                     {group.label}
                   </p>
-                  {group.items.map((item) => (
+                  {group.items.map((item, itemIndex) => (
                     <Link
                       key={item.key}
                       href={item.href}
                       onClick={() => setActiveGroup(null)}
+                      ref={(el) => {
+                        groupLinks.current[`${group.label}-${itemIndex}`] = el;
+                      }}
                       className={`block rounded px-3 py-1.5 text-xs transition ${
                         isActive(item.href)
                           ? "bg-emerald-600/15 font-medium text-emerald-400"

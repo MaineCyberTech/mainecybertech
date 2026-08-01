@@ -246,7 +246,9 @@ router.get("/quotes", requireAuth, requireAdmin, async (_req, res, next) => {
 router.get("/products", (req, res) => {
   const category = String(req.query.category ?? "");
   const allProducts = getProducts();
-  const result = category ? allProducts.filter((p) => p.category === category) : allProducts;
+  const result = category
+    ? allProducts.filter((p) => p.category === category || p.categoryId === category)
+    : allProducts;
   res.json(success(result));
 });
 

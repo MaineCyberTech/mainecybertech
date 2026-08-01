@@ -148,6 +148,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
                     <select
                       name="autoApprove"
                       defaultValue={domain.auto_approve ? "true" : "false"}
+                      aria-label="Domain approval mode"
                       className="cyber-input min-w-[180px]"
                     >
                       <option value="true">Auto-approve</option>
@@ -172,9 +173,9 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
           <input type="hidden" name="organizationId" value={org.id} />
 
           <div className="grid gap-4 md:grid-cols-[1fr,220px,auto]">
-            <input name="domain" placeholder="example.com" className="cyber-input" />
+            <input name="domain" placeholder="example.com" aria-label="New domain name" className="cyber-input" />
 
-            <select name="autoApprove" defaultValue="false" className="cyber-input">
+            <select name="autoApprove" defaultValue="false" aria-label="New domain approval mode" className="cyber-input">
               <option value="false">Manual approval</option>
               <option value="true">Auto-approve</option>
             </select>

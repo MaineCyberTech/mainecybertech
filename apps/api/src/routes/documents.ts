@@ -350,12 +350,11 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateDocumentSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    const orgId = req.query.organization_id as string | undefined;
 
-    const { data: current, error: fetchError } = await supabase
-      .from("documents")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
+    let currentQuery = supabase.from("documents").select("version").eq("id", req.params.id);
+    if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+    const { data: current, error: fetchError } = await currentQuery.single();
 
     if (fetchError || !current) {
       throw new AppError("NOT_FOUND", "Document not found", 404);
@@ -378,13 +377,13 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     updateData.version = current.version + 1;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("documents")
       .update(updateData)
       .eq("id", req.params.id)
-      .eq("version", current.version)
-      .select()
-      .single();
+      .eq("version", current.version);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.select().single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     if (!data) throw new AppError("VERSION_CONFLICT", "Document was modified by another user", 409);
@@ -441,12 +440,14 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
 
 router.post("/:id/signed-url", async (req, res, next) => {
   try {
+    const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    const { data: doc, error: docError } = await supabase
+    let query = supabase
       .from("documents")
       .select("storage_bucket, storage_path")
-      .eq("id", req.params.id)
-      .single();
+      .eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data: doc, error: docError } = await query.single();
 
     if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
     if (!doc.storage_bucket || !doc.storage_path)

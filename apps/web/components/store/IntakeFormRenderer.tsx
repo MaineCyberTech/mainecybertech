@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { submitLead } from "../../app/(public)/contact/actions";
 import TrustBadgeList from "./TrustBadgeList";
+import { getClientEnv } from "../../lib/env";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_BASE = getClientEnv().NEXT_PUBLIC_API_URL;
 
 interface IntakeField {
   id: string;

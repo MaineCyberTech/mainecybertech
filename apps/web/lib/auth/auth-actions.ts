@@ -4,12 +4,13 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { MCTClient, ApiError } from "@mct/sdk";
 import { getCookieOptions } from "@/lib/cookie-domain";
+import { getClientEnv } from "@/lib/env";
 
 const SESSION_COOKIE = "mct_session";
 
 function unauthClient() {
   return MCTClient.create({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000",
+    baseUrl: getClientEnv().NEXT_PUBLIC_API_URL,
   });
 }
 

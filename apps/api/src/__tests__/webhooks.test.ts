@@ -63,6 +63,7 @@ jest.mock("../services/audit", () => ({
 
 jest.mock("../lib/idempotency", () => ({
   checkIdempotencyKey: jest.fn().mockResolvedValue(null),
+  claimIdempotencyKey: jest.fn().mockResolvedValue(true),
   storeIdempotencyKey: jest.fn().mockResolvedValue(undefined),
 }));
 
@@ -106,6 +107,57 @@ describe("webhooks routes", () => {
         .send({ type: "checkout.session.completed" });
 
       expect(res.status).toBe(400);
+    });
+
+    it("stores Stripe invoice amounts in minor units without 100x inflation", async () => {
+      const StripeMock = (await import("stripe")).default as unknown as jest.Mock;
+      const constructEvent = jest.fn().mockReturnValue({
+        type: "invoice.paid",
+        id: "evt_inv_1",
+        data: {
+          object: {
+            customer: "cus_1",
+            id: "in_1",
+            number: "INV-1001",
+            status: "paid",
+            subtotal: 500,
+            tax: 50,
+            total: 550,
+            currency: "usd",
+            hosted_invoice_url: "https://invoice.stripe.com/x",
+            invoice_pdf: "https://pay.stripe.com/x.pdf",
+            due_date: null,
+            status_transitions: { paid_at: 1700000000 },
+          },
+        },
+      });
+      StripeMock.mockImplementationOnce(() => ({ webhooks: { constructEvent } }));
+
+      const supabaseModule = await import("../services/supabase");
+      const builders: Record<string, any> = {};
+      const supabase = {
+        from: jest.fn().mockImplementation((table: string) => {
+          const result =
+            table === "billing_customers"
+              ? ({ data: { organization_id: "org-1" }, error: null } as MockResult)
+              : ({ data: null, error: null } as MockResult);
+          const builder = createMockBuilder(result);
+          builders[table] = builder;
+          return builder;
+        }),
+      };
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "invoice.paid", id: "evt_inv_1" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["invoices"].upsert.mock.calls[0][0];
+      expect(upsertArgs.subtotal_cents).toBe(500);
+      expect(upsertArgs.tax_cents).toBe(50);
+      expect(upsertArgs.total_cents).toBe(550);
     });
   });
 
@@ -212,6 +264,75 @@ describe("webhooks routes", () => {
         });
 
       expect(res.status).toBe(401);
+    });
+
+    it("rejects M365 webhook with missing clientState (unauthenticated spoof)", async () => {
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users",
+              changeType: "updated",
+            },
+          ],
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body.error?.code).toBe("UNAUTHORIZED");
+    });
+
+    it("rejects M365 webhook when clientState omitted from all notifications", async () => {
+      const res = await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            { resource: "users", changeType: "created" },
+            { resource: "users", changeType: "updated" },
+          ],
+        });
+
+      expect(res.status).toBe(401);
+    });
+
+    it("uses event-unique dedup keys so legit repeated events are not dropped", async () => {
+      const { claimIdempotencyKey } = await import("../lib/idempotency");
+      (claimIdempotencyKey as jest.Mock).mockClear();
+
+      await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users/abc",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+              resourceData: { id: "abc" },
+            },
+          ],
+        });
+      const firstKey = (claimIdempotencyKey as jest.Mock).mock.calls[0][0] as string;
+
+      (claimIdempotencyKey as jest.Mock).mockClear();
+      await request(app)
+        .post("/api/v1/webhooks/m365")
+        .send({
+          value: [
+            {
+              resource: "users/def",
+              changeType: "updated",
+              clientState: "m365-client-state",
+              subscriptionExpirationDateTime: "2026-08-01T00:00:00Z",
+              resourceData: { id: "def" },
+            },
+          ],
+        });
+      const secondKey = (claimIdempotencyKey as jest.Mock).mock.calls[0][0] as string;
+
+      expect(firstKey).toMatch(/^m365-/);
+      expect(secondKey).toMatch(/^m365-/);
+      expect(firstKey).not.toBe(secondKey);
     });
   });
 

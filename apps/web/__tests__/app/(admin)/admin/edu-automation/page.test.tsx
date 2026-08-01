@@ -20,6 +20,10 @@ jest.mock("next/link", () => {
   );
 });
 
+jest.mock("@/lib/auth/admin", () => ({
+  requireAdminAccess: jest.fn().mockResolvedValue({ userId: "u1", roleKey: "admin" }),
+}));
+
 describe("EduAutomationPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();

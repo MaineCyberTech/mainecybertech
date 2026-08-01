@@ -1,4 +1,5 @@
 import { logger } from "../logger";
+import { getSupabaseAdmin } from "../services/supabase";
 import type { TaskResult } from "../task-registry";
 
 const MAX_RETRIES = 5;
@@ -9,10 +10,7 @@ export async function webhookRetry(
   payload: Record<string, unknown>,
 ): Promise<TaskResult> {
   try {
-    const { createClient } = await import("@supabase/supabase-js");
-    const { env } = await import("../env");
-
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = getSupabaseAdmin();
 
     const { data: deliveries, error: fetchError } = await supabase
       .from("webhook_deliveries")

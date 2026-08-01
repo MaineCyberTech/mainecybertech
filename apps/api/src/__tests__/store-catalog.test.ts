@@ -56,24 +56,27 @@ describe("store catalog routes", () => {
       const res = await request(app).get("/api/v1/store/products");
       expect(res.status).toBe(200);
       expect(res.body.data).toBeInstanceOf(Array);
-      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.data.length).toBe(245);
+      const slugs = new Set(res.body.data.map((p: any) => p.slug));
+      expect(slugs.has("password-security-checkup")).toBe(true);
     });
 
     it("filters products by category", async () => {
-      const res = await request(app).get("/api/v1/store/products?category=security");
+      const res = await request(app).get("/api/v1/store/products?category=cybersecurity");
       expect(res.status).toBe(200);
       expect(res.body.data).toBeInstanceOf(Array);
+      expect(res.body.data.length).toBeGreaterThan(0);
       res.body.data.forEach((p: any) => {
-        expect(p.category).toBe("security");
+        expect(p.categoryId).toBe("cybersecurity");
       });
     });
   });
 
   describe("GET /products/:slug", () => {
     it("returns a product by slug", async () => {
-      const res = await request(app).get("/api/v1/store/products/m365-hardening");
+      const res = await request(app).get("/api/v1/store/products/password-security-checkup");
       expect(res.status).toBe(200);
-      expect(res.body.data.slug).toBe("m365-hardening");
+      expect(res.body.data.slug).toBe("password-security-checkup");
       expect(res.body.data.name).toBeDefined();
       expect(res.body.data.summary).toBeDefined();
     });
@@ -96,9 +99,9 @@ describe("store catalog routes", () => {
 
   describe("GET /categories/:slug", () => {
     it("returns a category with products", async () => {
-      const res = await request(app).get("/api/v1/store/categories/security");
+      const res = await request(app).get("/api/v1/store/categories/cybersecurity");
       expect(res.status).toBe(200);
-      expect(res.body.data.slug).toBe("security");
+      expect(res.body.data.slug).toBe("cybersecurity");
       expect(res.body.data.products).toBeInstanceOf(Array);
       expect(res.body.data.products.length).toBeGreaterThan(0);
     });

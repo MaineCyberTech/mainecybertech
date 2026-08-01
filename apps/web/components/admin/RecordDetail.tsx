@@ -90,9 +90,10 @@ export default function RecordDetail({
         </div>
         {editFields.map((f) => (
           <div key={f.key}>
-            <label className="mb-1 block text-xs font-medium text-slate-400">{f.label}</label>
+            <label htmlFor={`edit-${f.key}`} className="mb-1 block text-xs font-medium text-slate-400">{f.label}</label>
             {f.type === "textarea" ? (
               <textarea
+                id={`edit-${f.key}`}
                 name={f.key}
                 defaultValue={String(record[f.key] ?? "")}
                 required={f.required}
@@ -101,6 +102,7 @@ export default function RecordDetail({
               />
             ) : f.type === "select" && f.options ? (
               <select
+                id={`edit-${f.key}`}
                 name={f.key}
                 defaultValue={String(record[f.key] ?? "")}
                 className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
@@ -113,6 +115,7 @@ export default function RecordDetail({
               </select>
             ) : (
               <input
+                id={`edit-${f.key}`}
                 type={f.type ?? "text"}
                 name={f.key}
                 defaultValue={String(record[f.key] ?? "")}

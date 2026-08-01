@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import type { CatalogProduct } from "@/lib/catalog/types";
+import { getClientApi } from "@/lib/client-api";
 import {
   getQuoteItems,
   addToQuote,
@@ -172,44 +173,31 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
     setSubmitting(true);
     setStatus(null);
 
-    const payload = {
-      ...form,
-      items: items.map((i) => ({
-        productId: i.productId,
-        name: i.name,
-        priceRange: i.priceRange,
-      })),
-      submittedAt: new Date().toISOString(),
-      source: "store-quote-builder",
-    };
-
     try {
-      const res = await fetch("/api/v1/store/quotes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      await getClientApi().store.submitQuote({
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        notes: form.notes,
+        items: items.map((i) => ({
+          productId: i.productId,
+          name: i.name,
+          priceRange: i.priceRange,
+        })),
       });
-      const body = await res.json();
-      if (res.ok && body.success !== false) {
-        setStatus({
-          type: "success",
-          message:
-            "Your quote request has been submitted. A member of our team will follow up with you shortly.",
-        });
-        setItems([]);
-        setForm({ name: "", email: "", phone: "", notes: "" });
-        localStorage.removeItem("mct_quote");
-        clearQuote();
-      } else {
-        setStatus({
-          type: "error",
-          message: body.error || "Submission failed. Please try again.",
-        });
-      }
+      setStatus({
+        type: "success",
+        message:
+          "Your quote request has been submitted. A member of our team will follow up with you shortly.",
+      });
+      setItems([]);
+      setForm({ name: "", email: "", phone: "", notes: "" });
+      localStorage.removeItem("mct_quote");
+      clearQuote();
     } catch {
       setStatus({
         type: "error",
-        message: "Communication error. Please try again.",
+        message: "Submission failed. Please try again.",
       });
     } finally {
       setSubmitting(false);

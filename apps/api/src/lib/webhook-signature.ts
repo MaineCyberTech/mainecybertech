@@ -30,17 +30,31 @@ function extractTimestamp(payload: Record<string, unknown>): number | null {
     (payload as any).created_at ??
     (payload as any).occurred_at ??
     (payload as any).event_date;
-  if (!ts) return null;
+  if (ts === undefined || ts === null || ts === "") return null;
 
-  const parsed = typeof ts === "number" ? ts : Date.parse(String(ts));
-  return isNaN(parsed) ? null : parsed;
+  let parsed: number;
+  if (typeof ts === "number") {
+    parsed = ts;
+  } else {
+    parsed = Date.parse(String(ts));
+  }
+  if (isNaN(parsed)) return null;
+
+  // Normalize epoch-seconds to milliseconds (detect by magnitude: seconds ≈ 1e9-1e10, ms ≈ 1e12-1e13)
+  if (parsed > 0 && parsed < 1e12) parsed *= 1000;
+
+  return parsed;
 }
 
 export function validateWebhookTimestamp(
   payload: Record<string, unknown>,
   toleranceMs: number = TIMESTAMP_TOLERANCE_MS,
+  options: { requireTimestamp?: boolean } = {},
 ): boolean {
   const ts = extractTimestamp(payload);
-  if (ts === null) return true; // no timestamp to validate — skip
+  if (ts === null) {
+    // Reject payloads without a timestamp when the caller requires it (replay bound)
+    return options.requireTimestamp ? false : true;
+  }
   return Math.abs(Date.now() - ts) <= toleranceMs;
 }

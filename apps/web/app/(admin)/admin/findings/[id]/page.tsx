@@ -1,4 +1,4 @@
-import { getApiClient } from "@/lib/api";
+﻿import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
@@ -7,6 +7,7 @@ import RecordDetail from "@/components/admin/RecordDetail";
 import { updateFinding } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Finding Detail - Admin - Maine CyberTech" };
 
 export default async function DetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;

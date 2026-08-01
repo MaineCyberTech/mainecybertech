@@ -10,6 +10,6 @@
     "P3": 3
   },
   "total_findings": 6,
-  "timestamp": "2026-07-30T06:49:23.412351+00:00",
-  "commit": "62da92c fix: remove duplicate Everything lines in top tiers"
+  "timestamp": "2026-08-01T06:33:06.170225+00:00",
+  "commit": "a585f1d feat: comprehensive detailed runbook procedures for all 245 products"
 }

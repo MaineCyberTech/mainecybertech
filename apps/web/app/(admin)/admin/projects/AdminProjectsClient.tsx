@@ -146,6 +146,7 @@ export default function AdminProjectsClient({
               setPage(1);
             }, [])}
             placeholder="Search projects..."
+            aria-label="Search projects"
             className="cyber-input w-full pl-9"
           />
           <svg
@@ -169,6 +170,7 @@ export default function AdminProjectsClient({
             setPage(1);
           }}
           className="cyber-input max-w-[200px]"
+          aria-label="Filter by organization"
         >
           <option value="">All orgs</option>
           {allOrganizations.map((org) => (
@@ -184,6 +186,7 @@ export default function AdminProjectsClient({
             setPage(1);
           }}
           className="cyber-input max-w-[160px]"
+          aria-label="Filter by status"
         >
           {allStatuses.map((s) => (
             <option key={s} value={s}>

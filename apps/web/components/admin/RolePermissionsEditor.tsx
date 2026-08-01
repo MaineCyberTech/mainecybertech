@@ -207,6 +207,8 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
                         <button
                           onClick={() => togglePermission(perm.id, hasIt)}
                           disabled={disabled || isToggling}
+                          aria-pressed={hasIt}
+                          aria-label={`Toggle ${mod} ${action} permission (${hasIt ? "granted" : "not granted"})`}
                           className={`inline-flex h-8 w-8 items-center justify-center rounded border text-xs font-bold transition sm:h-7 sm:w-7 ${
                             hasIt
                               ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"

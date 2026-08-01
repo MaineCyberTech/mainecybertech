@@ -1,5 +1,9 @@
 import { render, screen } from "@testing-library/react";
 
+jest.mock("@/lib/auth/admin", () => ({
+  requireAdminAccess: jest.fn().mockResolvedValue({ userId: "u1", roleKey: "admin" }),
+}));
+
 jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;

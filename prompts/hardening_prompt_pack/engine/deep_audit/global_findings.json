@@ -1,6 +1,6 @@
 {
-  "total": 14,
-  "generated_at": "2026-07-30T06:49:21.154872+00:00",
+  "total": 13,
+  "generated_at": "2026-08-01T06:31:21.973976+00:00",
   "findings": [
     {
       "severity": "P1",
@@ -110,15 +110,6 @@
       "issue": "Prod terraform apply gated by prod-approval environment but no required E2E/test workflow_call dependency before apply",
       "remediation": "Add needs: [validate, e2e] to terraform-apply-prod job",
       "impact": "Terraform changes can be approved and applied even if tests or E2E tests are failing"
-    },
-    {
-      "severity": "P2",
-      "domain": "observability",
-      "category": "metrics",
-      "file": "apps/worker/src/main.ts",
-      "issue": "Worker has no Prometheus metrics endpoint \u2014 task count, queue depth, error rates invisible",
-      "remediation": "Add prom-client metrics endpoint or expose BullMQ queue stats via health server",
-      "impact": "Queue backlogs and error spikes in worker are invisible until users report issues"
     },
     {
       "severity": "P2",

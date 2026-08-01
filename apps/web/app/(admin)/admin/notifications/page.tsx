@@ -1,10 +1,12 @@
 import Breadcrumbs from "@/components/Breadcrumbs";
 import NotificationsPageClient from "@/components/NotificationsPageClient";
+import { requireAdminAccess } from "@/lib/auth/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Notifications - Admin - Maine CyberTech" };
 
-export default function AdminNotificationsPage() {
+export default async function AdminNotificationsPage() {
+  await requireAdminAccess();
   return (
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Notifications" }]} />

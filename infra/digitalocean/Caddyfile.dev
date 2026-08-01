@@ -1,3 +1,7 @@
+# Dev Caddyfile — same security header set as prod, but:
+# - tls internal (self-signed, no cert files on dev droplet)
+# - HSTS WITHOUT preload (dev domain must never be preloaded)
+
 www.mainecybertech.us, app.mainecybertech.us {
     tls internal
 
@@ -6,7 +10,11 @@ www.mainecybertech.us, app.mainecybertech.us {
     header / {
         X-Frame-Options "DENY"
         X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.mainecybertech.us wss:"
     }
 }
 
@@ -22,6 +30,10 @@ api.mainecybertech.us {
     header / {
         X-Frame-Options "DENY"
         X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss:"
     }
 }

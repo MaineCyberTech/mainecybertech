@@ -53,8 +53,9 @@ export default function BulkInviteForm({ organizations, roles }: Props) {
     <form onSubmit={handleSubmit} className="max-w-3xl space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label className="cyber-label">Organization</label>
+          <label htmlFor="bulk-org" className="cyber-label">Organization</label>
           <select
+            id="bulk-org"
             value={orgId}
             onChange={(e) => setOrgId(e.target.value)}
             required
@@ -69,8 +70,9 @@ export default function BulkInviteForm({ organizations, roles }: Props) {
           </select>
         </div>
         <div>
-          <label className="cyber-label">Role</label>
+          <label htmlFor="bulk-role" className="cyber-label">Role</label>
           <select
+            id="bulk-role"
             value={roleId}
             onChange={(e) => setRoleId(e.target.value)}
             required
@@ -87,11 +89,12 @@ export default function BulkInviteForm({ organizations, roles }: Props) {
       </div>
 
       <div>
-        <label className="cyber-label">Users (CSV)</label>
+        <label htmlFor="bulk-csv" className="cyber-label">Users (CSV)</label>
         <p className="mb-2 mt-1 text-xs text-slate-400">
           One per line: <code>email, full_name</code>
         </p>
         <textarea
+          id="bulk-csv"
           value={csv}
           onChange={(e) => setCsv(e.target.value)}
           rows={10}

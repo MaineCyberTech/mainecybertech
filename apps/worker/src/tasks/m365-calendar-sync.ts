@@ -1,8 +1,6 @@
-import pino from "pino";
 import { env } from "../env";
+import { logger } from "../logger";
 import type { TaskHandler, TaskResult } from "../task-registry";
-
-const logger = pino({ level: env.LOG_LEVEL });
 
 interface CalendarSyncPayload {
   projectId?: string;

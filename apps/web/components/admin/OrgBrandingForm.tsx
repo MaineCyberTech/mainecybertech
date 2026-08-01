@@ -75,7 +75,7 @@ export default function OrgBrandingForm({
 
       <div className="mt-6 space-y-6">
         <div>
-          <label className="cyber-label">Organization Logo</label>
+          <label id="org-logo-label" className="cyber-label">Organization Logo</label>
           <div className="mt-2 flex items-center gap-4">
             {logoUrl && !imgError ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -93,9 +93,11 @@ export default function OrgBrandingForm({
             <div>
               <input
                 ref={fileRef}
+                id="org-logo-file"
                 type="file"
                 accept="image/png,image/jpeg,image/svg+xml"
                 onChange={handleLogoUpload}
+                aria-labelledby="org-logo-label"
                 className="hidden"
               />
               <button
@@ -112,9 +114,10 @@ export default function OrgBrandingForm({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="cyber-label">Brand Color</label>
+            <label htmlFor="org-brand-color" className="cyber-label">Brand Color</label>
             <div className="mt-2 flex items-center gap-3">
               <input
+                id="org-brand-color"
                 type="color"
                 value={brandColor}
                 onChange={(e) => setBrandColor(e.target.value)}
@@ -124,6 +127,7 @@ export default function OrgBrandingForm({
                 type="text"
                 value={brandColor}
                 onChange={(e) => setBrandColor(e.target.value)}
+                aria-label="Brand color hex value"
                 className="cyber-input font-mono text-xs"
                 placeholder="#059669"
               />
@@ -131,9 +135,10 @@ export default function OrgBrandingForm({
           </div>
 
           <div>
-            <label className="cyber-label">Accent Color</label>
+            <label htmlFor="org-accent-color" className="cyber-label">Accent Color</label>
             <div className="mt-2 flex items-center gap-3">
               <input
+                id="org-accent-color"
                 type="color"
                 value={accentColor}
                 onChange={(e) => setAccentColor(e.target.value)}
@@ -143,6 +148,7 @@ export default function OrgBrandingForm({
                 type="text"
                 value={accentColor}
                 onChange={(e) => setAccentColor(e.target.value)}
+                aria-label="Accent color hex value"
                 className="cyber-input font-mono text-xs"
                 placeholder="#0D9488"
               />
@@ -152,8 +158,9 @@ export default function OrgBrandingForm({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="cyber-label">Custom Domain</label>
+            <label htmlFor="org-custom-domain" className="cyber-label">Custom Domain</label>
             <input
+              id="org-custom-domain"
               type="text"
               value={customDomain}
               onChange={(e) => setCustomDomain(e.target.value)}

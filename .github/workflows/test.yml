@@ -21,6 +21,7 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
   test:
@@ -32,10 +33,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -52,3 +53,75 @@ jobs:
 
       - name: Validate OpenAPI spec
         run: pnpm --filter=api exec tsx src/scripts/validate-openapi.ts
+
+  # Dependency audit — hard gate, no continue-on-error
+  security-scan:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Setup Node.js
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2
+        with:
+          node-version: 20
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10 --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit production dependencies (high/critical fail the build)
+        run: pnpm audit --audit-level=high
+
+      - name: Run Trivy filesystem vulnerability scanner
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+          skip-dirs: node_modules,.pnpm-store,dist,.next,coverage
+
+      - name: Upload Trivy SARIF report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: trivy-results
+          path: trivy-results.sarif
+          retention-days: 7
+
+  # Secret scanning — same patterns as the pre-commit hook (scripts/scan-secrets.sh)
+  secrets-scan:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Scan diff for secrets
+        run: |
+          set -e
+          PATTERNS='SUPABASE_SERVICE_ROLE_KEY|SUPABASE_ANON_KEY|JWT_SECRET|STRIPE_SECRET_KEY|AKIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|github_pat_[0-9a-zA-Z_]{22,}|sk_(live|test)_[0-9a-zA-Z]{16,}|-----BEGIN [A-Za-z ]*PRIVATE KEY-----'
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE="$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD~1)"
+          fi
+          DIFF=$(git diff -U0 "$BASE" HEAD 2>/dev/null || git diff -U0 HEAD~1 HEAD)
+          MATCHES=$(printf '%s' "$DIFF" | grep -E "^\+" | grep -v 'PATTERNS=' | grep -v 'secrets\.' | grep -vE "^\+\s*#" | grep -cE "$PATTERNS" || true)
+          echo "Secret-pattern matches in diff: $MATCHES"
+          if [ "$MATCHES" -gt 0 ]; then
+            printf '%s' "$DIFF" | grep -nE "^\+.*($PATTERNS)" | grep -v 'PATTERNS=' | grep -v 'secrets\.' || true
+            echo "::error::Secret pattern detected in diff — remove or replace secret values."
+            exit 1
+          fi

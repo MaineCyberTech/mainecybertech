@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { getClientApi } from "@/lib/client-api";
+import { getClientEnv } from "@/lib/env";
 
 const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
 
@@ -75,7 +76,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     fetchUnread();
 
     // Connect to SSE stream
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
     const url = `${baseUrl}/api/v1/notifications/stream`;
     const es = new EventSource(url, { withCredentials: true });
     eventSourceRef.current = es;

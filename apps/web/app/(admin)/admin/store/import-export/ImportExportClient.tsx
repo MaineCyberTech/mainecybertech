@@ -179,15 +179,16 @@ export default function ImportExportClient() {
             Upload a JSON file to validate product data. Client-side validation checks required
             fields.
           </p>
-          <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
-            <div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                onChange={handleJsonImport}
-                className="block w-full rounded border border-white/10 bg-[#0A1118]/60 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-emerald-600/20 file:px-3 file:py-1 file:text-xs file:font-medium file:text-emerald-400"
-              />
+    <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
+      <div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          onChange={handleJsonImport}
+          aria-label="Import JSON file"
+          className="block w-full rounded border border-white/10 bg-[#0A1118]/60 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-emerald-600/20 file:px-3 file:py-1 file:text-xs file:font-medium file:text-emerald-400"
+        />
             </div>
             {jsonResult ? (
               <div
@@ -225,6 +226,7 @@ export default function ImportExportClient() {
                 type="file"
                 accept=".csv"
                 onChange={handleCsvImport}
+                aria-label="Import CSV file"
                 className="block w-full rounded border border-white/10 bg-[#0A1118]/60 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-emerald-600/20 file:px-3 file:py-1 file:text-xs file:font-medium file:text-emerald-400"
               />
             </div>

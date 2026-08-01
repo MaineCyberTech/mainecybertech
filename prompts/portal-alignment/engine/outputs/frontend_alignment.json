@@ -42,10 +42,10 @@
     }
   ],
   "component_counts": {
-    "admin": 26,
-    "portal": 12,
+    "admin": 28,
+    "portal": 14,
     "marketing": 4,
-    "total": 71
+    "total": 75
   },
   "route_groups": [
     "(admin)",

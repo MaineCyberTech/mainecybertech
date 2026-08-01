@@ -1,18 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-async function authHeaders(): Promise<Record<string, string>> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("mct_session")?.value;
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
+import { getApiClient } from "@/lib/api";
 
 export async function createPromotionAction(prev: { ok: boolean; error?: string }, form: FormData) {
   try {
@@ -21,7 +10,7 @@ export async function createPromotionAction(prev: { ok: boolean; error?: string 
       badgeText: (form.get("badgeText") as string) || "",
       detailText: (form.get("detailText") as string) || "",
       promoType: (form.get("promoType") as string) || "bundle_savings",
-      status: (form.get("status") as string) || "paused",
+      status: (form.get("status") as "active" | "paused" | "expired" | "archived") || "paused",
       terms: (form.get("terms") as string) || "",
       eligibilityTargets: ((form.get("eligibilityTargets") as string) || "")
         .split(",")
@@ -31,17 +20,7 @@ export async function createPromotionAction(prev: { ok: boolean; error?: string 
       endDate: (form.get("endDate") as string) || undefined,
     };
 
-    const headers = await authHeaders();
-    const res = await fetch(`${API_BASE}/api/v1/store/promotions`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-
-    if (!res.ok) {
-      const json = await res.json();
-      return { ok: false, error: json.error?.message || "Failed to create promotion" };
-    }
+    await getApiClient().store.createPromotion(body);
     revalidatePath("/admin/store/promotions");
     return { ok: true };
   } catch (error) {
@@ -71,17 +50,7 @@ export async function updatePromotionAction(prev: { ok: boolean; error?: string 
         .filter(Boolean);
     }
 
-    const headers = await authHeaders();
-    const res = await fetch(`${API_BASE}/api/v1/store/promotions/${id}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify(patch),
-    });
-
-    if (!res.ok) {
-      const json = await res.json();
-      return { ok: false, error: json.error?.message || "Failed to update promotion" };
-    }
+    await getApiClient().store.updatePromotion(id, patch);
     revalidatePath("/admin/store/promotions");
     return { ok: true };
   } catch (error) {
@@ -94,16 +63,7 @@ export async function deletePromotionAction(prev: { ok: boolean; error?: string 
     const id = form.get("id") as string;
     if (!id) return { ok: false, error: "Missing id" };
 
-    const headers = await authHeaders();
-    const res = await fetch(`${API_BASE}/api/v1/store/promotions/${id}`, {
-      method: "DELETE",
-      headers,
-    });
-
-    if (!res.ok) {
-      const json = await res.json();
-      return { ok: false, error: json.error?.message || "Failed to delete promotion" };
-    }
+    await getApiClient().store.deletePromotion(id);
     revalidatePath("/admin/store/promotions");
     return { ok: true };
   } catch (error) {

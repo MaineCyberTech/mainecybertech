@@ -188,4 +188,196 @@ describe("tickets routes", () => {
       expect(res.status).toBe(201);
     });
   });
+
+  describe("PATCH /:id/comments/:commentId", () => {
+    const ORG = "00000000-0000-0000-0000-000000000001";
+    const OTHER_ORG = "00000000-0000-0000-0000-000000000002";
+
+    function mockFromSequence(tableResults: Record<string, MockResult>) {
+      const supabase = mockAuth();
+      supabase.from.mockImplementation((table: string) => {
+        return createMockBuilder(
+          tableResults[table] ?? { data: null, error: new Error("not found") },
+        );
+      });
+      return supabase;
+    }
+
+    it("allows the comment author to edit within the 5-minute window", async () => {
+      const supabase = mockFromSequence({
+        ticket_comments: {
+          data: {
+            id: "comment-1",
+            author_id: "user-1",
+            organization_id: ORG,
+            body: "Original",
+            created_at: new Date().toISOString(),
+          },
+          error: null,
+        },
+        tickets: { data: { id: "ticket-1", organization_id: ORG }, error: null },
+      });
+
+      const res = await request(app)
+        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ body: "Edited comment" });
+
+      expect(res.status).toBe(200);
+      expect(supabase.from).toHaveBeenCalledWith("ticket_comments");
+      expect(supabase.from).toHaveBeenCalledWith("tickets");
+    });
+
+    it("rejects a non-author, non-admin user with 403", async () => {
+      const supabase = mockFromSequence({
+        ticket_comments: {
+          data: {
+            id: "comment-1",
+            author_id: "another-user",
+            organization_id: ORG,
+            body: "Original",
+            created_at: new Date().toISOString(),
+          },
+          error: null,
+        },
+        tickets: { data: { id: "ticket-1", organization_id: ORG }, error: null },
+        memberships: { data: [], error: null },
+      });
+
+      const res = await request(app)
+        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ body: "Edited comment" });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error?.message).toMatch(/comment author/i);
+    });
+
+    it("allows an org admin to edit a comment they did not author", async () => {
+      const supabase = mockFromSequence({
+        ticket_comments: {
+          data: {
+            id: "comment-1",
+            author_id: "another-user",
+            organization_id: ORG,
+            body: "Original",
+            created_at: new Date().toISOString(),
+          },
+          error: null,
+        },
+        tickets: { data: { id: "ticket-1", organization_id: ORG }, error: null },
+        memberships: {
+          data: [{ roles: { id: "role-1", key: "admin" } }],
+          error: null,
+        },
+      });
+
+      const res = await request(app)
+        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ body: "Edited by admin" });
+
+      expect(res.status).toBe(200);
+      expect(supabase.from).toHaveBeenCalledWith("memberships");
+    });
+
+    it("rejects edits when the caller is scoped to a different org than the comment", async () => {
+      const supabase = mockFromSequence({
+        ticket_comments: {
+          data: {
+            id: "comment-1",
+            author_id: "user-1",
+            organization_id: OTHER_ORG,
+            body: "Original",
+            created_at: new Date().toISOString(),
+          },
+          error: null,
+        },
+        tickets: { data: { id: "ticket-1", organization_id: OTHER_ORG }, error: null },
+      });
+
+      const res = await request(app)
+        .patch(`/api/v1/tickets/ticket-1/comments/comment-1?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ body: "Edited comment" });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("returns 404 when the comment's ticket is in a different org", async () => {
+      mockFromSequence({
+        ticket_comments: {
+          data: {
+            id: "comment-1",
+            author_id: "user-1",
+            organization_id: OTHER_ORG,
+            body: "Original",
+            created_at: new Date().toISOString(),
+          },
+          error: null,
+        },
+        tickets: { data: { id: "ticket-1", organization_id: ORG }, error: null },
+      });
+
+      const res = await request(app)
+        .patch("/api/v1/tickets/ticket-1/comments/comment-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ body: "Edited comment" });
+
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("by-id tenant scoping", () => {
+    const ORG = "00000000-0000-0000-0000-000000000001";
+
+    it("PATCH /:id filters the fetch and update by organization_id", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: { version: 1 }, error: null });
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .patch(`/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ title: "Updated Title" });
+
+      expect(res.status).toBe(200);
+      expect(builder.eq).toHaveBeenCalledWith("organization_id", ORG);
+    });
+
+    it("GET /:id/comments verifies the ticket belongs to the caller's org first", async () => {
+      const supabase = mockAuth();
+      const builders: Record<string, any> = {};
+      supabase.from.mockImplementation((table: string) => {
+        const builder = createMockBuilder({ data: [], error: null });
+        builders[table] = builder;
+        return builder;
+      });
+
+      const res = await request(app)
+        .get(`/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      // The ticket fetch must be org-scoped before comments are returned
+      expect(builders.tickets.eq).toHaveBeenCalledWith("organization_id", ORG);
+      expect(supabase.from).toHaveBeenCalledWith("tickets");
+      expect(supabase.from).toHaveBeenCalledWith("ticket_comments");
+    });
+
+    it("GET /:id/comments returns 404 when the ticket is in another org", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("not found") }),
+      );
+
+      const res = await request(app)
+        .get(
+          `/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=${ORG}`,
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+  });
 });

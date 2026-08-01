@@ -63,4 +63,51 @@ describe("webhook-management routes", () => {
     const res = await request(app).get("/api/v1/webhook-endpoints");
     expect(res.status).toBe(401);
   });
+
+  it("POST / rejects webhook URLs pointing at private/loopback hosts (SSRF)", async () => {
+    // requireAdmin: memberships lookup returns an admin membership
+    const adminSupabase = mockAuth();
+    adminSupabase.from.mockReturnValue(
+      createMockBuilder({
+        data: [{ id: "m1", roles: { id: "r1", key: "admin" } }],
+        error: null,
+      } as MockResult),
+    );
+
+    const res = await request(app)
+      .post("/api/v1/webhook-endpoints")
+      .set("Authorization", "Bearer token")
+      .send({
+        organizationId: "00000000-0000-0000-0000-000000000001",
+        name: "Internal hook",
+        url: "http://169.254.169.254/latest/meta-data",
+        events: ["ticket.created"],
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error?.code).toBe("VALIDATION");
+    expect(adminSupabase.from).not.toHaveBeenCalledWith("webhook_endpoints");
+  });
+
+  it("POST / rejects non-http(s) webhook schemes", async () => {
+    const adminSupabase = mockAuth();
+    adminSupabase.from.mockReturnValue(
+      createMockBuilder({
+        data: [{ id: "m1", roles: { id: "r1", key: "admin" } }],
+        error: null,
+      } as MockResult),
+    );
+
+    const res = await request(app)
+      .post("/api/v1/webhook-endpoints")
+      .set("Authorization", "Bearer token")
+      .send({
+        organizationId: "00000000-0000-0000-0000-000000000001",
+        name: "Redis hook",
+        url: "redis://127.0.0.1:6379",
+        events: ["ticket.created"],
+      });
+
+    expect(res.status).toBe(400);
+  });
 });

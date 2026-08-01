@@ -902,6 +902,7 @@ function AdminTaskCard({
                       value={editingCommentBody}
                       onChange={(event) => setEditingCommentBody(event.target.value)}
                       rows={3}
+                      aria-label="Edit comment"
                       className="cyber-input"
                     />
                     <label className="flex items-center gap-2 text-sm text-slate-300">
@@ -955,13 +956,14 @@ function AdminTaskCard({
             <input type="hidden" name="projectId" value={projectId} />
             <input type="hidden" name="organizationId" value={organizationId} />
             <input type="hidden" name="taskId" value={taskState.id} />
-            <textarea
-              name="body"
-              rows={3}
-              className="cyber-input"
-              placeholder="Add an internal or client-facing comment about this task..."
-              required
-            />
+<textarea
+  name="body"
+  rows={3}
+  className="cyber-input"
+  placeholder="Add an internal or client-facing comment about this task..."
+  aria-label="Add a comment"
+  required
+/>
             <label className="flex items-center gap-2 text-sm text-slate-300">
               <input type="checkbox" name="isInternal" />
               Internal only (hidden from client)

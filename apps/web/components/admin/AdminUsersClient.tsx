@@ -149,6 +149,7 @@ export default function AdminUsersClient({ memberships, profileMap, orgMap, role
             value={search}
             onChange={handleSearchChange}
             placeholder="Search by name, email, or ID..."
+            aria-label="Search users"
             className="cyber-input w-full pl-9"
           />
           <svg
@@ -172,6 +173,7 @@ export default function AdminUsersClient({ memberships, profileMap, orgMap, role
             setPage(1);
           }}
           className="cyber-input max-w-[200px]"
+          aria-label="Filter by organization"
         >
           <option value="">All orgs</option>
           {orgList.map((org) => (
@@ -187,6 +189,7 @@ export default function AdminUsersClient({ memberships, profileMap, orgMap, role
             setPage(1);
           }}
           className="cyber-input max-w-[140px]"
+          aria-label="Filter by status"
         >
           <option value="all">All status</option>
           <option value="active">Active</option>

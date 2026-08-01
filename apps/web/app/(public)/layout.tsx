@@ -5,8 +5,9 @@ import MarketingHeader from "../../components/marketing/MarketingHeader";
 import ParticleBackground from "../../components/marketing/ParticleBackground";
 import LocalBusinessJsonLd from "../../components/seo/LocalBusinessJsonLd";
 import { siteConfig } from "../../lib/seo/site";
+import { getClientEnv } from "../../lib/env";
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
+const GA_ID = getClientEnv().NEXT_PUBLIC_GA_ID;
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -43,7 +44,7 @@ export const metadata: Metadata = {
     follow: true,
   },
 };
-const TAWKTO_ID = process.env.NEXT_PUBLIC_TAWKTO_ID;
+const TAWKTO_ID = getClientEnv().NEXT_PUBLIC_TAWKTO_ID;
 
 export default async function PublicLayout({ children }: { children: React.ReactNode }) {
   const headersList = await headers();

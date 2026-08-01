@@ -2,6 +2,8 @@ import Link from "next/link";
 import { type Promotion } from "@/lib/catalog/promotions";
 import PromoBadge from "@/components/store/PromoBadge";
 import { buildMetadata } from "@/lib/seo/metadata";
+import { getApiClient } from "@/lib/api";
+import type { StorePromotion } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +14,6 @@ export const metadata = buildMetadata({
   path: "/store/promotions",
 });
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
 const promoTypeLabels: Record<string, string> = {
   bundle_savings: "Bundle Savings",
   starter_credit: "Starter Credit",
@@ -23,27 +23,26 @@ const promoTypeLabels: Record<string, string> = {
   free_addon: "Free Add-on",
 };
 
+function toPromotion(p: StorePromotion): Promotion {
+  return {
+    id: p.id,
+    name: p.name,
+    badgeText: p.badge_text || "",
+    detailText: p.detail_text || "",
+    promoType: p.promo_type || "bundle_savings",
+    status: (p.status as Promotion["status"]) || "active",
+    terms: p.terms || "",
+    eligibilityTargets: p.eligibility_targets || [],
+    startDate: p.start_date || undefined,
+    endDate: p.end_date || undefined,
+    createdAt: p.created_at,
+    updatedAt: p.updated_at,
+  };
+}
+
 async function fetchActivePromotions(): Promise<Promotion[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/store/promotions`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return [];
-    const json = await res.json();
-    return (json.data ?? []).map((p: Record<string, unknown>) => ({
-      id: p.id as string,
-      name: p.name as string,
-      badgeText: (p as any).badge_text as string || "",
-      detailText: (p as any).detail_text as string || "",
-      promoType: (p as any).promo_type as string || "bundle_savings",
-      status: (p as any).status as string || "active",
-      terms: p.terms as string || "",
-      eligibilityTargets: ((p as any).eligibility_targets as string[]) || [],
-      startDate: (p as any).start_date as string || undefined,
-      endDate: (p as any).end_date as string || undefined,
-      createdAt: p.created_at as string,
-      updatedAt: p.updated_at as string,
-    }));
+    return (await getApiClient().store.listActivePromotions()).map(toPromotion);
   } catch {
     return [];
   }

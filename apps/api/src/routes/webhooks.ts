@@ -1,4 +1,5 @@
 import { Router } from "express";
+import crypto from "crypto";
 import Stripe from "stripe";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logger } from "../lib/logger";
@@ -6,7 +7,7 @@ import { failure, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
 import { verifyWebhookSignature, validateWebhookTimestamp } from "../lib/webhook-signature";
-import { checkIdempotencyKey, storeIdempotencyKey } from "../lib/idempotency";
+import { claimIdempotencyKey, storeIdempotencyKey } from "../lib/idempotency";
 import { recordWebhookDelivery } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
@@ -33,8 +34,10 @@ async function logWebhookDelivery(
 }
 
 async function dedupWebhook(key: string): Promise<boolean> {
-  const existing = await checkIdempotencyKey(key);
-  if (existing) {
+  // Atomic claim (Redis SET NX EX or in-memory mutex fallback) — prevents
+  // concurrent check-then-store races from double-processing an event.
+  const claimed = await claimIdempotencyKey(key, "processing");
+  if (!claimed) {
     logger.info({ key }, "Duplicate webhook, skipping");
     return true;
   }
@@ -118,9 +121,10 @@ router.post("/stripe", async (req, res, next) => {
               stripe_invoice_id: inv.id,
               invoice_number: inv.number,
               status,
-              subtotal_cents: Math.round(inv.subtotal * 100),
-              tax_cents: Math.round((inv.tax ?? 0) * 100),
-              total_cents: Math.round(inv.total * 100),
+              // Stripe already returns amounts in the smallest currency unit (cents)
+              subtotal_cents: Math.round(inv.subtotal),
+              tax_cents: Math.round(inv.tax ?? 0),
+              total_cents: Math.round(inv.total),
               currency: inv.currency,
               hosted_invoice_url: inv.hosted_invoice_url,
               invoice_pdf_url: inv.invoice_pdf,
@@ -233,7 +237,7 @@ router.post("/jira", async (req, res, next) => {
       return;
     }
 
-    if (!validateWebhookTimestamp(event)) {
+    if (!validateWebhookTimestamp(event, undefined, { requireTimestamp: true })) {
       logger.warn({ event: event.webhookEvent, issueKey }, "Jira webhook timestamp outside tolerance");
       res.status(400).json(failure("BAD_REQUEST", "Webhook timestamp outside tolerance", 400));
       return;
@@ -311,7 +315,7 @@ router.post("/jsm", async (req, res, next) => {
       return;
     }
 
-    if (!validateWebhookTimestamp(event)) {
+    if (!validateWebhookTimestamp(event, undefined, { requireTimestamp: true })) {
       logger.warn({ event: event.webhookEvent, issueKey }, "JSM webhook timestamp outside tolerance");
       res.status(400).json(failure("BAD_REQUEST", "Webhook timestamp outside tolerance", 400));
       return;
@@ -393,9 +397,16 @@ router.post("/m365", async (req, res, next) => {
     }
 
     for (const notification of value) {
-      if (notification.clientState && notification.clientState !== clientState) {
-        logger.warn({ resource: notification.resource }, "M365 webhook clientState mismatch");
-        res.status(401).json(failure("UNAUTHORIZED", "Invalid clientState", 401));
+      // clientState is the only authentication for M365 change notifications
+      // (Graph does not sign webhook payloads). Missing or mismatched
+      // clientState must be rejected — previously an omitted clientState
+      // passed the check, making the endpoint unauthenticated.
+      if (!notification.clientState || notification.clientState !== clientState) {
+        logger.warn(
+          { resource: notification.resource, hasClientState: Boolean(notification.clientState) },
+          "M365 webhook clientState missing or mismatch",
+        );
+        res.status(401).json(failure("UNAUTHORIZED", "Invalid or missing clientState", 401));
         return;
       }
     }
@@ -406,9 +417,19 @@ router.post("/m365", async (req, res, next) => {
       return;
     }
 
-    const resource = value[0]?.resource;
-    const changeType = value[0]?.changeType;
-    const m365Key = `m365-${resource ?? "unknown"}-${changeType ?? "unknown"}`;
+    const notification = value[0];
+    const resource = notification?.resource;
+    const changeType = notification?.changeType;
+    // Deterministic but event-unique dedup key: Graph sends no per-event id or
+    // timestamp, so include the subscription expiry + a digest of the full
+    // notification JSON. Identical retransmissions dedupe; distinct legitimate
+    // events (same resource + changeType) are NOT suppressed.
+    const eventDigest = crypto
+      .createHash("sha256")
+      .update(JSON.stringify(notification ?? {}))
+      .digest("hex")
+      .slice(0, 16);
+    const m365Key = `m365-${resource ?? "unknown"}-${changeType ?? "unknown"}-${notification?.subscriptionExpirationDateTime ?? "no-expiry"}-${eventDigest}`;
     if (await dedupWebhook(m365Key)) {
       res.json(success({ received: true }));
       return;

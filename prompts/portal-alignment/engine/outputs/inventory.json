@@ -6,13 +6,13 @@
       ],
       "has_routes": true,
       "routes_dir": "C:\\temp\\mainecybertech-portal\\apps\\api\\src\\routes",
-      "file_count": 5840
+      "file_count": 5852
     },
     "web": {
       "entry_points": [],
       "has_routes": false,
       "routes_dir": null,
-      "file_count": 21752
+      "file_count": 20548
     },
     "worker": {
       "entry_points": [
@@ -20,7 +20,7 @@
       ],
       "has_routes": false,
       "routes_dir": null,
-      "file_count": 4902
+      "file_count": 4943
     }
   },
   "packages": {
@@ -42,8 +42,7 @@
     "infra\\digitalocean\\Caddyfile": 2435,
     "infra\\digitalocean\\Caddyfile.dev": 604,
     "infra\\digitalocean\\Caddyfile.prod": 711,
-    "infra\\digitalocean\\deploy.sh": 1029,
-    "infra\\digitalocean\\docker-compose.yml": 3829,
+    "infra\\digitalocean\\docker-compose.yml": 4539,
     "infra\\digitalocean\\README.md": 84,
     "infra\\terraform\\README.md": 232,
     "infra\\terraform\\.terraform\\modules\\modules.json": 173,
@@ -183,7 +182,7 @@
     "infra\\terraform\\digitalocean\\droplet.tf": 543,
     "infra\\terraform\\digitalocean\\firewall.tf": 1288,
     "infra\\terraform\\digitalocean\\outputs.tf": 352,
-    "infra\\terraform\\digitalocean\\providers.tf": 846,
+    "infra\\terraform\\digitalocean\\providers.tf": 774,
     "infra\\terraform\\digitalocean\\terraform.tfstate": 9874,
     "infra\\terraform\\digitalocean\\terraform.tfstate.backup": 9565,
     "infra\\terraform\\digitalocean\\variables.tf": 1904,
@@ -860,6 +859,47 @@
         "endpoint_security",
         "vendor_contracts"
       ]
+    },
+    {
+      "file": "5302104_store_promotions.sql",
+      "tables": [
+        "store_promotions",
+        "store_promotions"
+      ]
+    },
+    {
+      "file": "5302105_store_quotes.sql",
+      "tables": [
+        "store_quotes",
+        "store_quotes"
+      ]
+    },
+    {
+      "file": "5302106_store_analytics.sql",
+      "tables": [
+        "IF",
+        "store_analytics_events"
+      ]
+    },
+    {
+      "file": "5302107_notification_dedup_and_indexes.sql",
+      "tables": [
+        "notifications"
+      ]
+    },
+    {
+      "file": "5302108_fix_audit_logs_cascade.sql",
+      "tables": [
+        "audit_logs"
+      ]
+    },
+    {
+      "file": "5302109_soft_delete.sql",
+      "tables": [
+        "if",
+        "if",
+        "if"
+      ]
     }
   ],
   "routes": [
@@ -886,6 +926,18 @@
     {
       "file": "ai.ts",
       "path": "/copilot/:ticketId/reply-draft"
+    },
+    {
+      "file": "analytics.ts",
+      "path": "/track"
+    },
+    {
+      "file": "analytics.ts",
+      "path": "/"
+    },
+    {
+      "file": "analytics.ts",
+      "path": "/summary"
     },
     {
       "file": "api-keys.ts",
@@ -1066,6 +1118,10 @@
     {
       "file": "billing.ts",
       "path": "/sync"
+    },
+    {
+      "file": "billing.ts",
+      "path": "/create-portal-session"
     },
     {
       "file": "bulk.ts",
@@ -1984,6 +2040,54 @@
       "path": "/public/:orgId"
     },
     {
+      "file": "store.ts",
+      "path": "/promotions"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions/active"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions/admin"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions/:id"
+    },
+    {
+      "file": "store.ts",
+      "path": "/promotions/:id"
+    },
+    {
+      "file": "store.ts",
+      "path": "/quotes"
+    },
+    {
+      "file": "store.ts",
+      "path": "/quotes"
+    },
+    {
+      "file": "store.ts",
+      "path": "/products"
+    },
+    {
+      "file": "store.ts",
+      "path": "/products/:slug"
+    },
+    {
+      "file": "store.ts",
+      "path": "/categories"
+    },
+    {
+      "file": "store.ts",
+      "path": "/categories/:slug"
+    },
+    {
       "file": "tickets.ts",
       "path": "/export"
     },
@@ -2014,6 +2118,10 @@
     {
       "file": "tickets.ts",
       "path": "/:id/comments/:commentId"
+    },
+    {
+      "file": "tickets.ts",
+      "path": "/:id"
     },
     {
       "file": "tickets.ts",
@@ -2178,6 +2286,10 @@
     {
       "file": "webhooks.ts",
       "path": "/m365"
+    },
+    {
+      "file": "webhooks.ts",
+      "path": "/m365"
     }
   ],
   "components": [
@@ -2198,6 +2310,8 @@
     "admin\\AdminHeaderActions.tsx",
     "admin\\AdminOrganizationsClient.tsx",
     "admin\\AdminPageShell.tsx",
+    "admin\\AdminSidebarContent.tsx",
+    "admin\\AdminSidebarLayout.tsx",
     "admin\\AdminSLAClient.tsx",
     "admin\\AdminSubnav.tsx",
     "admin\\AdminTicketCenterClient.tsx",
@@ -2227,6 +2341,8 @@
     "portal\\PortalDocumentsCenterClient.tsx",
     "portal\\PortalGlobalSearch.tsx",
     "portal\\PortalHeaderActions.tsx",
+    "portal\\PortalSidebarContent.tsx",
+    "portal\\PortalSidebarLayout.tsx",
     "portal\\PortalSubnav.tsx",
     "portal\\ProjectCalendarView.tsx",
     "portal\\ProjectTasksWithViews.tsx",
@@ -2254,16 +2370,16 @@
     "store\\TrustBadgeList.tsx"
   ],
   "tests": {
-    "api": 213,
+    "api": 219,
     "web": 0,
     "sdk": 0,
-    "worker": 6,
+    "worker": 12,
     "e2e": 0
   },
-  "total_files": 2943,
-  "total_lines": 353787,
+  "total_files": 3067,
+  "total_lines": 362972,
   "git": {
-    "commit": "62da92c fix: remove duplicate Everything lines in top tiers",
+    "commit": "a585f1d feat: comprehensive detailed runbook procedures for all 245 products",
     "branch": "develop"
   },
   "summary": {
@@ -2272,10 +2388,10 @@
       "web",
       "worker"
     ],
-    "migrations": 68,
-    "api_routes": 329,
-    "components": 71,
-    "total_files": 2943,
-    "total_lines": 353787
+    "migrations": 74,
+    "api_routes": 347,
+    "components": 75,
+    "total_files": 3067,
+    "total_lines": 362972
   }
 }

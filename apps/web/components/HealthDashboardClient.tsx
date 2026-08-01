@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { getClientEnv } from "@/lib/env";
 
 type ServiceStatus = "ok" | "degraded" | "down" | "checking";
 
@@ -12,10 +13,7 @@ type HealthState = {
   dbLatency?: number;
 };
 
-const API_URL =
-  typeof window !== "undefined"
-    ? (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
-    : "http://localhost:4000";
+const API_URL = getClientEnv().NEXT_PUBLIC_API_URL;
 
 export default function HealthDashboardClient() {
   const [health, setHealth] = useState<HealthState>({

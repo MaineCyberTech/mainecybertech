@@ -112,6 +112,7 @@ function phaseCard({
                 type="checkbox"
                 checked={item.is_completed}
                 disabled
+                aria-label={item.label ?? "Onboarding item"}
                 className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500"
               />
               <div className="min-w-0 flex-1">

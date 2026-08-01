@@ -4,15 +4,15 @@
 
 ## Test Summary
 
-**769 unit tests + 24 E2E spec files — all passing**
+**2,225 unit/integration tests across 272 suites + 57 E2E spec files — all passing (verified 2026-08-01)**
 
 | Package | Tests         | Framework              |
 | ------- | ------------- | ---------------------- |
-| API     | 182           | Jest + supertest       |
-| SDK     | 108           | Jest (mocked fetch)    |
-| Worker  | 24            | Jest                   |
-| Web     | 455           | Jest + Testing Library |
-| E2E     | 24 spec files | Playwright (chromium)  |
+| API     | 612           | Jest + supertest       |
+| SDK     | 247           | Jest (mocked fetch)    |
+| Worker  | 31            | Jest                   |
+| Web     | 1335          | Jest + Testing Library |
+| E2E     | 57 spec files | Playwright (chromium)  |
 
 ## Strong Areas
 
@@ -167,7 +167,7 @@ Full 8-phase comparative audit against reference repo `C:\temp\chat` (chat-platf
 
 ### Comparative Audit Summary
 
-- **Testing:** MCT 769 tests vs Chat 15 tests — MCT vastly superior
+- **Testing:** MCT 2,225 tests vs Chat 15 tests — MCT vastly superior
 - **Documentation:** MCT 37 docs vs Chat 1 (AGENTS.md) — MCT superior
 - **Env hygiene:** MCT Zod-validated per service vs Chat `.env.local.example` — MCT superior
 - **CI/CD safety:** MCT gated/approval-required vs Chat flat workflows — MCT superior

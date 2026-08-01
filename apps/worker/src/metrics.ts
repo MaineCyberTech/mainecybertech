@@ -1,5 +1,6 @@
 import promClient from "prom-client";
 import { getRegisteredTaskTypes } from "./task-registry";
+import { getTaskQueueStats } from "./producer";
 
 const register = new promClient.Registry();
 
@@ -22,8 +23,14 @@ export const taskExecutionDuration = new promClient.Histogram({
 
 export const taskQueueDepth = new promClient.Gauge({
   name: "worker_task_queue_depth",
-  help: "Current number of tasks in the queue",
+  help: "Current number of tasks waiting or active in the BullMQ queue (set only when the queue connection is available)",
   labelNames: ["queue"] as const,
+  registers: [register],
+});
+
+export const workerRegisteredTasks = new promClient.Gauge({
+  name: "worker_registered_tasks",
+  help: "Number of registered task handlers in the worker process",
   registers: [register],
 });
 
@@ -48,6 +55,18 @@ export function getMetricsContentType(): string {
 
 export async function getMetrics(): Promise<string> {
   updateMemoryMetrics();
-  taskQueueDepth.set({ queue: "registered" }, getRegisteredTaskTypes().length);
+  workerRegisteredTasks.set(getRegisteredTaskTypes().length);
+
+  const statsPromise = getTaskQueueStats().then((stats) => stats ?? null);
+  const stats = await Promise.race([
+    statsPromise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+  ]);
+  if (stats) {
+    taskQueueDepth.set({ queue: "mct-tasks" }, stats.waiting + stats.active);
+  } else {
+    taskQueueDepth.set({ queue: "unavailable" }, 0);
+  }
+
   return register.metrics();
 }

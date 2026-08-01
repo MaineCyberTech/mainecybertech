@@ -9,6 +9,23 @@ import {
 let _adminClient: SupabaseClient | null = null;
 const circuitBreaker = createSupabaseCircuitBreaker();
 
+function isTestEnv(): boolean {
+  return (getEnv()?.NODE_ENV ?? process.env.NODE_ENV) === "test";
+}
+
+/**
+ * Wrap the Supabase client's fetch with the circuit breaker so failing
+ * Supabase calls (network errors / timeouts) trip the breaker instead of
+ * cascading to every downstream request. In test environments the breaker is
+ * bypassed to preserve existing test behavior.
+ */
+function circuitBreakingFetch(...args: Parameters<typeof fetch>): ReturnType<typeof fetch> {
+  if (isTestEnv()) {
+    return fetch(...args);
+  }
+  return circuitBreaker.execute(() => fetch(...args));
+}
+
 export function getSupabaseAdmin(): SupabaseClient {
   if (!_adminClient) {
     const env = getEnv();
@@ -24,7 +41,7 @@ export function getSupabaseAdmin(): SupabaseClient {
           persistSession: false,
         },
         global: {
-          fetch: (...args) => fetch(...args),
+          fetch: circuitBreakingFetch,
         },
         realtime: {
           transport: WebSocket as any,

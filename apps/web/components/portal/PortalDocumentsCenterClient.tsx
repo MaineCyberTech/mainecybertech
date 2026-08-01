@@ -238,6 +238,7 @@ export default function PortalDocumentsCenterClient({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search documents..."
+            aria-label="Search documents"
             className="cyber-input min-w-[200px] flex-1"
           />
         </div>
@@ -346,6 +347,7 @@ export default function PortalDocumentsCenterClient({
                       checked={selectedIds.includes(doc.id)}
                       onChange={() => toggleSelect(doc.id)}
                       className="shrink-0 accent-emerald-600"
+                      aria-label="Select document"
                     />
                   ) : null}
                   <Link
@@ -381,6 +383,7 @@ export default function PortalDocumentsCenterClient({
                           type="checkbox"
                           checked={selectedIds.length === sorted.length && sorted.length > 0}
                           onChange={toggleAll}
+                          aria-label="Select all documents"
                           className="accent-emerald-600"
                         />
                       </th>
@@ -424,6 +427,7 @@ export default function PortalDocumentsCenterClient({
                             type="checkbox"
                             checked={selectedIds.includes(doc.id)}
                             onChange={() => toggleSelect(doc.id)}
+                            aria-label="Select document"
                             className="accent-emerald-600"
                           />
                         </td>

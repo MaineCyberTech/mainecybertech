@@ -1,6 +1,16 @@
 #!/bin/sh
 
-PATTERNS="SUPABASE_SERVICE_ROLE_KEY|SUPABASE_ANON_KEY|JWT_SECRET|STRIPE_SECRET_KEY|AKIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|-----BEGIN[ A-Za-z]*PRIVATE KEY-----"
+# Pre-commit secret scanner — mirrors the CI `secrets-scan` job in
+# .github/workflows/test.yml. Keep both pattern lists in sync.
+#
+# Full-history scan option (run manually, e.g. before a public push):
+#   git log --all -p | grep -E "$PATTERNS" | grep -v 'secrets\.' | grep -v 'PATTERNS=' || true
+#   git log --all --format='%H' --name-only | xargs grep -lE "$PATTERNS" 2>/dev/null || true
+# Note: patterns intentionally include common provider tokens:
+#   ghp_ (GitHub PAT), gho_ (GitHub OAuth), github_pat_ (fine-grained PAT),
+#   sk_live_/sk_test_ (Stripe), AKIA (AWS access key).
+
+PATTERNS="SUPABASE_SERVICE_ROLE_KEY|SUPABASE_ANON_KEY|JWT_SECRET|STRIPE_SECRET_KEY|AKIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|github_pat_[0-9a-zA-Z_]{22,}|sk_(live|test)_[0-9a-zA-Z]{16,}|-----BEGIN[ A-Za-z]*PRIVATE KEY-----"
 
 STAGED=$(git diff --cached --diff-filter=ACMR --name-only 2>/dev/null | grep -vE '\.md$|scan-secrets\.|__tests__|jest\.setup|\.test\.' || true)
 

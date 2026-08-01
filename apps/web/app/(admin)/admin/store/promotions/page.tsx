@@ -3,14 +3,13 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { validatePromotion, type Promotion } from "@/lib/catalog/promotions";
+import { getApiClient } from "@/lib/api";
+import type { StorePromotion } from "@mct/sdk";
 import PromoForm from "./PromoForm";
 import DeleteButton from "./DeleteButton";
-import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Promotions - Store - Admin - Maine CyberTech" };
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 const promoTypeLabels: Record<string, string> = {
   bundle_savings: "Bundle Savings",
@@ -40,29 +39,30 @@ function formatDate(d?: string) {
   });
 }
 
-async function fetchPromotions(): Promise<Promotion[]> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("mct_session")?.value;
-  const res = await fetch(`${API_BASE}/api/v1/store/promotions/admin`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    cache: "no-store",
-  });
-  if (!res.ok) return [];
-  const json = await res.json();
-  return (json.data ?? []).map((p: Record<string, unknown>) => ({
-    id: p.id as string,
-    name: p.name as string,
-    badgeText: (p as any).badge_text as string || "",
-    detailText: (p as any).detail_text as string || "",
-    promoType: (p as any).promo_type as string || "bundle_savings",
+function toPromotion(p: StorePromotion): Promotion {
+  return {
+    id: p.id,
+    name: p.name,
+    badgeText: p.badge_text || "",
+    detailText: p.detail_text || "",
+    promoType: p.promo_type || "bundle_savings",
     status: p.status as Promotion["status"],
-    terms: p.terms as string || "",
-    eligibilityTargets: ((p as any).eligibility_targets as string[]) || [],
-    startDate: (p as any).start_date as string || undefined,
-    endDate: (p as any).end_date as string || undefined,
-    createdAt: p.created_at as string,
-    updatedAt: p.updated_at as string,
-  }));
+    terms: p.terms || "",
+    eligibilityTargets: p.eligibility_targets || [],
+    startDate: p.start_date || undefined,
+    endDate: p.end_date || undefined,
+    createdAt: p.created_at,
+    updatedAt: p.updated_at,
+  };
+}
+
+async function fetchPromotions(): Promise<Promotion[]> {
+  try {
+    const promotions = await getApiClient().store.listPromotions();
+    return promotions.map(toPromotion);
+  } catch {
+    return [];
+  }
 }
 
 export default async function AdminPromotionsPage() {

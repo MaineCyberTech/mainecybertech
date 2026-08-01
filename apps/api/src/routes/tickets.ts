@@ -198,12 +198,11 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateTicketSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    const orgId = req.query.organization_id as string | undefined;
 
-    const { data: current, error: fetchError } = await supabase
-      .from("tickets")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
+    let currentQuery = supabase.from("tickets").select("version").eq("id", req.params.id);
+    if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+    const { data: current, error: fetchError } = await currentQuery.single();
 
     if (fetchError || !current) {
       throw new AppError("NOT_FOUND", "Ticket not found", 404);
@@ -225,13 +224,13 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     updateData.version = current.version + 1;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("tickets")
       .update(updateData)
       .eq("id", req.params.id)
-      .eq("version", current.version)
-      .select()
-      .single();
+      .eq("version", current.version);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.select().single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     if (!data) throw new AppError("VERSION_CONFLICT", "Ticket was modified by another user", 409);
@@ -274,6 +273,15 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.get("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const orgId = req.query.organization_id as string | undefined;
+
+    // Verify the ticket exists and (when scoped) belongs to the caller's org
+    // before exposing its comments.
+    let ticketQuery = supabase.from("tickets").select("id").eq("id", req.params.id);
+    if (orgId) ticketQuery = ticketQuery.eq("organization_id", orgId);
+    const { data: ticket, error: ticketError } = await ticketQuery.single();
+    if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
+
     const { data, error } = await supabase
       .from("ticket_comments")
       .select("*")
@@ -359,34 +367,66 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
 
     const { data: existing, error: fetchError } = await supabase
       .from("ticket_comments")
-      .select("id, author_id, organization_id, body")
+      .select("id, author_id, organization_id, body, created_at")
       .eq("id", req.params.commentId)
       .eq("ticket_id", req.params.id)
       .single();
 
     if (fetchError || !existing) throw new AppError("NOT_FOUND", "Comment not found", 404);
 
-    // 5-minute edit window check
-    const { data: comment } = await supabase
-      .from("ticket_comments")
-      .select("created_at")
-      .eq("id", req.params.commentId)
-      .single();
-
-    if (comment) {
-      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
-      if (new Date(comment.created_at) < fiveMinAgo)
-        throw new AppError(
-          "FORBIDDEN",
-          "Comment can only be edited within 5 minutes of posting",
-          403,
-        );
+    // Tenant check: the comment's ticket must belong to the comment's org,
+    // and (when the caller is scoped to an org) that org must match.
+    const orgId = req.query.organization_id as string | undefined;
+    if (orgId && orgId !== existing.organization_id) {
+      throw new AppError("FORBIDDEN", "Not authorized for this comment", 403);
     }
+
+    const { data: ticket } = await supabase
+      .from("tickets")
+      .select("id, organization_id")
+      .eq("id", req.params.id)
+      .single();
+    if (!ticket || ticket.organization_id !== existing.organization_id) {
+      throw new AppError("NOT_FOUND", "Comment not found", 404);
+    }
+
+    // Author check: only the comment author (or an admin of the comment's org)
+    // may edit it.
+    const isAuthor = existing.author_id === req.authUser!.userId;
+    if (!isAuthor) {
+      const { data: memberships } = await supabase
+        .from("memberships")
+        .select("roles!inner(id, key)")
+        .eq("user_id", req.authUser!.userId)
+        .eq("organization_id", existing.organization_id)
+        .eq("status", "approved");
+
+      const isOrgAdmin =
+        memberships?.some((row) =>
+          ["admin", "super_admin"].includes(
+            (row.roles as unknown as { key: string }).key,
+          ),
+        ) ?? false;
+
+      if (!isOrgAdmin) {
+        throw new AppError("FORBIDDEN", "Only the comment author can edit this comment", 403);
+      }
+    }
+
+    // 5-minute edit window check
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+    if (new Date(existing.created_at) < fiveMinAgo)
+      throw new AppError(
+        "FORBIDDEN",
+        "Comment can only be edited within 5 minutes of posting",
+        403,
+      );
 
     const { data, error } = await supabase
       .from("ticket_comments")
       .update({ body: parsed.body, edited_at: new Date().toISOString() })
       .eq("id", req.params.commentId)
+      .eq("organization_id", existing.organization_id)
       .select()
       .single();
 

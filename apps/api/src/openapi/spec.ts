@@ -250,6 +250,252 @@ const businessModules: RouteDef[] = [
   { method: "get", path: "/dashboard/activity-feed", summary: "Recent activity feed", tag: "Dashboard" },
 ];
 
+const extendedRoutes: RouteDef[] = [
+// admin - generated from apps/api/src/routes/admin.ts
+  { method: "post", path: "/admin/test-email", summary: "Send test email", tag: "Admin" },
+
+// ai - generated from apps/api/src/routes/ai.ts
+  { method: "post", path: "/ai/triage/analyze", summary: "Analyze tickets with AI", tag: "AI" },
+  { method: "post", path: "/ai/triage/convert", summary: "Convert AI triage result to ticket", tag: "AI" },
+  { method: "get", path: "/ai/triage", summary: "Get AI triage suggestions", tag: "AI" },
+  { method: "get", path: "/ai/copilot/{ticketId}/summarize", summary: "Summarize ticket with AI", tag: "AI", params: [pathParam("ticketId")] },
+  { method: "post", path: "/ai/copilot/{ticketId}/reply-draft", summary: "Draft AI reply for ticket", tag: "AI", params: [pathParam("ticketId")] },
+
+// analytics - generated from apps/api/src/routes/analytics.ts
+  { method: "get", path: "/analytics/summary", summary: "Get analytics summary", tag: "Analytics" },
+
+// approvals - generated from apps/api/src/routes/approvals.ts
+  { method: "get", path: "/approvals/stats", summary: "Get approval statistics", tag: "Approvals" },
+  { method: "delete", path: "/approvals/{id}", summary: "Delete approval", tag: "Approvals", params: [pathParam("id")] },
+  { method: "post", path: "/approvals/{id}/reject", summary: "Reject approval", tag: "Approvals", params: [pathParam("id")] },
+  { method: "post", path: "/approvals/{id}/cancel", summary: "Cancel approval", tag: "Approvals", params: [pathParam("id")] },
+  { method: "get", path: "/approvals/{id}/comments", summary: "List approval comments", tag: "Approvals", params: [pathParam("id")] },
+  { method: "post", path: "/approvals/{id}/comments", summary: "Add approval comment", tag: "Approvals", params: [pathParam("id")] },
+  { method: "get", path: "/approvals/{id}/timeline", summary: "Get approval timeline", tag: "Approvals", params: [pathParam("id")] },
+
+// assets - generated from apps/api/src/routes/assets.ts
+  { method: "get", path: "/assets/{id}/comments", summary: "List asset comments", tag: "Assets", params: [pathParam("id")] },
+  { method: "get", path: "/assets/{id}/timeline", summary: "Get asset timeline", tag: "Assets", params: [pathParam("id")] },
+
+// batch - generated from apps/api/src/routes/batch.ts
+  { method: "get", path: "/batch/status/public", summary: "List public status items", tag: "Batch", auth: false },
+  { method: "get", path: "/batch/licenses/savings", summary: "Get license savings", tag: "Batch" },
+
+// billing - generated from apps/api/src/routes/billing.ts
+  { method: "get", path: "/billing/billing-customer", summary: "Get Stripe billing customer", tag: "Billing" },
+  { method: "post", path: "/billing/create-portal-session", summary: "Create billing portal session", tag: "Billing" },
+
+// business-os - generated from apps/api/src/routes/business-os.ts
+  { method: "get", path: "/business-os/summary", summary: "Get business OS summary", tag: "BusinessOS" },
+  { method: "get", path: "/business-os/approvals-overdue", summary: "Get overdue approvals", tag: "BusinessOS" },
+  { method: "get", path: "/business-os/recent-activity", summary: "Get recent activity", tag: "BusinessOS" },
+  { method: "get", path: "/business-os/org-health", summary: "Get org health", tag: "BusinessOS" },
+
+// client-onboarding-command-center - generated from apps/api/src/routes/client-onboarding-command-center.ts
+  { method: "get", path: "/client-onboarding/export.csv", summary: "Export client onboarding (CSV)", tag: "Onboarding" },
+  { method: "get", path: "/client-onboarding/{id}", summary: "Get client onboarding", tag: "Onboarding", params: [pathParam("id")] },
+  { method: "post", path: "/client-onboarding", summary: "Create client onboarding", tag: "Onboarding" },
+  { method: "patch", path: "/client-onboarding/{id}", summary: "Update client onboarding", tag: "Onboarding", params: [pathParam("id")] },
+  { method: "delete", path: "/client-onboarding/{id}", summary: "Delete client onboarding", tag: "Onboarding", params: [pathParam("id")] },
+  { method: "post", path: "/client-onboarding/{id}/complete-phase", summary: "Complete onboarding phase", tag: "Onboarding", params: [pathParam("id")] },
+  { method: "get", path: "/client-onboarding/{id}/checklist", summary: "Get onboarding checklist", tag: "Onboarding", params: [pathParam("id")] },
+  { method: "patch", path: "/client-onboarding/{id}/checklist/{itemId}", summary: "Update onboarding checklist item", tag: "Onboarding", params: [pathParam("id"), pathParam("itemId")] },
+
+// dmarc-coach - generated from apps/api/src/routes/dmarc-coach.ts
+  { method: "get", path: "/dmarc-coach/{id}", summary: "Get DMARC assessment", tag: "DMARCCoach", params: [pathParam("id")] },
+  { method: "post", path: "/dmarc-coach", summary: "Create DMARC assessment", tag: "DMARCCoach" },
+  { method: "patch", path: "/dmarc-coach/{id}", summary: "Update DMARC assessment", tag: "DMARCCoach", params: [pathParam("id")] },
+  { method: "delete", path: "/dmarc-coach/{id}", summary: "Delete DMARC assessment", tag: "DMARCCoach", params: [pathParam("id")] },
+  { method: "post", path: "/dmarc-coach/analyze", summary: "Run DMARC analysis", tag: "DMARCCoach" },
+
+// documents - generated from apps/api/src/routes/documents.ts
+  { method: "get", path: "/documents/{id}", summary: "Get document", tag: "Documents", params: [pathParam("id")] },
+  { method: "post", path: "/documents/{id}/signed-url", summary: "Create signed download URL", tag: "Documents", params: [pathParam("id")] },
+  { method: "post", path: "/documents/{id}/shares", summary: "Create document share link", tag: "Documents", params: [pathParam("id")] },
+  { method: "get", path: "/documents/{id}/shares", summary: "List document shares", tag: "Documents", params: [pathParam("id")] },
+  { method: "patch", path: "/documents/{id}/shares/{shareId}", summary: "Update document share", tag: "Documents", params: [pathParam("id"), pathParam("shareId")] },
+  { method: "delete", path: "/documents/{id}/shares/{shareId}", summary: "Delete document share", tag: "Documents", params: [pathParam("id"), pathParam("shareId")] },
+  { method: "get", path: "/documents/shares/{token}", summary: "Get shared document by token (public)", tag: "Documents", auth: false, params: [pathParam("token")] },
+
+// dynamic-client-forms-builder - generated from apps/api/src/routes/dynamic-client-forms-builder.ts
+  { method: "get", path: "/dynamic-forms/export.csv", summary: "Export dynamic forms (CSV)", tag: "Forms" },
+  { method: "get", path: "/dynamic-forms/{id}", summary: "Get dynamic form", tag: "Forms", params: [pathParam("id")] },
+  { method: "post", path: "/dynamic-forms", summary: "Create dynamic form", tag: "Forms" },
+  { method: "patch", path: "/dynamic-forms/{id}", summary: "Update dynamic form", tag: "Forms", params: [pathParam("id")] },
+  { method: "delete", path: "/dynamic-forms/{id}", summary: "Delete dynamic form", tag: "Forms", params: [pathParam("id")] },
+  { method: "post", path: "/dynamic-forms/{id}/publish", summary: "Publish dynamic form", tag: "Forms", params: [pathParam("id")] },
+  { method: "post", path: "/dynamic-forms/{id}/submit", summary: "Submit dynamic form response", tag: "Forms", params: [pathParam("id")] },
+  { method: "get", path: "/dynamic-forms/{id}/submissions", summary: "List form submissions", tag: "Forms", params: [pathParam("id")] },
+
+// edu-automation - generated from apps/api/src/routes/edu-automation.ts
+  { method: "post", path: "/edu-automation/automation/{id}/execute", summary: "Execute automation", tag: "EduAutomation", params: [pathParam("id")] },
+  { method: "post", path: "/edu-automation/automation/{id}/complete", summary: "Complete automation", tag: "EduAutomation", params: [pathParam("id")] },
+  { method: "post", path: "/edu-automation/kb-generator/{id}/generate", summary: "Generate knowledge base article", tag: "EduAutomation", params: [pathParam("id")] },
+  { method: "get", path: "/edu-automation/kb/search", summary: "Search knowledge base", tag: "EduAutomation" },
+  { method: "post", path: "/edu-automation/kb/{id}/rate", summary: "Rate knowledge base article", tag: "EduAutomation", params: [pathParam("id")] },
+  { method: "post", path: "/edu-automation/compliance/score", summary: "Score compliance posture", tag: "EduAutomation" },
+  { method: "post", path: "/edu-automation/phishing/{id}/launch", summary: "Launch phishing campaign", tag: "EduAutomation", params: [pathParam("id")] },
+  { method: "get", path: "/edu-automation/phishing/{id}/results", summary: "Get phishing campaign results", tag: "EduAutomation", params: [pathParam("id")] },
+  { method: "get", path: "/edu-automation/scorecards/summary", summary: "Get scorecard summary", tag: "EduAutomation" },
+  { method: "get", path: "/edu-automation/scorecards/overview", summary: "Get scorecard overview", tag: "EduAutomation" },
+  { method: "get", path: "/edu-automation/scorecards/leaderboard", summary: "Get scorecard leaderboard", tag: "EduAutomation" },
+  { method: "post", path: "/edu-automation/scorecards/evaluate", summary: "Evaluate scorecard", tag: "EduAutomation" },
+
+// field-services - generated from apps/api/src/routes/field-services.ts
+  { method: "post", path: "/field-services/isp/{id}/score", summary: "Score ISP offering", tag: "FieldServices", params: [pathParam("id")] },
+  { method: "post", path: "/field-services/unifi/{id}/plan", summary: "Generate UniFi deployment plan", tag: "FieldServices", params: [pathParam("id")] },
+  { method: "post", path: "/field-services/camera-calc/calculate", summary: "Calculate camera coverage plan", tag: "FieldServices" },
+  { method: "post", path: "/field-services/staging/{id}/checklist", summary: "Get hardware staging checklist", tag: "FieldServices", params: [pathParam("id")] },
+  { method: "get", path: "/field-services/network-diagrams/{id}/export", summary: "Export network diagram", tag: "FieldServices", params: [pathParam("id")] },
+
+// file-requests - generated from apps/api/src/routes/file-requests.ts
+  { method: "get", path: "/file-requests/public/{token}", summary: "Get public file request by token", tag: "FileRequests", auth: false, params: [pathParam("token")] },
+  { method: "patch", path: "/file-requests/{id}", summary: "Update file request", tag: "FileRequests", params: [pathParam("id")] },
+  { method: "delete", path: "/file-requests/{id}", summary: "Delete file request", tag: "FileRequests", params: [pathParam("id")] },
+
+// final - generated from apps/api/src/routes/final.ts
+  { method: "get", path: "/final/sharepoint/structure-summary", summary: "Get SharePoint structure summary", tag: "Final" },
+  { method: "get", path: "/final/backups/stats", summary: "Get backup statistics", tag: "Final" },
+  { method: "get", path: "/final/backups/risk-analysis", summary: "Get backup risk analysis", tag: "Final" },
+  { method: "get", path: "/final/budgets/analysis", summary: "Get budget analysis", tag: "Final" },
+  { method: "post", path: "/final/procurement/compare", summary: "Compare procurement options", tag: "Final" },
+
+// findings - generated from apps/api/src/routes/findings.ts
+  { method: "get", path: "/findings/stats", summary: "Get finding statistics", tag: "Findings" },
+  { method: "post", path: "/findings/{id}/verify", summary: "Verify finding", tag: "Findings", params: [pathParam("id")] },
+  { method: "post", path: "/findings/{id}/resolve", summary: "Resolve finding", tag: "Findings", params: [pathParam("id")] },
+  { method: "get", path: "/findings/{id}/comments", summary: "List finding comments", tag: "Findings", params: [pathParam("id")] },
+  { method: "post", path: "/findings/{id}/comments", summary: "Add finding comment", tag: "Findings", params: [pathParam("id")] },
+  { method: "get", path: "/findings/{id}/timeline", summary: "Get finding timeline", tag: "Findings", params: [pathParam("id")] },
+
+// governance - generated from apps/api/src/routes/governance.ts
+  { method: "post", path: "/governance/change-requests/{id}/submit", summary: "Submit change request", tag: "Governance", params: [pathParam("id")] },
+  { method: "post", path: "/governance/change-requests/{id}/approve", summary: "Approve change request", tag: "Governance", params: [pathParam("id")] },
+  { method: "post", path: "/governance/change-requests/{id}/reject", summary: "Reject change request", tag: "Governance", params: [pathParam("id")] },
+  { method: "post", path: "/governance/change-requests/{id}/implement", summary: "Implement change request", tag: "Governance", params: [pathParam("id")] },
+  { method: "post", path: "/governance/change-requests/{id}/verify", summary: "Verify change request", tag: "Governance", params: [pathParam("id")] },
+  { method: "get", path: "/governance/sop-library/compliance-map", summary: "Get SOP compliance map", tag: "Governance" },
+  { method: "get", path: "/governance/sop-library/framework-gaps", summary: "Get framework gaps", tag: "Governance" },
+
+// health - generated from apps/api/src/routes/health.ts
+  { method: "get", path: "/health", summary: "Health check", tag: "Health", auth: false },
+
+// insurance-binder - generated from apps/api/src/routes/insurance-binder.ts
+  { method: "get", path: "/insurance-binder/coverage-report", summary: "Get coverage report", tag: "Insurance" },
+  { method: "post", path: "/insurance-binder", summary: "Create insurance binder", tag: "Insurance" },
+  { method: "get", path: "/insurance-binder/{id}", summary: "Get insurance binder", tag: "Insurance", params: [pathParam("id")] },
+  { method: "patch", path: "/insurance-binder/{id}", summary: "Update insurance binder", tag: "Insurance", params: [pathParam("id")] },
+  { method: "delete", path: "/insurance-binder/{id}", summary: "Delete insurance binder", tag: "Insurance", params: [pathParam("id")] },
+
+// license-optimizer - generated from apps/api/src/routes/license-optimizer.ts
+  { method: "get", path: "/license-optimizer/{id}", summary: "Get license optimizer run", tag: "LicenseOptimizer", params: [pathParam("id")] },
+  { method: "post", path: "/license-optimizer", summary: "Create license optimizer run", tag: "LicenseOptimizer" },
+  { method: "patch", path: "/license-optimizer/{id}", summary: "Update license optimizer run", tag: "LicenseOptimizer", params: [pathParam("id")] },
+  { method: "delete", path: "/license-optimizer/{id}", summary: "Delete license optimizer run", tag: "LicenseOptimizer", params: [pathParam("id")] },
+  { method: "get", path: "/license-optimizer/reclaimable/license-list", summary: "Get reclaimable license list", tag: "LicenseOptimizer" },
+  { method: "get", path: "/license-optimizer/summary/data", summary: "Get license optimizer summary", tag: "LicenseOptimizer" },
+
+// profiles - generated from apps/api/src/routes/profiles.ts
+  { method: "get", path: "/profiles/{id}", summary: "Get profile", tag: "Profiles", params: [pathParam("id")] },
+
+// projects - generated from apps/api/src/routes/projects.ts
+  { method: "delete", path: "/projects/{id}/tasks/{taskId}/comments/{commentId}", summary: "Delete task comment", tag: "Projects", params: [pathParam("id"), pathParam("taskId"), pathParam("commentId")] },
+
+// proposals - generated from apps/api/src/routes/proposals.ts
+  { method: "get", path: "/proposals/export", summary: "Export proposals (CSV/JSON)", tag: "Proposals" },
+  { method: "post", path: "/proposals/{id}/phases", summary: "Create phase", tag: "Proposals", params: [pathParam("id")] },
+  { method: "patch", path: "/proposals/{id}/phases/{phaseId}", summary: "Update phase", tag: "Proposals", params: [pathParam("id"), pathParam("phaseId")] },
+  { method: "delete", path: "/proposals/{id}/phases/{phaseId}", summary: "Delete phase", tag: "Proposals", params: [pathParam("id"), pathParam("phaseId")] },
+  { method: "post", path: "/proposals/{id}/items", summary: "Create item", tag: "Proposals", params: [pathParam("id")] },
+  { method: "patch", path: "/proposals/{id}/items/{itemId}", summary: "Update item", tag: "Proposals", params: [pathParam("id"), pathParam("itemId")] },
+  { method: "delete", path: "/proposals/{id}/items/{itemId}", summary: "Delete item", tag: "Proposals", params: [pathParam("id"), pathParam("itemId")] },
+  { method: "post", path: "/proposals/{id}/submit-approval", summary: "Submit proposal for approval", tag: "Proposals", params: [pathParam("id")] },
+  { method: "post", path: "/proposals/{id}/publish", summary: "Publish proposal", tag: "Proposals", params: [pathParam("id")] },
+  { method: "get", path: "/proposals/{id}/comments", summary: "List proposal comments", tag: "Proposals", params: [pathParam("id")] },
+  { method: "post", path: "/proposals/{id}/comments", summary: "Add proposal comment", tag: "Proposals", params: [pathParam("id")] },
+  { method: "get", path: "/proposals/{id}/timeline", summary: "Get proposal timeline", tag: "Proposals", params: [pathParam("id")] },
+
+// public - generated from apps/api/src/routes/public.ts
+  { method: "get", path: "/public/init", summary: "Public init (CSRF token)", tag: "Public", auth: false },
+
+// qbr - generated from apps/api/src/routes/qbr.ts
+  { method: "post", path: "/qbr/generate", summary: "Generate QBR report", tag: "QBR" },
+
+// satisfaction-pulse-widget - generated from apps/api/src/routes/satisfaction-pulse-widget.ts
+  { method: "get", path: "/satisfaction-pulse/export", summary: "Export surveys (CSV/JSON)", tag: "Satisfaction" },
+  { method: "get", path: "/satisfaction-pulse/{id}", summary: "Get survey", tag: "Satisfaction", params: [pathParam("id")] },
+  { method: "post", path: "/satisfaction-pulse", summary: "Create survey", tag: "Satisfaction" },
+  { method: "patch", path: "/satisfaction-pulse/{id}", summary: "Update survey", tag: "Satisfaction", params: [pathParam("id")] },
+  { method: "post", path: "/satisfaction-pulse/{id}/respond", summary: "Submit survey response", tag: "Satisfaction", params: [pathParam("id")] },
+  { method: "delete", path: "/satisfaction-pulse/{id}", summary: "Delete survey", tag: "Satisfaction", params: [pathParam("id")] },
+  { method: "get", path: "/satisfaction-pulse/templates", summary: "List templates", tag: "Satisfaction" },
+  { method: "get", path: "/satisfaction-pulse/templates/{id}", summary: "Get template", tag: "Satisfaction", params: [pathParam("id")] },
+  { method: "post", path: "/satisfaction-pulse/templates", summary: "Create template", tag: "Satisfaction" },
+  { method: "patch", path: "/satisfaction-pulse/templates/{id}", summary: "Update template", tag: "Satisfaction", params: [pathParam("id")] },
+  { method: "delete", path: "/satisfaction-pulse/templates/{id}", summary: "Delete template", tag: "Satisfaction", params: [pathParam("id")] },
+  { method: "get", path: "/satisfaction-pulse/schedules", summary: "List schedules", tag: "Satisfaction" },
+  { method: "post", path: "/satisfaction-pulse/schedules", summary: "Create schedule", tag: "Satisfaction" },
+  { method: "patch", path: "/satisfaction-pulse/schedules/{id}", summary: "Update schedule", tag: "Satisfaction", params: [pathParam("id")] },
+  { method: "delete", path: "/satisfaction-pulse/schedules/{id}", summary: "Delete schedule", tag: "Satisfaction", params: [pathParam("id")] },
+
+// security-ops - generated from apps/api/src/routes/security-ops.ts
+  { method: "post", path: "/security-ops/offboarding/{id}/complete-step", summary: "Complete offboarding step", tag: "SecurityOps", params: [pathParam("id")] },
+  { method: "get", path: "/security-ops/patch-compliance/stats", summary: "Get patch compliance stats", tag: "SecurityOps" },
+
+// security-suite - generated from apps/api/src/routes/security-suite.ts
+  { method: "post", path: "/security-suite/identity-verification/{id}/verify", summary: "Verify identity verification", tag: "SecuritySuite", params: [pathParam("id")] },
+  { method: "get", path: "/security-suite/endpoint-security/coverage", summary: "Get endpoint security coverage", tag: "SecuritySuite" },
+
+// service-catalog - generated from apps/api/src/routes/service-catalog.ts
+  { method: "post", path: "/service-catalog", summary: "Create service catalog item", tag: "ServiceCatalog" },
+  { method: "patch", path: "/service-catalog/{id}", summary: "Update service catalog item", tag: "ServiceCatalog", params: [pathParam("id")] },
+  { method: "delete", path: "/service-catalog/{id}", summary: "Delete service catalog item", tag: "ServiceCatalog", params: [pathParam("id")] },
+
+// sla - generated from apps/api/src/routes/sla.ts
+  { method: "get", path: "/sla/metrics", summary: "Get SLA metrics", tag: "SLA" },
+
+// status-page - generated from apps/api/src/routes/status-page.ts
+  { method: "get", path: "/status-page/public/{orgId}", summary: "Get public status page", tag: "StatusPage", auth: false, params: [pathParam("orgId")] },
+
+// store - generated from apps/api/src/routes/store.ts
+  { method: "get", path: "/store/promotions/admin", summary: "List promotions (admin)", tag: "Store" },
+
+// training-hub - generated from apps/api/src/routes/training-hub.ts
+  { method: "get", path: "/training-hub/my-courses", summary: "Get my courses", tag: "TrainingHub" },
+  { method: "get", path: "/training-hub/courses", summary: "List courses", tag: "TrainingHub" },
+  { method: "post", path: "/training-hub/courses", summary: "Create course", tag: "TrainingHub" },
+  { method: "get", path: "/training-hub/courses/{id}", summary: "Get course", tag: "TrainingHub", params: [pathParam("id")] },
+  { method: "patch", path: "/training-hub/courses/{id}", summary: "Update course", tag: "TrainingHub", params: [pathParam("id")] },
+  { method: "delete", path: "/training-hub/courses/{id}", summary: "Delete course", tag: "TrainingHub", params: [pathParam("id")] },
+  { method: "post", path: "/training-hub/courses/{id}/enroll", summary: "Enroll in course", tag: "TrainingHub", params: [pathParam("id")] },
+  { method: "post", path: "/training-hub/courses/{id}/progress", summary: "Update course progress", tag: "TrainingHub", params: [pathParam("id")] },
+  { method: "get", path: "/training-hub/lessons", summary: "List lessons", tag: "TrainingHub" },
+  { method: "post", path: "/training-hub/lessons", summary: "Create lesson", tag: "TrainingHub" },
+  { method: "get", path: "/training-hub/lessons/{id}", summary: "Get lesson", tag: "TrainingHub", params: [pathParam("id")] },
+  { method: "patch", path: "/training-hub/lessons/{id}", summary: "Update lesson", tag: "TrainingHub", params: [pathParam("id")] },
+  { method: "delete", path: "/training-hub/lessons/{id}", summary: "Delete lesson", tag: "TrainingHub", params: [pathParam("id")] },
+
+// uptime-monitor - generated from apps/api/src/routes/uptime-monitor.ts
+  { method: "get", path: "/uptime-monitor/dashboard", summary: "Get uptime monitor dashboard", tag: "UptimeMonitor" },
+  { method: "get", path: "/uptime-monitor/checks", summary: "List checks", tag: "UptimeMonitor" },
+  { method: "get", path: "/uptime-monitor/checks/{id}", summary: "Get check", tag: "UptimeMonitor", params: [pathParam("id")] },
+  { method: "post", path: "/uptime-monitor/checks", summary: "Create uptime check", tag: "UptimeMonitor" },
+  { method: "patch", path: "/uptime-monitor/checks/{id}", summary: "Update uptime check", tag: "UptimeMonitor", params: [pathParam("id")] },
+  { method: "delete", path: "/uptime-monitor/checks/{id}", summary: "Delete uptime check", tag: "UptimeMonitor", params: [pathParam("id")] },
+  { method: "get", path: "/uptime-monitor/checks/{id}/results", summary: "List check results", tag: "UptimeMonitor", params: [pathParam("id")] },
+  { method: "get", path: "/uptime-monitor/checks/{id}/uptime", summary: "Get uptime percentage", tag: "UptimeMonitor", params: [pathParam("id")] },
+
+// users - generated from apps/api/src/routes/users.ts
+  { method: "get", path: "/users/compound", summary: "Get compound user list", tag: "Users" },
+
+// vendors - generated from apps/api/src/routes/vendors.ts
+  { method: "get", path: "/vendors/vendor-contracts/renewals", summary: "Get vendor contract renewals", tag: "Vendors" },
+
+// webhooks - generated from apps/api/src/routes/webhooks.ts
+  { method: "get", path: "/webhooks/m365", summary: "M365 OAuth verification challenge", tag: "Webhooks", auth: false },
+
+];
+
 export const routeModules: RouteDef[] = [
   ...auth,
   ...auth2,
@@ -258,6 +504,7 @@ export const routeModules: RouteDef[] = [
   ...adminAudit,
   ...systemWebhooks,
   ...businessModules,
+  ...extendedRoutes,
 ];
 
 export function buildSpec() {

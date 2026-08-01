@@ -30,7 +30,7 @@
       ]
     }
   ],
-  "migration_count": 68,
+  "migration_count": 74,
   "unused_tables": [
     "ai_draft_outputs",
     "appointments",

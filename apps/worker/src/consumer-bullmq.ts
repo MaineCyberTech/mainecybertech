@@ -1,5 +1,5 @@
 import { Worker as BullWorker, type Job } from "bullmq";
-import { env } from "./env";
+import { env, resolveRedisUrl } from "./env";
 import { executeTask } from "./task-registry";
 import { logger } from "./logger";
 import { isShuttingDown, drainInFlight } from "./shutdown";
@@ -7,7 +7,7 @@ import { isShuttingDown, drainInFlight } from "./shutdown";
 let bullWorker: BullWorker | null = null;
 
 export async function runBullMQWorker(): Promise<void> {
-  const connection = { url: env.REDIS_URL };
+  const connection = { url: resolveRedisUrl(env.REDIS_URL, env.REDIS_PASSWORD) };
   const concurrency = env.WORKER_CONCURRENCY;
 
   bullWorker = new BullWorker(

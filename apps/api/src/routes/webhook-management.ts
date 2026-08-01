@@ -9,6 +9,7 @@ import { requireAdmin } from "../middleware/admin";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
 import { httpClients } from "../lib/http-client";
+import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -67,11 +68,10 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("webhook_endpoints")
-      .select("*")
-      .eq("id", req.params.id)
-      .single();
+    const orgId = req.query.organization_id as string | undefined;
+    let query = supabase.from("webhook_endpoints").select("*").eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Webhook not found", 404);
     res.json(success(maskWebhookData(data)));
   } catch (error) {
@@ -82,6 +82,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", requireAdmin, async (req, res, next) => {
   try {
     const parsed = createSchema.parse(req.body);
+    await assertSafeWebhookUrl(parsed.url);
     const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
@@ -118,6 +119,10 @@ router.patch("/:id", requireAdmin, requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+
+    if (parsed.url !== undefined) {
+      await assertSafeWebhookUrl(parsed.url);
+    }
 
     const { data: current, error: fetchError } = await supabase
       .from("webhook_endpoints")
@@ -192,6 +197,16 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
 router.get("/:id/deliveries", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const orgId = req.query.organization_id as string | undefined;
+    if (orgId) {
+      const { data: webhook } = await supabase
+        .from("webhook_endpoints")
+        .select("id")
+        .eq("id", req.params.id)
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      if (!webhook) throw new AppError("NOT_FOUND", "Webhook not found", 404);
+    }
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
@@ -242,6 +257,7 @@ router.post("/:id/test", requireAdmin, async (req, res, next) => {
     let error: string | null = null;
 
     try {
+      await assertSafeWebhookUrl(webhook.url);
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
       const res = await fetch(webhook.url, {

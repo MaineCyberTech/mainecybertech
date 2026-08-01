@@ -1,4 +1,4 @@
-import { requireAdminAccess } from "@/lib/auth/admin";
+﻿import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -6,6 +6,7 @@ import { getProductById, getCategories } from "@/lib/catalog/loader";
 import { getRecommendationsForProduct } from "@/lib/catalog/bundles";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Product Detail - Store - Admin - Maine CyberTech" };
 
 export default async function AdminStoreProductDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -125,9 +126,9 @@ export default async function AdminStoreProductDetailPage(props: {
                       <td className="px-3 py-2 text-slate-200">{f.label}</td>
                       <td className="px-3 py-2 text-slate-300">{f.type}</td>
                       <td className="px-3 py-2 text-slate-300">{f.required ? "Yes" : "No"}</td>
-                      <td className="px-3 py-2 text-xs text-slate-400">{f.help || "—"}</td>
+                      <td className="px-3 py-2 text-xs text-slate-400">{f.help || "â€”"}</td>
                       <td className="px-3 py-2 text-xs text-slate-400">
-                        {f.options ? f.options.join(", ") : "—"}
+                        {f.options ? f.options.join(", ") : "â€”"}
                       </td>
                     </tr>
                   ))}

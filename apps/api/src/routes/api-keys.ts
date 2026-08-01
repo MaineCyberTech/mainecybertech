@@ -90,6 +90,7 @@ router.post("/", async (req, res, next) => {
 // PATCH /api/v1/api-keys/:id — update (revoke/toggle)
 router.patch("/:id", async (req, res, next) => {
   try {
+    const orgId = req.query.organization_id as string;
     const parsed = z
       .object({
         isActive: z.boolean().optional(),
@@ -103,10 +104,12 @@ router.patch("/:id", async (req, res, next) => {
     if (parsed.name !== undefined) updateData.name = parsed.name;
     updateData.updated_at = new Date().toISOString();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("api_keys")
       .update(updateData)
-      .eq("id", req.params.id)
+      .eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query
       .select("id, name, key_prefix, is_active, created_at")
       .single();
 
@@ -130,8 +133,11 @@ router.patch("/:id", async (req, res, next) => {
 // DELETE /api/v1/api-keys/:id
 router.delete("/:id", async (req, res, next) => {
   try {
+    const orgId = req.query.organization_id as string;
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("api_keys").delete().eq("id", req.params.id);
+    let query = supabase.from("api_keys").delete().eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { error } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

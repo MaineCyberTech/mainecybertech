@@ -95,11 +95,10 @@ router.get("/invoices", async (req, res, next) => {
 router.get("/invoices/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("invoices")
-      .select("*")
-      .eq("id", req.params.id)
-      .single();
+    const orgId = req.query.organization_id as string | undefined;
+    let query = supabase.from("invoices").select("*").eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Invoice not found", 404);
     res.json(success(data));
   } catch (error) {
@@ -216,9 +215,10 @@ router.post("/sync", requireAdmin, async (req, res, next) => {
               stripe_invoice_id: inv.id,
               invoice_number: inv.number,
               status,
-              subtotal_cents: Math.round(inv.subtotal * (inv.currency === "usd" ? 100 : 100)),
-              tax_cents: Math.round((inv.tax ?? 0) * 100),
-              total_cents: Math.round(inv.total * 100),
+              // Stripe already returns amounts in the smallest currency unit (cents)
+              subtotal_cents: Math.round(inv.subtotal),
+              tax_cents: Math.round(inv.tax ?? 0),
+              total_cents: Math.round(inv.total),
               currency: inv.currency,
               hosted_invoice_url: inv.hosted_invoice_url,
               invoice_pdf_url: inv.invoice_pdf,

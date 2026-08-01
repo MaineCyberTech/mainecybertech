@@ -1,6 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { createClient, type RedisClientType } from "redis";
-import { getEnv } from "../config/env";
+import { getEnv, resolveRedisUrl } from "../config/env";
 
 /**
  * Redis-backed response cache with in-memory fallback.
@@ -26,9 +26,11 @@ class CacheBackend {
 
   async initialize() {
     const env = getEnv();
-    if (env.REDIS_URL) {
+    if (env.REDIS_URL || env.REDIS_PASSWORD) {
       try {
-        this.redis = createClient({ url: env.REDIS_URL });
+        this.redis = createClient({
+          url: resolveRedisUrl(env.REDIS_URL ?? "redis://redis:6379", env.REDIS_PASSWORD),
+        });
         await this.redis.connect();
         this.useRedis = true;
         const { logger } = await import("../lib/logger");
@@ -112,7 +114,7 @@ class CacheBackend {
       this.redis
         .keys(`${pattern}*`)
         .then((keys: string[]) => {
-          if (keys.length) this.redis!.del(...keys);
+          if (keys.length) this.redis!.del(keys);
         })
         .catch(() => {});
     }

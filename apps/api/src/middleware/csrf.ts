@@ -19,6 +19,31 @@ function timingSafeCompare(a: string, b: string): boolean {
   }
 }
 
+/**
+ * The app frontend (app.*) and API (api.*) are separate subdomains. A host-only
+ * cookie set on the API origin is invisible to `document.cookie` on the app
+ * origin, so the SDK can never read the csrf token and every cross-origin
+ * mutation 403s. Double-submit needs the cookie readable on BOTH subdomains:
+ * set the Domain to the registrable parent (e.g. .mainecybertech.com). On
+ * localhost / bare IPs no Domain attribute is added (host-only, same-origin).
+ */
+function cookieDomain(req: Request): string | undefined {
+  const host = req.get("host");
+  if (!host) return undefined;
+  const hostname = host.split(":")[0].toLowerCase();
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    /^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)
+  ) {
+    return undefined;
+  }
+  const labels = hostname.split(".");
+  if (labels.length < 3) return undefined;
+  return `.${labels.slice(-2).join(".")}`;
+}
+
 const CSRF_SKIP_PATHS = [
   "/api/v1/auth/sign-in",
   "/api/v1/auth/sign-up",
@@ -49,10 +74,12 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction) 
 
   if (SAFE_METHODS.includes(req.method)) {
     const token = generateToken();
+    const domain = cookieDomain(req);
     res.cookie(CSRF_COOKIE, token, {
       httpOnly: false,
       secure: getEnv().NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
+      ...(domain ? { domain } : {}),
       maxAge: 24 * 60 * 60 * 1000,
     });
     return next();

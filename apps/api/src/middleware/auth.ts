@@ -54,7 +54,7 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
             exp?: number;
           };
           if (decoded.exp && decoded.exp * 1000 < Date.now()) {
-            throw new AppError("UNAUTHORIZED", "Token expired", 40101);
+            throw new AppError("UNAUTHORIZED", "Token expired", 401);
           }
           req.authUser = {
             userId: decoded.sub,
@@ -72,8 +72,33 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
 
     const supabase = getSupabaseAdmin();
 
-    const { data, error } = await supabase.auth.getUser(token);
-    if (error || !data.user) {
+    // Bound the fallback lookup — an unresponsive Supabase must not hang the
+    // request (AbortSignal.timeout is supported on Node 20+).
+    type GetUserResult = {
+      data: { user: { id: string; email?: string } | null } | null;
+      error: Error | null;
+    };
+    const getUserWithTimeout = (
+      supabase.auth.getUser as unknown as (
+        token: string,
+        options: { signal: AbortSignal },
+      ) => Promise<GetUserResult>
+    ).bind(supabase.auth);
+    const { data, error } = await getUserWithTimeout(token, {
+      signal: AbortSignal.timeout(5000),
+    }).catch((err: unknown) => {
+      const isTimeout =
+        (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) ||
+        (typeof err === "object" &&
+          err !== null &&
+          ((err as { name?: unknown }).name === "TimeoutError" ||
+            (err as { name?: unknown }).name === "AbortError"));
+      if (isTimeout) {
+        return { data: null, error: new Error("Session verification timed out") };
+      }
+      throw err;
+    });
+    if (error || !data?.user) {
       throw new AppError("UNAUTHORIZED", "Invalid or expired session", 401);
     }
 

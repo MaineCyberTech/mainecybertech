@@ -1,4 +1,100 @@
 import Link from "next/link";
+import {
+  Archive,
+  Banknote,
+  BarChart3,
+  BookOpen,
+  Bot,
+  Building2,
+  Calendar,
+  Camera,
+  CheckCircle2,
+  ClipboardList,
+  Cloud,
+  DollarSign,
+  FileText,
+  Fish,
+  Folder,
+  FolderOpen,
+  Globe,
+  GraduationCap,
+  Hand,
+  HardDrive,
+  KeyRound,
+  Laptop,
+  Mail,
+  Megaphone,
+  MessageSquare,
+  Monitor,
+  Package,
+  Phone,
+  Plug,
+  RadioTower,
+  RefreshCw,
+  Rocket,
+  Ruler,
+  Search,
+  Shield,
+  ShoppingCart,
+  Siren,
+  Smile,
+  Target,
+  Ticket,
+  Timer,
+  TriangleAlert,
+  Users,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
+
+const ICON_MAP: Record<string, LucideIcon> = {
+  "📋": ClipboardList,
+  "🎫": Ticket,
+  "🗂️": FolderOpen,
+  "📝": FileText,
+  "📄": FileText,
+  "📊": BarChart3,
+  "🚀": Rocket,
+  "🤖": Bot,
+  "🔑": KeyRound,
+  "💻": Laptop,
+  "📡": RadioTower,
+  "📷": Camera,
+  "🖥️": Monitor,
+  "🛡️": Shield,
+  "🌐": Globe,
+  "🔌": Plug,
+  "📧": Mail,
+  "🎓": GraduationCap,
+  "📐": Ruler,
+  "✅": CheckCircle2,
+  "🏢": Building2,
+  "📚": BookOpen,
+  "⚡": Zap,
+  "📅": Calendar,
+  "📞": Phone,
+  "🎣": Fish,
+  "👥": Users,
+  "💲": DollarSign,
+  "📁": Folder,
+  "🎯": Target,
+  "🚨": Siren,
+  "⚠️": TriangleAlert,
+  "🗄️": Archive,
+  "🔄": RefreshCw,
+  "💰": Banknote,
+  "💾": HardDrive,
+  "🔍": Search,
+  "📖": BookOpen,
+  "⏱️": Timer,
+  "🛒": ShoppingCart,
+  "☁️": Cloud,
+  "📦": Package,
+  "💬": MessageSquare,
+  "👋": Hand,
+  "😊": Smile,
+  "📢": Megaphone,
+};
 
 type Props = {
   icon?: string;
@@ -21,10 +117,15 @@ export default function EmptyState({
   secondaryLabel,
   secondaryAction,
 }: Props) {
+  const Icon = ICON_MAP[icon] ?? ClipboardList;
+
   return (
     <div className="rounded-2xl border border-dashed border-white/10 bg-[#071018]/70 px-6 py-12 text-center">
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-[#0A1118]/60 text-2xl">
-        {icon}
+      <div
+        className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-[#0A1118]/60"
+        aria-hidden="true"
+      >
+        <Icon className="h-7 w-7 text-slate-400" strokeWidth={1.5} />
       </div>
       <h3 className="font-orbitron text-base font-semibold text-slate-50">
         {title}

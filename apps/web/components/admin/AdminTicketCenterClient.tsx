@@ -469,6 +469,7 @@ export default function AdminTicketCenterClient({
             value={search}
             onChange={handleSearchChange}
             placeholder="Search tickets..."
+            aria-label="Search tickets"
             className="cyber-input w-full pl-9"
           />
           <svg
@@ -485,7 +486,7 @@ export default function AdminTicketCenterClient({
             />
           </svg>
         </div>
-        <select value={orgFilter} onChange={handleOrgChange} className="cyber-input max-w-[200px]">
+        <select value={orgFilter} onChange={handleOrgChange} className="cyber-input max-w-[200px]" aria-label="Filter by organization">
           <option value="">All orgs</option>
           {organizations.map((org) => (
             <option key={org.id} value={org.id}>
@@ -497,12 +498,13 @@ export default function AdminTicketCenterClient({
           value={statusFilter}
           onChange={handleStatusChange}
           className="cyber-input max-w-[140px]"
+          aria-label="Filter by status"
         >
           <option value="all">All status</option>
           <option value="open">Open</option>
           <option value="closed">Closed</option>
         </select>
-        <select value={sortBy} onChange={handleSortChange} className="cyber-input max-w-[160px]">
+        <select value={sortBy} onChange={handleSortChange} className="cyber-input max-w-[160px]" aria-label="Sort tickets">
           <option value="updated">Recently updated</option>
           <option value="newest">Newest first</option>
           <option value="oldest">Oldest first</option>
@@ -594,6 +596,7 @@ export default function AdminTicketCenterClient({
                   }}
                   className="cyber-input w-auto"
                   style={{ minWidth: "140px" }}
+                  aria-label="Bulk action"
                 >
                   <option value="">Select bulk action</option>
                   <option value="status">Change Status</option>
@@ -606,6 +609,7 @@ export default function AdminTicketCenterClient({
                     className="cyber-input w-auto"
                     style={{ minWidth: "160px" }}
                     disabled={bulkProcessing}
+                    aria-label="Bulk status"
                   >
                     <option value="">Select status</option>
                     {STATUS_OPTIONS.map((s) => (
@@ -622,6 +626,7 @@ export default function AdminTicketCenterClient({
                     className="cyber-input w-auto"
                     style={{ minWidth: "140px" }}
                     disabled={bulkProcessing}
+                    aria-label="Bulk priority"
                   >
                     <option value="">Select priority</option>
                     {PRIORITY_OPTIONS.map((p) => (
@@ -725,8 +730,8 @@ export default function AdminTicketCenterClient({
               className="space-y-4 px-6 py-6"
             >
               <div>
-                <label className="cyber-label">Organization</label>
-                <select name="organizationId" className="cyber-input" required defaultValue="">
+                <label htmlFor="ticket-organization" className="cyber-label">Organization</label>
+                <select id="ticket-organization" name="organizationId" className="cyber-input" required defaultValue="">
                   <option value="">Select organization</option>
                   {organizations.map((org) => (
                     <option key={org.id} value={org.id}>
@@ -736,13 +741,13 @@ export default function AdminTicketCenterClient({
                 </select>
               </div>
               <div>
-                <label className="cyber-label">Title</label>
-                <input name="subject" className="cyber-input" placeholder="Ticket title" required />
+                <label htmlFor="ticket-subject" className="cyber-label">Title</label>
+                <input id="ticket-subject" name="subject" className="cyber-input" placeholder="Ticket title" required />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="cyber-label">Priority</label>
-                  <select name="priority" defaultValue="normal" className="cyber-input">
+                  <label htmlFor="ticket-priority" className="cyber-label">Priority</label>
+                  <select id="ticket-priority" name="priority" defaultValue="normal" className="cyber-input">
                     <option value="low">low</option>
                     <option value="normal">normal</option>
                     <option value="high">high</option>
@@ -750,8 +755,9 @@ export default function AdminTicketCenterClient({
                   </select>
                 </div>
                 <div>
-                  <label className="cyber-label">Category</label>
+                  <label htmlFor="ticket-category" className="cyber-label">Category</label>
                   <input
+                    id="ticket-category"
                     name="category"
                     className="cyber-input"
                     placeholder="Endpoint, Billing, Networking..."
@@ -759,8 +765,9 @@ export default function AdminTicketCenterClient({
                 </div>
               </div>
               <div>
-                <label className="cyber-label">Description</label>
+                <label htmlFor="ticket-description" className="cyber-label">Description</label>
                 <textarea
+                  id="ticket-description"
                   name="description"
                   rows={6}
                   className="cyber-input"

@@ -139,8 +139,9 @@ export default function ProfilePage({ initialData }: Props) {
 
       <form onSubmit={handleSave} className="space-y-6">
         <div>
-          <label className="cyber-label">Email</label>
+          <label htmlFor="profile-email" className="cyber-label">Email</label>
           <input
+            id="profile-email"
             value={email}
             disabled
             className="w-full rounded-lg border border-white/10 bg-[#0A1118]/40 px-4 py-3 text-slate-400 outline-none"
@@ -149,16 +150,18 @@ export default function ProfilePage({ initialData }: Props) {
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="cyber-label">Full Name</label>
+            <label htmlFor="profile-fullName" className="cyber-label">Full Name</label>
             <input
+              id="profile-fullName"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               className="cyber-input"
             />
           </div>
           <div>
-            <label className="cyber-label">Phone</label>
+            <label htmlFor="profile-phone" className="cyber-label">Phone</label>
             <input
+              id="profile-phone"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="cyber-input"
@@ -167,8 +170,8 @@ export default function ProfilePage({ initialData }: Props) {
         </div>
 
         <div>
-          <label className="cyber-label">Title</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className="cyber-input" />
+          <label htmlFor="profile-title" className="cyber-label">Title</label>
+          <input id="profile-title" value={title} onChange={(e) => setTitle(e.target.value)} className="cyber-input" />
         </div>
 
         <button type="submit" disabled={saving} className="cyber-button">
@@ -221,8 +224,9 @@ export default function ProfilePage({ initialData }: Props) {
 
       <form onSubmit={handlePasswordChange} className="space-y-6">
         <div>
-          <label className="cyber-label">Current Password</label>
+          <label htmlFor="profile-pw-current" className="cyber-label">Current Password</label>
           <input
+            id="profile-pw-current"
             type="password"
             value={pwCurrent}
             onChange={(e) => setPwCurrent(e.target.value)}
@@ -232,8 +236,9 @@ export default function ProfilePage({ initialData }: Props) {
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label className="cyber-label">New Password</label>
+            <label htmlFor="profile-pw-new" className="cyber-label">New Password</label>
             <input
+              id="profile-pw-new"
               type="password"
               value={pwNew}
               onChange={(e) => setPwNew(e.target.value)}
@@ -243,8 +248,9 @@ export default function ProfilePage({ initialData }: Props) {
             />
           </div>
           <div>
-            <label className="cyber-label">Confirm New Password</label>
+            <label htmlFor="profile-pw-confirm" className="cyber-label">Confirm New Password</label>
             <input
+              id="profile-pw-confirm"
               type="password"
               value={pwConfirm}
               onChange={(e) => setPwConfirm(e.target.value)}

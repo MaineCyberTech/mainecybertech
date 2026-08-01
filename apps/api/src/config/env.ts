@@ -26,6 +26,8 @@ const envSchema = z.object({
   JSM_SERVICEDESK_ID: z.string().optional(),
   JSM_REQUEST_TYPE_ID: z.string().optional(),
   REDIS_URL: z.string().url().optional(),
+  TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),
+  REDIS_PASSWORD: z.string().optional(),
   JIRA_WEBHOOK_SECRET: z.string().optional(),
   JSM_WEBHOOK_SECRET: z.string().optional(),
   M365_WEBHOOK_SECRET: z.string().optional(),
@@ -34,6 +36,24 @@ const envSchema = z.object({
 });
 
 export type Env = z.infer<typeof envSchema>;
+
+/**
+ * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
+ * does not already carry credentials. Used by ioredis / node-redis clients.
+ */
+export function resolveRedisUrl(url: string, password?: string): string {
+  if (!password) return url;
+  try {
+    const parsed = new URL(url);
+    if (!parsed.username && !parsed.password) {
+      parsed.password = password;
+      return parsed.toString();
+    }
+  } catch {
+    // Malformed URL — leave as-is, the client will surface the error.
+  }
+  return url;
+}
 
 let _env: Env | null = null;
 

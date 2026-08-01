@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { submitLead } from "../../app/(public)/contact/actions";
+import { getClientEnv } from "../../lib/env";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+const API_BASE = getClientEnv().NEXT_PUBLIC_API_URL;
+const TURNSTILE_SITE_KEY = getClientEnv().NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 interface FormData {
   company: string;
@@ -113,8 +114,9 @@ export default function ContactForm() {
   return (
     <form onSubmit={handleSubmit} className="intake-widget space-y-5">
       <div>
-        <label className={labelCls}>Company Name</label>
+        <label htmlFor="contact-company" className={labelCls}>Company Name</label>
         <input
+          id="contact-company"
           type="text"
           value={form.company}
           onChange={(e) => update("company", e.target.value)}
@@ -125,8 +127,9 @@ export default function ContactForm() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label className={labelCls}>Contact Name</label>
+          <label htmlFor="contact-name" className={labelCls}>Contact Name</label>
           <input
+            id="contact-name"
             type="text"
             value={form.name}
             onChange={(e) => update("name", e.target.value)}
@@ -135,8 +138,9 @@ export default function ContactForm() {
           {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
         </div>
         <div>
-          <label className={labelCls}>Work Email</label>
+          <label htmlFor="contact-email" className={labelCls}>Work Email</label>
           <input
+            id="contact-email"
             type="email"
             value={form.email}
             onChange={(e) => update("email", e.target.value)}
@@ -145,8 +149,9 @@ export default function ContactForm() {
           {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
         </div>
         <div>
-          <label className={labelCls}>Phone Number</label>
+          <label htmlFor="contact-phone" className={labelCls}>Phone Number</label>
           <input
+            id="contact-phone"
             type="tel"
             value={form.phone}
             onChange={(e) => update("phone", e.target.value)}
@@ -158,8 +163,9 @@ export default function ContactForm() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label className={labelCls}>Services of Interest</label>
+          <label htmlFor="contact-services" className={labelCls}>Services of Interest</label>
           <select
+            id="contact-services"
             value={form.services}
             onChange={(e) => update("services", e.target.value)}
             className={inputCls("services")}
@@ -178,8 +184,9 @@ export default function ContactForm() {
           {errors.services && <p className="mt-1 text-xs text-red-400">{errors.services}</p>}
         </div>
         <div>
-          <label className={labelCls}>Employees</label>
+          <label htmlFor="contact-employees" className={labelCls}>Employees</label>
           <select
+            id="contact-employees"
             value={form.employees}
             onChange={(e) => update("employees", e.target.value)}
             className={inputCls("employees")}
@@ -195,8 +202,9 @@ export default function ContactForm() {
           {errors.employees && <p className="mt-1 text-xs text-red-400">{errors.employees}</p>}
         </div>
         <div>
-          <label className={labelCls}>Urgency</label>
+          <label htmlFor="contact-urgency" className={labelCls}>Urgency</label>
           <select
+            id="contact-urgency"
             value={form.urgency}
             onChange={(e) => update("urgency", e.target.value)}
             className={inputCls("urgency")}
@@ -213,8 +221,9 @@ export default function ContactForm() {
       </div>
 
       <div>
-        <label className={labelCls}>How can we assist your business?</label>
+        <label htmlFor="contact-message" className={labelCls}>How can we assist your business?</label>
         <textarea
+          id="contact-message"
           rows={4}
           value={form.message}
           onChange={(e) => update("message", e.target.value)}

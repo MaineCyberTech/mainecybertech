@@ -1,7 +1,9 @@
 import crypto from "crypto";
 import { getSupabaseAdmin } from "../services/supabase";
+import { enqueueTask } from "./task-producer";
 import { logger } from "./logger";
 import { checkIdempotencyKey, storeIdempotencyKey } from "./idempotency";
+import { assertSafeWebhookUrl } from "./ssrf-guard";
 
 export async function dispatchWebhook(
   event: string,
@@ -9,6 +11,16 @@ export async function dispatchWebhook(
   data: Record<string, unknown>,
 ): Promise<void> {
   try {
+    // Route delivery through the worker queue when available (async delivery,
+    // retries + DLQ via webhook-retry). Fall back to inline dispatch so
+    // webhooks are never lost when the queue is unavailable.
+    const enqueued = await enqueueTask("webhook-dispatcher", {
+      event,
+      organizationId,
+      data,
+    });
+    if (enqueued) return;
+
     const supabase = getSupabaseAdmin();
 
     const { data: endpoints, error: fetchError } = await supabase
@@ -50,6 +62,7 @@ export async function dispatchWebhook(
       let error: string | null = null;
 
       try {
+        await assertSafeWebhookUrl(endpoint.url);
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 10000);
         const res = await fetch(endpoint.url, {

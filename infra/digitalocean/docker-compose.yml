@@ -8,10 +8,10 @@ x-security: &security
 
 x-app-env: &app-env
   NODE_ENV: production
-  SUPABASE_URL: ${SUPABASE_URL}
-  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-  JWT_SECRET: ${JWT_SECRET}
+  SUPABASE_URL: ${SUPABASE_URL:?SUPABASE_URL must be set}
+  SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?SUPABASE_ANON_KEY must be set}
+  SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:?SUPABASE_SERVICE_ROLE_KEY must be set}
+  JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set}
   CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
   APP_BASE_URL: https://${APP_DOMAIN:-app.mainecybertech.com}
 
@@ -20,8 +20,8 @@ services:
   redis:
     image: redis:7-alpine@sha256:e7723ff73d963f5cc6d9c4643ea3d989527a402a319239054e9472a7fb9219a2
     <<: *security
-    # CHANGE THE REDIS_PASSWORD env var in production to a strong random value
-    command: redis-server --requirepass ${REDIS_PASSWORD:-mct_redis_changeme_in_production}
+    # REDIS_PASSWORD is REQUIRED (no fallback) — set it in .env or the environment
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
     volumes:
       - redis-data:/data
     tmpfs:
@@ -30,7 +30,7 @@ services:
     mem_limit: 48m
     read_only: true
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-mct_redis_changeme_in_production}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -43,8 +43,8 @@ services:
       <<: *app-env
       API_PORT: 4000
       LOG_LEVEL: info
-      REDIS_URL: redis://:${REDIS_PASSWORD:-mct_redis_changeme_in_production}@redis:6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-mct_redis_changeme_in_production}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SENTRY_DSN: ${SENTRY_DSN:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
@@ -77,8 +77,8 @@ services:
       LOG_LEVEL: info
       HEALTH_PORT: 3001
       QUEUE_BACKEND: bullmq
-      REDIS_URL: redis://:${REDIS_PASSWORD:-mct_redis_changeme_in_production}@redis:6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-mct_redis_changeme_in_production}
+      REDIS_URL: redis://:${REDIS_PASSWORD:?REDIS_PASSWORD must be set}@redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
       SENTRY_DSN: ${SENTRY_DSN:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       JIRA_BASE_URL: ${JIRA_BASE_URL:-}
@@ -118,6 +118,29 @@ services:
         condition: service_started
     restart: unless-stopped
     mem_limit: 256m
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/apps/web/.next/cache
+
+  # ===== Observability (internal only — no published ports) =====
+  prometheus:
+    image: prom/prometheus:v3.5.1@sha256:4b05278adfb2e2781063781edd7ca88cc649ea5270cea1696618886a37eeb298
+    <<: *security
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus.rules.yml:/etc/prometheus/rules.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+    tmpfs:
+      - /prometheus
+      - /tmp
+    restart: unless-stopped
+    mem_limit: 256m
+    read_only: true
 
   # ===== Reverse Proxy =====
   caddy:

@@ -2,7 +2,7 @@
 
 Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infrastructure, security, and feature functionality; marketing site integrated as the public homepage (www route, 4 phases complete)
 
-**Latest audit session (2026-06-26):** Comprehensive remediation session: Worker main.ts split from 413→32 lines (6 modules), nonce-based CSP added (API+Web), webhook idempotency enforced (Redis dedup + deterministic keys), optimistic locking wired into documents/projects/orgs PATCH handlers, markAllRead orgId fix, deploy rollback capability, JWT rotation doc (`docs/JWT_ROTATION.md`), bulk ops UI partial-failure alerts, removed `infra/terraform/aws/` (dead), fixed `idempotency.ts` import extension, removed `'unsafe-eval'` from Web CSP, deployed health checks. **13 of 15 P1 findings now resolved** (3 stale, 1 by-design). 774 tests all green (182 API + 108 SDK + 24 Worker + 460 Web). ESLint clean (0 errors) across all 6 packages. TypeScript clean across all 6 packages (lib/test-utils.ts excluded from typecheck via tsconfig).
+**Latest audit run (2026-08-01):** Fresh full audit executed (repo-deep-dive pack, run `20260801-0233-develop-a585f1d` + all 3 engines) — see `prompts/repo-deep-dive/20260801-0233-develop-a585f1d/` for all reports. Key P0s fixed this session: web test suite restored to green (AdminPageShell subnav prop rendering restored after sidebar redesign removed it without updating tests), unauth password reset closed (`POST /auth/reset-password` now requires auth + email match — was account takeover via `admin.updateUserById` with only email+password), IDORs closed on api-keys PATCH/DELETE + documents signed-url (org filter added). Full remediation sweep completed across 7 parallel workstreams: webhook auth (M365 clientState required), SSRF guard on webhook URLs, per-user rate-limit buckets, ticket comment author/org checks, 5 admin pages gated with requireAdminAccess, JWT fallback timeout, Stripe 100x amount bug fixed, by-id tenant isolation on billing/tickets/documents, atomic idempotency + event-unique M365 dedup keys, CSRF double-submit fix, 4 new migrations (document_permissions restore, bulk_update RPC hardening, approved-membership RLS, CHECK constraints), Redis password via secrets, deploy gates + SHA-pinned actions + Prometheus, queue producer wired (BullMQ enqueue + API task-producer), webhook retry scheduled, circuit breaker + cache init wired, worker PII redaction, health 503 on drain, store: 245-product catalog + SDK module + tests + E2E, all 242 pages titled, form labels, sidebar keyboard a11y + DRY, WCAG AA contrast, PWA manifest, OpenAPI 396 paths, TROUBLESHOOTING.md. **All tests green: API 691, SDK 247, Worker 31, Web 1355 (total 2,324 across 279 suites).** ESLint clean (0 errors), TypeScript clean.
 
 **Hardening Prompt Pack Audit (2026-06-23):** Full 8-domain adversarial audit executed via `prompts/hardening_prompt_pack/`. Domains: Security, Data Integrity, Resilience, Observability, Supply Chain, Privacy, CI/CD, Evolution/Platform. **89 deduplicated findings** (12 P0 Critical, 28 P1 High, 49 P2 Medium). **Global Risk Score: 0/100 (CRITICAL)**. **All 12 P0s fixed** (graceful shutdown, Terraform gates, prod approval, cookie flags, local JWT, image tagging, circuit breaker on Supabase, outbound HTTP timeouts, secrets in SSH deploy logs, tenant isolation).
 
@@ -65,15 +65,15 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status & Patterns
 
-**1,530 tests, all passing:** API 583, SDK 223, Worker 24, Web 700
+**2,324 tests, all passing (2026-08-01 verified):** API 691, SDK 247, Worker 31, Web 1355
 
-| Package | Tests         | Framework                         |
-| ------- | ------------- | --------------------------------- |
-| API     | 583           | Jest + supertest                  |
-| SDK     | 223           | Jest (mocked fetch)               |
-| Worker  | 24            | Jest (env schema + task handlers) |
-| Web     | 700           | Jest + Testing Library            |
-| E2E     | 26 spec files | Playwright (chromium)             |
+| Package | Tests         | Suites | Framework                         |
+| ------- | ------------- | ------ | --------------------------------- |
+| API     | 691           | 76     | Jest + supertest                  |
+| SDK     | 247           | 2      | Jest (mocked fetch)               |
+| Worker  | 31            | 5      | Jest (env schema + task handlers) |
+| Web     | 1355          | 196    | Jest + Testing Library            |
+| E2E     | 57 spec files | —      | Playwright (chromium)             |
 
 ### Test patterns
 

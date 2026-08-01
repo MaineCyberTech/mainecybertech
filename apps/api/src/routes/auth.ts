@@ -291,7 +291,7 @@ router.post("/forgot-password", rateLimitAuth, rateLimitEmail, async (req, res, 
   }
 });
 
-router.post("/reset-password", rateLimitAuth, rateLimitEmail, async (req, res, next) => {
+router.post("/reset-password", requireAuth, rateLimitAuth, rateLimitEmail, async (req, res, next) => {
   try {
     const { email, password } = z
       .object({
@@ -309,23 +309,17 @@ router.post("/reset-password", rateLimitAuth, rateLimitEmail, async (req, res, n
       })
       .parse(req.body);
 
+    if (email !== req.authUser!.email) {
+      throw new AppError("FORBIDDEN", "You can only reset your own password", 403);
+    }
+
     const pwdCheck = validatePasswordStrength(password);
     if (!pwdCheck.valid) {
       throw new AppError("WEAK_PASSWORD", pwdCheck.message || "Password is too weak", 400);
     }
 
     const supabase = getSupabaseAdmin();
-    const { data: users, error: lookupError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", email)
-      .single();
-
-    if (lookupError || !users) {
-      throw new AppError("NOT_FOUND", "User not found", 404);
-    }
-
-    const { error } = await supabase.auth.admin.updateUserById(users.id, {
+    const { error } = await supabase.auth.admin.updateUserById(req.authUser!.userId, {
       password,
     });
 
@@ -334,10 +328,10 @@ router.post("/reset-password", rateLimitAuth, rateLimitEmail, async (req, res, n
     }
 
     await logAuditEvent({
-      actorUserId: users.id,
+      actorUserId: req.authUser!.userId,
       action: "auth.reset-password",
       entityType: "user",
-      entityId: users.id,
+      entityId: req.authUser!.userId,
       metadata: { email },
     });
 
