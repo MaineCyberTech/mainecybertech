@@ -123,6 +123,8 @@ jobs:
 
       - name: Diagnose API login flow
         run: |
+          echo "=== env.local key lengths ==="
+          awk -F= '/^(SUPABASE_URL|SUPABASE_ANON_KEY|SUPABASE_SERVICE_ROLE_KEY)=/ {print $1" len="length($2)}' apps/api/.env.local
           echo "=== supabase status keys ==="
           supabase status --output json | jq 'keys'
           echo "=== API health body ==="
