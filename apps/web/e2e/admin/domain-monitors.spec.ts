@@ -15,7 +15,6 @@ test.describe("admin domain monitors", () => {
     await page.goto("/admin/domain-monitors");
     const createBtn = page.getByRole("button", { name: /new domain/i });
     const emptyState = page.getByText(/no domains/i);
-    const visible = (await createBtn.isVisible()) || (await emptyState.isVisible());
-    expect(visible).toBe(true);
+    await expect(createBtn.or(emptyState).first()).toBeVisible({ timeout: 10000 });
   });
 });

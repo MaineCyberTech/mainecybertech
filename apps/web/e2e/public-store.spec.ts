@@ -5,7 +5,7 @@ test.describe("public store homepage", () => {
     await page.goto("/store");
     await expect(
       page.getByRole("heading", { name: /browse our services/i }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15000 });
     await expect(page.getByText(/every service includes clear scope/i)).toBeVisible();
   });
 

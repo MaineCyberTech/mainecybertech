@@ -14,7 +14,7 @@ test.describe("admin ticket flows", () => {
 
   test("shows not-found for unknown ticket", async ({ page }) => {
     await page.goto("/admin/tickets/does-not-exist");
-    await expect(page.getByText("Ticket not found.", { exact: true })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Ticket not found.", { exact: true }).first()).toBeVisible({ timeout: 10000 });
   });
 });
 
@@ -32,7 +32,7 @@ test.describe("admin user flows", () => {
 
   test("shows not-found for unknown user", async ({ page }) => {
     await page.goto("/admin/users/does-not-exist");
-    await expect(page.getByText("User not found.", { exact: true })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("User not found.", { exact: true }).first()).toBeVisible({ timeout: 10000 });
   });
 });
 

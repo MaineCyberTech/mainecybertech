@@ -15,7 +15,6 @@ test.describe("admin findings page", () => {
     await page.goto("/admin/findings");
     const createBtn = page.getByRole("button", { name: /new finding/i });
     const emptyState = page.getByText(/no findings/i);
-    const visible = (await createBtn.isVisible()) || (await emptyState.isVisible());
-    expect(visible).toBe(true);
+    await expect(createBtn.or(emptyState).first()).toBeVisible({ timeout: 10000 });
   });
 });

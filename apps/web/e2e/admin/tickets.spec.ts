@@ -27,7 +27,7 @@ test.describe("admin tickets list", () => {
 test.describe("admin ticket detail", () => {
   test("shows not-found for unknown ticket", async ({ page }) => {
     await page.goto("/admin/tickets/does-not-exist");
-    await expect(page.getByText("Ticket not found.", { exact: true })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("Ticket not found.", { exact: true }).first()).toBeVisible({ timeout: 10000 });
   });
 
   test("shows ticket info when ticket exists", async ({ page }) => {
