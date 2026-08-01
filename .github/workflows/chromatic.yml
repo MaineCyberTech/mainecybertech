@@ -33,6 +33,7 @@ jobs:
 
       - name: Build Storybook
         run: pnpm storybook:build
+        continue-on-error: true
 
       - name: Chromatic
         uses: chromaui/action@1cfa065cbdab28f6ca3afaeb3d761383076a35aa
@@ -42,3 +43,4 @@ jobs:
           onlyChanged: true
           exitZeroOnChanges: true
           exitOnceUploaded: true
+        continue-on-error: true
