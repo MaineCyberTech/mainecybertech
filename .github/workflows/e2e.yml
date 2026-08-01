@@ -123,6 +123,8 @@ jobs:
 
       - name: Diagnose API login flow
         run: |
+          echo "=== supabase status keys ==="
+          supabase status --output json | jq 'keys'
           echo "=== API health body ==="
           curl -sS http://localhost:4000/health || echo "API DOWN"
           echo ""
