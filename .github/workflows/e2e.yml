@@ -116,8 +116,9 @@ jobs:
 
       - name: Diagnose API login flow
         run: |
-          echo "=== API health ==="
-          curl -sS -o /dev/null -w "health: %{http_code}\n" http://localhost:4000/health || echo "API DOWN"
+          echo "=== API health body ==="
+          curl -sS http://localhost:4000/health || echo "API DOWN"
+          echo ""
           echo "=== Sign-in ==="
           RESP=$(curl -sS -w "\n%{http_code}" -X POST http://localhost:4000/api/v1/auth/sign-in \
             -H "Content-Type: application/json" \
@@ -129,10 +130,13 @@ jobs:
           TOKEN=$(echo "$BODY" | jq -r '.data.accessToken // empty' 2>/dev/null)
           if [ -n "$TOKEN" ]; then
             echo "=== /auth/me ==="
-            curl -sS -w "\n%{http_code}" http://localhost:4000/api/v1/auth/me -H "Authorization: Bearer $TOKEN" | head -1 | cut -c1-200
+            curl -sS http://localhost:4000/api/v1/auth/me -H "Authorization: Bearer $TOKEN"
             echo ""
-            echo "=== memberships ==="
-            curl -sS -w "\n%{http_code}" "http://localhost:4000/api/v1/memberships?status=approved&user_id=$(curl -sS http://localhost:4000/api/v1/auth/me -H "Authorization: Bearer $TOKEN" | jq -r '.data.userId')" -H "Authorization: Bearer $TOKEN" | head -1 | cut -c1-300
+            echo "=== memberships (raw) ==="
+            curl -sS "http://localhost:4000/api/v1/memberships?user_id=66ce903f-6fe0-45da-878b-a0398e6b1981&status=approved" -H "Authorization: Bearer $TOKEN"
+            echo ""
+            echo "=== memberships no params (org-access path) ==="
+            curl -sS "http://localhost:4000/api/v1/memberships" -H "Authorization: Bearer $TOKEN"
           fi
 
       - name: Run Playwright tests
