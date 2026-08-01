@@ -1,7 +1,8 @@
 # Terraform Backend Configuration - Production
 # Stores state in DigitalOcean Spaces (S3-compatible)
+# Bucket: https://portal-terraform-state-production.nyc3.digitaloceanspaces.com
 
-bucket         = "portal-terraform-state"
+bucket         = "portal-terraform-state-production"
 key            = "digitalocean/prod/terraform.tfstate"
 region         = "us-east-1"
 skip_credentials_validation = true
