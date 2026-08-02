@@ -8,6 +8,8 @@ Complete the MCT client portal monorepo with comprehensive testing, CI/CD, infra
 
 **Hardening Prompt Pack Audit (2026-06-23):** Full 8-domain adversarial audit executed via `prompts/hardening_prompt_pack/`. Domains: Security, Data Integrity, Resilience, Observability, Supply Chain, Privacy, CI/CD, Evolution/Platform. **89 deduplicated findings** (12 P0 Critical, 28 P1 High, 49 P2 Medium). **Global Risk Score: 0/100 (CRITICAL)**. **All 12 P0s fixed** (graceful shutdown, Terraform gates, prod approval, cookie flags, local JWT, image tagging, circuit breaker on Supabase, outbound HTTP timeouts, secrets in SSH deploy logs, tenant isolation).
 
+**Remaining-findings sweep (2026-08-02):** Closed the open audit items: (1) PRIV-P1-003 — `public_interactions` retention: migration 5302117 (created_at index + policy comment) + worker task `public-interaction-retention` (90-day purge, registered + scheduled daily); (2) 14 lint warnings → 0 (dead imports removed, `_payload`/`_error` renames, console→logger/stdout); (3) coverage now CI-enforced via `pnpm test:coverage` (test.yml + validate.yml) with realistic per-package thresholds (API 58/30/50/55, Web 35/25/30/35, Worker 12/5/15/12, SDK 40/33/38/40 — all pass); (4) middleware.ts unit tests (21 tests incl. genuine fix: unauth `/admin/*` now gated → /login); (5) a11y CI testing — `e2e/a11y.spec.ts` axe-core WCAG A/AA scans on login/store/portal/admin (all pass); (6) module docs added for store/analytics/billing (75 total); (7) storybook deps aligned to 8.6.18 (was mixed v8/v10 — broken), staticDirs → apps/web/public, Chromatic non-blocking (known Next 15.5 + Storybook webpack5 conflict); (8) email/SMTP verified (test-email endpoint + worker retry/timeouts — config-dependent by design). **Final: 2,345 unit tests (API 691, SDK 247, Worker 31, Web 1376), 252 E2E tests, lint 0 errors/0 warnings, typecheck clean, all workflows green.**
+
 ### 🎯 Architectural Synthesis (2026-06-10)
 
 The MCT platform is a **Hybrid Platform Monorepo** operating as a highly resilient Modular Monolith. Its strength lies in the robust separation of concerns across its services, while maintaining transactional consistency via shared core packages (`@mct/config`).
@@ -67,15 +69,15 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status & Patterns
 
-**2,324 tests, all passing (2026-08-01 verified):** API 691, SDK 247, Worker 31, Web 1355
+**2,345 tests, all passing (2026-08-02 verified):** API 691, SDK 247, Worker 31, Web 1376
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
 | API     | 691           | 76     | Jest + supertest                  |
 | SDK     | 247           | 2      | Jest (mocked fetch)               |
 | Worker  | 31            | 5      | Jest (env schema + task handlers) |
-| Web     | 1355          | 196    | Jest + Testing Library            |
-| E2E     | 57 spec files | —      | Playwright (chromium)             |
+| Web     | 1376          | 197    | Jest + Testing Library            |
+| E2E     | 252 tests / 60 spec files | — | Playwright (chromium + axe-core)  |
 
 ### Test patterns
 
