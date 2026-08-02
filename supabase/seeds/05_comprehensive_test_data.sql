@@ -1,4 +1,4 @@
--- =========================================================
+﻿-- =========================================================
 -- 05_comprehensive_test_data.sql
 -- Comprehensive test data expansion: 3 new organizations,
 -- 20 new users (chat-style), and cross-module coverage for
@@ -17,12 +17,12 @@ begin;
 -- 1. NEW ORGANIZATIONS
 -- =========================================================
 insert into public.organizations (
-  id, name, slug, status, primary_domain, support_plan, brand_color, accent_color, settings, metadata
+  id, name, slug, status, primary_domain, support_plan, brand_color, accent_color, settings
 )
 values
-  ('33333333-3333-4333-8333-333333333333'::uuid, 'Harborview Health Systems', 'harborview', 'approved'::public.org_status, 'harborview.example', 'Managed Security Premium', '#0EA5E9', '#6366F1', '{}'::jsonb, jsonb_build_object('seeded', true, 'industry', 'healthcare')),
-  ('44444444-4444-4444-8444-444444444444'::uuid, 'Brightline Retail Group', 'brightline', 'approved'::public.org_status, 'brightline.example', 'Managed IT Standard', '#F59E0B', '#EF4444', '{}'::jsonb, jsonb_build_object('seeded', true, 'industry', 'retail')),
-  ('55555555-5555-4555-8555-555555555555'::uuid, 'Summit Financial Advisors', 'summit', 'approved'::public.org_status, 'summit.example', 'Managed Security Premium', '#8B5CF6', '#EC4899', '{}'::jsonb, jsonb_build_object('seeded', true, 'industry', 'finance'))
+  ('33333333-3333-4333-8333-333333333333'::uuid, 'Harborview Health Systems', 'harborview', 'approved'::public.org_status, 'harborview.example', 'Managed Security Premium', '#0EA5E9', '#6366F1', jsonb_build_object('seeded', true, 'industry', 'healthcare')),
+  ('44444444-4444-4444-8444-444444444444'::uuid, 'Brightline Retail Group', 'brightline', 'approved'::public.org_status, 'brightline.example', 'Managed IT Standard', '#F59E0B', '#EF4444', jsonb_build_object('seeded', true, 'industry', 'retail')),
+  ('55555555-5555-4555-8555-555555555555'::uuid, 'Summit Financial Advisors', 'summit', 'approved'::public.org_status, 'summit.example', 'Managed Security Premium', '#8B5CF6', '#EC4899', jsonb_build_object('seeded', true, 'industry', 'finance'))
 on conflict (id) do update
 set
   name = excluded.name,
@@ -32,7 +32,7 @@ set
   support_plan = excluded.support_plan,
   brand_color = excluded.brand_color,
   accent_color = excluded.accent_color,
-  metadata = excluded.metadata,
+  settings = excluded.settings,
   updated_at = now();
 
 -- =========================================================
@@ -389,14 +389,14 @@ insert into public.tickets (
 )
 values
   ('52600000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'a1000000-0000-4000-8000-000000000002'::uuid, 'd4000000-0000-4000-8000-000000000001'::uuid, 'VPN drops on Radiology floor', 'Users on the Radiology floor lose VPN connectivity every morning around 9am.', 'open', 'high', 'network', 'portal', '{vpn,connectivity}', jsonb_build_object('seeded', true)),
-  ('52600000-0000-0000-0000-000000000002'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'a1000000-0000-4000-8000-000000000003'::uuid, 'd4000000-0000-4000-8000-000000000003'::uuid, 'HIPAA audit evidence request', 'Need the access review report for Q3 to complete the HIPAA readiness audit.', 'in_progress', 'medium', 'compliance', 'portal', '{hipaa,compliance}', jsonb_build_object('seeded', true)),
+  ('52600000-0000-0000-0000-000000000002'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'a1000000-0000-4000-8000-000000000003'::uuid, 'd4000000-0000-4000-8000-000000000003'::uuid, 'HIPAA audit evidence request', 'Need the access review report for Q3 to complete the HIPAA readiness audit.', 'in_progress', 'normal', 'compliance', 'portal', '{hipaa,compliance}', jsonb_build_object('seeded', true)),
   ('52600000-0000-0000-0000-000000000003'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'a1000000-0000-4000-8000-000000000004'::uuid, 'd4000000-0000-4000-8000-000000000002'::uuid, 'New workstation imaging on 3rd floor', 'Twelve new workstations need to be imaged and joined to the domain.', 'open', 'low', 'hardware', 'portal', '{imaging,hardware}', jsonb_build_object('seeded', true)),
   ('52600000-0000-0000-0000-000000000004'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'b2000000-0000-4000-8000-000000000002'::uuid, 'd4000000-0000-4000-8000-000000000001'::uuid, 'POS terminal offline at Store 42', 'Register 3 at Store 42 cannot connect to the payment gateway.', 'open', 'urgent', 'infrastructure', 'portal', '{pos,store42}', jsonb_build_object('seeded', true)),
-  ('52600000-0000-0000-0000-000000000005'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'b2000000-0000-4000-8000-000000000003'::uuid, 'd4000000-0000-4000-8000-000000000002'::uuid, 'Sales reporting export failing', 'The nightly sales export to the data warehouse has failed 3 nights in a row.', 'in_progress', 'medium', 'data', 'portal', '{reporting,data}', jsonb_build_object('seeded', true)),
+  ('52600000-0000-0000-0000-000000000005'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'b2000000-0000-4000-8000-000000000003'::uuid, 'd4000000-0000-4000-8000-000000000002'::uuid, 'Sales reporting export failing', 'The nightly sales export to the data warehouse has failed 3 nights in a row.', 'in_progress', 'normal', 'data', 'portal', '{reporting,data}', jsonb_build_object('seeded', true)),
   ('52600000-0000-0000-0000-000000000006'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'c3000000-0000-4000-8000-000000000002'::uuid, 'd4000000-0000-4000-8000-000000000003'::uuid, 'Email phishing simulation clicked', 'A user clicked a link in the latest phishing simulation - need a training follow-up.', 'open', 'high', 'security', 'portal', '{phishing,training}', jsonb_build_object('seeded', true)),
-  ('52600000-0000-0000-0000-000000000007'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'c3000000-0000-4000-8000-000000000003'::uuid, 'd4000000-0000-4000-8000-000000000001'::uuid, 'Client portal two-factor enrollment', 'We need to enroll all advisors in two-factor authentication for the portal.', 'in_progress', 'medium', 'security', 'portal', '{mfa,enrollment}', jsonb_build_object('seeded', true)),
+  ('52600000-0000-0000-0000-000000000007'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'c3000000-0000-4000-8000-000000000003'::uuid, 'd4000000-0000-4000-8000-000000000001'::uuid, 'Client portal two-factor enrollment', 'We need to enroll all advisors in two-factor authentication for the portal.', 'in_progress', 'normal', 'security', 'portal', '{mfa,enrollment}', jsonb_build_object('seeded', true)),
   ('52600000-0000-0000-0000-000000000008'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, '71d23f2a-39b9-42f7-9ddc-115ac45ef12e'::uuid, 'd4000000-0000-4000-8000-000000000001'::uuid, 'Printer queue on production floor', 'Label printer on the production floor is stuck in the queue.', 'resolved', 'low', 'hardware', 'portal', '{printer,production}', jsonb_build_object('seeded', true)),
-  ('52600000-0000-0000-0000-000000000009'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, '6adfefa6-27c2-480e-9881-6514f4e9b708'::uuid, 'd4000000-0000-4000-8000-000000000002'::uuid, 'Case management system upgrade', 'Schedule the upgrade window for the case management system.', 'open', 'medium', 'software', 'portal', '{upgrade,casemanagement}', jsonb_build_object('seeded', true))
+  ('52600000-0000-0000-0000-000000000009'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, '6adfefa6-27c2-480e-9881-6514f4e9b708'::uuid, 'd4000000-0000-4000-8000-000000000002'::uuid, 'Case management system upgrade', 'Schedule the upgrade window for the case management system.', 'open', 'normal', 'software', 'portal', '{upgrade,casemanagement}', jsonb_build_object('seeded', true))
 on conflict (id) do nothing;
 
 insert into public.ticket_comments (id, ticket_id, organization_id, author_id, body, is_internal, created_at)
@@ -417,7 +417,7 @@ values
   ('53600000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid, 'd4000000-0000-4000-8000-000000000001'::uuid, 'HIPAA Readiness Assessment', 'Annual HIPAA compliance assessment across all departments.', 'active', 'high', now() - interval '30 days', now() + interval '45 days', 35, jsonb_build_object('seeded', true)),
   ('53600000-0000-0000-0000-000000000002'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid, 'd4000000-0000-4000-8000-000000000002'::uuid, 'Network Segmentation Project', 'Segment the hospital network into clinical and administrative zones.', 'active', 'medium', now() - interval '15 days', now() + interval '60 days', 15, jsonb_build_object('seeded', true)),
   ('53600000-0000-0000-0000-000000000003'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid, 'b2000000-0000-4000-8000-000000000002'::uuid, 'Store 42 Refresh', 'Full IT refresh for the flagship store location.', 'active', 'high', now() - interval '10 days', now() + interval '20 days', 50, jsonb_build_object('seeded', true)),
-  ('53600000-0000-0000-0000-000000000004'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid, 'c3000000-0000-4000-8000-000000000004'::uuid, 'Zero Trust Rollout', 'Roll out zero trust architecture for remote advisors.', 'planning', 'high', now(), now() + interval '90 days', 5, jsonb_build_object('seeded', true))
+  ('53600000-0000-0000-0000-000000000004'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid, 'c3000000-0000-4000-8000-000000000004'::uuid, 'Zero Trust Rollout', 'Roll out zero trust architecture for remote advisors.', 'planned', 'high', now(), now() + interval '90 days', 5, jsonb_build_object('seeded', true))
 on conflict (id) do nothing;
 
 -- NOTE: project_members was dropped in migration 5302055; project

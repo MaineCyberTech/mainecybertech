@@ -222,7 +222,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
                     </p>
                     <p className="text-sm text-slate-400">
                       Org: {org?.name ?? log.organization_id ?? "Global"}
-                      {log.entity_id ? ` • ID: ${log.entity_id}` : ""}
+                      {log.entity_id ? ` â€¢ ID: ${log.entity_id}` : ""}
                     </p>
                   </div>
                   <div className="shrink-0 text-right text-xs text-slate-400">
