@@ -622,12 +622,12 @@ on conflict (id) do nothing;
 -- 25. WEBSITE MONITORS
 -- =========================================================
 insert into public.website_monitors (
-  id, organization_id, url, display_name, status, last_status, last_response_ms, ssl_expires, ssl_valid, lighthouse_score, check_interval_hours, alerts_enabled, created_by, metadata
+  id, organization_id, url, display_name, status, last_status, last_response_ms, ssl_expires, ssl_valid, lighthouse_score, check_interval_hours, alerts_enabled, created_by
 )
 values
-  ('67600000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'https://portal.harborview.example', 'Harborview Portal', 'up', 'ok', 240, now() + interval '90 days', true, 92, 5, true, 'd4000000-0000-4000-8000-000000000004'::uuid, jsonb_build_object('seeded', true)),
-  ('67600000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'https://www.brightline.example', 'Brightline Website', 'up', 'ok', 180, now() + interval '45 days', true, 88, 5, true, 'd4000000-0000-4000-8000-000000000004'::uuid, jsonb_build_object('seeded', true)),
-  ('67600000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'https://advisor.summit.example', 'Summit Advisor Portal', 'degraded', 'slow', 2900, now() + interval '20 days', true, 74, 5, true, 'd4000000-0000-4000-8000-000000000004'::uuid, jsonb_build_object('seeded', true))
+  ('67600000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'https://portal.harborview.example', 'Harborview Portal', 'up', 'ok', 240, now() + interval '90 days', true, 92, 5, true, 'd4000000-0000-4000-8000-000000000004'::uuid),
+  ('67600000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'https://www.brightline.example', 'Brightline Website', 'up', 'ok', 180, now() + interval '45 days', true, 88, 5, true, 'd4000000-0000-4000-8000-000000000004'::uuid),
+  ('67600000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'https://advisor.summit.example', 'Summit Advisor Portal', 'degraded', 'slow', 2900, now() + interval '20 days', true, 74, 5, true, 'd4000000-0000-4000-8000-000000000004'::uuid)
 on conflict (id) do nothing;
 
 commit;
