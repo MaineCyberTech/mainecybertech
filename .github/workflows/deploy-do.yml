@@ -326,20 +326,29 @@ jobs:
           API_DOMAIN: ${{ needs.setup.outputs.api_domain }}
           APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
         run: |
+          api_ok=""
           for i in $(seq 1 30); do
-            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null || echo "000")
-            if [ "$CODE" = "200" ] || [ "$CODE" = "526" ]; then echo "API ready after $((i*4))s (HTTP $CODE)"; break; fi
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null | tr -d '\r\n' || echo "000")
+            case "$CODE" in
+              200|526) echo "API ready after $((i*4))s (HTTP $CODE)"; api_ok=1; break ;;
+            esac
             echo "Attempt $i/30: $CODE"; sleep 4
           done
-          if [ "$CODE" = "000" ]; then echo "API health check failed (no connection)"; exit 1; fi
+          if [ -z "$api_ok" ]; then
+            echo "API health check failed — dumping droplet API container logs:"
+            ssh -o StrictHostKeyChecking=no root@${{ needs.resolve-ip.outputs.droplet_ip }} \
+              "docker compose -p mct-portal logs --tail=40 api 2>/dev/null || docker logs mct-portal-api-1 --tail 40 2>/dev/null || echo 'no api container found'" || true
+            exit 1
+          fi
           echo "Worker health check via SSH..."
           ssh -o StrictHostKeyChecking=no root@${{ needs.resolve-ip.outputs.droplet_ip }} \
             "curl -sf --connect-timeout 5 --max-time 10 http://localhost:3001/health" 2>/dev/null || \
             echo "Warning: Worker health check failed (non-fatal)"
+          web_ok=""
           for i in $(seq 1 15); do
-            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null || echo "000")
-            if [ "$CODE" != "000" ]; then echo "Web ready after $((i*4))s (HTTP $CODE)"; break; fi
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null | tr -d '\r\n' || echo "000")
+            if [ "$CODE" != "000" ] && [ -n "$CODE" ]; then echo "Web ready after $((i*4))s (HTTP $CODE)"; web_ok=1; break; fi
             echo "Attempt $i/15: $CODE"; sleep 4
           done
-          [ "$CODE" = "000" ] && { echo "Web health check failed"; exit 1; }
+          [ -z "$web_ok" ] && { echo "Web health check failed"; exit 1; }
           echo "--- ALL HEALTH CHECKS PASSED ---"

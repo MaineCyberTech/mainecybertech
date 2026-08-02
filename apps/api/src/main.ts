@@ -66,9 +66,12 @@ function shutdown(signal: string) {
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
+// Log-and-continue for non-fatal async rejections. Background promises
+// (queue producers, webhook dispatchers, cache init) can reject without the
+// server being unusable — exiting on every unhandled rejection makes the
+// container restart-loop. Only true fatal states (uncaughtException) exit.
 process.on("unhandledRejection", (reason) => {
-  logger.error({ err: reason }, "Unhandled promise rejection — shutting down");
-  process.exit(1);
+  logger.error({ err: reason }, "Unhandled promise rejection — continuing");
 });
 
 process.on("uncaughtException", (error) => {
