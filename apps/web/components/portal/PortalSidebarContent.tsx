@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
-import { usePermissions } from "@/lib/use-permissions";
+import { usePermissions, type ServerPermissionData } from "@/lib/use-permissions";
 
 type NavItem = { key: string; href: string; label: string; module?: string };
 
@@ -133,12 +133,18 @@ const GROUPS: Array<{ label: string; items: NavItem[] }> = [
   },
 ];
 
-export default function PortalSidebarContent({ mobile }: { mobile?: boolean }) {
+export default function PortalSidebarContent({
+  mobile,
+  permissions,
+}: {
+  mobile?: boolean;
+  permissions?: ServerPermissionData | null;
+}) {
   const pathname = usePathname();
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const groupButtons = useRef<Record<string, HTMLButtonElement | null>>({});
   const groupLinks = useRef<Record<string, HTMLAnchorElement | null>>({});
-  const { can, loading } = usePermissions();
+  const { can, loading } = usePermissions(permissions);
 
   const isActive = (href: string) => {
     if (href === "/portal/dashboard")

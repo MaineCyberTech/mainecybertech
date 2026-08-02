@@ -84,6 +84,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     unreadCount = 0;
   }
 
+  let permissionsResult = null;
+  try {
+    permissionsResult = await getApiClient().permissions.getMyPermissions();
+  } catch {
+    permissionsResult = null;
+  }
+
   return (
     <div className="min-h-screen bg-[#0A1118] text-slate-50">
       <header className="sticky top-0 z-40 border-b border-emerald-600/20 bg-[#0A1118]/85 backdrop-blur-md">
@@ -112,7 +119,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-        <AdminSidebarLayout>
+        <AdminSidebarLayout
+          permissions={
+            permissionsResult
+              ? { isSuperAdmin: permissionsResult.isSuperAdmin, keys: permissionsResult.keys }
+              : null
+          }
+        >
           <RouteGuard rules={ADMIN_ROUTE_PERMISSIONS} homeHref="/admin">
             {children}
           </RouteGuard>

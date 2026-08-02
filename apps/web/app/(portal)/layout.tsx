@@ -78,16 +78,20 @@ const PORTAL_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   // Run independent calls in parallel
-  const [userResult, membershipResult, unreadCountResult, allOrgsResult] = await Promise.all([
-    getApiClient()
-      .users.me()
-      .catch(() => null),
-    getApprovedMembership().catch(() => null),
-    getUnreadCount().catch(() => 0),
-    getApiClient()
-      .organizations.list()
-      .catch(() => [] as any[]),
-  ]);
+  const [userResult, membershipResult, unreadCountResult, allOrgsResult, permissionsResult] =
+    await Promise.all([
+      getApiClient()
+        .users.me()
+        .catch(() => null),
+      getApprovedMembership().catch(() => null),
+      getUnreadCount().catch(() => 0),
+      getApiClient()
+        .organizations.list()
+        .catch(() => [] as any[]),
+      getApiClient()
+        .permissions.getMyPermissions()
+        .catch(() => null),
+    ]);
 
   if (!userResult?.userId) {
     redirect("/login");
@@ -182,7 +186,13 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       </header>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <PortalSidebarLayout>
+        <PortalSidebarLayout
+          permissions={
+            permissionsResult
+              ? { isSuperAdmin: permissionsResult.isSuperAdmin, keys: permissionsResult.keys }
+              : null
+          }
+        >
           <RouteGuard rules={PORTAL_ROUTE_PERMISSIONS} homeHref="/portal/dashboard">
             {children}
           </RouteGuard>

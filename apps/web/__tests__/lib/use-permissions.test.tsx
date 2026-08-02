@@ -57,7 +57,7 @@ describe("usePermissions", () => {
     expect(result.current.can("anything", "manage")).toBe(true);
   });
 
-  it("exposes the error when the request fails", async () => {
+  it("exposes the error and fails open when the request fails", async () => {
     mockGetMyPermissions.mockRejectedValue(new Error("network down"));
     const { result } = renderHook(() => usePermissions());
 
@@ -66,7 +66,32 @@ describe("usePermissions", () => {
     });
 
     expect(result.current.error).toBeTruthy();
-    expect(result.current.can("tickets", "view")).toBe(false);
+    expect(result.current.can("tickets", "view")).toBe(true);
+  });
+
+  it("seeds from server-supplied permissions without a loading state", async () => {
+    mockGetMyPermissions.mockResolvedValue(CLIENT_USER);
+    const { result } = renderHook(() =>
+      usePermissions({ isSuperAdmin: false, keys: ["tickets:view"] }),
+    );
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.can("tickets", "view")).toBe(true);
+    expect(result.current.can("documents", "view")).toBe(false);
+  });
+
+  it("falls back to server permissions when the refresh fails", async () => {
+    mockGetMyPermissions.mockRejectedValue(new Error("down"));
+    const { result } = renderHook(() =>
+      usePermissions({ isSuperAdmin: false, keys: ["tickets:view"] }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(result.current.can("tickets", "view")).toBe(true);
+    expect(result.current.can("documents", "view")).toBe(false);
   });
 
   it("refreshes when explicitly requested", async () => {

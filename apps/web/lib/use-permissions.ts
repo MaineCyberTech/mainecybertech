@@ -28,9 +28,34 @@ export function invalidatePermissionsCache() {
   cache = null;
 }
 
-export function usePermissions() {
-  const [data, setData] = useState<MyPermissionsResponse | null>(() => (cache ? cache.data : null));
-  const [loading, setLoading] = useState(!cache);
+export type ServerPermissionData = {
+  isSuperAdmin: boolean;
+  keys: string[];
+};
+
+/**
+ * Provides the effective permission set for the current user.
+ *
+ * `serverPermissions` (optional) seeds the hook with data fetched
+ * server-side so navigation renders correctly on first paint without
+ * an extra client round-trip. On fetch failure the hook degrades to
+ * fail-open (`can()` returns true) so the UI never collapses into an
+ * empty shell — the API remains the enforcement point.
+ */
+export function usePermissions(serverPermissions?: ServerPermissionData | null) {
+  const [data, setData] = useState<MyPermissionsResponse | null>(() => {
+    if (serverPermissions) {
+      return {
+        isSuperAdmin: serverPermissions.isSuperAdmin,
+        keys: serverPermissions.keys,
+        permissions: [],
+        roles: [],
+        memberships: [],
+      };
+    }
+    return cache ? cache.data : null;
+  });
+  const [loading, setLoading] = useState(() => !serverPermissions && !cache);
   const [error, setError] = useState<unknown>(null);
 
   useEffect(() => {
@@ -63,8 +88,11 @@ export function usePermissions() {
   );
 
   const can = useCallback(
-    (moduleKey: string, actionKey = "view") => canCheck(effective, moduleKey, actionKey),
-    [effective],
+    (moduleKey: string, actionKey = "view") => {
+      if (error && !data) return true;
+      return canCheck(effective, moduleKey, actionKey);
+    },
+    [effective, error, data],
   );
 
   const refresh = useCallback(async () => {
