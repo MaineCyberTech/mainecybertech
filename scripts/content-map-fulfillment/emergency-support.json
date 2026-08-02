@@ -1,0 +1,512 @@
+{
+  "emergency_remote_support": {
+    "fulfillmentWorkflow": [
+      "Confirm the emergency and scope: confirm the Emergency Remote Support, assess the urgency, and start the same-day response.",
+      "Collect the details: gather the emergency type, the business impact, and the affected systems.",
+      "Pre-work: review the intake details and prepare the remote tools and checklists.",
+      "Connect and diagnose: establish remote access and diagnose the blocking issue.",
+      "Fix the issue: apply the fix or the immediate workaround.",
+      "Verify the resolution: confirm the business is unblocked.",
+      "Deliver the closeout package: the resolution and follow-up documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Emergency Remote Support scope: same-day remote troubleshooting where available.",
+        "Confirm the emergency type and the business impact.",
+        "Gather baseline: affected systems and the current access.",
+        "Create the ticket with product id emergency_remote_support, mark it high priority, and assign an available engineer.",
+        "Check prerequisites: remote access possible and the contact available."
+      ],
+      "delivery": [
+        "Respond with priority: same-day remote session.",
+        "Establish secure remote access to the affected systems.",
+        "Diagnose the urgent issue: root cause of the blocking problem.",
+        "Apply the fix or a fast workaround to unblock the business.",
+        "Verify the resolution: the systems work again.",
+        "Document the incident timeline and the fix.",
+        "Identify the prevention steps.",
+        "Technical verification: confirm the issue is resolved."
+      ],
+      "documentation": [
+        "Produce the resolution documentation: issue, cause, and fix.",
+        "Document the incident timeline.",
+        "Record the follow-up recommendations.",
+        "Include the prevention guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: priority support, rapid response, remote diagnosis/fix, direct engineer access, and fast resolution.",
+        "Confirm the blocking issue is resolved.",
+        "Confirm the fix is stable.",
+        "Confirm the follow-up items are documented.",
+        "Flag follow-ups: permanent fixes and prevention."
+      ],
+      "closeout": [
+        "Send the resolution documentation.",
+        "Recommend follow-ups: permanent fixes and prevention.",
+        "Confirm the business is unblocked.",
+        "Record internal notes: incident and fix.",
+        "Offer a follow-up to confirm stability."
+      ]
+    }
+  },
+  "emergency_on_site_visit": {
+    "fulfillmentWorkflow": [
+      "Confirm the emergency and scope: confirm the Emergency On-Site Visit, assess the urgency, and dispatch the technician.",
+      "Collect the details: gather the emergency type, the business impact, and the site details.",
+      "Pre-work: review the intake and prepare the tools and parts for the visit.",
+      "Travel and connect: arrive on site and begin the hands-on diagnosis.",
+      "Repair the issue: apply the hands-on diagnosis and repair.",
+      "Verify the resolution: confirm the business-impacting issue is resolved.",
+      "Deliver the closeout package: the resolution and coordination documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Emergency On-Site Visit scope: local urgent onsite visit for business-impacting issues.",
+        "Confirm the emergency type, the business impact, and the site details.",
+        "Gather baseline: affected systems and the site access.",
+        "Create the ticket with product id emergency_on_site_visit, mark it high priority, and assign a technician.",
+        "Check prerequisites: the site is accessible and the contact is on site."
+      ],
+      "delivery": [
+        "Dispatch the technician with priority.",
+        "Prepare the tools and any likely parts.",
+        "Arrive on site and assess the situation.",
+        "Perform the hands-on diagnosis of the issue.",
+        "Repair the issue: the hands-on fix.",
+        "Coordinate with the customer during the resolution.",
+        "Verify the business-impacting issue is resolved.",
+        "Technical verification: confirm the systems work."
+      ],
+      "documentation": [
+        "Produce the resolution documentation: issue, cause, and fix.",
+        "Document the on-site work performed.",
+        "Record the coordination notes.",
+        "Include the follow-up recommendations.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: priority response, fast dispatch, hands-on diagnosis/repair, on-site resolution, and emergency coordination.",
+        "Confirm the issue is resolved.",
+        "Confirm the fix is stable.",
+        "Confirm the coordination was handled.",
+        "Flag follow-ups: permanent fixes and prevention."
+      ],
+      "closeout": [
+        "Send the resolution documentation.",
+        "Recommend follow-ups: permanent fixes and prevention.",
+        "Confirm the business is unblocked.",
+        "Record internal notes: on-site incident and fix.",
+        "Offer a follow-up visit if needed."
+      ]
+    }
+  },
+  "email_compromise_response": {
+    "fulfillmentWorkflow": [
+      "Confirm the incident and scope: confirm the Email Compromise Response, confirm the compromise, and start the response.",
+      "Collect the details: gather the compromise signs and the affected accounts.",
+      "Pre-work: prepare the incident response checklist and the containment steps.",
+      "Contain the account: secure the account and revoke the sessions.",
+      "Remove the attacker access: reset the credentials and remove the forwarding/rules.",
+      "Review and harden: review the inbox and harden the email security.",
+      "Deliver the closeout package: the response and notification guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Email Compromise Response scope: containment, session reset, rule removal, and hardening.",
+        "Confirm the compromise signs and the affected accounts.",
+        "Gather baseline: the account, the access level, and the incident scope.",
+        "Create the ticket with product id email_compromise_response, mark it critical, and assign a security engineer.",
+        "Check prerequisites: admin access to the email platform."
+      ],
+      "delivery": [
+        "Contain the compromised account immediately.",
+        "Reset the password and revoke all sessions and tokens.",
+        "Remove the forwarding rules and attacker access.",
+        "Review the inbox and mail rules for the attacker actions.",
+        "Check for the secondary compromise: connected apps and other accounts.",
+        "Apply the email security hardening: MFA and authentication.",
+        "Verify the attacker access is fully removed.",
+        "Technical verification: confirm the account is secured."
+      ],
+      "documentation": [
+        "Produce the response documentation: incident, actions, and state.",
+        "Document the rules removed and the access revoked.",
+        "Record the hardening applied.",
+        "Include the notification guidance for affected contacts.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: containment, password/session reset, rule/access removal, inbox review, hardening, and notification guidance.",
+        "Confirm the attacker access is removed.",
+        "Confirm the account is secured.",
+        "Confirm the notification guidance is provided.",
+        "Flag follow-ups: monitoring the account and a security review."
+      ],
+      "closeout": [
+        "Send the response documentation.",
+        "Recommend follow-ups: monitor the account and harden further.",
+        "Confirm the customer knows what to notify.",
+        "Record internal notes: compromise and response.",
+        "Offer a post-incident security review."
+      ]
+    }
+  },
+  "ransomware_first_response": {
+    "fulfillmentWorkflow": [
+      "Confirm the incident and scope: confirm the Ransomware First Response, confirm the situation, and start the triage.",
+      "Collect the details: gather the infection signs, the affected systems, and the impact.",
+      "Pre-work: prepare the containment and evidence preservation checklist.",
+      "Contain the infection: guide the immediate containment and isolation.",
+      "Preserve the evidence: protect the evidence for analysis.",
+      "Assess and coordinate: assess the impact and coordinate the recovery and communications.",
+      "Deliver the closeout package: the response and post-incident recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Ransomware First Response scope: containment, triage, and coordination for suspected ransomware.",
+        "Confirm the infection signs and the affected systems.",
+        "Gather baseline: the attack scope and the business impact.",
+        "Create the ticket with product id ransomware_first_response, mark it critical, and assign a security engineer.",
+        "Check prerequisites: the remote access and the communication path."
+      ],
+      "delivery": [
+        "Guide the immediate containment: isolate the affected systems.",
+        "Preserve the evidence: stop destructive actions and preserve the logs.",
+        "Assess the impact: affected systems and data.",
+        "Provide the recovery guidance: restore paths and coordination.",
+        "Support the communications: who to notify and what to say.",
+        "Coordinate with the appropriate responders.",
+        "Provide the post-incident security recommendations.",
+        "Technical verification: confirm the containment is in place."
+      ],
+      "documentation": [
+        "Produce the response documentation: incident, containment, and assessment.",
+        "Document the evidence preserved.",
+        "Record the recovery guidance.",
+        "Include the post-incident recommendations.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: containment, evidence preservation, impact assessment, recovery guidance/coordination, communication support, and recommendations.",
+        "Confirm the containment is in place.",
+        "Confirm the evidence is preserved.",
+        "Confirm the recovery path is clear.",
+        "Flag follow-ups: recovery execution and post-incident hardening."
+      ],
+      "closeout": [
+        "Send the response documentation.",
+        "Recommend follow-ups: recovery and post-incident hardening.",
+        "Confirm the customer knows the recovery path.",
+        "Record internal notes: ransomware incident.",
+        "Offer post-incident security review."
+      ]
+    }
+  },
+  "website_down_emergency": {
+    "fulfillmentWorkflow": [
+      "Confirm the emergency and scope: confirm the Website Down Emergency, assess the outage, and start the triage.",
+      "Collect the details: gather the outage signs and the business impact.",
+      "Pre-work: review the hosting, DNS, and provider details.",
+      "Diagnose the outage: identify the DNS, hosting, SSL, or provider cause.",
+      "Restore the site: apply the restoration and emergency mitigation.",
+      "Verify the restoration: confirm the site is back up.",
+      "Deliver the closeout package: the root cause and prevention documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Website Down Emergency scope: DNS, hosting, SSL, application, or provider triage.",
+        "Confirm the outage signs and the business impact.",
+        "Gather baseline: hosting, DNS, and the last working state.",
+        "Create the ticket with product id website_down_emergency, mark it critical, and assign a specialist.",
+        "Check prerequisites: the hosting and DNS access."
+      ],
+      "delivery": [
+        "Diagnose the outage cause: DNS, hosting, SSL, or provider issue.",
+        "Check the hosting: server, storage, and configuration state.",
+        "Review the DNS and SSL: resolution, certificate, and proxy state.",
+        "Assess for attacks: DDoS or compromise signs.",
+        "Restore the website: apply the fix or the workaround.",
+        "Apply the emergency mitigation: failover or protection.",
+        "Verify the site is back up and accessible.",
+        "Technical verification: confirm the site loads correctly."
+      ],
+      "documentation": [
+        "Produce the root cause documentation: outage cause and fix.",
+        "Document the mitigation applied.",
+        "Record the restoration timeline.",
+        "Include the prevention guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: fast diagnosis, host/config/attack assessment, website restoration, emergency mitigation, and root cause guidance.",
+        "Confirm the site is back up.",
+        "Confirm the cause is documented.",
+        "Confirm the mitigation is in place.",
+        "Flag follow-ups: permanent fixes and monitoring."
+      ],
+      "closeout": [
+        "Send the root cause documentation.",
+        "Recommend follow-ups: permanent fixes and monitoring.",
+        "Confirm the site is stable.",
+        "Record internal notes: outage and fix.",
+        "Offer uptime monitoring."
+      ]
+    }
+  },
+  "network_down_emergency": {
+    "fulfillmentWorkflow": [
+      "Confirm the emergency and scope: confirm the Network Down Emergency, assess the outage, and start the triage.",
+      "Collect the details: gather the outage signs and the affected users.",
+      "Pre-work: review the network topology and the hardware details.",
+      "Diagnose the outage: identify the internet, firewall, switch, Wi-Fi, or ISP cause.",
+      "Restore the connectivity: apply the fix or the emergency mitigation.",
+      "Verify the restoration: confirm the network is back up.",
+      "Deliver the closeout package: the root cause and prevention documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Network Down Emergency scope: internet, firewall, switch, Wi-Fi, or ISP triage.",
+        "Confirm the outage signs and the affected users.",
+        "Gather baseline: network hardware, topology, and the ISP.",
+        "Create the ticket with product id network_down_emergency, mark it critical, and assign a technician.",
+        "Check prerequisites: the network access and the hardware details."
+      ],
+      "delivery": [
+        "Diagnose the outage: where the connectivity drops.",
+        "Check the internet and ISP: link status and outages.",
+        "Review the firewall and routing: state and configuration.",
+        "Check the switches and Wi-Fi: hardware and coverage.",
+        "Review the DNS and DHCP: resolution and addressing.",
+        "Restore the connectivity: apply the fix or the workaround.",
+        "Apply the emergency mitigation: failover or isolation.",
+        "Technical verification: confirm the network is back up."
+      ],
+      "documentation": [
+        "Produce the root cause documentation: outage cause and fix.",
+        "Document the mitigation applied.",
+        "Record the restoration timeline.",
+        "Include the prevention guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: fast diagnosis, hardware/routing/DNS review, connectivity restoration, emergency mitigation, and root cause guidance.",
+        "Confirm the network is back up.",
+        "Confirm the cause is documented.",
+        "Confirm the mitigation is in place.",
+        "Flag follow-ups: permanent fixes and monitoring."
+      ],
+      "closeout": [
+        "Send the root cause documentation.",
+        "Recommend follow-ups: permanent fixes and monitoring.",
+        "Confirm the connectivity is stable.",
+        "Record internal notes: outage and fix.",
+        "Offer network monitoring."
+      ]
+    }
+  },
+  "computer_won_t_boot_support": {
+    "fulfillmentWorkflow": [
+      "Confirm the emergency and scope: confirm the Computer Won't Boot Support, assess the issue, and start the triage.",
+      "Collect the details: gather the symptoms, the data value, and the business impact.",
+      "Pre-work: prepare the boot diagnosis and the data recovery approach.",
+      "Diagnose the boot failure: identify the cause of the boot issue.",
+      "Attempt the recovery: recover the data and repair or reinstall as needed.",
+      "Verify the recovery: confirm the device boots and the data is safe.",
+      "Deliver the closeout package: the recovery and backup guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Computer Won't Boot Support scope: device triage and recovery path.",
+        "Confirm the symptoms, the data value, and the impact.",
+        "Gather baseline: device model, recent changes, and last working state.",
+        "Create the ticket with product id computer_won_t_boot_support, mark it high priority, and assign a technician.",
+        "Check prerequisites: the device is accessible or available for service."
+      ],
+      "delivery": [
+        "Diagnose the boot failure: hardware, OS, or drive cause.",
+        "Assess the drive health: signs of failure.",
+        "Attempt the data recovery: preserve the data first.",
+        "Repair or reinstall: fix the boot or reinstall the OS as needed.",
+        "Restore the data to the working system.",
+        "Verify the device boots and the data is present.",
+        "Provide the backup guidance to prevent recurrence.",
+        "Technical verification: confirm the device is working."
+      ],
+      "documentation": [
+        "Produce the recovery documentation: cause, actions, and result.",
+        "Document the data recovery performed.",
+        "Record the drive health findings.",
+        "Include the backup guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: diagnosis, data recovery attempt, repair/reinstall, drive health assessment, and backup guidance.",
+        "Confirm the device boots.",
+        "Confirm the data is safe.",
+        "Confirm the drive health is known.",
+        "Flag follow-ups: drive replacement and backup setup."
+      ],
+      "closeout": [
+        "Send the recovery documentation.",
+        "Recommend follow-ups: backup setup and drive replacement.",
+        "Confirm the device is working.",
+        "Record internal notes: boot failure and fix.",
+        "Offer backup setup to prevent recurrence."
+      ]
+    }
+  },
+  "data_recovery_coordination": {
+    "fulfillmentWorkflow": [
+      "Confirm the emergency and scope: confirm the Data Recovery Coordination, assess the data loss, and start the coordination.",
+      "Collect the details: gather the data loss type, the affected storage, and the impact.",
+      "Pre-work: prepare the recovery assessment and the provider list.",
+      "Assess the data loss: evaluate the situation and the recovery options.",
+      "Guide the protection: advise how to avoid worsening the situation.",
+      "Coordinate the recovery: work with the professional recovery services.",
+      "Deliver the closeout package: the recovery plan and next steps."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Data Recovery Coordination scope: coordinate recovery options and next steps.",
+        "Confirm the data loss type and the affected storage.",
+        "Gather baseline: the storage device and the situation.",
+        "Create the ticket with product id data_recovery_coordination, mark it high priority, and assign a technician.",
+        "Check prerequisites: the situation details and the device access."
+      ],
+      "delivery": [
+        "Assess the data loss: type, cause, and recoverability.",
+        "Evaluate the recovery options: DIY, software, or professional.",
+        "Guide the protection: what to avoid doing to worsen it.",
+        "Coordinate with the professional recovery services when needed.",
+        "Prepare the device for the professional recovery.",
+        "Assist with the restore once the data is recovered.",
+        "Document the recovery plan and the timeline.",
+        "Technical verification: confirm the recovery path is sound."
+      ],
+      "documentation": [
+        "Produce the recovery plan documentation: options and next steps.",
+        "Document the coordination with the services.",
+        "Record the recovery timeline.",
+        "Include the prevention guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: assessment, option evaluation, protection guidance, service coordination, restore assistance, and documentation.",
+        "Confirm the recovery path is set.",
+        "Confirm the situation is not worsened.",
+        "Confirm the coordination is in place.",
+        "Flag follow-ups: restore completion and backup setup."
+      ],
+      "closeout": [
+        "Send the recovery plan documentation.",
+        "Recommend follow-ups: complete the restore and set up backups.",
+        "Confirm the customer knows the recovery path.",
+        "Record internal notes: data loss and coordination.",
+        "Offer backup setup to prevent recurrence."
+      ]
+    }
+  },
+  "emergency_support_retainer": {
+    "fulfillmentWorkflow": [
+      "Confirm the retainer and onboard: confirm the Emergency Support Retainer, collect the environment details, and set the terms.",
+      "Send onboarding prep: the customer confirms the contacts, the environment, and the expectations.",
+      "Pre-work: collect the emergency environment details and set up the priority escalation.",
+      "Establish the retainer: document the response terms and the discounted rates.",
+      "Prepare the readiness: pre-collect the access and the emergency info.",
+      "Coordinate ongoing: maintain the retainer and the readiness.",
+      "Deliver the closeout package: the retainer and response documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Emergency Support Retainer scope: priority response, terms, and pre-collected details.",
+        "Confirm the contacts, the environment, and the expectations.",
+        "Gather baseline: the emergency environment details and the current support state.",
+        "Create the ticket with product id emergency_support_retainer, expected deliverables (retainer terms, readiness documentation), and assign an account engineer.",
+        "Check prerequisites: the contacts and the environment access confirmed."
+      ],
+      "delivery": [
+        "Collect the emergency environment details: systems, providers, and access.",
+        "Document the priority contact information and the escalation path.",
+        "Establish the pre-negotiated response terms.",
+        "Set up the priority escalation in an incident.",
+        "Confirm the discounted emergency response rates.",
+        "Prepare the faster dispatch for on-site emergencies.",
+        "Maintain the recurring coordination.",
+        "Technical verification: confirm the retainer readiness is documented."
+      ],
+      "documentation": [
+        "Produce the retainer and response documentation: terms, contacts, and readiness.",
+        "Document the emergency environment details.",
+        "Record the response commitments.",
+        "Include the escalation path.",
+        "Security rule: sensitive access details stored securely, never in plain docs."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: priority response, pre-negotiated terms, priority escalation, faster dispatch, and recurring coordination.",
+        "Confirm the terms are documented.",
+        "Confirm the escalation path is set.",
+        "Confirm the environment details are collected.",
+        "Flag follow-ups: updating the readiness details."
+      ],
+      "closeout": [
+        "Send the retainer documentation.",
+        "Recommend follow-ups: update the environment details regularly.",
+        "Confirm the customer is set for emergency response.",
+        "Record internal notes: retainer state.",
+        "Offer a readiness review."
+      ]
+    }
+  },
+  "critical_account_lockout_help": {
+    "fulfillmentWorkflow": [
+      "Confirm the emergency and scope: confirm the Critical Account Lockout Help, assess the lockout, and start the response.",
+      "Collect the details: gather the locked account, the platform, and the impact.",
+      "Pre-work: prepare the recovery path and the verification steps.",
+      "Verify the identity: confirm the requester is authorized.",
+      "Restore the access: reset the credentials and restore the access.",
+      "Review the security: check the account security and document the recovery.",
+      "Deliver the closeout package: the recovery and access guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Critical Account Lockout Help scope: triage of access loss to critical accounts.",
+        "Confirm the locked account: domain, email, website, Cloudflare, or admin.",
+        "Gather baseline: the platform, the access level, and the impact.",
+        "Create the ticket with product id critical_account_lockout_help, mark it critical, and assign an engineer.",
+        "Check prerequisites: the identity verification path is available."
+      ],
+      "delivery": [
+        "Respond with priority to the lockout.",
+        "Verify the identity of the requester: proper authorization.",
+        "Assess the account: platform, access level, and recovery path.",
+        "Reset the credentials and restore the access.",
+        "Review the account security: MFA, recovery options, and lock state.",
+        "Document the access recovery guidance.",
+        "Check for any unauthorized access signs.",
+        "Technical verification: confirm the access is restored and secure."
+      ],
+      "documentation": [
+        "Produce the recovery documentation: account, actions, and result.",
+        "Document the identity verification.",
+        "Record the security review.",
+        "Include the access recovery guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: priority response, identity verification, credential reset/access restoration, security review, and recovery guidance.",
+        "Confirm the access is restored.",
+        "Confirm the identity was verified.",
+        "Confirm the account is secured.",
+        "Flag follow-ups: recovery path setup and a critical_account_recovery_kit."
+      ],
+      "closeout": [
+        "Send the recovery documentation.",
+        "Recommend follow-ups: set up a recovery kit and review access.",
+        "Confirm the access is restored.",
+        "Record internal notes: lockout and recovery.",
+        "Offer a critical_account_recovery_kit."
+      ]
+    }
+  }
+}

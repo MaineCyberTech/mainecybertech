@@ -1,0 +1,906 @@
+{
+  "microsoft_365_tenant_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Microsoft 365 Tenant Setup, review the user count, services to use, and domain details from intake, and schedule the build session with a contact who can receive the Global Admin account credentials.",
+      "Send prep instructions: customer should confirm the business name, the domain to use for email (or decide on one), the service list (Exchange, SharePoint, Teams, OneDrive), and the person who will own the Global Admin account.",
+      "Pre-work: verify domain ownership prerequisites, prepare the tenant naming and admin account plan, and decide the license SKUs needed per user based on the services selected.",
+      "Build the tenant: create the tenant at admin.microsoft.com with the business name, set the Global Admin account with a strong password and MFA, verify the domain, and configure user, group, and license structure.",
+      "Configure foundations: set up email and DNS (MX, SPF/DKIM/DMARC), apply the MFA and security baseline, and create the SharePoint, Teams, and OneDrive foundational structure.",
+      "Verify and walk through: test mail flow, confirm users can sign in with MFA, and review the tenant structure with the customer contact.",
+      "Deliver the closeout package: tenant documentation (tenant ID, admins, structure, DNS records), user setup guidance, and the ongoing management path."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify purchase is Microsoft 365 Tenant Setup and the customer is creating a new tenant (not migrating an existing one); if they have an existing tenant, recommend tenant_cleanup or migration instead.",
+        "Confirm who will own the Global Admin account, that they can receive credentials securely, and that the customer has a domain they own or will purchase.",
+        "Gather baseline: business name, domain, user count, intended services (Exchange/Teams/SharePoint/OneDrive), and the license SKU budget.",
+        "Create the ticket with product id microsoft_365_tenant_setup, expected deliverables (tenant, DNS, security baseline, documentation), and assign a technician with M365 Global Admin experience.",
+        "Check prerequisites: domain ownership confirmed or domain purchase decision made, admin account holder identified, and license procurement path agreed."
+      ],
+      "delivery": [
+        "Create the tenant with the exact legal business name; record the tenant ID, primary domain, and initial admin account in the secure password store (never in plain text docs).",
+        "Set the initial Global Admin with a strong unique password and MFA enrollment verified with a test sign-in; establish a break-glass admin account with a separate strong credential.",
+        "Verify the domain: add the DNS verification record at the registrar, confirm verification, then add MX, SPF, DKIM, and DMARC records and wait for propagation.",
+        "Create the user/group structure per the agreed plan and assign licenses; create the shared mailboxes and distribution lists requested.",
+        "Apply the security baseline: MFA with Conditional Access for all users, block legacy authentication, default external sharing disabled, and Secure Score recommendations that are safe to apply immediately.",
+        "Configure foundational SharePoint/Teams/OneDrive structure: default team sites, a document library layout, and OneDrive provisioning defaults.",
+        "Test end to end: send and receive test mail, sign in as a sample user with MFA, confirm SharePoint/Teams access, and confirm no red flags in the Secure Score dashboard.",
+        "Technical verification: confirm DNS records resolve, MFA applies to all users, and no user has standing Global Admin beyond the designated break-glass accounts."
+      ],
+      "documentation": [
+        "Produce the tenant documentation package: tenant ID, domain(s), DNS record table, admin account list with roles, user/license structure, and the services in use.",
+        "Document the security baseline applied (MFA, legacy auth blocking, sharing defaults) with the location of each setting.",
+        "Include a getting-started guide for the customer: how to add users, assign licenses, and where admins sign in.",
+        "Record credentials only in the secure password store with references in the ticket; never include passwords in the documentation.",
+        "Note the ongoing management path (microsoft_365_monthly_admin or m365_managed_bundle) and the license review cadence."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: tenant provisioning and domain verification, user/group/license design, email and DNS, MFA baseline, SharePoint/Teams/OneDrive foundations, and tenant documentation.",
+        "Confirm test mail flow, a successful sample-user sign-in with MFA, and that the Global Admin and break-glass accounts are both secured.",
+        "Secret audit: confirm no passwords or admin tokens appear in the delivered documentation or ticket notes.",
+        "Confirm the customer contact acknowledged the walkthrough and can locate the tenant documentation.",
+        "Flag follow-ups: any licenses still to assign, the recommended ongoing admin plan, and any services the customer wants enabled later."
+      ],
+      "closeout": [
+        "Send the deliverables package: tenant documentation, DNS record table, admin/user guidance, and the getting-started guide.",
+        "Recommend next steps based on what was configured: monthly admin for ongoing management, security baseline or backup setup if not included, and secure score review in 60 days.",
+        "Confirm the break-glass credential is stored safely with the customer and MCT; note its location without exposing the secret.",
+        "Record internal notes: tenant ID, domain, structure decisions, and any service exclusions for future reference.",
+        "Schedule a 30-day check-in to confirm mail is flowing, MFA adoption is complete, and to review the first month of admin activity."
+      ]
+    }
+  },
+  "microsoft_365_tenant_cleanup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Microsoft 365 Tenant Cleanup, review user/device counts and the primary goal from intake, and schedule the audit and change-approval session with a Global Admin.",
+      "Send prep instructions: customer should confirm who can approve cleanup changes, identify any users or mailboxes that must be preserved, and flag any known usage of shared mailboxes or external sharing.",
+      "Pre-work: pull the tenant baseline — user list with licenses and last activity, groups/Teams inventory, shared mailbox list with members, and external sharing settings.",
+      "Run the audit: review stale users and licenses for cost reclaim, evaluate Teams/groups for inactivity and duplication, review mailbox delegation, and document risky external sharing.",
+      "Present the cleanup plan: show the customer the proposed changes in batches with a go/no-go per batch, and get explicit approval before any removal.",
+      "Execute approved changes: remove or disable stale users, reclaim unused licenses, clean Teams/groups, tighten mailbox permissions, and lock down external sharing to safe defaults.",
+      "Deliver the closeout package: the cleanup report with what changed, before/after cost impact, and post-cleanup tenant documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify purchase is Microsoft 365 Tenant Cleanup and confirm the customer wants changes executed (not just a review); if review-only, note that scope.",
+        "Confirm approval authority: identify the Global Admin who can approve each batch of removals and confirm they understand what will be removed.",
+        "Gather baseline: user/device counts, known shared mailboxes, external sharing usage, and any compliance or legal holds on accounts.",
+        "Create the ticket with product id microsoft_365_tenant_cleanup, the audit-and-approve workflow, expected deliverables (cleanup report, cost impact, documentation), and assign a senior M365 admin.",
+        "Check prerequisites: license cost baseline captured, list of accounts under legal/compliance hold identified, and approval session scheduled."
+      ],
+      "delivery": [
+        "Export the full user list with licenses, last sign-in activity, and mailbox status; flag accounts inactive over 90 days and any with both user and assigned license mismatches.",
+        "Review group and Teams inventory: list inactive teams, duplicate/empty groups, and stale membership; capture current channel structure for reuse.",
+        "Review shared mailboxes: list Full Access, Send As, and Send on Behalf members; flag stale or unnecessary delegation.",
+        "Review external sharing: audit 'Anyone with the link' links, guest users, and SharePoint sharing defaults; document each risky item with the folder or file.",
+        "Build the batch cleanup plan: group changes as (1) disable stale users, (2) reclaim licenses, (3) clean Teams/groups, (4) fix mailbox delegation, (5) lock down sharing; present each batch with go/no-go.",
+        "Execute only approved batches: disable accounts (do not delete until confirmed), remove licenses after confirmation, archive or remove stale teams per approval, remove unapproved delegation, and set safe sharing defaults.",
+        "Re-verify after each batch: confirm active users still have access, critical mailboxes are intact, and no approved-to-keep items were touched.",
+        "Technical verification: capture before/after license count and cost delta, and confirm all changes match the approved plan."
+      ],
+      "documentation": [
+        "Produce the cleanup report: what was found (stale users, inactive teams, risky sharing), what was approved, and what was changed with timestamps.",
+        "Document the cost impact: licenses reclaimed and the resulting monthly savings estimate.",
+        "Record the post-cleanup tenant documentation baseline: current users, teams, shared mailboxes, and external sharing settings.",
+        "List anything found but not changed (declined batches or items under hold) with the reason.",
+        "Security rule: do not include any passwords, delegation secrets, or personal data beyond what is needed for the audit record."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: stale user and license audit with cost reclaim, group/Teams cleanup, mailbox delegation review, external sharing lockdown, approved execution, and post-cleanup documentation.",
+        "Confirm each change matches the approved batches and that declined items were left untouched.",
+        "Spot-check active users: confirm a sample of active accounts still have mail, OneDrive, and Teams access.",
+        "Confirm the license cost reclaim math is accurate against the subscription price list.",
+        "Flag follow-ups: recurring review cadence (quarterly access review), any users on hold, and remaining cleanup opportunities."
+      ],
+      "closeout": [
+        "Send the deliverables package: cleanup report, cost impact summary, and the post-cleanup documentation.",
+        "Recommend next steps: a quarterly access review to keep the tenant clean, shared mailbox usage policies, and ongoing monthly admin if the customer lacks in-house admin.",
+        "Revoke any temporary admin delegation used during the engagement and confirm the customer Global Admin remains intact.",
+        "Record internal notes: tenant state before/after, approval decisions, and any customer quirks for future reference.",
+        "Schedule a 30-day check to confirm no breakage from cleanup and to validate the projected license savings."
+      ]
+    }
+  },
+  "microsoft_365_monthly_admin": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Microsoft 365 Monthly Admin plan, capture the tenant access and admin contacts, and establish the recurring schedule and monthly reporting cadence.",
+      "Send onboarding prep: customer confirms the Global Admin who will grant delegated admin access, the user-change process, and the priority contact for admin requests.",
+      "Pre-work: build the tenant baseline (users, licenses, groups, mailboxes, security settings) and the monthly checklist so every cycle covers the same ground.",
+      "Run monthly administration: process user lifecycle requests, manage licenses and groups, handle mailbox/Teams/SharePoint support, and apply access reviews and cleanup.",
+      "Apply security and compliance settings: maintain the security baseline, review risky sharing and admin roles, and implement approved security improvements.",
+      "Update documentation and report: refresh tenant documentation with the month's changes and produce the monthly summary of work performed.",
+      "Deliver the monthly closeout: the work summary, open items list, and recommended next actions for the following month."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Monthly Admin plan scope and confirm the customer understands it is recurring administration, not break-fix emergency support outside business hours.",
+        "Capture delegated admin access: confirm the Global Admin grant or MCT admin credentials path, and the primary customer contact for requests.",
+        "Establish the ticket queue and monthly cycle: log the plan start, the recurring checklist, and the reporting date each month.",
+        "Gather baseline: current user/license/group/mailbox inventory and security settings from the first full review.",
+        "Set expectations: response time for admin requests, change-approval process, and what is excluded (end-user device support unless separately scoped)."
+      ],
+      "delivery": [
+        "Run the monthly checklist: user lifecycle changes (onboard/offboard), license reconciliation, group membership review, and mailbox health checks.",
+        "Process admin requests as they arrive: create/disable users, assign licenses, create shared mailboxes, fix Teams/SharePoint access, and troubleshoot mailbox issues.",
+        "Review security posture monthly: admin role inventory, external sharing audit, MFA coverage check, and any new Secure Score recommendations worth applying.",
+        "Apply approved security and compliance settings: tighten sharing defaults, block legacy auth, review guest access, and document each applied change.",
+        "Update tenant documentation with every user/license/group change so the baseline stays current.",
+        "Log all work with timestamps in the ticket; note anything requiring customer approval before proceeding.",
+        "Technical verification: confirm each change is tested (login, mail flow, sharing link) and reversible if something breaks."
+      ],
+      "documentation": [
+        "Produce the monthly summary: work performed, users/licenses/groups changed, security settings applied, and support tickets resolved.",
+        "Maintain the living tenant documentation: current user list, license totals, shared mailboxes, teams, and security settings.",
+        "Track open items and pending approvals in a monthly status list.",
+        "Record cost observations: license over-provisioning or feature-fit issues for the license optimization recommendation.",
+        "Security rule: keep all administrative details out of customer-facing summaries unless they are action items."
+      ],
+      "qa": [
+        "Verify the monthly checklist is complete: no user lifecycle request left open, license count reconciled, and security review performed.",
+        "Confirm the security baseline still holds: MFA coverage complete, no new global admins beyond approved, and no risky external sharing introduced.",
+        "Confirm the monthly summary was delivered on schedule and the customer acknowledged it.",
+        "Spot-check that tenant documentation matches the live tenant.",
+        "Flag follow-ups: recurring cleanup candidates, license savings, and any security improvement for the next month."
+      ],
+      "closeout": [
+        "Send the monthly summary with the work log and open items list.",
+        "Recommend upgrades when patterns show need: secure score review, license optimization, migration, or backup setup.",
+        "Confirm the customer's admin access is intact and no credentials were changed without approval.",
+        "Record internal notes for the next cycle: pending items, recurring issues, and customer preferences.",
+        "Schedule the next month's cycle and confirm the customer knows the reporting date."
+      ]
+    }
+  },
+  "microsoft_365_security_baseline": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Microsoft 365 Security Baseline, review the tenant and admin access from intake, and schedule the implementation window with a Global Admin.",
+      "Send prep instructions: customer should confirm the users who need MFA, any legacy devices or apps that rely on basic authentication, and who approves the baseline changes.",
+      "Pre-work: pull current tenant security state — MFA coverage, admin roles, legacy auth usage, email protection settings, and external sharing defaults.",
+      "Run the baseline: enforce MFA with Conditional Access, review and prune admin roles to least privilege, and block legacy authentication.",
+      "Harden email and sharing: apply the email protection baseline (anti-phishing, safe links/attachments) and lock external sharing to safe defaults.",
+      "Verify and document: test sign-ins, confirm the baseline holds, and produce the baseline documentation with verification evidence.",
+      "Deliver the closeout package: baseline documentation, what-was-changed summary, and the recommended follow-on security steps."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify purchase is Microsoft 365 Security Baseline and confirm the customer understands the baseline will change sign-in and sharing behavior.",
+        "Confirm which users and apps are exempt (or will be updated) for MFA, and identify any legacy auth dependencies before blocking.",
+        "Gather baseline: current MFA coverage, admin role assignments, email protection config, and external sharing settings.",
+        "Create the ticket with product id microsoft_365_security_baseline, expected deliverables (MFA, admin review, legacy auth block, email protection, sharing lockdown, documentation), and assign a senior M365 admin.",
+        "Check prerequisites: change window agreed, Global Admin access confirmed, and a rollback plan agreed for the Conditional Access policy."
+      ],
+      "delivery": [
+        "Enforce MFA: create the Conditional Access policy requiring MFA for all users with exclude-break-glass accounts; enroll the customer's core users first and confirm they can authenticate.",
+        "Review admin roles: list all Global Admin and privileged role members, remove unused admin roles, and assign least-privilege roles per job function.",
+        "Block legacy authentication: create the CA policy or set Exchange to block basic auth; confirm critical devices and apps still authenticate with modern auth before enforcing.",
+        "Apply email protection baseline: enable anti-phishing policies, safe links and safe attachments, and standard anti-spam settings aligned with the Secure Score recommendations.",
+        "Lock down external sharing: set SharePoint and OneDrive default sharing to 'Specific people', disable 'Anyone' links, and review existing guest access.",
+        "Test end to end: sample user MFA sign-in, a legacy-auth test confirming the block, and an email deliverability check.",
+        "Technical verification: confirm the CA policy reports success, no approved user is locked out, and Secure Score improved on the applied controls."
+      ],
+      "documentation": [
+        "Produce the baseline documentation: the applied policies with names and settings, admin role matrix, and sharing defaults.",
+        "Document the verification evidence: test sign-in results, legacy-auth block confirmation, and email protection validation.",
+        "Record the rollback steps for each policy so changes can be reversed quickly if the customer reports breakage.",
+        "Note exempt accounts (break-glass) and their protection controls.",
+        "Security rule: never store MFA recovery codes or admin passwords in documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: MFA enforcement and CA baseline, admin role review, legacy auth blocking, email protection, external sharing lockdown, and documentation.",
+        "Confirm no approved user was locked out and no critical app broke under the legacy-auth block.",
+        "Confirm the CA policy is in report-then-enforce only if the customer is not ready for full enforcement; otherwise confirm enforce mode.",
+        "Verify the Secure Score improved on the applied controls and record the new score.",
+        "Flag follow-ups: remaining Secure Score items, user MFA enrollment completion, and a 90-day admin role re-review."
+      ],
+      "closeout": [
+        "Send the deliverables package: baseline documentation, what-changed summary, and verification evidence.",
+        "Recommend next steps: microsoft_365_backup_setup for recovery, secure score review for continued hardening, or endpoint protection rollout.",
+        "Confirm break-glass accounts remain accessible to the customer owner and their credentials are stored securely.",
+        "Record internal notes: applied policies, exempt accounts, and the pre/post Secure Score for future comparison.",
+        "Schedule a 30-day check to confirm MFA adoption is complete and no legacy-auth breakage was reported."
+      ]
+    }
+  },
+  "microsoft_365_backup_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Microsoft 365 Backup Setup, review the tenant size and services to protect from intake, and schedule the configuration session with a Global Admin.",
+      "Send prep instructions: customer should confirm the backup platform preference (or let MCT select), the retention target, and who will own the backup credentials.",
+      "Pre-work: inventory what must be protected (mailboxes, OneDrive, SharePoint sites, Teams), compare backup platforms for the tenant size, and prepare the retention policy plan.",
+      "Configure the backup platform: set up the backup tenant/site, connect Exchange, SharePoint, and OneDrive sources, and configure the agreed retention.",
+      "Verify recoverability: run a test restore of a sample mailbox, file, and site to confirm backups actually restore.",
+      "Document and walk through: produce the backup/restore documentation and walk the customer through how restores work.",
+      "Deliver the closeout package: backup configuration summary, retention policy, restore-walkthrough evidence, and the monitoring recommendation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify purchase is Microsoft 365 Backup Setup and confirm what the customer expects (M365 backup, not device or server backup).",
+        "Determine backup platform fit: evaluate the platform's per-user licensing against tenant size and the customer's budget; recommend a specific platform.",
+        "Confirm retention target (e.g., indefinite, 3 years, 7 years) and any compliance drivers (insurance, HIPAA, legal holds).",
+        "Gather baseline: number of mailboxes, OneDrive users, SharePoint sites, Teams, and total data volume to size the plan.",
+        "Create the ticket with product id microsoft_365_backup_setup, expected deliverables (platform config, retention, test restore, documentation), and assign a technician with M365 backup platform experience."
+      ],
+      "delivery": [
+        "Provision the backup platform: create the backup organization/account, set admin credentials in the secure password store, and configure the service account with the needed Exchange/SharePoint read scopes.",
+        "Connect sources: configure Exchange Online backup for all mailboxes, OneDrive for all users, and SharePoint/Teams site backups.",
+        "Set retention and schedules per the agreed target; enable alerts for backup failure and storage thresholds.",
+        "Enable restore features: confirm restore-to-original and restore-to-alternate are available and tested.",
+        "Run the test restore: restore a sample mailbox message, a OneDrive file, and a SharePoint library item to a scratch location; confirm integrity.",
+        "Verify the backup job ran clean: check the dashboard for any failed items, and confirm storage is within the plan.",
+        "Technical verification: confirm restore content matches source, retention policy applies, and no backup data is stored where it can be overwritten by the source."
+      ],
+      "documentation": [
+        "Produce the backup and restore documentation: platform, what is backed up, retention policy, restore procedure, and where the backup admin signs in.",
+        "Document the test restore evidence: what was restored, where, and confirmation of integrity.",
+        "Include the failure-alert and monitoring guidance so the customer knows when to call.",
+        "Record backup admin credentials only in the secure password store; never include them in documentation.",
+        "Note the recommended backup monitoring plan if the customer wants MCT to watch the jobs."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: platform selection and setup, Exchange backup, SharePoint/OneDrive backup, retention policy, test restore, documentation, and restore walkthrough.",
+        "Confirm the test restore returned valid data and the restore walkthrough was delivered.",
+        "Confirm the backup dashboard shows all sources protected with no failed items.",
+        "Confirm retention matches the customer's agreed target and any compliance driver.",
+        "Flag follow-ups: backup monitoring plan recommendation, storage growth review cadence, and quarterly restore-test recommendation."
+      ],
+      "closeout": [
+        "Send the deliverables package: backup configuration summary, retention policy, test-restore evidence, and restore documentation.",
+        "Recommend next steps: backup_monitoring_plan for automated job monitoring, quarterly restore tests, or a disaster recovery plan starter.",
+        "Confirm backup admin credentials are safely stored and the customer knows the restore process.",
+        "Record internal notes: platform, licensed volume, retention, and restore-test date for future reference.",
+        "Schedule the first monitoring check-in and a 90-day restore-test reminder."
+      ]
+    }
+  },
+  "microsoft_365_migration_lite": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Microsoft 365 Migration Lite, review the source platform and account count from intake, and schedule planning and cutover windows with the customer contact.",
+      "Send prep instructions: customer should confirm the source admin access, the target domain, and the small set of accounts in scope; flag any public folders or custom routing.",
+      "Pre-work: inventory source mailboxes, groups, shared mailboxes, and calendar resources with sizes and permissions; design the target structure and DNS plan.",
+      "Migrate data: perform mailbox and data migration for the in-scope accounts into the target tenant using the migration tool.",
+      "Cut over: coordinate domain and DNS cutover (MX, autodiscover, SPF) to the new environment at the agreed time.",
+      "Validate post-migration: confirm mail flows, files are present, permissions applied, and users can sign in with MFA.",
+      "Deliver the closeout package: migration documentation, user guidance, and post-migration validation report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Migration Lite scope fits: small account count (typically under 20) and simple mail/file migration; if larger or multi-workload, recommend migration_full.",
+        "Confirm source admin access and target tenant readiness; identify the cutover window and who can change DNS.",
+        "Inventory the source: mailboxes, distribution groups, shared mailboxes, calendar resources, and routing rules; record sizes and permissions.",
+        "Create the ticket with product id microsoft_365_migration_lite, the migration plan, expected deliverables, and assign the migration technician.",
+        "Check prerequisites: source admin creds path, target tenant admin path, DNS change authority, and the cutover date agreed."
+      ],
+      "delivery": [
+        "Set up the migration endpoint in the target tenant: connect the source system and validate the connection with a small test batch.",
+        "Run pre-migration sync: migrate the in-scope mailboxes and files while users continue working; verify item counts and sizes match.",
+        "Validate a test mailbox: check calendar items, contacts, attachments, and folder structure came over intact.",
+        "Prepare cutover: confirm final sync, set the target to match, and align DNS change timing with the migration tool's final sync.",
+        "Execute cutover: change MX, autodiscover, and SPF records at the agreed time; confirm propagation.",
+        "Post-migration validation: send and receive test mail, verify files accessible with correct permissions, and confirm MFA sign-in works for migrated users.",
+        "Technical verification: confirm no data loss in the sample set, mail routes correctly, and the source can be decommissioned only after the customer confirms."
+      ],
+      "documentation": [
+        "Produce the migration documentation: what was migrated, source-to-target mapping, DNS changes made, and validation results.",
+        "Include user guidance: how to sign in to the new environment, where files live, and how to report issues.",
+        "Document any items that did not migrate (e.g., large items, special permissions) with the reason.",
+        "Record the cutover timeline and DNS change details for the customer's records.",
+        "Security rule: never store source or target admin credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: scope assessment and plan, mailbox/data migration, DNS cutover, target configuration, post-migration validation, and documentation.",
+        "Confirm test mail flow and file access for the migrated accounts.",
+        "Confirm permissions were applied per the source inventory and no public folder data was lost.",
+        "Confirm the customer acknowledged the cutover and knows the issue-reporting path.",
+        "Flag follow-ups: source decommission date, the migration_full recommendation if scope grew, and a 30-day post-migration check."
+      ],
+      "closeout": [
+        "Send the deliverables package: migration documentation, DNS change summary, validation report, and user guidance.",
+        "Recommend next steps: decommission the source after a hold period, security baseline on the new tenant, or backup setup on the target.",
+        "Confirm source admin credentials are rotated or revoked after migration completes.",
+        "Record internal notes: migration timeline, items migrated, and any data anomalies for future reference.",
+        "Schedule a 30-day post-migration check with the customer."
+      ]
+    }
+  },
+  "microsoft_365_migration_full": {
+    "fulfillmentWorkflow": [
+      "Confirm project scope and kick off: confirm the Full Migration project, define the source and target environments, and run the kickoff with stakeholders to agree timeline, communication, and cutover.",
+      "Run discovery and planning: inventory all workloads (mailboxes, files, Teams, SharePoint, OneDrive, shared resources, public folders) and produce the full migration plan with phases and risks.",
+      "Design the target: map the target tenant structure, permissions, naming, and governance to the business needs.",
+      "Communicate and prepare users: deliver user communication and change management, including training links and timeline expectations.",
+      "Execute phased migration: migrate mailboxes, files, and collaboration workloads in phases with validation gates between each.",
+      "Execute cutover: run the final cutover with minimized disruption, coordinate DNS, and validate mail and files.",
+      "Deliver post-migration support and closeout: support users post-cutover, validate all workloads, and hand over the full migration documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Full Migration scope and confirm the customer understands it is a project with phases, communication, and a defined cutover.",
+        "Confirm project governance: project sponsor, decision makers, source/target admins, and the cutover weekend window.",
+        "Gather discovery inputs: all workloads, user counts, data volumes, applications that integrate with the source, and any special data (public folders, archives).",
+        "Create the project ticket with product id microsoft_365_migration_full, the phase plan, milestone dates, expected deliverables, and assign the migration lead.",
+        "Identify risks and prerequisites: connectivity, DNS authority, licensing, compliance holds, and any workloads that cannot migrate."
+      ],
+      "delivery": [
+        "Run full discovery: inventory mailboxes, distribution groups, shared mailboxes, public folders, calendars, Teams, SharePoint sites, OneDrive, and file shares with sizes and permissions.",
+        "Design the target tenant: create the site/team structure, permission model, naming conventions, and retention/governance plan.",
+        "Build the migration environment: set up the migration tool, stage the target, and run a pilot batch with stakeholder review.",
+        "Execute phased migration: migrate mailbox batch 1, validate; then files/OneDrive/Teams/SharePoint phases, validating item counts and permissions at each gate.",
+        "Run user communication: send the timeline, what changes, when cutover happens, and where to get help; hold a pre-cutover staff briefing.",
+        "Execute cutover: final sync, switch DNS (MX/autodiscover/SPF), re-enable any required integrations, and announce cutover complete.",
+        "Post-migration validation: verify mail flow, file access, Teams/SharePoint, and run the support period catching and fixing issues.",
+        "Technical verification: confirm every workload has a validated checklist sign-off and no data loss was reported."
+      ],
+      "documentation": [
+        "Produce the full migration documentation: discovery inventory, target design, phase plan, cutover runbook, DNS changes, and validation sign-offs.",
+        "Include the user communication pack and the post-migration support guide.",
+        "Document workload-by-workload status: what migrated, what was validated, and any known issues with fixes.",
+        "Record the cutover timeline and rollback plan in the runbook.",
+        "Security rule: credentials stay in the secure store; documentation contains only technical configuration details."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: discovery and planning, target design, communication and change management, phased migration, cutover, post-migration validation and support, and documentation.",
+        "Confirm each phase gate passed with evidence (item counts, permission spot-checks, sign-off).",
+        "Confirm mail flow and file access post-cutover and that no workload was left without validation.",
+        "Confirm the customer sponsor acknowledged the post-migration report.",
+        "Flag follow-ups: decommission of source, backup setup on the new tenant, and a 30/60/90-day post-migration support check."
+      ],
+      "closeout": [
+        "Deliver the full closeout package: migration documentation, user guide, post-migration report, and support handover.",
+        "Recommend next steps: backup setup, security baseline, tenant documentation, and ongoing admin support.",
+        "Confirm source admin credentials are revoked or rotated and the source is decommissioned per the agreed plan.",
+        "Record internal notes: project timeline, issues and resolutions, and workload inventory for future reference.",
+        "Schedule the post-migration support checkpoints (30/60/90 days)."
+      ]
+    }
+  },
+  "microsoft_365_license_optimization": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the License Optimization, review the tenant and user count from intake, and schedule the review session with a Global Admin.",
+      "Send prep instructions: customer should confirm who decides license changes and should flag any job roles with special software needs.",
+      "Pre-work: pull the license inventory, per-user license assignment, and usage data from the M365 admin center.",
+      "Run the analysis: map license usage to job functions, identify inactive users and unused/unused features, and compare plan fit against needs.",
+      "Present recommendations: show the customer the cost-saving and feature-fit options with expected impact, and get approval for any reallocation.",
+      "Execute approved reallocation: reassign licenses, downgrade or upgrade as agreed, and adjust auto-license defaults.",
+      "Deliver the closeout package: the license report with savings, the new assignment map, and ongoing license management guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify purchase is License Optimization and confirm the customer wants actionable recommendations, not just a report.",
+        "Confirm who approves license changes and the subscription contract terms (annual commitment limits changes).",
+        "Gather baseline: user count, license SKUs purchased and assigned, and job role list.",
+        "Create the ticket with product id microsoft_365_license_optimization, expected deliverables (report, savings, reallocation), and assign a technician with M365 licensing knowledge.",
+        "Check prerequisites: admin access confirmed and the customer's contract renewal date noted."
+      ],
+      "delivery": [
+        "Pull the license inventory: list every subscription, the purchased count, assigned count, and cost per SKU.",
+        "Review per-user usage: identify users inactive over 90 days, licenses with unused features, and users on a higher SKU than their job needs.",
+        "Map plan fit: compare each user's job function to the features in their assigned SKU (e.g., users without Teams, SharePoint, or Office apps that only need email).",
+        "Calculate scenarios: present cost-saving options (downgrade to lower SKU, remove inactive users) and feature-fit options (upgrade for needed apps) with the monthly delta.",
+        "Present recommendations with impact and risk; get explicit approval before any change.",
+        "Execute approved reallocation: unassign licenses from departing users, assign the right SKUs, and set group-based licensing defaults where useful.",
+        "Technical verification: confirm no user lost access to software they use and the new license count matches the subscription."
+      ],
+      "documentation": [
+        "Produce the license report: current spend, per-user SKU mapping, savings scenarios, and the recommended final state.",
+        "Document the new assignment map and any group-based licensing rules.",
+        "Include contract notes: renewal date, annual commitment headroom, and true-up implications.",
+        "Record the savings estimate in the ticket for future reference.",
+        "Security rule: no personal user data beyond names and license assignments."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: license inventory and usage analysis, inactive user and unused license identification, plan-fit review, recommendations, approved reallocation, and guidance.",
+        "Confirm no active user lost a feature they actually use.",
+        "Confirm the savings math matches the price list and contract terms.",
+        "Confirm the customer approved each reallocation before execution.",
+        "Flag follow-ups: quarterly license re-check, renewal-date reminder, and any user who needs a higher SKU."
+      ],
+      "closeout": [
+        "Send the deliverables package: license report, savings summary, and the new assignment map.",
+        "Recommend next steps: quarterly license review, alert on users approaching inactive, and managed license administration.",
+        "Confirm all license changes match the approved plan.",
+        "Record internal notes: current SKU totals, savings achieved, and renewal date.",
+        "Schedule the quarterly license review reminder."
+      ]
+    }
+  },
+  "shared_mailbox_cleanup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Shared Mailbox Cleanup, review the tenant from intake, and schedule the review with a Global Admin.",
+      "Send prep instructions: customer should identify which shared mailboxes must be preserved and who the current owners are.",
+      "Pre-work: inventory all shared mailboxes across the tenant with member lists and activity.",
+      "Run the review: document Full Access, Send As, and Send on Behalf permissions for every shared mailbox; flag stale members and unused mailboxes.",
+      "Present the plan: show the customer the proposed permission cleanup and mailbox disposition, and get approval.",
+      "Execute approved cleanup: remove stale delegation, archive or disable unused shared mailboxes, and document the final access state.",
+      "Deliver the closeout package: the access documentation, what-changed summary, and shared mailbox usage recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Shared Mailbox Cleanup scope and confirm the customer knows this covers permission review and approved cleanup.",
+        "Identify which shared mailboxes are business-critical and cannot lose access.",
+        "Gather baseline: full list of shared mailboxes with members and permissions.",
+        "Create the ticket with product id shared_mailbox_cleanup, expected deliverables (inventory, cleanup, documentation), and assign a technician with Exchange admin experience.",
+        "Check prerequisites: approval authority identified and critical-mailbox list confirmed."
+      ],
+      "delivery": [
+        "Export the shared mailbox inventory: name, primary SMTP, member list, Full Access, Send As, and Send on Behalf permissions.",
+        "Review usage: note mailboxes with no recent activity, no members, or duplicate purpose.",
+        "Flag risky delegation: users with Full Access across many mailboxes, terminated-user access, and vendor accounts with Send As.",
+        "Build the cleanup plan per mailbox: keep/disable/archive disposition and which members to remove; get approval on the list.",
+        "Execute approved changes: remove stale members, disable or archive unused mailboxes per approval, and preserve business data before archiving.",
+        "Re-verify access: confirm remaining members can still access their mailboxes and no critical mailbox was changed without approval.",
+        "Technical verification: confirm the final permission state matches the approved plan and mail flow for preserved mailboxes is intact."
+      ],
+      "documentation": [
+        "Produce the shared mailbox documentation: inventory, current owners/members, and the permission state after cleanup.",
+        "Document what changed: members removed, mailboxes archived/disabled, and the reason for each.",
+        "Include usage recommendations: owner assignment, periodic review, and a shared mailbox policy if one does not exist.",
+        "Record any mailbox preserved under a business need with the owner named.",
+        "Security rule: no mailbox content or sensitive emails referenced in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: inventory, permission review, stale mailbox identification, approved cleanup, access documentation, and recommendations.",
+        "Confirm critical mailboxes still function and their preserved members have access.",
+        "Confirm all changes were approved and match the plan.",
+        "Confirm no active mailbox lost its Send As/Full Access without approval.",
+        "Flag follow-ups: quarterly shared mailbox review, owner assignment for unowned mailboxes, and policy creation."
+      ],
+      "closeout": [
+        "Send the deliverables package: shared mailbox documentation and what-changed summary.",
+        "Recommend next steps: a shared mailbox usage policy, quarterly access review, or shared_mailbox cleanup recurring.",
+        "Confirm no access was broken for preserved mailboxes.",
+        "Record internal notes: mailbox inventory state, owners, and any exceptions.",
+        "Schedule the quarterly shared mailbox review reminder."
+      ]
+    }
+  },
+  "onedrive_and_sharepoint_permissions_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the OneDrive and SharePoint Permissions Review, review the tenant from intake, and schedule the review with a Global Admin.",
+      "Send prep instructions: customer should identify which sites contain sensitive data and who the site owners are.",
+      "Pre-work: pull external sharing settings, public link reports, guest users, and site-level permission snapshots.",
+      "Run the audit: review external sharing policy, enumerate public and 'anyone with the link' links, review guest access, and document excessive sharing.",
+      "Present the findings: show the customer the risky sharing inventory with risk level and the proposed remediation; get approval.",
+      "Execute approved remediation: remove public links, revoke guest access, tighten site permissions, and set safe sharing defaults.",
+      "Deliver the closeout package: the sharing audit report, what-changed summary, and permissions documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the scope covers OneDrive and SharePoint sharing review, not full tenant security.",
+        "Identify sensitive sites (finance, HR, contracts) and the site owners for approval.",
+        "Gather baseline: external sharing settings, public link count, guest user list, and site permission counts.",
+        "Create the ticket with product id onedrive_and_sharepoint_permissions_review, expected deliverables (audit report, remediation, documentation), and assign a technician with SharePoint admin experience.",
+        "Check prerequisites: approval authority for remediation confirmed and sensitive-site list agreed."
+      ],
+      "delivery": [
+        "Review external sharing policy: document the tenant default (Anyone, New and existing guests, Existing guests, Only people in org).",
+        "Enumerate public links: pull all 'Anyone with the link' and 'People in org with link' links with file/folder path and owner.",
+        "Review guest access: list guest users, which sites they can access, and their last activity.",
+        "Review site permissions: spot-check site owners, members, and unique permission sets for the sensitive sites.",
+        "Classify risk: label each finding as Critical (public link to sensitive data), High (broad guest access), Medium (excessive members), and Low (cosmetic).",
+        "Present the remediation plan with the site owner; get approval per site before removing access.",
+        "Execute approved remediation: disable public links, remove or restrict guests, tighten site permissions, and set safe sharing defaults.",
+        "Technical verification: confirm the risky links are gone, guests removed as approved, and legitimate external access preserved."
+      ],
+      "documentation": [
+        "Produce the sharing audit report: policy state, public links found, guest inventory, and risk-classified findings.",
+        "Document what changed: links removed, guests revoked, permissions adjusted, and the safe defaults applied.",
+        "Include the site permission matrix for the sensitive sites.",
+        "Record approved exceptions: external users with legitimate access and the business reason.",
+        "Security rule: do not include file contents or URLs that reveal sensitive data beyond the path needed for the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: external sharing policy review, public link audit, guest access review, permission review, risk documentation, and approved remediation.",
+        "Confirm no sensitive data remains shared via public or 'anyone' links.",
+        "Confirm legitimate external collaborators retained access per approval.",
+        "Confirm the safe defaults are set and site owners acknowledged the changes.",
+        "Flag follow-ups: recurring external sharing review, guest re-certification, and site owner training."
+      ],
+      "closeout": [
+        "Send the deliverables package: sharing audit report, what-changed summary, and site permissions documentation.",
+        "Recommend next steps: quarterly permissions review, owner assignment, or a sharing policy.",
+        "Confirm the safe sharing defaults are active.",
+        "Record internal notes: findings count, remediation results, and approved exceptions.",
+        "Schedule the quarterly external sharing re-check."
+      ]
+    }
+  },
+  "new_employee_m365_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and start date: confirm the New Employee M365 Setup, review the role and start date from intake, and schedule the setup before the employee's first day.",
+      "Send prep instructions: customer confirms the employee's role, name, department, and which apps and sites they need access to.",
+      "Pre-work: prepare the account template (naming, license, mailbox, groups, site access) matching the role.",
+      "Create the account: provision the M365 account and mailbox, assign the license, and set up the standard security profile.",
+      "Configure access: enroll MFA with the employee or manager, add SharePoint/Teams membership, and apply least-privilege permissions.",
+      "Verify and instruct: test sign-in, confirm access to the needed apps, and send the new-employee getting-started instructions.",
+      "Deliver the closeout: account summary, access list, and onboarding instructions for the employee."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the New Employee M365 Setup scope and the employee start date to plan the provisioning window.",
+        "Confirm role and access needs: department, applications, and the sites/shared mailboxes the role requires.",
+        "Gather baseline: naming convention, license SKU for the role, and the standard onboarding checklist for similar hires.",
+        "Create the ticket with product id new_employee_m365_setup, expected deliverables (account, access, instructions), and assign the provisioning technician.",
+        "Check prerequisites: manager or IT contact confirmed as the enrollment helper, and license availability confirmed."
+      ],
+      "delivery": [
+        "Create the account: username per convention, mailbox, license assignment, and the standard security group membership.",
+        "Set the initial password per policy and require change on first sign-in; never send the password via unsecured email.",
+        "Enroll MFA: configure the authenticator app with the employee or a manager, verify with a test sign-in, and store recovery codes in the secure location.",
+        "Assign access: add to the role's Teams/SharePoint sites, shared mailboxes, and distribution lists at least-privilege.",
+        "Configure email basics: set the display name, signature template if used, and any shared mailbox delegation needed.",
+        "Verify end to end: test sign-in, mail send/receive, Teams/SharePoint access, and OneDrive provisioning.",
+        "Technical verification: confirm the account appears in the correct groups, license is active, and no excessive permissions were granted."
+      ],
+      "documentation": [
+        "Produce the onboarding summary: account name, license, access list, and the apps configured.",
+        "Include the new-employee getting-started instructions: sign-in, MFA app, Teams/SharePoint locations, and who to contact for help.",
+        "Record the MFA recovery-code storage location without exposing the codes.",
+        "Log the ticket with the account details for audit.",
+        "Security rule: never store the initial password in any documentation; the employee changes it at first sign-in."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: account and mailbox creation, license assignment, MFA enrollment, SharePoint/Teams access, least-privilege permissions, and instructions.",
+        "Confirm the test sign-in worked and the employee or manager received the credentials securely.",
+        "Confirm the access list matches the role needs and nothing excessive was granted.",
+        "Confirm the onboarding instructions were delivered.",
+        "Flag follow-ups: any access the employee requests later, and the 30-day account review."
+      ],
+      "closeout": [
+        "Send the onboarding summary and getting-started instructions to the manager.",
+        "Recommend next steps: standard onboarding checklist adoption, or new_employee setup as a recurring bundle.",
+        "Confirm the employee's first-day sign-in is expected to work; provide the support contact.",
+        "Record internal notes: account details, access granted, and any special arrangements.",
+        "Schedule the 30-day check on the new employee's access."
+      ]
+    }
+  },
+  "departing_employee_lockdown": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and departure date: confirm the Departing Employee Lockdown, review the departure date and data needs from intake, and schedule the secure offboarding with the manager.",
+      "Send prep instructions: manager confirms who will take over the employee's work, which files/mailbox must be preserved, and the exact last working day.",
+      "Pre-work: inventory the employee's access (mailbox, OneDrive, SharePoint sites, Teams, groups, shared mailboxes) and decide preservation and handoff.",
+      "Execute the lockdown: disable the account, revoke sessions, and remove group and permission access at the departure time.",
+      "Preserve and hand off: back up or transfer the mailbox, OneDrive, and business-critical files to the assigned owner.",
+      "Verify and document: confirm access is revoked, data preserved, and produce the offboarding documentation for audit.",
+      "Deliver the closeout package: offboarding report, preserved-data inventory, and the audit-ready documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Departing Employee Lockdown scope and the departure date; confirm whether the account should be disabled or fully deleted.",
+        "Identify the data owner: who takes over mail, files, and project access.",
+        "Gather baseline: the employee's account, mailbox size, OneDrive size, groups/Teams membership, and shared mailbox access.",
+        "Create the ticket with product id departing_employee_lockdown, expected deliverables (lockdown, preservation, documentation), and assign the offboarding technician.",
+        "Check prerequisites: legal/compliance hold check on the account, and the manager confirmed the takeover owner."
+      ],
+      "delivery": [
+        "At departure time: disable the account (block sign-in) and revoke all active sessions across mail, apps, and mobile devices.",
+        "Remove access: strip group memberships, Teams/SharePoint site access, and shared mailbox delegation (or transfer to the owner).",
+        "Preserve data: back up the mailbox (PST or licensed archive), export OneDrive content to the owner or a shared site, and preserve files per the manager's list.",
+        "Hand off: grant the assigned owner access to the preserved data and confirm they can open what they need.",
+        "Handle external access: remove the employee from any external sharing links and guest lists where applicable.",
+        "Verify revocation: test that the disabled account cannot sign in, access mail, or reach sites.",
+        "Technical verification: confirm preserved data is intact and the takeover owner verified access."
+      ],
+      "documentation": [
+        "Produce the offboarding report: account disabled, sessions revoked, access removed, and data preserved with the owner.",
+        "Document the preserved-data inventory: mailbox/OneDrive/files, where they now live, and who owns them.",
+        "Include the audit-ready record: dates, actions, and evidence for compliance.",
+        "Record any items intentionally not preserved with the reason.",
+        "Security rule: no personal employee data beyond what the audit record requires."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: account disablement, session revocation, access removal, data preservation, handoff, and audit documentation.",
+        "Confirm the disabled account cannot sign in or access resources (test result).",
+        "Confirm the takeover owner verified access to the preserved data.",
+        "Confirm the offboarding documentation is audit-ready.",
+        "Flag follow-ups: license reclamation, mailbox retention period, and 30-day verification that the account remains locked."
+      ],
+      "closeout": [
+        "Send the deliverables package: offboarding report, preserved-data inventory, and audit documentation.",
+        "Recommend next steps: license reclamation via license optimization, and recurring offboarding via monthly admin.",
+        "Confirm the employee's mobile device was wiped or blocked if company-managed.",
+        "Record internal notes: departure date, owner assigned, and data location.",
+        "Schedule a 30-day re-verification that the account is still disabled."
+      ]
+    }
+  },
+  "teams_cleanup_mini_project": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Teams Cleanup Mini Project, review the tenant from intake, and schedule the review with a Global Admin.",
+      "Send prep instructions: customer should identify the teams that must be preserved and who the team owners are.",
+      "Pre-work: inventory all teams with activity, membership, guest access, and channel structure.",
+      "Run the review: flag inactive and duplicate teams, review guest access, and assess channel clutter and naming.",
+      "Present the plan: propose the cleanup (archive/merge/rename, channel structure, guest removal) and get approval per team.",
+      "Execute approved cleanup: archive inactive teams, merge or rename as approved, clean channels, and remove unnecessary guests.",
+      "Deliver the closeout package: the teams organization documentation, what-changed summary, and naming standards."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Teams Cleanup scope and confirm the customer wants changes executed with approval, not just a report.",
+        "Identify the preserved list: business-critical teams and their owners.",
+        "Gather baseline: full team list with activity dates, member counts, guest counts, and channel counts.",
+        "Create the ticket with product id teams_cleanup_mini_project, expected deliverables (cleanup plan, execution, documentation), and assign a technician with Teams admin experience.",
+        "Check prerequisites: approval authority confirmed and archived-team data-retention needs known."
+      ],
+      "delivery": [
+        "Inventory teams: list every team with last activity, owner, members, guests, and channel structure.",
+        "Classify each team: active/keep, inactive/archive, duplicate/merge, or rename/reorganize.",
+        "Review guest access: list guests per team and flag those with access to sensitive teams.",
+        "Propose the cleanup plan per team with the disposition and get approval before executing.",
+        "Execute approved changes: archive inactive teams (preserving data), merge duplicates, rename per standards, and restructure channels.",
+        "Remove unnecessary guests and confirm remaining guests have only the access they need.",
+        "Technical verification: confirm archived teams are recoverable, active teams are intact, and members kept access."
+      ],
+      "documentation": [
+        "Produce the teams organization documentation: current team list, owner, purpose, and channel structure.",
+        "Document what changed: archived, merged, renamed, restructured teams with dates.",
+        "Include naming and organization standards for future team creation.",
+        "Record the archived-team list with retention notes.",
+        "Security rule: no sensitive conversation content referenced in documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: inventory and activity review, inactive/duplicate identification, guest access review, channel cleanup, naming standardization, and documentation.",
+        "Confirm active teams retained their members and data after cleanup.",
+        "Confirm guests were removed only per approval and archived teams remain recoverable.",
+        "Confirm the naming and structure standards are documented for the customer.",
+        "Flag follow-ups: team creation policy, quarterly team review, and owner reassignment for ownerless teams."
+      ],
+      "closeout": [
+        "Send the deliverables package: teams organization documentation and what-changed summary.",
+        "Recommend next steps: a team creation and naming policy, recurring teams cleanup, or owner training.",
+        "Confirm no active team data was lost.",
+        "Record internal notes: team inventory state and any exceptions.",
+        "Schedule the quarterly teams review reminder."
+      ]
+    }
+  },
+  "microsoft_secure_score_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Microsoft Secure Score Review, review the tenant from intake, and schedule the review with a Global Admin.",
+      "Send prep instructions: customer should confirm which users/apps are critical so recommendations can be risk-ranked accordingly.",
+      "Pre-work: pull the Secure Score dashboard with all recommendations and their current impact.",
+      "Run the analysis: review every major recommendation, classify risk-versus-impact, and identify which improvements are safe and high-impact.",
+      "Assess operational risk: evaluate the disruption risk of each improvement (lockout, app breakage, legacy auth) and select the approved set.",
+      "Implement approved improvements: apply the safe high-impact changes and verify the score improvement.",
+      "Deliver the closeout package: the score improvement report, what-changed summary, and the remaining recommendation roadmap."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Secure Score Review scope and confirm the customer wants approved improvements implemented, not just interpreted.",
+        "Identify critical users and apps so recommendations can be risk-ranked against the actual environment.",
+        "Gather baseline: current Secure Score, all recommendations with impact, and the tenant's known legacy-auth or device dependencies.",
+        "Create the ticket with product id microsoft_secure_score_review, expected deliverables (analysis, implemented improvements, report), and assign a senior M365 admin.",
+        "Check prerequisites: change window agreed, rollback plan for each implemented improvement, and approval authority confirmed."
+      ],
+    "delivery": [
+      "Pull the Secure Score dashboard: current score, per-category breakdown, and the full recommendation list with impact points.",
+      "Classify each recommendation: safe-high-impact, needs-caution (lockout risk), needs-customer-input, or not-applicable.",
+      "Rank the recommended set by score impact versus operational risk; present the shortlist to the customer.",
+      "Implement approved improvements: apply them one at a time, testing sign-in and app access after each.",
+      "Watch for disruption: if a change breaks access or mail flow, roll back immediately and document why.",
+      "Re-measure the Secure Score after implementation and confirm the projected gain was realized.",
+      "Technical verification: confirm each improvement is live, the score increased, and no approved user or app was affected."
+    ],
+    "documentation": [
+      "Produce the score improvement report: before/after score, the improvements applied with settings, and the points gained.",
+      "Document the recommendations reviewed but not applied with the reason (risk, dependency, needs decision).",
+      "Include the remaining recommendation roadmap prioritized for the next review.",
+      "Record the rollback details for each applied change.",
+      "Security rule: no credentials or recovery codes in the documentation."
+    ],
+    "qa": [
+      "Verify every whatIsIncluded item: Secure Score review and interpretation, recommendation analysis with risk ranking, safe improvement identification, disruption risk assessment, approved implementation, and score documentation.",
+      "Confirm the before/after score is captured and the gain matches the applied recommendations.",
+      "Confirm no approved user or app lost access during implementation.",
+      "Confirm the remaining recommendations are documented with priority.",
+      "Flag follow-ups: scheduled re-review, the recommendations needing customer decisions, and recurring secure score monitoring."
+    ],
+    "closeout": [
+      "Send the deliverables package: score improvement report, what-changed summary, and the remaining roadmap.",
+      "Recommend next steps: secure score re-review quarterly, or a broader m365_security_assessment if deeper hardening is needed.",
+      "Confirm the rollback paths are documented and break-glass access intact.",
+      "Record internal notes: score changes, applied improvements, and remaining items.",
+      "Schedule the quarterly secure score re-review."
+    ]
+    }
+  },
+  "m365_launch_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the M365 Launch Bundle, review the new business details from intake, and schedule the build with a Global Admin.",
+      "Send prep instructions: customer confirms the domain, user list, and who owns the admin accounts.",
+      "Pre-work: prepare the tenant naming, user/group structure, license plan, and DNS record plan.",
+      "Build the foundation: create the tenant, set the admin accounts with MFA, verify the domain, and configure DNS for mail.",
+      "Set up users and security: create users, mailboxes, and licenses; enforce MFA; apply the security baseline.",
+      "Configure collaboration: set up SharePoint/Teams/OneDrive foundations and support the first user onboarding.",
+      "Deliver the closeout package: tenant setup documentation, DNS records, and onboarding support notes."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the M365 Launch Bundle scope and confirm the customer is a new business or new tenant (not migration).",
+        "Confirm domain ownership, user list, and the admin account owner.",
+        "Gather baseline: business name, domain, user count, services needed, and license budget.",
+        "Create the ticket with product id m365_launch_bundle, expected deliverables (tenant, DNS, MFA, baseline, onboarding, documentation), and assign the provisioning technician.",
+        "Check prerequisites: domain available, license procurement path agreed, and admin owner identified."
+      ],
+      "delivery": [
+        "Create the tenant with the business name; configure the domain and DNS (MX, SPF, DKIM, DMARC) with verification evidence.",
+        "Set up the Global Admin and break-glass accounts with strong passwords and MFA; store credentials in the secure store.",
+        "Create users with mailboxes and licenses per the plan; create shared mailboxes and groups requested.",
+        "Enforce MFA for all users with Conditional Access and block legacy authentication.",
+        "Apply the security baseline: safe sharing defaults, admin least-privilege, and email protection basics.",
+        "Configure SharePoint/Teams/OneDrive foundations and walk the first users through sign-in and onboarding.",
+        "Technical verification: test mail flow, MFA sign-in for a sample user, and confirm the tenant structure matches the plan."
+      ],
+      "documentation": [
+        "Produce the tenant setup documentation: tenant ID, DNS record table, admin accounts, user/license structure, and services.",
+        "Include the security baseline summary and the onboarding guide.",
+        "Document the domain and mail flow verification results.",
+        "Record the admin and break-glass credential locations without exposing secrets.",
+        "Security rule: credentials stay in the secure store only."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: domain/DNS, user/mailbox/license setup, MFA, security baseline, onboarding support, and documentation.",
+        "Confirm mail flow and MFA sign-in work for a sample user.",
+        "Confirm the admin accounts are secured and break-glass exists.",
+        "Confirm the customer received the onboarding support and documentation.",
+        "Flag follow-ups: remaining users to onboard, license adjustments, and the 30-day check."
+      ],
+      "closeout": [
+        "Send the deliverables package: tenant documentation, DNS summary, and onboarding guide.",
+        "Recommend next steps: microsoft_365_backup_setup, monthly admin, or secure score review.",
+        "Confirm the customer can sign in and knows the support path.",
+        "Record internal notes: tenant details and structure decisions.",
+        "Schedule the 30-day launch check-in."
+      ]
+    }
+  },
+  "m365_secure_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the M365 Secure Bundle, review the tenant from intake, and schedule the hardening project with a Global Admin.",
+      "Send prep instructions: customer confirms the users/apps that need MFA, any legacy-auth dependencies, and the backup retention target.",
+      "Pre-work: pull the security baseline state, admin roles, sharing settings, and the data that needs backup.",
+      "Implement the security baseline: enforce MFA with Conditional Access, apply the admin role review, block legacy auth, and harden email protection.",
+      "Set up backup: configure the M365 backup platform with retention and run a test restore.",
+      "Verify and document: run the security verification, confirm backup restores, and produce the coordinated security documentation.",
+      "Deliver the closeout package: security baseline documentation, backup config, verification evidence, and the hardening roadmap."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the M365 Secure Bundle scope and confirm the customer understands both hardening and backup are included.",
+        "Confirm MFA enrollment path, legacy-auth dependencies, and the backup retention target.",
+        "Gather baseline: current Secure Score, admin roles, sharing settings, and data volume for backup.",
+        "Create the ticket with product id m365_secure_bundle, expected deliverables (baseline, backup, verification, documentation), and assign a senior M365 admin.",
+        "Check prerequisites: change window agreed, backup platform budget confirmed, and rollback plan ready."
+      ],
+      "delivery": [
+        "Apply the security baseline: MFA Conditional Access for all users (break-glass excluded), block legacy auth, and least-privilege admin roles.",
+        "Harden email: anti-phishing policies, safe links/attachments, and safe sharing defaults for SharePoint/OneDrive.",
+        "Configure the backup platform: connect Exchange, SharePoint, and OneDrive with the agreed retention.",
+        "Run a test restore: restore a sample mailbox item, file, and site and confirm integrity.",
+        "Verify the baseline: test MFA sign-in, confirm legacy auth blocked, and re-measure the Secure Score.",
+        "Verify the backup dashboard: all sources protected with no failed items.",
+        "Technical verification: confirm both security and backup evidence are captured and no approved user or app broke."
+      ],
+      "documentation": [
+        "Produce the coordinated security documentation: baseline settings, admin roles, sharing defaults, and verification evidence.",
+        "Produce the backup documentation: platform, retention, restore procedure, and test-restore evidence.",
+        "Include the remaining hardening roadmap from the Secure Score.",
+        "Record rollback steps for the applied policies.",
+        "Security rule: no credentials, recovery codes, or MFA seeds in documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: MFA/CA enforcement, security baseline, email protection, backup setup, admin review, and coordinated documentation.",
+        "Confirm the test restore returned valid data and the Secure Score improved.",
+        "Confirm no approved user or app lost access.",
+        "Confirm backup monitoring is set up (or the monitoring recommendation documented).",
+        "Flag follow-ups: quarterly re-review, backup monitoring plan, and remaining Secure Score items."
+      ],
+      "closeout": [
+        "Send the deliverables package: security baseline documentation, backup documentation, and verification evidence.",
+        "Recommend next steps: backup monitoring, quarterly secure score review, or full assessment.",
+        "Confirm break-glass accounts and backup admin credentials are stored securely.",
+        "Record internal notes: score change, backup config, and remaining items.",
+        "Schedule the 60-day security re-check and the first backup monitoring review."
+      ]
+    }
+  },
+  "m365_cleanup_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the M365 Cleanup Bundle, review the tenant from intake, and schedule the cleanup project with a Global Admin.",
+      "Send prep instructions: customer confirms who approves removals and identifies accounts/mailboxes that must be preserved.",
+      "Pre-work: pull the tenant baseline across users, licenses, groups, Teams, mailboxes, and sharing settings.",
+      "Run the audit: identify stale users and licenses, inactive groups/Teams, mailbox delegation issues, and risky external sharing.",
+      "Present and approve: show the cleanup plan in batches with go/no-go approval before any removal.",
+      "Execute the cleanup: disable/remove stale users, reclaim licenses, clean groups/Teams, fix mailbox permissions, and lock down sharing.",
+      "Deliver the closeout package: the cleanup report, cost impact, and the tenant documentation baseline."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the M365 Cleanup Bundle scope (users, licenses, groups, mailboxes, sharing in one project).",
+        "Confirm approval authority and the preserved list (users, mailboxes, teams).",
+        "Gather baseline: user/license inventory, group/Team list, shared mailbox permissions, and sharing settings.",
+        "Create the ticket with product id m365_cleanup_bundle, expected deliverables (cleanup report, execution, documentation), and assign a senior M365 admin.",
+        "Check prerequisites: cost baseline captured, compliance holds identified, and approval session scheduled."
+      ],
+      "delivery": [
+        "Audit users and licenses: flag inactive accounts, license mismatches, and cost-reclaim candidates.",
+        "Audit groups and Teams: list inactive/duplicate teams and stale membership.",
+        "Audit mailboxes: review shared mailbox delegation and flag stale or unnecessary access.",
+        "Audit sharing: enumerate public links, guests, and external sharing defaults.",
+        "Build the batch plan (users/licenses, groups/Teams, mailboxes, sharing) and get go/no-go per batch.",
+        "Execute approved batches and re-verify after each: active users keep access, preserved mailboxes intact, sharing tightened.",
+        "Technical verification: capture the before/after license count and cost delta, and confirm changes match approvals."
+      ],
+      "documentation": [
+        "Produce the cleanup report: findings, approved changes, executed changes, and cost impact.",
+        "Produce the tenant documentation baseline: current users, licenses, teams, shared mailboxes, and sharing settings.",
+        "Record declined or held items with the reason.",
+        "Document the before/after license totals.",
+        "Security rule: no credentials or sensitive personal data beyond the audit record."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: user/license cleanup, group/Teams cleanup, mailbox delegation review, sharing lockdown, approved execution, and documentation baseline.",
+        "Confirm active users retain access and preserved data is intact.",
+        "Confirm the cost math is accurate and changes match approvals.",
+        "Confirm the tenant documentation baseline matches the live tenant.",
+        "Flag follow-ups: quarterly access review, recurring cleanup, and license re-check."
+      ],
+      "closeout": [
+        "Send the deliverables package: cleanup report, cost impact, and tenant documentation baseline.",
+        "Recommend next steps: quarterly access review, shared mailbox policy, or monthly admin.",
+        "Confirm no approved-to-keep item was changed.",
+        "Record internal notes: tenant state before/after and approval decisions.",
+        "Schedule the 30-day post-cleanup check."
+      ]
+    }
+  },
+  "m365_managed_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the M365 Managed Bundle, capture the tenant access and admin contacts, and establish the recurring management cycle.",
+      "Send onboarding prep: customer confirms the Global Admin delegation, the user-change process, and the monthly reporting cadence.",
+      "Pre-work: build the tenant baseline and the recurring monthly checklist.",
+      "Run recurring management: user lifecycle and license management, security baseline maintenance, and access reviews and cleanup.",
+      "Provide admin support: handle admin requests, troubleshooting, and approved security improvements.",
+      "Update documentation and report: keep tenant documentation current and deliver the monthly management summary.",
+      "Deliver the monthly closeout: work summary, open items, and recommended improvements."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Managed Bundle scope and the recurring nature; confirm the customer understands the monthly cycle.",
+        "Capture delegated admin access and the primary contact for requests.",
+        "Establish the ticket queue, monthly checklist, and reporting date.",
+        "Gather baseline: user/license/group/mailbox inventory and security settings.",
+        "Set expectations: response times, approval process, and exclusions."
+      ],
+      "delivery": [
+        "Run the monthly checklist: user lifecycle, license reconciliation, group membership, and mailbox health.",
+        "Process admin requests: create/disable users, assign licenses, fix access, and troubleshoot mail/Teams/SharePoint.",
+        "Maintain the security baseline: MFA coverage check, admin role review, sharing audit, and secure score monitoring.",
+        "Perform access reviews and cleanup: remove stale access, revoke unneeded guests, and prune delegation.",
+        "Apply approved improvements from the score roadmap.",
+        "Update tenant documentation with every change.",
+        "Technical verification: test changes, log everything with timestamps, and flag items needing approval."
+      ],
+      "documentation": [
+        "Produce the monthly management summary: work performed, changes, support tickets, and security maintenance.",
+        "Maintain the living tenant documentation: users, licenses, teams, shared mailboxes, and security settings.",
+        "Track open items and pending approvals monthly.",
+        "Record cost and license observations for optimization.",
+        "Security rule: keep administrative details out of customer summaries unless actionable."
+      ],
+      "qa": [
+        "Verify the monthly checklist is complete and no request is left open.",
+        "Confirm the security baseline still holds (MFA, admin roles, sharing).",
+        "Confirm the monthly summary was delivered and acknowledged.",
+        "Spot-check tenant documentation against the live tenant.",
+        "Flag follow-ups: license savings, security improvements, and recurring cleanup."
+      ],
+      "closeout": [
+        "Send the monthly management summary with open items.",
+        "Recommend upgrades when patterns show need (secure score review, license optimization, backup).",
+        "Confirm admin access is intact and no unauthorized changes were made.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next month's cycle and reporting date."
+      ]
+    }
+  }
+}

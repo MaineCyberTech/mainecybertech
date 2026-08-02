@@ -1,0 +1,1012 @@
+{
+  "cyber_risk_snapshot": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Cyber Risk Snapshot for the customer, review their security concerns and any recent incidents from intake, and schedule the assessment window with the admin contact who can grant read-only access.",
+      "Send prep instructions: customer should confirm which platforms hold business data (M365, Google Workspace, line-of-business apps), where backups live, and who the admin contacts are; gather any prior security assessments or insurance questionnaires.",
+      "Pre-work: prepare the six-domain review checklist (identity, endpoint, email, backup, network, policy/risk), stage evidence folders per domain, and pull domain authentication records for email posture.",
+      "Run the assessment: collect evidence across the six domains — MFA coverage and admin accounts (identity), endpoint protection and patch state (endpoint), SPF/DKIM/DMARC and mail rules (email), backup config/success/off-site (backup), firewall/Wi-Fi/remote access (network), and policies/incident history (policy/risk).",
+      "Score the snapshot: compute the numerical risk score with red/amber/green per-domain ratings, and select the top five critical actions with clear implementation guidance.",
+      "Walk through with the customer in a 30-minute session: review the risk score, the per-domain ratings, and the top five actions in plain English; answer leadership-level questions.",
+      "Deliver the closeout package: the Cyber Risk Snapshot report (leadership-ready), the top-five action sheet, and a recommended follow-on path (full assessment, managed security, or specific fixes)."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Cyber Risk Snapshot (lightweight six-domain review, read-only); if the customer reports an active incident, escalate to the appropriate emergency product.",
+        "Verify admin access to M365/cloud platforms and confirm who can speak to endpoint and backup state; request read-only access or guided sessions.",
+        "Gather baseline: tenant and domain names, user/device counts, backup platform, line-of-business apps, and any prior assessments or insurer questionnaires.",
+        "Create the ticket with product id cyber_risk_snapshot, the six domains, expected deliverables (snapshot report, top-five actions), exclusions (no changes), and assign a technician with broad security review experience.",
+        "Check prerequisites: data-gathering sessions booked and confirmation the customer understands this is assessment-only."
+      ],
+      "delivery": [
+        "Identity domain: record MFA coverage across platforms, enumerate admin accounts, flag shared/generic credentials, and note separation-of-duties gaps with evidence.",
+        "Endpoint domain: record antivirus/EDR product and status, patch currency, disk encryption, and local admin rights for a representative device sample.",
+        "Email domain: pull SPF/DKIM/DMARC records, review anti-phishing policy presence, and scan mailbox forwarding rules for compromise indicators.",
+        "Backup domain: confirm platform, jobs running, recent success, retention, off-site copy, and whether restores were ever tested.",
+        "Network domain: review firewall posture, Wi-Fi security (WPA2/3, guest network), remote-access exposure (VPN vs RDP), and router/AP management access.",
+        "Policy/risk domain: note whether security policies exist (password, acceptable use, incident reporting), recent incidents, and insurance requirements.",
+        "Score and rank: compute the numerical risk score and per-domain red/amber/green ratings, then select the top five critical actions ordered by risk reduction and effort.",
+        "Technical verification: confirm every rating is evidence-backed, no changes were made, and no sensitive data appears in captures."
+      ],
+      "documentation": [
+        "Produce the Cyber Risk Snapshot report: overall risk score, six domain ratings with traffic-light status, and a leadership-ready executive summary in plain English.",
+        "Include the top five critical actions with owner, effort, and implementation guidance for each.",
+        "Document per-domain evidence summaries (MFA coverage, endpoint posture, email/DNS, backup, network, policy) as the report's appendix.",
+        "Note the backup and MFA findings explicitly since they are the most common critical gaps for small businesses.",
+        "Security rule: never store credentials, backup keys, recovery codes, or personal data in the report or notes."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: six-domain review, numerical risk score with red/amber/green ratings, top five actions with guidance, leadership-ready report, and the 30-minute walkthrough.",
+        "Confirm the assessment was read-only and no system or policy changes were made.",
+        "Secret audit: confirm no credentials or sensitive data appear in deliverables.",
+        "Verify the risk scoring is consistent with prior snapshots so trends can be measured.",
+        "Flag follow-ups: critical gaps requiring action within 30 days, a full assessment recommendation if depth is needed, and any insurer-required controls."
+      ],
+      "closeout": [
+        "Send the deliverables package: the snapshot report and top-five action sheet, with the walkthrough completed and acknowledged.",
+        "Recommend next steps based on findings: full_cybersecurity_assessment for depth, mct_secure_care or a monthly cyber plan for ongoing management, or specific fixes for quick wins.",
+        "Revoke any temporary access used for evidence gathering.",
+        "Record internal notes: baseline risk score, per-domain state, and evidence pointers so a future snapshot shows progress.",
+        "Schedule a 60-90 day follow-up to re-snapshot or check progress on the top five actions."
+      ]
+    }
+  },
+  "full_cybersecurity_assessment": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Full Cybersecurity Assessment, define the in-scope environment (users, devices, cloud platforms, servers, network), and schedule stakeholder interviews with owners, IT contacts, and key staff.",
+      "Send prep instructions: customer should gather current documentation (network diagram, device inventory, backup config, insurance questionnaire), confirm admin access for configuration review, and line up interview participants.",
+      "Pre-work: prepare the assessment plan across eight or more domains, stage evidence folders, assemble interview questions per role, and pull domain and tenant baseline data.",
+      "Run the assessment: conduct stakeholder interviews, review accessible system and platform configurations, collect evidence across all domains, and note both strengths and gaps with proof.",
+      "Score and document: build the detailed findings report with risk ratings and evidence for every finding, plus the executive summary for leadership.",
+      "Build the roadmap: create the phased remediation roadmap with priorities and estimated effort, ordered by risk reduction and dependency.",
+      "Walk through the findings with the customer in a Q&A session, then deliver the closeout package: findings report, executive summary, phased roadmap, and recommended first-phase engagement."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Full Cybersecurity Assessment and that the customer wants depth across eight or more domains; if they need a faster lighter review, recommend cyber_risk_snapshot instead.",
+        "Confirm the environment scope: user/device counts, cloud platforms, servers, network gear, and any third-party systems, and identify the access needed for configuration review.",
+        "Gather baseline: existing documentation, prior assessments, insurance requirements, compliance drivers, and any known incidents.",
+        "Create the ticket with product id full_cybersecurity_assessment, the domain list, interview schedule, expected deliverables (findings report, executive summary, roadmap), and assign senior assessor(s).",
+        "Check prerequisites: interview participants confirmed, admin access arranged, and the assessment plan agreed with the customer."
+      ],
+      "delivery": [
+        "Stakeholder interviews: conduct structured interviews with the owner, IT contact, and key staff covering how the business uses technology, what data matters most, and what keeps them up at night; record notes.",
+        "Identity domain review: enumerate accounts, roles, MFA coverage, legacy auth, stale accounts, and separation of duties across M365 and other platforms.",
+        "Endpoint domain review: for the fleet record EDR/AV status, patch currency, encryption, local admin rights, and device lifecycle state.",
+        "Email domain review: SPF/DKIM/DMARC, anti-phishing/anti-spam config, mailbox rules, and MFA on mailboxes.",
+        "Backup domain review: platform, job success history, retention, off-site copy, encryption of backups, and restore-test evidence.",
+        "Network domain review: firewall rules, Wi-Fi security and guest separation, remote-access exposure, segmentation, and device management access.",
+        "Policy and risk review: security policies, incident history, compliance requirements, and insurance controls; compare against common standards.",
+        "Additional domains as scoped (DLP, identity governance, cloud apps, physical security of IT) based on the customer's industry and data.",
+        "Score and document: rate each finding by severity with evidence, and verify every claim is traceable before it enters the report.",
+        "Technical verification: confirm no configuration changes were made (assessment only), and confirm access used was read-only."
+      ],
+      "documentation": [
+        "Produce the detailed findings report: each finding with description, evidence, risk rating, and remediation guidance, organized by domain.",
+        "Produce the executive summary for board/leadership: the overall posture, the top risks in plain English, and the recommended investment priorities.",
+        "Build the phased remediation roadmap: phases with priorities, dependencies, and estimated effort, so the customer can execute in order.",
+        "Include the evidence index pointing to captured configurations, screenshots, and interview notes without embedding sensitive data.",
+        "Security rule: never include credentials, keys, backup recovery codes, or unredacted personal data in any deliverable; redact aggressively."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: eight-plus-domain coverage, stakeholder interviews, configuration review of accessible systems, findings report with risk ratings/evidence/remediation, executive summary, phased roadmap, and findings walkthrough with Q&A.",
+        "Confirm every finding in the report is backed by collected evidence and that severities are consistent.",
+        "Confirm the roadmap phases are ordered by risk reduction and are feasible in sequence.",
+        "Secret audit: confirm no credentials or sensitive data appear in deliverables or notes.",
+        "Flag follow-ups: urgent items from the first phase, and schedule the customer's decision point on which remediation work to start."
+      ],
+      "closeout": [
+        "Deliver the closeout package: findings report, executive summary, phased roadmap, and evidence index; complete the walkthrough with Q&A.",
+        "Recommend the first-phase engagement mapped to the roadmap (e.g., mfa_enforcement_project, endpoint_protection_rollout, backup setup) and quote accordingly.",
+        "Revoke all temporary access granted for the assessment and confirm access state is unchanged.",
+        "Record internal notes: assessment baseline, key findings pointers, and the roadmap for future engagements.",
+        "Schedule a 90-day follow-up to review progress against the first roadmap phase."
+      ]
+    }
+  },
+  "m365_security_assessment": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the M365 Security Assessment, verify the customer's tenant is in scope, and schedule the review with a Global Admin who can grant read-only access.",
+      "Send prep instructions: customer should confirm tenant admin access, list shared mailboxes and external sharing practices, and identify any known licensing gaps.",
+      "Pre-work: prepare the tenant review checklist (MFA/Conditional Access, roles, sharing, email protection, retention/backup/DLP, identity risk), and stage evidence folders.",
+      "Run the assessment: review the tenant's MFA and Conditional Access policies, admin role assignments, external sharing across SharePoint/OneDrive/Teams, email protection config, retention/backup/DLP posture, and identity risk settings.",
+      "Score and document: build the risk-ranked findings report with tenant-specific remediation guidance for each issue.",
+      "Walk through the findings with the customer: explain the tenant-specific issues in plain English and confirm the priority fixes.",
+      "Deliver the closeout package: the risk-ranked findings report with tenant-specific remediation guidance, plus a recommended follow-on quote (hardening project, licensing adjustments, or managed security)."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the M365 Security Assessment for the specific tenant and that a Global Admin can provide access; if the customer is mid-breach, escalate to email/account compromise response.",
+        "Verify tenant admin access method (read-only delegated admin, break-glass with consent, or guided session) and confirm licensing allows the checks (P1/P2 where needed for Conditional Access and identity risk).",
+        "Gather baseline: tenant name, domains, license counts, shared mailboxes, external sharing behavior, and any prior M365 reviews.",
+        "Create the ticket with product id m365_security_assessment, expected deliverables (risk-ranked findings, remediation guidance), exclusions (no changes), and assign a technician with M365 security/Entra experience.",
+        "Check prerequisites: Global Admin session scheduled and confirmation the review is read-only."
+      ],
+      "delivery": [
+        "MFA and Conditional Access review: in Entra admin center, document CA policies (which users/apps, report-only vs on), per-user MFA state, and security defaults; flag any gap where MFA is not enforced.",
+        "Role assignment review: enumerate Global Admins and all delegated admin roles (Exchange, SharePoint, Teams, Intune), flag excessive or stale assignments, and note separation-of-duties gaps.",
+        "External sharing review: check SharePoint/OneDrive/Teams external sharing settings (Anyone vs Existing guests vs new guests), list guest users, and note oversharing risk.",
+        "Email protection review: document anti-phishing policy impersonation protection, anti-spam thresholds, quarantine settings, and safe links/attachments state; pull SPF/DKIM/DMARC via MXToolbox.",
+        "Retention, backup, and DLP review: note retention policies, whether an external backup exists (M365 native is not backup), DLP policy presence, and eDiscovery permissions.",
+        "Identity risk review: check legacy auth enablement (basic auth protocols), risky sign-in detection (requires P2), stale/unused accounts, and self-service password reset configuration.",
+        "Score and document: rate findings by severity with tenant-specific evidence and write remediation guidance that names the exact setting path to change.",
+        "Technical verification: confirm all findings are tenant-specific and evidence-backed, no changes were made, and no sensitive data was captured."
+      ],
+      "documentation": [
+        "Produce the risk-ranked findings report: each finding with severity, evidence, and tenant-specific remediation steps (exact admin path and setting).",
+        "Include the CA/MFA coverage summary, role inventory, external sharing status, email protection state, retention/backup/DLP posture, and identity risk findings.",
+        "Include the licensing notes: any checks that require P1/P2 licenses the tenant may not have, so the customer understands remediation prerequisites.",
+        "Document the SPF/DKIM/DMARC findings with exact recommended DNS record changes.",
+        "Security rule: never store tenant admin credentials, tokens, or recovery codes in the report or notes."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: CA/MFA review in the actual tenant, admin role audit, external sharing review across SharePoint/OneDrive/Teams, email protection review, retention/backup/DLP posture, identity risk review, and risk-ranked findings with remediation.",
+        "Confirm findings are tenant-specific (not generic) and traceable to collected evidence.",
+        "Confirm the assessment was read-only.",
+        "Secret audit: confirm no tenant secrets appear in deliverables.",
+        "Flag follow-ups: critical items (missing MFA, legacy auth, oversharing), licensing needs, and the recommended hardening engagement."
+      ],
+      "closeout": [
+        "Send the deliverables package: risk-ranked findings report and remediation guidance; complete the walkthrough.",
+        "Recommend next steps: m365 hardening work (mfa_enforcement_project, email_security_hardening), the endpoint_protection_rollout if endpoints are exposed, or managed security for ongoing posture.",
+        "Revoke any temporary admin access and confirm tenant state is unchanged.",
+        "Record internal notes: tenant baseline, findings pointers, and licensing observations.",
+        "Schedule a 60-90 day follow-up to verify remediation progress."
+      ]
+    }
+  },
+  "small_business_ransomware_readiness_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Ransomware Readiness Review, and schedule the data-gathering with the admin who can speak to backups, MFA, endpoints, and recovery.",
+      "Send prep instructions: customer should confirm where backups run and whether they have ever tested a restore, and gather endpoint and M365 admin access.",
+      "Pre-work: prepare the readiness checklist across backups, MFA, endpoint protection, local admin rights, and recovery documentation.",
+      "Run the review: assess backup existence, success, off-site copy, and restore-testing; verify MFA coverage; review endpoint protection and patch state; check local admin rights; and review recovery documentation and incident-readiness.",
+      "Score and document: build the Ransomware Readiness Scorecard with prioritized hardening steps.",
+      "Walk through the scorecard with the customer: explain the biggest ransomware-relevant gaps (typically untested backups and missing MFA) and confirm the priority actions.",
+      "Deliver the closeout package: the scorecard, the prioritized hardening steps, and a recommended follow-on quote (backup setup, MFA enforcement, endpoint rollout)."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Ransomware Readiness Review; if the customer reports an active ransomware event, escalate to ransomware_first_response immediately.",
+        "Verify access to backup platforms, M365, and endpoint management; confirm who can describe the backup schedule.",
+        "Gather baseline: backup platform, MFA state if known, endpoint protection product, and any prior recovery testing.",
+        "Create the ticket with product id small_business_ransomware_readiness_review, expected deliverables (scorecard, hardening steps), exclusions (no changes), and assign a technician with backup and endpoint experience.",
+        "Check prerequisites: sessions booked and confirmation the review is read-only."
+      ],
+      "delivery": [
+        "Backup assessment: confirm a backup solution exists, verify recent job success, check retention, confirm an off-site/immutable copy exists, and — critically — ask whether a restore has ever been tested and how recently.",
+        "MFA coverage review: verify MFA on email and critical cloud accounts, enumerate any accounts without MFA, and check admin accounts specifically.",
+        "Endpoint protection review: record the EDR/AV product and detection status, patch currency of OS and key apps, and note any devices with no protection.",
+        "Local admin rights review: identify workstations where users run as local admin, which dramatically increases ransomware blast radius.",
+        "Recovery documentation review: check whether the customer has documented recovery steps, a defined restore order, and an incident contact sheet.",
+        "Score and document: compute the readiness score and list prioritized hardening steps (test restore, enforce MFA, remove local admin, harden endpoints).",
+        "Technical verification: confirm all findings are evidence-backed and no changes were made."
+      ],
+      "documentation": [
+        "Produce the Ransomware Readiness Scorecard with scores for backups, MFA, endpoints, admin rights, and recovery readiness.",
+        "List the prioritized hardening steps with owner, effort, and risk reduction for each (test restore first, then MFA, then local admin removal).",
+        "Document the backup state explicitly: exists/runs/off-site/tested, with the restore-test gap called out as the top finding.",
+        "Include the recovery documentation status and what the customer should have in place.",
+        "Security rule: never store backup credentials, recovery codes, or keys in the deliverables."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: backup assessment (exists/runs/off-site/tested), MFA review, endpoint protection and patch review, local admin review, recovery documentation and incident-readiness check, and the scorecard with hardening steps.",
+        "Confirm the backup findings clearly separate 'configured' from 'verified' (a configured-but-untested backup is the key gap).",
+        "Confirm the review was read-only.",
+        "Secret audit: confirm no backup credentials or keys appear in deliverables.",
+        "Flag follow-ups: restore-test scheduling, MFA enforcement, local admin removal, and the backup setup/upgrade recommendation."
+      ],
+      "closeout": [
+        "Send the deliverables package: scorecard and hardening steps; complete the walkthrough.",
+        "Recommend next steps: backup setup or upgrade with a restore test, mfa_enforcement_project, endpoint_protection_rollout, and local_admin_removal_project.",
+        "Revoke any temporary access granted.",
+        "Record internal notes: readiness baseline and findings pointers.",
+        "Schedule a 60-day follow-up to confirm the top hardening steps were completed."
+      ]
+    }
+  },
+  "nonprofit_cyber_readiness_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Nonprofit Cyber Readiness Review, understand the organization type (church, nonprofit, community org) from intake, and schedule the review with the lead admin or volunteer coordinator.",
+      "Send prep instructions: the organization should confirm who manages accounts, how online giving/payments are handled, and how volunteers get access.",
+      "Pre-work: prepare the budget-aware checklist (email/MFA, backup, volunteer access, giving platforms, staff practices) and note free/low-cost tool options.",
+      "Run the review: assess email security and MFA, backup posture, volunteer account management, online giving platform security, and staff security awareness practices.",
+      "Score and document: produce the readiness findings with budget-aware recommendations, prioritizing free and low-cost options.",
+      "Walk through the findings with the leadership contact: explain the risks in plain English and prioritize actions within the organization's budget.",
+      "Deliver the closeout package: the readiness report, the budget-aware action list, and recommended free/low-cost tool setup (e.g., free MFA, free backup tier)."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Nonprofit Cyber Readiness Review and the organization type; if they report an active incident, escalate accordingly.",
+        "Identify the lead admin or volunteer coordinator and confirm which platforms hold data (email, giving, donor records, files).",
+        "Gather baseline: platform list, user/volunteer counts, backup state, giving platform, and budget constraints that shape recommendations.",
+        "Create the ticket with product id nonprofit_cyber_readiness_review, expected deliverables (readiness report, budget-aware actions), exclusions (no changes), and assign a technician who understands nonprofit constraints.",
+        "Check prerequisites: review session booked and confirmation the organization is comfortable sharing its tooling and budget limits."
+      ],
+      "delivery": [
+        "Email and MFA review: check email platform, MFA coverage on mailboxes and admin accounts, and SPF/DKIM/DMARC basics; flag accounts without MFA.",
+        "Backup assessment: confirm backup exists, runs, and is off-site; check whether restores were tested; note the free-tier options that fit the org.",
+        "Volunteer account review: inventory volunteer accounts and access, identify stale accounts, and check how access is granted and removed as volunteers turn over.",
+        "Online giving and payment platform check: review the giving platform's security settings, MFA on the finance account, and how donation data is stored.",
+        "Staff/volunteer awareness review: assess current practices (password sharing, phishing awareness, device handling) through discussion.",
+        "Recommendations: list actions with free/low-cost options prioritized first (free MFA, free backup, free phishing resources), then paid options.",
+        "Technical verification: confirm findings are evidence-backed, no changes were made, and donor/personal data was not captured."
+      ],
+      "documentation": [
+        "Produce the readiness report: findings per area (email/MFA, backup, volunteers, giving, awareness) with plain-English impact for a nontechnical audience.",
+        "Include the budget-aware action list with cost tiers (free, low-cost, paid) and the recommended priority order.",
+        "Document volunteer account hygiene findings without listing personal email addresses where avoidable.",
+        "Include the giving-platform security notes and donor-data handling recommendations.",
+        "Security rule: never store donor lists, payment data, credentials, or volunteer personal data in the deliverables."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: email/MFA review, backup assessment, volunteer account review, giving platform check, staff awareness review, and budget-aware recommendations with free/low-cost options.",
+        "Confirm recommendations are realistic for a nonprofit budget and not just enterprise-grade tools.",
+        "Confirm the review was read-only.",
+        "Secret audit: confirm no donor data, credentials, or personal data appear in deliverables.",
+        "Flag follow-ups: MFA on the finance/giving account, volunteer account cleanup, and the backup setup with a free tier."
+      ],
+      "closeout": [
+        "Send the deliverables package: readiness report and budget-aware action list.",
+        "Recommend next steps: volunteer_account_cleanup, guest_wi_fi_for_churches if applicable, or the church_it_foundation for a broader technology foundation.",
+        "Revoke any temporary access granted.",
+        "Record internal notes: org profile, platform list, and readiness baseline for future work.",
+        "Schedule a 90-day follow-up to review progress within the org's budget."
+      ]
+    }
+  },
+  "vendor_access_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Vendor Access Review, and schedule the review with the admin who manages vendor relationships and system access.",
+      "Send prep instructions: customer should compile the vendor list (IT providers, accountants, marketing, remote-support vendors), their known system access, and any shared credentials.",
+      "Pre-work: prepare the vendor access inventory template and the remote-access review checklist (VPN, RDP, remote support tools).",
+      "Run the review: inventory all vendor accounts and their system access, review shared/generic vendor credentials, map remote-access paths, review the vendor offboarding process, and identify stale vendor accounts.",
+      "Build the Vendor Access Map: document each vendor, what they can access, how they access it, and whether access is still needed.",
+      "Walk through the map with the customer: confirm which vendors still need access and which should be revoked.",
+      "Deliver the closeout package: the Vendor Access Map, the prioritized cleanup plan (with revoke list approved by the customer), and the recommended access-review cadence."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Vendor Access Review and that the customer will approve any access changes; if a vendor is under investigation, note it and avoid changing their access until cleared.",
+        "Verify admin access to the platforms where vendors hold accounts and confirm who manages vendor relationships.",
+        "Gather baseline: vendor list from the customer, known shared credentials, remote-access tools, and the current offboarding process.",
+        "Create the ticket with product id vendor_access_review, expected deliverables (Vendor Access Map, cleanup plan), and assign a technician.",
+        "Check prerequisites: vendor list compiled and approval workflow defined."
+      ],
+      "delivery": [
+        "Vendor account inventory: enumerate vendor accounts across M365, cloud apps, hosting, remote-support tools, and any shared logins; record what each vendor can access.",
+        "Shared/generic credential review: identify generic vendor logins (shared admin, maintenance accounts) and assess the risk of shared credentials.",
+        "Remote-access path review: map how each vendor connects (VPN, RDP, remote-support sessions like ScreenConnect/TeamViewer), and verify MFA on each path where supported.",
+        "Offboarding process review: assess whether the customer has a defined process for removing vendor access when a relationship ends.",
+        "Stale vendor identification: flag vendors with no recent activity, no owner, or known-ended relationships whose access should be revoked.",
+        "Build the Vendor Access Map: vendor, systems accessed, access method, owner, last activity, and needed/not-needed status.",
+        "Technical verification: confirm the map is complete and accurate and that no changes were made without approval."
+      ],
+      "documentation": [
+        "Produce the Vendor Access Map: vendor, systems, access method, owner, and status, as the primary deliverable.",
+        "Produce the prioritized cleanup plan: vendors to revoke (with the customer's approval), vendors to reduce access, and vendors to keep, each with action and owner.",
+        "Document the shared-credential risks found and the recommended remediation (named individual accounts, password rotation).",
+        "Include the recommended access-review cadence (quarterly) and the offboarding checklist the customer should adopt.",
+        "Security rule: never store vendor passwords, session tokens, or remote-access keys in the deliverables."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: vendor account inventory, shared credential review, remote-access path review, offboarding process review, stale vendor identification, and the Vendor Access Map with cleanup plan.",
+        "Confirm the cleanup plan distinguishes approved revokes from recommendations needing customer approval.",
+        "Confirm the review was read-only (no changes executed without approval).",
+        "Secret audit: confirm no vendor credentials appear in deliverables.",
+        "Flag follow-ups: revokes to execute, shared-credential rotation, and the offboarding process adoption."
+      ],
+      "closeout": [
+        "Send the deliverables package: Vendor Access Map and cleanup plan; walk through the revoke list and obtain approval.",
+        "Recommend next steps: executing the approved revokes (as a follow-on), the admin_privilege_review if privileged vendor accounts exist, and the quarterly review cadence.",
+        "Revoke any temporary access granted for the review.",
+        "Record internal notes: vendor inventory baseline and the approved cleanup plan.",
+        "Schedule a quarterly reminder for the access review cadence."
+      ]
+    }
+  },
+  "admin_privilege_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Admin Privilege Review, define the in-scope platforms (M365, servers, cloud apps), and schedule the review with the admin who can approve role changes.",
+      "Send prep instructions: customer should confirm who holds privileged roles, which are needed, and their break-glass/emergency access approach.",
+      "Pre-work: prepare the privileged-account enumeration queries for M365, servers, and cloud apps, and stage the role-mapping template.",
+      "Run the review: inventory high-privilege accounts, compare role assignments against actual job responsibilities, identify excessive/stale/shared privileged accounts, and review the break-glass account.",
+      "Build the least-privilege roadmap: propose the role changes needed, with the documented approvals required for each.",
+      "Walk through the roadmap with the customer: confirm the proposed role changes and obtain approval to proceed (changes are a separate follow-on unless approved in scope).",
+      "Deliver the closeout package: the privileged account inventory, role assignment review, and the least-privilege remediation roadmap with documented approvals."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Admin Privilege Review and whether role changes are in scope or review-only; if changes are not pre-approved, deliver the roadmap for approval.",
+        "Verify admin access to M365, servers, and cloud apps; confirm the decision maker who approves privilege changes.",
+        "Gather baseline: current privileged accounts, role assignments, break-glass process, and any access reviews done before.",
+        "Create the ticket with product id admin_privilege_review, expected deliverables (inventory, roadmap, approvals), and assign a technician experienced with privileged access.",
+        "Check prerequisites: approval workflow defined and break-glass account confirmed functional."
+      ],
+      "delivery": [
+        "M365 privilege inventory: enumerate Global Admins and all delegated admin roles (Exchange, SharePoint, Teams, Intune, Billing), recording each holder and role.",
+        "Server privilege inventory: list domain/enterprise/schema admin members and local admin groups on servers where accessible, noting service accounts versus people.",
+        "Cloud app privilege inventory: for in-scope cloud apps, list super-admins and delegated admins from each console.",
+        "Role-vs-job review: compare each privileged account against the person's actual role, and flag excessive access (e.g., a bookkeeper with Global Admin).",
+        "Excessive/stale/shared identification: flag privileged accounts that are stale, shared, or hold more access than the role needs.",
+        "Break-glass review: verify the emergency access account exists, is documented, is not used for daily work, and has a defined activation procedure.",
+        "Build the roadmap: for each account propose Keep / Demote / Remove with the required approval, mapped to the least-privilege principle.",
+        "Technical verification: confirm the inventory is complete, the roadmap is justified, and no changes were made beyond approved scope."
+      ],
+      "documentation": [
+        "Produce the privileged account inventory: account, platform, role, owner, purpose, and last-activity, as the primary deliverable.",
+        "Produce the role-vs-job review showing where access exceeds responsibility.",
+        "Document the least-privilege remediation roadmap with the proposed change and approval status for each account.",
+        "Document the break-glass account review (existence, usage, activation procedure) without the actual password.",
+        "Security rule: never store privileged credentials, service account secrets, or recovery codes in the deliverables."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: high-privilege inventory, role assignment review, excessive/stale/shared identification, break-glass review, change-management process assessment, and least-privilege roadmap with documented approvals.",
+        "Confirm the roadmap changes are all approved by the decision maker before any execution.",
+        "Confirm the break-glass account is documented and functional.",
+        "Secret audit: confirm no privileged secrets appear in deliverables.",
+        "Flag follow-ups: approved changes to execute, quarterly re-review, and MFA on all privileged accounts."
+      ],
+      "closeout": [
+        "Send the deliverables package: inventory, role review, roadmap, and approvals.",
+        "Recommend next steps: executing the approved role changes (follow-on), the mfa_enforcement_project for privileged accounts, and the quarterly review cadence.",
+        "Revoke any temporary access granted.",
+        "Record internal notes: privilege baseline and approved roadmap.",
+        "Schedule a quarterly review reminder for the privileged access cadence."
+      ]
+    }
+  },
+  "mfa_enforcement_project": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the MFA Enforcement Project, define the systems in scope (M365, third-party platforms), and schedule the rollout planning session with the admin.",
+      "Send prep instructions: customer should confirm user count, available authenticator devices, which systems must be covered, and any users needing alternate methods (hardware keys).",
+      "Pre-work: prepare the M365 Conditional Access policy design, the enrollment plan, and the third-party MFA enablement runbook per in-scope platform.",
+      "Run the rollout: assess MFA coverage, design and enforce the M365 Conditional Access policy, create the user enrollment plan with step-by-step instructions, and enable MFA on critical third-party platforms.",
+      "Support enrollment: guide users through enrollment in small groups, handle lockout prevention (break-glass, backup methods), and fix any blocked users.",
+      "Verify and document: post-rollout verification that MFA applies to all users and admin actions, with evidence per system.",
+      "Deliver the closeout package: the enforcement policy documentation, the enrollment guide, the verification evidence, and the residual-platform list (systems still needing MFA)."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the MFA Enforcement Project (broader rollout, not a single session); if the customer needs quick wins only, recommend mfa_setup_session instead.",
+        "Verify admin access to M365 and each in-scope platform; confirm the user list and enrollment approach.",
+        "Gather baseline: current MFA coverage per system, user count, devices, and any users who will need hardware keys or offline methods.",
+        "Create the ticket with product id mfa_enforcement_project, the in-scope systems, expected deliverables (policies, enrollment guide, verification), and assign a technician with Conditional Access experience.",
+        "Check prerequisites: rollout timeline agreed, enrollment windows scheduled, and break-glass account confirmed."
+      ],
+      "delivery": [
+        "Coverage assessment: record current MFA state per system (M365, banking, payroll, CRM, registrar, etc.) and list every account and platform in scope.",
+        "M365 Conditional Access design: create the MCT-MFA-All-Users policy requiring MFA for all cloud apps and all users, excluding only the documented break-glass account.",
+        "Phased enforcement: enable the policy in report-only mode first, validate signals, then switch to on; apply to an admin pilot group before all users to catch issues early.",
+        "Third-party MFA enablement: walk through enabling MFA on each critical third-party platform with the admin, using the runbook for each platform's settings.",
+        "User enrollment plan: produce step-by-step instructions per staff member (which app, which accounts, recovery codes), and run small-group enrollment sessions.",
+        "Lockout prevention: ensure every user has a recovery method (backup codes, secondary device), the break-glass account is functional, and support is available for locked users.",
+        "Verification: test sign-in for each user on each covered system, confirm MFA prompts fire, and confirm admin actions also require MFA.",
+        "Technical verification: confirm coverage of every in-scope account, no business-blocking lockouts, and no recovery codes stored in MCT documentation."
+      ],
+      "documentation": [
+        "Produce the MFA coverage map: account, platform, method, MFA status before/after, and recovery status.",
+        "Document the Conditional Access policy configuration (name, scoping, exclusions, enforcement state) for admin reference.",
+        "Produce the user enrollment guide and the per-platform MFA runbook for the customer's ongoing reference.",
+        "Document the residual-platform list: systems that still cannot enforce MFA, with the risk and compensating control for each.",
+        "Security rule: never store recovery codes, QR seeds, TOTP secrets, or passwords in any documentation or notes."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: coverage assessment, Conditional Access policy design/enforcement, user enrollment plan with step-by-step instructions, third-party MFA enablement, enrollment support and lockout prevention, and post-rollout verification.",
+        "Confirm every in-scope account now requires MFA and that verification evidence exists.",
+        "Confirm no user was permanently locked out and the break-glass path works.",
+        "Secret audit: confirm no recovery codes or secrets appear in deliverables.",
+        "Flag follow-ups: residual platforms, users needing hardware keys, and a 30-day spot-check that MFA is still enforced."
+      ],
+      "closeout": [
+        "Send the deliverables package: MFA coverage map, policy documentation, enrollment guide, runbooks, and verification evidence.",
+        "Recommend next steps: password_manager_rollout to manage the new volume of passwords/codes, email_security_hardening if email remains risky, or managed security for ongoing enforcement.",
+        "Revoke any temporary admin access granted during rollout.",
+        "Record internal notes: policy GUID, coverage baseline, and residual platform list.",
+        "Schedule a 30-day spot-check to confirm MFA remains enforced and no user regressed."
+      ]
+    }
+  },
+  "password_manager_rollout": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Password Manager Rollout, review the team size and current password storage from intake, and schedule the platform selection and rollout sessions.",
+      "Send prep instructions: customer should confirm where passwords currently live (spreadsheets, browsers, notebooks), who needs access to which shared vaults, and the user count for licensing.",
+      "Pre-work: prepare the platform comparison (Bitwarden vs 1Password vs Keeper), the vault/permission structure draft, and the migration plan from spreadsheets and browsers.",
+      "Run the rollout: select the platform with the customer, set up the organization with shared vaults/folders/permissions, migrate critical credentials, roll out the browser and device extensions to all users, and train staff.",
+      "Support adoption: guide users through daily use (generate, save, share, autofill), fix sync/enrollment issues, and document admin guidance for ongoing vault management.",
+      "Verify and walk through: confirm all users are enrolled, shared vault access is correct, and the customer admin can manage access reviews.",
+      "Deliver the closeout package: the platform setup summary, the vault/permission map, the user guide, admin guidance, and the residual cleanup list (spreadsheets to retire)."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Password Manager Rollout; if the customer has no accounts worth protecting yet, recommend starting with MFA or a security checkup first.",
+        "Confirm the platform selection authority and budget; identify the user count and the vault-sharing needs (departments, teams).",
+        "Gather baseline: current password storage locations, number of credentials, shared account inventory, and browser/device mix.",
+        "Create the ticket with product id password_manager_rollout, expected deliverables (organization setup, migration, training, admin guidance), and assign a technician.",
+        "Check prerequisites: user list and rollout timeline confirmed, and the customer has approved the platform choice and licensing cost."
+      ],
+      "delivery": [
+        "Platform selection: compare Bitwarden, 1Password, and Keeper against the team's size, budget, and features (shared vaults, MFA, SSO), and recommend one with the customer's approval.",
+        "Organization setup: create the organization/team account, set up the vault structure (shared vaults per department/function), define folder organization, and configure permission levels.",
+        "Credential migration: export critical credentials from spreadsheets and browsers (with customer supervision), import them into the correct vaults, and remove or archive the source spreadsheets only after verification.",
+        "Extension rollout: install and configure the browser extension and mobile apps for each user, connect them to the correct account, and confirm autofill works.",
+        "Staff training: walk through password generation, saving logins, sharing within the team (never emailing passwords), and daily autofill; answer questions individually as needed.",
+        "Admin guidance: document how the customer admin manages vaults, adds/removes users, reviews access, and handles shared-credential rotation.",
+        "Verification: confirm every user is enrolled and synced, shared vault access is correct per the permission map, and no critical credential is missing.",
+        "Technical verification: confirm no plaintext passwords remain in spreadsheets the customer controls, and confirm no MCT documentation captured any master passwords."
+      ],
+      "documentation": [
+        "Produce the platform setup summary: platform, organization structure, and licensing.",
+        "Produce the vault/permission map: vault, members, roles, and purpose.",
+        "Write the user guide (generate, save, share, autofill, recover) in plain English.",
+        "Write the admin guidance for ongoing vault management and access reviews.",
+        "Document the residual cleanup list: spreadsheets and browser-saved passwords to retire, with owners.",
+        "Security rule: never store master passwords, recovery codes, or exported credential files in MCT documentation; deliver exports only through the customer's secure channels."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: platform selection/comparison, organization setup with vaults and permissions, credential migration, extension rollout, staff training, and admin guidance.",
+        "Confirm all users are enrolled and no critical credential is missing from the vaults.",
+        "Confirm the customer admin can manage vaults and access reviews.",
+        "Secret audit: confirm no master passwords or exported credential files appear in deliverables or notes.",
+        "Flag follow-ups: residual spreadsheets to retire, shared-credential rotation, and a 30-day check that adoption is sticking."
+      ],
+      "closeout": [
+        "Send the deliverables package: setup summary, vault map, user guide, admin guidance, and cleanup list.",
+        "Recommend next steps: mfa_setup_session or mfa_enforcement_project to pair with the manager, and a security checkup to review remaining risks.",
+        "Confirm the customer has the master password and recovery codes stored securely (in their own safe location).",
+        "Record internal notes: platform, structure, user count, and adoption status.",
+        "Schedule a 30-day adoption check and note the cleanup list for the customer to complete."
+      ]
+    }
+  },
+  "email_security_hardening": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Email Security Hardening engagement, review the customer's email platform and domains from intake, and schedule the change window with the email admin.",
+      "Send prep instructions: customer should confirm mail domains, DNS access (for SPF/DKIM/DMARC changes), and that a maintenance window is acceptable for policy changes.",
+      "Pre-work: pull current SPF/DKIM/DMARC records, prepare the M365 anti-phishing/anti-spam policy changes, and stage the forwarding-rule audit query.",
+      "Run the hardening: correct and verify SPF/DKIM/DMARC records, configure M365 anti-phishing with impersonation protection, tune anti-spam and quarantine settings, audit mailbox rules for compromise indicators, and verify MFA on all mailboxes.",
+      "Test deliverability: send test emails, verify records validate (MXToolbox), confirm mail flow is intact, and check quarantine behavior.",
+      "Walk through with the customer: explain what changed, why, and how to monitor; answer questions.",
+      "Deliver the closeout package: the change log, DNS record verification, policy configuration summary, deliverability test results, and any residual findings."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is Email Security Hardening (configuration changes in scope) and that the customer has approved making changes; if an active compromise is suspected, escalate to email compromise response first.",
+        "Verify email admin access and DNS access; confirm the change window and rollback plan.",
+        "Gather baseline: current SPF/DKIM/DMARC records, M365/Google email security config, forwarding rules, and MFA state.",
+        "Create the ticket with product id email_security_hardening, expected deliverables (change log, verification, documentation), and assign a technician with email/DNS experience.",
+        "Check prerequisites: change window approved, DNS access confirmed, and the customer understands the brief delivery delay for DNS record propagation."
+      ],
+      "delivery": [
+        "SPF/DKIM/DMARC correction: fix the SPF record to include only legitimate senders (no +all), add or repair DKIM selectors, and set a DMARC policy (start at p=none with monitoring, then tighten toward quarantine/reject on the customer's timeline).",
+        "Record verification: after DNS changes, verify via MXToolbox that SPF, DKIM, and DMARC validate and align; document pass/fail per domain.",
+        "M365 anti-phishing: configure the anti-phishing policy with impersonation protection for the domain and key exec titles, and enable mailbox intelligence where available.",
+        "Anti-spam and quarantine tuning: set the anti-spam policy thresholds appropriate for the business, configure the quarantine notification cadence, and set the admin quarantine permissions.",
+        "Mailbox rule audit: scan all mailboxes for forwarding rules and suspicious inbox rules; flag any that indicate compromise and recommend removal (with approval).",
+        "MFA verification: confirm MFA is enabled on all mailboxes; flag any mailbox without MFA and recommend the follow-on mfa work.",
+        "Deliverability testing: send test emails to external and internal addresses, verify DKIM signing shows in headers, confirm SPF/DMARC alignment, and confirm no legit mail is quarantined.",
+        "Technical verification: confirm DNS records validate, mail flow is healthy post-change, and no legitimate messages are blocked; verify the rollback plan is documented."
+      ],
+      "documentation": [
+        "Produce the change log: every DNS record and policy change with before/after values and timestamp.",
+        "Produce the DNS verification report: SPF/DKIM/DMARC validation results per domain.",
+        "Document the M365 policy configuration (anti-phishing, anti-spam, quarantine) for admin reference.",
+        "Document the forwarding-rule findings with mailbox, rule, and disposition.",
+        "Security rule: never store mailbox credentials, SMTP secrets, or tokens in the deliverables."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: SPF/DKIM/DMARC correction and verification, anti-phishing with impersonation protection, anti-spam/quarantine tuning, mailbox rule audit, MFA verification on mailboxes, and post-change deliverability testing.",
+        "Confirm DNS records validate and legit mail flows after the changes.",
+        "Confirm every change was approved and logged, and the rollback plan exists.",
+        "Secret audit: confirm no secrets appear in deliverables.",
+        "Flag follow-ups: DMARC tightening timeline, mailboxes still needing MFA, and any suspicious forwarding rules requiring customer action."
+      ],
+      "closeout": [
+        "Send the deliverables package: change log, DNS verification, policy summary, and deliverability results.",
+        "Recommend next steps: DMARC enforcement/monitoring to move to reject, phishing readiness mini audit to measure staff, and mfa_enforcement_project for remaining mailboxes.",
+        "Confirm the customer monitors DMARC aggregate reports (or set up the reporting address).",
+        "Record internal notes: DNS baseline, policy changes, and forwarding findings.",
+        "Schedule a 30-day DMARC review to check the policy and consider tightening to quarantine/reject."
+      ]
+    }
+  },
+  "endpoint_protection_rollout": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Endpoint Protection Rollout, define the device fleet in scope, and schedule the deployment planning with the admin.",
+      "Send prep instructions: customer should confirm the device list, licensing status (M365 Business Premium?), and any devices that must not be disrupted (POS, servers).",
+      "Pre-work: assess current endpoint protection state, prepare the deployment plan (Microsoft Defender for Business or chosen solution), and stage the device list.",
+      "Run the deployment: license the solution, deploy the agent centrally across Windows and Mac workstations, configure detection/response/alerts, and set up the monitoring process.",
+      "Verify coverage: confirm fleet-wide agent coverage, run test detections (where safe), and confirm alerts route to the right people.",
+      "Walk through with the customer: show the dashboard, explain alert handling, and confirm the monitoring process.",
+      "Deliver the closeout package: deployment documentation, fleet coverage verification, alert-handling guide, and monitoring process setup."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is Endpoint Protection Rollout; if the customer already has an EDR with coverage, assess whether the ask is improvement or replacement.",
+        "Confirm licensing and budget: Microsoft Defender for Business via M365 Business Premium, or an alternate solution the customer approves.",
+        "Gather baseline: current AV/EDR products per device, device count and OS mix, and any compliance/insurance requirements.",
+        "Create the ticket with product id endpoint_protection_rollout, expected deliverables (deployment, coverage verification, monitoring), and assign a technician with endpoint management experience.",
+        "Check prerequisites: device list confirmed, licensing approved, and a deployment window that avoids business disruption."
+      ],
+      "delivery": [
+        "State assessment: record the current protection product and status on each device; identify unmanaged or unprotected devices.",
+        "Solution selection: recommend Microsoft Defender for Business (or the approved alternative) and confirm licensing coverage for every device in scope.",
+        "Central deployment: deploy the agent centrally (via M365/Intune, RMM, or scripted install) across Windows and Mac workstations; stage rollouts to avoid breaking business systems.",
+        "Configuration: enable real-time protection, cloud-delivered protection, tamper protection, and the detection/response policies appropriate for the business.",
+        "Alert configuration: set up alert routing so security events reach the right team (MCT SOC or the customer's contact), with severity-based notification.",
+        "Monitoring process: define who reviews alerts, the response workflow for detections, and the escalation path; configure any required SIEM/console integration.",
+        "Coverage verification: confirm agent presence and healthy status on 100% of in-scope devices, run a safe test detection (e.g., EICAR) on a test device, and confirm the alert fires.",
+        "Technical verification: confirm no business system was broken, coverage is complete, and alert routing works end-to-end."
+      ],
+      "documentation": [
+        "Produce the deployment documentation: solution, licensing, agent deployment method, and configuration.",
+        "Produce the fleet coverage verification report: device, agent status, and protection state.",
+        "Write the alert-handling guide: what alerts mean, who responds, and the escalation path.",
+        "Document the monitoring process and alert routing configuration.",
+        "Security rule: never store management console credentials or API keys in the deliverables."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: state assessment, solution selection/licensing guidance, central deployment across Windows and Mac, detection/response/alert configuration, monitoring process setup, and deployment documentation with fleet-wide coverage verification.",
+        "Confirm 100% coverage of in-scope devices and healthy agent status.",
+        "Confirm a safe test detection fires the configured alert end-to-end.",
+        "Secret audit: confirm no console credentials appear in deliverables.",
+        "Flag follow-ups: devices requiring manual intervention, alert-tuning after 30 days, and the ongoing monitoring arrangement."
+      ],
+      "closeout": [
+        "Send the deliverables package: deployment doc, coverage report, alert-handling guide, and monitoring process.",
+        "Recommend next steps: local_admin_removal_project to reduce ransomware blast radius, bitlocker_encryption_rollout for data protection, and managed security (mct_secure_care) for ongoing monitoring.",
+        "Confirm the customer knows who monitors alerts and how to respond.",
+        "Record internal notes: solution, licensing, coverage baseline, and alert routing.",
+        "Schedule a 30-day review to tune alerts and confirm ongoing coverage."
+      ]
+    }
+  },
+  "local_admin_removal_project": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Local Admin Removal Project, define the workstations in scope, and schedule the assessment and change windows with the admin.",
+      "Send prep instructions: customer should confirm which users legitimately need admin rights for software installs/updates and identify any legacy apps that require elevation.",
+      "Pre-work: assess current local admin rights across the fleet, prepare the exception list, and build the removal plan with testing steps.",
+      "Run the removal: execute the privilege change on in-scope workstations in a staged rollout, using the approved exception list.",
+      "Support the transition: handle staff who lose the ability to install software, provide elevation guidance or just-in-time options, and fix broken workflows.",
+      "Verify and document: confirm no critical workflow broke, document who retains admin rights and why, and confirm the change holds.",
+      "Deliver the closeout package: the removal log, exception list with justification, post-change support notes, and the documentation of who retains admin rights."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is Local Admin Removal and that the customer approves reducing privileges (this impacts how staff install software).",
+        "Confirm the fleet list and identify the admin decision maker who approves exceptions.",
+        "Gather baseline: which workstations have users in local admin groups, which applications need elevation, and any known software-install needs.",
+        "Create the ticket with product id local_admin_removal_project, expected deliverables (removal log, exception list, documentation), and assign a technician.",
+        "Check prerequisites: staged change windows agreed, exceptions approved, and a support plan for affected staff."
+      ],
+      "delivery": [
+        "Rights assessment: enumerate local Administrators group membership on each in-scope workstation; identify standard users who hold admin rights.",
+        "Needs analysis: with the customer, identify which users legitimately install/update software and which applications require elevation; draft the exception list.",
+        "Removal plan: for each workstation define the change (remove user from local admins) and the support path (elevation prompt, help desk installs, or retained exception).",
+        "Staged execution: pilot the change on a small group first, confirm no breakage, then roll out to the remaining workstations in agreed waves.",
+        "Exception handling: apply exceptions only where approved, and document the reason for each retained admin right.",
+        "Post-change support: help affected staff reinstall needed software through the approved process (help desk install, standard user installers), and resolve any workflow breakage.",
+        "Technical verification: confirm the privilege change is enforced (no lingering local admin groups), exceptions are documented, and no critical workflow is broken.",
+        "Final documentation: record who retains admin rights and why, and the removal evidence for each workstation."
+      ],
+      "documentation": [
+        "Produce the removal log: workstation, previous admin membership, change date, and removal evidence.",
+        "Produce the exception list: user, workstation, reason for retained admin rights, and approval.",
+        "Document the support process staff should follow when they need software installed.",
+        "Include the verification evidence that privileges were removed fleet-wide.",
+        "Security rule: never store local admin passwords or elevation secrets in the deliverables."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: rights assessment, needs analysis, removal plan with exceptions, fleet-wide execution, post-change support, and documentation of who retains admin rights.",
+        "Confirm no critical workflow was broken and affected staff received support.",
+        "Confirm exceptions are all justified and approved.",
+        "Confirm the change is enforced (no accidental re-promotion).",
+        "Flag follow-ups: any workstations that need further remediation, and the security benefit of pairing with endpoint protection."
+      ],
+      "closeout": [
+        "Send the deliverables package: removal log, exception list, and support process.",
+        "Recommend next steps: endpoint_protection_rollout to layer EDR on top of least privilege, bitlocker_encryption_rollout for data protection, and managed security for ongoing control.",
+        "Confirm the customer knows the support path for software installs.",
+        "Record internal notes: baseline, exceptions, and removal evidence.",
+        "Schedule a 30-day check that privileges were not re-granted and exceptions are still valid."
+      ]
+    }
+  },
+  "bitlocker_encryption_rollout": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the BitLocker Encryption Rollout, define the devices in scope, and schedule the enablement window with the admin.",
+      "Send prep instructions: customer should confirm the device list, which devices have TPM, and how recovery keys should be stored (M365/Entra, AD, or secure vault).",
+      "Pre-work: assess BitLocker readiness across devices (TPM presence, OS edition, compatibility), prepare the recovery-key storage plan, and stage the deployment.",
+      "Run the rollout: enable full-disk encryption on supported devices, collect and securely store recovery keys, verify protection status, and handle TPM compatibility issues.",
+      "Review Mac devices: check and enable FileVault where applicable, with recovery key handling.",
+      "Verify and document: confirm encryption status on all devices, confirm recovery keys are retrievable, and document the encryption status report.",
+      "Deliver the closeout package: the encryption status documentation for all devices, the recovery-key storage plan, and any devices requiring manual attention."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is BitLocker Encryption Rollout and that the customer understands encrypted drives require recovery keys to be managed properly (risk of data loss if mishandled).",
+        "Confirm device list, OS editions (BitLocker requires Pro/Enterprise), and where recovery keys will be stored (Entra/M365, AD, or customer vault).",
+        "Gather baseline: TPM status per device, current encryption state, and any devices with known compatibility issues.",
+        "Create the ticket with product id bitlocker_encryption_rollout, expected deliverables (encryption status doc, recovery key plan), and assign a technician.",
+        "Check prerequisites: enablement windows agreed and the recovery-key storage destination is confirmed and accessible."
+      ],
+      "delivery": [
+        "Readiness assessment: check TPM presence and status (TPM 2.0 preferred), OS edition support, and disk configuration (single vs multiple volumes) per device.",
+        "Enable BitLocker: use manage-bde or the Windows UI to enable full-disk encryption on each supported device; choose the appropriate encryption method (XTS-AES 128/256) and enable without TPM if necessary (with the policy implications noted).",
+        "Recovery key collection: capture the recovery keys during enablement and store them in the approved secure destination (Entra/AD for domain-joined, or the customer's password vault); verify they are retrievable before proceeding.",
+        "TPM compatibility handling: for devices without TPM, document the compatibility gap and use the approved policy approach or defer with justification.",
+        "FileVault review (Mac): enable FileVault on in-scope Macs and store the recovery key in the approved location.",
+        "Protection status verification: confirm each device reports 'Fully Encrypted' (not 'encryption paused'), and verify the protection status is persistent.",
+        "Technical verification: confirm 100% of supported devices are encrypted, recovery keys are all retrievable, and no data loss or boot failure occurred; spot-check a reboot."
+      ],
+      "documentation": [
+        "Produce the encryption status report: device, OS, TPM status, encryption state, and recovery-key storage location.",
+        "Document the recovery-key storage plan and the retrieval procedure (who can access keys and how).",
+        "Document devices excluded from encryption (no TPM, unsupported OS) with the risk and justification.",
+        "Include the user impact note: encrypted drives require the password/PIN and any expected behavior changes.",
+        "Security rule: never store recovery keys in MCT documentation; they live only in the approved secure destination."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: readiness assessment, encryption enablement with verified status, recovery-key collection and secure storage, FileVault review where applicable, TPM configuration/compatibility handling, and encryption status documentation.",
+        "Confirm 100% of supported devices are fully encrypted and recovery keys are retrievable.",
+        "Confirm no data loss or boot failures occurred during enablement.",
+        "Confirm recovery keys are NOT stored in MCT deliverables.",
+        "Flag follow-ups: unsupported devices needing replacement (computer_replacement_readiness_review), and key rotation/review cadence."
+      ],
+      "closeout": [
+        "Send the deliverables package: encryption status report and recovery-key storage plan.",
+        "Recommend next steps: local_admin_removal_project to reduce blast radius, endpoint_protection_rollout for detection, and the replacement review for unsupported devices.",
+        "Confirm the customer can retrieve recovery keys in an emergency.",
+        "Record internal notes: encryption baseline and key storage pointers.",
+        "Schedule a review when new devices join the fleet to confirm encryption is applied."
+      ]
+    }
+  },
+  "dns_filtering_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the DNS Filtering Setup, review the customer's network and DNS configuration from intake, and schedule the deployment window with the admin.",
+      "Send prep instructions: customer should confirm their DNS configuration (router, DHCP, servers), internet providers, and any sites that must always be accessible.",
+      "Pre-work: review current DNS configuration, select the protective DNS service (Cisco Umbrella, DNSFilter, or similar), and prepare the category policy draft.",
+      "Run the setup: configure the protective DNS service, route all business traffic through filtered DNS, set category and policy configuration to balance security and productivity, and configure exceptions.",
+      "Verify and tune: confirm filtering is active on all paths, test category blocking, and tune policies to avoid legitimate-site breakage.",
+      "Walk through with the customer: show the dashboard, explain the blocked categories, and confirm the exception list.",
+      "Deliver the closeout package: the DNS filtering configuration documentation, category policy summary, exception list, and verification evidence."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is DNS Filtering Setup; if the customer has no admin access to their router/DHCP, note that coverage will be limited to configured endpoints.",
+        "Confirm the protective DNS service choice and licensing (Cisco Umbrella, DNSFilter, or the approved alternative).",
+        "Gather baseline: current DNS servers, network topology (router, DHCP scope, VPN), and any sites that must always resolve (banking, government portals).",
+        "Create the ticket with product id dns_filtering_setup, expected deliverables (config doc, policy summary, verification), and assign a technician.",
+        "Check prerequisites: admin access to network gear/DHCP, approved service/license, and a deployment window."
+      ],
+      "delivery": [
+        "Configuration review: document the current DNS setup (router DHCP options, static assignments, VPN DNS) and how traffic currently resolves.",
+        "Service setup: create the customer's account and network configuration in the chosen protective DNS service, and install any roaming agent on endpoints if required for full coverage.",
+        "Traffic routing: configure the router/DHCP to hand out the filtered DNS servers (and/or configure the roaming clients), so all business traffic resolves through filtered DNS.",
+        "Policy configuration: set the category policy (block malware, phishing, botnet, and adult/risky categories while allowing business-relevant sites), and set enforcement per the customer's tolerance.",
+        "Exception handling: add legitimate blocked sites to the allow list with the customer's confirmation, and document each exception with its reason.",
+        "Verification: confirm filtering is active on all paths (router and clients), test known malicious and blocked categories, and confirm legitimate sites still resolve.",
+        "Technical verification: confirm no business workflow broke, filtering is enforced, and the exception list is documented and approved."
+      ],
+      "documentation": [
+        "Produce the DNS filtering configuration documentation: service, DNS endpoints, DHCP/roaming configuration, and coverage.",
+        "Produce the category policy summary: what is blocked, what is allowed, and the enforcement approach.",
+        "Document the exception list with the reason for each allowed site.",
+        "Include the verification evidence: filtering-active checks and blocked-site test results.",
+        "Security rule: never store service admin credentials or API keys in the deliverables."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: DNS configuration review, protective DNS service selection, traffic routing through filtered DNS, category/policy configuration, exception handling, and documentation with verification.",
+        "Confirm filtering is active on all coverage paths and legitimate business sites still resolve.",
+        "Confirm the policy balances security and productivity and the customer approved the categories.",
+        "Secret audit: confirm no service credentials appear in deliverables.",
+        "Flag follow-ups: roaming coverage for off-network devices, policy review cadence, and any sites needing exception review."
+      ],
+      "closeout": [
+        "Send the deliverables package: configuration doc, policy summary, exception list, and verification evidence.",
+        "Recommend next steps: endpoint_protection_rollout for layered defense, security awareness training for the human layer, and managed security for ongoing filtering management.",
+        "Confirm the customer knows how to access the dashboard and manage exceptions.",
+        "Record internal notes: service, DNS endpoints, coverage, and exceptions.",
+        "Schedule a 30-day policy review to confirm exceptions are still needed."
+      ]
+    }
+  },
+  "security_awareness_training_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Security Awareness Training Setup, review team size and budget from intake, and schedule the platform configuration session.",
+      "Send prep instructions: customer should confirm the user list, preferred language, and any compliance requirements (insurance often asks for training).",
+      "Pre-work: compare awareness platforms (KnowBe4, Phished, Microsoft, or similar) for the team size, prepare the campaign structure, and stage the phishing simulation templates.",
+      "Run the setup: configure the platform with automated training campaigns, set up the phishing simulation schedule and content, enroll users with role assignments, and establish the result-review process.",
+      "Verify and walk through: confirm enrollment, run a test campaign, and review how results will be reported to the customer.",
+      "Prepare follow-on reporting: define the monthly or quarterly review cadence, the phishing simulation result thresholds that trigger action, and the owner for reviewing results.",
+      "Deliver the closeout package: the platform configuration summary, campaign schedule, enrollment report, and ongoing management guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is Security Awareness Training Setup and whether the customer wants platform setup only or the ongoing managed program.",
+        "Confirm team size, budget, and any compliance/insurance training requirements that shape the platform choice.",
+        "Gather baseline: any existing training program, the phishing risk from prior reviews (if any), and the user list.",
+        "Create the ticket with product id security_awareness_training_setup, expected deliverables (configured platform, campaigns, enrollment, reporting), and assign a technician.",
+        "Check prerequisites: platform choice approved, user list provided, and campaign language confirmed."
+      ],
+      "delivery": [
+        "Platform selection: compare options (KnowBe4, Phished, Microsoft, etc.) against team size and budget, and recommend with the customer's approval.",
+        "Platform configuration: create the organization, set up user import, configure SSO where applicable, and set the training library defaults.",
+        "Training campaign setup: create the automated training campaign (assign baseline training to all users) with due dates and reminders appropriate to the team.",
+        "Phishing simulation schedule: configure the simulation schedule (frequency and templates), choose realistic templates matching common attack types, and set the reporting-button behavior.",
+        "User enrollment and roles: import users with correct roles (admin vs standard), assign the training plan, and confirm enrollment email delivery.",
+        "Result review process: establish how results are reviewed (who sees click rates, how failures are coached), and set up the reporting cadence.",
+        "Verification: run a test campaign on a small group, confirm training assignments appear, and confirm the reporting dashboard works.",
+        "Technical verification: confirm all users are enrolled, campaigns are scheduled, and results flow into the dashboard correctly."
+      ],
+      "documentation": [
+        "Produce the platform configuration summary: platform, organization, SSO, and defaults.",
+        "Produce the campaign schedule: training assignments and phishing simulation calendar.",
+        "Document the enrollment report: user, role, training status, and any delivery failures.",
+        "Write the ongoing management guidance: how to add users, adjust campaigns, and review results.",
+        "Security rule: never store platform admin credentials or API keys in the deliverables."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: platform selection based on team size/budget, automated training campaigns, phishing simulation schedule/content, user enrollment and roles, result review process, and ongoing management guidance.",
+        "Confirm all users are enrolled and the test campaign works.",
+        "Confirm the result-review process is defined (who coaches failures, how often results are reviewed).",
+        "Secret audit: confirm no platform credentials appear in deliverables.",
+        "Flag follow-ups: first campaign completion, first simulation round, and the managed training option."
+      ],
+      "closeout": [
+        "Send the deliverables package: config summary, campaign schedule, enrollment report, and management guidance.",
+        "Recommend next steps: phishing_readiness_mini_audit to baseline staff, the managed training option for ongoing campaigns, and staff_security_starter for cheat sheets.",
+        "Confirm the customer admin can manage the platform.",
+        "Record internal notes: platform, campaign schedule, and enrollment status.",
+        "Schedule the first campaign completion check and simulation round follow-up."
+      ]
+    }
+  },
+  "incident_response_plan_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Incident Response Plan Starter, and schedule the working sessions with the owner, IT contact, and communications lead.",
+      "Send prep instructions: customer should think through their top incident scenarios, gather emergency contacts, and identify who should hold which response roles.",
+      "Pre-work: prepare the plan template (triggers, roles, procedures, communications, evidence handling) and tailor it to the customer's environment and industry.",
+      "Run the working sessions: define escalation triggers, assign response/communication/technical roles, write step-by-step procedures for email compromise, ransomware, and breach, and set the communications procedures.",
+      "Add preservation and evidence-handling guidance: what to preserve, how to handle evidence for insurance and authorities.",
+      "Walk through the plan with the customer: confirm it is practical under pressure and everyone knows their role.",
+      "Deliver the closeout package: the practical plan document, the roles matrix, the contact sheet, and the recommendation to test the plan with a tabletop exercise."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Incident Response Plan Starter (documentation and planning); if the customer is currently in an incident, escalate to the appropriate emergency product first.",
+        "Identify the participants: owner, IT contact, communications lead, and any key staff who hold response roles.",
+        "Gather baseline: the customer's environment (platforms, critical systems), recent incidents, insurance and legal contacts, and any existing plan fragments.",
+        "Create the ticket with product id incident_response_plan_starter, expected deliverables (plan document, roles, procedures), and assign the consultant/technician.",
+        "Check prerequisites: working sessions booked and emergency contacts gathered."
+      ],
+      "delivery": [
+        "Trigger and escalation definition: define what triggers an incident response (indicators for email compromise, ransomware, breach, outage), the severity levels, and when to escalate to MCT emergency support or 911/authorities.",
+        "Role assignments: document the incident commander, communications lead, and technical lead (with alternates), confirm each person accepts the role, and define off-hours coverage.",
+        "Response procedures: write step-by-step procedures for email compromise (verify, contain, reset, scan), ransomware (isolate, preserve, notify, recover path), and breach (preserve, notify, remediate), tailored to the customer's environment.",
+        "Communications procedures: define who communicates to staff, customers, insurers, and authorities, with approved messaging guidance and a do-not-share rule on ransom demands.",
+        "Preservation and evidence handling: document what to preserve (logs, systems, emails, samples), how to handle evidence for insurance and law enforcement, and what NOT to do (don't reboot infected systems, don't pay ransom without guidance).",
+        "Practical testing guidance: recommend a tabletop exercise to validate the plan and identify gaps.",
+        "Technical verification: confirm the plan reflects the customer's actual environment and contacts, is in an editable/printable format, and contains no sensitive credentials."
+      ],
+      "documentation": [
+        "Produce the practical incident response plan: triggers, roles, procedures, communications, and evidence handling, in a format the team can actually use under pressure.",
+        "Produce the roles matrix and the emergency contact sheet (insurance, legal, IT, authorities).",
+        "Include the one-page quick-start for the highest-risk scenarios.",
+        "Note the plan's review cadence (quarterly) and the tabletop exercise recommendation.",
+        "Security rule: the plan is operational data, not credentials; do not include passwords, keys, or access details beyond what the team already knows."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: escalation and trigger definition, role assignments, step-by-step procedures for the three scenarios, communications procedures, preservation/evidence guidance, and the practical plan document.",
+        "Confirm the plan is tailored to the customer's actual environment, not a generic template.",
+        "Confirm roles are accepted by the named individuals and the contact sheet is complete.",
+        "Confirm the plan is editable and printable and the quick-start fits one page.",
+        "Flag follow-ups: tabletop exercise scheduling, quarterly review, and any missing contacts."
+      ],
+      "closeout": [
+        "Send the deliverables package: the plan document, roles matrix, contact sheet, and quick-start.",
+        "Recommend next steps: a tabletop exercise (follow-on drill), the basic_incident_readiness_checklist for the lightweight version, and the cyber insurance readiness package to fund the response.",
+        "Confirm the plan is stored where the team can reach it in a crisis.",
+        "Record internal notes: environment summary and plan review date.",
+        "Schedule a quarterly plan review and the tabletop exercise recommendation."
+      ]
+    }
+  },
+  "cyber_insurance_readiness_package": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Cyber Insurance Readiness Package, obtain the insurer's questionnaire or application if available, and schedule the review with the admin.",
+      "Send prep instructions: customer should gather their insurance application/questions, confirm current controls (MFA, backup, endpoint, admin, training), and identify which gaps they already know about.",
+      "Pre-work: prepare the control checklist mapped to common cyber insurance requirements, and stage evidence folders per control.",
+      "Run the review: assess MFA, backup, endpoint, admin access, and training controls; remediate the in-scope gaps that insurers most commonly require; and collect the evidence for the questionnaire.",
+      "Build the readiness summary: document the controls in place, the evidence for each, and the remaining gaps with remediation priorities.",
+      "Walk through with the customer: explain what the insurer will ask, what evidence to provide, and how to answer the application accurately.",
+      "Deliver the closeout package: the readiness summary, the evidence pack, the questionnaire-guidance document, and the remaining-gap list."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Cyber Insurance Readiness Package and whether in-scope remediation is included (remediate the gaps insurers most require) versus review-only.",
+        "Obtain the insurer's questionnaire/application if available; if not, use the standard common-controls checklist.",
+        "Gather baseline: current MFA, backup, endpoint, admin, and training state, plus any prior assessment evidence.",
+        "Create the ticket with product id cyber_insurance_readiness_package, expected deliverables (readiness summary, evidence pack, guidance), and assign a technician.",
+        "Check prerequisites: questionnaire obtained (or agreed checklist), remediation scope approved, and evidence collection windows scheduled."
+      ],
+      "delivery": [
+        "Control assessment: evaluate each common insurance control — MFA coverage, backup existence/testing/off-site, endpoint protection, admin access hygiene, and security training — against the insurer's typical requirements.",
+        "Gap identification: list each control that falls short of what insurers commonly require, with the specific fix.",
+        "In-scope remediation: remediate the gaps within the approved scope (e.g., enable MFA where feasible, verify backups, tighten the most critical admin access) with evidence captured for each fix.",
+        "Evidence collection: capture proof for each control (MFA policy screenshots, backup success reports, endpoint coverage report, admin inventory, training records) into the evidence pack.",
+        "Readiness summary: document each control's status (compliant / gap), the evidence pointer, and the remaining gaps with priorities.",
+        "Questionnaire guidance: draft accurate answers for the insurer's questions based on the actual state, and flag anything that must not be overstated.",
+        "Technical verification: confirm evidence is accurate and current, remediation is complete within scope, and nothing in the package overstates the customer's posture."
+      ],
+      "documentation": [
+        "Produce the readiness summary: control, status, evidence pointer, and remaining gap for each common insurance requirement.",
+        "Assemble the evidence pack: screenshots and reports for MFA, backup, endpoint, admin, and training controls.",
+        "Produce the questionnaire-guidance document: how to answer each question accurately and what not to overstate.",
+        "Document the remaining-gap list with remediation priorities and estimated effort.",
+        "Security rule: redact any credentials or sensitive data in the evidence pack; include only what is needed to prove the control."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: control requirements review, MFA/backup/endpoint/admin/training assessment, in-scope remediation, evidence collection, readiness summary, and application guidance.",
+        "Confirm evidence is accurate, current, and does not overstate controls.",
+        "Confirm remediation was completed within the approved scope and logged.",
+        "Secret audit: confirm no credentials appear in the evidence pack.",
+        "Flag follow-ups: remaining gaps to fix, evidence refresh cadence, and the application submission deadline."
+      ],
+      "closeout": [
+        "Send the deliverables package: readiness summary, evidence pack, questionnaire guidance, and gap list.",
+        "Recommend next steps: completing the remaining gaps (mfa_enforcement_project, backup setup, endpoint rollout), and the compliance quarterly review to keep evidence current.",
+        "Confirm the customer knows how to submit the evidence with their application.",
+        "Record internal notes: control baseline, evidence pointers, and the insurer's requirements used.",
+        "Schedule a follow-up around the application deadline to confirm submission and address last gaps."
+      ]
+    }
+  },
+  "security_awareness_lunch_learn": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Security Awareness Lunch & Learn, agree on the session date/time and delivery mode (on-site or remote), and identify the audience size.",
+      "Send prep instructions: the customer should share examples of recent phishing attempts they've seen and any industry-specific risks to highlight.",
+      "Pre-work: customize the session content for the business and industry (phishing, passwords, MFA, safe habits) and prepare the printable reference materials.",
+      "Deliver the session: present the customized training with real-world examples, run the interactive discussion, and answer audience questions.",
+      "Collect feedback: gauge audience understanding, note common confusion points, and identify follow-on training needs.",
+      "Debrief with the customer: summarize attendance, retention of key messages, observed risk behaviors, and the recommended follow-on training path.",
+      "Deliver the closeout package: the printable reference materials, the session summary, and any recommended follow-on training or tools."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Security Awareness Lunch & Learn and the delivery mode (on-site or remote); confirm the audience size and time allocation.",
+        "Gather baseline: the customer's industry (to tailor examples), recent phishing incidents they've seen, and any specific staff questions.",
+        "Create the ticket with product id security_awareness_lunch_learn, expected deliverables (session, materials), and assign the presenter.",
+        "Check prerequisites: date/time confirmed, audience notified, and any remote link/venue logistics settled."
+      ],
+      "delivery": [
+        "Content customization: tailor the session to the customer's industry and recent experiences, pulling real-world phishing examples relevant to their line of work.",
+        "Session delivery: present the training covering phishing recognition, password hygiene, MFA, and safe habits, using real examples and plain English.",
+        "Interactive discussion: run Q&A and scenario walkthroughs so attendees practice spotting red flags rather than passively listening.",
+        "Practical takeaways: ensure every attendee leaves with at least one concrete behavior change (e.g., report suspicious email, enable MFA, stop reusing passwords).",
+        "Reference materials: distribute the printable quick-reference cards for attendees to keep.",
+        "Feedback collection: note common misconceptions from the session to inform follow-on training needs.",
+        "Technical verification: confirm materials are accurate, no real credentials or sensitive data were shown, and attendance/engagement notes are recorded."
+      ],
+      "documentation": [
+        "Produce the session summary: topics covered, attendance, and engagement notes.",
+        "Produce the printable reference materials: phishing red flags, password rules, MFA steps, and what to do when suspicious (report, don't click).",
+        "Document the follow-on training recommendations based on the common misconceptions noted.",
+        "Security rule: no real credentials or personal data in materials; use illustrative (fictional) examples."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: customized session on phishing/passwords/MFA/safe habits, real-world examples relevant to the business, interactive discussion, printable reference materials, and delivery on-site or remote.",
+        "Confirm attendees received the materials and understood the core messages.",
+        "Confirm no sensitive data appeared in examples or materials.",
+        "Confirm the session ran as scheduled and engagement was recorded.",
+        "Flag follow-ups: follow-on training, phishing simulation, or the staff security starter for new hires."
+      ],
+      "closeout": [
+        "Send the deliverables package: session summary and printable reference materials.",
+        "Recommend next steps: security_awareness_training_setup for automated ongoing training, phishing_readiness_mini_audit to measure staff, or staff_security_starter for new-hire onboarding.",
+        "No system access was granted; confirm materials were delivered to the customer's control.",
+        "Record internal notes: audience, engagement notes, and common misconceptions.",
+        "Offer a follow-up session or quiz in 30 days to reinforce learning."
+      ]
+    }
+  },
+  "owner_admin_security_training": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Owner/Admin Security Training, and schedule the focused session with the owners, admins, and managers.",
+      "Send prep instructions: the customer should confirm which accounts are privileged, whether they use MFA, and any recent security alerts they've seen.",
+      "Pre-work: prepare the admin-focused content (spear phishing, password attacks, session theft), the MFA/least-privilege best practices, and the alert-interpretation walkthrough.",
+      "Deliver the session: train owners/admins on admin-specific attack awareness, privileged account MFA and least-privilege, how to read security alerts and audit logs, and how to handle a suspected compromise.",
+      "Practice the workflows: walk through checking audit logs, interpreting alerts, and the compromise-handling steps with the admin.",
+      "Collect feedback: confirm understanding, note gaps in their admin practices, and identify follow-on hardening needs.",
+      "Deliver the closeout package: the practical reference materials for daily admin work and the recommended hardening follow-ups."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is Owner/Admin Security Training and identify the participants (owners, admins, managers) and their privileges.",
+        "Gather baseline: which admin accounts they hold, MFA usage, whether they review audit logs today, and any recent alerts or concerns.",
+        "Create the ticket with product id owner_admin_security_training, expected deliverables (session, reference materials), and assign a trainer with admin security depth.",
+        "Check prerequisites: session booked, participants confirmed, and admin console access available for the live walkthrough."
+      ],
+      "delivery": [
+        "Admin-specific awareness: train on spear phishing targeting admins, password/credential-stuffing attacks, and session theft (token hijacking, session cookies), with examples relevant to their admin roles.",
+        "MFA and least-privilege best practices: reinforce MFA on all privileged accounts, the principle of least privilege, avoiding daily-driver admin accounts, and proper break-glass usage.",
+        "Alert and audit log interpretation: demonstrate where to view security alerts and sign-in logs in M365/Entra, what risky-sign-in signals mean, and what an attacker's footprint looks like.",
+        "Suspected compromise handling: walk through the exact steps — verify the sign-in, revoke sessions, reset credentials, check rules/forwarding, preserve logs, and escalate — so admins can act calmly.",
+        "Live practice: with the admin's consent, walk through a real audit-log review and an alert triage on their tenant, and confirm they can navigate the console.",
+        "Reference materials: provide the daily-admin checklist (review sign-ins weekly, confirm MFA, check for new admin accounts, verify rules).",
+        "Technical verification: confirm the session was accurate, no credentials were exposed, and the live walkthrough changed nothing in the tenant."
+      ],
+      "documentation": [
+        "Produce the daily-admin checklist: weekly sign-in review, admin account verification, MFA confirmation, and rule/forwarding checks.",
+        "Produce the alert-triage quick reference: what alerts mean and the first three actions for each.",
+        "Document the suspected-compromise step-by-step for admin reference.",
+        "Record the session topics and the practice items completed.",
+        "Security rule: never store admin credentials, session tokens, or tenant secrets in the materials."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: training tailored to owners/admins, admin-specific attack awareness, MFA/least-privilege practices for privileged accounts, alert and audit log interpretation, suspected-compromise handling, and practical reference materials.",
+        "Confirm the live practice confirmed the admin can navigate the consoles.",
+        "Confirm no tenant settings were changed during the session.",
+        "Secret audit: confirm no credentials appear in materials.",
+        "Flag follow-ups: hardening the gaps the session revealed (MFA on admin accounts, admin account cleanup) and recurring admin review."
+      ],
+      "closeout": [
+        "Send the deliverables package: reference materials and session summary.",
+        "Recommend next steps: admin_privilege_review or admin_account_cleanup if the session revealed excessive privileges, mfa_enforcement_project for admin MFA gaps, and the incident_response_plan_starter to formalize response.",
+        "Confirm no access was left open from the session.",
+        "Record internal notes: participants, practice items, and observed gaps.",
+        "Offer a refresher in 60-90 days and the alert-review cadence to adopt."
+      ]
+    }
+  },
+  "staff_security_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Staff Security Starter, review the business systems and workflows from intake, and schedule the packaging session with the HR/ops contact.",
+      "Send prep instructions: customer should confirm new-hire onboarding flow, the systems staff use daily, and which cheat sheets would help most.",
+      "Pre-work: prepare the packaged training (phishing, passwords, MFA, data handling), the cheat sheets, and the new-hire onboarding structure.",
+      "Run the packaging session: customize the training and materials to the customer's systems, finalize the cheat sheets and quick-reference guides, and set up the new-hire onboarding structure.",
+      "Deliver the onboarding: hand over the packaged materials, walk through the incident-reporting guidance, and confirm the customer can reuse the pack for every new hire.",
+      "Verify and walk through: confirm the materials are tailored and complete, and answer questions about ongoing use.",
+      "Deliver the closeout package: the full staff security pack (training, cheat sheets, onboarding structure, incident-reporting guidance) in editable form."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Confirm scope is the Staff Security Starter (packaged, reusable training materials); if the customer wants live instructor-led sessions, recommend lunch & learn or awareness setup instead.",
+        "Identify the customer's systems (M365, CRM, line-of-business) and the new-hire onboarding flow to tailor the materials.",
+        "Gather baseline: current onboarding content, existing security guidance, and the incident-reporting path staff use today.",
+        "Create the ticket with product id staff_security_starter, expected deliverables (packaged training, cheat sheets, onboarding structure), and assign the content packager.",
+        "Check prerequisites: systems list confirmed and the customer's branding/terminology preferences for the materials."
+      ],
+      "delivery": [
+        "Package the training: create the staff training covering phishing, passwords, MFA, and data handling, customized to the customer's systems and workflows.",
+        "Build the cheat sheets: printable quick-reference guides for daily use (spot a phish, make a strong password, report suspicious activity) using the customer's tool names.",
+        "Create the new-hire onboarding structure: the day-one checklist (MFA enrollment, password manager setup, phishing awareness, reporting path) so every new hire starts secure.",
+        "Write the incident-reporting guidance: who to tell, how to report, and what happens next, tailored to their team.",
+        "Finalize and format: produce the materials in editable and printable formats with the customer's terminology.",
+        "Handover walkthrough: review the pack with the customer, confirm they can reuse it for every new hire, and answer questions.",
+        "Technical verification: confirm the materials are accurate, tailored, and contain no sensitive or personal data."
+      ],
+      "documentation": [
+        "Produce the staff security pack: training guide, cheat sheets, new-hire onboarding structure, and incident-reporting guidance.",
+        "Ensure the onboarding structure is a repeatable checklist the customer can follow for every hire.",
+        "Include the cheat sheets in printable one-page format for posting and handout.",
+        "Document the customization choices (tool names, terminology) so future updates are easy.",
+        "Security rule: no real credentials, personal data, or sensitive business data in the materials."
+      ],
+      "qa": [
+        "Verify all whatIsIncluded items: packaged training, customization to business systems, printable cheat sheets, new-hire onboarding structure, incident-reporting guidance, and keepable reference materials.",
+        "Confirm the pack is tailored (uses the customer's actual tool names) and repeatable.",
+        "Confirm the onboarding structure covers day-one security essentials.",
+        "Confirm no sensitive data appears in the materials.",
+        "Flag follow-ups: pairing with security_awareness_training_setup for automated campaigns, and updating the pack when systems change."
+      ],
+      "closeout": [
+        "Send the deliverables package: the full staff security pack in editable and printable formats.",
+        "Recommend next steps: security_awareness_training_setup for automated ongoing training, phishing_readiness_mini_audit to baseline staff, and the lunch & learn to kick off adoption.",
+        "Confirm the customer can update and reuse the pack for new hires.",
+        "Record internal notes: systems tailored, pack contents, and review cadence.",
+        "Schedule a review of the pack when the customer's systems change or annually."
+      ]
+    }
+  }
+}

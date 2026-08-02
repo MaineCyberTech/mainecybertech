@@ -1,0 +1,761 @@
+{
+  "mct_essential_care": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm MCT Essential Care, collect the environment access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the users, devices, and the support expectations.",
+      "Pre-work: establish the environment baseline and the coverage checklist.",
+      "Run the monthly cycle: perform the monitoring, maintenance, and support work.",
+      "Handle the help desk: respond to and resolve the covered support tickets.",
+      "Report and follow up: communicate the monthly status.",
+      "Deliver the cycle closeout: the monthly status communication."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the MCT Essential Care scope: entry managed care for very small organizations.",
+        "Collect the environment access and the support expectations.",
+        "Establish the coverage checklist and the cycle schedule.",
+        "Gather baseline: devices, users, and current health.",
+        "Set expectations: what is covered, hours, and the escalation path."
+      ],
+      "delivery": [
+        "Run the essential system monitoring: covered systems online and healthy.",
+        "Perform the proactive maintenance on covered systems.",
+        "Respond to the basic help desk support tickets.",
+        "Serve as the single point of contact for IT issues.",
+        "Triage the issues and escalate when out of scope.",
+        "Document the work performed each cycle.",
+        "Technical verification: confirm the covered systems are healthy."
+      ],
+      "documentation": [
+        "Produce the monthly status communication: work performed and open items.",
+        "Track the covered system health.",
+        "Record the resolved tickets.",
+        "Maintain the environment baseline.",
+        "Security rule: no credentials in the communication."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: monitoring, help desk support, proactive maintenance, single point of contact, monthly communication, and predictable pricing.",
+        "Confirm the covered systems are healthy.",
+        "Confirm the support tickets were handled.",
+        "Confirm the status was communicated.",
+        "Flag follow-ups: plan upgrades and uncovered issues."
+      ],
+      "closeout": [
+        "Send the monthly status communication.",
+        "Recommend follow-ups for open items.",
+        "Confirm the environment is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "mct_business_care": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm MCT Business Care, collect the environment access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the users, devices, and the support expectations.",
+      "Pre-work: establish the environment baseline and the care checklist.",
+      "Run the monthly cycle: perform the monitoring, patching, and maintenance work.",
+      "Handle the help desk: provide responsive support and manage the security basics.",
+      "Report and follow up: deliver the monthly reporting.",
+      "Deliver the cycle closeout: the monthly report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the MCT Business Care scope: managed support for growing small businesses.",
+        "Collect the environment access and the support expectations.",
+        "Establish the care checklist and the cycle schedule.",
+        "Gather baseline: network, devices, users, and security state.",
+        "Set expectations: response hours and the escalation path."
+      ],
+      "delivery": [
+        "Run the proactive system monitoring: covered systems and network healthy.",
+        "Provide the responsive help desk support.",
+        "Apply the regular maintenance and patching.",
+        "Manage the security basics: endpoints, email, and MFA status.",
+        "Oversee the network and device health.",
+        "Resolve issues and escalate when needed.",
+        "Document the monthly work.",
+        "Technical verification: confirm the environment is healthy and patched."
+      ],
+      "documentation": [
+        "Produce the monthly report: work performed, health, and open items.",
+        "Track the patching and maintenance.",
+        "Record the security basics status.",
+        "Maintain the environment documentation.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: proactive monitoring, responsive help desk, maintenance/patching, security basics, network/device oversight, and monthly reporting.",
+        "Confirm the environment is healthy.",
+        "Confirm the patching is current.",
+        "Confirm the report was delivered.",
+        "Flag follow-ups: plan upgrades and security findings."
+      ],
+      "closeout": [
+        "Send the monthly report.",
+        "Recommend follow-ups for open items.",
+        "Confirm the environment is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "mct_secure_care": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm MCT Secure Care, collect the environment access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the users, devices, and the security expectations.",
+      "Pre-work: establish the environment baseline and the security checklist.",
+      "Run the monthly cycle: perform the monitoring, maintenance, and security work.",
+      "Oversee the security: enforce the baseline, review access, and support awareness.",
+      "Report and follow up: deliver the security-focused reporting.",
+      "Deliver the cycle closeout: the monthly security report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the MCT Secure Care scope: managed IT with deeper cybersecurity oversight.",
+        "Collect the environment access and the security expectations.",
+        "Establish the security checklist and the cycle schedule.",
+        "Gather baseline: security state, access, and monitoring.",
+        "Set expectations: security response and the escalation path."
+      ],
+      "delivery": [
+        "Run the deeper security monitoring: alerts, findings, and anomalies.",
+        "Enforce the security baseline: MFA, endpoints, and email controls.",
+        "Coordinate the incident response when needed.",
+        "Support the security awareness: training and phishing readiness.",
+        "Oversee the access and admin accounts: roles and changes.",
+        "Apply the security maintenance.",
+        "Document the security work.",
+        "Technical verification: confirm the security baseline is enforced."
+      ],
+      "documentation": [
+        "Produce the security-focused report: work performed, findings, and posture.",
+        "Track the baseline enforcement.",
+        "Record the access and admin changes.",
+        "Maintain the security documentation.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: deeper security monitoring, baseline enforcement, incident response coordination, awareness support, access/admin oversight, and security reporting.",
+        "Confirm the security baseline is enforced.",
+        "Confirm the findings were handled.",
+        "Confirm the report was delivered.",
+        "Flag follow-ups: plan upgrades and remediation priorities."
+      ],
+      "closeout": [
+        "Send the monthly security report.",
+        "Recommend remediation for the findings.",
+        "Confirm the security posture is improving.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "mct_complete_care": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm MCT Complete Care, collect the environment access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the strategic goals and the coordination needs.",
+      "Pre-work: establish the environment baseline and the strategic checklist.",
+      "Run the monthly cycle: perform the managed support, security, and coordination work.",
+      "Manage the roadmap: coordinate projects, vendors, and the technology roadmap.",
+      "Review the strategy: review the IT planning and adjust.",
+      "Deliver the cycle closeout: the strategic IT report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the MCT Complete Care scope: full outsourced IT coordination and roadmap.",
+        "Collect the environment access and the strategic goals.",
+        "Establish the strategic checklist and the cycle schedule.",
+        "Gather baseline: environment health, projects, and roadmap.",
+        "Set expectations: coordination, planning, and priorities."
+      ],
+      "delivery": [
+        "Run the managed support and maintenance: environment health.",
+        "Maintain the security oversight: baseline and monitoring.",
+        "Manage the projects: coordination and progress.",
+        "Coordinate the vendors: providers and third parties.",
+        "Guide the technology roadmap: priorities and planning.",
+        "Provide the strategic IT planning: aligned to the business.",
+        "Document the monthly work and decisions.",
+        "Technical verification: confirm the environment and projects are on track."
+      ],
+      "documentation": [
+        "Produce the strategic IT report: work performed, projects, and roadmap.",
+        "Track the vendor coordination.",
+        "Record the roadmap decisions.",
+        "Maintain the strategic documentation.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: managed support/maintenance, security oversight, project management, vendor coordination, roadmap guidance, and strategic planning.",
+        "Confirm the environment is healthy.",
+        "Confirm the projects are on track.",
+        "Confirm the roadmap was reviewed.",
+        "Flag follow-ups: new roadmap priorities."
+      ],
+      "closeout": [
+        "Send the strategic IT report.",
+        "Recommend the next roadmap priorities.",
+        "Confirm the strategy is aligned.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "mct_co_managed_it": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm MCT Co-Managed IT, collect the environment access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the internal IT setup and the handoff expectations.",
+      "Pre-work: establish the environment baseline and the coverage checklist.",
+      "Run the monthly cycle: perform the monitoring, maintenance, and project support.",
+      "Support the internal IT: handle the escalation and the backup coverage.",
+      "Report and follow up: deliver the monthly status and documentation assistance.",
+      "Deliver the cycle closeout: the monthly status report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the MCT Co-Managed IT scope: support for the internal IT function.",
+        "Collect the environment access and the handoff expectations.",
+        "Establish the coverage checklist and the cycle schedule.",
+        "Gather baseline: environment health and the internal IT division of labor.",
+        "Set expectations: escalation path and the coverage boundaries."
+      ],
+      "delivery": [
+        "Run the monitoring and maintenance coverage.",
+        "Support the internal IT: escalate and resolve the tough issues.",
+        "Provide the project support: assistance on the internal projects.",
+        "Oversee the security: baseline and monitoring.",
+        "Assist with the documentation: environment and runbooks.",
+        "Serve as the backup for the IT function.",
+        "Document the monthly work.",
+        "Technical verification: confirm the coverage is active and healthy."
+      ],
+      "documentation": [
+        "Produce the monthly status report: work performed and coverage.",
+        "Track the escalations and resolutions.",
+        "Record the documentation progress.",
+        "Maintain the handoff documentation.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: escalation support, monitoring/maintenance, project support, security oversight, documentation assistance, and backup for the IT function.",
+        "Confirm the coverage is active.",
+        "Confirm the escalations were handled.",
+        "Confirm the documentation is progressing.",
+        "Flag follow-ups: open projects and coverage adjustments."
+      ],
+      "closeout": [
+        "Send the monthly status report.",
+        "Recommend the next priorities with the internal IT.",
+        "Confirm the coverage is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "cyber_basic": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm Cyber Basic, collect the security access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the MFA, email, and endpoint expectations.",
+      "Pre-work: establish the security baseline and the recurring checklist.",
+      "Run the monthly cycle: verify MFA, email security, and endpoint status.",
+      "Handle the maintenance: apply the security maintenance.",
+      "Run the quarterly review: review the security state quarterly.",
+      "Deliver the cycle closeout: the monthly security report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cyber Basic scope: recurring MFA, email, endpoint status, and quarterly reviews.",
+        "Collect the security access and the expectations.",
+        "Establish the security checklist and the cycle schedule.",
+        "Gather baseline: MFA, email, endpoint, and security state.",
+        "Set expectations: what each cycle covers."
+      ],
+      "delivery": [
+        "Verify the MFA status: enforcement and coverage.",
+        "Review the email security: spam, phishing, and authentication.",
+        "Check the endpoint protection status: coverage and health.",
+        "Apply the security maintenance: settings and controls.",
+        "Run the quarterly security review.",
+        "Document the security work.",
+        "Technical verification: confirm the security state is current."
+      ],
+      "documentation": [
+        "Produce the monthly security report: work performed and status.",
+        "Track the MFA and email findings.",
+        "Record the quarterly review results.",
+        "Maintain the security baseline.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: MFA verification, email security review, endpoint status check, quarterly review, security maintenance, and monthly reporting.",
+        "Confirm the MFA is enforced.",
+        "Confirm the email and endpoints are secure.",
+        "Confirm the quarterly review ran.",
+        "Flag follow-ups: plan upgrades and findings."
+      ],
+      "closeout": [
+        "Send the monthly security report.",
+        "Recommend follow-ups for the findings.",
+        "Confirm the security state is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "cyber_plus": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm Cyber Plus, collect the security access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the expectations and the training needs.",
+      "Pre-work: establish the security baseline and the enhanced checklist.",
+      "Run the monthly cycle: verify MFA, email, endpoints, and monitoring.",
+      "Handle the enhanced work: training support and admin access review.",
+      "Report and follow up: deliver the enhanced security reporting.",
+      "Deliver the cycle closeout: the monthly security report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cyber Plus scope: Cyber Basic plus endpoint monitoring, training support, and admin access review.",
+        "Collect the security access and the expectations.",
+        "Establish the enhanced checklist and the cycle schedule.",
+        "Gather baseline: the full security state.",
+        "Set expectations: the added coverage."
+      ],
+      "delivery": [
+        "Verify the MFA status: enforcement and coverage.",
+        "Review the email security: spam, phishing, and authentication.",
+        "Check the endpoint protection status and monitoring.",
+        "Apply the deeper security maintenance.",
+        "Provide the security training support: guidance and materials.",
+        "Review the admin access: accounts, roles, and MFA.",
+        "Run the quarterly security review.",
+        "Technical verification: confirm the enhanced coverage is active."
+      ],
+      "documentation": [
+        "Produce the enhanced security report: work performed and posture.",
+        "Track the training and access review results.",
+        "Record the endpoint monitoring findings.",
+        "Maintain the security baseline.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: Cyber Basic coverage, endpoint monitoring review, training support, admin access review, deeper maintenance, and enhanced reporting.",
+        "Confirm the endpoint monitoring is active.",
+        "Confirm the admin access was reviewed.",
+        "Confirm the enhanced report was delivered.",
+        "Flag follow-ups: plan upgrades and findings."
+      ],
+      "closeout": [
+        "Send the monthly security report.",
+        "Recommend follow-ups for the findings.",
+        "Confirm the security posture is strong.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "cyber_complete": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm Cyber Complete, collect the security access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the compliance targets and the readiness expectations.",
+      "Pre-work: establish the security baseline and the complete checklist.",
+      "Run the monthly cycle: perform the Cyber Plus work plus the retainer coordination.",
+      "Handle the strategic work: tabletop, compliance mapping, and vendor access.",
+      "Develop the roadmap: build and update the security roadmap.",
+      "Deliver the cycle closeout: the complete security report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cyber Complete scope: Cyber Plus plus incident retainer, tabletop, compliance mapping, vendor access, and roadmap.",
+        "Collect the security access and the compliance targets.",
+        "Establish the complete checklist and the cycle schedule.",
+        "Gather baseline: security state, compliance drivers, and roadmap.",
+        "Set expectations: the retainer terms and the strategic coverage."
+      ],
+      "delivery": [
+        "Run the Cyber Plus coverage: MFA, email, endpoints, and monitoring.",
+        "Provide the incident response retainer availability.",
+        "Run the tabletop exercise participation.",
+        "Map the compliance: controls to the target frameworks.",
+        "Review the vendor access: external accounts and risks.",
+        "Develop and update the security roadmap.",
+        "Document the monthly work.",
+        "Technical verification: confirm the complete coverage is active."
+      ],
+      "documentation": [
+        "Produce the complete security report: work performed, compliance, and roadmap.",
+        "Track the compliance mapping.",
+        "Record the vendor access review.",
+        "Maintain the security roadmap.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: Cyber Plus coverage, incident retainer, tabletop participation, compliance mapping, vendor access review, and roadmap development.",
+        "Confirm the retainer is active.",
+        "Confirm the compliance mapping is current.",
+        "Confirm the roadmap is updated.",
+        "Flag follow-ups: roadmap priorities and compliance gaps."
+      ],
+      "closeout": [
+        "Send the complete security report.",
+        "Recommend the next roadmap and compliance priorities.",
+        "Confirm the strategic posture.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "managed_dns_plan": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Managed DNS Plan, collect the DNS access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the domains and the change policy.",
+      "Pre-work: establish the DNS baseline and the recurring checklist.",
+      "Run the monthly cycle: apply the DNS changes and review the records.",
+      "Manage the domains: maintain the documentation and renewal tracking.",
+      "Monitor the security: check the domain security state.",
+      "Deliver the cycle closeout: the monthly DNS management summary."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Managed DNS Plan scope: ongoing DNS changes, documentation, and renewal tracking.",
+        "Collect the DNS access and the change policy.",
+        "Establish the DNS checklist and the cycle schedule.",
+        "Gather baseline: DNS records, domains, and renewals.",
+        "Set expectations: the change process and the monitoring."
+      ],
+      "delivery": [
+        "Apply the approved monthly DNS changes.",
+        "Review the DNS records: accuracy and risks.",
+        "Maintain the domain documentation.",
+        "Track the renewals: dates, reminders, and auto-renewal.",
+        "Monitor the domain security: lock, MFA, and contact state.",
+        "Document the DNS management summary.",
+        "Technical verification: confirm the DNS is healthy and current."
+      ],
+      "documentation": [
+        "Produce the monthly DNS management summary: changes and state.",
+        "Update the DNS and domain documentation.",
+        "Record the renewal status.",
+        "Track the open items.",
+        "Security rule: no credentials in the summary."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: DNS changes, documentation maintenance, renewal tracking, record review, security monitoring, and monthly summary.",
+        "Confirm the DNS changes were applied.",
+        "Confirm the renewals are tracked.",
+        "Confirm the summary was delivered.",
+        "Flag follow-ups: security fixes and expiring domains."
+      ],
+      "closeout": [
+        "Send the monthly DNS management summary.",
+        "Recommend follow-ups for the findings.",
+        "Confirm the DNS is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "unifi_monthly_management_monthly_it_plans": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the UniFi Monthly Management, collect the controller access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the device list and the expectations.",
+      "Pre-work: establish the network baseline and the recurring checklist.",
+      "Run the monthly cycle: apply the firmware updates and review the alerts.",
+      "Verify the health: check the device health and the controller backup.",
+      "Update the documentation: refresh the network documentation.",
+      "Deliver the cycle closeout: the monthly network summary."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the UniFi Monthly Management scope: firmware, alerts, health, backup, and documentation.",
+        "Collect the controller access and the expectations.",
+        "Establish the network checklist and the cycle schedule.",
+        "Gather baseline: device health, firmware, and alerts.",
+        "Set expectations: what each cycle covers."
+      ],
+      "delivery": [
+        "Review and apply the monthly firmware updates.",
+        "Monitor the alerts: resolve or escalate.",
+        "Review the device health: all UniFi devices online.",
+        "Verify the controller backup: present and restorable.",
+        "Update the network documentation.",
+        "Check the security settings and access.",
+        "Document the monthly network summary.",
+        "Technical verification: confirm the network is healthy."
+      ],
+      "documentation": [
+        "Produce the monthly network summary: work performed and state.",
+        "Update the network documentation.",
+        "Track the firmware versions.",
+        "Record the open items.",
+        "Security rule: no credentials in the summary."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: firmware review/updates, alert monitoring, device health review, controller backup verification, documentation updates, and monthly summary.",
+        "Confirm the firmware is current.",
+        "Confirm the device health is good.",
+        "Confirm the controller backup works.",
+        "Flag follow-ups: hardware upgrades and findings."
+      ],
+      "closeout": [
+        "Send the monthly network summary.",
+        "Recommend follow-ups for the findings.",
+        "Confirm the network is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "camera_maintenance_plan_monthly_it_plans": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Camera Maintenance Plan, collect the camera system access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the camera count and the access expectations.",
+      "Pre-work: establish the camera baseline and the recurring checklist.",
+      "Run the monthly cycle: review the camera/NVR health and firmware.",
+      "Verify the recording: check the recording, storage, and retention.",
+      "Review the access: review the permissions and access.",
+      "Deliver the cycle closeout: the maintenance report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Camera Maintenance Plan scope: recurring camera/NVR health, firmware, recording, and permissions.",
+        "Collect the camera system access and the expectations.",
+        "Establish the camera checklist and the cycle schedule.",
+        "Gather baseline: camera health, firmware, and storage.",
+        "Set expectations: what each cycle covers."
+      ],
+      "delivery": [
+        "Review the camera and NVR health: all cameras online.",
+        "Apply the firmware updates in a maintenance window.",
+        "Verify the recording: every camera recording and playback works.",
+        "Review the storage and retention: capacity and retention met.",
+        "Review the permissions and access: clean and least-privilege.",
+        "Check the camera condition and remote access.",
+        "Document the maintenance report.",
+        "Technical verification: confirm the camera system is healthy."
+      ],
+      "documentation": [
+        "Produce the maintenance report: work performed and findings.",
+        "Track the firmware and storage state.",
+        "Record the permissions review.",
+        "Maintain the camera documentation.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: health review, firmware updates, recording verification, storage/retention review, permissions review, and maintenance report.",
+        "Confirm every camera was checked.",
+        "Confirm the recording and storage are healthy.",
+        "Confirm the report was delivered.",
+        "Flag follow-ups: camera replacements and findings."
+      ],
+      "closeout": [
+        "Send the maintenance report.",
+        "Recommend follow-ups for the findings.",
+        "Confirm the camera system is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next maintenance cycle."
+      ]
+    }
+  },
+  "backup_monitoring_plan_monthly_it_plans": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Backup Monitoring Plan, collect the backup access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the backup tools and the expectations.",
+      "Pre-work: establish the backup baseline and the recurring checklist.",
+      "Run the monthly cycle: check the backup status and detect failures.",
+      "Manage the readiness: review the configuration and schedule the restore tests.",
+      "Report and follow up: deliver the monthly backup status report.",
+      "Deliver the cycle closeout: the monthly backup status report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Backup Monitoring Plan scope: ongoing backup status checks and restore-test reminders.",
+        "Collect the backup access and the expectations.",
+        "Establish the backup checklist and the cycle schedule.",
+        "Gather baseline: backup job health and retention.",
+        "Set expectations: the alerting and escalation path."
+      ],
+      "delivery": [
+        "Check the backup status: jobs succeeding and current.",
+        "Detect and escalate failures: alert the customer.",
+        "Review the backup configuration: still correct for the data.",
+        "Manage the restore-test schedule: reminders and coordination.",
+        "Document the monthly backup status report.",
+        "Track the retention and storage state.",
+        "Technical verification: confirm the backups are restorable."
+      ],
+      "documentation": [
+        "Produce the monthly backup status report: job status and findings.",
+        "Track the restore-test history.",
+        "Record the failures and resolutions.",
+        "Maintain the backup documentation.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: status checks, failure detection/escalation, monthly report, restore-test reminders, configuration review, and readiness management.",
+        "Confirm every backup job was checked.",
+        "Confirm the failures were escalated.",
+        "Confirm the report was delivered.",
+        "Flag follow-ups: failing backups and restore tests."
+      ],
+      "closeout": [
+        "Send the monthly backup status report.",
+        "Recommend fixes for the failures.",
+        "Confirm the backups are restorable.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monitoring cycle."
+      ]
+    }
+  },
+  "monthly_website_care_plan_monthly_it_plans": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Monthly Website Care Plan, collect the site access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the update policy and the minor-edit scope.",
+      "Pre-work: establish the site baseline and the recurring checklist.",
+      "Run the monthly cycle: apply the updates and check the uptime and backups.",
+      "Verify the leads: check the forms and lead delivery.",
+      "Handle the edits: apply the approved minor edits.",
+      "Deliver the cycle closeout: the monthly website health summary."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Monthly Website Care Plan scope: updates, uptime, backups, forms, and minor edits.",
+        "Collect the site access and the expectations.",
+        "Establish the website checklist and the cycle schedule.",
+        "Gather baseline: site health, versions, and backup state.",
+        "Set expectations: the minor-edit scope."
+      ],
+      "delivery": [
+        "Apply the CMS, plugin, and theme updates in a maintenance window.",
+        "Verify the site after the updates: no breakage.",
+        "Monitor the uptime and performance.",
+        "Verify the backups and reporting.",
+        "Check the contact forms and lead delivery.",
+        "Apply the approved minor edits within scope.",
+        "Document the monthly website health summary.",
+        "Technical verification: confirm the site is healthy."
+      ],
+      "documentation": [
+        "Produce the monthly website health summary: work performed and findings.",
+        "Track the update history and versions.",
+        "Record the backup and lead check results.",
+        "Maintain the site documentation.",
+        "Security rule: no credentials in the summary."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: updates, uptime monitoring, backup verification/reporting, form/lead checks, minor edits, and monthly summary.",
+        "Confirm the updates were applied safely.",
+        "Confirm the site is healthy.",
+        "Confirm the summary was delivered.",
+        "Flag follow-ups: speed and security findings."
+      ],
+      "closeout": [
+        "Send the monthly website health summary.",
+        "Recommend follow-ups for the findings.",
+        "Confirm the site is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next care cycle."
+      ]
+    }
+  },
+  "monthly_local_seo_plan_monthly_it_plans": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Monthly Local SEO Plan, collect the business access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the target services, locations, and review process.",
+      "Pre-work: establish the local SEO baseline and the recurring checklist.",
+      "Run the monthly cycle: create the content and optimize the local pages.",
+      "Manage the profile and reviews: update the Google Business Profile and support reviews.",
+      "Report and follow up: deliver the monthly local SEO report.",
+      "Deliver the cycle closeout: the monthly local SEO report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Monthly Local SEO Plan scope: content, optimization, profile management, reviews, and reporting.",
+        "Collect the business access: profile, analytics, and search console.",
+        "Establish the local SEO checklist and the cycle schedule.",
+        "Gather baseline: rankings, profile state, and reviews.",
+        "Set expectations: the reporting cadence."
+      ],
+      "delivery": [
+        "Develop the monthly content: blog or local page updates.",
+        "Optimize the local pages: keywords and content.",
+        "Manage the Google Business Profile: posts, updates, and accuracy.",
+        "Support the reviews: monitoring and requests.",
+        "Track the local visibility and rankings.",
+        "Document the monthly local SEO report.",
+        "Technical verification: confirm the report reflects the real data."
+      ],
+      "documentation": [
+        "Produce the monthly local SEO report: work performed, rankings, and reviews.",
+        "Track the content published.",
+        "Record the profile and review activity.",
+        "Maintain the optimization documentation.",
+        "Security rule: no business account credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: content development, local optimization, profile management, review support, monthly reporting, and ongoing visibility management.",
+        "Confirm the monthly work was completed.",
+        "Confirm the report was delivered.",
+        "Confirm the profile is managed.",
+        "Flag follow-ups: content priorities and new pages."
+      ],
+      "closeout": [
+        "Send the monthly local SEO report.",
+        "Recommend the next content and optimization priorities.",
+        "Confirm the local visibility trend.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next monthly cycle."
+      ]
+    }
+  },
+  "compliance_quarterly_review": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Compliance Quarterly Review, collect the environment access, and establish the review cadence.",
+      "Send onboarding prep: the customer confirms the compliance drivers and the expectations.",
+      "Pre-work: establish the compliance baseline and the review checklist.",
+      "Run the quarterly review: review the access, assets, policies, and backups.",
+      "Update the risk register: refresh the risks and next actions.",
+      "Report and follow up: deliver the quarterly compliance report.",
+      "Deliver the cycle closeout: the quarterly compliance report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Compliance Quarterly Review scope: access, asset, policy, backup, and risk register review.",
+        "Collect the environment access and the compliance drivers.",
+        "Establish the review checklist and the cadence.",
+        "Gather baseline: current access, assets, policies, and risks.",
+        "Set expectations: what each review covers."
+      ],
+      "delivery": [
+        "Run the access review: users, admins, and vendors.",
+        "Review the asset inventory: current and accurate.",
+        "Check the policy currency: still valid and adopted.",
+        "Verify the backups: coverage and testing.",
+        "Update the risk register: risks, owners, and actions.",
+        "Document the quarterly compliance report.",
+        "Technical verification: confirm the review reflects the real state."
+      ],
+      "documentation": [
+        "Produce the quarterly compliance report: findings and updates.",
+        "Document the access and asset state.",
+        "Record the risk register updates.",
+        "Maintain the compliance documentation.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: access review, asset review, policy review, backup verification, risk register update, and quarterly report.",
+        "Confirm every area was reviewed.",
+        "Confirm the risk register is current.",
+        "Confirm the report was delivered.",
+        "Flag follow-ups: remediation and policy updates."
+      ],
+      "closeout": [
+        "Send the quarterly compliance report.",
+        "Recommend remediation for the findings.",
+        "Confirm the compliance state is current.",
+        "Record internal notes for the next review.",
+        "Schedule the next quarterly review."
+      ]
+    }
+  }
+}
