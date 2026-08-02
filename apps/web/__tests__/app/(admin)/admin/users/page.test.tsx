@@ -5,6 +5,11 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
 }));
 
+const mockRequirePermission = jest.fn();
+jest.mock("@/lib/auth/permissions", () => ({
+  requirePermission: (...args: any[]) => mockRequirePermission(...args),
+}));
+
 const mockMembershipsList = jest.fn();
 const mockProfilesList = jest.fn();
 const mockOrgsList = jest.fn();

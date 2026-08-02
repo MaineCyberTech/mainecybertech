@@ -10,6 +10,71 @@ import PortalGlobalSearch from "@/components/portal/PortalGlobalSearch";
 import { getUnreadCount } from "@/lib/notifications-actions";
 import { setActiveOrg } from "@/lib/org-actions";
 import PortalSidebarLayout from "@/components/portal/PortalSidebarLayout";
+import RouteGuard from "@/components/RouteGuard";
+
+const PORTAL_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string }> = {
+  "/portal/dashboard": { module: "dashboard" },
+  "/portal/projects": { module: "projects" },
+  "/portal/documents": { module: "documents" },
+  "/portal/support": { module: "tickets" },
+  "/portal/billing": { module: "billing" },
+  "/portal/approvals": { module: "approvals" },
+  "/portal/notifications": { module: "notifications" },
+  "/portal/assets": { module: "assets" },
+  "/portal/findings": { module: "findings" },
+  "/portal/qbr": { module: "qbr" },
+  "/portal/sla": { module: "sla" },
+  "/portal/time-entries": { module: "time-entries" },
+  "/portal/field-services": { module: "field-services" },
+  "/portal/file-requests": { module: "file-requests" },
+  "/portal/security-suite": { module: "security-suite" },
+  "/portal/security-ops": { module: "security-ops" },
+  "/portal/domain-monitors": { module: "domain-monitors" },
+  "/portal/governance": { module: "governance" },
+  "/portal/status": { module: "status" },
+  "/portal/status-pages": { module: "status-pages" },
+  "/portal/vendor-contracts": { module: "vendor-contracts" },
+  "/portal/vendor-contacts": { module: "vendor-contacts" },
+  "/portal/service-catalog": { module: "service-catalog" },
+  "/portal/training-hub": { module: "training-hub" },
+  "/portal/insurance-binder": { module: "insurance-binder" },
+  "/portal/timeline": { module: "timeline" },
+  "/portal/edu-automation": { module: "edu-automation" },
+  "/portal/saas-audit": { module: "saas-audit" },
+  "/portal/device-profiles": { module: "device-profiles" },
+  "/portal/dns-changes": { module: "dns-changes" },
+  "/portal/license-optimizer": { module: "license-optimizer" },
+  "/portal/dmarc-coach": { module: "dmarc-coach" },
+  "/portal/uptime-monitor": { module: "uptime-monitor" },
+  "/portal/incident-response": { module: "incident-response" },
+  "/portal/backup-dr": { module: "backup-dr" },
+  "/portal/runbooks": { module: "runbooks" },
+  "/portal/sop-library": { module: "sop-library" },
+  "/portal/break-glass": { module: "break-glass" },
+  "/portal/patch-compliance": { module: "patch-compliance" },
+  "/portal/endpoint-security": { module: "endpoint-security" },
+  "/portal/m365-hardening": { module: "m365-hardening" },
+  "/portal/offboarding": { module: "offboarding" },
+  "/portal/onboarding": { module: "onboarding" },
+  "/portal/client-onboarding-command-center": { module: "client-onboarding-command-center" },
+  "/portal/dynamic-client-forms-builder": { module: "dynamic-forms" },
+  "/portal/identity-verification": { module: "identity-verification" },
+  "/portal/compliance-readiness": { module: "compliance-readiness" },
+  "/portal/client-knowledge-base": { module: "client-knowledge-base" },
+  "/portal/change-requests": { module: "change-requests" },
+  "/portal/scoreboard": { module: "scoreboard" },
+  "/portal/phishing-simulations": { module: "phishing-simulations" },
+  "/portal/hardware-staging": { module: "hardware-staging" },
+  "/portal/camera-calculator": { module: "camera-calculator" },
+  "/portal/network-port-maps": { module: "network-port-maps" },
+  "/portal/sharepoint": { module: "sharepoint" },
+  "/portal/automation": { module: "automation" },
+  "/portal/procurement": { module: "procurement" },
+  "/portal/budgets": { module: "budgets" },
+  "/portal/risk-register": { module: "risk-register" },
+  "/portal/tabletop": { module: "tabletop" },
+  "/portal/proposals": { module: "proposals" },
+};
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   // Run independent calls in parallel
@@ -116,9 +181,13 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         </div>
       </header>
 
-<div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <PortalSidebarLayout>{children}</PortalSidebarLayout>
-        </div>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+        <PortalSidebarLayout>
+          <RouteGuard rules={PORTAL_ROUTE_PERMISSIONS} homeHref="/portal/dashboard">
+            {children}
+          </RouteGuard>
+        </PortalSidebarLayout>
       </div>
-    );
-  }
+    </div>
+  );
+}

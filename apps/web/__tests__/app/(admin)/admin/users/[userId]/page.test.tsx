@@ -5,6 +5,11 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
 }));
 
+const mockRequirePermission = jest.fn();
+jest.mock("@/lib/auth/permissions", () => ({
+  requirePermission: (...args: any[]) => mockRequirePermission(...args),
+}));
+
 const mockUsersGetDetail = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
@@ -12,9 +17,13 @@ jest.mock("@/lib/api", () => ({
   }),
 }));
 
-jest.mock("@/components/admin/PermissionsMatrix", () => ({
+jest.mock("@/components/admin/UserPermissionOverridesClient", () => ({
   __esModule: true,
-  default: ({ userId }: any) => <div data-testid="permissions-matrix">{userId}</div>,
+  default: ({ userId, memberships }: any) => (
+    <div data-testid="permissions-overrides">
+      {userId}:{memberships.length}
+    </div>
+  ),
 }));
 
 jest.mock("next/link", () => {

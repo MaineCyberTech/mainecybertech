@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { requirePermission } from "@/lib/auth/permissions";
 import { updateUserProfileBasics, updateMembership } from "./actions";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import PermissionsMatrix from "@/components/admin/PermissionsMatrix";
+import UserPermissionOverridesClient from "@/components/admin/UserPermissionOverridesClient";
 
 export const metadata = { title: "User Details - Admin - Maine CyberTech" };
 
@@ -17,6 +18,7 @@ type UserPageProps = {
 
 export default async function UserDetailPage({ params }: UserPageProps) {
   await requireAdminAccess();
+  await requirePermission("users", "view");
   const { userId } = await params;
   const api = getApiClient();
 
@@ -68,7 +70,9 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="user-fullName" className="cyber-label">Full Name</label>
+              <label htmlFor="user-fullName" className="cyber-label">
+                Full Name
+              </label>
               <input
                 id="user-fullName"
                 name="fullName"
@@ -78,7 +82,9 @@ export default async function UserDetailPage({ params }: UserPageProps) {
             </div>
 
             <div>
-              <label htmlFor="user-email" className="cyber-label">Email</label>
+              <label htmlFor="user-email" className="cyber-label">
+                Email
+              </label>
               <input
                 id="user-email"
                 value={profile.email ?? ""}
@@ -88,13 +94,27 @@ export default async function UserDetailPage({ params }: UserPageProps) {
             </div>
 
             <div>
-              <label htmlFor="user-phone" className="cyber-label">Phone</label>
-              <input id="user-phone" name="phone" defaultValue={profile.phone ?? ""} className="cyber-input" />
+              <label htmlFor="user-phone" className="cyber-label">
+                Phone
+              </label>
+              <input
+                id="user-phone"
+                name="phone"
+                defaultValue={profile.phone ?? ""}
+                className="cyber-input"
+              />
             </div>
 
             <div>
-              <label htmlFor="user-title" className="cyber-label">Title</label>
-              <input id="user-title" name="title" defaultValue={profile.title ?? ""} className="cyber-input" />
+              <label htmlFor="user-title" className="cyber-label">
+                Title
+              </label>
+              <input
+                id="user-title"
+                name="title"
+                defaultValue={profile.title ?? ""}
+                className="cyber-input"
+              />
             </div>
           </div>
 
@@ -216,9 +236,15 @@ export default async function UserDetailPage({ params }: UserPageProps) {
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Permissions</h2>
         <p className="mt-2 text-sm text-slate-400">
-          Role-based and individual permission overrides.
+          Role-based permissions with per-user overrides. Click a cell to cycle: allow → deny →
+          reset to role default.
         </p>
-        <PermissionsMatrix userId={userId} memberships={memberships} />
+        <UserPermissionOverridesClient
+          userId={userId}
+          memberships={(memberships ?? []).filter(
+            (m: any) => m.status === "approved" || m.status === "pending",
+          )}
+        />
       </section>
     </AdminPageShell>
   );

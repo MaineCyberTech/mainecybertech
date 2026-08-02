@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { requirePermission } from "@/lib/auth/permissions";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -10,6 +11,7 @@ export const metadata = { title: "Webhooks - Admin - Maine CyberTech" };
 
 export default async function AdminWebhooksPage() {
   await requireAdminAccess();
+  await requirePermission("webhooks", "view");
   const api = getApiClient();
   const endpoints = await api.webhooks.list();
 

@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import adminRouter from "../routes/admin";
-import { createTestApp } from "./helpers";
+import { createTestApp, createMockBuilder } from "./helpers";
 import { errorHandler } from "../middleware/error";
 import { invalidateCache } from "../middleware/cache";
 
@@ -80,6 +80,46 @@ describe("admin routes", () => {
         .send({ to: "test@example.com" });
 
       expect(res.status).toBe(502);
+    });
+  });
+
+  describe("GET /organizations", () => {
+    it("lists all organizations for super admins", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({ data: { id: "u1", is_super_admin: true }, error: null }),
+      );
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({
+          data: [
+            { id: "o1", name: "Acme Corp", slug: "acme", status: "active" },
+            { id: "o2", name: "Beta LLC", slug: "beta", status: "active" },
+          ],
+          error: null,
+        }),
+      );
+
+      const res = await request(app)
+        .get("/api/v1/admin/organizations")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(2);
+      expect(res.body.data[0].name).toBe("Acme Corp");
+    });
+
+    it("returns 403 for admins that are not super admins", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({ data: { id: "u1", is_super_admin: false }, error: null }),
+      );
+
+      const res = await request(app)
+        .get("/api/v1/admin/organizations")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
+      expect(supabase.from).toHaveBeenCalledTimes(1);
     });
   });
 });

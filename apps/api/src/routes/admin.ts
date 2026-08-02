@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
+import { getSupabaseAdmin } from "../services/supabase";
 import { rateLimitEmail } from "../middleware/rate-limit";
 import { sendEmail } from "../lib/email";
 import { AppError, success } from "../types";
@@ -10,6 +11,33 @@ import { logAuditEvent } from "../services/audit";
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireAdmin);
+
+// GET /api/v1/admin/organizations — list every tenant. Super admins only.
+router.get("/organizations", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_super_admin")
+      .eq("id", req.authUser!.userId)
+      .maybeSingle();
+
+    if (!profile?.is_super_admin) {
+      throw new AppError("FORBIDDEN", "Super admin access required", 403);
+    }
+
+    const { data, error } = await supabase
+      .from("organizations")
+      .select("id, name, slug, status, primary_domain, support_plan, created_at")
+      .order("name");
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data ?? []));
+  } catch (error) {
+    next(error);
+  }
+});
 
 // POST /api/v1/admin/test-email — send a test email to verify SMTP config
 router.post("/test-email", rateLimitEmail, async (req, res, next) => {
@@ -32,11 +60,7 @@ router.post("/test-email", rateLimitEmail, async (req, res, next) => {
     });
 
     if (!sent) {
-      throw new AppError(
-        "SMTP_ERROR",
-        "SMTP is not configured or sending failed",
-        502,
-      );
+      throw new AppError("SMTP_ERROR", "SMTP is not configured or sending failed", 502);
     }
 
     await logAuditEvent({

@@ -5,6 +5,11 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
 }));
 
+const mockRequirePermission = jest.fn();
+jest.mock("@/lib/auth/permissions", () => ({
+  requirePermission: (...args: any[]) => mockRequirePermission(...args),
+}));
+
 const mockOrgsList = jest.fn();
 const mockApiKeysList = jest.fn();
 jest.mock("@/lib/api", () => ({
@@ -61,7 +66,9 @@ describe("AdminApiKeysPage", () => {
 
   it("renders AdminApiKeysClient with organizations and keys", async () => {
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Org 1" }]);
-    mockApiKeysList.mockResolvedValue([{ id: "k1", name: "Key 1", key: "mct_xxx", organization_id: "o1" }]);
+    mockApiKeysList.mockResolvedValue([
+      { id: "k1", name: "Key 1", key: "mct_xxx", organization_id: "o1" },
+    ]);
     const Page = (await import("@/app/(admin)/admin/api-keys/page")).default;
     render(await Page());
     expect(screen.getByTestId("api-keys-client")).toBeInTheDocument();

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getClientApi } from "@/lib/client-api";
+import { MODULE_LABELS, PERMISSION_GROUPS, ACTION_ORDER } from "@/lib/permissions";
 
 type Props = {
   roleId: string;
@@ -13,6 +14,9 @@ type Permission = {
   id: string;
   module_key: string;
   action_key: string;
+  group_key?: string | null;
+  scope?: string | null;
+  label?: string | null;
   description?: string | null;
 };
 
@@ -22,36 +26,36 @@ interface ToastItem {
   kind: "success" | "error";
 }
 
-const MODULE_GROUP: Record<string, string> = {
-  dashboard: "Core",
-  users: "Admin",
-  organizations: "Admin",
-  memberships: "Admin",
-  audit: "Admin",
-  roles: "Admin",
-  tickets: "Support",
-  projects: "Projects",
-  documents: "Documents",
-  billing: "Finance",
-  webhooks: "Integrations",
-  notifications: "Communications",
+const LEGACY_GROUP: Record<string, string> = {
+  dashboard: "core",
+  users: "admin",
+  organizations: "admin",
+  memberships: "admin",
+  audit: "admin",
+  roles: "admin",
+  settings: "admin",
+  "bulk-invite": "admin",
+  billing: "admin",
+  tickets: "core",
+  support: "core",
+  projects: "core",
+  documents: "core",
+  approvals: "core",
+  notifications: "core",
+  webhooks: "tools",
+  "api-keys": "tools",
+  ai: "tools",
+  health: "tools",
+  store: "store",
+  "store-products": "store",
+  "store-promotions": "store",
+  "store-quotes": "store",
+  "store-campaigns": "store",
+  "store-analytics": "store",
+  "store-categories": "store",
 };
 
-const MODULE_ORDER = [
-  "dashboard",
-  "users",
-  "organizations",
-  "memberships",
-  "audit",
-  "roles",
-  "tickets",
-  "projects",
-  "documents",
-  "billing",
-  "webhooks",
-  "notifications",
-];
-const ACTION_ORDER = ["view", "create", "edit", "delete", "manage"];
+const GROUP_ORDER = PERMISSION_GROUPS.map((g) => g.key);
 
 function sortModules(modules: string[]): string[] {
   return [...modules].sort((a, b) => {
@@ -60,6 +64,8 @@ function sortModules(modules: string[]): string[] {
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
   });
 }
+
+const MODULE_ORDER: string[] = Object.keys(MODULE_LABELS);
 
 function sortActions(actions: string[]): string[] {
   return [...actions].sort((a, b) => {
@@ -127,10 +133,21 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
 
   const groupedModules = new Map<string, string[]>();
   for (const mod of modules) {
-    const group = MODULE_GROUP[mod] ?? "Other";
+    const firstPerm = permMap.get(`${mod}:view`) ?? permMap.get(`${mod}:create`);
+    const group = firstPerm?.group_key ?? LEGACY_GROUP[mod] ?? "other";
     if (!groupedModules.has(group)) groupedModules.set(group, []);
     groupedModules.get(group)!.push(mod);
   }
+
+  const groupLabel = (key: string) =>
+    PERMISSION_GROUPS.find((g) => g.key === key)?.label ??
+    key.charAt(0).toUpperCase() + key.slice(1);
+
+  const orderedGroups = [...groupedModules.keys()].sort((a, b) => {
+    const ai = GROUP_ORDER.indexOf(a);
+    const bi = GROUP_ORDER.indexOf(b);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
 
   return (
     <div className="space-y-6">
@@ -166,10 +183,10 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
         </div>
       </div>
 
-      {[...groupedModules.entries()].map(([group, mods]) => (
+      {orderedGroups.map((group) => (
         <div key={group} className="overflow-x-auto">
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
-            {group}
+            {groupLabel(group)}
           </p>
           <table className="w-full text-left text-sm">
             <thead>
@@ -188,9 +205,11 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
               </tr>
             </thead>
             <tbody>
-              {mods.map((mod) => (
+              {groupedModules.get(group)!.map((mod) => (
                 <tr key={mod} className="border-b border-white/5 transition hover:bg-white/[0.02]">
-                  <td className="px-3 py-3 font-medium capitalize text-slate-200">{mod}</td>
+                  <td className="px-3 py-3 font-medium capitalize text-slate-200">
+                    {MODULE_LABELS[mod] ?? mod}
+                  </td>
                   {actions.map((action) => {
                     const perm = permMap.get(`${mod}:${action}`);
                     if (!perm)

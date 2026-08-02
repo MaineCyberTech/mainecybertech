@@ -1,6 +1,7 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { requirePermission } from "@/lib/auth/permissions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Audit Log - Admin - Maine CyberTech" };
@@ -60,6 +61,7 @@ const ENTITY_TYPES = [
 
 export default async function AuditPage({ searchParams }: AuditPageProps) {
   await requireAdminAccess();
+  await requirePermission("audit", "view");
   const params = await searchParams;
 
   const api = getApiClient();
@@ -220,7 +222,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
                     </p>
                     <p className="text-sm text-slate-400">
                       Org: {org?.name ?? log.organization_id ?? "Global"}
-                      {log.entity_id ? ` • ID: ${log.entity_id}` : ""}
+                      {log.entity_id ? ` � ID: ${log.entity_id}` : ""}
                     </p>
                   </div>
                   <div className="shrink-0 text-right text-xs text-slate-400">

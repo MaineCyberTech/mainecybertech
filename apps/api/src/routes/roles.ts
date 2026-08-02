@@ -84,7 +84,7 @@ router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
         supabase.from("roles").select("id, key, name").eq("id", req.params.id).single(),
         supabase
           .from("permissions")
-          .select("id, module_key, action_key, description")
+          .select("id, module_key, action_key, group_key, scope, label, description")
           .order("module_key")
           .order("action_key"),
         supabase.from("role_permissions").select("permission_id").eq("role_id", req.params.id),

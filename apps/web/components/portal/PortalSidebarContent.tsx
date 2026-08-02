@@ -3,59 +3,132 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useRef, useState } from "react";
+import { usePermissions } from "@/lib/use-permissions";
 
-const GROUPS = [
+type NavItem = { key: string; href: string; label: string; module?: string };
+
+const GROUPS: Array<{ label: string; items: NavItem[] }> = [
   {
     label: "Core",
     items: [
-      { key: "dashboard", href: "/portal/dashboard", label: "Dashboard" },
-      { key: "projects", href: "/portal/projects", label: "Projects" },
-      { key: "documents", href: "/portal/documents", label: "Documents" },
-      { key: "support", href: "/portal/support", label: "Support" },
-      { key: "billing", href: "/portal/billing", label: "Billing" },
-      { key: "approvals", href: "/portal/approvals", label: "Approvals" },
+      { key: "dashboard", href: "/portal/dashboard", label: "Dashboard", module: "dashboard" },
+      { key: "projects", href: "/portal/projects", label: "Projects", module: "projects" },
+      { key: "documents", href: "/portal/documents", label: "Documents", module: "documents" },
+      { key: "support", href: "/portal/support", label: "Support", module: "tickets" },
+      { key: "billing", href: "/portal/billing", label: "Billing", module: "billing" },
+      { key: "approvals", href: "/portal/approvals", label: "Approvals", module: "approvals" },
     ],
   },
   {
     label: "Operations",
     items: [
-      { key: "assets", href: "/portal/assets", label: "Assets" },
-      { key: "findings", href: "/portal/findings", label: "Findings" },
-      { key: "qbr", href: "/portal/qbr", label: "QBR Reports" },
-      { key: "sla", href: "/portal/sla", label: "SLA" },
-      { key: "time-entries", href: "/portal/time-entries", label: "Time Entries" },
-      { key: "field-services", href: "/portal/field-services", label: "Field Services" },
-      { key: "file-requests", href: "/portal/file-requests", label: "Files" },
+      { key: "assets", href: "/portal/assets", label: "Assets", module: "assets" },
+      { key: "findings", href: "/portal/findings", label: "Findings", module: "findings" },
+      { key: "qbr", href: "/portal/qbr", label: "QBR Reports", module: "qbr" },
+      { key: "sla", href: "/portal/sla", label: "SLA", module: "sla" },
+      {
+        key: "time-entries",
+        href: "/portal/time-entries",
+        label: "Time Entries",
+        module: "time-entries",
+      },
+      {
+        key: "field-services",
+        href: "/portal/field-services",
+        label: "Field Services",
+        module: "field-services",
+      },
+      {
+        key: "file-requests",
+        href: "/portal/file-requests",
+        label: "Files",
+        module: "file-requests",
+      },
     ],
   },
   {
     label: "Security",
     items: [
-      { key: "security-suite", href: "/portal/security-suite", label: "Security Suite" },
-      { key: "security-ops", href: "/portal/security-ops", label: "Security Ops" },
-      { key: "domain-monitors", href: "/portal/domain-monitors", label: "Domain Monitors" },
-      { key: "governance", href: "/portal/governance", label: "Governance" },
-      { key: "status", href: "/portal/status", label: "Status" },
+      {
+        key: "security-suite",
+        href: "/portal/security-suite",
+        label: "Security Suite",
+        module: "security-suite",
+      },
+      {
+        key: "security-ops",
+        href: "/portal/security-ops",
+        label: "Security Ops",
+        module: "security-ops",
+      },
+      {
+        key: "domain-monitors",
+        href: "/portal/domain-monitors",
+        label: "Domain Monitors",
+        module: "domain-monitors",
+      },
+      { key: "governance", href: "/portal/governance", label: "Governance", module: "governance" },
+      { key: "status", href: "/portal/status", label: "Status", module: "status" },
     ],
   },
   {
     label: "Business",
     items: [
-      { key: "vendor-contracts", href: "/portal/vendor-contracts", label: "Vendors" },
-      { key: "vendor-contacts", href: "/portal/vendor-contacts", label: "Vendor Contacts" },
-      { key: "service-catalog", href: "/portal/service-catalog", label: "Services" },
-      { key: "training-hub", href: "/portal/training-hub", label: "Training" },
-      { key: "insurance-binder", href: "/portal/insurance-binder", label: "Insurance" },
+      {
+        key: "vendor-contracts",
+        href: "/portal/vendor-contracts",
+        label: "Vendors",
+        module: "vendor-contracts",
+      },
+      {
+        key: "vendor-contacts",
+        href: "/portal/vendor-contacts",
+        label: "Vendor Contacts",
+        module: "vendor-contacts",
+      },
+      {
+        key: "service-catalog",
+        href: "/portal/service-catalog",
+        label: "Services",
+        module: "service-catalog",
+      },
+      {
+        key: "training-hub",
+        href: "/portal/training-hub",
+        label: "Training",
+        module: "training-hub",
+      },
+      {
+        key: "insurance-binder",
+        href: "/portal/insurance-binder",
+        label: "Insurance",
+        module: "insurance-binder",
+      },
     ],
   },
   {
     label: "Advanced",
     items: [
-      { key: "timeline", href: "/portal/timeline", label: "Timeline" },
-      { key: "edu-automation", href: "/portal/edu-automation", label: "Edu Automation" },
-      { key: "saas-audit", href: "/portal/saas-audit", label: "SaaS Audit" },
-      { key: "device-profiles", href: "/portal/device-profiles", label: "Device Profiles" },
-      { key: "dns-changes", href: "/portal/dns-changes", label: "DNS Changes" },
+      { key: "timeline", href: "/portal/timeline", label: "Timeline", module: "timeline" },
+      {
+        key: "edu-automation",
+        href: "/portal/edu-automation",
+        label: "Edu Automation",
+        module: "edu-automation",
+      },
+      { key: "saas-audit", href: "/portal/saas-audit", label: "SaaS Audit", module: "saas-audit" },
+      {
+        key: "device-profiles",
+        href: "/portal/device-profiles",
+        label: "Device Profiles",
+        module: "device-profiles",
+      },
+      {
+        key: "dns-changes",
+        href: "/portal/dns-changes",
+        label: "DNS Changes",
+        module: "dns-changes",
+      },
     ],
   },
 ];
@@ -65,13 +138,26 @@ export default function PortalSidebarContent({ mobile }: { mobile?: boolean }) {
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const groupButtons = useRef<Record<string, HTMLButtonElement | null>>({});
   const groupLinks = useRef<Record<string, HTMLAnchorElement | null>>({});
+  const { can, loading } = usePermissions();
 
   const isActive = (href: string) => {
-    if (href === "/portal/dashboard") return pathname === "/portal/dashboard" || pathname === "/portal";
+    if (href === "/portal/dashboard")
+      return pathname === "/portal/dashboard" || pathname === "/portal";
     return pathname.startsWith(href);
   };
 
-  const groupFlyoutId = (label: string) => `portal-sidebar-flyout-${label.toLowerCase().replace(/\s+/g, "-")}`;
+  const visibleGroups = loading
+    ? []
+    : GROUPS.map((group) => ({
+        ...group,
+        items: group.items.filter((item) => {
+          if (!item.module) return true;
+          return can(item.module, "view");
+        }),
+      })).filter((group) => group.items.length > 0);
+
+  const groupFlyoutId = (label: string) =>
+    `portal-sidebar-flyout-${label.toLowerCase().replace(/\s+/g, "-")}`;
 
   const handleGroupKeyDown = (
     e: React.KeyboardEvent<HTMLButtonElement>,
@@ -89,10 +175,7 @@ export default function PortalSidebarContent({ mobile }: { mobile?: boolean }) {
     }
   };
 
-  const handleFlyoutKeyDown = (
-    e: React.KeyboardEvent<HTMLDivElement>,
-    label: string,
-  ) => {
+  const handleFlyoutKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, label: string) => {
     if (e.key === "Escape") {
       e.preventDefault();
       setActiveGroup(null);
@@ -101,12 +184,23 @@ export default function PortalSidebarContent({ mobile }: { mobile?: boolean }) {
   };
 
   const autoGroup =
-    GROUPS.find((g) => g.items.some((i) => isActive(i.href)))?.label ?? null;
+    (loading ? [] : visibleGroups.find((g) => g.items.some((i) => isActive(i.href)))?.label) ??
+    null;
   const openGroup = activeGroup ?? autoGroup;
+
+  if (loading) {
+    return (
+      <nav aria-label="Portal navigation" className="space-y-2">
+        <div className="h-8 animate-pulse rounded bg-white/5" />
+        <div className="h-8 animate-pulse rounded bg-white/5" />
+        <div className="h-8 animate-pulse rounded bg-white/5" />
+      </nav>
+    );
+  }
 
   return (
     <nav aria-label="Portal navigation" className="relative space-y-1">
-      {GROUPS.map((group) => {
+      {visibleGroups.map((group) => {
         const isOpen = openGroup === group.label;
         return (
           <div key={group.label} className="relative">
@@ -132,7 +226,12 @@ export default function PortalSidebarContent({ mobile }: { mobile?: boolean }) {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </button>
 
@@ -154,7 +253,7 @@ export default function PortalSidebarContent({ mobile }: { mobile?: boolean }) {
                       }}
                       className={`block border-l-2 px-3 py-1.5 text-xs transition ${
                         isActive(item.href)
-                          ? "border-emerald-500 bg-emerald-500/5 text-emerald-400 font-medium"
+                          ? "border-emerald-500 bg-emerald-500/5 font-medium text-emerald-400"
                           : "border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200"
                       }`}
                     >

@@ -6,14 +6,66 @@ import AdminGlobalSearch from "@/components/admin/AdminGlobalSearch";
 import NotificationBell from "@/components/NotificationBell";
 import { getUnreadCount } from "@/lib/notifications-actions";
 import AdminSidebarLayout from "@/components/admin/AdminSidebarLayout";
+import RouteGuard from "@/components/RouteGuard";
+import SuperAdminOrgSwitcher from "@/components/admin/SuperAdminOrgSwitcher";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminLayout({
-  children
-}: {
-  children: ReactNode;
-}) {
+const ADMIN_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string }> = {
+  "/admin/organizations": { module: "organizations" },
+  "/admin/users": { module: "users" },
+  "/admin/roles": { module: "roles" },
+  "/admin/tickets": { module: "tickets" },
+  "/admin/documents": { module: "documents" },
+  "/admin/projects": { module: "projects" },
+  "/admin/approvals": { module: "approvals" },
+  "/admin/governance": { module: "governance" },
+  "/admin/incidents": { module: "incidents" },
+  "/admin/break-glass": { module: "break-glass" },
+  "/admin/id-verify": { module: "id-verify" },
+  "/admin/dmarc-coach": { module: "dmarc-coach" },
+  "/admin/patch-compliance": { module: "patch-compliance" },
+  "/admin/endpoint-security": { module: "endpoint-security" },
+  "/admin/m365-hardening": { module: "m365-hardening" },
+  "/admin/assets": { module: "assets" },
+  "/admin/domain-monitors": { module: "domain-monitors" },
+  "/admin/website-monitors": { module: "website-monitors" },
+  "/admin/dmarc": { module: "dmarc" },
+  "/admin/license-optimizer": { module: "license-optimizer" },
+  "/admin/licenses": { module: "licenses" },
+  "/admin/uptime-monitor": { module: "uptime-monitor" },
+  "/admin/field-services": { module: "field-services" },
+  "/admin/offboarding": { module: "offboarding" },
+  "/admin/onboarding": { module: "onboarding" },
+  "/admin/file-requests": { module: "file-requests" },
+  "/admin/vendor-contracts": { module: "vendor-contracts" },
+  "/admin/vendor-contacts": { module: "vendor-contacts" },
+  "/admin/training-hub": { module: "training-hub" },
+  "/admin/insurance-binder": { module: "insurance-binder" },
+  "/admin/store": { module: "store" },
+  "/admin/api-keys": { module: "api-keys" },
+  "/admin/webhooks": { module: "webhooks" },
+  "/admin/ai": { module: "ai" },
+  "/admin/edu-automation": { module: "edu-automation" },
+  "/admin/final": { module: "final" },
+  "/admin/health": { module: "health" },
+  "/admin/audit": { module: "audit" },
+  "/admin/bulk-invite": { module: "bulk-invite" },
+  "/admin/notifications": { module: "notifications" },
+  "/admin/sla": { module: "sla" },
+  "/admin/proposals": { module: "proposals" },
+  "/admin/qbr": { module: "qbr" },
+  "/admin/service-catalog": { module: "service-catalog" },
+  "/admin/business-os": { module: "business-os" },
+  "/admin/findings": { module: "findings" },
+  "/admin/security-suite": { module: "security-suite" },
+  "/admin/security-ops": { module: "security-ops" },
+  "/admin/status": { module: "status" },
+  "/admin/status-pages": { module: "status-pages" },
+  "/admin/vendors": { module: "vendors" },
+};
+
+export default async function AdminLayout({ children }: { children: ReactNode }) {
   let user;
   try {
     user = await getApiClient().users.me();
@@ -42,23 +94,30 @@ export default async function AdminLayout({
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-              <div className="hidden sm:block"><AdminGlobalSearch /></div>
+              <div className="hidden sm:block">
+                <AdminGlobalSearch />
+              </div>
+              <SuperAdminOrgSwitcher />
               <NotificationBell basePath="/admin" initialUnread={unreadCount} />
               <AdminHeaderActions />
             </div>
           </div>
 
-          <div className="mt-2 sm:hidden"><AdminGlobalSearch /></div>
+          <div className="mt-2 sm:hidden">
+            <AdminGlobalSearch />
+          </div>
 
-          <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-            Admin operations workspace
-          </p>
+          <p className="mt-1 text-xs text-slate-400 sm:text-sm">Admin operations workspace</p>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-          <AdminSidebarLayout>{children}</AdminSidebarLayout>
-        </main>
+        <AdminSidebarLayout>
+          <RouteGuard rules={ADMIN_ROUTE_PERMISSIONS} homeHref="/admin">
+            {children}
+          </RouteGuard>
+        </AdminSidebarLayout>
+      </main>
     </div>
   );
 }

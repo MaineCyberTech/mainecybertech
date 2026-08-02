@@ -49,7 +49,11 @@ router.get("/", requireAdmin, async (req, res, next) => {
         !membership ||
         !["admin", "super_admin"].includes((membership.roles as unknown as { key: string }).key)
       ) {
-        throw new AppError("FORBIDDEN", "You do not have access to users in this organization", 403);
+        throw new AppError(
+          "FORBIDDEN",
+          "You do not have access to users in this organization",
+          403,
+        );
       }
 
       const { data: userIds } = await supabase
@@ -109,7 +113,11 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
         !membership ||
         !["admin", "super_admin"].includes((membership.roles as unknown as { key: string }).key)
       ) {
-        throw new AppError("FORBIDDEN", "You do not have access to users in this organization", 403);
+        throw new AppError(
+          "FORBIDDEN",
+          "You do not have access to users in this organization",
+          403,
+        );
       }
     }
 
@@ -422,7 +430,7 @@ router.get("/:id/permissions", async (req, res, next) => {
         .eq("user_id", userId),
       supabase
         .from("permissions")
-        .select("id, module_key, action_key, description")
+        .select("id, module_key, action_key, group_key, scope, label, description")
         .order("module_key")
         .order("action_key"),
       supabase
@@ -469,7 +477,7 @@ router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
       .object({
         organizationId: z.string().min(1, "organizationId is required"),
         permissionId: z.string().min(1, "permissionId is required"),
-        isAllowed: z.boolean(),
+        isAllowed: z.boolean().nullable(),
       })
       .parse(req.body);
 
@@ -483,7 +491,15 @@ router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
 
     if (checkError) throw new AppError("DB_ERROR", checkError.message, 500);
 
-    if (existing) {
+    if (isAllowed === null) {
+      if (existing) {
+        const { error } = await supabase
+          .from("user_permission_overrides")
+          .delete()
+          .eq("id", existing.id);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+      }
+    } else if (existing) {
       const { error } = await supabase
         .from("user_permission_overrides")
         .update({ is_allowed: isAllowed })

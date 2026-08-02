@@ -50,9 +50,7 @@ export class UsersApi {
   }
 
   getPermissions(userId: string) {
-    return this.client.get<UserPermissionsResponse>(
-      `/api/v1/users/${userId}/permissions`,
-    );
+    return this.client.get<UserPermissionsResponse>(`/api/v1/users/${userId}/permissions`);
   }
 
   updatePermissions(
@@ -60,12 +58,9 @@ export class UsersApi {
     data: {
       permissionId: string;
       organizationId: string;
-      isAllowed: boolean;
+      isAllowed: boolean | null;
     },
   ) {
-    return this.client.put<{ updated: boolean }>(
-      `/api/v1/users/${userId}/permissions`,
-      data,
-    );
+    return this.client.put<{ updated: boolean }>(`/api/v1/users/${userId}/permissions`, data);
   }
 }

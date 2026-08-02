@@ -14,6 +14,10 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mocks.requireAdminAccess(...args),
 }));
 
+jest.mock("@/lib/auth/permissions", () => ({
+  requirePermission: (...args: any[]) => mocks.requirePermission(...args),
+}));
+
 jest.mock("next/link", () => {
   return ({ children, href, ...rest }: any) => (
     <a href={href} {...rest}>

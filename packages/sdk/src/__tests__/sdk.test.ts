@@ -84,6 +84,46 @@ describe("MCTClient", () => {
       expect(client.profiles).toBeDefined();
       expect(client.audit).toBeDefined();
       expect(client.roles).toBeDefined();
+      expect(client.permissions).toBeDefined();
+    });
+  });
+
+  describe("PermissionsApi", () => {
+    it("getMyPermissions fetches the effective permission set", async () => {
+      const payload = {
+        isSuperAdmin: false,
+        permissions: [{ id: "p1", module_key: "tickets", action_key: "view" }],
+        keys: ["tickets:view"],
+        roles: ["client_user"],
+        memberships: [{ organization_id: "o1", role_id: "r1", status: "approved" }],
+      };
+      mockFetch.mockResolvedValue(mockResponse(payload));
+
+      const result = await client.permissions.getMyPermissions();
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE_URL}/api/v1/me/permissions`,
+        expect.objectContaining({ method: "GET" }),
+      );
+      expect(result.keys).toEqual(["tickets:view"]);
+      expect(result.isSuperAdmin).toBe(false);
+    });
+
+    it("surfaces super admin flags", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          isSuperAdmin: true,
+          permissions: [],
+          keys: [],
+          roles: ["super_admin"],
+          memberships: [],
+        }),
+      );
+
+      const result = await client.permissions.getMyPermissions();
+
+      expect(result.isSuperAdmin).toBe(true);
+      expect(result.roles).toEqual(["super_admin"]);
     });
   });
 

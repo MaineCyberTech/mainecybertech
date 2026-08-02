@@ -1,5 +1,6 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { requirePermission } from "@/lib/auth/permissions";
 import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
@@ -14,6 +15,7 @@ type Props = { params: Promise<{ roleId: string }> };
 
 export default async function RoleDetailPage({ params }: Props) {
   await requireAdminAccess();
+  await requirePermission("roles", "view");
   const { roleId } = await params;
   const api = getApiClient();
 

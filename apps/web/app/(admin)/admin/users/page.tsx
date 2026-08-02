@@ -1,5 +1,6 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { requirePermission } from "@/lib/auth/permissions";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -10,6 +11,7 @@ export const metadata = { title: "Users - Admin - Maine CyberTech" };
 
 export default async function UsersPage() {
   await requireAdminAccess();
+  await requirePermission("users", "view");
   const api = getApiClient();
 
   const memberships = await api.memberships.list();

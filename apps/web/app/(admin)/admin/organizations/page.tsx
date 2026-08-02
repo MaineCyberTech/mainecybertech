@@ -1,4 +1,5 @@
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { requirePermission } from "@/lib/auth/permissions";
 import { getApiClient } from "@/lib/api";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
@@ -10,6 +11,7 @@ export const metadata = { title: "Organizations - Admin - Maine CyberTech" };
 
 export default async function OrganizationsPage() {
   await requireAdminAccess();
+  await requirePermission("organizations", "view");
   const api = getApiClient();
 
   const organizations = await api.organizations.list();

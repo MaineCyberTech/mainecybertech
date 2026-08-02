@@ -26,6 +26,7 @@ import dashboardRouter from "./routes/dashboard";
 import auditRouter from "./routes/audit";
 import webhooksRouter from "./routes/webhooks";
 import rolesRouter from "./routes/roles";
+import meRouter from "./routes/me";
 import searchRouter from "./routes/search";
 import searchPortalRouter from "./routes/search-portal";
 import docsRouter from "./routes/docs";
@@ -149,6 +150,7 @@ export function createApp(): Express {
   app.use("/api/v1/audit", auditRouter);
   app.use("/api/v1/webhooks", webhooksRouter);
   app.use("/api/v1/roles", rolesRouter);
+  app.use("/api/v1/me", meRouter);
   app.use("/api/v1/search", searchRouter);
   app.use("/api/v1/search/portal", searchPortalRouter);
   app.use("/api/v1/public", publicRouter);

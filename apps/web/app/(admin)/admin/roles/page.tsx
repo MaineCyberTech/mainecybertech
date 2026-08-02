@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { requirePermission } from "@/lib/auth/permissions";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -10,6 +11,7 @@ export const metadata = { title: "Roles - Admin - Maine CyberTech" };
 
 export default async function AdminRolesPage() {
   await requireAdminAccess();
+  await requirePermission("roles", "view");
   const api = getApiClient();
   const roles = await api.roles.listWithPermissions();
 
@@ -37,6 +39,15 @@ export default async function AdminRolesPage() {
           </p>
           <p className="text-xs text-slate-400">System Roles</p>
         </div>
+      </div>
+
+      <div className="mb-6 flex justify-end">
+        <Link
+          href="/admin/permissions"
+          className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-500/20"
+        >
+          View Permission Matrix
+        </Link>
       </div>
 
       <div className="space-y-4">

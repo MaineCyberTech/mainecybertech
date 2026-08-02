@@ -11,6 +11,12 @@ import { ProfilesApi } from "./profiles";
 import { AuditApi } from "./audit";
 import { RolesApi, type RolePermissions } from "./roles";
 import {
+  PermissionsApi,
+  type MyPermissionsResponse,
+  type PermissionInfo,
+  type MembershipBrief,
+} from "./permissions";
+import {
   NotificationsApi,
   type NotificationPreference,
   type NotificationPreferencesResponse,
@@ -154,6 +160,9 @@ export type {
   UserPermissionsResponse,
   PermissionOverride,
   RolePermissions,
+  MyPermissionsResponse,
+  PermissionInfo,
+  MembershipBrief,
   NotificationPreference,
   NotificationPreferencesResponse,
   Invoice,
@@ -242,6 +251,7 @@ export class MCTClient {
   public profiles: ProfilesApi;
   public audit: AuditApi;
   public roles: RolesApi;
+  public permissions: PermissionsApi;
   public notifications: NotificationsApi;
   public billing: BillingApi;
   public webhooks: WebhooksApi;
@@ -290,6 +300,7 @@ export class MCTClient {
     this.profiles = new ProfilesApi(client);
     this.audit = new AuditApi(client);
     this.roles = new RolesApi(client);
+    this.permissions = new PermissionsApi(client);
     this.notifications = new NotificationsApi(client);
     this.billing = new BillingApi(client);
     this.webhooks = new WebhooksApi(client);
