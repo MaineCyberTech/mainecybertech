@@ -1,4 +1,4 @@
-﻿-- =========================================================
+-- =========================================================
 -- 05_comprehensive_test_data.sql
 -- Comprehensive test data expansion: 3 new organizations,
 -- 20 new users (chat-style), and cross-module coverage for
