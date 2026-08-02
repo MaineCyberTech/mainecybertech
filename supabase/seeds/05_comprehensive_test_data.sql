@@ -584,25 +584,25 @@ on conflict (id) do nothing;
 -- 22. CHANGE REQUESTS
 -- =========================================================
 insert into public.change_requests (
-  id, organization_id, title, description, change_type, risk_level, rollback_plan, implementation_date, verification_steps, status, requester_id, created_by, metadata
+  id, organization_id, title, description, change_type, risk_level, rollback_plan, implementation_date, verification_steps, status, requester_id, created_by
 )
 values
-  ('64600000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Firewall rule deployment - Radiology segment', 'Deploy 12 inter-zone rules to segment the Radiology network.', 'network_change', 'high', 'Rollback via config backup restore on the firewall.', now() + interval '7 days', 'Verify connectivity from Radiology workstations to PACS.', 'pending', 'd4000000-0000-4000-8000-000000000001'::uuid, 'd4000000-0000-4000-8000-000000000001'::uuid, jsonb_build_object('seeded', true)),
-  ('64600000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'Store 42 network upgrade', 'Upgrade the core switch at Store 42 during off-hours.', 'infrastructure_change', 'medium', 'Revert to the old switch if traffic fails to pass.', now() + interval '5 days', 'POS transactions flowing for 30 minutes after cutover.', 'approved', 'd4000000-0000-4000-8000-000000000002'::uuid, 'd4000000-0000-4000-8000-000000000002'::uuid, jsonb_build_object('seeded', true)),
-  ('64600000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'VPN appliance firmware update', 'Apply the latest firmware to the remote access VPN appliance.', 'security_change', 'medium', 'Firmware rollback via vendor recovery procedure.', now() + interval '10 days', 'Remote advisors can connect for 1 hour post-update.', 'pending', 'd4000000-0000-4000-8000-000000000001'::uuid, 'd4000000-0000-4000-8000-000000000001'::uuid, jsonb_build_object('seeded', true))
+  ('64600000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Firewall rule deployment - Radiology segment', 'Deploy 12 inter-zone rules to segment the Radiology network.', 'network_change', 'high', 'Rollback via config backup restore on the firewall.', now() + interval '7 days', 'Verify connectivity from Radiology workstations to PACS.', 'pending', 'd4000000-0000-4000-8000-000000000001'::uuid, 'd4000000-0000-4000-8000-000000000001'::uuid),
+  ('64600000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'Store 42 network upgrade', 'Upgrade the core switch at Store 42 during off-hours.', 'infrastructure_change', 'medium', 'Revert to the old switch if traffic fails to pass.', now() + interval '5 days', 'POS transactions flowing for 30 minutes after cutover.', 'approved', 'd4000000-0000-4000-8000-000000000002'::uuid, 'd4000000-0000-4000-8000-000000000002'::uuid),
+  ('64600000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'VPN appliance firmware update', 'Apply the latest firmware to the remote access VPN appliance.', 'security_change', 'medium', 'Firmware rollback via vendor recovery procedure.', now() + interval '10 days', 'Remote advisors can connect for 1 hour post-update.', 'pending', 'd4000000-0000-4000-8000-000000000001'::uuid, 'd4000000-0000-4000-8000-000000000001'::uuid),
 on conflict (id) do nothing;
 
 -- =========================================================
 -- 23. RISK REGISTER
 -- =========================================================
 insert into public.risk_register (
-  id, organization_id, risk_description, risk_category, likelihood, impact, risk_score, mitigating_controls, status, owner_user_id, created_by, metadata
+  id, organization_id, risk_description, risk_category, likelihood, impact, risk_score, mitigating_controls, status, owner_user_id, created_by
 )
 values
-  ('65600000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Single point of failure in clinical network core', 'availability', 'medium', 'high', 12, 'Redundant core switches are on order; scheduled cutover next month.', 'open', 'a1000000-0000-4000-8000-000000000002'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid, jsonb_build_object('seeded', true)),
-  ('65600000-0000-0000-0000-000000000002'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Legacy PACS interface EOL', 'vendor_dependency', 'high', 'medium', 15, 'Vendor extension contract signed; migration planned Q4.', 'accepted', 'a1000000-0000-4000-8000-000000000001'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid, jsonb_build_object('seeded', true)),
-  ('65600000-0000-0000-0000-000000000003'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'POS malware risk from third-party apps', 'security', 'high', 'high', 20, 'App allow-listing deployed on all POS terminals.', 'mitigated', 'b2000000-0000-4000-8000-000000000002'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid, jsonb_build_object('seeded', true)),
-  ('65600000-0000-0000-0000-000000000004'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Regulatory fine from late breach reporting', 'regulatory', 'low', 'high', 8, 'Incident response runbook updated; tabletop exercises quarterly.', 'monitored', 'c3000000-0000-4000-8000-000000000004'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid, jsonb_build_object('seeded', true))
+  ('65600000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Single point of failure in clinical network core', 'availability', 'medium', 'high', 12, 'Redundant core switches are on order; scheduled cutover next month.', 'open', 'a1000000-0000-4000-8000-000000000002'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid),
+  ('65600000-0000-0000-0000-000000000002'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Legacy PACS interface EOL', 'vendor_dependency', 'high', 'medium', 15, 'Vendor extension contract signed; migration planned Q4.', 'accepted', 'a1000000-0000-4000-8000-000000000001'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid),
+  ('65600000-0000-0000-0000-000000000003'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'POS malware risk from third-party apps', 'security', 'high', 'high', 20, 'App allow-listing deployed on all POS terminals.', 'mitigated', 'b2000000-0000-4000-8000-000000000002'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid),
+  ('65600000-0000-0000-0000-000000000004'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Regulatory fine from late breach reporting', 'regulatory', 'low', 'high', 8, 'Incident response runbook updated; tabletop exercises quarterly.', 'monitored', 'c3000000-0000-4000-8000-000000000004'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid)
 on conflict (id) do nothing;
 
 -- =========================================================
