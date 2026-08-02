@@ -15,15 +15,6 @@ const eventLog: TrackEvent[] = [];
 export function track(event: string, data?: Omit<TrackEvent, "event">) {
   const entry: TrackEvent = { event, ...data };
   eventLog.push(entry);
-  if (process.env.NODE_ENV === "development") {
-    console.log(
-      "[Analytics]",
-      entry.event,
-      entry.page,
-      entry.productId || "",
-      entry.metadata || "",
-    );
-  }
   try {
     const payload = {
       ...entry,

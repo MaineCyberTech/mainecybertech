@@ -532,7 +532,7 @@ router.get("/scorecards/summary", async (req, res, next) => {
 
     let query = sb.from("cyber_scorecards").select("category, score, badge");
     if (orgId) query = query.eq("organization_id", orgId);
-    const { data: scorecards, error } = await query;
+    const { data: scorecards, error: _error } = await query;
     if (!scorecards || scorecards.length === 0) {
       return res.json(
         success({
@@ -685,7 +685,7 @@ router.post("/scorecards/evaluate", async (req, res, next) => {
 
     let query = sb.from("cyber_scorecards").select("id, category, score");
     if (orgId) query = query.eq("organization_id", orgId);
-    const { data: scorecards, error } = await query;
+    const { data: scorecards, error: _error } = await query;
     if (!scorecards || scorecards.length === 0) {
       return res.json(success({ evaluated: 0, badgesAssigned: [] }));
     }

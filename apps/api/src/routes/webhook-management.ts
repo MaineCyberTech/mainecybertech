@@ -8,7 +8,6 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
-import { httpClients } from "../lib/http-client";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 
 const router: ReturnType<typeof Router> = Router();

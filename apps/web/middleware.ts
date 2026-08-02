@@ -92,7 +92,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (!isAuthenticated && isPortalRoute) {
+  if (!isAuthenticated && (isPortalRoute || isAdminRoute)) {
     const redirect = NextResponse.redirect(new URL("/login", request.url));
     setCspHeaders(redirect, nonce, host, isLocalDev);
     return redirect;

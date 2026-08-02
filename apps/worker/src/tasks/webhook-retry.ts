@@ -7,7 +7,7 @@ const BASE_DELAY_MS = 60_000; // 1 minute
 const BATCH_SIZE = 20;
 
 export async function webhookRetry(
-  payload: Record<string, unknown>,
+  _payload: Record<string, unknown>,
 ): Promise<TaskResult> {
   try {
     const supabase = getSupabaseAdmin();

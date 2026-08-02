@@ -2,7 +2,7 @@ import { logger } from "../logger";
 import type { TaskResult } from "../task-registry";
 
 export async function orphanCleanup(
-  payload: Record<string, unknown>,
+  _payload: Record<string, unknown>,
 ): Promise<TaskResult> {
   try {
     const { createClient } = await import("@supabase/supabase-js");

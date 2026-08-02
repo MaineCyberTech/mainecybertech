@@ -54,6 +54,16 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
   }, RECONCILE_INTERVAL_MS);
   reconcileInterval.unref();
 
+  // Schedule public-interaction-retention (90-day PII purge) to run daily
+  const PUBLIC_INTERACTION_RETENTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
+  const publicInteractionRetentionInterval = setInterval(() => {
+    logger.info("Running scheduled public-interaction-retention");
+    runScheduledTask("public-interaction-retention").catch((error) => {
+      logger.error({ error }, "Scheduled public-interaction-retention failed");
+    });
+  }, PUBLIC_INTERACTION_RETENTION_INTERVAL_MS);
+  publicInteractionRetentionInterval.unref();
+
   // Schedule webhook-retry (with DLQ) to run every 5 minutes
   const WEBHOOK_RETRY_INTERVAL_MS = 5 * 60 * 1000;
   const webhookRetryInterval = setInterval(() => {

@@ -6,7 +6,6 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
-import { getEnv } from "../config/env";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);

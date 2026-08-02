@@ -9,6 +9,7 @@ import { retentionTask } from "./retention";
 import { webhookDispatcher } from "./webhook-dispatcher";
 import { webhookRetry } from "./webhook-retry";
 import { orphanCleanup } from "./orphan-cleanup";
+import { publicInteractionRetention } from "./public-interaction-retention";
 import {
   domainMonitorCheck,
   websiteMonitorCheck,
@@ -35,6 +36,8 @@ export function registerAllTasks(): void {
   registerTask("retention", retentionTask);
   registerTask("webhook-dispatcher", webhookDispatcher);
   registerTask("webhook-retry", webhookRetry);
+  registerTask("orphan-cleanup", orphanCleanup);
+  registerTask("public-interaction-retention", publicInteractionRetention);
 
   registerTask("domain-monitor-check", domainMonitorCheck);
   registerTask("website-monitor-check", websiteMonitorCheck);

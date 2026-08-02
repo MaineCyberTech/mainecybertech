@@ -4,7 +4,6 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { requireActiveSubscription } from "../middleware/require-active-subscription";
 import { requireAdmin } from "../middleware/admin";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { responseCacheNoRenew } from "../middleware/cache";
@@ -239,8 +238,6 @@ router.get("/:id/detail", async (req, res, next) => {
     const { data: project, error: projError } = await query.single();
 
     if (projError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
-
-    const projectOrgId = project.organization_id as string;
 
     const [
       { data: memberships, error: memError },

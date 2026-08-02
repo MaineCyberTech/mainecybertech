@@ -20,7 +20,7 @@ if (!spec.paths || Object.keys(spec.paths).length === 0) {
 }
 
 const pathCount = Object.keys(spec.paths).length;
-console.log(`OpenAPI spec: ${pathCount} paths, ${spec.openapi} version`);
+process.stdout.write(`OpenAPI spec: ${pathCount} paths, ${spec.openapi} version\n`);
 
 const missingSummaries: string[] = [];
 for (const [path, methods] of Object.entries(spec.paths)) {
@@ -42,4 +42,4 @@ if (errors > 0) {
   process.exit(1);
 }
 
-console.log("OpenAPI spec validation passed");
+process.stdout.write("OpenAPI spec validation passed\n");
