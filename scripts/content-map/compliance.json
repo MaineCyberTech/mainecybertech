@@ -1,0 +1,439 @@
+{
+  "cyber_insurance_questionnaire_help": {
+    "marketingCopy": "Cyber insurance applications are packed with technical questions - 'Do you have MFA?', 'Are backups tested?', 'What security controls are in place?' - and most business owners don't know how to answer them or what evidence they need. The Cyber Insurance Questionnaire Help interprets those technical questions and collects the evidence you need. We work through your application question by question, explain what each one actually means, help you answer accurately, and gather the supporting evidence insurers want. You complete the application with confidence instead of guessing - and you avoid the common answer patterns that trigger denials or higher premiums.",
+    "bestFor": [
+      "Businesses applying for cyber insurance for the first time",
+      "Organizations renewing and unsure how to answer technical questions",
+      "Companies that were denied, quoted high premiums, or faced coverage carve-outs",
+      "Business owners who find insurance questionnaires technical and confusing"
+    ],
+    "whatIsIncluded": [
+      "Insurance questionnaire technical question interpretation",
+      "Answer guidance for each question",
+      "Evidence identification and collection for required controls",
+      "Gap identification against insurer requirements",
+      "Accurate application completion guidance",
+      "Insurance application support documentation"
+    ],
+    "customerOutcomes": [
+      "A cyber insurance application you can complete accurately",
+      "Technical questions translated into plain English",
+      "Evidence collected for the controls insurers require",
+      "Better approval odds and fewer coverage surprises"
+    ]
+  },
+  "acceptable_use_policy_starter": {
+    "marketingCopy": "An acceptable use policy sets clear ground rules for how employees use company technology - and without one, businesses have no documented basis to enforce responsible use, manage access, or protect themselves. The Acceptable Use Policy Starter drafts a practical employee technology usage policy tailored to your business. We create a usable policy covering internet use, email, devices, passwords, and data handling - written for real employees, not lawyers. You get a document you can actually adopt, distribute, and enforce, customized to how your business works.",
+    "bestFor": [
+      "Businesses that have never had an employee technology policy",
+      "Organizations that want clear expectations documented",
+      "Companies preparing for insurance or compliance that asks about policies",
+      "Businesses that want a practical policy employees will actually read"
+    ],
+    "whatIsIncluded": [
+      "Employee technology usage policy draft",
+      "Internet, email, and device use rules",
+      "Password and data handling expectations",
+      "Business-appropriate customization",
+      "Employee acknowledgment language",
+      "Policy adoption guidance"
+    ],
+    "customerOutcomes": [
+      "A practical acceptable use policy for your business",
+      "Clear, documented expectations for employees",
+      "A policy you can adopt, distribute, and enforce",
+      "Documentation for insurance and compliance"
+    ]
+  },
+  "password_policy_starter": {
+    "marketingCopy": "Password and MFA policies are no longer optional for businesses - insurers and compliance frameworks require them, and they set the expectation that protects your accounts. The Password Policy Starter creates a password and MFA policy document tailored to your business. We draft a policy covering password requirements, MFA expectations, password manager use, and handling of shared credentials - written practically so your team can follow it. You get a policy document that codifies modern password practices and satisfies the growing list of requirements that ask for one.",
+    "bestFor": [
+      "Businesses that need a documented password and MFA policy",
+      "Organizations preparing for insurance that asks about password practices",
+      "Companies that want modern password expectations codified",
+      "Businesses that want a practical policy for their team"
+    ],
+    "whatIsIncluded": [
+      "Password and MFA policy draft",
+      "Password requirement standards",
+      "MFA expectation documentation",
+      "Password manager guidance",
+      "Shared credential handling rules",
+      "Policy adoption guidance"
+    ],
+    "customerOutcomes": [
+      "A documented password and MFA policy",
+      "Modern password expectations codified",
+      "A policy that supports insurance applications",
+      "Practical standards your team can follow"
+    ]
+  },
+  "data_backup_policy_starter": {
+    "marketingCopy": "Backup isn't a project you do once - it's a policy that defines what gets backed up, how often, and who's responsible for reviewing it. The Data Backup Policy Starter creates a backup policy document that codifies these decisions for your business. We draft a policy defining the data that must be backed up, the backup schedule, retention expectations, and who reviews and tests backups. You get a documented backup policy that turns 'we should back up' into a defined, accountable process - and answers the questions insurers and auditors ask.",
+    "bestFor": [
+      "Businesses that want backup requirements documented",
+      "Organizations preparing for insurance or compliance that asks about backup",
+      "Companies that want clear backup accountability",
+      "Businesses that want backup policy aligned to their data"
+    ],
+    "whatIsIncluded": [
+      "Data backup policy draft",
+      "Data classification for backup requirements",
+      "Backup schedule and retention definition",
+      "Review and testing responsibility assignment",
+      "Restore expectation documentation",
+      "Policy adoption guidance"
+    ],
+    "customerOutcomes": [
+      "A documented backup policy for your business",
+      "Clear definition of what's backed up and how often",
+      "Accountability for review and testing",
+      "Policy documentation for insurance and compliance"
+    ]
+  },
+  "incident_response_policy_starter": {
+    "marketingCopy": "An incident response policy is the escalation and response framework your business follows when something goes wrong - and it's increasingly required by insurers and compliance frameworks. The Incident Response Policy Starter creates a basic incident escalation and response policy for your business. We draft a policy defining what counts as an incident, how to escalate it, who responds, and how the response is documented - written practically so it works during an actual event. You get a policy that codifies your response expectations and satisfies the requirements that ask for one.",
+    "bestFor": [
+      "Businesses that need a documented incident response policy",
+      "Organizations preparing for insurance that requires one",
+      "Companies that want escalation and response expectations codified",
+      "Businesses that want a practical incident policy"
+    ],
+    "whatIsIncluded": [
+      "Incident response policy draft",
+      "Incident definition and classification",
+      "Escalation and reporting procedures",
+      "Response role assignments",
+      "Documentation and notification requirements",
+      "Policy adoption guidance"
+    ],
+    "customerOutcomes": [
+      "A documented incident response policy",
+      "Clear escalation and response expectations",
+      "A policy that works during an actual incident",
+      "Documentation for insurance and compliance"
+    ]
+  },
+  "vendor_access_policy_starter": {
+    "marketingCopy": "Vendors need access to your systems to do their jobs - but without a policy governing how that access is requested, used, and removed, vendor accounts become an uncontrolled risk. The Vendor Access Policy Starter defines how vendors request, use, and lose access. We draft a policy covering how vendors get access, what's required before it's granted, acceptable use expectations, and how access is removed when relationships end. You get a policy that brings order to third-party access - and documentation that addresses the vendor risk questions insurers and auditors ask.",
+    "bestFor": [
+      "Businesses that work with multiple vendors and contractors",
+      "Organizations that want vendor access governed by policy",
+      "Companies preparing for insurance that asks about vendor access",
+      "Businesses that want third-party access controlled"
+    ],
+    "whatIsIncluded": [
+      "Vendor access policy draft",
+      "Vendor access request process definition",
+      "Access approval requirements",
+      "Vendor acceptable use expectations",
+      "Access removal process documentation",
+      "Policy adoption guidance"
+    ],
+    "customerOutcomes": [
+      "A documented vendor access policy",
+      "Ordered, controlled third-party access",
+      "Clear expectations for vendors and approval",
+      "Documentation for insurance and compliance"
+    ]
+  },
+  "employee_offboarding_checklist": {
+    "marketingCopy": "When an employee leaves, every account, key, and device they can access is a risk - and rushed offboarding leaves access that should have been removed. The Employee Offboarding Checklist creates an access removal and data preservation checklist for your business. We build a practical, role-aware checklist covering accounts to disable, access to revoke, devices to collect, data to preserve, and steps to complete before the employee's last day. You get a repeatable offboarding process that ensures no former employee retains access - and no important data is lost.",
+    "bestFor": [
+      "Businesses that offboard employees without a consistent process",
+      "Organizations concerned about former employees retaining access",
+      "Companies that want data preserved during offboarding",
+      "Businesses preparing for insurance or compliance reviews"
+    ],
+    "whatIsIncluded": [
+      "Offboarding checklist creation",
+      "Account and access removal steps",
+      "Device collection procedures",
+      "Data preservation requirements",
+      "Role-aware offboarding considerations",
+      "Offboarding documentation"
+    ],
+    "customerOutcomes": [
+      "A repeatable offboarding checklist for every departure",
+      "Access removed consistently and completely",
+      "Important data preserved before access is cut",
+      "Documented offboarding for audit"
+    ]
+  },
+  "asset_inventory_starter": {
+    "marketingCopy": "You can't protect, insure, or manage what you can't list - and most small businesses have no complete inventory of their hardware, software, licenses, accounts, and vendors. The Asset Inventory Starter builds your initial asset inventory: hardware, software, license, account, and vendor records. We help you create a practical inventory covering the assets that matter, structured so it can grow with your business. You get a working asset inventory that supports security, insurance, budgeting, and lifecycle management - the foundation every other control builds on.",
+    "bestFor": [
+      "Businesses with no asset inventory",
+      "Organizations that want hardware, software, and licenses tracked",
+      "Companies preparing for insurance or compliance that asks about inventory",
+      "Businesses that want a foundation for asset management"
+    ],
+    "whatIsIncluded": [
+      "Asset inventory structure design",
+      "Hardware asset identification",
+      "Software and license inventory",
+      "Account and vendor listing",
+      "Practical inventory creation",
+      "Inventory maintenance guidance"
+    ],
+    "customerOutcomes": [
+      "A working inventory of your key assets",
+      "Hardware, software, licenses, and accounts listed",
+      "A foundation for security, insurance, and budget",
+      "A practical, growing asset record"
+    ]
+  },
+  "security_awareness_policy_starter": {
+    "marketingCopy": "Security training works best when it's expected - and a policy that sets those expectations ensures training isn't an afterthought. The Security Awareness Policy Starter sets expectations for employee security training. We draft a policy defining the security training requirements for your staff, including phishing awareness, password practices, and reporting responsibilities. You get a policy that codifies your security awareness program - and provides the documentation insurers and compliance reviewers increasingly require.",
+    "bestFor": [
+      "Businesses that want security training expectations codified",
+      "Organizations preparing for insurance that asks about training",
+      "Companies that want staff held to security expectations",
+      "Businesses that want a documented awareness program"
+    ],
+    "whatIsIncluded": [
+      "Security awareness policy draft",
+      "Training requirement definition",
+      "Phishing and password practice expectations",
+      "Security incident reporting responsibilities",
+      "Awareness program documentation",
+      "Policy adoption guidance"
+    ],
+    "customerOutcomes": [
+      "A documented security awareness policy",
+      "Clear training expectations for staff",
+      "A codified awareness program",
+      "Documentation for insurance and compliance"
+    ]
+  },
+  "remote_work_policy_starter": {
+    "marketingCopy": "Remote work multiplies the places your data lives - home networks, personal devices, public Wi-Fi - and without a policy, there are no expectations for how staff protect it. The Remote Work Policy Starter defines device, Wi-Fi, MFA, and data handling expectations for remote work. We draft a policy covering what's required of remote workers - device security, home network safety, MFA use, and handling of business data - written practically for your team. You get a remote work policy that sets clear expectations and protects your business beyond the office walls.",
+    "bestFor": [
+      "Businesses with remote or hybrid workforces",
+      "Organizations that want remote security expectations documented",
+      "Companies preparing for insurance that asks about remote work",
+      "Businesses that want to protect data outside the office"
+    ],
+    "whatIsIncluded": [
+      "Remote work policy draft",
+      "Device security expectations",
+      "Home network and Wi-Fi requirements",
+      "MFA and access expectations",
+      "Data handling rules for remote work",
+      "Policy adoption guidance"
+    ],
+    "customerOutcomes": [
+      "A documented remote work policy",
+      "Clear expectations for remote staff",
+      "Business data protected beyond the office",
+      "Documentation for insurance and compliance"
+    ]
+  },
+  "cyber_insurance_readiness_bundle": {
+    "marketingCopy": "Cyber insurance readiness requires several coordinated controls - security questionnaire support, MFA evidence, backup evidence, endpoint review, admin access review, and a gap report. The Cyber Insurance Readiness Bundle packages these into one coordinated engagement: questionnaire support, MFA evidence, backup evidence, endpoint review, admin access review, and a gap report. Instead of assembling evidence piecemeal, you get a coordinated readiness engagement that prepares your controls and documentation for the application. You approach your cyber insurance application with evidence and a clear gap picture - not hope.",
+    "bestFor": [
+      "Businesses applying for cyber insurance that want readiness handled",
+      "Organizations that want control evidence assembled together",
+      "Companies that want a gap report before applying",
+      "Businesses that want a coordinated insurance readiness engagement"
+    ],
+    "whatIsIncluded": [
+      "Security questionnaire support",
+      "MFA evidence collection",
+      "Backup evidence collection",
+      "Endpoint protection review",
+      "Admin access review",
+      "Gap report with readiness summary"
+    ],
+    "customerOutcomes": [
+      "A coordinated, evidence-backed insurance readiness position",
+      "The controls insurers require reviewed and documented",
+      "A clear gap report before you apply",
+      "Better approval odds and premium outcomes"
+    ]
+  },
+  "small_business_policy_pack": {
+    "marketingCopy": "Small businesses need a core set of technology policies - acceptable use, password and MFA, backup, incident response, and offboarding - and most have none. The Small Business Policy Pack creates these foundational policies in one coordinated engagement: acceptable use, password/MFA, backup, incident response, and offboarding. Instead of drafting policies one by one, you get a coordinated set that covers the essentials, customized to your business and consistent with each other. You get the policy foundation insurers and compliance reviews expect - done together, not scattered.",
+    "bestFor": [
+      "Businesses with no technology policies at all",
+      "Organizations that need the core policies created together",
+      "Companies preparing for insurance that asks about policies",
+      "Businesses that want a coordinated policy foundation"
+    ],
+    "whatIsIncluded": [
+      "Acceptable use policy",
+      "Password and MFA policy",
+      "Backup policy",
+      "Incident response policy",
+      "Offboarding checklist",
+      "Coordinated policy pack documentation"
+    ],
+    "customerOutcomes": [
+      "A coordinated set of foundational technology policies",
+      "The policies insurers and compliance expect in place",
+      "Consistent, customized documentation",
+      "A policy foundation built together"
+    ]
+  },
+  "compliance_foundation_bundle": {
+    "marketingCopy": "A compliance foundation requires more than policies - it needs asset inventory, access review, backup review, a policy pack, a risk register, and ongoing review. The Compliance Foundation Bundle packages these into one coordinated engagement: asset inventory, access review, backup review, policy pack, risk register, and quarterly review option. Instead of building compliance piecemeal, you get a coordinated foundation covering the core compliance building blocks. You get the documented, organized compliance base that insurance and audit preparation require - established together.",
+    "bestFor": [
+      "Businesses preparing for compliance or audit readiness",
+      "Organizations that want the compliance basics established together",
+      "Companies that want inventory, access, backup, and policies coordinated",
+      "Businesses that want a compliance foundation to build on"
+    ],
+    "whatIsIncluded": [
+      "Asset inventory establishment",
+      "Access review",
+      "Backup review",
+      "Policy pack creation",
+      "Risk register development",
+      "Quarterly review option"
+    ],
+    "customerOutcomes": [
+      "A coordinated compliance foundation",
+      "Inventory, access, backup, policies, and risk register in place",
+      "A documented base for audit and insurance preparation",
+      "A foundation built together, not scattered"
+    ]
+  },
+  "risk_register_starter": {
+    "marketingCopy": "Risk management starts with a risk register - a living document that lists the risks to your business, their owners, impact, likelihood, and next actions. Most small businesses have none. The Risk Register Starter creates an initial risk register for your business. We help you identify your key technology and business risks, document each with owner, impact, likelihood, and next action, and create a practical register you can maintain. You get a working risk register that turns 'what could go wrong' from a worry into a managed, documented list.",
+    "bestFor": [
+      "Businesses that want risks documented and managed",
+      "Organizations preparing for compliance that requires a risk register",
+      "Companies that want risk ownership and next actions defined",
+      "Businesses that want a practical risk management starting point"
+    ],
+    "whatIsIncluded": [
+      "Risk identification for your business",
+      "Risk documentation with owner, impact, and likelihood",
+      "Next action definition for each risk",
+      "Risk register structure creation",
+      "Practical risk register development",
+      "Risk maintenance guidance"
+    ],
+    "customerOutcomes": [
+      "A working risk register for your business",
+      "Risks documented with owners and next actions",
+      "Risk management turned into a practical tool",
+      "Documentation for compliance and leadership"
+    ]
+  },
+  "quarterly_access_review": {
+    "marketingCopy": "Access accumulates - employees change roles, vendors come and go, accounts are forgotten - and without regular review, access becomes outdated and risky. The Quarterly Access Review is a recurring review of user, admin, and vendor access. Each quarter we review who has access to what, identify stale and excessive access, and work with you to remove or correct what shouldn't be there. You get documented, recurring access review that keeps access aligned with reality - and provides the review evidence insurers and compliance frameworks increasingly require.",
+    "bestFor": [
+      "Businesses that want access reviewed on a schedule",
+      "Organizations preparing for compliance that requires access reviews",
+      "Companies that want stale access removed regularly",
+      "Businesses that want documented access review evidence"
+    ],
+    "whatIsIncluded": [
+      "Quarterly user access review",
+      "Admin access review",
+      "Vendor access review",
+      "Stale and excessive access identification",
+      "Approved access correction",
+      "Access review documentation"
+    ],
+    "customerOutcomes": [
+      "Access reviewed and corrected quarterly",
+      "Stale and excessive access removed on schedule",
+      "Documented access review evidence",
+      "Access kept aligned with your business"
+    ]
+  },
+  "data_handling_checklist": {
+    "marketingCopy": "Sensitive data - customer, payment, health, or business information - needs defined handling rules, and most small businesses have none. The Data Handling Checklist documents how sensitive customer, payment, health, or business data should be handled. We create a practical checklist covering how sensitive data is collected, stored, accessed, shared, and disposed of - tailored to the data your business actually handles. You get a documented data handling guide that reduces risk and answers the data-handling questions insurers and compliance reviews ask.",
+    "bestFor": [
+      "Businesses that handle customer, payment, health, or sensitive data",
+      "Organizations that want data handling rules documented",
+      "Companies preparing for compliance or insurance reviews",
+      "Businesses that want staff guidance on handling sensitive data"
+    ],
+    "whatIsIncluded": [
+      "Sensitive data identification",
+      "Data collection and storage guidance",
+      "Access and sharing rules",
+      "Data retention and disposal procedures",
+      "Practical data handling checklist",
+      "Staff guidance documentation"
+    ],
+    "customerOutcomes": [
+      "A documented data handling checklist for your business",
+      "Clear rules for sensitive data at every stage",
+      "Reduced risk of data mishandling",
+      "Documentation for compliance and insurance"
+    ]
+  },
+  "pci_payment_handling_readiness_review": {
+    "marketingCopy": "Businesses that accept card payments handle sensitive payment data - and most have never reviewed the technology controls around how that data flows. The PCI/Payment Handling Readiness Review reviews your basic payment handling and technology controls around card and payment workflows. We examine how you accept, process, store, and transmit payment data, identify common risk areas, and provide practical recommendations. You get a clear review of your payment handling readiness - not a full PCI certification, but the practical technology review that reduces risk and prepares you for the questions that come with payment processing.",
+    "bestFor": [
+      "Businesses that accept card payments",
+      "Organizations that want payment data handling reviewed",
+      "Companies preparing for merchant account or processor requirements",
+      "Businesses that want to reduce payment handling risk"
+    ],
+    "whatIsIncluded": [
+      "Payment acceptance and processing review",
+      "Card data handling assessment",
+      "Storage and transmission risk identification",
+      "Common payment risk area review",
+      "Practical recommendations",
+      "Payment readiness review documentation"
+    ],
+    "customerOutcomes": [
+      "A clear review of your payment handling readiness",
+      "Card data risks identified and explained",
+      "Practical recommendations to reduce risk",
+      "A documented readiness review"
+    ]
+  },
+  "hipaa_oriented_it_readiness_review": {
+    "marketingCopy": "Offices that handle health-related data - even indirectly - face expectations around protecting it, and most small practices have never reviewed their IT against those expectations. The HIPAA-Oriented IT Readiness Review is a practical IT readiness review for offices that handle health-related data. We review the technology controls that matter for health data: access controls, MFA, encryption, backup, audit logging, and data handling. You get a practical, jargon-free review of your IT readiness - not a legal opinion or certification, but the technology assessment that identifies gaps and prioritizes fixes.",
+    "bestFor": [
+      "Offices that handle health-related data (practices, wellness, allied health)",
+      "Organizations that want IT readiness reviewed against health data expectations",
+      "Companies that want practical technology gap identification",
+      "Businesses preparing for insurance or partner requirements"
+    ],
+    "whatIsIncluded": [
+      "Access control and MFA review",
+      "Encryption and device security assessment",
+      "Backup and recovery review",
+      "Audit and logging capability assessment",
+      "Health data handling review",
+      "IT readiness report with prioritized gaps"
+    ],
+    "customerOutcomes": [
+      "A practical review of your IT readiness for health data",
+      "Technology gaps identified and prioritized",
+      "Clear, jargon-free findings",
+      "A documented readiness assessment"
+    ]
+  },
+  "cmmc_nist_starter_gap_review": {
+    "marketingCopy": "Defense contractors and businesses serving the federal supply chain face CMMC and NIST expectations - and most don't know where they stand. The CMMC/NIST Starter Gap Review provides an initial gap review against common security control expectations. We review your current controls against the common expectations of these frameworks, identify where you stand, and document the gaps that would need closing. You get an honest starting point for CMMC/NIST readiness - the assessment that tells you what pursuing compliance would actually involve.",
+    "bestFor": [
+      "Businesses exploring CMMC or NIST compliance",
+      "Organizations in the defense or federal supply chain",
+      "Companies that want an initial gap assessment before investing",
+      "Businesses that want to know what compliance would require"
+    ],
+    "whatIsIncluded": [
+      "Current control review against common framework expectations",
+      "Control gap identification",
+      "Readiness level assessment",
+      "Gap prioritization",
+      "Compliance effort estimation",
+      "Starter gap review documentation"
+    ],
+    "customerOutcomes": [
+      "An honest picture of your CMMC/NIST readiness",
+      "Gaps identified against common expectations",
+      "A clear sense of what compliance would involve",
+      "A documented starting point"
+    ]
+  }
+}

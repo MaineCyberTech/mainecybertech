@@ -1,0 +1,623 @@
+{
+  "wi_fi_coverage_check": {
+    "marketingCopy": "Dead zones, dropped connections, and slow spots are the most common complaints in any office - and they're rarely about the internet connection itself. The Wi-Fi Coverage Check is an onsite or guided review of your wireless coverage that pinpoints exactly where Wi-Fi is weak and why. We test signal strength across your space, identify dead zones and interference sources, assess whether your current access points are positioned and configured correctly, and map the path to better coverage - whether that's repositioning, adding access points, or upgrading hardware. You get a coverage map and a practical upgrade path instead of guessing why Wi-Fi keeps dropping.",
+    "bestFor": [
+      "Businesses with dead zones, dropped connections, or slow spots",
+      "Organizations that have blamed their ISP but suspect the Wi-Fi itself",
+      "Companies adding rooms, walls, or users to an existing wireless setup",
+      "Businesses that want a documented coverage map before investing in upgrades"
+    ],
+    "whatIsIncluded": [
+      "Onsite or guided Wi-Fi coverage assessment",
+      "Signal strength testing across your space",
+      "Dead zone and interference identification",
+      "Access point placement and configuration review",
+      "Coverage map with findings",
+      "Practical upgrade path with recommendations"
+    ],
+    "customerOutcomes": [
+      "A clear map of your actual Wi-Fi coverage and problem areas",
+      "The real cause of dead zones identified - placement, interference, or capacity",
+      "A practical, prioritized path to better coverage",
+      "No more guesswork about why Wi-Fi keeps dropping"
+    ]
+  },
+  "network_health_check": {
+    "marketingCopy": "Your network sits between your business and everything you do online - yet most small businesses never look at the routers, switches, cabling, and configuration that make it run. The Network Health Check reviews the health of your network infrastructure: router and switch status, Wi-Fi configuration, cabling, IP scheme, and basic security risks. We identify configuration errors, aging equipment, cabling problems, and security gaps before they cause outages. You get a clear picture of your network's health with prioritized fixes - the kind of review that catches the issue before it becomes 'the internet is down'.",
+    "bestFor": [
+      "Businesses that have never had their network infrastructure reviewed",
+      "Organizations experiencing intermittent connectivity or performance issues",
+      "Companies with aging routers, switches, or cabling",
+      "Businesses that want to catch network problems before they cause outages"
+    ],
+    "whatIsIncluded": [
+      "Router and switch health and configuration review",
+      "Wi-Fi configuration and coverage assessment",
+      "Cabling and physical infrastructure inspection",
+      "IP scheme and DHCP/DNS review",
+      "Basic network security risk review",
+      "Network health report with prioritized fixes"
+    ],
+    "customerOutcomes": [
+      "A clear picture of your network infrastructure's health",
+      "Configuration, cabling, and equipment issues identified early",
+      "Basic security risks documented",
+      "Prioritized fixes that prevent future outages"
+    ]
+  },
+  "small_office_network_audit": {
+    "marketingCopy": "Most small office networks grew organically - a router added here, a switch there, an access point someone plugged in - with no documentation and no one sure what's actually connected. The Small Office Network Audit documents your network properly: every device, connection, IP, and risk. We map the layout, identify unknown or risky devices, review configuration, and produce a clear picture of your network with improvement recommendations. You go from 'I hope it works' to a documented network you understand and can manage.",
+    "bestFor": [
+      "Small offices with undocumented, organically grown networks",
+      "Businesses that don't know what's actually connected to their network",
+      "Organizations that want a network map and documentation",
+      "Companies preparing for network upgrades or troubleshooting"
+    ],
+    "whatIsIncluded": [
+      "Network device and connection inventory",
+      "Network layout mapping and diagram",
+      "Unknown and risky device identification",
+      "Configuration review",
+      "Security risk assessment",
+      "Network documentation and improvement recommendations"
+    ],
+    "customerOutcomes": [
+      "A documented map of your small office network",
+      "Unknown and risky devices identified",
+      "Clear improvement recommendations",
+      "A network you understand instead of one you hope works"
+    ]
+  },
+  "guest_wi_fi_review": {
+    "marketingCopy": "Guest Wi-Fi that shares your business network is a back door - guests, customers, and vendors on the same network as your computers and files can reach sensitive systems. The Guest Wi-Fi Review examines how your guest network is set up and whether it's actually separated from your business systems. We check whether guests and business traffic are isolated, review guest password practices, and assess the risk of current configuration. You get a clear answer to the question every business should be able to answer: are our guests on our business network?",
+    "bestFor": [
+      "Businesses that offer Wi-Fi to customers, clients, or visitors",
+      "Organizations unsure whether guest and business networks are separated",
+      "Companies with guest Wi-Fi sharing the same network as staff computers",
+      "Businesses preparing for security or compliance reviews"
+    ],
+    "whatIsIncluded": [
+      "Guest network configuration review",
+      "Business and guest traffic isolation assessment",
+      "Guest password and access practice review",
+      "Guest network risk assessment",
+      "Improvement recommendations",
+      "Guest Wi-Fi separation documentation"
+    ],
+    "customerOutcomes": [
+      "A clear answer on whether guests can reach business systems",
+      "Guest and business traffic properly isolated where needed",
+      "Safe guest Wi-Fi password and access practices",
+      "Documented separation for security reviews"
+    ]
+  },
+  "camera_network_readiness_check": {
+    "marketingCopy": "Security cameras need a network that can support them - enough bandwidth, stable connections, and the right structure - and discovering that during installation is the wrong time to find out. The Camera Network Readiness Check determines whether your current network can support cameras and recording before you buy a single camera. We assess your network capacity, bandwidth, wiring, Wi-Fi suitability, and whether you have the right infrastructure for NVR recording and remote access. You get a clear go/no-go assessment with the specific gaps to address before deployment. It's the planning step that prevents a camera installation from turning into a network project.",
+    "bestFor": [
+      "Businesses planning to install security cameras",
+      "Organizations that want to know if their network can handle recording",
+      "Companies that want to avoid a failed camera installation",
+      "Businesses planning camera systems across a large or outdoor space"
+    ],
+    "whatIsIncluded": [
+      "Network capacity and bandwidth assessment for cameras",
+      "Wiring and infrastructure readiness review",
+      "Wi-Fi suitability assessment for wireless cameras",
+      "NVR and recording infrastructure considerations",
+      "Remote access readiness check",
+      "Camera readiness report with gaps and recommendations"
+    ],
+    "customerOutcomes": [
+      "A clear assessment of whether your network can support cameras",
+      "Specific gaps identified before you buy equipment",
+      "A plan for what needs upgrading before deployment",
+      "Avoidance of a failed camera installation"
+    ]
+  },
+  "outdoor_wi_fi_planning_visit": {
+    "marketingCopy": "Outdoor Wi-Fi is a different challenge than indoor - weather, power, cable runs, and coverage over open space all need planning. The Outdoor Wi-Fi Planning Visit plans your outdoor access point deployment properly: placement, power, wiring, weatherproofing, and coverage validation. We walk the site, determine where access points should go for the coverage you need, plan the power and cabling requirements, and consider weatherproofing for Maine's environment. You get a deployment plan for outdoor Wi-Fi that works - instead of access points installed in the wrong place, failing in the weather, or leaving dead zones.",
+    "bestFor": [
+      "Businesses with yards, lots, marinas, warehouses, or outdoor spaces needing Wi-Fi",
+      "Organizations planning outdoor access point installation",
+      "Companies that need coverage planned before equipment is purchased",
+      "Businesses in Maine where weatherproofing is essential"
+    ],
+    "whatIsIncluded": [
+      "Site walkthrough for outdoor Wi-Fi planning",
+      "Access point placement planning for required coverage",
+      "Power and cabling requirements planning",
+      "Weatherproofing and environmental considerations",
+      "Coverage planning and validation approach",
+      "Outdoor Wi-Fi deployment plan"
+    ],
+    "customerOutcomes": [
+      "A proper outdoor Wi-Fi deployment plan",
+      "Access points placed where they deliver the coverage you need",
+      "Power, cabling, and weatherproofing planned before purchase",
+      "Outdoor coverage that actually works in Maine's climate"
+    ]
+  },
+  "firewall_configuration_review": {
+    "marketingCopy": "A firewall is only as good as its configuration - and many small business firewalls have wide-open rules, unsecured remote access, flat networks, and default admin settings. The Firewall Configuration Review examines your firewall's actual configuration: rules, remote access, segmentation, and management access. We identify open ports that shouldn't be open, remote access that bypasses security, lack of segmentation, and weak management access. You get a documented review of your firewall's security with specific changes to make. It's the review that finds the rules that shouldn't be there.",
+    "bestFor": [
+      "Businesses with firewalls configured by a previous provider or done on the fly",
+      "Organizations concerned about open ports and remote access",
+      "Companies with flat networks and no segmentation",
+      "Businesses preparing for security or compliance reviews"
+    ],
+    "whatIsIncluded": [
+      "Firewall rule review",
+      "Open port and unnecessary exposure identification",
+      "Remote access configuration review",
+      "Network segmentation assessment",
+      "Management access security review",
+      "Firewall configuration report with recommended changes"
+    ],
+    "customerOutcomes": [
+      "A documented review of your firewall's real configuration",
+      "Unnecessary open ports and risky remote access identified",
+      "Segmentation recommendations to limit lateral movement",
+      "A safer firewall with specific changes identified"
+    ]
+  },
+  "isp_failover_readiness_review": {
+    "marketingCopy": "When your internet goes down, your business stops - and most small businesses have no plan for how they'd stay online. The ISP Failover Readiness Review examines your options for backup internet, failover, and continuity. We review your current internet setup, assess whether backup connectivity is feasible in your location, and evaluate options like a second ISP, LTE or 5G backup, and automatic failover. You get a realistic assessment of your options with cost and reliability considerations - so when the primary connection fails, your business has a plan instead of a shutdown.",
+    "bestFor": [
+      "Businesses that can't afford to be offline when the internet fails",
+      "Organizations that rely on internet for phone, payments, or customer service",
+      "Companies that have experienced internet outages with no backup",
+      "Businesses that want to know their failover options before an outage"
+    ],
+    "whatIsIncluded": [
+      "Current internet setup review",
+      "Backup internet feasibility assessment for your location",
+      "Failover option evaluation (second ISP, LTE/5G, automatic failover)",
+      "Cost and reliability comparison",
+      "Continuity impact assessment",
+      "Failover readiness recommendations"
+    ],
+    "customerOutcomes": [
+      "A realistic assessment of your backup internet options",
+      "Cost and reliability comparison for each option",
+      "A plan for staying online when the primary connection fails",
+      "Continuity planning based on actual feasibility"
+    ]
+  },
+  "basic_router_replacement": {
+    "marketingCopy": "Consumer routers are a weak link for small businesses - limited features, no security controls, and performance that degrades under real business use. The Basic Router Replacement replaces a consumer router with a more appropriate business-grade configuration. We install a suitable router, configure it properly for your network - SSIDs, security, DHCP, and basic settings - and connect your devices. You get a router built for business use with proper configuration instead of a consumer device doing a job it wasn't designed for. It's the first step toward a network that's reliable, secure, and manageable.",
+    "bestFor": [
+      "Businesses running their entire office on a consumer router",
+      "Organizations that want business-grade networking features",
+      "Companies experiencing performance or reliability issues with their router",
+      "Businesses that want a properly configured network foundation"
+    ],
+    "whatIsIncluded": [
+      "Consumer router assessment",
+      "Business-grade router recommendation and installation",
+      "Network configuration including SSIDs and security",
+      "DHCP and basic network settings",
+      "Device connection and testing",
+      "Router configuration documentation"
+    ],
+    "customerOutcomes": [
+      "A business-grade router properly configured",
+      "Reliable, secure network foundation",
+      "Features your business actually needs",
+      "Documented configuration instead of default settings"
+    ]
+  },
+  "business_wi_fi_setup": {
+    "marketingCopy": "Business Wi-Fi isn't the same as home Wi-Fi - it needs proper access points, secure SSIDs, coverage, and management. The Business Wi-Fi Setup installs and configures business access points and secure wireless networks the right way. We install appropriate access points, configure staff networks with proper security, ensure coverage across your space, and set up management so the network is maintainable. Your business gets reliable, secure wireless designed for business use - not a home router pretending to be an office network.",
+    "bestFor": [
+      "Businesses that have outgrown home-grade Wi-Fi",
+      "Organizations that need reliable coverage across a real office space",
+      "Companies that want secure, managed wireless networks",
+      "Businesses that want Wi-Fi designed and installed properly"
+    ],
+    "whatIsIncluded": [
+      "Business access point selection and installation",
+      "Secure staff SSID configuration",
+      "Coverage planning and placement",
+      "Network security configuration",
+      "Management and monitoring setup",
+      "Wi-Fi setup documentation"
+    ],
+    "customerOutcomes": [
+      "Reliable, secure business Wi-Fi with proper coverage",
+      "Access points designed and installed for business use",
+      "A managed wireless network instead of a home-grade setup",
+      "Documented Wi-Fi configuration"
+    ]
+  },
+  "guest_wi_fi_setup": {
+    "marketingCopy": "Offering Wi-Fi to customers and visitors is great hospitality - but if the guest network can reach your business systems, it's a security hole. The Guest Wi-Fi Setup creates a separated guest network so visitors get internet without access to your computers, files, or printers. We configure a dedicated guest SSID, isolate it from your business network, set appropriate access controls, and document the setup. Your customers get the convenience of Wi-Fi, and your business data stays protected from everyone who connects to it.",
+    "bestFor": [
+      "Businesses offering Wi-Fi to customers, clients, or visitors",
+      "Organizations that want guest and business networks properly separated",
+      "Companies concerned about guests accessing business systems",
+      "Businesses preparing for security or compliance reviews"
+    ],
+    "whatIsIncluded": [
+      "Dedicated guest SSID configuration",
+      "Guest network isolation from business systems",
+      "Access controls and password configuration",
+      "Coverage consideration for guest areas",
+      "Separation verification",
+      "Guest Wi-Fi setup documentation"
+    ],
+    "customerOutcomes": [
+      "Guest Wi-Fi that doesn't expose your business network",
+      "Proper isolation between guest and business traffic",
+      "Convenient internet for visitors without the security risk",
+      "Documented separation for security reviews"
+    ]
+  },
+  "vlan_setup": {
+    "marketingCopy": "When staff computers, guest Wi-Fi, cameras, IoT devices, and phones all share one network, a compromise of any one device can reach everything. The VLAN Setup segments your network so different device types and user groups are isolated from each other. We plan and configure VLANs for staff, guest, IoT, cameras, and other device categories, set up the routing and security policies between them, and verify devices land in the right segments. Your network goes from flat and exposed to segmented and controlled - the way modern business networks are supposed to be.",
+    "bestFor": [
+      "Businesses with cameras, IoT devices, and staff on one flat network",
+      "Organizations that want to limit the blast radius of a compromise",
+      "Companies with managed switches capable of VLANs but not using them",
+      "Businesses preparing for security or compliance reviews"
+    ],
+    "whatIsIncluded": [
+      "Network segmentation planning",
+      "VLAN design for staff, guest, IoT, camera, and other segments",
+      "VLAN configuration on managed switches",
+      "Routing and inter-segment security policy setup",
+      "Device-to-VLAN assignment and verification",
+      "Segmentation documentation"
+    ],
+    "customerOutcomes": [
+      "A segmented network where devices are isolated by type",
+      "Reduced blast radius if any single device is compromised",
+      "Cameras, guests, IoT, and staff on controlled segments",
+      "A network designed the way business networks should be"
+    ]
+  },
+  "firewall_setup": {
+    "marketingCopy": "A business firewall is the gatekeeper of your network - controlling what comes in, what goes out, and who can manage your systems remotely. The Firewall Setup deploys and configures a business firewall properly for your environment. We install a suitable firewall, build a security rule set that allows what's needed and blocks what isn't, configure remote access securely, set up segmentation where appropriate, and document the whole configuration. Your network gets a real security boundary instead of whatever the router defaults were - with rules that protect rather than just pass traffic.",
+    "bestFor": [
+      "Businesses with no dedicated firewall or only consumer router protections",
+      "Organizations that want a proper security boundary for their network",
+      "Companies that need secure remote access configured correctly",
+      "Businesses preparing for security or compliance reviews"
+    ],
+    "whatIsIncluded": [
+      "Business firewall selection and installation",
+      "Security rule set design and configuration",
+      "Secure remote access configuration",
+      "Segmentation and routing setup",
+      "Rule testing and verification",
+      "Firewall configuration documentation"
+    ],
+    "customerOutcomes": [
+      "A properly deployed business firewall",
+      "A security rule set that blocks what should be blocked",
+      "Secure remote access without wide-open exposure",
+      "Documented firewall configuration"
+    ]
+  },
+  "switch_installation": {
+    "marketingCopy": "Managed switches are the backbone of a business network - handling wired connectivity, VLANs, and traffic management - but only if they're installed and configured properly. The Switch Installation service installs or configures a managed network switch the right way: physical installation, VLAN and port configuration, link testing, and integration with your network. We ensure wired devices connect reliably, ports are configured correctly, and the switch is set up for management rather than left as an expensive unconfigured hub. Your wired network gets the reliability and structure it needs.",
+    "bestFor": [
+      "Businesses adding a managed switch to their network",
+      "Organizations that need wired devices connected reliably",
+      "Companies that want switches configured for VLANs and management",
+      "Businesses upgrading from unmanaged to managed networking"
+    ],
+    "whatIsIncluded": [
+      "Managed switch installation and rack mounting",
+      "Port configuration and VLAN setup",
+      "Link and connectivity testing",
+      "Integration with existing network",
+      "Management access configuration",
+      "Switch configuration documentation"
+    ],
+    "customerOutcomes": [
+      "A properly installed and configured managed switch",
+      "Reliable wired connectivity for your devices",
+      "VLAN and management capabilities actually used",
+      "Documented switch configuration"
+    ]
+  },
+  "patch_panel_cleanup": {
+    "marketingCopy": "An unlabeled, tangled patch panel turns every network change into a mystery - which cable goes where, what's connected, and how to trace a problem. The Patch Panel Cleanup labels, organizes, and documents your network rack and cabling. We organize the cabling, label every port and connection, identify and fix undocumented connections, and produce documentation that makes future changes straightforward. Your network closet goes from a rat's nest to an organized, documented infrastructure that any technician can work with.",
+    "bestFor": [
+      "Businesses with unlabeled, tangled network closets",
+      "Organizations where nobody knows which cable goes where",
+      "Companies that want network changes to be straightforward",
+      "Businesses preparing for network documentation or upgrades"
+    ],
+    "whatIsIncluded": [
+      "Network rack organization and cleanup",
+      "Cable labeling and management",
+      "Port-to-device documentation",
+      "Undocumented connection identification and fixing",
+      "Network closet documentation",
+      "Future-change guidance"
+    ],
+    "customerOutcomes": [
+      "An organized, labeled network closet",
+      "Every port and connection documented",
+      "Network changes that are straightforward instead of mysterious",
+      "A rack any technician can work with"
+    ]
+  },
+  "network_documentation_package": {
+    "marketingCopy": "When your network breaks, your IT provider - current or future - needs to understand your environment immediately. If nothing is documented, every fix starts from scratch. The Network Documentation Package creates proper documentation for your network: diagrams, IP lists, device maps, management notes, and vendor summaries. We document what's connected, how it's configured, what the IP scheme is, how devices are managed, and who your vendors are. It's the documentation that makes network management, troubleshooting, and provider transitions dramatically faster - and it's what every business should have but almost none do.",
+    "bestFor": [
+      "Businesses with undocumented network infrastructure",
+      "Organizations that want diagrams and IP documentation",
+      "Companies preparing for IT provider transitions",
+      "Businesses that want faster, cheaper troubleshooting"
+    ],
+    "whatIsIncluded": [
+      "Network diagrams",
+      "IP and address scheme documentation",
+      "Device map and inventory",
+      "Management notes and access documentation",
+      "Vendor and provider summary",
+      "Complete network documentation package"
+    ],
+    "customerOutcomes": [
+      "Complete, professional network documentation",
+      "Faster troubleshooting and provider transitions",
+      "An IP scheme and device map everyone can use",
+      "Documentation that reduces future IT costs"
+    ]
+  },
+  "isp_cutover_support": {
+    "marketingCopy": "Switching internet providers should be simple, but cutover day often means downtime, missed appointments, and confusion about who does what. The ISP Cutover Support coordinates and supports your new internet activation or provider transition. We coordinate with the new provider, plan the cutover timeline, prepare your equipment and settings, and support the transition so your business stays online through the change. We handle the technical coordination so your internet cutover happens smoothly - without the outage and hassle that usually comes with provider changes.",
+    "bestFor": [
+      "Businesses switching internet providers",
+      "Organizations activating new internet service",
+      "Companies that want the cutover coordinated professionally",
+      "Businesses that can't afford downtime during the transition"
+    ],
+    "whatIsIncluded": [
+      "Provider coordination for activation",
+      "Cutover timeline planning",
+      "Equipment and configuration preparation",
+      "Cutover day support",
+      "Post-activation testing and verification",
+      "Cutover documentation"
+    ],
+    "customerOutcomes": [
+      "A coordinated internet cutover with minimal disruption",
+      "Provider coordination handled for you",
+      "Your business online through the transition",
+      "Documented, verified new service"
+    ]
+  },
+  "lte_5g_backup_internet_setup": {
+    "marketingCopy": "When your primary internet fails, LTE or 5G backup can keep your business online - but only if it's configured to actually work when needed. The LTE/5G Backup Internet Setup configures backup internet connectivity where it's available in your area. We assess your coverage and options, select an appropriate cellular backup solution, configure it so it can take over when the primary connection fails, and test the failover. Your business gets a safety net for internet outages - with backup connectivity that actually works when you need it.",
+    "bestFor": [
+      "Businesses that can't afford to be offline when the internet fails",
+      "Organizations in areas where LTE/5G backup is available",
+      "Companies that rely on internet for phones, payments, or operations",
+      "Businesses that want tested failover rather than a box in a closet"
+    ],
+    "whatIsIncluded": [
+      "LTE/5G coverage and option assessment",
+      "Cellular backup solution selection",
+      "Backup internet configuration",
+      "Failover configuration and testing",
+      "Coverage and performance verification",
+      "Backup internet documentation"
+    ],
+    "customerOutcomes": [
+      "Backup internet that works when the primary connection fails",
+      "Tested failover instead of an unconfigured solution",
+      "Continuity for internet-dependent operations",
+      "Documented backup connectivity"
+    ]
+  },
+  "unifi_controller_setup": {
+    "marketingCopy": "UniFi gear is powerful, but it only delivers if the controller and devices are configured correctly - and many businesses run UniFi with defaults, mixed versions, or a controller nobody can manage. The UniFi Controller Setup sets up or cleanly configures your UniFi Network controller and device adoption. We install or update the controller, adopt and configure your UniFi devices, set up networks and SSIDs, and configure management so the system is maintainable. Your UniFi environment gets a proper foundation: devices adopted, configuration centralized, and management working.",
+    "bestFor": [
+      "Businesses with UniFi devices that were never properly configured",
+      "Organizations that need a controller set up cleanly",
+      "Companies running mixed or mismanaged UniFi environments",
+      "Businesses that want their UniFi network manageable"
+    ],
+    "whatIsIncluded": [
+      "UniFi controller installation or cleanup",
+      "Device adoption and configuration",
+      "Network and SSID setup",
+      "Controller management configuration",
+      "Firmware and version alignment",
+      "UniFi setup documentation"
+    ],
+    "customerOutcomes": [
+      "A properly configured UniFi controller",
+      "All UniFi devices adopted and managed centrally",
+      "Clean networks and SSID configuration",
+      "A manageable UniFi environment"
+    ]
+  },
+  "unifi_wi_fi_install": {
+    "marketingCopy": "UniFi access points deliver great wireless performance - when they're installed and configured properly. The UniFi Wi-Fi Install handles the complete deployment: installing UniFi access points, configuring SSIDs, setting up guest network separation, and applying basic wireless settings. We plan placement for coverage, install and adopt the access points, configure staff and guest networks securely, and verify the wireless works as intended. Your business gets reliable UniFi wireless installed the right way - not access points plugged in with default settings.",
+    "bestFor": [
+      "Businesses deploying UniFi access points",
+      "Organizations that want proper SSID and guest network configuration",
+      "Companies that want UniFi installed by someone who knows it",
+      "Businesses that want reliable wireless coverage"
+    ],
+    "whatIsIncluded": [
+      "Access point placement planning",
+      "UniFi access point installation and adoption",
+      "Staff and guest SSID configuration",
+      "Guest network separation",
+      "Wireless settings and security configuration",
+      "Coverage and functionality verification"
+    ],
+    "customerOutcomes": [
+      "UniFi access points installed for proper coverage",
+      "Secure staff and guest wireless networks",
+      "Guest traffic separated from business traffic",
+      "Verified wireless performance"
+    ]
+  },
+  "unifi_network_cleanup": {
+    "marketingCopy": "UniFi networks accumulate problems over time - inconsistent device naming, old firmware, confusing topology, ignored alerts, and configurations nobody documented. The UniFi Network Cleanup fixes and documents your UniFi environment. We standardize device naming, review and update firmware, verify topology and connections, address alerts, and produce configuration documentation. Your UniFi network goes from a working-but-messy environment to a clean, documented, manageable one - where device names make sense, firmware is current, and alerts mean something.",
+    "bestFor": [
+      "Businesses with messy, undocumented UniFi environments",
+      "Organizations with inconsistent device naming and alerts",
+      "Companies running outdated UniFi firmware",
+      "Businesses that want their UniFi network clean and documented"
+    ],
+    "whatIsIncluded": [
+      "Device naming standardization",
+      "Firmware review and updates",
+      "Topology and connection verification",
+      "Alert review and resolution",
+      "Configuration cleanup",
+      "UniFi network documentation"
+    ],
+    "customerOutcomes": [
+      "A clean, organized UniFi network",
+      "Consistent naming and current firmware",
+      "Alerts that are addressed, not ignored",
+      "Documented configuration for management"
+    ]
+  },
+  "unifi_monthly_management": {
+    "marketingCopy": "UniFi networks need ongoing care - firmware updates, alert monitoring, health checks, and configuration backups - and without it, they slowly degrade into the messy state that causes outages. The UniFi Monthly Management provides ongoing UniFi maintenance: firmware review and updates, alert monitoring, device health review, controller backups, and configuration documentation. Each month your UniFi environment gets checked, updated, and protected, with issues caught early. It's proactive UniFi management that keeps your wireless network reliable and secure month after month.",
+    "bestFor": [
+      "Businesses that rely on their UniFi network every day",
+      "Organizations that want firmware and alerts managed proactively",
+      "Companies that want controller backups and documentation maintained",
+      "Businesses that want to avoid the slow decline of neglected networks"
+    ],
+    "whatIsIncluded": [
+      "Monthly UniFi firmware review and updates",
+      "Alert monitoring and resolution",
+      "Device health review",
+      "Controller backup configuration",
+      "Configuration documentation maintenance",
+      "Monthly network summary"
+    ],
+    "customerOutcomes": [
+      "A reliably maintained UniFi network",
+      "Firmware current and alerts addressed monthly",
+      "Controller backups protecting your configuration",
+      "Documented, proactive network management"
+    ]
+  },
+  "unifi_site_documentation": {
+    "marketingCopy": "UniFi site documentation is the difference between a network you can manage and one you can only guess about. The UniFi Site Documentation documents your UniFi environment completely: devices, ports, photos, IPs, controller notes, and topology. We capture what's installed, how it's connected, how it's configured, and where it lives, producing documentation that makes management and troubleshooting straightforward. When something breaks or a new technician needs to understand your setup, the documentation is there. It's the kind of network knowledge most businesses only realize they lacked after an outage.",
+    "bestFor": [
+      "Businesses with undocumented UniFi deployments",
+      "Organizations that want device and port documentation",
+      "Companies preparing for IT provider transitions",
+      "Businesses that want faster UniFi troubleshooting"
+    ],
+    "whatIsIncluded": [
+      "UniFi device inventory and documentation",
+      "Port and connection documentation",
+      "Site photos and physical layout",
+      "IP address documentation",
+      "Controller and configuration notes",
+      "Complete UniFi site documentation"
+    ],
+    "customerOutcomes": [
+      "Complete documentation of your UniFi environment",
+      "Devices, ports, and IPs documented",
+      "Faster management and troubleshooting",
+      "Knowledge that survives personnel and provider changes"
+    ]
+  },
+  "small_office_wi_fi_bundle": {
+    "marketingCopy": "Small offices often piece together Wi-Fi from consumer gear - a router here, a repeater there - and end up with a network that's unreliable and insecure. The Small Office Wi-Fi Bundle packages a proper wireless network foundation into one coordinated engagement: router or firewall review, access points, staff SSID, guest SSID, and documentation. Instead of coordinating separate pieces, you get a coordinated project that reviews your existing infrastructure, installs appropriate access points, configures secure staff and guest networks, and documents the result. It's the small office Wi-Fi fix, bundled and coordinated.",
+    "bestFor": [
+      "Small offices running on consumer Wi-Fi gear",
+      "Organizations that need staff and guest networks done together",
+      "Companies that want a coordinated Wi-Fi improvement project",
+      "Businesses that want documentation with their Wi-Fi setup"
+    ],
+    "whatIsIncluded": [
+      "Router or firewall review",
+      "Access point installation",
+      "Staff SSID configuration",
+      "Guest SSID and separation setup",
+      "Coverage verification",
+      "Wi-Fi setup documentation"
+    ],
+    "customerOutcomes": [
+      "A coordinated small office Wi-Fi upgrade",
+      "Secure staff and guest networks",
+      "Reliable coverage with proper access points",
+      "A documented, bundled Wi-Fi project"
+    ]
+  },
+  "business_network_foundation": {
+    "marketingCopy": "A business network needs proper fundamentals - a firewall, a managed switch, decent Wi-Fi, VLAN basics, and labeling - and most small businesses are running on consumer equipment that provides none of them. The Business Network Foundation builds the proper network foundation for a small business in one coordinated project: firewall, managed switch, Wi-Fi, VLAN basics, labeling, and documentation. We install and configure the core components, establish basic segmentation, organize the infrastructure, and document it all. It's the network most small businesses should have had from the start - delivered as one coherent project.",
+    "bestFor": [
+      "Businesses running on consumer routers with no real network infrastructure",
+      "Organizations that want a proper firewall, switch, and Wi-Fi foundation",
+      "Companies that want VLAN basics and documentation from the start",
+      "Businesses ready to invest in a real network foundation"
+    ],
+    "whatIsIncluded": [
+      "Business firewall installation and configuration",
+      "Managed switch installation and configuration",
+      "Business Wi-Fi setup",
+      "VLAN basics and segmentation",
+      "Rack and cabling labeling",
+      "Network foundation documentation"
+    ],
+    "customerOutcomes": [
+      "A proper network foundation for your business",
+      "Firewall, switch, and Wi-Fi configured correctly",
+      "Basic segmentation and organized infrastructure",
+      "A documented network built the right way"
+    ]
+  },
+  "outdoor_coverage_bundle": {
+    "marketingCopy": "Outdoor Wi-Fi for yards, marinas, warehouses, and public areas is a specialized challenge - coverage over open space, weatherproofing, power, and wiring all need planning and proper equipment. The Outdoor Coverage Bundle combines outdoor Wi-Fi planning and deployment into one coordinated engagement. We plan the coverage, specify the right weatherproof access points, handle installation and configuration, and validate the coverage actually works. Instead of coordinating planning and installation separately, you get one project that delivers working outdoor coverage. It's the complete outdoor Wi-Fi solution, planned and deployed together.",
+    "bestFor": [
+      "Businesses with outdoor spaces needing Wi-Fi coverage",
+      "Marinas, warehouses, lots, and public areas with coverage challenges",
+      "Organizations that want planning and deployment coordinated",
+      "Businesses that need weatherproof outdoor coverage in Maine"
+    ],
+    "whatIsIncluded": [
+      "Outdoor coverage planning",
+      "Weatherproof access point selection and installation",
+      "Power and wiring configuration",
+      "SSID and security configuration",
+      "Coverage validation",
+      "Outdoor deployment documentation"
+    ],
+    "customerOutcomes": [
+      "Working outdoor Wi-Fi coverage across your space",
+      "Weatherproof equipment installed for Maine's climate",
+      "Planning and deployment coordinated as one project",
+      "Validated coverage instead of guesswork"
+    ]
+  },
+  "camera_and_wi_fi_bundle": {
+    "marketingCopy": "Security cameras depend on a network that can support them - and installing cameras without addressing the Wi-Fi and network first leads to dropped feeds, poor recording, and failed remote access. The Camera and Wi-Fi Bundle combines network readiness, camera VLAN, Wi-Fi, NVR, and documentation into one coordinated engagement. We assess the network, configure the camera VLAN and Wi-Fi infrastructure, set up the NVR and recording, and document the complete system. Instead of coordinating camera and network work separately, you get a coordinated project where cameras and the network that supports them are built together.",
+    "bestFor": [
+      "Businesses installing cameras that need network upgrades first",
+      "Organizations that want cameras and Wi-Fi built as one project",
+      "Companies that need camera VLAN and NVR setup coordinated",
+      "Businesses that want a documented camera and network system"
+    ],
+    "whatIsIncluded": [
+      "Camera network readiness assessment",
+      "Camera VLAN configuration",
+      "Wi-Fi infrastructure setup",
+      "NVR and recording configuration",
+      "Camera and network integration",
+      "Complete system documentation"
+    ],
+    "customerOutcomes": [
+      "A camera system built on a network that supports it",
+      "Cameras and Wi-Fi coordinated as one project",
+      "Proper camera VLAN and NVR setup",
+      "A documented camera and network system"
+    ]
+  }
+}

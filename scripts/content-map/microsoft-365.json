@@ -1,0 +1,418 @@
+{
+  "microsoft_365_tenant_setup": {
+    "marketingCopy": "A clean Microsoft 365 tenant is the foundation of everything else - and most tenants are a tangle of default settings, wrong licenses, and insecure configurations from day one. The Microsoft 365 Tenant Setup provisions or cleanly configures a new tenant foundation the right way. We set up your domain, create a proper user and group structure, assign the right licenses, configure email and DNS records, enforce MFA and basic security baselines from the start, and document the whole tenant so it's manageable instead of mysterious. Starting with a properly configured tenant avoids the cleanup, security gaps, and confusion that plague businesses that set up Microsoft 365 on their own.",
+    "bestFor": [
+      "New businesses setting up Microsoft 365 for the first time",
+      "Organizations migrating from another provider who want a clean start",
+      "Businesses whose tenant was set up hastily and needs a proper foundation",
+      "Companies that want MFA, security, and structure in place from day one"
+    ],
+    "whatIsIncluded": [
+      "Tenant provisioning and domain verification",
+      "User, group, and license structure design and setup",
+      "Email and DNS configuration",
+      "MFA and security baseline configuration",
+      "SharePoint, Teams, and OneDrive foundational setup",
+      "Tenant documentation for ongoing management"
+    ],
+    "customerOutcomes": [
+      "A properly structured Microsoft 365 tenant with correct licenses and users",
+      "Email, domains, and DNS working correctly from the start",
+      "Security basics like MFA configured before users arrive",
+      "Documented, manageable tenant structure instead of an inherited mess"
+    ]
+  },
+  "microsoft_365_tenant_cleanup": {
+    "marketingCopy": "Over the years, Microsoft 365 tenants accumulate stale users, wrong licenses, orphaned groups, mailbox delegation that shouldn't exist, and insecure collaboration settings - often left behind by former employees and past IT providers. The Microsoft 365 Tenant Cleanup systematically works through your tenant to remove what shouldn't be there. We identify and disable stale accounts, reclaim wasted licenses, clean up groups and Teams no longer in use, review and remove unnecessary mailbox delegation and shared mailbox permissions, and lock down external sharing and collaboration settings that expose data. Every change is documented and approved, so you end up with a leaner, safer, less expensive tenant.",
+    "bestFor": [
+      "Businesses that have had employees, providers, or contractors come and go",
+      "Organizations paying for licenses nobody uses",
+      "Companies concerned about wide-open sharing or old delegation",
+      "Businesses that inherited a tenant and want it cleaned up properly"
+    ],
+    "whatIsIncluded": [
+      "Stale user and license audit with cost reclaim",
+      "Group and Teams cleanup",
+      "Mailbox delegation and shared mailbox permission review",
+      "External sharing and collaboration setting lockdown",
+      "Approved execution of cleanup changes",
+      "Post-cleanup tenant documentation"
+    ],
+    "customerOutcomes": [
+      "A tenant free of stale users, unused licenses, and orphaned groups",
+      "Lower monthly Microsoft 365 costs from reclaimed licenses",
+      "Reduced data exposure from cleaned-up sharing and delegation",
+      "A documented, managed tenant instead of an accumulated mess"
+    ]
+  },
+  "microsoft_365_monthly_admin": {
+    "marketingCopy": "Microsoft 365 needs ongoing administration - new users, departing users, license changes, mailbox issues, Teams management, and security settings - and most small businesses have nobody doing it consistently. The Microsoft 365 Monthly Admin service provides ongoing, predictable administration of your tenant. Each month we handle user and license changes, troubleshoot mailbox and Teams issues, review and clean up access, apply security and compliance settings, and keep your tenant documented. You get the benefits of a dedicated Microsoft 365 administrator without hiring one full-time. It's a recurring service that keeps your tenant running, secure, and well-maintained month after month.",
+    "bestFor": [
+      "Businesses that rely on Microsoft 365 but have no dedicated admin",
+      "Organizations that juggle admin tasks between busy staff members",
+      "Companies that want proactive tenant maintenance rather than reactive fixes",
+      "Businesses that want their tenant managed consistently and documented"
+    ],
+    "whatIsIncluded": [
+      "Monthly user, license, and group administration",
+      "Mailbox, Teams, and SharePoint troubleshooting and support",
+      "Access review and cleanup",
+      "Security and compliance setting application",
+      "Tenant documentation updates",
+      "Monthly summary of work performed"
+    ],
+    "customerOutcomes": [
+      "Microsoft 365 administration handled consistently every month",
+      "User lifecycle managed properly from onboarding to offboarding",
+      "Security and compliance settings kept current",
+      "A documented, well-run tenant with a predictable monthly cost"
+    ]
+  },
+  "microsoft_365_security_baseline": {
+    "marketingCopy": "Microsoft 365 comes with security defaults, but 'default' isn't 'secure enough' for most businesses - especially with insurance and compliance expectations rising. The Microsoft 365 Security Baseline establishes practical, foundational controls in your tenant: MFA enforced, admin roles reviewed, legacy authentication blocked, email protection configured, and sharing locked down to safe defaults. We implement the baseline settings that matter most for a small business, verify they work without disrupting your users, and document everything. This is the tenant hardening every Microsoft 365 business should have - implemented, tested, and documented.",
+    "bestFor": [
+      "Businesses that want Microsoft 365 security hardened beyond default settings",
+      "Organizations preparing for insurance or compliance reviews",
+      "Companies that have never reviewed MFA or admin roles in their tenant",
+      "Businesses that want documented security baselines in place"
+    ],
+    "whatIsIncluded": [
+      "MFA enforcement and Conditional Access baseline",
+      "Admin role review and least-privilege adjustment",
+      "Legacy authentication blocking",
+      "Email protection baseline configuration",
+      "External sharing lockdown to safe defaults",
+      "Baseline documentation and verification"
+    ],
+    "customerOutcomes": [
+      "MFA enforced and legacy authentication blocked in your tenant",
+      "Admin roles reviewed and reduced to least privilege",
+      "Email protection and sharing configured to safe baselines",
+      "Documented security baseline evidence for insurance and compliance"
+    ]
+  },
+  "microsoft_365_backup_setup": {
+    "marketingCopy": "Microsoft 365 does not fully back up your data - it provides retention and recycling, but accidental deletion, malicious insider actions, and ransomware can still destroy mail, OneDrive files, and SharePoint content permanently. The Microsoft 365 Backup Setup configures a proper backup solution for Exchange Online, SharePoint, and OneDrive so you have real point-in-time recovery. We select an appropriate backup platform, configure automated backup of your mailboxes, sites, and files, set sensible retention, and test a restore so you know it actually works. Your Microsoft 365 data finally gets the protection your business already assumes it has.",
+    "bestFor": [
+      "Businesses that assume Microsoft 365 protects their data (it doesn't fully)",
+      "Organizations concerned about accidental deletion or ransomware",
+      "Companies that need email, SharePoint, and OneDrive recoverable beyond Microsoft's retention",
+      "Businesses preparing for insurance that requires backup evidence"
+    ],
+    "whatIsIncluded": [
+      "M365 backup platform selection and setup",
+      "Exchange Online mailbox backup configuration",
+      "SharePoint and OneDrive backup configuration",
+      "Retention policy configuration",
+      "Test restore to verify recoverability",
+      "Backup and restore documentation",
+      "Mail, site, and file restore walkthrough"
+    ],
+    "customerOutcomes": [
+      "Real, automated backup of your Microsoft 365 data",
+      "Point-in-time recovery for mail, files, and sites",
+      "Verified restore capability instead of assumed protection",
+      "Backup evidence for insurance and compliance"
+    ]
+  },
+  "microsoft_365_migration_lite": {
+    "marketingCopy": "Moving to Microsoft 365 doesn't have to be a massive project. The Microsoft 365 Migration Lite is designed for small businesses migrating a modest number of mailboxes, a domain, or a small file set - with planning, cutover, and validation handled professionally. We plan the migration to minimize disruption, migrate mailboxes and data with the right tools, configure the new environment, and validate that mail and files arrived intact. We handle the technical cutover steps that commonly break, so your team moves to Microsoft 365 without lost email, missing files, or confused users.",
+    "bestFor": [
+      "Small businesses migrating a few mailboxes to Microsoft 365",
+      "Organizations moving email and domain from another provider",
+      "Companies with a modest amount of data who want a managed migration",
+      "Businesses that want cutover handled by professionals"
+    ],
+    "whatIsIncluded": [
+      "Migration scope assessment and plan",
+      "Mailbox and data migration for a small number of accounts",
+      "Domain and DNS cutover coordination",
+      "New environment configuration",
+      "Post-migration validation of mail and files",
+      "Migration documentation and user guidance"
+    ],
+    "customerOutcomes": [
+      "A completed migration to Microsoft 365 with minimal disruption",
+      "Mail, domain, and data validated as intact",
+      "Users set up and productive in the new environment",
+      "A documented migration instead of a weekend of stress"
+    ]
+  },
+  "microsoft_365_migration_full": {
+    "marketingCopy": "A full migration to Microsoft 365 involves discovery, communication, cutover, and post-migration validation - and when it's done poorly, it costs lost email, disrupted business, and frustrated staff. The Microsoft 365 Migration Full is a complete migration project for businesses moving substantial mailboxes, file stores, and collaboration workloads. We conduct discovery and planning, design the target structure, communicate the migration to users so nobody is surprised, execute the migration in phases, perform cutover with minimized disruption, and validate everything post-migration. It's a managed, project-based migration where every step is planned, tested, and documented.",
+    "bestFor": [
+      "Businesses migrating a substantial number of users and data",
+      "Organizations moving from Google Workspace, on-premises email, or another platform",
+      "Companies that need a planned, phased migration with clear communication",
+      "Businesses that want the migration project managed end to end"
+    ],
+    "whatIsIncluded": [
+      "Full discovery and migration planning",
+      "Target tenant structure design",
+      "User communication and change management",
+      "Phased migration of mailboxes, files, and collaboration workloads",
+      "Cutover execution with minimized disruption",
+      "Post-migration validation and support",
+      "Full migration documentation"
+    ],
+    "customerOutcomes": [
+      "A complete, planned migration to Microsoft 365 executed in phases",
+      "Users informed and prepared throughout the process",
+      "Data migrated and validated with no loss",
+      "A documented, supported post-migration environment"
+    ]
+  },
+  "microsoft_365_license_optimization": {
+    "marketingCopy": "Most small businesses pay for Microsoft 365 licenses they don't use or need - and the opposite is also common: users on the wrong plan, missing features they could use, or paying extra for products nobody touches. The Microsoft 365 License Optimization reviews every license assignment in your tenant against actual usage. We analyze which users are inactive, which licenses are wasted, and which plans are mismatched to job needs. You get a clear picture of what you're paying for versus what you're using, with recommendations that reduce cost or improve fit. For most businesses this review pays for itself in the first month of reclaimed licenses.",
+    "bestFor": [
+      "Businesses that want to reduce Microsoft 365 costs without losing features",
+      "Organizations with inactive users still holding licenses",
+      "Companies unsure whether users are on the right plan",
+      "Businesses preparing for renewal who want to right-size"
+    ],
+    "whatIsIncluded": [
+      "License inventory and usage analysis",
+      "Inactive user and unused license identification",
+      "Plan-fit review against job needs",
+      "Cost-saving and feature-fit recommendations",
+      "Approved license reallocation",
+      "Ongoing license management guidance"
+    ],
+    "customerOutcomes": [
+      "A clear picture of Microsoft 365 spend versus actual usage",
+      "Wasted licenses identified and reclaimed",
+      "Users right-sized to plans that match their jobs",
+      "Reduced monthly cost or better feature fit"
+    ]
+  },
+  "shared_mailbox_cleanup": {
+    "marketingCopy": "Shared mailboxes quietly accumulate permissions, delegation, and stale access - former employees who can still read them, users with Full Access who shouldn't have it, and mailboxes that nobody uses anymore. The Shared Mailbox Cleanup reviews every shared mailbox in your tenant and its permission structure. We identify which shared mailboxes are still needed, document who has access and what kind, flag stale and excessive permissions, and clean up what you approve. You get a documented picture of your shared mailbox environment with the access risk removed - because a shared mailbox with the wrong people in it is a data leak waiting to happen.",
+    "bestFor": [
+      "Businesses with multiple shared mailboxes and unclear access",
+      "Organizations that have had staff changes without permission cleanup",
+      "Companies concerned about who can read shared mailboxes",
+      "Businesses preparing for access reviews or compliance checks"
+    ],
+    "whatIsIncluded": [
+      "Shared mailbox inventory across the tenant",
+      "Full Access, Send As, and Send on Behalf permission review",
+      "Stale and unnecessary mailbox identification",
+      "Approved permission cleanup",
+      "Active mailbox access documentation",
+      "Shared mailbox usage recommendations"
+    ],
+    "customerOutcomes": [
+      "A complete inventory of shared mailboxes and who can access them",
+      "Stale access removed and permissions reduced to what's needed",
+      "Reduced risk of unauthorized mailbox access",
+      "Documented shared mailbox environment for access reviews"
+    ]
+  },
+  "onedrive_and_sharepoint_permissions_review": {
+    "marketingCopy": "External sharing, public links, and 'anyone with the link' permissions are how confidential business data quietly leaks - and most small businesses have no idea how widely their OneDrive and SharePoint content is shared. The OneDrive and SharePoint Permissions Review examines external sharing settings, public and 'anyone' links, guest access, and excessive user permissions across your environment. We identify files and sites that are more exposed than they should be, document the risks, and recommend or execute the fixes you approve. Your collaboration data gets its sharing posture reviewed and corrected before a leak happens.",
+    "bestFor": [
+      "Businesses that share files externally and want to confirm it's controlled",
+      "Organizations worried about public links and guest access",
+      "Companies that have never reviewed SharePoint and OneDrive sharing",
+      "Businesses preparing for compliance or insurance data-protection reviews"
+    ],
+    "whatIsIncluded": [
+      "External sharing policy review",
+      "Public and 'anyone with the link' link audit",
+      "Guest access review",
+      "User permission and site access review",
+      "Excessive sharing identification with risk documentation",
+      "Approved remediation of risky sharing"
+    ],
+    "customerOutcomes": [
+      "A clear picture of how your OneDrive and SharePoint content is shared",
+      "Public and 'anyone' links identified and corrected",
+      "Guest and user access reviewed against need",
+      "Reduced risk of accidental external data exposure"
+    ]
+  },
+  "new_employee_m365_setup": {
+    "marketingCopy": "A new hire's first week is shaped by whether their IT is ready on day one - and a rushed setup creates security gaps and frustrating starts. The New Employee M365 Setup creates or guides a clean, complete onboarding for a new employee: mailbox, license, MFA enrollment, SharePoint and Teams access, and the right permissions for their role. We configure the account securely with MFA and least privilege, grant access only to what the job needs, and hand the employee clear instructions so they're productive from day one. It's onboarding done the way it should be - fast, secure, and complete.",
+    "bestFor": [
+      "Businesses hiring new staff who want IT ready on day one",
+      "Organizations that want consistent, secure employee onboarding",
+      "Companies that want new hires set up with the right access - not too much or too little",
+      "Businesses that want onboarding handled without burdening existing staff"
+    ],
+    "whatIsIncluded": [
+      "Microsoft 365 account and mailbox creation",
+      "License assignment matching the role",
+      "MFA enrollment and authenticator setup",
+      "SharePoint and Teams access configuration",
+      "Role-appropriate permissions with least privilege",
+      "New employee instructions for getting started"
+    ],
+    "customerOutcomes": [
+      "New employees productive from day one with a working setup",
+      "Accounts created securely with MFA and least privilege",
+      "Access granted to exactly what the job needs",
+      "Consistent, documented onboarding for every hire"
+    ]
+  },
+  "departing_employee_lockdown": {
+    "marketingCopy": "A departing employee's account is a security risk the moment they leave - whether they leave on good terms or bad. The Departing Employee Lockdown secures the account promptly and properly: disabling or securing access, revoking sessions, removing permissions, and preserving the business data that must be retained. We handle the account hygiene so you're not left wondering whether a former employee still has access to email, files, or apps. We also preserve important data - mailbox content, OneDrive files, and anything the business needs - before access is cut. The account is locked down fast, and the data is saved.",
+    "bestFor": [
+      "Businesses offboarding employees who want access cut promptly",
+      "Organizations that need departed-employee data preserved before access is removed",
+      "Companies concerned about former employees retaining access",
+      "Businesses that want a consistent, documented offboarding process"
+    ],
+    "whatIsIncluded": [
+      "Account disablement or secure offboarding",
+      "Session revocation across email and apps",
+      "Permission and group access removal",
+      "Mailbox, OneDrive, and file data preservation",
+      "Access handoff for business-critical data",
+      "Offboarding documentation for audit"
+    ],
+    "customerOutcomes": [
+      "Former employees cut off from business systems promptly",
+      "Important data preserved before access is removed",
+      "Access risk eliminated without losing business data",
+      "Documented offboarding evidence for compliance"
+    ]
+  },
+  "teams_cleanup_mini_project": {
+    "marketingCopy": "Microsoft Teams environments accumulate clutter fast: abandoned teams, guest access nobody remembers granting, channels that were used once, and inconsistent naming that makes everything hard to find. The Teams Cleanup Mini Project reviews your Teams environment and restores order. We identify inactive and duplicate teams, review guest access, clean up unused channels, improve naming and structure, and document the organization going forward. A clean Teams environment is easier to navigate, less exposed through forgotten guest access, and more useful for everyone.",
+    "bestFor": [
+      "Businesses with years of accumulated Teams clutter",
+      "Organizations unsure what guest access exists in Teams",
+      "Companies where nobody can find anything in Teams",
+      "Businesses that want a documented, organized collaboration structure"
+    ],
+    "whatIsIncluded": [
+      "Teams inventory and activity review",
+      "Inactive and duplicate team identification",
+      "Guest access review",
+      "Channel cleanup and structure improvements",
+      "Naming and organization standardization",
+      "Teams organization documentation"
+    ],
+    "customerOutcomes": [
+      "A cleaner, more navigable Teams environment",
+      "Forgotten guest access identified and removed",
+      "Consistent naming and structure going forward",
+      "Documented Teams organization"
+    ]
+  },
+  "microsoft_secure_score_review": {
+    "marketingCopy": "Microsoft Secure Score is a running security assessment of your tenant - but the raw score alone doesn't tell you what to fix first or which improvements are safe. The Microsoft Secure Score Review interprets your tenant's score and turns it into actionable work. We review the major recommendations Microsoft surfaces, identify which improvements meaningfully reduce risk, and flag which ones could disrupt operations if applied blindly. You get a prioritized list of secure score improvements to implement - the safe, high-impact ones first - and we can execute them with your approval. Your score becomes a tool for improvement instead of a number you ignore.",
+    "bestFor": [
+      "Businesses that want to improve their Microsoft Secure Score",
+      "Organizations that have seen the score but not known what to do with it",
+      "Companies that want high-impact security improvements without breaking things",
+      "Businesses preparing for insurance that considers security baselines"
+    ],
+    "whatIsIncluded": [
+      "Microsoft Secure Score review and interpretation",
+      "Recommendation analysis with risk-versus-impact ranking",
+      "Safe, high-impact improvement identification",
+      "Operational disruption risk assessment",
+      "Approved implementation of improvements",
+      "Score improvement documentation"
+    ],
+    "customerOutcomes": [
+      "A higher, more meaningful Microsoft Secure Score",
+      "High-impact improvements applied safely",
+      "Risk-versus-disruption clarity for each recommendation",
+      "Documented security baseline improvements"
+    ]
+  },
+  "m365_launch_bundle": {
+    "marketingCopy": "Starting a new business's Microsoft 365 environment from scratch involves dozens of steps - domain, email, users, licenses, MFA, and security - and skipping or fumbling any of them creates problems later. The M365 Launch Bundle packages the entire new-business Microsoft 365 setup into one coordinated engagement: domain configuration, user and mailbox creation, license assignment, MFA enforcement, and new-user onboarding support. Instead of coordinating five separate services, you get one project plan, one point of contact, and everything working together from day one. It's the new-business Microsoft 365 foundation, bundled at a better price than assembling it piecemeal.",
+    "bestFor": [
+      "New businesses setting up Microsoft 365 from scratch",
+      "Founders who want email, users, and security handled together",
+      "Organizations that want MFA and security configured from the start",
+      "New businesses that want a coordinated, better-priced foundation"
+    ],
+    "whatIsIncluded": [
+      "Domain and DNS configuration",
+      "User, mailbox, and license setup",
+      "MFA enforcement",
+      "Security baseline configuration",
+      "New user onboarding support",
+      "Tenant setup documentation"
+    ],
+    "customerOutcomes": [
+      "A complete Microsoft 365 environment up and running",
+      "Email, users, and security configured and coordinated",
+      "MFA enforced from day one",
+      "A bundled, better-priced foundation with one point of contact"
+    ]
+  },
+  "m365_secure_bundle": {
+    "marketingCopy": "Securing Microsoft 365 is a set of related improvements that work best together - MFA enforcement, security baselines, email protection, backup, and admin review. The M365 Secure Bundle packages these security-focused Microsoft 365 improvements into one coordinated hardening engagement. Instead of tackling each piece separately, you get a bundled security project that implements MFA and Conditional Access, establishes the security baseline, hardens email protection, sets up Microsoft 365 backup, and reviews admin access - all coordinated and documented together. It's the full Microsoft 365 security treatment, bundled at a better price with everything implemented coherently.",
+    "bestFor": [
+      "Businesses that want Microsoft 365 hardened comprehensively",
+      "Organizations preparing for insurance that requires multiple controls",
+      "Companies that want MFA, backup, email protection, and admin review done together",
+      "Businesses that want a coordinated security project rather than piecemeal fixes"
+    ],
+    "whatIsIncluded": [
+      "MFA and Conditional Access enforcement",
+      "Security baseline implementation",
+      "Email protection hardening",
+      "Microsoft 365 backup setup",
+      "Admin access review",
+      "Coordinated security documentation"
+    ],
+    "customerOutcomes": [
+      "A comprehensively hardened Microsoft 365 tenant",
+      "MFA, backup, email protection, and admin review all implemented",
+      "Insurance-ready security controls documented",
+      "A coordinated, better-priced security engagement"
+    ]
+  },
+  "m365_cleanup_bundle": {
+    "marketingCopy": "A messy Microsoft 365 tenant combines wasted spend, stale access, and excessive sharing into one compounding problem. The M365 Cleanup Bundle packages the tenant cleanup work into a single coordinated project: user and license cleanup, group and Teams cleanup, mailbox delegation review, sharing lockdown, and tenant documentation. Instead of tackling each cleanup separately, you get one coordinated engagement that works through your tenant systematically, with every change documented and approved. You end up with a leaner, safer, less expensive tenant - and a documented baseline you can maintain.",
+    "bestFor": [
+      "Businesses with an accumulated tenant mess and unclear access",
+      "Organizations paying for licenses nobody uses",
+      "Companies concerned about stale access and wide-open sharing",
+      "Businesses that want a coordinated tenant cleanup project"
+    ],
+    "whatIsIncluded": [
+      "User and license cleanup",
+      "Group and Teams cleanup",
+      "Mailbox delegation and shared mailbox review",
+      "External sharing and collaboration lockdown",
+      "Approved cleanup execution",
+      "Tenant documentation baseline"
+    ],
+    "customerOutcomes": [
+      "A clean, lean, documented Microsoft 365 tenant",
+      "Wasted licenses and stale access removed",
+      "Sharing locked down to safe levels",
+      "A coordinated, better-priced cleanup project"
+    ]
+  },
+  "m365_managed_bundle": {
+    "marketingCopy": "The ongoing administration of Microsoft 365 - users, licenses, security, and support - is a recurring need, not a one-time project. The M365 Managed Bundle is a recurring Microsoft 365 administration and improvement plan that keeps your tenant running well month after month. Each cycle includes user lifecycle management, license optimization, security baseline maintenance, access reviews, and responsive admin support. You get a managed Microsoft 365 environment with predictable monthly cost and continuous improvement, without hiring a dedicated administrator. It's the comprehensive, ongoing management your tenant needs to stay secure and efficient.",
+    "bestFor": [
+      "Businesses that want ongoing Microsoft 365 management",
+      "Organizations without a dedicated Microsoft 365 admin",
+      "Companies that want continuous security and license optimization",
+      "Businesses that want predictable monthly IT cost for their tenant"
+    ],
+    "whatIsIncluded": [
+      "Recurring user lifecycle and license management",
+      "Security baseline maintenance",
+      "Access reviews and cleanup",
+      "Admin support and troubleshooting",
+      "Tenant documentation maintenance",
+      "Monthly management summary"
+    ],
+    "customerOutcomes": [
+      "A professionally managed Microsoft 365 environment month after month",
+      "Continuous security, license, and access optimization",
+      "Responsive admin support when issues arise",
+      "Predictable monthly cost and documented management"
+    ]
+  }
+}

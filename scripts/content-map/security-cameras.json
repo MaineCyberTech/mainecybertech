@@ -1,0 +1,301 @@
+{
+  "camera_site_survey": {
+    "marketingCopy": "Security camera placement is a skill - put cameras in the wrong places and you get blind spots, glare, poor coverage, and gaps right where incidents happen. The Camera Site Survey is a walkthrough and placement recommendation service that determines exactly where cameras should go before you buy anything. We walk your property, identify the areas that need coverage, evaluate lighting, sight lines, and entry points, and recommend specific camera types and positions. You get a professional placement plan that covers what matters - so you don't spend money on cameras that miss the action.",
+    "bestFor": [
+      "Businesses planning a camera system who want professional placement guidance",
+      "Organizations that want to avoid blind spots and wasted camera purchases",
+      "Property owners adding coverage to entry points, lots, or storage areas",
+      "Businesses that want a documented camera plan before purchasing equipment"
+    ],
+    "whatIsIncluded": [
+      "Onsite property walkthrough",
+      "Coverage area identification",
+      "Entry point and sight line evaluation",
+      "Lighting and environmental assessment",
+      "Specific camera type and placement recommendations",
+      "Camera placement plan documentation"
+    ],
+    "customerOutcomes": [
+      "A professional camera placement plan before you spend on equipment",
+      "Coverage designed around your actual property and risks",
+      "No expensive blind spots from poor placement",
+      "A documented plan you can purchase against"
+    ]
+  },
+  "single_camera_add_on": {
+    "marketingCopy": "Adding one camera to an existing system should be simple - but integrating it correctly, pointing it at the right area, and getting it recording properly takes more than plugging it in. The Single Camera Add-On adds one camera to an appropriate existing camera system: installation, configuration, network setup, and integration with your recording. We mount the camera in the right spot, configure it to join your system, verify recording and viewing work, and document the addition. One more camera, properly installed and fully functional, extending your coverage where you need it.",
+    "bestFor": [
+      "Businesses with an existing camera system adding coverage",
+      "Organizations that want one more camera at a specific location",
+      "Companies that want a new camera integrated properly with recording",
+      "Property owners extending coverage to a new area"
+    ],
+    "whatIsIncluded": [
+      "Camera selection guidance for the addition",
+      "Camera installation and mounting",
+      "Network and system integration",
+      "Recording configuration",
+      "Viewing and access verification",
+      "Camera addition documentation"
+    ],
+    "customerOutcomes": [
+      "A new camera added and fully functional",
+      "Proper integration with your existing recording",
+      "Extended coverage where you needed it",
+      "Documented camera addition"
+    ]
+  },
+  "small_camera_system_setup": {
+    "marketingCopy": "A small 2-4 camera system is the right size for many businesses - but only if it's set up properly with recording, storage, and viewing that actually work. The Small Camera System Setup handles the complete setup of a small camera system: installation, configuration, recording setup, storage management, and basic viewing access. We place and install the cameras, configure the recording, set up storage with sensible retention, and make sure you can view footage. Your business gets a working 2-4 camera system with reliable recording - not cameras that sit unconfigured or fail to record when it matters.",
+    "bestFor": [
+      "Small businesses installing their first camera system",
+      "Organizations that want 2-4 cameras set up and recording reliably",
+      "Companies that want viewing and storage configured properly",
+      "Businesses that want a complete small camera system working from day one"
+    ],
+    "whatIsIncluded": [
+      "Camera installation for a 2-4 camera system",
+      "Recording configuration",
+      "Storage setup and retention configuration",
+      "Basic viewing and access setup",
+      "System testing and verification",
+      "Camera system documentation"
+    ],
+    "customerOutcomes": [
+      "A working 2-4 camera system with reliable recording",
+      "Storage and retention configured properly",
+      "Viewing access set up for the right people",
+      "A documented, verified camera system"
+    ]
+  },
+  "camera_health_check": {
+    "marketingCopy": "Camera systems fail silently - a camera stops recording, a blind spot develops, storage fills up, or an account becomes stale - and most businesses never notice until they need footage and find nothing there. The Camera Health Check reviews your camera system's health: recording status, blind spots, storage, account access, and camera condition. We verify cameras are actually recording, identify coverage gaps, check storage capacity and retention, review who has access, and assess camera health. You get a clear picture of your camera system's reliability before you need footage it didn't capture.",
+    "bestFor": [
+      "Businesses that rely on cameras but haven't verified they're recording",
+      "Organizations concerned about blind spots or storage issues",
+      "Companies unsure who has access to their camera system",
+      "Businesses that want camera reliability verified proactively"
+    ],
+    "whatIsIncluded": [
+      "Recording status verification for all cameras",
+      "Blind spot and coverage review",
+      "Storage capacity and retention check",
+      "Account and access review",
+      "Camera health and condition assessment",
+      "Camera health report with recommendations"
+    ],
+    "customerOutcomes": [
+      "Verification that your cameras are actually recording",
+      "Blind spots and storage issues identified before they matter",
+      "A clear picture of who has camera access",
+      "A documented camera system health assessment"
+    ]
+  },
+  "nvr_cleanup": {
+    "marketingCopy": "The NVR is the brain of your camera system - and over time, recording schedules get sloppy, channels get misnamed, permissions grow stale, and storage fills up. The NVR Cleanup cleans up and configures your recording system properly: recording schedules, channels, naming, permissions, and storage settings. We straighten out what's recording when, fix channel naming so footage is findable, review permissions, and manage storage settings and retention. Your NVR becomes a system you can actually rely on to find footage when you need it - instead of a mess you avoid until an incident.",
+    "bestFor": [
+      "Businesses with messy NVR configurations",
+      "Organizations that can't find footage because channels are misnamed",
+      "Companies with recording schedules that don't match needs",
+      "Businesses that want recording, naming, and storage cleaned up"
+    ],
+    "whatIsIncluded": [
+      "Recording schedule review and cleanup",
+      "Channel naming standardization",
+      "Permissions and access review",
+      "Storage settings and retention management",
+      "Recording verification",
+      "NVR configuration documentation"
+    ],
+    "customerOutcomes": [
+      "A cleaned-up NVR with sensible recording schedules",
+      "Footage that's findable because channels are named correctly",
+      "Permissions and storage managed properly",
+      "A reliable, documented recording system"
+    ]
+  },
+  "remote_camera_access_setup": {
+    "marketingCopy": "The whole point of business cameras is checking what's happening when you're not there - but remote access is often left unconfigured or set up insecurely. The Remote Camera Access Setup configures secure remote viewing for owners and managers. We set up remote access to your camera system, configure it securely so footage isn't exposed to the internet unprotected, and verify viewing works from phones and computers. You get the ability to check your business from anywhere - with remote access that's secure, not an open door into your system.",
+    "bestFor": [
+      "Owners and managers who want to check cameras remotely",
+      "Businesses that need secure mobile access to their camera system",
+      "Organizations concerned about exposing camera systems to the internet",
+      "Companies that want remote viewing set up properly"
+    ],
+    "whatIsIncluded": [
+      "Secure remote access configuration",
+      "Mobile and computer viewing setup",
+      "Security verification of remote access",
+      "User access configuration for owners and managers",
+      "Remote viewing testing",
+      "Remote access documentation"
+    ],
+    "customerOutcomes": [
+      "Secure remote viewing of your cameras from anywhere",
+      "Access configured so footage isn't exposed unprotected",
+      "Owners and managers able to check the business remotely",
+      "Documented, verified remote access"
+    ]
+  },
+  "camera_signage_package": {
+    "marketingCopy": "Camera signage does more than meet legal notice requirements - it deters crime by making people know they're on camera, and it clarifies expectations for customers and staff. The Camera Signage Package recommends the right signage placement and wording for your business. We assess where signage should go for maximum deterrent effect and legal notice, recommend wording that's clear and appropriate, and guide placement at entries, in view of cameras, and in customer areas. You get a signage plan that makes your camera system work harder - deterring the incidents it's there to capture.",
+    "bestFor": [
+      "Businesses with cameras that want visible deterrence",
+      "Organizations that want signage that meets notice requirements",
+      "Companies that want customers and staff aware they're on camera",
+      "Businesses preparing for camera installations or renewals"
+    ],
+    "whatIsIncluded": [
+      "Signage placement assessment",
+      "Camera visibility and deterrent analysis",
+      "Signage wording recommendations",
+      "Entry and camera-area placement guidance",
+      "Notice and communication considerations",
+      "Signage plan documentation"
+    ],
+    "customerOutcomes": [
+      "Signage that deters crime and communicates clearly",
+      "Notice requirements addressed for your business",
+      "Cameras working harder through visible deterrence",
+      "A documented signage plan"
+    ]
+  },
+  "camera_maintenance_plan": {
+    "marketingCopy": "Cameras collect dust, firmware goes stale, recording fills storage, and access drifts over time - and without maintenance, a camera system slowly stops being reliable when you need it most. The Camera Maintenance Plan is a recurring service that keeps your camera system healthy: lens cleaning, firmware updates, recording and storage verification, and access review. Each cycle your cameras get checked, cleaned, updated, and verified, with issues caught early. It's proactive maintenance that keeps your camera system recording reliably - instead of discovering failures only when you need the footage.",
+    "bestFor": [
+      "Businesses that depend on their camera system for security",
+      "Organizations that want recording verified regularly",
+      "Companies that want camera maintenance handled on a schedule",
+      "Businesses that want to avoid discovering camera failures after the fact"
+    ],
+    "whatIsIncluded": [
+      "Recurring camera lens cleaning",
+      "Firmware and software updates",
+      "Recording and storage verification",
+      "Remote access testing",
+      "Access and permission review",
+      "Maintenance report each cycle"
+    ],
+    "customerOutcomes": [
+      "Cameras maintained and recording reliably on a schedule",
+      "Storage, firmware, and access kept healthy",
+      "Issues caught early instead of discovered at the wrong time",
+      "Documented camera maintenance"
+    ]
+  },
+  "camera_starter_bundle": {
+    "marketingCopy": "Starting a camera system involves cameras, recording, mobile app, and documentation - and coordinating them separately is how you end up with cameras that don't record or a system nobody can access. The Camera Starter Bundle packages a two-camera starter system into one coordinated engagement: camera installation, recording setup, mobile app configuration, and documentation. Instead of piecing it together, you get a working two-camera starter system with recording and phone access, coordinated and documented. It's the affordable, complete starting point for business camera coverage.",
+    "bestFor": [
+      "Small businesses installing their first camera system",
+      "Organizations that want a coordinated two-camera starter",
+      "Companies that want recording and mobile access set up together",
+      "Businesses that want a documented starter system"
+    ],
+    "whatIsIncluded": [
+      "Two-camera installation",
+      "Recording configuration",
+      "Mobile app and viewing setup",
+      "Storage configuration",
+      "System testing",
+      "Starter system documentation"
+    ],
+    "customerOutcomes": [
+      "A complete two-camera starter system",
+      "Recording and mobile viewing working together",
+      "A coordinated, documented setup",
+      "Affordable, complete starting coverage"
+    ]
+  },
+  "camera_business_bundle": {
+    "marketingCopy": "A real business camera deployment is more than a couple cameras - it's a system of four to eight cameras with an NVR, remote access, user permissions, and validation that everything works. The Camera Business Bundle packages a proper business camera deployment into one coordinated engagement: camera installation, NVR setup, remote access, user permissions, and validation. We install and configure the system end to end, set up secure remote access, configure who can view what, and validate coverage and recording. Your business gets a real camera system - not just cameras - installed, configured, and proven.",
+    "bestFor": [
+      "Businesses deploying a four to eight camera system",
+      "Organizations that need NVR, remote access, and permissions set up",
+      "Companies that want a coordinated, validated camera deployment",
+      "Businesses that want professional coverage across their property"
+    ],
+    "whatIsIncluded": [
+      "Four to eight camera installation",
+      "NVR configuration and recording setup",
+      "Secure remote access setup",
+      "User permissions configuration",
+      "Coverage and recording validation",
+      "Business camera system documentation"
+    ],
+    "customerOutcomes": [
+      "A complete four to eight camera business system",
+      "NVR, remote access, and permissions all configured",
+      "Validated coverage and recording",
+      "A coordinated, documented deployment"
+    ]
+  },
+  "camera_complete_bundle": {
+    "marketingCopy": "Larger camera deployments need more than cameras and an NVR - they need network segmentation, power protection, retention planning, and a maintenance path. The Camera Complete Bundle is a larger, comprehensive camera deployment with everything coordinated: camera installation, segmentation, UPS consideration, retention planning, and maintenance. We design and install a system that's secure on your network, protected against power loss, records with sensible retention, and has a maintenance plan going forward. It's the full camera system for businesses that want coverage built to last - not just cameras bolted to walls.",
+    "bestFor": [
+      "Businesses deploying a larger camera system",
+      "Organizations that want network segmentation and UPS protection",
+      "Companies that want retention planned and maintenance established",
+      "Businesses that want a comprehensive, coordinated camera deployment"
+    ],
+    "whatIsIncluded": [
+      "Comprehensive camera installation",
+      "Camera network segmentation (VLAN)",
+      "UPS and power protection consideration",
+      "Storage retention planning",
+      "Maintenance plan establishment",
+      "Complete camera system documentation"
+    ],
+    "customerOutcomes": [
+      "A comprehensive camera system built to last",
+      "Cameras segmented from the business network",
+      "Recording protected against power loss with sensible retention",
+      "A maintenance path that keeps the system reliable"
+    ]
+  },
+  "unifi_camera_install": {
+    "marketingCopy": "UniFi cameras and NVR offer excellent integration - when deployed by someone who knows UniFi. The UniFi Camera Install deploys UniFi cameras and the UniFi Protect NVR with a basic recording schedule and access setup. We install and adopt the cameras, configure the NVR and recording, set up initial access for viewing, and verify everything works together. Your business gets a UniFi camera system installed and configured properly - integrated with the UniFi ecosystem and recording as intended.",
+    "bestFor": [
+      "Businesses already using UniFi networking that want UniFi cameras",
+      "Organizations that want cameras integrated with their UniFi environment",
+      "Companies that want UniFi Protect NVR set up properly",
+      "Businesses that want a cohesive UniFi security system"
+    ],
+    "whatIsIncluded": [
+      "UniFi camera installation and adoption",
+      "UniFi Protect NVR configuration",
+      "Recording schedule setup",
+      "Initial viewing and access configuration",
+      "System integration and testing",
+      "UniFi camera system documentation"
+    ],
+    "customerOutcomes": [
+      "UniFi cameras installed and recording properly",
+      "NVR and recording configured with a sensible schedule",
+      "Integration with your UniFi environment",
+      "A documented UniFi camera system"
+    ]
+  },
+  "unifi_door_access_consultation": {
+    "marketingCopy": "UniFi Access brings door control and access management into the UniFi ecosystem - but it's a different project than cameras, with different hardware, wiring, and door hardware requirements. The UniFi Door Access Consultation evaluates whether UniFi Access or door-control is right for your business and scopes the project. We assess your doors, entry points, and access needs, evaluate the hardware and wiring requirements, and provide a realistic project scope with what's involved. You get an informed answer about door access control - what it would take, what it would cost, and whether it fits - before committing to the project.",
+    "bestFor": [
+      "Businesses considering UniFi Access for door control",
+      "Organizations that want to control who enters through key doors",
+      "Companies that want a realistic scope before investing in access control",
+      "Businesses already using UniFi who want to evaluate door access"
+    ],
+    "whatIsIncluded": [
+      "Door and entry point assessment",
+      "UniFi Access hardware and wiring evaluation",
+      "Access needs and requirements review",
+      "Project scope and effort estimation",
+      "Feasibility assessment",
+      "Door access consultation report"
+    ],
+    "customerOutcomes": [
+      "An informed evaluation of whether UniFi Access fits your business",
+      "Realistic project scope, hardware, and wiring requirements",
+      "A clear understanding of what door control would involve",
+      "A decision-ready consultation report"
+    ]
+  }
+}
