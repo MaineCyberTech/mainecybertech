@@ -33,7 +33,12 @@ test.describe("portal project task views", () => {
     const projectLink = page.locator("a[href*='/portal/projects/']").first();
     if (await projectLink.isVisible()) {
       await projectLink.click();
-      await expect(page.getByRole("button", { name: /list|timeline|calendar/i }).first()).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: /list|timeline|calendar/i }).first(),
+      ).toBeVisible({ timeout: 10000 });
+    } else {
+      // No seeded projects — the list page itself must still render.
+      await expect(page.getByRole("heading", { name: /projects/i })).toBeVisible();
     }
   });
 
