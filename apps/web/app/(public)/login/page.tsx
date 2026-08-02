@@ -91,7 +91,13 @@ export default function LoginPage() {
               </div>
             ) : null}
 
-            <Button type="submit" disabled={loading} loading={loading} className="w-full" aria-label="Secure Login">
+            <Button
+              type="submit"
+              disabled={loading}
+              loading={loading}
+              className="w-full"
+              aria-label="Secure Login"
+            >
               {loading ? "Signing In..." : "Secure Login"}
             </Button>
           </form>
@@ -102,6 +108,15 @@ export default function LoginPage() {
               Sign up
             </a>
           </p>
+
+          {process.env.NODE_ENV !== "production" ? (
+            <p className="mt-3 text-xs text-slate-500">
+              <Link href="/test-accounts" className="text-emerald-500 hover:text-emerald-400">
+                Browse test accounts
+              </Link>{" "}
+              (dev only)
+            </p>
+          ) : null}
         </div>
       </main>
     </>

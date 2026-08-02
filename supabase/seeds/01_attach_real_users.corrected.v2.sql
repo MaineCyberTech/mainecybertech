@@ -5,7 +5,10 @@
 -- created in your Supabase project.
 --
 -- All local test accounts use the same password:
---   Password123!
+--   1
+-- (verified against the bcrypt hashes in
+--  00_local_auth_users.corrected.v2.sql; see also
+--  05_comprehensive_test_data.sql which extends the roster.)
 -- =========================================================
 
 begin;
