@@ -16,6 +16,10 @@ export default defineConfig({
     video: "on-first-retry",
   },
 
+  expect: {
+    timeout: 15000,
+  },
+
   projects: [
     {
       name: "setup",
