@@ -209,7 +209,7 @@ jobs:
     # always(): run even when gates are skipped (dev); !failure() && !cancelled(): never run after a failure
     if: ${{ always() && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     environment: ${{ needs.setup.outputs.name }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -220,10 +220,10 @@ jobs:
           host: ${{ needs.resolve-ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          command_timeout: 30m
+          command_timeout: 45m
           script: |
             set -e
-            cloud-init status --wait 2>/dev/null || true
+            timeout 60 cloud-init status --wait 2>/dev/null || true
             if ! docker compose version >/dev/null 2>&1; then
               apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2
             fi
@@ -282,7 +282,7 @@ jobs:
           host: ${{ needs.resolve-ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
-          command_timeout: 30m
+          command_timeout: 45m
           envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY
           script: |
             set -e
