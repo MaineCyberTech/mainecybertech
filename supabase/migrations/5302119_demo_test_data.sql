@@ -338,7 +338,7 @@ insert into public.memberships (
 )
 select
   m.organization_id, m.user_id, r.id, m.status::public.membership_status,
-  '66ce903f-6fe0-45da-878b-a0398e6b1981'::uuid,
+  'd4000000-0000-4000-8000-000000000004'::uuid,
   case when m.status = 'approved' then now() else null end,
   m.job_title, m.is_billing_contact, m.is_security_contact
 from membership_rows m
