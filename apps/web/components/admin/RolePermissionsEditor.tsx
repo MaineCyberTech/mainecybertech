@@ -81,6 +81,19 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = useCallback((group: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(group)) {
+        next.delete(group);
+      } else {
+        next.add(group);
+      }
+      return next;
+    });
+  }, []);
 
   const addToast = useCallback((message: string, kind: "success" | "error" = "success") => {
     const id = Date.now();
@@ -183,69 +196,102 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
         </div>
       </div>
 
-      {orderedGroups.map((group) => (
-        <div key={group} className="overflow-x-auto">
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
-            {groupLabel(group)}
-          </p>
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
-                  Module
-                </th>
-                {actions.map((action) => (
-                  <th
-                    key={action}
-                    className="px-3 py-2 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
-                  >
-                    {action}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {groupedModules.get(group)!.map((mod) => (
-                <tr key={mod} className="border-b border-white/5 transition hover:bg-white/[0.02]">
-                  <td className="px-3 py-3 font-medium capitalize text-slate-200">
-                    {MODULE_LABELS[mod] ?? mod}
-                  </td>
-                  {actions.map((action) => {
-                    const perm = permMap.get(`${mod}:${action}`);
-                    if (!perm)
-                      return (
-                        <td key={action} className="px-3 py-3 text-center text-slate-600">
-                          —
-                        </td>
-                      );
-                    const hasIt = rolePermissionIds.includes(perm.id);
-                    const isToggling = toggling === perm.id;
-                    const disabled = isSystem && roleKey === "super_admin";
-                    return (
-                      <td key={action} className="px-3 py-3 text-center">
-                        <button
-                          onClick={() => togglePermission(perm.id, hasIt)}
-                          disabled={disabled || isToggling}
-                          aria-pressed={hasIt}
-                          aria-label={`Toggle ${mod} ${action} permission (${hasIt ? "granted" : "not granted"})`}
-                          className={`inline-flex h-8 w-8 items-center justify-center rounded border text-xs font-bold transition sm:h-7 sm:w-7 ${
-                            hasIt
-                              ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
-                              : "border-white/10 bg-[#0A1118]/60 text-slate-600 hover:border-slate-600 hover:text-slate-400"
-                          } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-                          title={perm.description ?? `${mod} ${action}`}
-                        >
-                          {isToggling ? "..." : hasIt ? "✓" : ""}
-                        </button>
+      {orderedGroups.map((group) => {
+        const isCollapsed = collapsedGroups.has(group);
+        return (
+          <div key={group} className="overflow-x-auto rounded-lg border border-white/10">
+            <button
+              type="button"
+              onClick={() => toggleGroup(group)}
+              aria-expanded={!isCollapsed}
+              aria-controls={`role-group-${group}`}
+              className="flex w-full items-center justify-between rounded-t-lg bg-white/[0.03] px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-300 transition hover:bg-white/[0.06]"
+            >
+              <span>
+                {groupLabel(group)}
+                <span className="ml-2 text-[9px] font-semibold normal-case tracking-normal text-slate-500">
+                  {groupedModules.get(group)!.length} modules
+                </span>
+              </span>
+              <svg
+                className={`h-3.5 w-3.5 transition-transform ${isCollapsed ? "" : "rotate-180"}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+            {!isCollapsed ? (
+              <table id={`role-group-${group}`} className="w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                      Module
+                    </th>
+                    {actions.map((action) => (
+                      <th
+                        key={action}
+                        className="px-3 py-2 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
+                      >
+                        {action}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {groupedModules.get(group)!.map((mod) => (
+                    <tr
+                      key={mod}
+                      className="border-b border-white/5 transition hover:bg-white/[0.02]"
+                    >
+                      <td className="px-3 py-3 font-medium capitalize text-slate-200">
+                        {MODULE_LABELS[mod] ?? mod}
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ))}
+                      {actions.map((action) => {
+                        const perm = permMap.get(`${mod}:${action}`);
+                        if (!perm)
+                          return (
+                            <td key={action} className="px-3 py-3 text-center text-slate-600">
+                              —
+                            </td>
+                          );
+                        const hasIt = rolePermissionIds.includes(perm.id);
+                        const isToggling = toggling === perm.id;
+                        const disabled = isSystem && roleKey === "super_admin";
+                        return (
+                          <td key={action} className="px-3 py-3 text-center">
+                            <button
+                              onClick={() => togglePermission(perm.id, hasIt)}
+                              disabled={disabled || isToggling}
+                              aria-pressed={hasIt}
+                              aria-label={`Toggle ${mod} ${action} permission (${hasIt ? "granted" : "not granted"})`}
+                              className={`inline-flex h-8 w-8 items-center justify-center rounded border text-xs font-bold transition sm:h-7 sm:w-7 ${
+                                hasIt
+                                  ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
+                                  : "border-white/10 bg-[#0A1118]/60 text-slate-600 hover:border-slate-600 hover:text-slate-400"
+                              } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                              title={perm.description ?? `${mod} ${action}`}
+                            >
+                              {isToggling ? "..." : hasIt ? "✓" : ""}
+                            </button>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }

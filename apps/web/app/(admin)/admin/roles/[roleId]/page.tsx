@@ -6,6 +6,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RolePermissionsEditor from "@/components/admin/RolePermissionsEditor";
+import RoleEditForm from "@/components/admin/RoleEditForm";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,21 @@ export default async function RoleDetailPage({ params }: Props) {
         </Link>
       }
     >
+      <section className="cyber-panel">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="cyber-heading text-lg">Role Settings</h2>
+            <p className="mt-1 text-sm text-slate-400">Edit the role name and description.</p>
+          </div>
+          <RoleEditForm
+            roleId={roleId}
+            initialName={role.name}
+            initialDescription={role.description}
+            isSystem={role.is_system}
+          />
+        </div>
+      </section>
+
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Permission Toggles</h2>
         <p className="mt-2 text-sm text-slate-400">

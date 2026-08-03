@@ -80,9 +80,9 @@ export default function AdminUsersClient({ memberships, profileMap, orgMap, role
     }
 
     if (statusFilter === "active") {
-      items = items.filter((m) => m.status === "active");
+      items = items.filter((m) => m.status === "approved");
     } else if (statusFilter === "inactive") {
-      items = items.filter((m) => m.status !== "active");
+      items = items.filter((m) => m.status !== "approved");
     }
 
     return items;

@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminOrganizationsClient from "@/components/admin/AdminOrganizationsClient";
+import CreateOrganizationForm from "@/components/admin/CreateOrganizationForm";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Organizations - Admin - Maine CyberTech" };
@@ -24,6 +25,7 @@ export default async function OrganizationsPage() {
       subnav={<AdminSubnav current="organizations" />}
       title="Organizations"
       description="View and manage client tenants, domains, status, and service plans."
+      actions={<CreateOrganizationForm />}
     >
       <AdminOrganizationsClient organizations={organizations ?? []} />
     </AdminPageShell>

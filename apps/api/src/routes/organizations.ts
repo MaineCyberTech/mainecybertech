@@ -28,19 +28,28 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
 
-    const { data: memberships } = await supabase
-      .from("memberships")
-      .select("organization_id")
-      .eq("user_id", req.authUser!.userId)
-      .eq("status", "approved");
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_super_admin")
+      .eq("id", req.authUser!.userId)
+      .single();
 
-    const orgIds = (memberships ?? []).map((m: any) => m.organization_id).filter(Boolean);
     let query = supabase.from("organizations").select("*");
 
-    if (orgIds.length > 0) {
-      query = query.in("id", orgIds);
-    } else {
-      query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+    if (!profile?.is_super_admin) {
+      const { data: memberships } = await supabase
+        .from("memberships")
+        .select("organization_id")
+        .eq("user_id", req.authUser!.userId)
+        .eq("status", "approved");
+
+      const orgIds = (memberships ?? []).map((m: any) => m.organization_id).filter(Boolean);
+
+      if (orgIds.length > 0) {
+        query = query.in("id", orgIds);
+      } else {
+        query = query.eq("id", "00000000-0000-0000-0000-000000000000");
+      }
     }
 
     const statusFilter = req.query.status as string | undefined;

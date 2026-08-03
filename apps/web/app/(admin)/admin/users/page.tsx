@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminUsersClient from "@/components/admin/AdminUsersClient";
+import InviteUserForm from "@/components/admin/InviteUserForm";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Users - Admin - Maine CyberTech" };
@@ -14,21 +15,16 @@ export default async function UsersPage() {
   await requirePermission("users", "view");
   const api = getApiClient();
 
-  const memberships = await api.memberships.list();
+  const compound = await api.users.getCompound().catch(() => [] as any[]);
 
-  const uniqueUserIds = [...new Set(memberships.map((m: any) => m.user_id).filter(Boolean))];
-  const orgIds = memberships.map((m: any) => m.organization_id).filter(Boolean);
-  const roleIds = memberships.map((m: any) => m.role_id).filter(Boolean);
-
-  const [profiles, organizations, roles] = await Promise.all([
-    uniqueUserIds.length ? api.profiles.list({ ids: uniqueUserIds }) : Promise.resolve([] as any[]),
-    orgIds.length ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as any[]),
-    roleIds.length ? api.roles.list({ ids: roleIds }) : Promise.resolve([] as any[]),
+  const memberships = compound.flatMap((c: any) => c.memberships ?? []);
+  const profileMap = Object.fromEntries(compound.map((c: any) => [c.user.id, c.user]));
+  const orgMap = Object.fromEntries([
+    ...new Map(compound.flatMap((c: any) => c.organizations ?? []).map((o: any) => [o.id, o])),
   ]);
-
-  const profileMap = Object.fromEntries(profiles.map((p: any) => [p.id, p]));
-  const orgMap = Object.fromEntries(organizations.map((o: any) => [o.id, o]));
-  const roleMap = Object.fromEntries(roles.map((r: any) => [r.id, r]));
+  const roleMap = Object.fromEntries([
+    ...new Map(compound.flatMap((c: any) => c.roles ?? []).map((r: any) => [r.id, r])),
+  ]);
 
   return (
     <AdminPageShell
@@ -36,7 +32,12 @@ export default async function UsersPage() {
       subnav={<AdminSubnav current="users" />}
       title="Users"
       description="Manage user profiles, organization memberships, and role assignments."
-      actions={<div className="cyber-pill">Total users: {uniqueUserIds.length}</div>}
+      actions={
+        <div className="flex items-center gap-3">
+          <div className="cyber-pill">Total users: {compound.length}</div>
+          <InviteUserForm />
+        </div>
+      }
     >
       <AdminUsersClient
         memberships={memberships}

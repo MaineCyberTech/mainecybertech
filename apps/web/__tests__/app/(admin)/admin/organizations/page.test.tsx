@@ -25,6 +25,16 @@ jest.mock("next/link", () => {
   );
 });
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+}));
+
+jest.mock("@/lib/client-api", () => ({
+  getClientApi: () => ({
+    organizations: { create: jest.fn() },
+  }),
+}));
+
 jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;

@@ -47,6 +47,22 @@ jest.mock("@/components/admin/RolePermissionsEditor", () => {
   };
 });
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+}));
+
+jest.mock("@/lib/client-api", () => ({
+  getClientApi: () => ({
+    roles: { update: jest.fn(), delete: jest.fn() },
+  }),
+}));
+
+jest.mock("@/components/admin/RoleEditForm", () => {
+  return function MockRoleEditForm({ initialName }: any) {
+    return <div data-testid="role-edit-form">{initialName}</div>;
+  };
+});
+
 describe("RoleDetailPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -63,7 +79,7 @@ describe("RoleDetailPage", () => {
     });
     const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page")).default;
     render(await Page({ params: Promise.resolve({ roleId: "r1" }) }));
-    expect(screen.getByText("Admin")).toBeInTheDocument();
+    expect(screen.getAllByText("Admin").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Admin role")).toBeInTheDocument();
   });
 

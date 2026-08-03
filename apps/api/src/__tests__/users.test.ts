@@ -97,7 +97,7 @@ describe("users routes", () => {
     it("returns 404 when not found (admin viewing other user)", async () => {
       const supabase = mockAuth();
       supabase.from.mockReturnValueOnce(
-        createMockBuilder({ data: { is_super_admin: true }, error: null }),
+        createMockBuilder({ data: { roles: { id: "role-admin", key: "admin" } }, error: null }),
       );
       const result: MockResult = { data: null, error: new Error("Not found") };
       supabase.from.mockReturnValue(createMockBuilder(result));
@@ -107,6 +107,24 @@ describe("users routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
+    });
+
+    it("returns 403 when non-admin views another user", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(
+        createMockBuilder({
+          data: { roles: { id: "role-user", key: "client_user" } },
+          error: null,
+        }),
+      );
+      const result: MockResult = { data: USER, error: null };
+      supabase.from.mockReturnValue(createMockBuilder(result));
+
+      const res = await request(app)
+        .get("/api/v1/users/user-2")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
     });
   });
 
@@ -138,7 +156,7 @@ describe("users routes", () => {
 
   describe("GET /:id/detail", () => {
     it("returns compound user detail in a single call", async () => {
-      const supabase = mockAuth();
+      const supabase = mockAdmin();
       const profileBuilder = createMockBuilder({
         data: { id: "user-1", full_name: "Test User", email: "test@example.com" },
         error: null,
@@ -168,13 +186,14 @@ describe("users routes", () => {
         error: null,
       });
 
-      let callCount = 0;
+      // mockAdmin() consumes the first from() call (requireAdmin membership check)
+      let callCount = 1;
       supabase.from.mockImplementation(() => {
         callCount++;
-        if (callCount === 1) return profileBuilder;
-        if (callCount === 2) return membershipBuilder;
-        if (callCount === 3) return orgBuilder;
-        if (callCount === 4) return roleBuilder;
+        if (callCount === 2) return profileBuilder;
+        if (callCount === 3) return membershipBuilder;
+        if (callCount === 4) return orgBuilder;
+        if (callCount === 5) return roleBuilder;
         return allRolesBuilder;
       });
 
@@ -193,12 +212,10 @@ describe("users routes", () => {
     });
 
     it("returns 404 when user not found", async () => {
-      const supabase = mockAuth();
-      supabase.from
-        .mockReturnValueOnce(createMockBuilder({ data: { is_super_admin: true }, error: null }))
-        .mockReturnValue(
-          createMockBuilder({ data: null, error: { message: "Not found", code: "PGRST116" } }),
-        );
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: { message: "Not found", code: "PGRST116" } }),
+      );
 
       const res = await request(app)
         .get("/api/v1/users/nonexistent/detail")

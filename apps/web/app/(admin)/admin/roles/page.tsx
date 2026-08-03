@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/auth/permissions";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import CreateRoleForm from "@/components/admin/CreateRoleForm";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Roles - Admin - Maine CyberTech" };
@@ -41,7 +42,8 @@ export default async function AdminRolesPage() {
         </div>
       </div>
 
-      <div className="mb-6 flex justify-end">
+      <div className="mb-6 flex items-center justify-end gap-3">
+        <CreateRoleForm />
         <Link
           href="/admin/permissions"
           className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-500/20"

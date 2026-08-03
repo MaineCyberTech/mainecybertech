@@ -15,18 +15,28 @@ router.get("/", requireAdmin, async (req, res, next) => {
     const supabase = getSupabaseAdmin();
     let orgId = req.query.organization_id as string | undefined;
 
+    let allOrgs = false;
     if (!orgId) {
-      const { data: membership } = await supabase
-        .from("memberships")
-        .select("organization_id")
-        .eq("user_id", req.authUser!.userId)
-        .eq("status", "approved")
-        .order("created_at", { ascending: true })
-        .limit(1)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_super_admin")
+        .eq("id", req.authUser!.userId)
         .single();
 
-      if (membership) {
-        orgId = membership.organization_id as string;
+      allOrgs = profile?.is_super_admin === true;
+      if (!allOrgs) {
+        const { data: membership } = await supabase
+          .from("memberships")
+          .select("organization_id")
+          .eq("user_id", req.authUser!.userId)
+          .eq("status", "approved")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .single();
+
+        if (membership) {
+          orgId = membership.organization_id as string;
+        }
       }
     }
 
@@ -85,18 +95,28 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
     const supabase = getSupabaseAdmin();
     let orgId = req.query.organization_id as string | undefined;
 
+    let allOrgs = false;
     if (!orgId) {
-      const { data: membership } = await supabase
-        .from("memberships")
-        .select("organization_id")
-        .eq("user_id", req.authUser!.userId)
-        .eq("status", "approved")
-        .order("created_at", { ascending: true })
-        .limit(1)
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_super_admin")
+        .eq("id", req.authUser!.userId)
         .single();
 
-      if (membership) {
-        orgId = membership.organization_id as string;
+      allOrgs = profile?.is_super_admin === true;
+      if (!allOrgs) {
+        const { data: membership } = await supabase
+          .from("memberships")
+          .select("organization_id")
+          .eq("user_id", req.authUser!.userId)
+          .eq("status", "approved")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .single();
+
+        if (membership) {
+          orgId = membership.organization_id as string;
+        }
       }
     }
 
@@ -121,7 +141,7 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
       }
     }
 
-    // Fetch all profiles scoped to the org
+    // Fetch all profiles scoped to the org (or all orgs for super admins)
     let profileQuery = supabase
       .from("profiles")
       .select(
@@ -247,12 +267,18 @@ router.get("/:id", async (req, res, next) => {
   try {
     if (req.authUser?.userId !== req.params.id) {
       const supabase = getSupabaseAdmin();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_super_admin")
-        .eq("id", req.authUser!.userId)
-        .single();
-      if (!profile?.is_super_admin) {
+      const { data: membership } = await supabase
+        .from("memberships")
+        .select("roles!inner(id, key)")
+        .eq("user_id", req.authUser!.userId)
+        .eq("status", "approved")
+        .limit(1)
+        .maybeSingle();
+
+      const roleKey = (membership?.roles as unknown as { key?: string } | null)?.key;
+      const isAdmin = !!roleKey && ["admin", "super_admin"].includes(roleKey);
+
+      if (!isAdmin) {
         throw new AppError("FORBIDDEN", "Admin access required to view other users", 403);
       }
     }
@@ -272,19 +298,8 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.get("/:id/detail", async (req, res, next) => {
+router.get("/:id/detail", requireAdmin, async (req, res, next) => {
   try {
-    if (req.authUser?.userId !== req.params.id) {
-      const supabase = getSupabaseAdmin();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_super_admin")
-        .eq("id", req.authUser!.userId)
-        .single();
-      if (!profile?.is_super_admin) {
-        throw new AppError("FORBIDDEN", "Admin access required to view other users", 403);
-      }
-    }
     const supabase = getSupabaseAdmin();
 
     const { data: user, error: userError } = await supabase
@@ -403,19 +418,8 @@ router.patch("/:id/role", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get("/:id/permissions", async (req, res, next) => {
+router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
   try {
-    if (req.authUser?.userId !== req.params.id) {
-      const supabase = getSupabaseAdmin();
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_super_admin")
-        .eq("id", req.authUser!.userId)
-        .single();
-      if (!profile?.is_super_admin) {
-        throw new AppError("FORBIDDEN", "Admin access required to view other users", 403);
-      }
-    }
     const supabase = getSupabaseAdmin();
     const userId = req.params.id;
 

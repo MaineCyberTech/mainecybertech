@@ -90,15 +90,21 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateProfileSchema.parse(req.body);
 
-    // Only allow users to edit their own profile (unless admin)
+    // Only allow users to edit their own profile (unless admin role)
     if (req.authUser!.userId !== req.params.id) {
       const supabaseAdmin = getSupabaseAdmin();
-      const { data: isAdmin } = await supabaseAdmin
-        .from("profiles")
-        .select("is_super_admin")
-        .eq("id", req.authUser!.userId)
-        .single();
-      if (!isAdmin?.is_super_admin) {
+      const { data: membership } = await supabaseAdmin
+        .from("memberships")
+        .select("roles!inner(id, key)")
+        .eq("user_id", req.authUser!.userId)
+        .eq("status", "approved")
+        .limit(1)
+        .maybeSingle();
+
+      const roleKey = (membership?.roles as unknown as { key?: string } | null)?.key;
+      const isAdmin = !!roleKey && ["admin", "super_admin"].includes(roleKey);
+
+      if (!isAdmin) {
         throw new AppError("FORBIDDEN", "You can only edit your own profile", 403);
       }
     }

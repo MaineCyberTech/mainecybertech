@@ -41,6 +41,19 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = useCallback((group: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(group)) {
+        next.delete(group);
+      } else {
+        next.add(group);
+      }
+      return next;
+    });
+  }, []);
 
   const addToast = useCallback((message: string, kind: "success" | "error" = "success") => {
     const id = Date.now();
@@ -170,88 +183,125 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
               Organization {membership.organization_id.slice(0, 8)}…
             </h3>
             <div className="overflow-x-auto rounded-lg border border-white/10">
-              {orderedGroups.map((group) => (
-                <div key={group} className="border-b border-white/5 last:border-b-0">
-                  <p className="bg-white/[0.02] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500">
-                    {PERMISSION_GROUPS.find((g) => g.key === group)?.label ?? group}
-                  </p>
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-white/10">
-                        <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
-                          Module
-                        </th>
-                        {actions.map((action) => (
-                          <th
-                            key={action}
-                            className="px-3 py-2 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
-                          >
-                            {action}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {groupedModules.get(group)!.map((mod) => (
-                        <tr
-                          key={mod}
-                          className="border-b border-white/5 transition hover:bg-white/[0.02]"
-                        >
-                          <td className="px-3 py-2.5 text-slate-200">
-                            {MODULE_LABELS[mod] ?? mod}
-                          </td>
-                          {actions.map((action) => {
-                            const perm = permMap.get(`${mod}:${action}`);
-                            if (!perm)
-                              return (
-                                <td key={action} className="px-3 py-2.5 text-center text-slate-600">
-                                  —
-                                </td>
-                              );
-                            const override = orgOverrides.find((o) => o.permission_id === perm.id);
-                            const hasRole = rolePermissionIds.includes(perm.id);
-                            const cellBusy = busy === `${membership.organization_id}:${perm.id}`;
-                            let bg = "bg-[#0A1118]/60";
-                            if (override?.is_allowed) bg = "bg-emerald-500/60";
-                            else if (override && !override.is_allowed) bg = "bg-red-500/60";
-                            else if (hasRole) bg = "bg-emerald-500/15";
-                            return (
-                              <td key={action} className="px-3 py-2.5 text-center">
-                                <button
-                                  onClick={() =>
-                                    cycleOverride(membership.organization_id, perm.id, override)
-                                  }
-                                  disabled={cellBusy}
-                                  aria-label={`Toggle ${mod} ${action} override for ${membership.organization_id} (current: ${override ? (override.is_allowed ? "allowed" : "denied") : hasRole ? "role default granted" : "not set"})`}
-                                  className={`inline-flex h-7 w-7 items-center justify-center rounded border text-xs font-bold transition ${bg} ${
-                                    override?.is_allowed
-                                      ? "border-emerald-500/60 text-emerald-950 hover:opacity-80"
-                                      : override && !override.is_allowed
-                                        ? "border-red-500/60 text-red-50 hover:opacity-80"
-                                        : hasRole
-                                          ? "border-emerald-500/30 text-emerald-400 hover:border-emerald-500/50"
-                                          : "border-white/10 text-slate-600 hover:border-slate-500 hover:text-slate-400"
-                                  } ${cellBusy ? "cursor-wait opacity-60" : "cursor-pointer"}`}
-                                >
-                                  {cellBusy
-                                    ? "..."
-                                    : override
-                                      ? override.is_allowed
-                                        ? "✓"
-                                        : "✗"
-                                      : hasRole
-                                        ? "✓"
-                                        : ""}
-                                </button>
+              {orderedGroups.map((group) => {
+                const groupLabel = PERMISSION_GROUPS.find((g) => g.key === group)?.label ?? group;
+                const isCollapsed = collapsedGroups.has(group);
+                return (
+                  <div key={group} className="border-b border-white/5 last:border-b-0">
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group)}
+                      aria-expanded={!isCollapsed}
+                      aria-controls={`override-group-${group}`}
+                      className="flex w-full items-center justify-between bg-white/[0.02] px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 transition hover:bg-white/[0.04]"
+                    >
+                      <span>
+                        {groupLabel}
+                        <span className="ml-2 text-[9px] font-semibold normal-case tracking-normal text-slate-500">
+                          {groupedModules.get(group)!.length} modules
+                        </span>
+                      </span>
+                      <svg
+                        className={`h-3.5 w-3.5 transition-transform ${isCollapsed ? "" : "rotate-180"}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                    {!isCollapsed ? (
+                      <table id={`override-group-${group}`} className="w-full text-left text-sm">
+                        <thead>
+                          <tr className="border-b border-white/10">
+                            <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                              Module
+                            </th>
+                            {actions.map((action) => (
+                              <th
+                                key={action}
+                                className="px-3 py-2 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
+                              >
+                                {action}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {groupedModules.get(group)!.map((mod) => (
+                            <tr
+                              key={mod}
+                              className="border-b border-white/5 transition hover:bg-white/[0.02]"
+                            >
+                              <td className="px-3 py-2.5 text-slate-200">
+                                {MODULE_LABELS[mod] ?? mod}
                               </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
+                              {actions.map((action) => {
+                                const perm = permMap.get(`${mod}:${action}`);
+                                if (!perm)
+                                  return (
+                                    <td
+                                      key={action}
+                                      className="px-3 py-2.5 text-center text-slate-600"
+                                    >
+                                      —
+                                    </td>
+                                  );
+                                const override = orgOverrides.find(
+                                  (o) => o.permission_id === perm.id,
+                                );
+                                const hasRole = rolePermissionIds.includes(perm.id);
+                                const cellBusy =
+                                  busy === `${membership.organization_id}:${perm.id}`;
+                                let bg = "bg-[#0A1118]/60";
+                                if (override?.is_allowed) bg = "bg-emerald-500/60";
+                                else if (override && !override.is_allowed) bg = "bg-red-500/60";
+                                else if (hasRole) bg = "bg-emerald-500/15";
+                                return (
+                                  <td key={action} className="px-3 py-2.5 text-center">
+                                    <button
+                                      onClick={() =>
+                                        cycleOverride(membership.organization_id, perm.id, override)
+                                      }
+                                      disabled={cellBusy}
+                                      aria-label={`Toggle ${mod} ${action} override for ${membership.organization_id} (current: ${override ? (override.is_allowed ? "allowed" : "denied") : hasRole ? "role default granted" : "not set"})`}
+                                      className={`inline-flex h-7 w-7 items-center justify-center rounded border text-xs font-bold transition ${bg} ${
+                                        override?.is_allowed
+                                          ? "border-emerald-500/60 text-emerald-950 hover:opacity-80"
+                                          : override && !override.is_allowed
+                                            ? "border-red-500/60 text-red-50 hover:opacity-80"
+                                            : hasRole
+                                              ? "border-emerald-500/30 text-emerald-400 hover:border-emerald-500/50"
+                                              : "border-white/10 text-slate-600 hover:border-slate-500 hover:text-slate-400"
+                                      } ${cellBusy ? "cursor-wait opacity-60" : "cursor-pointer"}`}
+                                    >
+                                      {cellBusy
+                                        ? "..."
+                                        : override
+                                          ? override.is_allowed
+                                            ? "✓"
+                                            : "✗"
+                                          : hasRole
+                                            ? "✓"
+                                            : ""}
+                                    </button>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : null}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

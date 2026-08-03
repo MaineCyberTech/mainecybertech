@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Fragment } from "react";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { requirePermission } from "@/lib/auth/permissions";
 import { getApiClient } from "@/lib/api";
-import { MODULE_LABELS, PERMISSION_GROUPS } from "@/lib/permissions";
+import { PERMISSION_GROUPS } from "@/lib/permissions";
+import PermissionMatrixClient from "@/components/admin/PermissionMatrixClient";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +61,11 @@ export default async function PermissionMatrixPage() {
     return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
   });
 
+  const matrixGroups = orderedGroups.map((group) => ({
+    group,
+    modules: groupedModules.get(group) ?? [],
+  }));
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -84,69 +89,11 @@ export default async function PermissionMatrixPage() {
           Unable to load the permission matrix.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#0F172A]/60">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="px-4 py-3 text-xs uppercase tracking-[0.12em] text-slate-400">
-                  Module
-                </th>
-                {roles.map((role: any) => (
-                  <th
-                    key={role.id}
-                    className="px-3 py-3 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
-                  >
-                    {role.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {orderedGroups.map((group) => (
-                <Fragment key={group}>
-                  <tr className="border-b border-white/5 bg-white/[0.02]">
-                    <td
-                      colSpan={roles.length + 1}
-                      className="px-4 py-2 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500"
-                    >
-                      {PERMISSION_GROUPS.find((g) => g.key === group)?.label ?? group.toUpperCase()}
-                    </td>
-                  </tr>
-                  {groupedModules.get(group)!.map((mod) => (
-                    <tr
-                      key={mod.module_key}
-                      className="border-b border-white/5 transition hover:bg-white/[0.02]"
-                    >
-                      <td className="px-4 py-2.5 text-slate-200">
-                        {MODULE_LABELS[mod.module_key] ?? mod.module_key}
-                      </td>
-                      {roles.map((role: any) => {
-                        const hasView = mod.action_view_id
-                          ? rolePermissionSets
-                              .find((rps) => rps.roleId === role.id)
-                              ?.ids.has(mod.action_view_id)
-                          : false;
-                        return (
-                          <td key={role.id} className="px-3 py-2.5 text-center">
-                            <span
-                              className={
-                                hasView
-                                  ? "inline-flex h-6 w-6 items-center justify-center rounded border border-emerald-500/30 bg-emerald-500/15 text-xs font-bold text-emerald-400"
-                                  : "inline-flex h-6 w-6 items-center justify-center rounded border border-white/10 text-xs text-slate-600"
-                              }
-                            >
-                              {hasView ? "✓" : "—"}
-                            </span>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <PermissionMatrixClient
+          roles={roles}
+          rolePermissionSets={rolePermissionSets}
+          groupedModules={matrixGroups}
+        />
       )}
     </div>
   );

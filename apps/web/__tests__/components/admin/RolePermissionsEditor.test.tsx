@@ -88,7 +88,11 @@ describe("RolePermissionsEditor", () => {
     render(<RolePermissionsEditor roleId="r1" roleKey="super_admin" isSystem={true} />);
     await waitFor(() => {
       const buttons = screen.getAllByRole("button");
-      buttons.forEach((btn) => {
+      const toggleButtons = buttons.filter((btn) =>
+        (btn.getAttribute("aria-label") ?? "").startsWith("Toggle"),
+      );
+      expect(toggleButtons.length).toBeGreaterThan(0);
+      toggleButtons.forEach((btn) => {
         expect(btn).toBeDisabled();
       });
     });
