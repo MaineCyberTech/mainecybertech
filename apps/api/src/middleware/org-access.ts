@@ -78,6 +78,22 @@ async function resolveDefaultOrgId(
     if (active && active.length > 0) {
       return active[0].organization_id as string;
     }
+
+    // Platform admins (admin/super_admin in any org) can switch into any
+    // tenant — honor the active org even without a membership there.
+    const { data: allMemberships } = await supabase
+      .from("memberships")
+      .select("id, roles!inner(id, key)")
+      .eq("user_id", userId)
+      .eq("status", "approved");
+
+    if (allMemberships && allMemberships.length > 0) {
+      const isPlatformAdmin = allMemberships.some((row) => {
+        const key = (row.roles as unknown as { key?: string } | null)?.key;
+        return key != null && ["admin", "super_admin"].includes(key);
+      });
+      if (isPlatformAdmin) return activeOrgId;
+    }
   }
 
   const { data: memberships } = await supabase

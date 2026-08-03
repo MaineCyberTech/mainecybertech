@@ -61,6 +61,7 @@ describe("getApprovedMembership", () => {
       organization_id: "org-1",
       role_id: "role-1",
       organizations: { name: "Test Org" },
+      isPlatformAdmin: false,
     });
   });
 
@@ -120,5 +121,27 @@ describe("getApprovedMembership", () => {
 
     expect(result?.organization_id).toBe("org-2");
     expect(result?.id).toBe("mem-2");
+  });
+
+  it("honors active org for platform admins without a membership there", async () => {
+    const mockGetActiveOrg = (await import("@/lib/org-actions")).getActiveOrg as jest.Mock;
+    mockGetActiveOrg.mockResolvedValue("org-99");
+
+    mockMe.mockResolvedValue({ userId: "user-1", email: "u@test.com" });
+    mockMembershipsList.mockResolvedValue([
+      {
+        id: "mem-1",
+        status: "approved",
+        organization_id: "org-1",
+        role_id: "role-1",
+        roles: { id: "r1", key: "super_admin" },
+      },
+    ]);
+
+    const { getApprovedMembership } = await import("@/lib/auth/membership");
+    const result = await getApprovedMembership();
+
+    expect(result?.organization_id).toBe("org-99");
+    expect(result?.isPlatformAdmin).toBe(true);
   });
 });

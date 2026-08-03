@@ -154,12 +154,15 @@ export default async function PortalLayout({ children }: { children: ReactNode }
                   )}
                 </div>
                 <div className="mt-1">
-                  <OrgSwitcher
-                    orgs={userOrgs}
-                    activeOrgId={membership.organization_id}
-                    setActiveOrgAction={setActiveOrg}
-                  />
-                  {permissionsResult?.isSuperAdmin && <SuperAdminOrgSwitcher />}
+                  {permissionsResult?.isSuperAdmin ? (
+                    <SuperAdminOrgSwitcher />
+                  ) : (
+                    <OrgSwitcher
+                      orgs={userOrgs}
+                      activeOrgId={membership.organization_id}
+                      setActiveOrgAction={setActiveOrg}
+                    />
+                  )}
                 </div>
               </div>
             </div>
