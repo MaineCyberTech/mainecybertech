@@ -67,6 +67,11 @@ describe("TestAccountsPage", () => {
     expect(screen.getByText("Marcus Chen")).toBeInTheDocument();
     expect(screen.getByText("Elena Volkov")).toBeInTheDocument();
     expect(screen.getByText("Aisha Johnson")).toBeInTheDocument();
+    expect(screen.getByText("Dani Calderon")).toBeInTheDocument();
+    expect(screen.getByText("Ravi Mehta")).toBeInTheDocument();
+    expect(screen.getByText("Grace Liu")).toBeInTheDocument();
+    expect(screen.getByText("Omar Farouk")).toBeInTheDocument();
+    expect(screen.getByText("Nora Berg")).toBeInTheDocument();
     expect(screen.getByText(/Click any account to sign in automatically/)).toBeInTheDocument();
   });
 
@@ -83,7 +88,7 @@ describe("TestAccountsPage", () => {
     const { default: Page } = await import("@/app/(public)/test-accounts/page");
     render(<Page />);
     expect(screen.getAllByText("pending").length).toBe(2);
-    expect(screen.getByText("suspended")).toBeInTheDocument();
+    expect(screen.getAllByText("suspended").length).toBe(2);
   });
 
   it("signs in with the shared password and routes to the redirect target", async () => {

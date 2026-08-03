@@ -110,6 +110,15 @@ const ACCOUNTS: TestAccount[] = [
     badgeColor: "#10b981",
     color: "#8b5cf6",
   },
+  {
+    email: "omar.farouk@acme.example",
+    name: "Omar Farouk",
+    role: "IT Coordinator",
+    org: "Acme Manufacturing",
+    badge: "Client Admin",
+    badgeColor: "#10b981",
+    color: "#0d9488",
+  },
   // Northwind Legal
   {
     email: "clientadmin.real@beta.example",
@@ -128,6 +137,15 @@ const ACCOUNTS: TestAccount[] = [
     badge: "Client User",
     badgeColor: "#10b981",
     color: "#f59e0b",
+  },
+  {
+    email: "nora.berg@northwind.example",
+    name: "Nora Berg",
+    role: "Logistics Analyst",
+    org: "Northwind Legal",
+    badge: "Client User",
+    badgeColor: "#10b981",
+    color: "#ca8a04",
   },
   // Harborview Health Systems
   {
@@ -176,6 +194,15 @@ const ACCOUNTS: TestAccount[] = [
     status: "pending",
     color: "#ec4899",
   },
+  {
+    email: "dani.calderon@harborview.example",
+    name: "Dani Calderon",
+    role: "On-Site Engineer",
+    org: "Harborview Health Systems",
+    badge: "Technician",
+    badgeColor: "#f59e0b",
+    color: "#22c55e",
+  },
   // Brightline Retail Group
   {
     email: "sarah.patel@brightline.example",
@@ -223,6 +250,16 @@ const ACCOUNTS: TestAccount[] = [
     status: "suspended",
     color: "#65a30d",
   },
+  {
+    email: "ravi.mehta@brightline.example",
+    name: "Ravi Mehta",
+    role: "IT Manager (Suspended)",
+    org: "Brightline Retail Group",
+    badge: "Client Admin",
+    badgeColor: "#10b981",
+    status: "suspended",
+    color: "#dc2626",
+  },
   // Summit Financial Advisors
   {
     email: "elena.volkov@summit.example",
@@ -269,6 +306,15 @@ const ACCOUNTS: TestAccount[] = [
     badgeColor: "#10b981",
     status: "pending",
     color: "#c026d3",
+  },
+  {
+    email: "grace.liu@summit.example",
+    name: "Grace Liu",
+    role: "Compliance Associate",
+    org: "Summit Financial Advisors",
+    badge: "Client User",
+    badgeColor: "#10b981",
+    color: "#7c3aed",
   },
 ];
 
