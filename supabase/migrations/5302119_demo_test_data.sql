@@ -31,6 +31,8 @@ insert into public.organizations (
   id, name, slug, status, primary_domain, support_plan, brand_color, accent_color, settings
 )
 values
+  ('11111111-1111-1111-1111-111111111111'::uuid, 'Acme Manufacturing', 'acme', 'approved'::public.org_status, 'acme.example', 'Managed Security Premium', '#059669', '#0D9488', jsonb_build_object('seeded', true, 'industry', 'manufacturing')),
+  ('22222222-2222-2222-2222-222222222222'::uuid, 'Northwind Legal', 'northwind', 'approved'::public.org_status, 'beta.example', 'Managed IT Standard', '#2563EB', '#7C3AED', jsonb_build_object('seeded', true, 'industry', 'legal')),
   ('33333333-3333-4333-8333-333333333333'::uuid, 'Harborview Health Systems', 'harborview', 'approved'::public.org_status, 'harborview.example', 'Managed Security Premium', '#0EA5E9', '#6366F1', jsonb_build_object('seeded', true, 'industry', 'healthcare')),
   ('44444444-4444-4444-8444-444444444444'::uuid, 'Brightline Retail Group', 'brightline', 'approved'::public.org_status, 'brightline.example', 'Managed IT Standard', '#F59E0B', '#EF4444', jsonb_build_object('seeded', true, 'industry', 'retail')),
   ('55555555-5555-4555-8555-555555555555'::uuid, 'Summit Financial Advisors', 'summit', 'approved'::public.org_status, 'summit.example', 'Managed Security Premium', '#8B5CF6', '#EC4899', jsonb_build_object('seeded', true, 'industry', 'finance'))
@@ -51,6 +53,8 @@ set
 -- =========================================================
 insert into public.organization_domains (organization_id, domain, auto_approve)
 values
+  ('11111111-1111-1111-1111-111111111111'::uuid, 'acme.example', false),
+  ('22222222-2222-2222-2222-222222222222'::uuid, 'beta.example', false),
   ('33333333-3333-4333-8333-333333333333'::uuid, 'harborview.example', false),
   ('44444444-4444-4444-8444-444444444444'::uuid, 'brightline.example', false),
   ('55555555-5555-4555-8555-555555555555'::uuid, 'summit.example', false)
