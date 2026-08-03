@@ -93,6 +93,12 @@ const GROUPS: Array<{ label: string; items: NavItem[] }> = [
         module: "service-catalog",
       },
       {
+        key: "store",
+        href: "/portal/store",
+        label: "Store",
+        module: "store",
+      },
+      {
         key: "training-hub",
         href: "/portal/training-hub",
         label: "Training",

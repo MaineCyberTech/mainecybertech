@@ -74,6 +74,7 @@ const PORTAL_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string
   "/portal/risk-register": { module: "risk-register" },
   "/portal/tabletop": { module: "tabletop" },
   "/portal/proposals": { module: "proposals" },
+  "/portal/store": { module: "store" },
 };
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {

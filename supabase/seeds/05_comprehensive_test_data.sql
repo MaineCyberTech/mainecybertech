@@ -630,4 +630,31 @@ values
   ('67600000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'https://advisor.summit.example', 'Summit Advisor Portal', 'degraded', 'slow', 2900, now() + interval '20 days', true, 74, 5, true, 'd4000000-0000-4000-8000-000000000004'::uuid)
 on conflict (id) do nothing;
 
+-- =========================================================
+-- 26. STORE PROMOTIONS
+-- =========================================================
+insert into public.store_promotions (
+  id, name, badge_text, detail_text, promo_type, status, terms, eligibility_targets, start_date, end_date
+)
+values
+  ('70600000-0000-0000-0000-000000000001'::uuid, 'Cybersecurity Essentials Bundle', 'SAVE 15%', 'Bundle Managed Workstation + HIPAA Compliance Review and save 15% on quarterly pricing.', 'bundle_savings', 'active', 'Valid for new customers only. Cannot be combined with other offers.', '{"new_customer"}', now() - interval '30 days', now() + interval '60 days'),
+  ('70600000-0000-0000-0000-000000000002'::uuid, 'Store IT Support + Zero Trust Access', 'SAVE 20%', 'Combine Store IT Support with Zero Trust Access for comprehensive retail security.', 'bundle_savings', 'active', 'Minimum 12-month commitment required.', '{"retail", "multi_location"}', now() - interval '15 days', now() + interval '75 days'),
+  ('70600000-0000-0000-0000-000000000003'::uuid, 'Q4 Hardware Refresh Promo', 'LIMITED TIME', 'Free managed workstation setup with any 20+ device commitment.', 'limited_time', 'paused', 'Ends Dec 31, 2026. Setup fees waived for qualifying orders.', '{"enterprise"}', now() + interval '45 days', now() + interval '120 days'),
+  ('70600000-0000-0000-0000-000000000004'::uuid, 'Legacy Summer Promo 2025', 'EXPIRED', 'Summer 2025 discount on managed services.', 'seasonal', 'expired', 'Expired Aug 31, 2025.', '{}', now() - interval '1 year', now() - interval '3 months')
+on conflict (id) do nothing;
+
+-- =========================================================
+-- 27. STORE QUOTES
+-- =========================================================
+insert into public.store_quotes (
+  id, name, email, phone, notes, items, status
+)
+values
+  ('71600000-0000-0000-0000-000000000001'::uuid, 'Jennifer Adams', 'jennifer.adams@harborview.example', '555-0301', 'Need quote for 50 managed workstations + HIPAA review for Harborview Health.', '[{"product_slug": "managed-workstation", "quantity": 50, "unit_price": 45}, {"product_slug": "hipaa-compliance-review", "quantity": 4, "unit_price": 1500}]'::jsonb, 'reviewed'),
+  ('71600000-0000-0000-0000-000000000002'::uuid, 'Robert Kim', 'robert.kim@brightline.example', '555-0401', 'Interested in Store IT Support for 30 locations + Zero Trust for 200 users.', '[{"product_slug": "store-it-support", "quantity": 30, "unit_price": 350}, {"product_slug": "zero-trust-access", "quantity": 200, "unit_price": 18}]'::jsonb, 'contacted'),
+  ('71600000-0000-0000-0000-000000000003'::uuid, 'Maria Santos', 'maria.santos@summit.example', '555-0501', 'Requesting quote for Zero Trust Access for 40 advisors.', '[{"product_slug": "zero-trust-access", "quantity": 40, "unit_price": 18}]'::jsonb, 'new'),
+  ('71600000-0000-0000-0000-000000000004'::uuid, 'David Park', 'david.park@acme.example', '555-0601', 'Follow-up on previous inquiry - ready to move forward with 25 workstations.', '[{"product_slug": "managed-workstation", "quantity": 25, "unit_price": 45}]'::jsonb, 'converted'),
+  ('71600000-0000-0000-0000-000000000005'::uuid, 'Lisa Chen', 'lisa.chen@northwind.example', '555-0701', 'Inquired about bulk pricing for 100+ devices - not responsive to follow-ups.', '[{"product_slug": "managed-workstation", "quantity": 100, "unit_price": 45}]'::jsonb, 'closed')
+on conflict (id) do nothing;
+
 commit;
