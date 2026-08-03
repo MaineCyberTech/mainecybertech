@@ -6,6 +6,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import PortalHeaderActions from "@/components/portal/PortalHeaderActions";
 import NotificationBell from "@/components/NotificationBell";
 import OrgSwitcher from "@/components/portal/OrgSwitcher";
+import SuperAdminOrgSwitcher from "@/components/admin/SuperAdminOrgSwitcher";
 import PortalGlobalSearch from "@/components/portal/PortalGlobalSearch";
 import { getUnreadCount } from "@/lib/notifications-actions";
 import { setActiveOrg } from "@/lib/org-actions";
@@ -158,6 +159,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
                     activeOrgId={membership.organization_id}
                     setActiveOrgAction={setActiveOrg}
                   />
+                  {permissionsResult?.isSuperAdmin && <SuperAdminOrgSwitcher />}
                 </div>
               </div>
             </div>
