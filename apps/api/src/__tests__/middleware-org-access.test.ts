@@ -34,6 +34,8 @@ function mockReq(
     query: opts.orgId ? { organization_id: opts.orgId } : {},
     body: opts.bodyOrgId ? { organizationId: opts.bodyOrgId } : {},
     params: opts.paramsId ? { id: opts.paramsId } : {},
+    headers: {},
+    cookies: {},
   } as unknown as Request;
 }
 
@@ -58,6 +60,7 @@ function mockSupabase(
     const chain: Record<string, unknown> = {};
     chain.eq = jest.fn().mockReturnValue(chain);
     chain.order = jest.fn().mockReturnValue({ limit: jest.fn().mockResolvedValue(result) });
+    chain.limit = jest.fn().mockResolvedValue(result);
     chain.maybeSingle = jest.fn().mockResolvedValue(result);
     // When the chain is awaited directly (no .maybeSingle or .limit), return result
     chain[Symbol.toStringTag] = "Promise";
@@ -215,6 +218,55 @@ describe("requireOrgAccess middleware", () => {
       await requireOrgAccess(mockReq({ userId: "user-1" }), mockRes(), next);
 
       expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
+    });
+
+    it("prefers the X-Active-Org header when the user is a member there", async () => {
+      mockSupabase({
+        primaryMembership: { organization_id: "00000000-0000-0000-0000-000000000002" },
+      });
+      const next = jest.fn();
+      const req = mockReq({ userId: "user-1" });
+      req.headers = { "x-active-org": "00000000-0000-0000-0000-000000000002" };
+
+      await requireOrgAccess(req, mockRes(), next);
+
+      expect(next).toHaveBeenCalledWith();
+      expect((req.query as Record<string, string>).organization_id).toBe(
+        "00000000-0000-0000-0000-000000000002",
+      );
+    });
+
+    it("falls back to the primary org when the active org header is not a membership", async () => {
+      mockSupabase({
+        membershipRow: null,
+        allMemberships: [{ organization_id: "00000000-0000-0000-0000-000000000001" }],
+      });
+      const next = jest.fn();
+      const req = mockReq({ userId: "user-1" });
+      req.headers = { "x-active-org": "00000000-0000-0000-0000-000000000099" };
+
+      await requireOrgAccess(req, mockRes(), next);
+
+      expect(next).toHaveBeenCalledWith();
+      expect((req.query as Record<string, string>).organization_id).toBe(
+        "00000000-0000-0000-0000-000000000001",
+      );
+    });
+
+    it("prefers the mct_active_org cookie when no header is present", async () => {
+      mockSupabase({
+        primaryMembership: { organization_id: "00000000-0000-0000-0000-000000000003" },
+      });
+      const next = jest.fn();
+      const req = mockReq({ userId: "user-1" });
+      req.cookies = { mct_active_org: "00000000-0000-0000-0000-000000000003" };
+
+      await requireOrgAccess(req, mockRes(), next);
+
+      expect(next).toHaveBeenCalledWith();
+      expect((req.query as Record<string, string>).organization_id).toBe(
+        "00000000-0000-0000-0000-000000000003",
+      );
     });
   });
 

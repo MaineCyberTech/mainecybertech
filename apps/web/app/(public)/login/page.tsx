@@ -109,7 +109,7 @@ export default function LoginPage() {
             </a>
           </p>
 
-          {process.env.NODE_ENV !== "production" ? (
+          {process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED === "true" ? (
             <p className="mt-3 text-xs text-slate-500">
               <Link href="/test-accounts" className="text-emerald-500 hover:text-emerald-400">
                 Browse test accounts

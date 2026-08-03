@@ -12,6 +12,7 @@ export interface ClientOptions {
   baseUrl: string;
   getToken?: () => Promise<string | null>;
   getCsrfToken?: () => string | undefined;
+  getActiveOrgId?: () => Promise<string | null> | string | null;
   timeoutMs?: number;
   retries?: Partial<RetryOptions>;
 }
@@ -42,6 +43,7 @@ export class ApiClient {
   private baseUrl: string;
   private getToken: () => Promise<string | null>;
   private getCsrfToken: () => string | undefined;
+  private getActiveOrgId: () => Promise<string | null> | string | null;
   private timeoutMs: number;
   private retry: RetryOptions;
   private unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -50,6 +52,7 @@ export class ApiClient {
     this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
     this.getToken = opts.getToken ?? (async () => null);
     this.getCsrfToken = opts.getCsrfToken ?? (() => undefined);
+    this.getActiveOrgId = opts.getActiveOrgId ?? (() => null);
     this.timeoutMs = opts.timeoutMs ?? 30_000;
     this.retry = { ...DEFAULT_RETRY, ...opts.retries };
   }
@@ -129,7 +132,7 @@ export class ApiClient {
     body?: unknown,
     params?: Record<string, string | number | undefined>,
   ): Promise<T> {
-    const token = await this.getToken();
+    const [token, activeOrgId] = await Promise.all([this.getToken(), this.getActiveOrgId()]);
     const url = `${this.baseUrl}${path}${buildQuery(params)}`;
 
     const headers: Record<string, string> = {
@@ -140,6 +143,9 @@ export class ApiClient {
     } else if (this.unsafeMethods.has(method)) {
       const csrfToken = this.getCsrfToken();
       if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+    }
+    if (activeOrgId) {
+      headers["X-Active-Org"] = activeOrgId;
     }
 
     return this.executeFetch<T>(url, {

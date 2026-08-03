@@ -60,6 +60,7 @@ function createClient(opts?: Partial<ClientOptions>) {
   const options: ClientOptions = {
     baseUrl: BASE_URL,
     getToken: opts?.getToken,
+    getActiveOrgId: opts?.getActiveOrgId,
   };
   return MCTClient.create(options);
 }
@@ -145,6 +146,29 @@ describe("MCTClient", () => {
 
       const headers = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
       expect(headers["Authorization"]).toBeUndefined();
+    });
+
+    it("includes X-Active-Org header when getActiveOrgId returns an org", async () => {
+      client = createClient({
+        getToken: () => Promise.resolve("test-token"),
+        getActiveOrgId: () => Promise.resolve("org-123"),
+      });
+      mockFetch.mockResolvedValue(mockResponse({ ok: true }));
+
+      await client.roles.list();
+
+      const headers = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBe("Bearer test-token");
+      expect(headers["X-Active-Org"]).toBe("org-123");
+    });
+
+    it("omits X-Active-Org header when no active org", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ ok: true }));
+
+      await client.roles.list();
+
+      const headers = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
+      expect(headers["X-Active-Org"]).toBeUndefined();
     });
   });
 

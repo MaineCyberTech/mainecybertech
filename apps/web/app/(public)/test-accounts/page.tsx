@@ -5,8 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { testLoginAction } from "@/lib/auth/auth-actions";
 
-const TEST_PASSWORD = process.env.NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD ?? "1";
-
 type TestAccount = {
   email: string;
   name: string;
@@ -286,12 +284,22 @@ export default function TestAccountsPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED !== "true") {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0A1118] px-6">
         <div className="text-center">
           <h1 className="text-xl font-bold text-slate-100">Not Available</h1>
-          <p className="mt-2 text-sm text-slate-400">This page is only available in development.</p>
+          <p className="mt-2 text-sm text-slate-400">
+            Test accounts are disabled in this environment.
+          </p>
+          <p className="mt-3">
+            <Link
+              href="/login"
+              className="text-sm text-emerald-400 underline-offset-4 hover:underline"
+            >
+              Back to login
+            </Link>
+          </p>
         </div>
       </main>
     );
@@ -301,7 +309,10 @@ export default function TestAccountsPage() {
     setLoading(email);
     setError(null);
     try {
-      const result = await testLoginAction(email, TEST_PASSWORD);
+      const result = await testLoginAction(
+        email,
+        process.env.NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD ?? "1",
+      );
       if (!result.ok) {
         setError(result.error);
         setLoading(null);
@@ -325,7 +336,7 @@ export default function TestAccountsPage() {
           <p className="mt-3 text-sm text-slate-400">
             Click any account to sign in automatically. Password:{" "}
             <code className="rounded bg-emerald-600/15 px-1.5 py-0.5 font-mono text-xs text-emerald-400">
-              {TEST_PASSWORD}
+              {process.env.NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD ?? "1"}
             </code>
           </p>
         </div>

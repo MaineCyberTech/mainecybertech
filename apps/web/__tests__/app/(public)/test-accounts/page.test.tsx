@@ -22,10 +22,23 @@ jest.mock("next/link", () => {
 describe("TestAccountsPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED = "true";
     mockTestLoginAction.mockResolvedValue({
       ok: true,
       redirectTo: "/portal/dashboard",
     });
+  });
+
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
+  });
+
+  it("shows a Not Available state when test accounts are disabled", async () => {
+    delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
+    const { default: Page } = await import("@/app/(public)/test-accounts/page");
+    render(<Page />);
+    expect(screen.getByText("Not Available")).toBeInTheDocument();
+    expect(screen.queryByText("Marcus Chen")).not.toBeInTheDocument();
   });
 
   it("renders the account grid with all seeded users", async () => {

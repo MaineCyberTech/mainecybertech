@@ -1,4 +1,4 @@
-name: deploy-do
+﻿name: deploy-do
 
 on:
   workflow_dispatch:
@@ -180,6 +180,7 @@ jobs:
             NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}-${{ github.run_number }}
             NEXT_PUBLIC_GIT_SHA=${{ github.sha }}
             NEXT_PUBLIC_BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.pusher.date || '' }}
+            NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=${{ needs.setup.outputs.name == 'dev' && 'true' || 'false' }}
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -191,7 +192,7 @@ jobs:
     uses: ./.github/workflows/validate.yml
 
   # e2e + migrations: required for prod (main) deploys only; skipped on dev to keep deploys fast.
-  # Skipped jobs do NOT block deploy — deploy uses always() && !failure() && !cancelled().
+  # Skipped jobs do NOT block deploy â€” deploy uses always() && !failure() && !cancelled().
   e2e-gate:
     needs: [setup]
     if: ${{ needs.setup.outputs.name == 'prod' && (github.event_name == 'push' || github.event.inputs.rollback_sha == '') }}
@@ -335,7 +336,7 @@ jobs:
             echo "Attempt $i/30: $CODE"; sleep 4
           done
           if [ -z "$api_ok" ]; then
-            echo "API health check failed — dumping droplet API container logs:"
+            echo "API health check failed â€” dumping droplet API container logs:"
             ssh -o StrictHostKeyChecking=no root@${{ needs.resolve-ip.outputs.droplet_ip }} \
               "docker compose -p mct-portal logs --tail=40 api 2>/dev/null || docker logs mct-portal-api-1 --tail 40 2>/dev/null || echo 'no api container found'" || true
             exit 1
