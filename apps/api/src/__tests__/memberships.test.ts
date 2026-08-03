@@ -90,6 +90,27 @@ describe("memberships routes", () => {
 
       expect(res.status).toBe(200);
     });
+
+    it("does not org-scope self lookups (user_id = caller)", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: [MEMBERSHIP], error: null });
+      const eqSpy = jest.fn().mockReturnValue(builder);
+      builder.eq = eqSpy;
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .get("/api/v1/memberships?user_id=user-1&status=approved&organization_id=org-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      // The org filter must NOT be applied for self-lookups (the handler
+      // receives the injected active org but must return all memberships
+      // so getApprovedMembership can resolve the active org / platform admin).
+      const eqCalls = eqSpy.mock.calls.map((c) => c[0]);
+      expect(eqCalls).not.toContain("organization_id");
+      expect(eqCalls).toContain("status");
+      expect(eqCalls).toContain("user_id");
+    });
   });
 
   describe("GET /mine", () => {

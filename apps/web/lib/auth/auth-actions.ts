@@ -46,9 +46,15 @@ export async function testLoginAction(email: string, password: string): Promise<
 
     let redirectTo = "/portal/dashboard";
     try {
-      const me = await client.users.me();
+      // Use an authenticated client for the role lookup (me + memberships
+      // require the bearer token, not just the cookie).
+      const authedClient = MCTClient.create({
+        baseUrl: getClientEnv().NEXT_PUBLIC_API_URL,
+        getToken: async () => result.accessToken,
+      });
+      const me = await authedClient.users.me();
       if (me?.userId) {
-        const memberships = await client.memberships.list({
+        const memberships = await authedClient.memberships.list({
           userId: me.userId,
           status: "approved",
         });
@@ -82,5 +88,6 @@ export async function signupAction(email: string, password: string, fullName: st
 export async function logoutAction() {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE);
+  cookieStore.delete("mct_active_org");
   redirect("/login");
 }

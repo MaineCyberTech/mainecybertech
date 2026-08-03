@@ -21,11 +21,14 @@ router.get("/", async (req, res, next) => {
     const statusFilter = req.query.status as string | undefined;
     const userId = req.query.user_id as string | undefined;
 
-    let query = supabase
-      .from("memberships")
-      .select("*, organizations(*), roles(*)");
+    let query = supabase.from("memberships").select("*, organizations(*), roles(*)");
 
-    if (orgId) query = query.eq("organization_id", orgId);
+    // When the caller enumerates their OWN memberships (user_id = self),
+    // do not scope to the active org — they need the full list to resolve
+    // the active org and detect platform-admin access. Cross-user lookups
+    // keep the org filter (caller's active org) for tenant isolation.
+    const isSelfLookup = userId != null && userId === req.authUser?.userId;
+    if (orgId && !isSelfLookup) query = query.eq("organization_id", orgId);
     if (statusFilter) query = query.eq("status", statusFilter);
     if (userId) query = query.eq("user_id", userId);
 
@@ -85,11 +88,7 @@ router.post("/invite", requireAdmin, async (req, res, next) => {
       .maybeSingle();
 
     if (existing) {
-      throw new AppError(
-        "CONFLICT",
-        "User already has a membership in this organization",
-        409,
-      );
+      throw new AppError("CONFLICT", "User already has a membership in this organization", 409);
     }
 
     const { data, error } = await supabase
@@ -157,10 +156,7 @@ router.patch("/:id", requireAdmin, async (req, res, next) => {
 router.delete("/:id", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase
-      .from("memberships")
-      .delete()
-      .eq("id", req.params.id);
+    const { error } = await supabase.from("memberships").delete().eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
