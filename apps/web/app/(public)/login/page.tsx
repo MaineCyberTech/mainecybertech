@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { loginAction } from "@/lib/auth/auth-actions";
+import { isTestAccountsEnabled } from "@/lib/test-accounts";
 import { Button } from "@mct/ui/components/Button";
 
 export default function LoginPage() {
@@ -109,7 +110,7 @@ export default function LoginPage() {
             </a>
           </p>
 
-          {process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED === "true" ? (
+          {isTestAccountsEnabled() ? (
             <p className="mt-3 text-xs text-slate-500">
               <Link href="/test-accounts" className="text-emerald-500 hover:text-emerald-400">
                 Browse test accounts

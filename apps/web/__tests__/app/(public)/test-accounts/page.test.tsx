@@ -33,12 +33,30 @@ describe("TestAccountsPage", () => {
     delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
   });
 
+  function setHostname(hostname: string) {
+    Object.defineProperty(window, "location", {
+      value: { hostname },
+      writable: true,
+      configurable: true,
+    });
+  }
+
   it("shows a Not Available state when test accounts are disabled", async () => {
     delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
+    setHostname("app.mainecybertech.com");
     const { default: Page } = await import("@/app/(public)/test-accounts/page");
     render(<Page />);
     expect(screen.getByText("Not Available")).toBeInTheDocument();
     expect(screen.queryByText("Marcus Chen")).not.toBeInTheDocument();
+  });
+
+  it("enables on the dev domain (.us) even without the env flag", async () => {
+    delete process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED;
+    setHostname("app.mainecybertech.us");
+    const { default: Page } = await import("@/app/(public)/test-accounts/page");
+    render(<Page />);
+    expect(screen.getByText("Test Accounts")).toBeInTheDocument();
+    expect(screen.getByText("Marcus Chen")).toBeInTheDocument();
   });
 
   it("renders the account grid with all seeded users", async () => {

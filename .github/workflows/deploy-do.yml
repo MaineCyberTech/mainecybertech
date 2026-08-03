@@ -51,6 +51,7 @@ jobs:
       ghcr_prefix: ${{ steps.env.outputs.ghcr_prefix }}
       droplet_name: ${{ steps.env.outputs.droplet_name }}
       redis_password: ${{ steps.env.outputs.redis_password }}
+      test_accounts_enabled: ${{ steps.env.outputs.test_accounts_enabled }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Determine environment
@@ -68,6 +69,12 @@ jobs:
             WWW_DOMAIN=www.mainecybertech.us
             ENV_NAME=dev
             DROPLET_NAME=mct-portal-dev
+          fi
+          # Test accounts page is enabled on dev only
+          if [ "$ENV_NAME" = "dev" ]; then
+            TEST_ACCOUNTS_ENABLED=true
+          else
+            TEST_ACCOUNTS_ENABLED=false
           fi
           # Redis password: prod requires the secret; dev gets a per-deploy generated value
           if [ -n "${{ secrets.REDIS_PASSWORD }}" ]; then
@@ -87,6 +94,7 @@ jobs:
           echo "ghcr_prefix=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
           echo "droplet_name=$DROPLET_NAME" >> $GITHUB_OUTPUT
           echo "redis_password=$RP" >> $GITHUB_OUTPUT
+          echo "test_accounts_enabled=$TEST_ACCOUNTS_ENABLED" >> $GITHUB_OUTPUT
 
   resolve-ip:
     needs: setup
@@ -180,7 +188,7 @@ jobs:
             NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}-${{ github.run_number }}
             NEXT_PUBLIC_GIT_SHA=${{ github.sha }}
             NEXT_PUBLIC_BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.pusher.date || '' }}
-            NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=${{ needs.setup.outputs.name == 'dev' && 'true' || 'false' }}
+            NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=${{ needs.setup.outputs.test_accounts_enabled }}
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

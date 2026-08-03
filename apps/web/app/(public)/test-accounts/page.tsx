@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { testLoginAction } from "@/lib/auth/auth-actions";
+import { isTestAccountsEnabled } from "@/lib/test-accounts";
 
 type TestAccount = {
   email: string;
@@ -284,7 +285,7 @@ export default function TestAccountsPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  if (process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED !== "true") {
+  if (!isTestAccountsEnabled()) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0A1118] px-6">
         <div className="text-center">
