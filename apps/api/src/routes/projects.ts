@@ -104,6 +104,69 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/v1/projects/compound?organization_id=X
+ *
+ * Portal projects dashboard data in ONE request: projects for the
+ * org plus their tasks, non-internal task comments, and the caller's
+ * read states. Replaces the previous N+1 pattern (list + 3 calls per
+ * project) that could exhaust the per-user rate limit on orgs with
+ * many projects.
+ */
+router.get("/compound", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const orgId = req.query.organization_id as string | undefined;
+
+    let projectQuery = supabase.from("projects").select("*");
+    if (orgId) projectQuery = projectQuery.eq("organization_id", orgId);
+    const { data: projects, error: projectError } = await projectQuery.order("created_at", {
+      ascending: false,
+    });
+    if (projectError) throw new AppError("DB_ERROR", projectError.message, 500);
+
+    const projectIds = (projects ?? []).map((p: any) => p.id);
+    let taskQuery = supabase
+      .from("project_tasks")
+      .select("*")
+      .order("sort_order", { ascending: true });
+    if (projectIds.length > 0) taskQuery = taskQuery.in("project_id", projectIds);
+    const { data: tasks, error: taskError } = await taskQuery;
+    if (taskError) throw new AppError("DB_ERROR", taskError.message, 500);
+
+    const taskIds = (tasks ?? []).map((t: any) => t.id);
+    let commentQuery = supabase
+      .from("project_task_comments")
+      .select("*")
+      .eq("is_internal", false)
+      .order("created_at", { ascending: true });
+    if (orgId) commentQuery = commentQuery.eq("organization_id", orgId);
+    if (taskIds.length > 0) commentQuery = commentQuery.in("task_id", taskIds);
+    const { data: comments, error: commentError } = await commentQuery;
+    if (commentError) throw new AppError("DB_ERROR", commentError.message, 500);
+
+    let readQuery = supabase
+      .from("project_task_comment_reads")
+      .select("*")
+      .eq("user_id", req.authUser!.userId);
+    if (orgId) readQuery = readQuery.eq("organization_id", orgId);
+    if (taskIds.length > 0) readQuery = readQuery.in("task_id", taskIds);
+    const { data: reads, error: readError } = await readQuery;
+    if (readError) throw new AppError("DB_ERROR", readError.message, 500);
+
+    res.json(
+      success({
+        projects: projects ?? [],
+        tasks: tasks ?? [],
+        comments: comments ?? [],
+        reads: reads ?? [],
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
 // --- Client Project Tracker (Module 12): phases, milestones, dependencies ---
 
 function camelToSnake(str: string): string {
@@ -213,11 +276,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    let query = supabase
-      .from("projects")
-      .select("*, project_tasks(*)")
-      .eq("id", req.params.id)
-      ;
+    let query = supabase.from("projects").select("*, project_tasks(*)").eq("id", req.params.id);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -429,10 +488,7 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
 
     if (fetchError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
 
-    const { error } = await supabase
-      .from("projects")
-      .delete()
-      .eq("id", req.params.id);
+    const { error } = await supabase.from("projects").delete().eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -979,4 +1035,3 @@ router.post("/:id/tasks/:taskId/portal-comment", async (req, res, next) => {
 });
 
 export default router;
-

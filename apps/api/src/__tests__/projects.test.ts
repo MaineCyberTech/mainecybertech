@@ -110,6 +110,43 @@ describe("projects routes", () => {
     });
   });
 
+  describe("GET /compound", () => {
+    it("returns projects with tasks, comments, and read states in one call", async () => {
+      const supabase = mockAuth();
+      supabase.from
+        .mockReturnValueOnce(createMockBuilder({ data: [PROJECT], error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: [TASK], error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: [COMMENT], error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: [READ_STATE], error: null }));
+
+      const res = await request(app)
+        .get("/api/v1/projects/compound?organization_id=00000000-0000-0000-0000-000000000001")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.projects).toHaveLength(1);
+      expect(res.body.data.tasks).toHaveLength(1);
+      expect(res.body.data.comments).toHaveLength(1);
+      expect(res.body.data.reads).toHaveLength(1);
+    });
+
+    it("handles orgs with no projects", async () => {
+      const supabase = mockAuth();
+      supabase.from
+        .mockReturnValueOnce(createMockBuilder({ data: [], error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: [], error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: [], error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: [], error: null }));
+
+      const res = await request(app)
+        .get("/api/v1/projects/compound?organization_id=00000000-0000-0000-0000-000000000001")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.projects).toHaveLength(0);
+    });
+  });
+
   describe("GET /:id", () => {
     it("returns a project with tasks", async () => {
       mockAuth();

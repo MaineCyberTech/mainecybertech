@@ -21,6 +21,17 @@ export class ProjectsApi {
     return this.client.get<PaginatedResult<Project>>("/api/v1/projects", qp);
   }
 
+  getCompound(organizationId?: string) {
+    const qp: Record<string, string | number | undefined> = {};
+    if (organizationId) qp.organization_id = organizationId;
+    return this.client.get<{
+      projects: Project[];
+      tasks: ProjectTask[];
+      comments: ProjectTaskComment[];
+      reads: ProjectTaskReadState[];
+    }>("/api/v1/projects/compound", qp);
+  }
+
   get(id: string) {
     return this.client.get<Project>(`/api/v1/projects/${id}`);
   }

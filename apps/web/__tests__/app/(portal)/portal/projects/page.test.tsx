@@ -2,10 +2,7 @@ import { jest } from "@jest/globals";
 import { render, screen } from "@testing-library/react";
 import React from "react";
 
-const mockProjectsList = jest.fn();
-const mockProjectsListTasks = jest.fn();
-const mockProjectsListTaskComments = jest.fn();
-const mockProjectsListReadStates = jest.fn();
+const mockProjectsCompound = jest.fn();
 const mockUsersMe = jest.fn();
 const mockGetApprovedMembership = jest.fn().mockResolvedValue({ organization_id: "org-1" });
 
@@ -18,10 +15,7 @@ jest.mock("next/link", () => ({
 jest.mock("@/lib/api", () => ({
   getApiClient: jest.fn().mockReturnValue({
     projects: {
-      list: mockProjectsList,
-      listTasks: mockProjectsListTasks,
-      listTaskComments: mockProjectsListTaskComments,
-      listReadStates: mockProjectsListReadStates,
+      getCompound: mockProjectsCompound,
     },
     users: { me: mockUsersMe },
   }),
@@ -31,19 +25,19 @@ jest.mock("@/lib/auth/membership", () => ({
   getApprovedMembership: mockGetApprovedMembership,
 }));
 
+function emptyCompound() {
+  return { projects: [], tasks: [], comments: [], reads: [] };
+}
+
 describe("PortalProjectsPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
     mockUsersMe.mockResolvedValue({ userId: "user-1" });
-    mockProjectsListTasks.mockResolvedValue([]);
-    mockProjectsListTaskComments.mockResolvedValue([]);
-    mockProjectsListReadStates.mockResolvedValue([]);
+    mockProjectsCompound.mockResolvedValue(emptyCompound());
   });
 
   it("renders projects heading", async () => {
-    mockProjectsList.mockResolvedValue({ items: [] });
-
     const { default: PortalProjectsPage } = await import("@/app/(portal)/portal/projects/page");
     const element = await PortalProjectsPage();
     render(element);
@@ -52,8 +46,9 @@ describe("PortalProjectsPage", () => {
   });
 
   it("renders project cards when data exists", async () => {
-    mockProjectsList.mockResolvedValue({
-      items: [
+    mockProjectsCompound.mockResolvedValue({
+      ...emptyCompound(),
+      projects: [
         {
           id: "p1",
           name: "Project Alpha",
@@ -82,8 +77,6 @@ describe("PortalProjectsPage", () => {
   });
 
   it("renders empty state when no projects", async () => {
-    mockProjectsList.mockResolvedValue({ items: [] });
-
     const { default: PortalProjectsPage } = await import("@/app/(portal)/portal/projects/page");
     const element = await PortalProjectsPage();
     render(element);
@@ -105,16 +98,14 @@ describe("PortalProjectsPage", () => {
     const now = new Date().toISOString();
     const oldDate = new Date(Date.now() - 100000).toISOString();
 
-    mockProjectsList.mockResolvedValue({
-      items: [
+    mockProjectsCompound.mockResolvedValue({
+      projects: [
         { id: "p1", name: "Project Alpha", status: "active", priority: "normal", updated_at: now },
       ],
+      tasks: [{ id: "task1", project_id: "p1", title: "Task 1" }],
+      comments: [{ id: "c1", task_id: "task1", created_at: now }],
+      reads: [{ task_id: "task1", last_seen_at: oldDate }],
     });
-    mockProjectsListTasks.mockResolvedValue([{ id: "task1", project_id: "p1", title: "Task 1" }]);
-    mockProjectsListTaskComments.mockResolvedValue([
-      { id: "c1", task_id: "task1", created_at: now },
-    ]);
-    mockProjectsListReadStates.mockResolvedValue([{ task_id: "task1", last_seen_at: oldDate }]);
 
     const { default: PortalProjectsPage } = await import("@/app/(portal)/portal/projects/page");
     const element = await PortalProjectsPage();
@@ -124,8 +115,9 @@ describe("PortalProjectsPage", () => {
   });
 
   it("renders project description", async () => {
-    mockProjectsList.mockResolvedValue({
-      items: [
+    mockProjectsCompound.mockResolvedValue({
+      ...emptyCompound(),
+      projects: [
         {
           id: "p1",
           name: "Project Alpha",
@@ -145,8 +137,9 @@ describe("PortalProjectsPage", () => {
   });
 
   it("renders project link with correct href", async () => {
-    mockProjectsList.mockResolvedValue({
-      items: [
+    mockProjectsCompound.mockResolvedValue({
+      ...emptyCompound(),
+      projects: [
         {
           id: "p1",
           name: "Project Alpha",

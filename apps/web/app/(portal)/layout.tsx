@@ -84,7 +84,14 @@ export default async function PortalLayout({ children }: { children: ReactNode }
     await Promise.all([
       getApiClient()
         .users.me()
-        .catch(() => null),
+        .catch((err) => {
+          // Only treat an explicit auth failure (401/403) as "not signed in".
+          // Transient API errors (429 rate limit, 5xx) must NOT redirect to
+          // /login — the middleware would bounce an authenticated user back
+          // to /portal/dashboard, producing an infinite redirect loop.
+          const status = (err as { status?: number })?.status;
+          return status === 401 || status === 403 ? null : ({ error: true } as any);
+        }),
       getApprovedMembership().catch(() => null),
       getUnreadCount().catch(() => 0),
       getApiClient()
@@ -96,6 +103,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
     ]);
 
   if (!userResult?.userId) {
+    if ((userResult as { error?: boolean })?.error) {
+      throw new Error("Unable to load your profile. Please try again.");
+    }
     redirect("/login");
   }
 

@@ -619,6 +619,20 @@ describe("MCTClient", () => {
       expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/projects/1/detail");
     });
 
+    it("getCompound fetches projects with tasks, comments, and reads", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ projects: [], tasks: [], comments: [], reads: [] }),
+      );
+
+      const result = await client.projects.getCompound("org-1");
+
+      expect(result.projects).toBeDefined();
+      expect(result.tasks).toBeDefined();
+      expect(result.comments).toBeDefined();
+      expect(result.reads).toBeDefined();
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/projects/compound");
+    });
+
     it("create posts a project", async () => {
       mockFetch.mockResolvedValue(mockResponse(project));
 

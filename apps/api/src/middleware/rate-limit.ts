@@ -21,10 +21,9 @@ export function userRateLimitKeyGenerator(
     try {
       const payload = token.split(".")[1];
       if (payload) {
-        const json = Buffer.from(
-          payload.replace(/-/g, "+").replace(/_/g, "/"),
-          "base64",
-        ).toString("utf8");
+        const json = Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(
+          "utf8",
+        );
         const parsed = JSON.parse(json) as { sub?: unknown };
         if (typeof parsed.sub === "string" && parsed.sub.length > 0) {
           return `user:${parsed.sub}`;
@@ -40,7 +39,7 @@ export function userRateLimitKeyGenerator(
 
 export const rateLimitByUser = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 600,
   message: "Too many requests from this user, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,

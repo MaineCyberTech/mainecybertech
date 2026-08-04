@@ -70,48 +70,17 @@ export default async function PortalProjectsPage() {
     );
   }
 
-  const currentUser = await api.users.me();
-  const currentUserId = currentUser?.userId ?? null;
+  // Single compound request (projects + tasks + comments + read states)
+  // instead of N+1 per-project calls — the old pattern exhausted the
+  // per-user rate limit on orgs with many projects.
+  const compound = await api.projects.getCompound(membership.organization_id);
+  const projects = compound.projects ?? [];
+  const tasks = compound.tasks ?? [];
+  const comments = compound.comments ?? [];
 
-  const result = await api.projects.list({ organizationId: membership.organization_id });
-  const projects = result.items ?? [];
-
-  const projectIds = projects.map((p: any) => p.id);
-  const allTasks = projectIds.length
-    ? await Promise.all(projectIds.map((id: string) => api.projects.listTasks(id)))
-    : [];
-
-  const tasks = allTasks.flat();
-  const taskIds = tasks.map((t: any) => t.id);
   const taskMap = new Map(tasks.map((task: any) => [task.id, task.project_id]));
 
-  const comments =
-    taskIds.length && projectIds.length
-      ? (
-          await Promise.all(
-            projectIds.map((id: string) =>
-              api.projects.listTaskComments(id, {
-                organizationId: membership.organization_id,
-                isInternal: false,
-              }),
-            ),
-          )
-        ).flat()
-      : [];
-
-  const reads =
-    currentUserId && taskIds.length && projectIds.length
-      ? (
-          await Promise.all(
-            projectIds.map((id: string) =>
-              api.projects.listReadStates(id, {
-                organizationId: membership.organization_id,
-              }),
-            ),
-          )
-        ).flat()
-      : [];
-
+  const reads = compound.reads ?? [];
   const readMap = new Map((reads ?? []).map((row: any) => [row.task_id, row.last_seen_at]));
   const unreadByProject = new Map<string, number>();
 

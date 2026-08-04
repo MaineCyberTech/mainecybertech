@@ -99,8 +99,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   let user;
   try {
     user = await getApiClient().users.me();
-  } catch {
-    user = null;
+  } catch (err) {
+    // 401/403 = not signed in -> login. Other failures (429/5xx) must not
+    // redirect: the middleware would bounce an authenticated user back to
+    // /portal/dashboard (or /admin), producing an infinite redirect loop.
+    const status = (err as { status?: number })?.status;
+    if (status === 401 || status === 403) {
+      redirect("/login");
+    }
+    throw new Error("Unable to load your profile. Please try again.");
   }
 
   if (!user?.userId) {
