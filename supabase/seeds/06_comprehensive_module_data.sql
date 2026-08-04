@@ -418,7 +418,7 @@ on conflict (id) do nothing;
 
 insert into public.port_maps (id, organization_id, switch_name, port_number, vlan_id, vlan_name, wall_jack_label, connected_device, device_type, uplink, poe_enabled, speed, notes, created_by) values
   ('81720000-0000-0000-0000-000000000001'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'SW42-1', 1, 10, 'Management', 'JACK-A1', 'AP-42-Lobby', 'access_point', false, true, '1G', 'Front lobby AP.', 'd4000000-0000-4000-8000-000000000001'::uuid),
-  ('81720000-0000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'SW42-1', 2, 20, 'POS', 'JACK-A2', 'REG-3', 'pos_terminal', false, true, '1G', 'Register 3.', 'd4000000-0000-4000-8000-000000000001'::uuid),
+  ('81720000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'SW42-1', 2, 20, 'POS', 'JACK-A2', 'REG-3', 'pos_terminal', false, true, '1G', 'Register 3.', 'd4000000-0000-4000-8000-000000000001'::uuid),
   ('81720000-0000-0000-0000-000000000003'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'SW42-1', 24, null, null, 'JACK-A24', 'SW42-UPLINK', 'uplink', true, false, '10G', 'Uplink to core.', 'd4000000-0000-4000-8000-000000000001'::uuid),
   ('81720000-0000-0000-0000-000000000004'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'SW-RAD-1', 5, 30, 'Clinical', 'RAD-J5', 'IMG-PC-12', 'workstation', false, false, '1G', 'Imaging PC.', 'f1000000-0000-4000-8000-000000000001'::uuid)
 on conflict (id) do nothing;
@@ -747,8 +747,8 @@ on conflict (id) do nothing;
 
 insert into public.uptime_results (id, check_id, response_status, response_time_ms, ssl_expiry_date, ssl_days_remaining, is_up, error_message, checked_at) values
   ('83010000-0000-0000-0000-000000000001'::uuid, '83000000-0000-0000-0000-000000000001'::uuid, 200, 420, '2027-01-15', 160, true, null, now() - interval '5 minutes'),
-  ('83010000-0000-0000-0000-0000-000000000002'::uuid, '83000000-0000-0000-0000-000000000001'::uuid, 200, 390, '2027-01-15', 160, true, null, now() - interval '20 minutes'),
-  ('83010000-0000-0000-0000-0000-000000000003'::uuid, '83000000-0000-0000-0000-000000000001'::uuid, 500, 1200, '2027-01-15', 160, false, 'HTTP 500 Internal Server Error', now() - interval '40 minutes'),
+  ('83010000-0000-0000-0000-000000000002'::uuid, '83000000-0000-0000-0000-000000000001'::uuid, 200, 390, '2027-01-15', 160, true, null, now() - interval '20 minutes'),
+  ('83010000-0000-0000-0000-000000000003'::uuid, '83000000-0000-0000-0000-000000000001'::uuid, 500, 1200, '2027-01-15', 160, false, 'HTTP 500 Internal Server Error', now() - interval '40 minutes'),
   ('83010000-0000-0000-0000-000000000004'::uuid, '83000000-0000-0000-0000-000000000002'::uuid, 200, 610, '2026-11-20', 105, true, null, now() - interval '10 minutes'),
   ('83010000-0000-0000-0000-000000000005'::uuid, '83000000-0000-0000-0000-000000000002'::uuid, 503, 3400, '2026-11-20', 105, false, 'HTTP 503 Service Unavailable', now() - interval '45 minutes'),
   ('83010000-0000-0000-0000-000000000006'::uuid, '83000000-0000-0000-0000-000000000003'::uuid, 200, 310, '2027-03-01', 205, true, null, now() - interval '15 minutes')
