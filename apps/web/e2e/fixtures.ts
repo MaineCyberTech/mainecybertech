@@ -48,7 +48,6 @@ export async function setActiveOrg(page: Page, organizationId: string) {
       name: "mct_active_org",
       value: organizationId,
       url: "http://localhost:3000",
-      path: "/",
     },
   ]);
 }
