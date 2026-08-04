@@ -1,23 +1,26 @@
-import { test, expect } from "../fixtures";
+import { test, expect, setActiveOrg } from "../fixtures";
+
+// Acme Manufacturing — seeded with HELPDESK-/SEC- Jira keys (seed 04).
+const ACME_ORG = "11111111-1111-1111-1111-111111111111";
 
 test.describe("jira integration badges", () => {
   test("admin ticket list shows JSM issue key", async ({ page }) => {
+    await setActiveOrg(page, ACME_ORG);
     await page.goto("/admin/tickets");
     const badge = page.getByText(/HELPDESK-/).first();
     await expect(badge).toBeVisible({ timeout: 5000 });
   });
 
   test("admin ticket detail shows JSM fields", async ({ page }) => {
-    await page.goto("/admin/tickets");
-    const ticketLink = page.locator("a[href*='/admin/tickets/']").first();
-    if (await ticketLink.isVisible()) {
-      await ticketLink.click();
-      const badge = page.getByText(/HELPDESK-/).first();
-      await expect(badge).toBeVisible({ timeout: 5000 });
-    }
+    await setActiveOrg(page, ACME_ORG);
+    // Acme ticket seeded with external_jsm_issue_key = 'HELPDESK-42' (seed 04)
+    await page.goto("/admin/tickets/52000000-0000-0000-0000-000000000001");
+    const badge = page.getByText(/HELPDESK-/).first();
+    await expect(badge).toBeVisible({ timeout: 5000 });
   });
 
   test("admin project list shows Jira project key", async ({ page }) => {
+    await setActiveOrg(page, ACME_ORG);
     await page.goto("/admin/projects");
     const badge = page.getByText(/SEC|INFRA/).first();
     await expect(badge).toBeVisible({ timeout: 5000 });
@@ -34,16 +37,23 @@ test.describe("document version history", () => {
 test.describe("notification preferences", () => {
   test("preferences page has save button", async ({ page }) => {
     await page.goto("/portal/notifications/preferences");
-    await expect(page.getByRole("heading", { name: /preferences/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { name: /preferences/i })).toBeVisible({
+      timeout: 5000,
+    });
     const btn = page.getByRole("button", { name: /save/i });
     await expect(btn).toBeVisible({ timeout: 15000 });
   });
 
   test("preferences page shows modules", async ({ page }) => {
     await page.goto("/portal/notifications/preferences");
-    await expect(page.getByRole("heading", { name: /preferences/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { name: /preferences/i })).toBeVisible({
+      timeout: 5000,
+    });
     await expect(
-      page.getByText(/tickets/i).or(page.getByText(/projects/i)).first(),
+      page
+        .getByText(/tickets/i)
+        .or(page.getByText(/projects/i))
+        .first(),
     ).toBeVisible({ timeout: 15000 });
   });
 });
