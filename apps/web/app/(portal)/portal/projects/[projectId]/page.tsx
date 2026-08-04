@@ -206,11 +206,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                   </p>
                 </div>
                 {task.approval_required && !task.approved_at ? (
-                  <form
-                    action={async (fd) => {
-                      await approvePortalProjectTask(fd);
-                    }}
-                  >
+                  <form action={approvePortalProjectTask as unknown as (fd: FormData) => void}>
                     <input type="hidden" name="projectId" value={project.project.id} />
                     <input type="hidden" name="taskId" value={task.id} />
                     <button type="submit" className="cyber-button-secondary">
@@ -250,9 +246,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                     )}
                   </div>
                   <form
-                    action={async (fd) => {
-                      await addPortalTaskComment(fd);
-                    }}
+                    action={addPortalTaskComment as unknown as (fd: FormData) => void}
                     className="mt-4 space-y-3"
                   >
                     <input type="hidden" name="projectId" value={project.project.id} />
@@ -376,9 +370,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
         </div>
 
         <form
-          action={async (fd) => {
-            await addPortalProjectUpdate(fd);
-          }}
+          action={addPortalProjectUpdate as unknown as (fd: FormData) => void}
           className="mt-6 space-y-4"
         >
           <input type="hidden" name="projectId" value={project.project.id} />

@@ -2,6 +2,7 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { submitProposalAction } from "./actions";
 
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
@@ -275,11 +276,9 @@ export default async function PortalProposalDetailPage({ params }: Props) {
 
       <div className="flex items-center justify-end gap-3">
         {proposal.status === "sent" && (
-          <form
-            action={async () => {
-              await api.proposals.submitForApproval(id, { organizationId: orgId });
-            }}
-          >
+          <form action={submitProposalAction as unknown as (fd: FormData) => void}>
+            <input type="hidden" name="proposalId" value={id} />
+            <input type="hidden" name="organizationId" value={orgId} />
             <button type="submit" className="cyber-button">
               Approve Proposal
             </button>
