@@ -1,4 +1,4 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
 import organizationsRouter from "../routes/organizations";
 import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
@@ -107,6 +107,72 @@ describe("organizations routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
+    });
+
+    it("shows all organizations for platform admins (admin role, not super admin)", async () => {
+      const supabase = mockAuth();
+      supabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: "platform-admin-user", email: "admin@example.com" } },
+        error: null,
+      });
+      supabase.from
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { id: "platform-admin-user", is_super_admin: false },
+            error: null,
+          }),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [ORG, { ...ORG, id: "org-2", name: "Other Org" }],
+            error: null,
+          }),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [{ roles: { id: "role-admin", key: "admin" } }],
+            error: null,
+          }),
+        );
+
+      const res = await request(app)
+        .get("/api/v1/organizations")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(2);
+    });
+
+    it("scopes organizations to memberships for client-scoped users", async () => {
+      const supabase = mockAuth();
+      supabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: "client-user", email: "client@example.com" } },
+        error: null,
+      });
+      supabase.from
+        .mockReturnValueOnce(
+          createMockBuilder({ data: { id: "client-user", is_super_admin: false }, error: null }),
+        )
+        .mockReturnValueOnce(createMockBuilder({ data: [ORG], error: null }))
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [{ roles: { id: "role-client", key: "client_user" } }],
+            error: null,
+          }),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [{ organization_id: "00000000-0000-0000-0000-000000000001" }],
+            error: null,
+          }),
+        );
+
+      const res = await request(app)
+        .get("/api/v1/organizations")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
     });
   });
 

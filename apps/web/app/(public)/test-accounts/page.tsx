@@ -316,6 +316,53 @@ const ACCOUNTS: TestAccount[] = [
     badgeColor: "#10b981",
     color: "#7c3aed",
   },
+  // Permission edge cases
+  {
+    email: "paige.norton@westbrook.example",
+    name: "Paige Norton",
+    role: "Office Manager",
+    org: "Westbrook Dental",
+    badge: "Client User",
+    badgeColor: "#10b981",
+    status: "pending",
+    color: "#94a3b8",
+  },
+  {
+    email: "devon.marsh@acme.example",
+    name: "Devon Marsh",
+    role: "IT Consultant",
+    org: "Acme · Northwind",
+    badge: "Client Admin",
+    badgeColor: "#10b981",
+    color: "#059669",
+  },
+  {
+    email: "ines.ribeiro@harborview.example",
+    name: "Ines Ribeiro",
+    role: "Compliance Director",
+    org: "Harborview Health Systems",
+    badge: "Client Admin",
+    badgeColor: "#10b981",
+    color: "#be123c",
+  },
+  {
+    email: "theo.novak@brightline.example",
+    name: "Theo Novak",
+    role: "On-Site Technician",
+    org: "Brightline Retail Group",
+    badge: "Technician",
+    badgeColor: "#f59e0b",
+    color: "#0f766e",
+  },
+  {
+    email: "wren.callahan@summit.example",
+    name: "Wren Callahan",
+    role: "Office Coordinator",
+    org: "Summit Financial Advisors",
+    badge: "Client User",
+    badgeColor: "#10b981",
+    color: "#a21caf",
+  },
 ];
 
 function getInitials(name: string) {

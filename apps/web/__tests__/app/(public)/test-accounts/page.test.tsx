@@ -72,6 +72,11 @@ describe("TestAccountsPage", () => {
     expect(screen.getByText("Grace Liu")).toBeInTheDocument();
     expect(screen.getByText("Omar Farouk")).toBeInTheDocument();
     expect(screen.getByText("Nora Berg")).toBeInTheDocument();
+    expect(screen.getByText("Paige Norton")).toBeInTheDocument();
+    expect(screen.getByText("Devon Marsh")).toBeInTheDocument();
+    expect(screen.getByText("Ines Ribeiro")).toBeInTheDocument();
+    expect(screen.getByText("Theo Novak")).toBeInTheDocument();
+    expect(screen.getByText("Wren Callahan")).toBeInTheDocument();
     expect(screen.getByText(/Click any account to sign in automatically/)).toBeInTheDocument();
   });
 
@@ -87,7 +92,7 @@ describe("TestAccountsPage", () => {
   it("marks pending and suspended accounts", async () => {
     const { default: Page } = await import("@/app/(public)/test-accounts/page");
     render(<Page />);
-    expect(screen.getAllByText("pending").length).toBe(2);
+    expect(screen.getAllByText("pending").length).toBe(3);
     expect(screen.getAllByText("suspended").length).toBe(2);
   });
 

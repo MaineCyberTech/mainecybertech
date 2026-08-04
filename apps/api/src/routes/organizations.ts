@@ -36,7 +36,24 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
 
     let query = supabase.from("organizations").select("*");
 
-    if (!profile?.is_super_admin) {
+    // Platform admins (super_admin profile OR admin/super_admin role in any
+    // approved membership) see every tenant. Client-scoped users see only
+    // their approved member orgs.
+    let isPlatformAdmin = !!profile?.is_super_admin;
+
+    if (!isPlatformAdmin) {
+      const { data: memberRoles } = await supabase
+        .from("memberships")
+        .select("roles!inner(id, key)")
+        .eq("user_id", req.authUser!.userId)
+        .eq("status", "approved");
+
+      isPlatformAdmin = (memberRoles ?? []).some((m: any) =>
+        ["admin", "super_admin"].includes(m.roles?.key),
+      );
+    }
+
+    if (!isPlatformAdmin) {
       const { data: memberships } = await supabase
         .from("memberships")
         .select("organization_id")
