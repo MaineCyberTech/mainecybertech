@@ -1,4 +1,4 @@
-﻿-- =========================================================
+-- =========================================================
 -- 5302121: Permission edge cases + thin-coverage demo data
 --
 -- Mirrors supabase/seeds/07_permission_edge_cases.sql so the

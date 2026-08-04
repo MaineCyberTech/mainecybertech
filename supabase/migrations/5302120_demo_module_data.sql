@@ -1,4 +1,4 @@
-﻿-- =========================================================
+-- =========================================================
 -- 5302120: Comprehensive demo module data for dev
 --
 -- Mirrors supabase/seeds/06_comprehensive_module_data.sql so
