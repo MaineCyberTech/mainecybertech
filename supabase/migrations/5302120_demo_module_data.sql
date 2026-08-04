@@ -26,6 +26,7 @@ begin
     return;
   end if;
 
+
 -- =========================================================
 -- 0. NEW USERS (5 accounts, password: 1)
 --    f1000000-...-001 Dani Calderon   - embedded technician @ Harborview
@@ -178,7 +179,23 @@ on conflict (id) do nothing;
 
 -- =========================================================
 -- 3. WEBHOOK DEAD LETTERS (references seed-04 webhook 60000000-...-001)
+--    The referenced endpoint is created here so the FK resolves on
+--    fresh databases (E2E applies migrations before seeds 00-07).
 -- =========================================================
+insert into public.webhook_endpoints (
+  id, organization_id, name, url, secret, events, is_active, created_by
+)
+values (
+  '60000000-0000-0000-0000-000000000001'::uuid,
+  '11111111-1111-1111-1111-111111111111'::uuid,
+  'Slack Notifications',
+  'https://hooks.slack.com/services/T00/B00/xxxxxxxx',
+  'whsec_example_secret',
+  '{ticket.created,ticket.updated,ticket.assigned,project.created}',
+  true,
+  '66ce903f-6fe0-45da-878b-a0398e6b1981'::uuid
+) on conflict (id) do nothing;
+
 insert into public.webhook_dead_letters (id, webhook_id, event, request_body, last_error, attempt_count, last_attempt_at) values
   ('81030000-0000-0000-0000-000000000001'::uuid, '60000000-0000-0000-0000-000000000001'::uuid, 'ticket.created', jsonb_build_object('event', 'ticket.created', 'retries', 3), 'Connection reset by peer', 3, now() - interval '1 day'),
   ('81030000-0000-0000-0000-000000000002'::uuid, '60000000-0000-0000-0000-000000000001'::uuid, 'ticket.updated', jsonb_build_object('event', 'ticket.updated', 'retries', 2), 'HTTP 429 Too Many Requests', 2, now() - interval '5 hours'),
@@ -593,10 +610,10 @@ on conflict (id) do nothing;
 -- =========================================================
 -- 20. CLIENT ONBOARDING COMMAND CENTER
 -- =========================================================
-insert into public.client_onboarding_command_center_records (id, organization_id, client_name, client_domain, client_contact_email, client_contact_phone, onboarding_lead_id, status, phase, risk_level, discovery_notes, m365_setup_status, m365_tenant_id, m365_licenses, access_collection_status, access_credentials, network_baseline_status, network_diagram_url, network_scan_results, documentation_status, documentation_url, backup_configuration_status, security_baseline_status, security_training_status, client_deliverables_status, expected_go_live, actual_go_live, created_by) values
-  ('82300000-0000-0000-0000-000000000001'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Westbrook Dental', 'westbrookdental.example', 'it@westbrookdental.example', '555-0801', 'd4000000-0000-4000-8000-000000000004'::uuid, 'in_progress', 'security_baseline', 'medium', '2 locations, 18 staff, EHR in cloud.', 'complete', 'westbrook.onmicrosoft.com', jsonb_build_object('m365_business_premium', 20), 'complete', jsonb_build_object('credential_collected', true), 'in_progress', null, jsonb_build_object('scan_ready', true), 'in_progress', null, 'not_started', 'in_progress', 'not_started', 'not_started', now() + interval '21 days', null, 'd4000000-0000-4000-8000-000000000004'::uuid),
-  ('82300000-0000-0000-0000-000000000002'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Portland Law Group', 'portlandlaw.example', 'matt@portlandlaw.example', '555-0802', 'd4000000-0000-4000-8000-000000000004'::uuid, 'completed', 'handoff', 'low', '25 users, 1 office.', 'complete', 'portlandlaw.onmicrosoft.com', jsonb_build_object('m365_business_standard', 30), 'complete', jsonb_build_object('credential_collected', true), 'complete', 'https://example.invalid/diagrams/plg', jsonb_build_object('scan_complete', true, 'findings', 2), 'complete', 'https://example.invalid/docs/plg', 'complete', 'complete', 'complete', 'complete', now() - interval '20 days', now() - interval '5 days', 'd4000000-0000-4000-8000-000000000004'::uuid),
-  ('82300000-0000-0000-0000-000000000003'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Maritime Freight Co', 'maritimefreight.example', 'ops@maritimefreight.example', '555-0803', 'f1000000-0000-4000-8000-000000000005'::uuid, 'in_progress', 'discovery', 'high', '3 locations, 45 staff, legacy on-prem.', 'not_started', null, jsonb_build_object(), 'in_progress', jsonb_build_object(), 'in_progress', null, jsonb_build_object(), 'not_started', null, 'not_started', 'not_started', 'not_started', 'not_started', now() + interval '45 days', null, 'f1000000-0000-4000-8000-000000000005'::uuid)
+insert into public.client_onboarding_command_center_records (id, organization_id, client_name, client_domain, client_contact_email, client_contact_phone, onboarding_lead_id, status, phase, risk_level, discovery_notes, m365_setup_status, m365_tenant_id, m365_licenses, access_collection_status, access_credentials, network_baseline_status, network_diagram_url, network_scan_results, documentation_status, documentation_url, security_baseline_status, security_baseline_score, security_findings, support_handoff_status, support_handoff_notes, handoff_completed_at, next_review_at, started_at, completed_at) values
+  ('82300000-0000-0000-0000-000000000001'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Westbrook Dental', 'westbrookdental.example', 'it@westbrookdental.example', '555-0801', 'd4000000-0000-4000-8000-000000000004'::uuid, 'in_progress', 'security_baseline', 'medium', '2 locations, 18 staff, EHR in cloud.', 'complete', 'westbrook.onmicrosoft.com', jsonb_build_object('m365_business_premium', 20), 'complete', jsonb_build_object('credential_collected', true), 'in_progress', null, jsonb_build_object('scan_ready', true), 'in_progress', null, 'not_started', null, jsonb_build_array(), 'not_started', null, null, now() + interval '21 days', now() - interval '25 days', null),
+  ('82300000-0000-0000-0000-000000000002'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Portland Law Group', 'portlandlaw.example', 'matt@portlandlaw.example', '555-0802', 'd4000000-0000-4000-8000-000000000004'::uuid, 'completed', 'handoff', 'low', '25 users, 1 office.', 'complete', 'portlandlaw.onmicrosoft.com', jsonb_build_object('m365_business_standard', 30), 'complete', jsonb_build_object('credential_collected', true), 'complete', 'https://example.invalid/diagrams/plg', jsonb_build_object('scan_complete', true, 'findings', 2), 'complete', 'https://example.invalid/docs/plg', 'complete', 82, jsonb_build_array(jsonb_build_object('id', 'PLG-001', 'severity', 'low')), 'complete', 'Handoff complete.', now() - interval '5 days', now() + interval '55 days', now() - interval '25 days', now() - interval '5 days'),
+  ('82300000-0000-0000-0000-000000000003'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Maritime Freight Co', 'maritimefreight.example', 'ops@maritimefreight.example', '555-0803', 'f1000000-0000-4000-8000-000000000005'::uuid, 'in_progress', 'discovery', 'high', '3 locations, 45 staff, legacy on-prem.', 'not_started', null, jsonb_build_object(), 'in_progress', jsonb_build_object(), 'in_progress', null, jsonb_build_object(), 'not_started', null, 'not_started', null, jsonb_build_array(), 'not_started', null, null, now() + interval '45 days', now() - interval '2 days', null)
 on conflict (id) do nothing;
 
 insert into public.client_onboarding_checklist_items (id, organization_id, onboarding_record_id, phase, item_key, label, description, is_required, is_completed, completed_by, completed_at, notes, sort_order) values
@@ -830,5 +847,4 @@ on conflict (id) do nothing;
 
 
 end $$;
-
 
