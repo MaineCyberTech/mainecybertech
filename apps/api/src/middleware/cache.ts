@@ -138,7 +138,11 @@ export function shutdownCache(): void {
 }
 
 function buildCacheKey(req: Request): string {
-  const baseKey = `${req.path}:${JSON.stringify(req.query)}`;
+  // req.path is router-relative inside mounted routers (e.g. "/" for both
+  // /api/v1/roles and /api/v1/organizations) — baseUrl + path yields the
+  // full mount path so cache keys never collide across routers.
+  const fullPath = `${req.baseUrl ?? ""}${req.path}`;
+  const baseKey = `${fullPath}:${JSON.stringify(req.query)}`;
   const authUser = (req as Request & { authUser?: { userId: string; orgId?: string } }).authUser;
   if (authUser?.orgId) {
     return `org=${authUser.orgId}:${baseKey}`;
