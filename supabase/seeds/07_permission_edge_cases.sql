@@ -7,14 +7,14 @@
 --     exercise org status filters + switcher badges.
 --   * 5 new users (password: 1) covering permission cases not
 --     present in seeds 00-06:
---       g1000000-...-001 Paige Norton   - NO memberships (pending-approval flow)
---       g1000000-...-002 Devon Marsh    - multi-role: client_admin @ Acme
+--       e1000000-...-001 Paige Norton   - NO memberships (pending-approval flow)
+--       e1000000-...-002 Devon Marsh    - multi-role: client_admin @ Acme
 --                                         + technician @ Northwind (role switching)
---       g1000000-...-003 Ines Ribeiro   - client_admin @ Harborview
+--       e1000000-...-003 Ines Ribeiro   - client_admin @ Harborview
 --                                         + DENY organizations:view (admin-scope deny)
---       g1000000-...-004 Theo Novak     - technician @ Brightline
+--       e1000000-...-004 Theo Novak     - technician @ Brightline
 --                                         + ALLOW users:view (admin-scope allow)
---       g1000000-...-005 Wren Callahan  - client_user @ Summit
+--       e1000000-...-005 Wren Callahan  - client_user @ Summit
 --                                         + ALLOW tickets:delete (core allow for lowest role)
 --   * A second webhook endpoint + delivery log (Harborview) so the
 --     webhook detail UI has multi-org data.
@@ -63,19 +63,19 @@ set organization_id = excluded.organization_id,
 -- =========================================================
 delete from auth.identities
 where user_id in (
-  'g1000000-0000-4000-8000-000000000001','g1000000-0000-4000-8000-000000000002',
-  'g1000000-0000-4000-8000-000000000003','g1000000-0000-4000-8000-000000000004',
-  'g1000000-0000-4000-8000-000000000005'
+  'e1000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000002',
+  'e1000000-0000-4000-8000-000000000003','e1000000-0000-4000-8000-000000000004',
+  'e1000000-0000-4000-8000-000000000005'
 )
    or provider_id in (
-  'g1000000-0000-4000-8000-000000000001','g1000000-0000-4000-8000-000000000002',
-  'g1000000-0000-4000-8000-000000000003','g1000000-0000-4000-8000-000000000004',
-  'g1000000-0000-4000-8000-000000000005'
+  'e1000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000002',
+  'e1000000-0000-4000-8000-000000000003','e1000000-0000-4000-8000-000000000004',
+  'e1000000-0000-4000-8000-000000000005'
 )
    or id in (
-  'g1000000-0000-4000-8000-000000000001','g1000000-0000-4000-8000-000000000002',
-  'g1000000-0000-4000-8000-000000000003','g1000000-0000-4000-8000-000000000004',
-  'g1000000-0000-4000-8000-000000000005'
+  'e1000000-0000-4000-8000-000000000001','e1000000-0000-4000-8000-000000000002',
+  'e1000000-0000-4000-8000-000000000003','e1000000-0000-4000-8000-000000000004',
+  'e1000000-0000-4000-8000-000000000005'
 );
 
 insert into auth.users (
@@ -88,11 +88,11 @@ insert into auth.users (
   reauthentication_token, reauthentication_sent_at, is_sso_user, deleted_at, is_anonymous
 )
 values
-  ('00000000-0000-0000-0000-000000000000', 'g1000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'paige.norton@westbrook.example', '$2a$10$WBaKteRHgBxhGdSfULyK0eqwF2ccw0JygnROECp.fFpypkkkTV1NC', '2026-08-03 08:00:00+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}'::jsonb, '{"email_verified": true}'::jsonb, NULL, '2026-08-03 08:00:00+00', '2026-08-03 08:00:00+00', '555-0801', NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
-  ('00000000-0000-0000-0000-000000000000', 'g1000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'devon.marsh@acme.example', '$2a$10$WBaKteRHgBxhGdSfULyK0eqwF2ccw0JygnROECp.fFpypkkkTV1NC', '2026-08-03 08:05:00+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}'::jsonb, '{"email_verified": true}'::jsonb, NULL, '2026-08-03 08:05:00+00', '2026-08-03 08:05:00+00', '555-0802', NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
-  ('00000000-0000-0000-0000-000000000000', 'g1000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'ines.ribeiro@harborview.example', '$2a$10$WBaKteRHgBxhGdSfULyK0eqwF2ccw0JygnROECp.fFpypkkkTV1NC', '2026-08-03 08:10:00+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}'::jsonb, '{"email_verified": true}'::jsonb, NULL, '2026-08-03 08:10:00+00', '2026-08-03 08:10:00+00', '555-0803', NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
-  ('00000000-0000-0000-0000-000000000000', 'g1000000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'theo.novak@brightline.example', '$2a$10$WBaKteRHgBxhGdSfULyK0eqwF2ccw0JygnROECp.fFpypkkkTV1NC', '2026-08-03 08:15:00+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}'::jsonb, '{"email_verified": true}'::jsonb, NULL, '2026-08-03 08:15:00+00', '2026-08-03 08:15:00+00', '555-0804', NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
-  ('00000000-0000-0000-0000-000000000000', 'g1000000-0000-4000-8000-000000000005', 'authenticated', 'authenticated', 'wren.callahan@summit.example', '$2a$10$WBaKteRHgBxhGdSfULyK0eqwF2ccw0JygnROECp.fFpypkkkTV1NC', '2026-08-03 08:20:00+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}'::jsonb, '{"email_verified": true}'::jsonb, NULL, '2026-08-03 08:20:00+00', '2026-08-03 08:20:00+00', '555-0805', NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false)
+  ('00000000-0000-0000-0000-000000000000', 'e1000000-0000-4000-8000-000000000001', 'authenticated', 'authenticated', 'paige.norton@westbrook.example', '$2a$10$WBaKteRHgBxhGdSfULyK0eqwF2ccw0JygnROECp.fFpypkkkTV1NC', '2026-08-03 08:00:00+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}'::jsonb, '{"email_verified": true}'::jsonb, NULL, '2026-08-03 08:00:00+00', '2026-08-03 08:00:00+00', '555-0801', NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
+  ('00000000-0000-0000-0000-000000000000', 'e1000000-0000-4000-8000-000000000002', 'authenticated', 'authenticated', 'devon.marsh@acme.example', '$2a$10$WBaKteRHgBxhGdSfULyK0eqwF2ccw0JygnROECp.fFpypkkkTV1NC', '2026-08-03 08:05:00+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}'::jsonb, '{"email_verified": true}'::jsonb, NULL, '2026-08-03 08:05:00+00', '2026-08-03 08:05:00+00', '555-0802', NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
+  ('00000000-0000-0000-0000-000000000000', 'e1000000-0000-4000-8000-000000000003', 'authenticated', 'authenticated', 'ines.ribeiro@harborview.example', '$2a$10$WBaKteRHgBxhGdSfULyK0eqwF2ccw0JygnROECp.fFpypkkkTV1NC', '2026-08-03 08:10:00+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}'::jsonb, '{"email_verified": true}'::jsonb, NULL, '2026-08-03 08:10:00+00', '2026-08-03 08:10:00+00', '555-0803', NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
+  ('00000000-0000-0000-0000-000000000000', 'e1000000-0000-4000-8000-000000000004', 'authenticated', 'authenticated', 'theo.novak@brightline.example', '$2a$10$WBaKteRHgBxhGdSfULyK0eqwF2ccw0JygnROECp.fFpypkkkTV1NC', '2026-08-03 08:15:00+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}'::jsonb, '{"email_verified": true}'::jsonb, NULL, '2026-08-03 08:15:00+00', '2026-08-03 08:15:00+00', '555-0804', NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false),
+  ('00000000-0000-0000-0000-000000000000', 'e1000000-0000-4000-8000-000000000005', 'authenticated', 'authenticated', 'wren.callahan@summit.example', '$2a$10$WBaKteRHgBxhGdSfULyK0eqwF2ccw0JygnROECp.fFpypkkkTV1NC', '2026-08-03 08:20:00+00', NULL, '', NULL, '', NULL, '', '', NULL, NULL, '{"provider": "email", "providers": ["email"]}'::jsonb, '{"email_verified": true}'::jsonb, NULL, '2026-08-03 08:20:00+00', '2026-08-03 08:20:00+00', '555-0805', NULL, '', '', NULL, '', 0, NULL, '', NULL, false, NULL, false)
 on conflict (id) do update
 set
   aud = excluded.aud,
@@ -110,11 +110,11 @@ insert into auth.identities (
   id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
 )
 values
-  ('g1000000-0000-4000-8000-000000000001', 'g1000000-0000-4000-8000-000000000001', '{"sub": "g1000000-0000-4000-8000-000000000001", "email": "paige.norton@westbrook.example", "email_verified": true}'::jsonb, 'email', 'g1000000-0000-4000-8000-000000000001', NULL, '2026-08-03 08:00:00+00', '2026-08-03 08:00:00+00'),
-  ('g1000000-0000-4000-8000-000000000002', 'g1000000-0000-4000-8000-000000000002', '{"sub": "g1000000-0000-4000-8000-000000000002", "email": "devon.marsh@acme.example", "email_verified": true}'::jsonb, 'email', 'g1000000-0000-4000-8000-000000000002', NULL, '2026-08-03 08:05:00+00', '2026-08-03 08:05:00+00'),
-  ('g1000000-0000-4000-8000-000000000003', 'g1000000-0000-4000-8000-000000000003', '{"sub": "g1000000-0000-4000-8000-000000000003", "email": "ines.ribeiro@harborview.example", "email_verified": true}'::jsonb, 'email', 'g1000000-0000-4000-8000-000000000003', NULL, '2026-08-03 08:10:00+00', '2026-08-03 08:10:00+00'),
-  ('g1000000-0000-4000-8000-000000000004', 'g1000000-0000-4000-8000-000000000004', '{"sub": "g1000000-0000-4000-8000-000000000004", "email": "theo.novak@brightline.example", "email_verified": true}'::jsonb, 'email', 'g1000000-0000-4000-8000-000000000004', NULL, '2026-08-03 08:15:00+00', '2026-08-03 08:15:00+00'),
-  ('g1000000-0000-4000-8000-000000000005', 'g1000000-0000-4000-8000-000000000005', '{"sub": "g1000000-0000-4000-8000-000000000005", "email": "wren.callahan@summit.example", "email_verified": true}'::jsonb, 'email', 'g1000000-0000-4000-8000-000000000005', NULL, '2026-08-03 08:20:00+00', '2026-08-03 08:20:00+00')
+  ('e1000000-0000-4000-8000-000000000001', 'e1000000-0000-4000-8000-000000000001', '{"sub": "e1000000-0000-4000-8000-000000000001", "email": "paige.norton@westbrook.example", "email_verified": true}'::jsonb, 'email', 'e1000000-0000-4000-8000-000000000001', NULL, '2026-08-03 08:00:00+00', '2026-08-03 08:00:00+00'),
+  ('e1000000-0000-4000-8000-000000000002', 'e1000000-0000-4000-8000-000000000002', '{"sub": "e1000000-0000-4000-8000-000000000002", "email": "devon.marsh@acme.example", "email_verified": true}'::jsonb, 'email', 'e1000000-0000-4000-8000-000000000002', NULL, '2026-08-03 08:05:00+00', '2026-08-03 08:05:00+00'),
+  ('e1000000-0000-4000-8000-000000000003', 'e1000000-0000-4000-8000-000000000003', '{"sub": "e1000000-0000-4000-8000-000000000003", "email": "ines.ribeiro@harborview.example", "email_verified": true}'::jsonb, 'email', 'e1000000-0000-4000-8000-000000000003', NULL, '2026-08-03 08:10:00+00', '2026-08-03 08:10:00+00'),
+  ('e1000000-0000-4000-8000-000000000004', 'e1000000-0000-4000-8000-000000000004', '{"sub": "e1000000-0000-4000-8000-000000000004", "email": "theo.novak@brightline.example", "email_verified": true}'::jsonb, 'email', 'e1000000-0000-4000-8000-000000000004', NULL, '2026-08-03 08:15:00+00', '2026-08-03 08:15:00+00'),
+  ('e1000000-0000-4000-8000-000000000005', 'e1000000-0000-4000-8000-000000000005', '{"sub": "e1000000-0000-4000-8000-000000000005", "email": "wren.callahan@summit.example", "email_verified": true}'::jsonb, 'email', 'e1000000-0000-4000-8000-000000000005', NULL, '2026-08-03 08:20:00+00', '2026-08-03 08:20:00+00')
 on conflict (id) do nothing;
 
 insert into public.profiles (
@@ -125,11 +125,11 @@ select
   jsonb_build_object('seeded', true, 'demo_label', u.demo_label)
 from (
   values
-    ('g1000000-0000-4000-8000-000000000001'::uuid, 'paige.norton@westbrook.example', 'Paige Norton', '555-0801', 'Office Manager', false, '66666666-6666-4666-8666-666666666666'::uuid, 'paige@westbrook.example'),
-    ('g1000000-0000-4000-8000-000000000002'::uuid, 'devon.marsh@acme.example', 'Devon Marsh', '555-0802', 'IT Consultant', false, '11111111-1111-1111-1111-111111111111'::uuid, 'devon@acme.example'),
-    ('g1000000-0000-4000-8000-000000000003'::uuid, 'ines.ribeiro@harborview.example', 'Ines Ribeiro', '555-0803', 'Compliance Director', false, '33333333-3333-4333-8333-333333333333'::uuid, 'ines@harborview.example'),
-    ('g1000000-0000-4000-8000-000000000004'::uuid, 'theo.novak@brightline.example', 'Theo Novak', '555-0804', 'On-Site Technician', false, '44444444-4444-4444-8444-444444444444'::uuid, 'theo@brightline.example'),
-    ('g1000000-0000-4000-8000-000000000005'::uuid, 'wren.callahan@summit.example', 'Wren Callahan', '555-0805', 'Office Coordinator', false, '55555555-5555-4555-8555-555555555555'::uuid, 'wren@summit.example')
+    ('e1000000-0000-4000-8000-000000000001'::uuid, 'paige.norton@westbrook.example', 'Paige Norton', '555-0801', 'Office Manager', false, '66666666-6666-4666-8666-666666666666'::uuid, 'paige@westbrook.example'),
+    ('e1000000-0000-4000-8000-000000000002'::uuid, 'devon.marsh@acme.example', 'Devon Marsh', '555-0802', 'IT Consultant', false, '11111111-1111-1111-1111-111111111111'::uuid, 'devon@acme.example'),
+    ('e1000000-0000-4000-8000-000000000003'::uuid, 'ines.ribeiro@harborview.example', 'Ines Ribeiro', '555-0803', 'Compliance Director', false, '33333333-3333-4333-8333-333333333333'::uuid, 'ines@harborview.example'),
+    ('e1000000-0000-4000-8000-000000000004'::uuid, 'theo.novak@brightline.example', 'Theo Novak', '555-0804', 'On-Site Technician', false, '44444444-4444-4444-8444-444444444444'::uuid, 'theo@brightline.example'),
+    ('e1000000-0000-4000-8000-000000000005'::uuid, 'wren.callahan@summit.example', 'Wren Callahan', '555-0805', 'Office Coordinator', false, '55555555-5555-4555-8555-555555555555'::uuid, 'wren@summit.example')
 ) as u(user_id, email, full_name, phone, title, is_super_admin, default_org_id, demo_label)
 on conflict (id) do update
 set
@@ -149,11 +149,11 @@ set
 -- =========================================================
 with membership_rows(user_id, organization_id, role_key, status, job_title, is_billing_contact, is_security_contact) as (
   values
-    ('g1000000-0000-4000-8000-000000000002'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'client_admin', 'approved', 'IT Consultant', true, true),
-    ('g1000000-0000-4000-8000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'technician', 'approved', 'IT Consultant', false, false),
-    ('g1000000-0000-4000-8000-000000000003'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'client_admin', 'approved', 'Compliance Director', true, true),
-    ('g1000000-0000-4000-8000-000000000004'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'technician', 'approved', 'On-Site Technician', false, true),
-    ('g1000000-0000-4000-8000-000000000005'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'client_user', 'approved', 'Office Coordinator', false, false)
+    ('e1000000-0000-4000-8000-000000000002'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'client_admin', 'approved', 'IT Consultant', true, true),
+    ('e1000000-0000-4000-8000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'technician', 'approved', 'IT Consultant', false, false),
+    ('e1000000-0000-4000-8000-000000000003'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'client_admin', 'approved', 'Compliance Director', true, true),
+    ('e1000000-0000-4000-8000-000000000004'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'technician', 'approved', 'On-Site Technician', false, true),
+    ('e1000000-0000-4000-8000-000000000005'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'client_user', 'approved', 'Office Coordinator', false, false)
 )
 insert into public.memberships (
   organization_id, user_id, role_id, status, approved_by, approved_at, job_title,
@@ -184,17 +184,17 @@ set
 --    - ALLOW tickets:delete for a client_user (core allow, lowest role)
 -- =========================================================
 insert into public.user_permission_overrides (organization_id, user_id, permission_id, is_allowed)
-select '33333333-3333-4333-8333-333333333333'::uuid, 'g1000000-0000-4000-8000-000000000003'::uuid, p.id, false
+select '33333333-3333-4333-8333-333333333333'::uuid, 'e1000000-0000-4000-8000-000000000003'::uuid, p.id, false
 from public.permissions p where p.module_key = 'organizations' and p.action_key = 'view'
 on conflict (organization_id, user_id, permission_id) do nothing;
 
 insert into public.user_permission_overrides (organization_id, user_id, permission_id, is_allowed)
-select '44444444-4444-4444-8444-444444444444'::uuid, 'g1000000-0000-4000-8000-000000000004'::uuid, p.id, true
+select '44444444-4444-4444-8444-444444444444'::uuid, 'e1000000-0000-4000-8000-000000000004'::uuid, p.id, true
 from public.permissions p where p.module_key = 'users' and p.action_key = 'view'
 on conflict (organization_id, user_id, permission_id) do nothing;
 
 insert into public.user_permission_overrides (organization_id, user_id, permission_id, is_allowed)
-select '55555555-5555-4555-8555-555555555555'::uuid, 'g1000000-0000-4000-8000-000000000005'::uuid, p.id, true
+select '55555555-5555-4555-8555-555555555555'::uuid, 'e1000000-0000-4000-8000-000000000005'::uuid, p.id, true
 from public.permissions p where p.module_key = 'tickets' and p.action_key = 'delete'
 on conflict (organization_id, user_id, permission_id) do nothing;
 
@@ -203,11 +203,11 @@ on conflict (organization_id, user_id, permission_id) do nothing;
 -- =========================================================
 insert into public.notification_preferences (organization_id, user_id, module_key, channel, enabled)
 values
-  ('11111111-1111-1111-1111-111111111111'::uuid, 'g1000000-0000-4000-8000-000000000002'::uuid, 'tickets', 'email', true),
-  ('22222222-2222-2222-2222-222222222222'::uuid, 'g1000000-0000-4000-8000-000000000002'::uuid, 'tickets', 'in_app', false),
-  ('33333333-3333-4333-8333-333333333333'::uuid, 'g1000000-0000-4000-8000-000000000003'::uuid, 'documents', 'in_app', true),
-  ('44444444-4444-4444-8444-444444444444'::uuid, 'g1000000-0000-4000-8000-000000000004'::uuid, 'projects', 'email', true),
-  ('55555555-5555-4555-8555-555555555555'::uuid, 'g1000000-0000-4000-8000-000000000005'::uuid, 'tickets', 'in_app', true)
+  ('11111111-1111-1111-1111-111111111111'::uuid, 'e1000000-0000-4000-8000-000000000002'::uuid, 'tickets', 'email', true),
+  ('22222222-2222-2222-2222-222222222222'::uuid, 'e1000000-0000-4000-8000-000000000002'::uuid, 'tickets', 'in_app', false),
+  ('33333333-3333-4333-8333-333333333333'::uuid, 'e1000000-0000-4000-8000-000000000003'::uuid, 'documents', 'in_app', true),
+  ('44444444-4444-4444-8444-444444444444'::uuid, 'e1000000-0000-4000-8000-000000000004'::uuid, 'projects', 'email', true),
+  ('55555555-5555-4555-8555-555555555555'::uuid, 'e1000000-0000-4000-8000-000000000005'::uuid, 'tickets', 'in_app', true)
 on conflict (organization_id, user_id, module_key, channel) do nothing;
 
 -- =========================================================
@@ -215,10 +215,10 @@ on conflict (organization_id, user_id, module_key, channel) do nothing;
 -- =========================================================
 insert into public.notifications (user_id, organization_id, title, body, module, module_id, action, read, created_at)
 values
-  ('g1000000-0000-4000-8000-000000000002'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Approval Needed', 'A change request awaits your approval.', 'approvals', '57600000-0000-0000-0000-000000000001', 'created', false, now() - interval '2 hours'),
-  ('g1000000-0000-4000-8000-000000000003'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Document Shared', 'A HIPAA policy document was shared with you.', 'documents', '54600000-0000-0000-0000-000000000001', 'shared', false, now() - interval '1 day'),
-  ('g1000000-0000-4000-8000-000000000004'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'Task Assigned', 'You were assigned "Replace switch at Store 17".', 'projects', '53700000-0000-0000-0000-000000000003', 'assigned', false, now() - interval '45 minutes'),
-  ('g1000000-0000-4000-8000-000000000005'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Ticket Updated', 'Your ticket "Client portal enrollment" was updated.', 'tickets', '52600000-0000-0000-0000-000000000007', 'updated', true, now() - interval '3 hours')
+  ('e1000000-0000-4000-8000-000000000002'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Approval Needed', 'A change request awaits your approval.', 'approvals', '57600000-0000-0000-0000-000000000001', 'created', false, now() - interval '2 hours'),
+  ('e1000000-0000-4000-8000-000000000003'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Document Shared', 'A HIPAA policy document was shared with you.', 'documents', '54600000-0000-0000-0000-000000000001', 'shared', false, now() - interval '1 day'),
+  ('e1000000-0000-4000-8000-000000000004'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'Task Assigned', 'You were assigned "Replace switch at Store 17".', 'projects', '53700000-0000-0000-0000-000000000003', 'assigned', false, now() - interval '45 minutes'),
+  ('e1000000-0000-4000-8000-000000000005'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Ticket Updated', 'Your ticket "Client portal enrollment" was updated.', 'tickets', '52600000-0000-0000-0000-000000000007', 'updated', true, now() - interval '3 hours')
 on conflict do nothing;
 
 -- =========================================================
