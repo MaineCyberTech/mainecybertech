@@ -220,11 +220,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
             View in Portal
           </Link>
           {deleted ? (
-            <form
-              action={async () => {
-                await restoreTicketAction(ticketId);
-              }}
-            >
+            <form action={restoreTicketAction.bind(null, ticketId) as unknown as () => void}>
               <button type="submit" className="cyber-button-secondary">
                 Restore Ticket
               </button>
@@ -260,9 +256,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
             </Link>
           </div>
           <form
-            action={async (fd) => {
-              await deleteTicketAction(ticketId, fd);
-            }}
+            action={deleteTicketAction.bind(null, ticketId) as unknown as (fd: FormData) => void}
             className="mt-6 flex flex-col gap-4 md:flex-row md:items-end"
           >
             <div className="w-full max-w-sm">
@@ -286,10 +280,8 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
             <span className="cyber-pill">Admin</span>
           </div>
           <form
-            action={async (fd) => {
-              await updateTicketAction(ticketId, fd);
-            }}
-            className="mt-6 space-y-4"
+            action={updateTicketAction.bind(null, ticketId) as unknown as (fd: FormData) => void}
+            className="mt-6 space-y-6"
           >
             <div>
               <label className="cyber-label">Title</label>
@@ -450,9 +442,11 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                   </div>
                   {isEditing ? (
                     <form
-                      action={async (fd) => {
-                        await editCommentAction(ticketId, comment.id, fd);
-                      }}
+                      action={
+                        editCommentAction.bind(null, ticketId, comment.id) as unknown as (
+                          fd: FormData,
+                        ) => void
+                      }
                       className="mt-3 space-y-3"
                     >
                       <textarea
@@ -483,9 +477,11 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
           )}
         </div>
         <form
-          action={async (fd) => {
-            await addCommentAction(ticketId, ticket.organization_id, fd);
-          }}
+          action={
+            addCommentAction.bind(null, ticketId, ticket.organization_id) as unknown as (
+              fd: FormData,
+            ) => void
+          }
           className="mt-6 space-y-4"
         >
           <div>
