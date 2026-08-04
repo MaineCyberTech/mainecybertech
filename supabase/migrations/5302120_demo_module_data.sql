@@ -245,7 +245,7 @@ insert into public.module_comments (id, organization_id, module_key, entity_type
   ('81070000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'findings', 'finding', '55600000-0000-0000-0000-000000000001', 'a1000000-0000-4000-8000-000000000003'::uuid, 'Please add evidence links for the HIPAA finding.', false),
   ('81070000-0000-0000-0000-000000000002'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'findings', 'finding', '55600000-0000-0000-0000-000000000001', 'd4000000-0000-4000-8000-000000000001'::uuid, 'Evidence collected, attaching to the finding record.', true),
   ('81070000-0000-0000-0000-000000000003'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'projects', 'project', '53600000-0000-0000-0000-000000000003', 'b2000000-0000-4000-8000-000000000002'::uuid, 'Store 42 network cutover is scheduled for Friday.', false),
-  ('81070000-0000-0000-0000-000000000004'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'risk', 'risk', null, 'f1000000-0000-4000-8000-000000000003'::uuid, 'Flagging elevated risk from the recent external pen test.', false),
+  ('81070000-0000-0000-0000-000000000004'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'risk', 'risk', '65600000-0000-0000-0000-000000000004', 'f1000000-0000-4000-8000-000000000003'::uuid, 'Flagging elevated risk from the recent external pen test.', false),
   ('81070000-0000-0000-0000-000000000005'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'tickets', 'ticket', '52600000-0000-0000-0000-000000000007', 'f1000000-0000-4000-8000-000000000004'::uuid, 'User reported access issue again after password reset.', false)
 on conflict (id) do nothing;
 
