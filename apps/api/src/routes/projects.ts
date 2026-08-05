@@ -117,9 +117,13 @@ router.get("/compound", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const orgId = req.query.organization_id as string | undefined;
+    const injected = (req as unknown as { orgAccessInjected?: boolean }).orgAccessInjected;
+    const platformAdmin = (req as unknown as { orgAccessPlatformAdmin?: boolean })
+      .orgAccessPlatformAdmin;
 
     let projectQuery = supabase.from("projects").select("*");
-    if (orgId) projectQuery = projectQuery.eq("organization_id", orgId);
+    if (orgId && !(injected && platformAdmin))
+      projectQuery = projectQuery.eq("organization_id", orgId);
     const { data: projects, error: projectError } = await projectQuery.order("created_at", {
       ascending: false,
     });
@@ -275,9 +279,15 @@ projectSubRoute("dependencies", "project_dependencies", createDependencySchema a
 router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
+    const injected = (req as unknown as { orgAccessInjected?: boolean }).orgAccessInjected;
+    const platformAdmin = (req as unknown as { orgAccessPlatformAdmin?: boolean })
+      .orgAccessPlatformAdmin;
     const supabase = getSupabaseAdmin();
     let query = supabase.from("projects").select("*, project_tasks(*)").eq("id", req.params.id);
-    if (orgId) query = query.eq("organization_id", orgId);
+    // Platform admins are org-agnostic: honor an EXPLICIT org, but don't
+    // pin them to the middleware-injected default org (which would 404
+    // projects belonging to other tenants).
+    if (orgId && !(injected && platformAdmin)) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Project not found", 404);
@@ -290,13 +300,20 @@ router.get("/:id", async (req, res, next) => {
 router.get("/:id/detail", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
+    const injected = (req as unknown as { orgAccessInjected?: boolean }).orgAccessInjected;
+    const platformAdmin = (req as unknown as { orgAccessPlatformAdmin?: boolean })
+      .orgAccessPlatformAdmin;
     const supabase = getSupabaseAdmin();
 
     let query = supabase.from("projects").select("*, project_tasks(*)").eq("id", req.params.id);
-    if (orgId) query = query.eq("organization_id", orgId);
+    if (orgId && !(injected && platformAdmin)) query = query.eq("organization_id", orgId);
     const { data: project, error: projError } = await query.single();
 
     if (projError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
+
+    // Platform admins can fetch any tenant's project without an org param Ã¢â‚¬â€
+    // scope the sub-queries to the project's own org in that case.
+    const scopeOrgId = orgId ?? (project as { organization_id?: string }).organization_id;
 
     const [
       { data: memberships, error: memError },
@@ -307,7 +324,7 @@ router.get("/:id/detail", async (req, res, next) => {
       supabase
         .from("memberships")
         .select("id, user_id, role_id, status, is_billing_contact, is_security_contact")
-        .eq("organization_id", orgId)
+        .eq("organization_id", scopeOrgId)
         .eq("status", "approved"),
       supabase
         .from("project_tasks")
@@ -323,7 +340,7 @@ router.get("/:id/detail", async (req, res, next) => {
         .from("project_task_comment_reads")
         .select("task_id, last_seen_at")
         .eq("user_id", req.authUser!.userId)
-        .eq("organization_id", orgId),
+        .eq("organization_id", scopeOrgId),
     ]);
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);

@@ -91,7 +91,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
 
   let project: any;
   try {
-    project = await api.projects.getDetail(projectId);
+    project = await api.projects.getDetail(projectId, membership.organization_id);
   } catch {
     return (
       <div className="space-y-6">

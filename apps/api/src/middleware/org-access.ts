@@ -63,7 +63,7 @@ function extractActiveOrgId(req: Request): string | null {
 async function resolveDefaultOrgId(
   userId: string,
   activeOrgId: string | null,
-): Promise<string | null> {
+): Promise<{ orgId: string | null; platformAdmin: boolean }> {
   const supabase = getSupabaseAdmin();
 
   if (activeOrgId) {
@@ -76,7 +76,7 @@ async function resolveDefaultOrgId(
       .limit(1);
 
     if (active && active.length > 0) {
-      return active[0].organization_id as string;
+      return { orgId: active[0].organization_id as string, platformAdmin: false };
     }
 
     // Platform admins (admin/super_admin in any org) can switch into any
@@ -92,7 +92,7 @@ async function resolveDefaultOrgId(
         const key = (row.roles as unknown as { key?: string } | null)?.key;
         return key != null && ["admin", "super_admin"].includes(key);
       });
-      if (isPlatformAdmin) return activeOrgId;
+      if (isPlatformAdmin) return { orgId: activeOrgId, platformAdmin: true };
     }
   }
 
@@ -102,10 +102,22 @@ async function resolveDefaultOrgId(
     .eq("user_id", userId)
     .eq("status", "approved")
     .order("created_at", { ascending: true })
-    .limit(1);
+    .limit(50);
 
-  if (!memberships || memberships.length === 0) return null;
-  return memberships[0].organization_id as string;
+  if (!memberships || memberships.length === 0) {
+    return { orgId: null, platformAdmin: false };
+  }
+
+  const isPlatformAdmin = memberships.some((row) => {
+    const key = (row.roles as unknown as { key?: string } | null)?.key;
+    return key != null && ["admin", "super_admin"].includes(key);
+  });
+
+  // Platform admins are org-agnostic: without an explicit org they see
+  // all tenants, so do NOT pin them to the first membership's org.
+  if (isPlatformAdmin) return { orgId: null, platformAdmin: true };
+
+  return { orgId: memberships[0].organization_id as string, platformAdmin: false };
 }
 
 export async function requireOrgAccess(req: Request, _res: Response, next: NextFunction) {
@@ -122,11 +134,21 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
     const orgId = extractOrgId(req);
     if (!orgId) {
       const activeOrgId = extractActiveOrgId(req);
-      const defaultOrgId = await resolveDefaultOrgId(req.authUser.userId, activeOrgId);
-      if (!defaultOrgId) {
+      const { orgId: defaultOrgId, platformAdmin } = await resolveDefaultOrgId(
+        req.authUser.userId,
+        activeOrgId,
+      );
+
+      if (!defaultOrgId && !platformAdmin) {
         throw new AppError("FORBIDDEN", "No approved organization membership found", 403);
       }
-      req.query = { ...req.query, organization_id: defaultOrgId };
+
+      if (defaultOrgId) {
+        req.query = { ...req.query, organization_id: defaultOrgId };
+        (req as Request & { orgAccessInjected?: boolean }).orgAccessInjected = true;
+      }
+      (req as Request & { orgAccessPlatformAdmin?: boolean }).orgAccessPlatformAdmin =
+        platformAdmin;
       next();
       return;
     }

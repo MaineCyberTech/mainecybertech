@@ -36,8 +36,10 @@ export class ProjectsApi {
     return this.client.get<Project>(`/api/v1/projects/${id}`);
   }
 
-  getDetail(id: string) {
-    return this.client.get<ProjectDetail>(`/api/v1/projects/${id}/detail`);
+  getDetail(id: string, organizationId?: string) {
+    const qp: Record<string, string | number | undefined> = {};
+    if (organizationId) qp.organization_id = organizationId;
+    return this.client.get<ProjectDetail>(`/api/v1/projects/${id}/detail`, qp);
   }
 
   create(data: {

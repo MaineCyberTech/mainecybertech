@@ -209,6 +209,44 @@ describe("requireOrgAccess middleware", () => {
       await requireOrgAccess(req, mockRes(), next);
 
       expect(next).toHaveBeenCalledWith();
+      expect((req as any).orgAccessInjected).toBe(true);
+      expect((req as any).orgAccessPlatformAdmin).toBe(false);
+      expect(req.query.organization_id).toBe("00000000-0000-0000-0000-000000000001");
+    });
+
+    it("does NOT inject a default org for platform admins (sees all tenants)", async () => {
+      mockSupabase({
+        primaryMembership: {
+          organization_id: "00000000-0000-0000-0000-000000000001",
+          roles: { key: "super_admin" },
+        },
+      });
+      const next = jest.fn();
+      const req = mockReq({ userId: "user-1" });
+
+      await requireOrgAccess(req, mockRes(), next);
+
+      expect(next).toHaveBeenCalledWith();
+      expect(req.query.organization_id).toBeUndefined();
+      expect((req as any).orgAccessInjected).toBeUndefined();
+      expect((req as any).orgAccessPlatformAdmin).toBe(true);
+    });
+
+    it("treats an admin-role membership as platform admin when no org is given", async () => {
+      mockSupabase({
+        primaryMembership: {
+          organization_id: "00000000-0000-0000-0000-000000000001",
+          roles: { key: "admin" },
+        },
+      });
+      const next = jest.fn();
+      const req = mockReq({ userId: "user-1" });
+
+      await requireOrgAccess(req, mockRes(), next);
+
+      expect(next).toHaveBeenCalledWith();
+      expect(req.query.organization_id).toBeUndefined();
+      expect((req as any).orgAccessPlatformAdmin).toBe(true);
     });
 
     it("returns 403 when user has no approved memberships", async () => {
