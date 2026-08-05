@@ -157,4 +157,14 @@ describe("PortalProjectsPage", () => {
     const link = screen.getByText("Project Alpha").closest("a");
     expect(link).toHaveAttribute("href", "/portal/projects/p1");
   });
+
+  it("shows a friendly state instead of crashing when the compound request fails", async () => {
+    mockProjectsCompound.mockRejectedValue(new Error("rate limited"));
+
+    const { default: PortalProjectsPage } = await import("@/app/(portal)/portal/projects/page");
+    const element = await PortalProjectsPage();
+    render(element);
+
+    expect(screen.getByText(/temporarily unavailable/i)).toBeInTheDocument();
+  });
 });

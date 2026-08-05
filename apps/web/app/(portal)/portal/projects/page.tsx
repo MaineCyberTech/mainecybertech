@@ -73,7 +73,24 @@ export default async function PortalProjectsPage() {
   // Single compound request (projects + tasks + comments + read states)
   // instead of N+1 per-project calls — the old pattern exhausted the
   // per-user rate limit on orgs with many projects.
-  const compound = await api.projects.getCompound(membership.organization_id);
+  let compound;
+  try {
+    compound = await api.projects.getCompound(membership.organization_id);
+  } catch {
+    // A transient API failure (e.g. rate limit, 5xx) must not take the
+    // whole page down with a 500 — render an empty state with a retry.
+    return (
+      <div className="space-y-6">
+        <Breadcrumbs
+          items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Projects" }]}
+        />
+        <PortalSubnav current="projects" />
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
+          Projects are temporarily unavailable. Please try again in a moment.
+        </div>
+      </div>
+    );
+  }
   const projects = compound.projects ?? [];
   const tasks = compound.tasks ?? [];
   const comments = compound.comments ?? [];
@@ -137,6 +154,7 @@ export default async function PortalProjectsPage() {
                   <p
                     className="mt-4 text-xs text-slate-400"
                     title={formatDateTime(project.updated_at)}
+                    suppressHydrationWarning
                   >
                     Updated {formatRelativeTime(project.updated_at)}
                   </p>
