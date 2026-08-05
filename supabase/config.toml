@@ -10,5 +10,6 @@ sql_paths = [
   "./seeds/04_test_seed.sql",
   "./seeds/05_comprehensive_test_data.sql",
   "./seeds/06_comprehensive_module_data.sql",
-  "./seeds/07_permission_edge_cases.sql"
+  "./seeds/07_permission_edge_cases.sql",
+"./seeds/08_expanded_test_data.sql"
 ]
