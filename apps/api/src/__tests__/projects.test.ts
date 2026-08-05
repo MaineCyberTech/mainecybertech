@@ -550,9 +550,9 @@ describe("projects routes", () => {
   });
 
   describe("POST /:id/tasks/:taskId/read", () => {
-    it("marks a task as read", async () => {
+    it("marks a task as read via RPC", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.rpc.mockResolvedValue({ data: null, error: null });
 
       const res = await request(app)
         .post(
@@ -563,6 +563,10 @@ describe("projects routes", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.marked).toBe(true);
+      expect(supabase.rpc).toHaveBeenCalledWith(
+        "mark_task_read",
+        expect.objectContaining({ p_user_id: "00000000-0000-0000-0000-000000000777" }),
+      );
     });
   });
 

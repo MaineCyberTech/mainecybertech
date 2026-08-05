@@ -952,15 +952,14 @@ router.post("/:id/tasks/:taskId/read", async (req, res, next) => {
     const parsed = markTaskReadSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { error } = await supabase.from("project_task_comment_reads").upsert(
-      {
-        user_id: req.authUser!.userId,
-        task_id: req.params.taskId,
-        organization_id: parsed.organizationId,
-        last_seen_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,task_id" },
-    );
+    // SECURITY DEFINER RPC so the insert path bypasses RLS (a direct
+    // upsert hit "new row violates row-level security policy" on hosted
+    // for projects whose tasks had no prior read row).
+    const { error } = await supabase.rpc("mark_task_read", {
+      p_user_id: req.authUser!.userId,
+      p_task_id: req.params.taskId,
+      p_organization_id: parsed.organizationId,
+    });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

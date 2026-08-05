@@ -125,11 +125,19 @@ export default async function PortalProjectDetailPage({ params }: Props) {
   }
 
   if (currentUserId && rawTasks.length > 0) {
-    await Promise.all(
-      rawTasks.map((t: any) =>
-        api.projects.markTaskRead(projectId, t.id, { organizationId: membership.organization_id }),
-      ),
-    );
+    // Marking reads is a best-effort convenience; a failure (e.g. an RLS
+    // hiccup on a brand-new read row) must never crash the page.
+    try {
+      await Promise.all(
+        rawTasks.map((t: any) =>
+          api.projects.markTaskRead(projectId, t.id, {
+            organizationId: membership.organization_id,
+          }),
+        ),
+      );
+    } catch {
+      // non-fatal: unread badges may be slightly stale until the next load
+    }
   }
 
   const commentsByTask = new Map<string, any[]>();
