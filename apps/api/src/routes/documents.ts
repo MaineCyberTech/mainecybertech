@@ -55,12 +55,37 @@ const updateShareSchema = z.object({
 });
 
 const BLOCKED_EXTENSIONS = new Set([
-  ".exe", ".msi", ".bat", ".cmd", ".com", ".scr", ".pif",
-  ".vbs", ".vbe", ".js", ".jse", ".wsf", ".wsh",
-  ".ps1", ".psm1", ".psd1", ".ps2", ".psc1",
-  ".sh", ".bash", ".dll", ".ocx", ".sys",
-  ".app", ".gadget", ".msu", ".msp", ".jar",
-  ".htm", ".html", ".svg",
+  ".exe",
+  ".msi",
+  ".bat",
+  ".cmd",
+  ".com",
+  ".scr",
+  ".pif",
+  ".vbs",
+  ".vbe",
+  ".js",
+  ".jse",
+  ".wsf",
+  ".wsh",
+  ".ps1",
+  ".psm1",
+  ".psd1",
+  ".ps2",
+  ".psc1",
+  ".sh",
+  ".bash",
+  ".dll",
+  ".ocx",
+  ".sys",
+  ".app",
+  ".gadget",
+  ".msu",
+  ".msp",
+  ".jar",
+  ".htm",
+  ".html",
+  ".svg",
 ]);
 
 const ALLOWED_MIME_TYPES = [
@@ -101,6 +126,56 @@ const upload = multer({
   },
 });
 const router: ReturnType<typeof Router> = Router();
+
+router.get("/shares/:token", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { token } = req.params;
+
+    const { data: share, error: shareError } = await supabase
+      .from("document_shares")
+      .select("*, documents!inner(id, name, storage_bucket, storage_path, mime_type)")
+      .eq("token", token)
+      .single();
+
+    if (shareError || !share) throw new AppError("NOT_FOUND", "Share link not found", 404);
+
+    if (share.revoked_at) throw new AppError("FORBIDDEN", "Share link has been revoked", 403);
+
+    if (new Date(share.expires_at) < new Date())
+      throw new AppError("FORBIDDEN", "Share link has expired", 403);
+
+    if (share.max_access && share.access_count >= share.max_access)
+      throw new AppError("FORBIDDEN", "Share link has reached maximum access count", 403);
+
+    const doc = share.documents;
+    if (!doc.storage_bucket || !doc.storage_path)
+      throw new AppError("STORAGE_ERROR", "Document has no storage reference", 500);
+
+    const { data: signedUrl, error: urlError } = await supabase.storage
+      .from(doc.storage_bucket)
+      .createSignedUrl(doc.storage_path, 3600);
+
+    if (urlError || !signedUrl)
+      throw new AppError("STORAGE_ERROR", "Failed to generate download URL", 500);
+
+    await supabase
+      .from("document_shares")
+      .update({ access_count: share.access_count + 1 })
+      .eq("id", share.id);
+
+    res.json(
+      success({
+        documentName: doc.name,
+        mimeType: doc.mime_type,
+        downloadUrl: signedUrl.signedUrl,
+        expiresIn: 3600,
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.use(requireAuth);
 router.use(requireOrgAccess);
@@ -407,7 +482,7 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
     const { data: doc, error: fetchError } = await supabase
       .from("documents")
       .select("id, organization_id, storage_bucket, storage_path")
-.eq("id", req.params.id)
+      .eq("id", req.params.id)
       .single();
 
     if (fetchError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
@@ -416,10 +491,7 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
       await supabase.storage.from(doc.storage_bucket).remove([doc.storage_path]);
     }
 
-    const { error } = await supabase
-      .from("documents")
-      .delete()
-      .eq("id", req.params.id);
+    const { error } = await supabase.from("documents").delete().eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -787,53 +859,3 @@ router.delete("/:id/shares/:shareId", async (req, res, next) => {
 export default router;
 
 // Public share access endpoint (no auth required)
-router.get("/shares/:token", async (req, res, next) => {
-  try {
-    const supabase = getSupabaseAdmin();
-    const { token } = req.params;
-
-    const { data: share, error: shareError } = await supabase
-      .from("document_shares")
-      .select("*, documents!inner(id, name, storage_bucket, storage_path, mime_type)")
-      .eq("token", token)
-      .single();
-
-    if (shareError || !share) throw new AppError("NOT_FOUND", "Share link not found", 404);
-
-    if (share.revoked_at) throw new AppError("FORBIDDEN", "Share link has been revoked", 403);
-
-    if (new Date(share.expires_at) < new Date())
-      throw new AppError("FORBIDDEN", "Share link has expired", 403);
-
-    if (share.max_access && share.access_count >= share.max_access)
-      throw new AppError("FORBIDDEN", "Share link has reached maximum access count", 403);
-
-    const doc = share.documents;
-    if (!doc.storage_bucket || !doc.storage_path)
-      throw new AppError("STORAGE_ERROR", "Document has no storage reference", 500);
-
-    const { data: signedUrl, error: urlError } = await supabase.storage
-      .from(doc.storage_bucket)
-      .createSignedUrl(doc.storage_path, 3600);
-
-    if (urlError || !signedUrl)
-      throw new AppError("STORAGE_ERROR", "Failed to generate download URL", 500);
-
-    await supabase
-      .from("document_shares")
-      .update({ access_count: share.access_count + 1 })
-      .eq("id", share.id);
-
-    res.json(
-      success({
-        documentName: doc.name,
-        mimeType: doc.mime_type,
-        downloadUrl: signedUrl.signedUrl,
-        expiresIn: 3600,
-      }),
-    );
-  } catch (error) {
-    next(error);
-  }
-});
-

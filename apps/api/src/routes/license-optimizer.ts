@@ -106,6 +106,7 @@ router.patch("/:id", async (req, res, next) => {
       .from("license_allocations")
       .update(fields)
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -119,7 +120,11 @@ router.patch("/:id", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("license_allocations").delete().eq("id", req.params.id);
+    const { error } = await supabase
+      .from("license_allocations")
+      .delete()
+      .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.status(204).send();
   } catch (err) {

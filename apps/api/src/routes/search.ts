@@ -73,8 +73,8 @@ router.get("/", async (req, res, next) => {
 
     let documentQuery = supabase
       .from("documents")
-      .select("id, name, type, visibility, organization_id")
-      .or(`name.ilike.${wildcardTerm},type.ilike.${wildcardTerm}`)
+      .select("id, name, mime_type, visibility, organization_id")
+      .or(`name.ilike.${wildcardTerm},mime_type.ilike.${wildcardTerm}`)
       .limit(5);
     if (adminOrgIds.length > 0) {
       documentQuery = documentQuery.in("organization_id", adminOrgIds);
@@ -108,7 +108,16 @@ router.get("/", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "search.query",
       entityType: "search",
-      metadata: { query: q, resultCounts: { users: users?.length ?? 0, organizations: organizations?.length ?? 0, tickets: tickets?.length ?? 0, projects: projects?.length ?? 0, documents: documents?.length ?? 0 } },
+      metadata: {
+        query: q,
+        resultCounts: {
+          users: users?.length ?? 0,
+          organizations: organizations?.length ?? 0,
+          tickets: tickets?.length ?? 0,
+          projects: projects?.length ?? 0,
+          documents: documents?.length ?? 0,
+        },
+      },
     });
 
     res.json(

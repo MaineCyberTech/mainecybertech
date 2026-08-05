@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -52,12 +53,17 @@ export default async function AiPolicyPage() {
           {items.length > 0 ? (
             items.map((item) => (
               <div key={item.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-                <p className="font-medium text-slate-50">{item.title ?? String(item.id)}</p>
+                <Link
+                  className="transition hover:text-emerald-400"
+                  href={`/admin/edu-automation/ai-policy/${item.id}`}
+                >
+                  <p className="font-medium text-slate-50">{item.title ?? String(item.id)}</p>
+                </Link>
               </div>
             ))
           ) : (
             <EmptyState
-              icon="🤖"
+              icon="ðŸ¤–"
               title="No AI policies"
               description="Use the form above to create one."
             />

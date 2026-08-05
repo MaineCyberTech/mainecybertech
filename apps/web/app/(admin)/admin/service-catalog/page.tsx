@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -68,7 +69,12 @@ export default async function ServiceCatalogPage() {
             {services.map((s) => (
               <div key={s.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium text-slate-50">{s.name}</p>
+                  <Link
+                    className="transition hover:text-emerald-400"
+                    href={`/admin/service-catalog/${s.id}`}
+                  >
+                    <p className="font-medium text-slate-50">{s.name}</p>
+                  </Link>
                   <span
                     className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${s.is_active ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-white/10 bg-white/5 text-slate-300"}`}
                   >

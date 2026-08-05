@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -56,9 +57,14 @@ export default async function BreakGlassPage() {
               <div key={a.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-slate-50">
-                      {a.account_name} — {a.system}
-                    </p>
+                    <Link
+                      className="transition hover:text-emerald-400"
+                      href={`/admin/break-glass/${a.id}`}
+                    >
+                      <p className="font-medium text-slate-50">
+                        {a.account_name} — {a.system}
+                      </p>
+                    </Link>
                     <p className="mt-1 text-xs text-slate-400">
                       Custodian: {a.custodian_name || "—"} &bull; Rotated:{" "}
                       {a.last_rotated_at

@@ -1,13 +1,73 @@
 import { Router } from "express";
 import crypto from "crypto";
+import multer from "multer";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { createFileRequestSchema, updateFileRequestSchema } from "../validators/file-requests";
+import { createNotification } from "../lib/notify";
 
 const router: ReturnType<typeof Router> = Router();
+
+const ALLOWED_MIME_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/plain",
+  "text/csv",
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/gzip",
+  "application/rtf",
+];
+
+const BLOCKED_EXTENSIONS = new Set([
+  ".exe",
+  ".bat",
+  ".cmd",
+  ".com",
+  ".scr",
+  ".ps1",
+  ".vbs",
+  ".js",
+  ".jse",
+  ".msi",
+  ".msp",
+  ".hta",
+  ".reg",
+  ".dll",
+  ".sh",
+  ".jar",
+  ".php",
+  ".cgi",
+  ".pl",
+]);
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = "." + file.originalname.split(".").pop()?.toLowerCase();
+    if (BLOCKED_EXTENSIONS.has(ext)) {
+      cb(new AppError("VALIDATION", `File type ${ext} is not allowed`, 400));
+      return;
+    }
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      cb(new AppError("VALIDATION", `File type ${file.mimetype} is not allowed`, 400));
+      return;
+    }
+    cb(null, true);
+  },
+});
 
 router.get("/public/:token", async (req, res, next) => {
   try {
@@ -38,6 +98,86 @@ router.get("/public/:token", async (req, res, next) => {
         expiresAt: data.expires_at,
       }),
     );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/public/:token/upload", upload.single("file"), async (req, res, next) => {
+  try {
+    if (!req.file) throw new AppError("VALIDATION", "No file provided", 400);
+
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("file_requests")
+      .select("*")
+      .eq("token", req.params.token)
+      .single();
+    if (error || !data) throw new AppError("NOT_FOUND", "File request not found or expired", 404);
+    if (data.status !== "active")
+      throw new AppError("GONE", "This upload link is no longer active", 410);
+    if (new Date(data.expires_at) < new Date())
+      throw new AppError("EXPIRED", "This upload link has expired", 410);
+    if (data.upload_count >= data.max_files)
+      throw new AppError("FULL", "Upload limit reached", 410);
+    if (data.max_file_size_mb && req.file.size > data.max_file_size_mb * 1024 * 1024) {
+      throw new AppError("VALIDATION", `File exceeds the ${data.max_file_size_mb}MB limit`, 400);
+    }
+    if (
+      data.allowed_mime_types &&
+      Array.isArray(data.allowed_mime_types) &&
+      data.allowed_mime_types.length > 0 &&
+      !data.allowed_mime_types.includes(req.file.mimetype)
+    ) {
+      throw new AppError(
+        "VALIDATION",
+        `File type ${req.file.mimetype} is not allowed for this request`,
+        400,
+      );
+    }
+
+    const safeName = req.file.originalname.replace(/[^\w.\-]+/g, "_");
+    const storagePath = `${data.storage_path}/${Date.now()}-${safeName}`;
+    const { error: uploadError } = await supabase.storage
+      .from("documents")
+      .upload(storagePath, req.file.buffer, {
+        contentType: req.file.mimetype || undefined,
+        upsert: true,
+      });
+    if (uploadError) {
+      throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);
+    }
+
+    const { data: updated, error: updateError } = await supabase
+      .from("file_requests")
+      .update({ upload_count: data.upload_count + 1 })
+      .eq("id", data.id)
+      .select()
+      .single();
+    if (updateError) throw new AppError("DB_ERROR", updateError.message, 500);
+
+    await logAuditEvent({
+      organizationId: data.organization_id,
+      actorUserId: data.created_by,
+      action: "file_request.uploaded",
+      entityType: "file_request",
+      entityId: data.id,
+      metadata: { fileName: safeName, sizeBytes: req.file.size },
+    });
+
+    if (data.notify_on_upload) {
+      await createNotification({
+        userId: data.created_by,
+        organizationId: data.organization_id,
+        title: "File uploaded",
+        body: `A file was uploaded to "${data.title}".`,
+        module: "documents",
+        moduleId: data.id,
+        action: "uploaded",
+      });
+    }
+
+    res.json(success({ uploaded: true, fileName: safeName, uploadCount: updated.upload_count }));
   } catch (error) {
     next(error);
   }

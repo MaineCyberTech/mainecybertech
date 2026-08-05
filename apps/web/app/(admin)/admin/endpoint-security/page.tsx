@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -50,7 +51,12 @@ export default async function EndpointPage() {
           {items.length > 0 ? (
             items.map((e) => (
               <div key={e.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-                <p className="font-medium text-slate-50">{e.device_group}</p>
+                <Link
+                  className="transition hover:text-emerald-400"
+                  href={`/admin/endpoint-security/${e.id}`}
+                >
+                  <p className="font-medium text-slate-50">{e.device_group}</p>
+                </Link>
                 <p className="mt-2 text-xs text-slate-400">
                   AV: {e.av_installed}/{e.total_endpoints} &bull; Encrypted: {e.disk_encrypted}/
                   {e.total_endpoints} &bull; MDM: {e.mdm_enrolled}/{e.total_endpoints}

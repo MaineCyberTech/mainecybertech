@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -63,7 +64,12 @@ export default async function StatusPage() {
               <div key={s.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-slate-50">{s.title}</p>
+                    <Link
+                      className="transition hover:text-emerald-400"
+                      href={`/admin/status/${s.id}`}
+                    >
+                      <p className="font-medium text-slate-50">{s.title}</p>
+                    </Link>
                     {s.description && (
                       <p className="mt-1 text-xs text-slate-400">{s.description}</p>
                     )}

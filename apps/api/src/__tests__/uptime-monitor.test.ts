@@ -171,7 +171,9 @@ describe("Uptime Monitor API", () => {
   describe("GET /api/v1/uptime-monitor/checks/:id/uptime", () => {
     it("returns uptime stats", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null, count: 100 }));
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { id: "c1" }, error: null, count: 100 }),
+      );
       const res = await request(app)
         .get("/api/v1/uptime-monitor/checks/c1/uptime")
         .set("Authorization", authToken);

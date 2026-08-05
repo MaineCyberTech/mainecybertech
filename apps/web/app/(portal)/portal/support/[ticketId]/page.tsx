@@ -5,6 +5,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import CommentBody from "@/components/CommentBody";
+import TicketReplyForm from "./TicketReplyForm";
 
 export const dynamic = "force-dynamic";
 
@@ -237,6 +238,10 @@ export default async function PortalSupportDetailPage({ params }: Props) {
             <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
               No comments yet.
             </div>
+          )}
+
+          {ticketStatus(ticket) !== "closed" && ticketStatus(ticket) !== "resolved" && (
+            <TicketReplyForm ticketId={ticketId} />
           )}
         </div>
       </section>

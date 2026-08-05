@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -60,7 +61,12 @@ export default async function IncidentsPage() {
             items.map((i) => (
               <div key={i.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
                 <div className="flex items-center justify-between">
-                  <p className="font-medium text-slate-50">{i.title}</p>
+                  <Link
+                    className="transition hover:text-emerald-400"
+                    href={`/admin/incidents/${i.id}`}
+                  >
+                    <p className="font-medium text-slate-50">{i.title}</p>
+                  </Link>
                   <span
                     className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] border-${sev(i.severity)}-500/25 bg-${sev(i.severity)}-500/10 text-${sev(i.severity)}-300`}
                   >

@@ -131,6 +131,7 @@ router.get("/checks/:id", async (req, res, next) => {
       .from("uptime_checks")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Check not found", 404);
     res.json(success(data));
@@ -194,6 +195,7 @@ router.patch("/checks/:id", async (req, res, next) => {
       .from("uptime_checks")
       .update(fields)
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
 
@@ -208,7 +210,11 @@ router.patch("/checks/:id", async (req, res, next) => {
 router.delete("/checks/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("uptime_checks").delete().eq("id", req.params.id);
+    const { error } = await supabase
+      .from("uptime_checks")
+      .delete()
+      .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.status(204).send();
   } catch (err) {
@@ -219,6 +225,13 @@ router.delete("/checks/:id", async (req, res, next) => {
 router.get("/checks/:id/results", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const { data: check, error: checkError } = await supabase
+      .from("uptime_checks")
+      .select("id")
+      .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
+      .single();
+    if (checkError || !check) throw new AppError("NOT_FOUND", "Check not found", 404);
     const { data, error } = await supabase
       .from("uptime_results")
       .select("*")
@@ -245,6 +258,14 @@ router.get("/checks/:id/uptime", async (req, res, next) => {
     ];
 
     const result: Record<string, { total: number; up: number; pct: number }> = {};
+
+    const { data: check, error: checkError } = await supabase
+      .from("uptime_checks")
+      .select("id")
+      .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
+      .single();
+    if (checkError || !check) throw new AppError("NOT_FOUND", "Check not found", 404);
 
     for (const period of periods) {
       const since = new Date(now.getTime() - period.days * 24 * 60 * 60 * 1000).toISOString();

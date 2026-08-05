@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -54,7 +55,12 @@ export default async function WebsiteMonitorPage() {
               <div key={w.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-slate-50">{w.display_name || w.url}</p>
+                    <Link
+                      className="transition hover:text-emerald-400"
+                      href={`/admin/website-monitors/${w.id}`}
+                    >
+                      <p className="font-medium text-slate-50">{w.display_name || w.url}</p>
+                    </Link>
                     <p className="mt-1 text-xs text-slate-400">
                       {w.url} &bull; {w.last_status}{" "}
                       {w.last_response_ms ? `(${w.last_response_ms}ms)` : ""} &bull; SSL:{" "}
@@ -67,7 +73,7 @@ export default async function WebsiteMonitorPage() {
             ))
           ) : (
             <EmptyState
-              icon="🌐"
+              icon="Ã°Å¸Å’Â"
               title="No websites monitored"
               description="Add websites to monitor uptime and SSL."
             />

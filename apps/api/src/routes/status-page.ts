@@ -116,6 +116,7 @@ function crudTable(
         .from(table)
         .select("*")
         .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string)
         .single();
       if (error || !data) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
       res.json(success(data));
@@ -163,6 +164,7 @@ function crudTable(
         .from(table)
         .update(fields)
         .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -175,7 +177,11 @@ function crudTable(
   router.delete(`/${resource}/:id`, async (req, res, next) => {
     try {
       const supabase = getSupabaseAdmin();
-      const { error } = await supabase.from(table).delete().eq("id", req.params.id);
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.status(204).send();
     } catch (err) {

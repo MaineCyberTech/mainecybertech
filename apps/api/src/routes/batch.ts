@@ -101,9 +101,13 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
 
   router.patch(`/${path}/:id`, async (req, res, next) => {
     try {
-      const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
-        req.body,
-      );
+      // Partial updates: accept any subset of the create schema's fields
+      // (a full re-submit would break editing a single field).
+      const schema = createSchema as {
+        partial?: () => { parse: (b: unknown) => Record<string, unknown> };
+        parse: (b: unknown) => Record<string, unknown>;
+      };
+      const parsed = (schema.partial ? schema.partial() : schema).parse(req.body);
       const sb = getSupabaseAdmin();
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(parsed)) {

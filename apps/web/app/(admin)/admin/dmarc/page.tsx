@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -59,7 +60,9 @@ export default async function DmarcPage() {
             items.map((d) => (
               <div key={d.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-4">
-                  <p className="font-medium text-slate-50">{d.domain}</p>
+                  <Link className="transition hover:text-emerald-400" href={`/admin/dmarc/${d.id}`}>
+                    <p className="font-medium text-slate-50">{d.domain}</p>
+                  </Link>
                   <div className="flex items-center gap-3 text-xs">
                     <span>SPF: {ok(d.spf_valid)}</span>
                     <span>DKIM: {ok(d.dkim_configured)}</span>

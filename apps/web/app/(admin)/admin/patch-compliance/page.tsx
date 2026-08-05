@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -64,7 +65,12 @@ export default async function PatchPage() {
           {items.length > 0 ? (
             items.map((p) => (
               <div key={p.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-                <p className="font-medium text-slate-50">{p.device_group}</p>
+                <Link
+                  className="transition hover:text-emerald-400"
+                  href={`/admin/patch-compliance/${p.id}`}
+                >
+                  <p className="font-medium text-slate-50">{p.device_group}</p>
+                </Link>
                 <p className="mt-2 text-xs text-slate-400">
                   {p.patched_devices}/{p.total_devices} patched &bull; {p.pending_patches} pending
                   &bull; {p.critical_patches} critical

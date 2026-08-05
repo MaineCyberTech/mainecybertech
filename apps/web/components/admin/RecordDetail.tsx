@@ -19,6 +19,8 @@ type RecordDetailProps = {
   onUpdate: () => void;
   parentHref: string;
   parentLabel: string;
+  deleteAction?: (id: string) => Promise<{ ok: boolean; error?: string }>;
+  onDelete?: () => void;
 };
 
 function snakeToLabel(k: string): string {
@@ -33,10 +35,25 @@ export default function RecordDetail({
   onUpdate,
   parentHref,
   parentLabel,
+  deleteAction,
+  onDelete,
 }: RecordDetailProps) {
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
+
+  const handleDelete = () => {
+    if (!deleteAction || !window.confirm("Delete this record? This cannot be undone.")) return;
+    setError("");
+    startTransition(async () => {
+      const result = await deleteAction(id);
+      if (result.ok) {
+        onDelete?.();
+      } else {
+        setError(result.error ?? "Delete failed");
+      }
+    });
+  };
 
   if (!record) {
     return (
@@ -90,7 +107,12 @@ export default function RecordDetail({
         </div>
         {editFields.map((f) => (
           <div key={f.key}>
-            <label htmlFor={`edit-${f.key}`} className="mb-1 block text-xs font-medium text-slate-400">{f.label}</label>
+            <label
+              htmlFor={`edit-${f.key}`}
+              className="mb-1 block text-xs font-medium text-slate-400"
+            >
+              {f.label}
+            </label>
             {f.type === "textarea" ? (
               <textarea
                 id={`edit-${f.key}`}
@@ -152,7 +174,18 @@ export default function RecordDetail({
         >
           Edit
         </button>
+        {deleteAction && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={pending}
+            className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-red-300 transition hover:bg-red-500/20 disabled:opacity-50"
+          >
+            {pending ? "Deleting..." : "Delete"}
+          </button>
+        )}
       </div>
+      {error && <p className="mb-3 text-xs text-red-400">{error}</p>}
 
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
         {displayFields.map((f) => {

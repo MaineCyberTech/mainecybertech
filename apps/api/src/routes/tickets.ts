@@ -101,11 +101,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    let query = supabase
-      .from("tickets")
-      .select("*, ticket_comments(*)")
-      .eq("id", req.params.id)
-      ;
+    let query = supabase.from("tickets").select("*, ticket_comments(*)").eq("id", req.params.id);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -159,9 +155,10 @@ router.post("/", async (req, res, next) => {
 
     const { data: adminMembers } = await supabase
       .from("memberships")
-      .select("user_id")
+      .select("user_id, roles!inner(key)")
       .eq("organization_id", parsed.organizationId)
-      .eq("role", "admin");
+      .eq("status", "approved")
+      .in("roles.key", ["admin", "super_admin"]);
 
     if (adminMembers?.length) {
       const adminIds = adminMembers
@@ -402,9 +399,7 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
 
       const isOrgAdmin =
         memberships?.some((row) =>
-          ["admin", "super_admin"].includes(
-            (row.roles as unknown as { key: string }).key,
-          ),
+          ["admin", "super_admin"].includes((row.roles as unknown as { key: string }).key),
         ) ?? false;
 
       if (!isOrgAdmin) {
@@ -457,10 +452,7 @@ router.delete("/:id", async (req, res, next) => {
 
     if (fetchError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
-    const { error } = await supabase
-      .from("tickets")
-      .delete()
-      .eq("id", req.params.id);
+    const { error } = await supabase.from("tickets").delete().eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -520,4 +512,3 @@ router.post("/bulk", requireAdmin, async (req, res, next) => {
 });
 
 export default router;
-
