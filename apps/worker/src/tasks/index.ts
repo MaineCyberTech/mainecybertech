@@ -24,6 +24,8 @@ import {
   saasAuditScan,
   statusMaintenanceCheck,
   dmarcCoachCheck,
+  slaLogCheck,
+  businessOsSnapshot,
 } from "./module-tasks";
 
 export function registerAllTasks(): void {
@@ -52,4 +54,6 @@ export function registerAllTasks(): void {
   registerTask("saas-audit-scan", saasAuditScan);
   registerTask("status-maintenance-check", statusMaintenanceCheck);
   registerTask("dmarc-coach-check", dmarcCoachCheck);
+  registerTask("sla-log-check", slaLogCheck);
+  registerTask("business-os-snapshot", businessOsSnapshot);
 }

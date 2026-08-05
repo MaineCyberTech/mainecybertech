@@ -117,7 +117,7 @@ export const licenseOptimizerCheck: TaskHandler = async (_payload): Promise<Task
 
     const { data: allocations, error: fetchError } = await supabase
       .from("license_allocations")
-      .select("id, used_seats, total_seats, license_name, organization_id, monthly_cost_per_seat");
+      .select("id, used_seats, total_seats, software_name, organization_id, cost_per_seat");
 
     if (fetchError) {
       return { ok: false, error: `Failed to fetch license_allocations: ${fetchError.message}` };
@@ -134,7 +134,7 @@ export const licenseOptimizerCheck: TaskHandler = async (_payload): Promise<Task
 
     const potentialSavings = underutilized.reduce((sum, a) => {
       const unusedSeats = Number(a.total_seats) - Number(a.used_seats);
-      const monthlyCost = (Number(a.monthly_cost_per_seat) || 0) * unusedSeats;
+      const monthlyCost = (Number(a.cost_per_seat) || 0) * unusedSeats;
       return sum + monthlyCost;
     }, 0);
 
@@ -162,6 +162,7 @@ export const dmarcCoachCheck: TaskHandler = async (_payload): Promise<TaskResult
     const { data: analyses, error: fetchError } = await supabase
       .from("dmarc_analyses")
       .select("id, analyzed_at")
+      .eq("status", "active")
       .lt("analyzed_at", thirtyDaysAgo);
 
     if (fetchError) {
@@ -278,10 +279,11 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
       }
 
       await (supabase.from("uptime_results") as any).insert({
-        uptime_check_id: check.id,
-        status_code: statusCode,
+        check_id: check.id,
+        response_status: statusCode,
         response_time_ms: responseTimeMs,
-        error: errorMsg,
+        error_message: errorMsg,
+        is_up: statusCode >= 200 && statusCode < 400,
         checked_at: now,
       });
 
@@ -588,6 +590,184 @@ export const saasAuditScan: TaskHandler = async (_payload): Promise<TaskResult> 
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     logger.error({ error: msg }, "saas-audit-scan failed");
+    return { ok: false, error: msg };
+  }
+};
+
+export const businessOsSnapshot: TaskHandler = async (_payload): Promise<TaskResult> => {
+  try {
+    const supabase = getSupabaseAdmin();
+
+    const { data: orgs, error: orgsError } = await supabase
+      .from("organizations")
+      .select("id, status");
+    if (orgsError) {
+      return { ok: false, error: `Failed to fetch organizations: ${orgsError.message}` };
+    }
+    const approvedCount = (orgs ?? []).filter((o: AnyRecord) => o.status === "approved").length;
+
+    const { count: openTickets, error: ticketsError } = await supabase
+      .from("tickets")
+      .select("*", { count: "exact", head: true })
+      .not("status", "in", '("resolved","closed","completed")');
+    if (ticketsError) {
+      return { ok: false, error: `Failed to fetch tickets: ${ticketsError.message}` };
+    }
+
+    const { count: activeProjects, error: projectsError } = await supabase
+      .from("projects")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active");
+    if (projectsError) {
+      return { ok: false, error: `Failed to fetch projects: ${projectsError.message}` };
+    }
+
+    const { count: pendingApprovals, error: approvalsError } = await supabase
+      .from("approval_requests")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "pending");
+    if (approvalsError) {
+      return { ok: false, error: `Failed to fetch approval_requests: ${approvalsError.message}` };
+    }
+
+    logger.info(
+      {
+        organizations: (orgs ?? []).length,
+        approvedOrgs: approvedCount,
+        openTickets: openTickets ?? 0,
+        activeProjects: activeProjects ?? 0,
+        pendingApprovals: pendingApprovals ?? 0,
+      },
+      "business-os-snapshot: computed",
+    );
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ error: msg }, "business-os-snapshot failed");
+    return { ok: false, error: msg };
+  }
+};
+
+const SLA_METRICS = ["first_response", "resolution"] as const;
+const TARGET_MINUTES: Record<(typeof SLA_METRICS)[number], number> = {
+  first_response: 60,
+  resolution: 480,
+};
+const SLA_LOOKBACK_DAYS = 30;
+
+export const slaLogCheck: TaskHandler = async (_payload): Promise<TaskResult> => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const since = new Date(Date.now() - SLA_LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: tickets, error: ticketsError } = await supabase
+      .from("tickets")
+      .select("id, organization_id, created_at, updated_at, status")
+      .gte("created_at", since)
+      .order("created_at", { ascending: true });
+
+    if (ticketsError) {
+      return { ok: false, error: `Failed to fetch tickets: ${ticketsError.message}` };
+    }
+
+    if (!tickets || tickets.length === 0) {
+      logger.info("sla-log-check: no tickets to evaluate");
+      return { ok: true };
+    }
+
+    const ticketIds = (tickets as AnyRecord[]).map((t) => t.id);
+
+    const { data: existing, error: existingError } = await supabase
+      .from("sla_logs")
+      .select("ticket_id, metric")
+      .in("ticket_id", ticketIds);
+
+    if (existingError) {
+      return { ok: false, error: `Failed to fetch existing sla_logs: ${existingError.message}` };
+    }
+
+    const seen = new Set((existing ?? []).map((l: AnyRecord) => `${l.ticket_id}:${l.metric}`));
+
+    const { data: comments, error: commentsError } = await supabase
+      .from("ticket_comments")
+      .select("ticket_id, created_at")
+      .in("ticket_id", ticketIds)
+      .order("created_at", { ascending: true });
+
+    if (commentsError) {
+      return { ok: false, error: `Failed to fetch ticket comments: ${commentsError.message}` };
+    }
+
+    const firstCommentAt = new Map<string, string>();
+    for (const c of comments ?? []) {
+      const key = c.ticket_id as string;
+      if (!firstCommentAt.has(key)) firstCommentAt.set(key, c.created_at as string);
+    }
+
+    const rows: Array<Record<string, unknown>> = [];
+    let created = 0;
+
+    for (const ticket of tickets as AnyRecord[]) {
+      const createdMs = new Date(ticket.created_at as string).getTime();
+      const orgId = ticket.organization_id as string;
+
+      for (const metric of SLA_METRICS) {
+        if (seen.has(`${ticket.id}:${metric}`)) continue;
+
+        let actualMinutes: number | null = null;
+        let breached = false;
+
+        if (metric === "first_response") {
+          const firstComment = firstCommentAt.get(ticket.id as string);
+          if (firstComment) {
+            actualMinutes = Math.max(
+              0,
+              Math.round((new Date(firstComment).getTime() - createdMs) / 60000),
+            );
+            breached = actualMinutes > TARGET_MINUTES[metric];
+          }
+        } else {
+          const status = String(ticket.status || "");
+          if (status === "resolved" || status === "closed") {
+            const updatedMs = new Date(ticket.updated_at as string).getTime();
+            actualMinutes = Math.max(0, Math.round((updatedMs - createdMs) / 60000));
+            breached = actualMinutes > TARGET_MINUTES[metric];
+          }
+        }
+
+        rows.push({
+          organization_id: orgId,
+          ticket_id: ticket.id,
+          metric,
+          target_minutes: TARGET_MINUTES[metric],
+          actual_minutes: actualMinutes,
+          breached,
+          breached_at: breached && actualMinutes !== null ? new Date().toISOString() : null,
+          resolved_at:
+            metric === "resolution" && actualMinutes !== null
+              ? new Date(createdMs + (actualMinutes || 0) * 60000).toISOString()
+              : null,
+        });
+        seen.add(`${ticket.id}:${metric}`);
+        created++;
+      }
+    }
+
+    if (rows.length > 0) {
+      const { error: insertError } = await (supabase.from("sla_logs") as any).insert(rows);
+      if (insertError) {
+        return { ok: false, error: `Failed to insert sla_logs: ${insertError.message}` };
+      }
+    }
+
+    logger.info(
+      { ticketsEvaluated: tickets.length, slaLogsCreated: created },
+      "sla-log-check: completed",
+    );
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ error: msg }, "sla-log-check failed");
     return { ok: false, error: msg };
   }
 };

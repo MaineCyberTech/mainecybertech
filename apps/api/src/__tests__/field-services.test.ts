@@ -112,6 +112,34 @@ describe("Field Services API", () => {
     expect(r.status).toBe(201);
   });
 
+  it("gets a single record by id (crudRoute GET /:id)", async () => {
+    const s = ma();
+    s.from.mockReturnValue(
+      createMockBuilder({ data: { id: "i-1", clientName: "Test" }, error: null }),
+    );
+    const r = await request(app).get("/api/v1/field-services/isp/i-1").set("Authorization", auth);
+    expect(r.status).toBe(200);
+    expect(r.body.success).toBe(true);
+  });
+
+  it("camera-calc calculate returns storage estimate", async () => {
+    const s = ma();
+    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    const r = await request(app)
+      .post("/api/v1/field-services/camera-calc/calculate")
+      .set("Authorization", auth)
+      .send({
+        organizationId: org,
+        cameraCount: 8,
+        bitrateMbps: 4,
+        resolution: "4MP",
+        retentionDays: 30,
+      });
+    expect(r.status).toBe(200);
+    expect(r.body.data.totalStorageTB).toBeGreaterThan(0);
+    expect(r.body.data.recommendedNVR).toBeDefined();
+  });
+
   it("returns 401 without auth token", async () => {
     const r = await request(app).get("/api/v1/field-services/isp");
     expect(r.status).toBe(401);

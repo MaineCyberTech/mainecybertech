@@ -335,6 +335,18 @@ describe("SDK modules — expanded coverage", () => {
       const result = await client.fieldServices.staging.list({ organization_id: "org-1" });
       expect(result.items).toHaveLength(1);
     });
+    it("calls camera calculate", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ totalStorageTB: 1.13 }));
+      const result = await client.fieldServices.camera.calculate({
+        organizationId: "org-1",
+        cameraCount: 8,
+        bitrateMbps: 4,
+        retentionDays: 30,
+      });
+      expect(result.totalStorageTB).toBe(1.13);
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+      expect(mockFetch.mock.calls[0][0]).toContain("/field-services/camera-calc/calculate");
+    });
   });
 
   describe("EduAutomationApi", () => {
@@ -435,6 +447,13 @@ describe("SDK modules — expanded coverage", () => {
       mockFetch.mockResolvedValue(mockResponse(paginated([{ id: "1" }])));
       const result = await client.final.procurement.list({ organization_id: "org-1" });
       expect(result.items).toHaveLength(1);
+    });
+    it("compares procurement quotes", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ lowestPrice: 900 }));
+      const result = await client.final.procurement.compare(["q1", "q2"]);
+      expect(result.lowestPrice).toBe(900);
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+      expect(mockFetch.mock.calls[0][0]).toContain("/final/procurement/compare");
     });
     it("gets backup stats", async () => {
       mockFetch.mockResolvedValue(mockResponse({ total: 10, failed: 1 }));
@@ -883,16 +902,29 @@ describe("SDK modules — expanded coverage", () => {
 
     it("listPayments fetches paginated payments", async () => {
       mockFetch.mockResolvedValue(
-        mockResponse(paginated([{ id: "p1", amount_cents: 5000, currency: "usd", status: "succeeded", created_at: "" }])),
+        mockResponse(
+          paginated([
+            { id: "p1", amount_cents: 5000, currency: "usd", status: "succeeded", created_at: "" },
+          ]),
+        ),
       );
-      const result = await client.billing.listPayments({ organizationId: "o1", page: 1, limit: 10 });
+      const result = await client.billing.listPayments({
+        organizationId: "o1",
+        page: 1,
+        limit: 10,
+      });
       expect(result.items).toHaveLength(1);
       expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/billing/payments");
     });
 
     it("getBillingCustomer fetches customer info", async () => {
       mockFetch.mockResolvedValue(
-        mockResponse({ id: "bc1", organization_id: "o1", billing_email: "billing@test.com", created_at: "" }),
+        mockResponse({
+          id: "bc1",
+          organization_id: "o1",
+          billing_email: "billing@test.com",
+          created_at: "",
+        }),
       );
       const result = await client.billing.getBillingCustomer({ organizationId: "o1" });
       expect(result.billing_email).toBe("billing@test.com");

@@ -4,18 +4,20 @@ export class BusinessOsApi {
   constructor(private client: ApiClient) {}
 
   async summary() {
-    return this.client.get<Record<string, unknown>>("/business-os/summary");
+    return this.client.get<Record<string, unknown>>("/api/v1/business-os/summary");
   }
 
   async approvalsOverdue() {
-    return this.client.get<unknown[]>("/business-os/approvals-overdue");
+    return this.client.get<unknown[]>("/api/v1/business-os/approvals-overdue");
   }
 
-  async recentActivity() {
-    return this.client.get<unknown[]>("/business-os/recent-activity");
+  async recentActivity(params?: { limit?: number }) {
+    const qp: Record<string, string | number | undefined> = {};
+    if (params?.limit) qp.limit = params.limit;
+    return this.client.get<unknown[]>("/api/v1/business-os/recent-activity", qp);
   }
 
   async orgHealth() {
-    return this.client.get<unknown[]>("/business-os/org-health");
+    return this.client.get<unknown[]>("/api/v1/business-os/org-health");
   }
 }

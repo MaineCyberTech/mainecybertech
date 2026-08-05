@@ -42,6 +42,7 @@ export class FinalApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/final/procurement/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/final/procurement/${id}`),
+    compare: (quoteIds: string[]) => this.c.post("/api/v1/final/procurement/compare", { quoteIds }),
   };
   dnsChanges = {
     list: (p?: Record<string, string | number | undefined>) =>

@@ -42,6 +42,21 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       next(e);
     }
   });
+  router.get(`/${path}/:id`, async (req, res, next) => {
+    try {
+      const sb = getSupabaseAdmin();
+      const { data, error } = await sb
+        .from(table)
+        .select("*")
+        .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string)
+        .single();
+      if (error || !data) throw new AppError("NOT_FOUND", "Not found", 404);
+      res.json(success(data));
+    } catch (e) {
+      next(e);
+    }
+  });
   router.post(`/${path}`, async (req, res, next) => {
     try {
       const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(

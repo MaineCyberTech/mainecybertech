@@ -26,6 +26,22 @@ jest.mock("@/components/Breadcrumbs", () => ({
   default: () => React.createElement("nav", { "aria-label": "Breadcrumb" }),
 }));
 
+jest.mock("@/app/(portal)/portal/camera-calculator/CameraCalculatorClient", () => ({
+  __esModule: true,
+  default: ({ initialItems }: { initialItems: Array<Record<string, unknown>> }) =>
+    React.createElement(
+      "div",
+      { "data-testid": "camera-calculator-client" },
+      React.createElement(
+        "div",
+        null,
+        (initialItems as Array<Record<string, unknown>>).map((a) =>
+          React.createElement("p", { key: String(a.id) }, String(a.site_name)),
+        ),
+      ),
+    ),
+}));
+
 jest.mock(
   "@/components/StatusPill",
   () => ({
@@ -62,26 +78,26 @@ describe("PortalCameraCalculatorPage", () => {
     expect(screen.getByRole("navigation", { "aria-label": "Breadcrumb" })).toBeInTheDocument();
   });
 
-  it("renders items when data exists", async () => {
+  it("renders the client calculator with items when data exists", async () => {
     mockCameraList.mockResolvedValue({
       items: [
         {
           id: "c1",
-          name: "Main Office",
+          site_name: "Main Office",
           status: "active",
           camera_count: 16,
-          total_storage_gb: 2000,
+          estimated_storage_tb: 2,
           retention_days: 30,
-          calculated_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
         },
         {
           id: "c2",
-          name: "Warehouse",
+          site_name: "Warehouse",
           status: "active",
           camera_count: 8,
-          total_storage_gb: 1000,
+          estimated_storage_tb: 1,
           retention_days: 60,
-          calculated_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
         },
       ],
     });
@@ -90,45 +106,19 @@ describe("PortalCameraCalculatorPage", () => {
     const element = await Page();
     render(element);
 
+    expect(screen.getByTestId("camera-calculator-client")).toBeInTheDocument();
     expect(screen.getByText("Main Office")).toBeInTheDocument();
     expect(screen.getByText("Warehouse")).toBeInTheDocument();
-    expect(screen.getByText(/Cameras: 16/)).toBeInTheDocument();
-    expect(screen.getByText(/Cameras: 8/)).toBeInTheDocument();
-    expect(screen.getByText(/2000 GB/)).toBeInTheDocument();
-    expect(screen.getByText(/1000 GB/)).toBeInTheDocument();
   });
 
-  it("shows empty state", async () => {
+  it("shows empty state via client", async () => {
     mockCameraList.mockResolvedValue({ items: [] });
 
     const { default: Page } = await import("@/app/(portal)/portal/camera-calculator/page");
     const element = await Page();
     render(element);
 
-    expect(screen.getByText("No camera calculations available.")).toBeInTheDocument();
-  });
-
-  it("renders status pills", async () => {
-    mockCameraList.mockResolvedValue({
-      items: [
-        {
-          id: "c1",
-          name: "Main Office",
-          status: "active",
-          camera_count: 16,
-          total_storage_gb: 2000,
-          retention_days: 30,
-        },
-      ],
-    });
-
-    const { default: Page } = await import("@/app/(portal)/portal/camera-calculator/page");
-    const element = await Page();
-    render(element);
-
-    const pills = screen.getAllByTestId("status-pill");
-    expect(pills).toHaveLength(1);
-    expect(pills[0]).toHaveTextContent("active");
+    expect(screen.getByTestId("camera-calculator-client")).toBeInTheDocument();
   });
 
   it("shows access restricted when no org", async () => {

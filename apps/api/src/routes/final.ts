@@ -279,22 +279,24 @@ router.post("/procurement/compare", async (req, res, next) => {
       .in("id", parsed.quoteIds);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     const quotes = data ?? [];
-    const lowestPrice = Math.min(...quotes.map((q: any) => q.total_price || 0));
-    const highestPrice = Math.max(...quotes.map((q: any) => q.total_price || 0));
+    const priced = quotes.map((q: any) => ({
+      ...q,
+      price: Number(q.quote_amount) || 0,
+    }));
+    const lowestPrice = Math.min(...priced.map((q: any) => q.price));
+    const highestPrice = Math.max(...priced.map((q: any) => q.price));
     res.json(
       success({
-        quotes: quotes.map((q: any) => ({
+        quotes: priced.map((q: any) => ({
           ...q,
-          savings: q.total_price ? Math.round((1 - q.total_price / highestPrice) * 100) : 0,
-          isLowest: q.total_price === lowestPrice,
+          savings: q.price ? Math.round((1 - q.price / highestPrice) * 100) : 0,
+          isLowest: q.price === lowestPrice,
         })),
         lowestPrice,
         highestPrice,
         averagePrice:
-          Math.round(
-            (quotes.reduce((s: number, q: any) => s + (q.total_price || 0), 0) / quotes.length) *
-              100,
-          ) / 100,
+          Math.round((priced.reduce((s: number, q: any) => s + q.price, 0) / priced.length) * 100) /
+          100,
       }),
     );
   } catch (err) {

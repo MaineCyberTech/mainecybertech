@@ -129,6 +129,32 @@ describe("Final API", () => {
     expect(r.status).toBe(200);
   });
 
+  it("compares procurement quotes using quote_amount", async () => {
+    const s = ma();
+    s.from.mockReturnValue(
+      createMockBuilder({
+        data: [
+          { id: "q1", vendor_name: "Vendor A", quote_amount: 1000 },
+          { id: "q2", vendor_name: "Vendor B", quote_amount: 1200 },
+          { id: "q3", vendor_name: "Vendor C", quote_amount: 900 },
+        ],
+        error: null,
+        count: 3,
+      }),
+    );
+    const r = await request(app)
+      .post("/api/v1/final/procurement/compare")
+      .set("Authorization", auth)
+      .send({ quoteIds: ["q1", "q2", "q3"] });
+    expect(r.status).toBe(200);
+    expect(r.body.data.lowestPrice).toBe(900);
+    expect(r.body.data.highestPrice).toBe(1200);
+    const q1 = r.body.data.quotes.find((q: { id: string }) => q.id === "q1");
+    expect(q1.isLowest).toBe(false);
+    const q3 = r.body.data.quotes.find((q: { id: string }) => q.id === "q3");
+    expect(q3.isLowest).toBe(true);
+  });
+
   it("returns 401 without auth token", async () => {
     const r = await request(app).get("/api/v1/final/sharepoint");
     expect(r.status).toBe(401);

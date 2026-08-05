@@ -74,6 +74,26 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
   }, WEBHOOK_RETRY_INTERVAL_MS);
   webhookRetryInterval.unref();
 
+  // Schedule sla-log-check (SLA breach evaluation from tickets) to run hourly
+  const SLA_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+  const slaCheckInterval = setInterval(() => {
+    logger.info("Running scheduled sla-log-check");
+    runScheduledTask("sla-log-check").catch((error) => {
+      logger.error({ error }, "Scheduled sla-log-check failed");
+    });
+  }, SLA_CHECK_INTERVAL_MS);
+  slaCheckInterval.unref();
+
+  // Schedule business-os-snapshot (MSP dashboard aggregates) to run daily
+  const BUSINESS_OS_INTERVAL_MS = 24 * 60 * 60 * 1000;
+  const businessOsInterval = setInterval(() => {
+    logger.info("Running scheduled business-os-snapshot");
+    runScheduledTask("business-os-snapshot").catch((error) => {
+      logger.error({ error }, "Scheduled business-os-snapshot failed");
+    });
+  }, BUSINESS_OS_INTERVAL_MS);
+  businessOsInterval.unref();
+
   runWorkerTasks().catch((error) => {
     logger.error(error, "Worker crashed");
     Sentry.captureException(error, { extra: { phase: "main-loop" } });

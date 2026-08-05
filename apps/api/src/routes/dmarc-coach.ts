@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
+import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
@@ -76,6 +77,13 @@ router.post("/", async (req, res, next) => {
     }
     const { data, error } = await supabase.from("dmarc_analyses").insert(fields).select().single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    await logAuditEvent({
+      organizationId: parsed.organizationId,
+      actorUserId: req.authUser!.userId,
+      action: "dmarc_analysis.created",
+      entityType: "dmarc_analysis",
+      entityId: data.id,
+    });
     res.status(201).json(success(data));
   } catch (err) {
     next(err);
@@ -94,9 +102,18 @@ router.patch("/:id", async (req, res, next) => {
       .from("dmarc_analyses")
       .update(fields)
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!data) throw new AppError("NOT_FOUND", "Analysis not found", 404);
+    await logAuditEvent({
+      organizationId: data.organization_id,
+      actorUserId: req.authUser!.userId,
+      action: "dmarc_analysis.updated",
+      entityType: "dmarc_analysis",
+      entityId: data.id,
+    });
     res.json(success(data));
   } catch (err) {
     next(err);
@@ -106,12 +123,23 @@ router.patch("/:id", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("dmarc_analyses")
       .delete()
       .eq("id", req.params.id)
-      .eq("organization_id", req.query.organization_id as string);
+      .eq("organization_id", req.query.organization_id as string)
+      .select()
+      .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (data) {
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "dmarc_analysis.deleted",
+        entityType: "dmarc_analysis",
+        entityId: data.id,
+      });
+    }
     res.status(204).send();
   } catch (err) {
     next(err);
@@ -181,6 +209,13 @@ router.post("/analyze", async (req, res, next) => {
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    await logAuditEvent({
+      organizationId: parsed.organizationId,
+      actorUserId: req.authUser!.userId,
+      action: "dmarc_analysis.analyzed",
+      entityType: "dmarc_analysis",
+      entityId: data.id,
+    });
     res.status(201).json(success(data));
   } catch (err) {
     next(err);

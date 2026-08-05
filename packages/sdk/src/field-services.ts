@@ -43,6 +43,8 @@ export class FieldServicesApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/field-services/camera-calc/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/field-services/camera-calc/${id}`),
+    calculate: (d: Record<string, unknown>) =>
+      this.c.post<Record<string, unknown>>("/api/v1/field-services/camera-calc/calculate", d),
   };
   staging = {
     list: (p?: Record<string, string | number | undefined>) =>
