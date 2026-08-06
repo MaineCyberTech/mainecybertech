@@ -93,6 +93,10 @@ const ADMIN_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string 
   "/admin/status": { module: "status" },
   "/admin/status-pages": { module: "status-pages" },
   "/admin/vendors": { module: "vendors" },
+  "/admin/permissions": { module: "roles" },
+  "/admin/approval-requests": { module: "approvals" },
+  "/admin/dynamic-forms": { module: "dynamic-forms" },
+  "/admin/satisfaction-pulse": { module: "satisfaction-pulse" },
 };
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

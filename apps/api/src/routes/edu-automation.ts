@@ -163,12 +163,14 @@ router.post("/automation/:id/execute", async (req, res, next) => {
       .from("automation_workflows")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
     const { data, error } = await supabase
       .from("automation_workflows")
-      .update({ status: "running", last_run_at: new Date().toISOString() })
+      .update({ last_run_status: "running", last_run_at: new Date().toISOString() })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -184,11 +186,12 @@ router.post("/automation/:id/complete", async (req, res, next) => {
     const { data, error } = await supabase
       .from("automation_workflows")
       .update({
-        status: parsed.success ? "completed" : "failed",
+        last_run_status: parsed.success ? "success" : "failed",
         last_result: parsed.result,
         last_run_at: new Date().toISOString(),
       })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -204,6 +207,7 @@ router.post("/kb-generator/:id/generate", async (req, res, next) => {
       .from("kb_article_generations")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
     const generatedBody = `# ${current.source_title || "Generated Article"}\n\nThis article was auto-generated from the provided source.\n\n## Overview\n\nGenerated content based on KB generation request.\n\n## Key Points\n\n- Review and customize this content\n- Add relevant internal knowledge\n- Verify against current procedures\n\n## Next Steps\n\n1. Review the generated content\n2. Publish to the knowledge base\n3. Notify relevant team members`;
@@ -215,6 +219,7 @@ router.post("/kb-generator/:id/generate", async (req, res, next) => {
         reviewed_by: req.authUser!.userId,
       })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -245,6 +250,13 @@ router.post("/kb/:id/rate", async (req, res, next) => {
   try {
     const parsed = z.object({ helpful: z.boolean() }).parse(req.body);
     const supabase = getSupabaseAdmin();
+    const { data: article, error: articleErr } = await supabase
+      .from("knowledge_articles")
+      .select("id")
+      .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
+      .single();
+    if (articleErr || !article) throw new AppError("NOT_FOUND", "Article not found", 404);
     const field = parsed.helpful ? "helpful_count" : "not_helpful_count";
     await supabase.rpc("increment_article_count", { article_id: req.params.id, field_name: field });
     res.json(success({ rated: true }));
@@ -292,6 +304,7 @@ router.post("/phishing/:id/launch", async (req, res, next) => {
       .from("phishing_campaigns")
       .update({ status: "active", launched_at: new Date().toISOString() })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .eq("status", "draft")
       .select()
       .single();
@@ -317,6 +330,7 @@ router.get("/phishing/:id/results", async (req, res, next) => {
       .from("phishing_campaigns")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Campaign not found", 404);
     const sent = data.target_count || 0;
@@ -398,6 +412,7 @@ psRoute("submit", async (req, res, next) => {
       .from("powershell_scripts")
       .select("id, status")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchErr || !existing) throw new AppError("NOT_FOUND", "Script not found", 404);
     if (existing.status !== "draft") {
@@ -415,6 +430,7 @@ psRoute("submit", async (req, res, next) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -437,6 +453,7 @@ psRoute("check", async (req, res, next) => {
       .from("powershell_scripts")
       .select("id, script_content")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchErr || !script) throw new AppError("NOT_FOUND", "Script not found", 404);
     const content = (script as Record<string, unknown>).script_content as string | null;
@@ -451,6 +468,7 @@ psRoute("check", async (req, res, next) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -473,6 +491,7 @@ psRoute("approve", async (req, res, next) => {
       .from("powershell_scripts")
       .select("id, status")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchErr || !existing) throw new AppError("NOT_FOUND", "Script not found", 404);
     if ((existing as Record<string, unknown>).status !== "pending_review") {
@@ -491,6 +510,7 @@ psRoute("approve", async (req, res, next) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -513,6 +533,7 @@ psRoute("reject", async (req, res, next) => {
       .from("powershell_scripts")
       .select("id, status")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchErr || !existing) throw new AppError("NOT_FOUND", "Script not found", 404);
     if ((existing as Record<string, unknown>).status !== "pending_review") {
@@ -529,6 +550,7 @@ psRoute("reject", async (req, res, next) => {
         updated_at: new Date().toISOString(),
       })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -700,10 +722,16 @@ router.get("/scorecards/leaderboard", requireAdmin, async (_req, res, next) => {
 router.post("/scorecards/evaluate", async (req, res, next) => {
   try {
     const sb = getSupabaseAdmin();
-    const orgId = (req.body as Record<string, unknown>).organization_id as string | undefined;
+    const body = req.body as Record<string, unknown>;
+    const orgId = (body.organizationId ?? body.organization_id ?? req.query.organization_id) as
+      | string
+      | undefined;
+    if (!orgId) {
+      throw new AppError("VALIDATION", "organizationId is required", 400);
+    }
 
     let query = sb.from("cyber_scorecards").select("id, category, score");
-    if (orgId) query = query.eq("organization_id", orgId);
+    query = query.eq("organization_id", orgId);
     const { data: scorecards, error: _error } = await query;
     if (!scorecards || scorecards.length === 0) {
       return res.json(success({ evaluated: 0, badgesAssigned: [] }));
@@ -737,7 +765,8 @@ router.post("/scorecards/evaluate", async (req, res, next) => {
       await sb
         .from("cyber_scorecards")
         .update({ badge, last_updated: new Date().toISOString() })
-        .eq("id", s.id);
+        .eq("id", s.id)
+        .eq("organization_id", orgId);
       await sb.from("score_history").insert({
         organization_id: orgId,
         category: s.category,

@@ -134,7 +134,7 @@ export default async function SatisfactionPulseAdminPage() {
             <h2 className="cyber-heading text-lg">Export</h2>
             <p className="mt-2 text-sm text-slate-400">Download pulse responses as CSV.</p>
             <a
-              href="/api/v1/satisfaction-pulse/export.csv"
+              href="/api/v1/satisfaction-pulse/export?format=csv"
               className="mt-3 inline-block rounded-md border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-300 transition hover:bg-emerald-500/20"
             >
               Export CSV

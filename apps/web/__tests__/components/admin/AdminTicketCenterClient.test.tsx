@@ -142,7 +142,7 @@ describe("AdminTicketCenterClient", () => {
         createTicketAction={mockCreateTicketAction}
       />,
     );
-    await user.click(screen.getByRole("button", { name: "Create Ticket" }));
+    await user.click(screen.getAllByRole("button", { name: "Create Ticket" })[0]);
     expect(screen.getByRole("heading", { name: "Create Ticket" })).toBeInTheDocument();
   });
 

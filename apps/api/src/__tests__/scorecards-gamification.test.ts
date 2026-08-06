@@ -360,7 +360,7 @@ describe("Scorecards Gamification", () => {
       expect(res.body.data.badgesAssigned).toEqual([]);
     });
 
-    it("returns empty evaluation when organization_id is missing", async () => {
+    it("returns 400 when organization_id is missing (refuses cross-org evaluate)", async () => {
       const s = mockSb();
       s.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
       const res = await request(app)
@@ -368,8 +368,7 @@ describe("Scorecards Gamification", () => {
         .set("Authorization", auth)
         .send({});
 
-      expect(res.status).toBe(200);
-      expect(res.body.data.evaluated).toBe(0);
+      expect(res.status).toBe(400);
     });
 
     it("returns 401 without auth token", async () => {

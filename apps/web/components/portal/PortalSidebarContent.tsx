@@ -45,6 +45,24 @@ const GROUPS: Array<{ label: string; items: NavItem[] }> = [
         module: "field-services",
       },
       {
+        key: "network-port-maps",
+        href: "/portal/network-port-maps",
+        label: "Port Maps",
+        module: "network-port-maps",
+      },
+      {
+        key: "network-diagrams",
+        href: "/portal/network-diagrams",
+        label: "Network Diagrams",
+        module: "network-port-maps",
+      },
+      {
+        key: "camera-calculator",
+        href: "/portal/camera-calculator",
+        label: "Camera Calculator",
+        module: "camera-calculator",
+      },
+      {
         key: "file-requests",
         href: "/portal/file-requests",
         label: "Files",

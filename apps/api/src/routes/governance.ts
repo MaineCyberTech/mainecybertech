@@ -158,6 +158,7 @@ router.post("/change-requests/:id/submit", async (req, res, next) => {
       .from("change_requests")
       .update({ status: "pending_review", submitted_at: new Date().toISOString() })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -307,6 +308,7 @@ router.post("/risks/:id/assess", async (req, res, next) => {
         assessed_at: new Date().toISOString(),
       })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);

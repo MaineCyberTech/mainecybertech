@@ -148,6 +148,7 @@ router.post("/isp/:id/score", async (req, res, next) => {
       .from("isp_assessments")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
     const consolidationScore = Math.max(
@@ -169,6 +170,7 @@ router.post("/isp/:id/score", async (req, res, next) => {
         recommendation,
       })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -197,6 +199,7 @@ router.post("/unifi/:id/plan", async (req, res, next) => {
       .from("unifi_surveys")
       .update({ ap_count: apCount, switch_count: switchCount, estimated_cost: estimatedCost })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -252,26 +255,25 @@ router.post("/staging/:id/checklist", async (req, res, next) => {
     const parsed = z
       .object({ itemName: z.string().min(1), completed: z.boolean() })
       .parse(req.body);
+    // hardware_staging tracks checklist state as boolean columns
+    const CHECKLIST_COLUMNS = ["configured", "tested", "labeled", "imaged", "qa_verified"] as const;
+    if (!CHECKLIST_COLUMNS.includes(parsed.itemName as (typeof CHECKLIST_COLUMNS)[number])) {
+      throw new AppError(
+        "VALIDATION",
+        `itemName must be one of: ${CHECKLIST_COLUMNS.join(", ")}`,
+        400,
+      );
+    }
     const supabase = getSupabaseAdmin();
-    const { data: current, error: fetchError } = await supabase
-      .from("hardware_staging")
-      .select("checklist_items, completed_items")
-      .eq("id", req.params.id)
-      .single();
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
-    const items: string[] = current.checklist_items || [];
-    const completed: string[] = current.completed_items || [];
-    const updatedItems = parsed.completed ? [...new Set([...items, parsed.itemName])] : items;
-    const updatedCompleted = parsed.completed
-      ? [...new Set([...completed, parsed.itemName])]
-      : completed.filter((i: string) => i !== parsed.itemName);
     const { data, error } = await supabase
       .from("hardware_staging")
-      .update({ checklist_items: updatedItems, completed_items: updatedCompleted })
+      .update({ [parsed.itemName]: parsed.completed })
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
     res.json(success(data));
   } catch (err) {
     next(err);
@@ -289,6 +291,7 @@ router.get("/network-diagrams/:id/export", async (req, res, next) => {
       .from("network_diagrams")
       .select("*")
       .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Not found", 404);
     res.setHeader("Content-Type", "application/json");

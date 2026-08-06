@@ -76,6 +76,11 @@ const PORTAL_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string
   "/portal/tabletop": { module: "tabletop" },
   "/portal/proposals": { module: "proposals" },
   "/portal/store": { module: "store" },
+  "/portal/profile": { module: "profile" },
+  "/portal/unifi-site-surveys": { module: "field-services" },
+  "/portal/data-retention": { module: "governance" },
+  "/portal/network-diagrams": { module: "network-port-maps" },
+  "/portal/ai-triage": { module: "ai", action: "view" },
 };
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {

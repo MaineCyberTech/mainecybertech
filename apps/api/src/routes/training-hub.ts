@@ -207,6 +207,13 @@ router.post("/courses/:id/enroll", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const userId = req.authUser!.userId;
+    const { data: course, error: courseError } = await supabase
+      .from("training_courses")
+      .select("id, organization_id")
+      .eq("id", req.params.id)
+      .eq("organization_id", req.query.organization_id as string)
+      .single();
+    if (courseError || !course) throw new AppError("NOT_FOUND", "Course not found", 404);
     const { data, error } = await supabase
       .from("training_enrollments")
       .insert({
@@ -261,6 +268,13 @@ router.post("/courses/:id/progress", async (req, res, next) => {
 router.get("/lessons", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const { data: course, error: courseError } = await supabase
+      .from("training_courses")
+      .select("id")
+      .eq("id", req.query.course_id as string)
+      .eq("organization_id", req.query.organization_id as string)
+      .single();
+    if (courseError || !course) throw new AppError("NOT_FOUND", "Course not found", 404);
     const { data, error } = await supabase
       .from("training_lessons")
       .select("*")
@@ -277,6 +291,13 @@ router.post("/lessons", async (req, res, next) => {
   try {
     const parsed = createLessonSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    const { data: course, error: courseError } = await supabase
+      .from("training_courses")
+      .select("id")
+      .eq("id", parsed.courseId)
+      .eq("organization_id", req.query.organization_id as string)
+      .single();
+    if (courseError || !course) throw new AppError("NOT_FOUND", "Course not found", 404);
     const { data, error } = await supabase
       .from("training_lessons")
       .insert({
@@ -307,8 +328,9 @@ router.get("/lessons/:id", async (req, res, next) => {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("training_lessons")
-      .select("*")
+      .select("*, training_courses!inner(organization_id)")
       .eq("id", req.params.id)
+      .eq("training_courses.organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Lesson not found", 404);
     res.json(success(data));
@@ -326,6 +348,14 @@ router.patch("/lessons/:id", async (req, res, next) => {
     if (parsed.content !== undefined) updateData.content = parsed.content;
     if (parsed.lessonType !== undefined) updateData.lesson_type = parsed.lessonType;
     if (parsed.sortOrder !== undefined) updateData.sort_order = parsed.sortOrder;
+
+    const { data: scoped, error: scopeError } = await supabase
+      .from("training_lessons")
+      .select("id")
+      .eq("id", req.params.id)
+      .eq("training_courses.organization_id", req.query.organization_id as string)
+      .single();
+    if (scopeError || !scoped) throw new AppError("NOT_FOUND", "Lesson not found", 404);
 
     const { data, error } = await supabase
       .from("training_lessons")
@@ -351,6 +381,13 @@ router.patch("/lessons/:id", async (req, res, next) => {
 router.delete("/lessons/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const { data: scoped, error: scopeError } = await supabase
+      .from("training_lessons")
+      .select("id")
+      .eq("id", req.params.id)
+      .eq("training_courses.organization_id", req.query.organization_id as string)
+      .single();
+    if (scopeError || !scoped) throw new AppError("NOT_FOUND", "Lesson not found", 404);
     const { error } = await supabase.from("training_lessons").delete().eq("id", req.params.id);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({

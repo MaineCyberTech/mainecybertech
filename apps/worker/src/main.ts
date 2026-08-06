@@ -114,6 +114,47 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
   }, APPROVAL_INTERVAL_MS);
   approvalInterval.unref();
 
+  // Schedule the module scan tasks. Each runs on a staggered offset so the
+  // scans don't all fire on the same tick.
+  const SCAN_INTERVAL_MS = 60 * 60 * 1000; // hourly
+  const SCAN_INTERVAL_6H_MS = 6 * 60 * 60 * 1000; // every 6 hours
+  const SCAN_INTERVAL_DAILY_MS = 24 * 60 * 60 * 1000; // daily
+  const scheduledScans: Array<{ name: string; intervalMs: number; offsetMin: number }> = [
+    { name: "domain-monitor-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 3 },
+    { name: "website-monitor-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 8 },
+    { name: "vendor-contract-renewal-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 13 },
+    { name: "patch-compliance-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 18 },
+    { name: "license-optimizer-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 23 },
+    { name: "backup-dr-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 28 },
+    { name: "phishing-campaign-send", intervalMs: SCAN_INTERVAL_MS, offsetMin: 33 },
+    { name: "status-maintenance-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 38 },
+    { name: "dmarc-coach-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 43 },
+    { name: "m365-hardening-scan", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 48 },
+    { name: "endpoint-security-check", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 53 },
+    { name: "saas-audit-scan", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 58 },
+    { name: "qbr-scheduled-generate", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 63 },
+  ];
+  for (const scan of scheduledScans) {
+    const interval = setInterval(() => {
+      logger.info(`Running scheduled ${scan.name}`);
+      runScheduledTask(scan.name).catch((error) => {
+        logger.error({ error }, `Scheduled ${scan.name} failed`);
+      });
+    }, scan.intervalMs);
+    interval.unref();
+  }
+  if (scheduledScans.length > 0) {
+    const first = scheduledScans[0];
+    const initialDelayMs = first.offsetMin * 60 * 1000;
+    const initial = setTimeout(() => {
+      logger.info(`Running initial ${first.name}`);
+      runScheduledTask(first.name).catch((error) => {
+        logger.error({ error }, `Initial ${first.name} failed`);
+      });
+    }, initialDelayMs);
+    initial.unref();
+  }
+
   runWorkerTasks().catch((error) => {
     logger.error(error, "Worker crashed");
     Sentry.captureException(error, { extra: { phase: "main-loop" } });

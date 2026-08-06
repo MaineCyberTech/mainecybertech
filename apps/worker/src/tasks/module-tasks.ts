@@ -28,9 +28,9 @@ export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResu
 
     const { error: updateError } = await (supabase.from("m365_hardening") as any)
       .update({
-        last_scanned_at: now,
-        scan_status: "completed",
-        next_scan_at: thirtyDaysLater,
+        last_assessment_at: now,
+        status: "healthy",
+        next_review_at: thirtyDaysLater,
       })
       .in("id", ids);
 
@@ -59,7 +59,7 @@ export const backupDrCheck: TaskHandler = async (_payload): Promise<TaskResult> 
 
     const { data: records, error: fetchError } = await supabase
       .from("backup_status")
-      .select("id, last_backup");
+      .select("id, last_backup_at");
 
     if (fetchError) {
       return { ok: false, error: `Failed to fetch backup_status records: ${fetchError.message}` };
@@ -74,11 +74,11 @@ export const backupDrCheck: TaskHandler = async (_payload): Promise<TaskResult> 
     const criticalIds: string[] = [];
 
     for (const record of records as AnyRecord[]) {
-      if (!record.last_backup) {
+      if (!record.last_backup_at) {
         criticalIds.push(record.id as string);
-      } else if ((record.last_backup as string) < fortyEightHoursAgo) {
+      } else if ((record.last_backup_at as string) < fortyEightHoursAgo) {
         criticalIds.push(record.id as string);
-      } else if ((record.last_backup as string) < twentyFourHoursAgo) {
+      } else if ((record.last_backup_at as string) < twentyFourHoursAgo) {
         warningIds.push(record.id as string);
       }
     }
@@ -430,8 +430,7 @@ export const patchComplianceCheck: TaskHandler = async (_payload): Promise<TaskR
       .from("patch_compliance")
       .select(
         "id, organization_id, device_group, total_devices, patched_devices, critical_patches, compliance_pct, status",
-      )
-      .eq("status", "active");
+      );
 
     if (fetchError) {
       return { ok: false, error: `Failed to fetch patch_compliance: ${fetchError.message}` };
@@ -515,8 +514,7 @@ export const endpointSecurityCheck: TaskHandler = async (_payload): Promise<Task
       .from("endpoint_security")
       .select(
         "id, organization_id, device_group, total_endpoints, av_installed, disk_encrypted, mdm_enrolled, local_admin_removed, firewall_enabled, edr_deployed, coverage_pct, status",
-      )
-      .eq("status", "active");
+      );
 
     if (fetchError) {
       return { ok: false, error: `Failed to fetch endpoint_security: ${fetchError.message}` };

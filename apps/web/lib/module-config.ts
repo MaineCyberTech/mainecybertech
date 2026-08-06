@@ -642,6 +642,117 @@ export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
       },
     ],
   },
+
+  // ---- standalone admin lists (previously read-only) ----
+  "insurance-binder": {
+    key: "insurance-binder",
+    label: "Insurance Binder",
+    listPath: "/admin/insurance-binder",
+    sdk: (api) => api.insuranceBinder,
+    fields: [
+      { key: "title", label: "Title" },
+      { key: "category", label: "Category" },
+      {
+        key: "evidenceStatus",
+        label: "Evidence Status",
+        type: "select",
+        options: ["needed", "requested", "collected", "verified", "expired"],
+      },
+      { key: "insuranceProvider", label: "Provider" },
+      { key: "policyNumber", label: "Policy #" },
+      { key: "expiryDate", label: "Expiry", type: "date" },
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: ["needed", "active", "expiring_soon", "expired"],
+      },
+    ],
+  },
+  "license-optimizer": {
+    key: "license-optimizer",
+    label: "License Optimizer",
+    listPath: "/admin/license-optimizer",
+    sdk: (api) => api.licenseOptimizer,
+    fields: [
+      { key: "softwareName", label: "Software" },
+      { key: "licenseType", label: "Type" },
+      { key: "totalSeats", label: "Total Seats", type: "number" },
+      { key: "usedSeats", label: "Used Seats", type: "number" },
+      { key: "costPerSeat", label: "Cost/Seat", type: "number" },
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: ["active", "inactive", "expiring"],
+      },
+    ],
+  },
+  "status-pages": {
+    key: "status-pages",
+    label: "Status Page Components",
+    listPath: "/admin/status-pages",
+    sdk: (api) => api.statusPage.components,
+    fields: [
+      { key: "name", label: "Name" },
+      { key: "description", label: "Description" },
+      { key: "componentType", label: "Type" },
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: ["operational", "degraded", "partial_outage", "major_outage", "maintenance"],
+      },
+      { key: "displayOrder", label: "Display Order", type: "number" },
+    ],
+  },
+  "uptime-monitor": {
+    key: "uptime-monitor",
+    label: "Uptime Monitor",
+    listPath: "/admin/uptime-monitor",
+    sdk: (api) => ({
+      get: (id) => api.uptimeMonitor.getCheck(id),
+      update: (id, data) => api.uptimeMonitor.updateCheck(id, data),
+      remove: (id) => api.uptimeMonitor.removeCheck(id),
+    }),
+    fields: [
+      { key: "url", label: "URL" },
+      {
+        key: "checkType",
+        label: "Check Type",
+        type: "select",
+        options: ["http", "https", "tcp", "ping"],
+      },
+      { key: "checkIntervalMinutes", label: "Interval (min)", type: "number" },
+      { key: "expectedStatusCode", label: "Expected Status", type: "number" },
+      { key: "timeoutSeconds", label: "Timeout (s)", type: "number" },
+      { key: "status", label: "Status", type: "select", options: ["active", "paused"] },
+    ],
+  },
+  "training-hub": {
+    key: "training-hub",
+    label: "Training Courses",
+    listPath: "/admin/training-hub",
+    sdk: (api) => api.trainingHub.courses,
+    fields: [
+      { key: "title", label: "Title" },
+      { key: "description", label: "Description", type: "textarea" },
+      { key: "category", label: "Category" },
+      {
+        key: "difficulty",
+        label: "Difficulty",
+        type: "select",
+        options: ["beginner", "intermediate", "advanced"],
+      },
+      { key: "estimatedMinutes", label: "Est. Minutes", type: "number" },
+      {
+        key: "status",
+        label: "Status",
+        type: "select",
+        options: ["draft", "published", "archived"],
+      },
+    ],
+  },
 };
 
 export function getModuleConfig(moduleKey: string): ModuleConfig | undefined {

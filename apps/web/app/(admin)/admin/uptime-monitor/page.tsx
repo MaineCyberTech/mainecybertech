@@ -1,10 +1,13 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
 import { StatusPill } from "@/components/admin/StatusPill";
+import { createUptimeCheck } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Uptime Monitor - Admin - Maine CyberTech" };
 
@@ -37,6 +40,23 @@ export default async function UptimeMonitorPage() {
       description="Monitor website availability, response times, and SSL certificate expiry."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "url", label: "URL", required: true },
+          {
+            key: "checkType",
+            label: "Type",
+            type: "select",
+            options: ["http", "https", "tcp", "ping"],
+          },
+          { key: "checkIntervalMinutes", label: "Interval (min)", type: "number" },
+          { key: "expectedStatusCode", label: "Expected Status", type: "number" },
+          { key: "timeoutSeconds", label: "Timeout (s)", type: "number" },
+        ]}
+        title="New Check"
+        action={createUptimeCheck}
+      />
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Monitors</h2>
         <div className="mt-6 space-y-3">
@@ -48,7 +68,12 @@ export default async function UptimeMonitorPage() {
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-slate-50">{item.url}</p>
+                    <Link
+                      className="transition hover:text-emerald-400"
+                      href={`/admin/uptime-monitor/${item.id}`}
+                    >
+                      <p className="font-medium text-slate-50">{item.url}</p>
+                    </Link>
                     <p className="mt-1 text-xs text-slate-400">
                       {item.check_type} &bull;{" "}
                       {new Date(item.created_at).toISOString().slice(0, 10)}

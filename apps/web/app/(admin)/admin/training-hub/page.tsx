@@ -1,10 +1,13 @@
+import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
 import { StatusPill } from "@/components/admin/StatusPill";
+import { createTrainingCourse } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Training Hub - Admin - Maine CyberTech" };
 
@@ -39,6 +42,29 @@ export default async function TrainingHubPage() {
       description="Manage microlearning courses, lessons, and track client enrollment progress."
       actions={null}
     >
+      <CrudForm
+        fields={[
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "title", label: "Title", required: true },
+          { key: "description", label: "Description", type: "textarea" },
+          { key: "category", label: "Category" },
+          {
+            key: "difficulty",
+            label: "Difficulty",
+            type: "select",
+            options: ["beginner", "intermediate", "advanced"],
+          },
+          { key: "estimatedMinutes", label: "Est. Minutes", type: "number" },
+          {
+            key: "status",
+            label: "Status",
+            type: "select",
+            options: ["draft", "published", "archived"],
+          },
+        ]}
+        title="New Course"
+        action={createTrainingCourse}
+      />
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Courses</h2>
         <div className="mt-6 space-y-3">
@@ -50,7 +76,12 @@ export default async function TrainingHubPage() {
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="font-medium text-slate-50">{item.title}</p>
+                    <Link
+                      className="transition hover:text-emerald-400"
+                      href={`/admin/training-hub/${item.id}`}
+                    >
+                      <p className="font-medium text-slate-50">{item.title}</p>
+                    </Link>
                     <p className="mt-1 text-xs text-slate-400">
                       {item.category} &bull; {item.difficulty} &bull; {item.estimated_minutes} min
                       &bull; {new Date(item.created_at).toISOString().slice(0, 10)}

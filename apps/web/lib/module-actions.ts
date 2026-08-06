@@ -1,4 +1,4 @@
-﻿"use server";
+"use server";
 
 import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
@@ -1509,6 +1509,95 @@ export async function createTabletop(formData: FormData) {
       afterActionReport: String(formData.get("afterActionReport") || ""),
     });
     revalidatePath("/admin/governance/tabletop");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function createInsuranceEvidence(formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.insuranceBinder.create({
+      organizationId: String(formData.get("organizationId") || ""),
+      title: String(formData.get("title") || ""),
+      evidenceType: String(formData.get("evidenceType") || "document"),
+      coverageArea: String(formData.get("coverageArea") || "") || null,
+    });
+    revalidatePath("/admin/insurance-binder");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function createLicenseAllocation(formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.licenseOptimizer.create({
+      organizationId: String(formData.get("organizationId") || ""),
+      softwareName: String(formData.get("softwareName") || ""),
+      licenseType: String(formData.get("licenseType") || "per_seat"),
+      totalSeats: Number(formData.get("totalSeats") || 0),
+      usedSeats: Number(formData.get("usedSeats") || 0),
+      costPerSeat: Number(formData.get("costPerSeat") || 0),
+    });
+    revalidatePath("/admin/license-optimizer");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function createStatusComponent(formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.statusPage.components.create({
+      organizationId: String(formData.get("organizationId") || ""),
+      name: String(formData.get("name") || ""),
+      description: String(formData.get("description") || ""),
+      componentType: String(formData.get("componentType") || "application"),
+      status: String(formData.get("status") || "operational"),
+    });
+    revalidatePath("/admin/status-pages");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function createUptimeCheck(formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.uptimeMonitor.createCheck({
+      organizationId: String(formData.get("organizationId") || ""),
+      url: String(formData.get("url") || ""),
+      checkType: String(formData.get("checkType") || "http"),
+      checkIntervalMinutes: Number(formData.get("checkIntervalMinutes") || 5),
+      expectedStatusCode: Number(formData.get("expectedStatusCode") || 200),
+      timeoutSeconds: Number(formData.get("timeoutSeconds") || 10),
+      status: String(formData.get("status") || "active"),
+    });
+    revalidatePath("/admin/uptime-monitor");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function createTrainingCourse(formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.trainingHub.courses.create({
+      organizationId: String(formData.get("organizationId") || ""),
+      title: String(formData.get("title") || ""),
+      description: String(formData.get("description") || "") || null,
+      category: String(formData.get("category") || "general"),
+      difficulty: String(formData.get("difficulty") || "beginner"),
+      estimatedMinutes: Number(formData.get("estimatedMinutes") || 30),
+      status: String(formData.get("status") || "draft"),
+    });
+    revalidatePath("/admin/training-hub");
     return { ok: true };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };

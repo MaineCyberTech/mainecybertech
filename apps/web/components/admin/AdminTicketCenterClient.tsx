@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
@@ -486,7 +486,12 @@ export default function AdminTicketCenterClient({
             />
           </svg>
         </div>
-        <select value={orgFilter} onChange={handleOrgChange} className="cyber-input max-w-[200px]" aria-label="Filter by organization">
+        <select
+          value={orgFilter}
+          onChange={handleOrgChange}
+          className="cyber-input max-w-[200px]"
+          aria-label="Filter by organization"
+        >
           <option value="">All orgs</option>
           {organizations.map((org) => (
             <option key={org.id} value={org.id}>
@@ -504,7 +509,12 @@ export default function AdminTicketCenterClient({
           <option value="open">Open</option>
           <option value="closed">Closed</option>
         </select>
-        <select value={sortBy} onChange={handleSortChange} className="cyber-input max-w-[160px]" aria-label="Sort tickets">
+        <select
+          value={sortBy}
+          onChange={handleSortChange}
+          className="cyber-input max-w-[160px]"
+          aria-label="Sort tickets"
+        >
           <option value="updated">Recently updated</option>
           <option value="newest">Newest first</option>
           <option value="oldest">Oldest first</option>
@@ -678,13 +688,20 @@ export default function AdminTicketCenterClient({
               />
             ))
           ) : (
-            <EmptyState
-              icon="🎫"
-              title="No tickets found"
-              description="There are no support tickets matching your current filters."
-              actionLabel="Create Ticket"
-              actionHref="/admin/tickets/new"
-            />
+            <div className="space-y-4">
+              <EmptyState
+                icon="ticket"
+                title="No tickets found"
+                description="There are no support tickets matching your current filters."
+              />
+              <button
+                type="button"
+                onClick={() => setOpenModal(true)}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500"
+              >
+                Create Ticket
+              </button>
+            </div>
           )}
         </div>
         {hasMore ? (
@@ -730,8 +747,16 @@ export default function AdminTicketCenterClient({
               className="space-y-4 px-6 py-6"
             >
               <div>
-                <label htmlFor="ticket-organization" className="cyber-label">Organization</label>
-                <select id="ticket-organization" name="organizationId" className="cyber-input" required defaultValue="">
+                <label htmlFor="ticket-organization" className="cyber-label">
+                  Organization
+                </label>
+                <select
+                  id="ticket-organization"
+                  name="organizationId"
+                  className="cyber-input"
+                  required
+                  defaultValue=""
+                >
                   <option value="">Select organization</option>
                   {organizations.map((org) => (
                     <option key={org.id} value={org.id}>
@@ -741,13 +766,28 @@ export default function AdminTicketCenterClient({
                 </select>
               </div>
               <div>
-                <label htmlFor="ticket-subject" className="cyber-label">Title</label>
-                <input id="ticket-subject" name="subject" className="cyber-input" placeholder="Ticket title" required />
+                <label htmlFor="ticket-subject" className="cyber-label">
+                  Title
+                </label>
+                <input
+                  id="ticket-subject"
+                  name="subject"
+                  className="cyber-input"
+                  placeholder="Ticket title"
+                  required
+                />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label htmlFor="ticket-priority" className="cyber-label">Priority</label>
-                  <select id="ticket-priority" name="priority" defaultValue="normal" className="cyber-input">
+                  <label htmlFor="ticket-priority" className="cyber-label">
+                    Priority
+                  </label>
+                  <select
+                    id="ticket-priority"
+                    name="priority"
+                    defaultValue="normal"
+                    className="cyber-input"
+                  >
                     <option value="low">low</option>
                     <option value="normal">normal</option>
                     <option value="high">high</option>
@@ -755,7 +795,9 @@ export default function AdminTicketCenterClient({
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="ticket-category" className="cyber-label">Category</label>
+                  <label htmlFor="ticket-category" className="cyber-label">
+                    Category
+                  </label>
                   <input
                     id="ticket-category"
                     name="category"
@@ -765,7 +807,9 @@ export default function AdminTicketCenterClient({
                 </div>
               </div>
               <div>
-                <label htmlFor="ticket-description" className="cyber-label">Description</label>
+                <label htmlFor="ticket-description" className="cyber-label">
+                  Description
+                </label>
                 <textarea
                   id="ticket-description"
                   name="description"
