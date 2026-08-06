@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
+import jwt from "jsonwebtoken";
 import { getSupabaseAdmin } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
+import { getEnv } from "../config/env";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -45,16 +47,41 @@ router.get("/stream", async (req, res, next) => {
     }, 30_000);
     keepaliveInterval.unref();
 
-    // Re-validate auth every 5 minutes to catch revoked sessions
-    const authValidationInterval = setInterval(async () => {
-      const { data: user, error } = await supabase.auth.getUser(
-        req.headers.authorization?.replace("Bearer ", "") || "",
-      );
-      if (error || !user?.user) {
-        res.write(`event: auth_expired\ndata: ${JSON.stringify({ type: "auth_expired" })}\n\n`);
-        res.end();
-      }
-    }, 5 * 60 * 1000);
+    // Re-validate auth every 5 minutes to catch revoked sessions. The
+    // EventSource client authenticates via cookie (no Bearer header), so we
+    // re-check the signed JWT locally instead of calling Supabase with a
+    // missing token (which would kill the stream for valid cookie sessions).
+    const authValidationInterval = setInterval(
+      () => {
+        const token = req.userJwt;
+        if (!token) {
+          res.write(`event: auth_expired\ndata: ${JSON.stringify({ type: "auth_expired" })}\n\n`);
+          res.end();
+          return;
+        }
+        const env = getEnv();
+        const secrets = env.JWT_SECRET.split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        let expired = true;
+        for (const secret of secrets) {
+          try {
+            const decoded = jwt.verify(token, secret) as { exp?: number };
+            if (!decoded.exp || decoded.exp * 1000 >= Date.now()) {
+              expired = false;
+              break;
+            }
+          } catch {
+            // try next secret
+          }
+        }
+        if (expired) {
+          res.write(`event: auth_expired\ndata: ${JSON.stringify({ type: "auth_expired" })}\n\n`);
+          res.end();
+        }
+      },
+      5 * 60 * 1000,
+    );
     authValidationInterval.unref();
 
     // Use Supabase realtime subscription for real-time notifications

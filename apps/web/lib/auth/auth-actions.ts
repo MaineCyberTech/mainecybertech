@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { MCTClient, ApiError } from "@mct/sdk";
 import { getCookieOptions } from "@/lib/cookie-domain";
 import { getClientEnv } from "@/lib/env";
+import { isPlatformAdminKey } from "@/lib/roles";
 
 const SESSION_COOKIE = "mct_session";
 
@@ -60,7 +61,7 @@ export async function testLoginAction(email: string, password: string): Promise<
         });
         const isAdmin = (memberships as any[]).some((m) => {
           const role = m.roles;
-          return role && ["admin", "super_admin"].includes(role.key);
+          return role && isPlatformAdminKey(role.key);
         });
         if (isAdmin) redirectTo = "/admin";
       }
