@@ -194,6 +194,55 @@ describe("GET /api/v1/me/permissions", () => {
     expect(res.body.data.keys).toEqual(["billing:view"]);
   });
 
+  it("resolves permissions for a new-catalog role (engineer)", async () => {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValueOnce(
+      createMockBuilder({ data: { id: "u1", is_super_admin: false }, error: null }),
+    );
+    supabase.from.mockReturnValueOnce(
+      createMockBuilder({
+        data: [
+          {
+            id: "m1",
+            organization_id: "org-1",
+            role_id: "role-eng",
+            status: "approved",
+            roles: { key: "engineer" },
+          },
+        ],
+        error: null,
+      }),
+    );
+    supabase.from.mockReturnValueOnce(
+      createMockBuilder({
+        data: [
+          { role_id: "role-eng", permission_id: "p-ticket" },
+          { role_id: "role-eng", permission_id: "p-asset" },
+        ],
+        error: null,
+      }),
+    );
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: [], error: null }));
+    supabase.from.mockReturnValueOnce(
+      createMockBuilder({
+        data: [
+          { id: "p-ticket", module_key: "tickets", action_key: "view", description: null },
+          { id: "p-asset", module_key: "assets", action_key: "edit", description: null },
+        ],
+        error: null,
+      }),
+    );
+
+    const res = await request(app)
+      .get("/api/v1/me/permissions")
+      .set("Authorization", "Bearer test-token");
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.isSuperAdmin).toBe(false);
+    expect(res.body.data.keys.sort()).toEqual(["assets:edit", "tickets:view"]);
+    expect(res.body.data.roles).toEqual(["engineer"]);
+  });
+
   it("returns 401 when unauthenticated", async () => {
     const supabase = mockAuth();
     supabase.auth.getUser.mockResolvedValue({ data: { user: null }, error: { message: "x" } });
