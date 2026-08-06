@@ -9,6 +9,7 @@ import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { createNotification, notifyAndEmail } from "../lib/notify";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
+import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS } from "../lib/roles";
 import {
   createTicketSchema,
   updateTicketSchema,
@@ -158,7 +159,7 @@ router.post("/", async (req, res, next) => {
       .select("user_id, roles!inner(key)")
       .eq("organization_id", parsed.organizationId)
       .eq("status", "approved")
-      .in("roles.key", ["admin", "super_admin"]);
+      .in("roles.key", PLATFORM_ADMIN_KEYS);
 
     if (adminMembers?.length) {
       const adminIds = adminMembers
@@ -399,7 +400,7 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
 
       const isOrgAdmin =
         memberships?.some((row) =>
-          ["admin", "super_admin"].includes((row.roles as unknown as { key: string }).key),
+          isPlatformAdminKey((row.roles as unknown as { key: string }).key),
         ) ?? false;
 
       if (!isOrgAdmin) {

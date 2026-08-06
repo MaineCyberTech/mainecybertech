@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { AppError } from "../types";
 import { getEnv } from "../config/env";
 import { logger } from "../lib/logger";
+import { isPlatformAdminKey } from "../lib/roles";
 
 const isTest = getEnv().NODE_ENV === "test";
 
@@ -33,7 +34,7 @@ async function checkOrgAccess(userId: string, orgId: string): Promise<boolean> {
 
   if (allMemberships && allMemberships.length > 0) {
     const isAdmin = allMemberships.some((row) =>
-      ["admin", "super_admin"].includes((row.roles as unknown as { key: string }).key),
+      isPlatformAdminKey((row.roles as unknown as { key: string }).key),
     );
     if (isAdmin) return true;
   }
@@ -90,7 +91,7 @@ async function resolveDefaultOrgId(
     if (allMemberships && allMemberships.length > 0) {
       const isPlatformAdmin = allMemberships.some((row) => {
         const key = (row.roles as unknown as { key?: string } | null)?.key;
-        return key != null && ["admin", "super_admin"].includes(key);
+        return isPlatformAdminKey(key);
       });
       if (isPlatformAdmin) return { orgId: activeOrgId, platformAdmin: true };
     }
@@ -110,7 +111,7 @@ async function resolveDefaultOrgId(
 
   const isPlatformAdmin = memberships.some((row) => {
     const key = (row.roles as unknown as { key?: string } | null)?.key;
-    return key != null && ["admin", "super_admin"].includes(key);
+    return isPlatformAdminKey(key);
   });
 
   // Platform admins are org-agnostic: without an explicit org they see

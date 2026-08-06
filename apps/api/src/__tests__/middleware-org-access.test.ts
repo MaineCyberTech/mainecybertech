@@ -232,6 +232,48 @@ describe("requireOrgAccess middleware", () => {
       expect((req as any).orgAccessPlatformAdmin).toBe(true);
     });
 
+    it("treats new MSP roles (engineer/dispatcher/finance) as platform admins", async () => {
+      for (const key of [
+        "engineer",
+        "dispatcher",
+        "finance",
+        "security-analyst",
+        "project-manager",
+        "onboarding-specialist",
+      ]) {
+        jest.clearAllMocks();
+        mockSupabase({
+          primaryMembership: {
+            organization_id: "00000000-0000-0000-0000-000000000001",
+            roles: { key },
+          },
+        });
+        const next = jest.fn();
+        const req = mockReq({ userId: "user-1" });
+        await requireOrgAccess(req, mockRes(), next);
+        expect(next).toHaveBeenCalledWith();
+        expect(req.query.organization_id).toBeUndefined();
+        expect((req as any).orgAccessPlatformAdmin).toBe(true);
+      }
+    });
+
+    it("does NOT treat client roles as platform admins", async () => {
+      for (const key of ["client-user", "client_viewer", "client-billing"]) {
+        jest.clearAllMocks();
+        mockSupabase({
+          primaryMembership: {
+            organization_id: "00000000-0000-0000-0000-000000000001",
+            roles: { key },
+          },
+        });
+        const next = jest.fn();
+        const req = mockReq({ userId: "user-1" });
+        await requireOrgAccess(req, mockRes(), next);
+        expect(next).toHaveBeenCalledWith();
+        expect(req.query.organization_id).toBe("00000000-0000-0000-0000-000000000001");
+        expect((req as any).orgAccessPlatformAdmin).toBe(false);
+      }
+    });
     it("treats an admin-role membership as platform admin when no org is given", async () => {
       mockSupabase({
         primaryMembership: {

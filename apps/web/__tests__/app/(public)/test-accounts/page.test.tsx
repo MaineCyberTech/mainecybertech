@@ -77,6 +77,14 @@ describe("TestAccountsPage", () => {
     expect(screen.getByText("Ines Ribeiro")).toBeInTheDocument();
     expect(screen.getByText("Theo Novak")).toBeInTheDocument();
     expect(screen.getByText("Wren Callahan")).toBeInTheDocument();
+    expect(screen.getByText("Dana Dispatcher")).toBeInTheDocument();
+    expect(screen.getByText("Eli Engineer")).toBeInTheDocument();
+    expect(screen.getByText("Sasha Security")).toBeInTheDocument();
+    expect(screen.getByText("Priya Projects")).toBeInTheDocument();
+    expect(screen.getByText("Frank Finance")).toBeInTheDocument();
+    expect(screen.getByText("Ollie Onboarding")).toBeInTheDocument();
+    expect(screen.getByText("Vera Viewer")).toBeInTheDocument();
+    expect(screen.getByText("Becca Billing")).toBeInTheDocument();
     expect(screen.getByText(/Click any account to sign in automatically/)).toBeInTheDocument();
   });
 
@@ -87,6 +95,10 @@ describe("TestAccountsPage", () => {
     expect(screen.getAllByText("Client Admin").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Harborview Health Systems").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Summit Financial Advisors").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Dispatcher").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Engineer").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Client Viewer").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Client Billing").length).toBeGreaterThan(0);
   });
 
   it("marks pending and suspended accounts", async () => {

@@ -7,18 +7,19 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccessByParam } from "../middleware/org-access";
 import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-});
 import { requireAdmin } from "../middleware/admin";
+import { isPlatformAdminKey } from "../lib/roles";
 import {
   createOrganizationSchema,
   updateOrganizationSchema,
   createDomainSchema,
   updateDomainSchema,
 } from "../validators/organization";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -48,9 +49,7 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
         .eq("user_id", req.authUser!.userId)
         .eq("status", "approved");
 
-      isPlatformAdmin = (memberRoles ?? []).some((m: any) =>
-        ["admin", "super_admin"].includes(m.roles?.key),
-      );
+      isPlatformAdmin = (memberRoles ?? []).some((m: any) => isPlatformAdminKey(m.roles?.key));
     }
 
     if (!isPlatformAdmin) {
