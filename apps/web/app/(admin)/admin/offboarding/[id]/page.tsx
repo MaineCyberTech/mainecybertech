@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateOffboarding } from "@/lib/module-actions";
+import { updateOffboarding, deleteOffboarding } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Offboarding Detail - Admin - Maine CyberTech" };
@@ -50,6 +51,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateOffboarding}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/offboarding/${id}`);
+        }}
+        deleteAction={deleteOffboarding}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/offboarding");
         }}
         parentHref="/admin/offboarding"
         parentLabel="Offboarding"

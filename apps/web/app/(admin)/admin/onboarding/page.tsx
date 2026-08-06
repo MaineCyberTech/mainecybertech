@@ -10,22 +10,21 @@ import { createOnboarding } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Onboarding - Admin" };
 
-const chk = (v: boolean) => (v ? "✅" : "⬜");
-
 export default async function OnboardingPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{
     id: string;
     client_name: string;
-    discovery_complete: boolean;
-    m365_setup_complete: boolean;
-    security_baseline_applied: boolean;
-    handoff_complete: boolean;
     status: string;
+    phase: string;
+    risk_level: string;
+    security_baseline_score: number | null;
+    support_handoff_status: string;
+    created_at: string;
   }> = [];
   try {
-    const r = await api.securityOps.onboarding.list({});
+    const r = await api.clientOnboarding.list({ limit: 50, page: 1 });
     items = r.items as unknown as typeof items;
   } catch {
     /* */
@@ -45,7 +44,15 @@ export default async function OnboardingPage() {
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
           { key: "clientName", label: "Client Name", required: true },
-          { key: "notes", label: "Notes", type: "textarea" },
+          { key: "clientDomain", label: "Client Domain", placeholder: "client.example.com" },
+          {
+            key: "clientContactEmail",
+            label: "Contact Email",
+            type: "text",
+            placeholder: "admin@example.com",
+          },
+          { key: "clientContactPhone", label: "Contact Phone" },
+          { key: "notes", label: "Discovery Notes", type: "textarea" },
         ]}
         title="New Onboarding"
         action={createOnboarding}
@@ -62,8 +69,23 @@ export default async function OnboardingPage() {
                   <p className="font-medium text-slate-50">{o.client_name}</p>
                 </Link>
                 <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-                  {chk(o.discovery_complete)} Discovery {chk(o.m365_setup_complete)} M365{" "}
-                  {chk(o.security_baseline_applied)} Security {chk(o.handoff_complete)} Handoff
+                  <span className="rounded-full border border-white/10 px-2 py-0.5">
+                    {o.status}
+                  </span>
+                  <span className="rounded-full border border-white/10 px-2 py-0.5">
+                    Phase: {o.phase}
+                  </span>
+                  <span className="rounded-full border border-white/10 px-2 py-0.5">
+                    Risk: {o.risk_level}
+                  </span>
+                  {o.security_baseline_score !== null && (
+                    <span className="rounded-full border border-white/10 px-2 py-0.5">
+                      Security: {o.security_baseline_score}/100
+                    </span>
+                  )}
+                  <span className="rounded-full border border-white/10 px-2 py-0.5">
+                    Handoff: {o.support_handoff_status}
+                  </span>
                 </p>
               </div>
             ))

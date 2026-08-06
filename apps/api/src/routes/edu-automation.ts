@@ -52,6 +52,21 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
       next(e);
     }
   });
+  router.get(`/${path}/:id`, async (req, res, next) => {
+    try {
+      const sb = getSupabaseAdmin();
+      const { data, error } = await sb
+        .from(table)
+        .select("*")
+        .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string)
+        .single();
+      if (error || !data) throw new AppError("NOT_FOUND", "Not found", 404);
+      res.json(success(data));
+    } catch (e) {
+      next(e);
+    }
+  });
   router.post(`/${path}`, async (req, res, next) => {
     try {
       const p = schema.parse(req.body) as Record<string, unknown>;
@@ -140,10 +155,6 @@ const schemas: SchemaMap = {
   powershell: { schema: ps, table: "powershell_scripts" },
   "kb-generator": { schema: kbGen, table: "kb_article_generations" },
 };
-
-for (const [path, { schema: s, table }] of Object.entries(schemas)) {
-  crud(path, table, s);
-}
 
 router.post("/automation/:id/execute", async (req, res, next) => {
   try {
@@ -779,5 +790,9 @@ router.post("/scorecards/evaluate", async (req, res, next) => {
     next(e);
   }
 });
+
+for (const [path, { schema: s, table }] of Object.entries(schemas)) {
+  crud(path, table, s);
+}
 
 export default router;

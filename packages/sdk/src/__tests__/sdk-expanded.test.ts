@@ -99,6 +99,22 @@ describe("SDK modules — expanded coverage", () => {
       const result = await client.governance.tabletop.get("1");
       expect(result.id).toBe("1");
     });
+    it("approves a change-request via workflow endpoint", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "1", status: "approved" }));
+      await client.governance.changes.approve("1");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+      expect(mockFetch.mock.calls[0][0]).toContain("/change-requests/1/approve");
+    });
+    it("submits a change-request via workflow endpoint", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "1", status: "pending_review" }));
+      await client.governance.changes.submit("1");
+      expect(mockFetch.mock.calls[0][0]).toContain("/change-requests/1/submit");
+    });
+    it("assesses a risk via workflow endpoint", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "1", risk_score: 25 }));
+      await client.governance.risks.assess("1", { likelihood: 5, impact: 5 });
+      expect(mockFetch.mock.calls[0][0]).toContain("/risks/1/assess");
+    });
   });
 
   describe("BatchApi", () => {
@@ -410,6 +426,26 @@ describe("SDK modules — expanded coverage", () => {
       const result = await client.eduAutomation.kbGenerator.list({ organization_id: "org-1" });
       expect(result.items).toHaveLength(1);
     });
+    it("launches a phishing campaign via workflow endpoint", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "1", status: "active" }));
+      await client.eduAutomation.phishing.launch("1");
+      expect(mockFetch.mock.calls[0][0]).toContain("/phishing/1/launch");
+    });
+    it("executes an automation workflow", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "1", status: "running" }));
+      await client.eduAutomation.automation.execute("1");
+      expect(mockFetch.mock.calls[0][0]).toContain("/automation/1/execute");
+    });
+    it("checks a powershell script via policy guard", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "1", risk_level: "low" }));
+      await client.eduAutomation.powershell.check("1");
+      expect(mockFetch.mock.calls[0][0]).toContain("/powershell/1/check");
+    });
+    it("evaluates scorecards", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ evaluated: 2 }));
+      await client.eduAutomation.scorecards.evaluate({ organizationId: "org-1" });
+      expect(mockFetch.mock.calls[0][0]).toContain("/scorecards/evaluate");
+    });
   });
 
   describe("FinalApi", () => {
@@ -422,6 +458,12 @@ describe("SDK modules — expanded coverage", () => {
       mockFetch.mockResolvedValue(mockResponse({ id: "1" }));
       const result = await client.final.sharepoint.get("1");
       expect(result.id).toBe("1");
+    });
+    it("gets sharepoint structure summary", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ totalPlans: 3, activeSites: 2 }));
+      const result = await client.final.sharepoint.structureSummary({ organization_id: "org-1" });
+      expect(result.totalPlans).toBe(3);
+      expect(mockFetch.mock.calls[0][0]).toContain("/sharepoint/structure-summary");
     });
     it("lists time entries", async () => {
       mockFetch.mockResolvedValue(mockResponse(paginated([{ id: "1" }])));

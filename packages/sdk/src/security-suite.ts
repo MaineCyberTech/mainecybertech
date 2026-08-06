@@ -103,5 +103,10 @@ export class SecuritySuiteApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<EndpointSecurity>(`/api/v1/security-suite/endpoint-security/${id}`, d),
     remove: (id: string) => this.client.delete(`/api/v1/security-suite/endpoint-security/${id}`),
+    coverage: (p?: Record<string, string | number | undefined>) =>
+      this.client.get<Record<string, unknown>>(
+        "/api/v1/security-suite/endpoint-security/coverage",
+        qp(p),
+      ),
   };
 }

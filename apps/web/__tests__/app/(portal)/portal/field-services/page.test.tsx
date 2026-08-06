@@ -62,20 +62,23 @@ describe("FieldServicesPage", () => {
       items: [
         {
           id: "f1",
-          site_name: "HQ Office",
-          provider: "Comcast",
-          speed_tier: "1 Gbps",
-          monthly_cost: 500,
-          contract_end: "2027-06-01T00:00:00Z",
+          client_name: "HQ Office",
+          current_provider: "Comcast",
+          bandwidth_current: "1 Gbps",
+          current_cost: 500,
+          contract_status: "active",
           status: "active",
+          phone_lines: 4,
         },
         {
           id: "f2",
-          site_name: "Branch Office",
-          provider: "Verizon",
-          speed_tier: "500 Mbps",
-          monthly_cost: 300,
+          client_name: "Branch Office",
+          current_provider: "Verizon",
+          bandwidth_current: "500 Mbps",
+          current_cost: 300,
+          contract_status: "expired",
           status: "expired",
+          phone_lines: 0,
         },
       ],
     });
@@ -88,8 +91,8 @@ describe("FieldServicesPage", () => {
     expect(screen.getByText("Branch Office")).toBeInTheDocument();
     expect(screen.getByText(/Provider: Comcast/)).toBeInTheDocument();
     expect(screen.getByText(/Provider: Verizon/)).toBeInTheDocument();
-    expect(screen.getByText(/Speed: 1 Gbps/)).toBeInTheDocument();
-    expect(screen.getByText(/Speed: 500 Mbps/)).toBeInTheDocument();
+    expect(screen.getByText(/Bandwidth: 1 Gbps/)).toBeInTheDocument();
+    expect(screen.getByText(/Bandwidth: 500 Mbps/)).toBeInTheDocument();
   });
 
   it("shows empty state", async () => {
@@ -116,11 +119,13 @@ describe("FieldServicesPage", () => {
       items: [
         {
           id: "f1",
-          site_name: "HQ",
-          provider: "Comcast",
-          speed_tier: "1 Gbps",
-          monthly_cost: 500,
+          client_name: "HQ",
+          current_provider: "Comcast",
+          bandwidth_current: "1 Gbps",
+          current_cost: 500,
+          contract_status: "active",
           status: "active",
+          phone_lines: 0,
         },
       ],
     });

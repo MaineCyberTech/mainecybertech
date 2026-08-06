@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateLicense } from "@/lib/module-actions";
+import { updateLicense, deleteLicense } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "License Detail - Admin - Maine CyberTech" };
@@ -52,6 +53,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateLicense}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/licenses/${id}`);
+        }}
+        deleteAction={deleteLicense}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/licenses");
         }}
         parentHref="/admin/licenses"
         parentLabel="Licenses"

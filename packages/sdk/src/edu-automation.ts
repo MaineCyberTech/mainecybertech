@@ -24,6 +24,8 @@ export class EduAutomationApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/edu-automation/compliance/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/edu-automation/compliance/${id}`),
+    score: (d: Record<string, unknown>) =>
+      this.c.post("/api/v1/edu-automation/compliance/score", d),
   };
   insurance = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -69,6 +71,8 @@ export class EduAutomationApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/edu-automation/phishing/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/edu-automation/phishing/${id}`),
+    launch: (id: string) => this.c.post(`/api/v1/edu-automation/phishing/${id}/launch`),
+    results: (id: string) => this.c.get(`/api/v1/edu-automation/phishing/${id}/results`),
   };
   scorecards = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -78,6 +82,13 @@ export class EduAutomationApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/edu-automation/scorecards/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/edu-automation/scorecards/${id}`),
+    summary: (p?: Record<string, string | number | undefined>) =>
+      this.c.get("/api/v1/edu-automation/scorecards/summary", qp(p)),
+    overview: (p?: Record<string, string | number | undefined>) =>
+      this.c.get("/api/v1/edu-automation/scorecards/overview", qp(p)),
+    leaderboard: () => this.c.get("/api/v1/edu-automation/scorecards/leaderboard"),
+    evaluate: (d: Record<string, unknown>) =>
+      this.c.post("/api/v1/edu-automation/scorecards/evaluate", d),
   };
   automation = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -87,6 +98,9 @@ export class EduAutomationApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/edu-automation/automation/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/edu-automation/automation/${id}`),
+    execute: (id: string) => this.c.post(`/api/v1/edu-automation/automation/${id}/execute`),
+    complete: (id: string, d: Record<string, unknown>) =>
+      this.c.post(`/api/v1/edu-automation/automation/${id}/complete`, d),
   };
   powershell = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -96,6 +110,13 @@ export class EduAutomationApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/edu-automation/powershell/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/edu-automation/powershell/${id}`),
+    check: (id: string) => this.c.post(`/api/v1/edu-automation/powershell/${id}/check`),
+    submit: (id: string, d: Record<string, unknown> = {}) =>
+      this.c.post(`/api/v1/edu-automation/powershell/${id}/submit`, d),
+    approve: (id: string, d: Record<string, unknown> = {}) =>
+      this.c.post(`/api/v1/edu-automation/powershell/${id}/approve`, d),
+    reject: (id: string, d: Record<string, unknown> = {}) =>
+      this.c.post(`/api/v1/edu-automation/powershell/${id}/reject`, d),
   };
   kbGenerator = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -105,5 +126,6 @@ export class EduAutomationApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/edu-automation/kb-generator/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/edu-automation/kb-generator/${id}`),
+    generate: (id: string) => this.c.post(`/api/v1/edu-automation/kb-generator/${id}/generate`),
   };
 }

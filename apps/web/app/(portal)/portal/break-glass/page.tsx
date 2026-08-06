@@ -31,16 +31,21 @@ export default async function PortalBreakGlassPage() {
         {items.map((a) => (
           <div key={String(a.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
             <div className="flex items-center justify-between">
-              <p className="font-medium text-slate-50">{String(a.name || a.account_name || "")}</p>
+              <p className="font-medium text-slate-50">{String(a.account_name || "Break Glass")}</p>
               <StatusPill status={String(a.status || "unknown")} />
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              Service: {String(a.service || "N/A")} &bull; Last used:{" "}
-              {String(a.last_used || "Never")}
+              System: {String(a.system || "N/A")} &bull; Custodian:{" "}
+              {String(a.custodian_name || "N/A")}
             </p>
-            {(a.expires_at as string | null) && (
+            {(a.last_used_at as string | null) && (
               <p className="mt-1 text-xs text-slate-400">
-                Expires: {new Date(String(a.expires_at)).toISOString().slice(0, 10)}
+                Last used: {new Date(String(a.last_used_at)).toISOString().slice(0, 10)}
+              </p>
+            )}
+            {(a.next_rotation_at as string | null) && (
+              <p className="mt-1 text-xs text-slate-400">
+                Next rotation: {new Date(String(a.next_rotation_at)).toISOString().slice(0, 10)}
               </p>
             )}
           </div>

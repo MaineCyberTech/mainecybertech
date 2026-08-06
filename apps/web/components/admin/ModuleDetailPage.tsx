@@ -1,23 +1,33 @@
 import { getApiClient } from "@/lib/api";
+import { getClientApi } from "@/lib/client-api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
+import WorkflowActionButtons from "@/components/admin/WorkflowActionButtons";
 import { getModuleConfig } from "@/lib/module-config";
 import { updateModuleRecord, deleteModuleRecord } from "@/lib/module-record-actions";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+export type WorkflowAction = {
+  label: string;
+  endpoint: (id: string, api: ReturnType<typeof getClientApi>) => Promise<unknown>;
+  confirm?: string;
+};
+
 export default async function ModuleDetailPage({
   moduleKey,
   id,
   subnavKey,
+  workflowActions = [],
 }: {
   moduleKey: string;
   id: string;
   subnavKey: string;
+  workflowActions?: WorkflowAction[];
 }) {
   await requireAdminAccess();
   const config = getModuleConfig(moduleKey);
@@ -45,6 +55,9 @@ export default async function ModuleDetailPage({
       subnav={<AdminSubnav current={subnavKey} />}
       title={String(record?.title ?? record?.name ?? record?.site_name ?? config.label)}
     >
+      {workflowActions.length > 0 && record && (
+        <WorkflowActionButtons id={id} actions={workflowActions} />
+      )}
       <RecordDetail
         id={id}
         record={record}

@@ -67,19 +67,23 @@ describe("PortalBackupDrPage", () => {
       items: [
         {
           id: "b1",
-          name: "Daily Server Backup",
-          status: "completed",
-          type: "full",
-          target: "S3",
-          last_run: new Date().toISOString(),
+          system_name: "Daily Server Backup",
+          status: "monitored",
+          backup_type: "full",
+          last_backup_status: "completed",
+          offsite_replicated: true,
+          encryption_enabled: true,
+          last_backup_at: new Date().toISOString(),
         },
         {
           id: "b2",
-          name: "Database Backup",
-          status: "running",
-          type: "incremental",
-          target: "Azure",
-          last_run: new Date().toISOString(),
+          system_name: "Database Backup",
+          status: "monitored",
+          backup_type: "incremental",
+          last_backup_status: "running",
+          offsite_replicated: false,
+          encryption_enabled: true,
+          last_backup_at: new Date().toISOString(),
         },
       ],
     });
@@ -92,8 +96,10 @@ describe("PortalBackupDrPage", () => {
     expect(screen.getByText("Database Backup")).toBeInTheDocument();
     expect(screen.getByText(/Type: full/)).toBeInTheDocument();
     expect(screen.getByText(/Type: incremental/)).toBeInTheDocument();
-    expect(screen.getByText(/Target: S3/)).toBeInTheDocument();
-    expect(screen.getByText(/Target: Azure/)).toBeInTheDocument();
+    expect(screen.getByText(/Status: completed/)).toBeInTheDocument();
+    expect(screen.getByText(/Status: running/)).toBeInTheDocument();
+    expect(screen.getByText(/Offsite: Yes/)).toBeInTheDocument();
+    expect(screen.getByText(/Offsite: No/)).toBeInTheDocument();
   });
 
   it("shows empty state", async () => {
@@ -109,7 +115,15 @@ describe("PortalBackupDrPage", () => {
   it("renders status pills", async () => {
     mockBackupsList.mockResolvedValue({
       items: [
-        { id: "b1", name: "Daily Server Backup", status: "completed", type: "full", target: "S3" },
+        {
+          id: "b1",
+          system_name: "Daily Server Backup",
+          status: "monitored",
+          backup_type: "full",
+          last_backup_status: "completed",
+          offsite_replicated: true,
+          encryption_enabled: true,
+        },
       ],
     });
 
@@ -119,7 +133,7 @@ describe("PortalBackupDrPage", () => {
 
     const pills = screen.getAllByTestId("status-pill");
     expect(pills).toHaveLength(1);
-    expect(pills[0]).toHaveTextContent("completed");
+    expect(pills[0]).toHaveTextContent("monitored");
   });
 
   it("shows access restricted when no org", async () => {

@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateIdVerify } from "@/lib/module-actions";
+import { updateIdVerify, deleteIdVerify } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "ID Verify Detail - Admin - Maine CyberTech" };
@@ -15,10 +16,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   const api = getApiClient();
   let record: Record<string, unknown> | null = null;
   try {
-    const items = (await api.securitySuite.idVerify.list({})).items as unknown as Array<
-      Record<string, unknown>
-    >;
-    record = items.find((r) => r.id === id) ?? null;
+    record = (await api.securitySuite.idVerify.get(id)) as unknown as Record<string, unknown>;
   } catch {}
 
   return (
@@ -48,6 +46,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateIdVerify}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/id-verify/${id}`);
+        }}
+        deleteAction={deleteIdVerify}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/id-verify");
         }}
         parentHref="/admin/id-verify"
         parentLabel="ID Verify"

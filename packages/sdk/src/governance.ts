@@ -84,6 +84,16 @@ export class GovernanceApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/governance/change-requests/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/governance/change-requests/${id}`),
+    submit: (id: string, d: Record<string, unknown> = {}) =>
+      this.c.post(`/api/v1/governance/change-requests/${id}/submit`, d),
+    approve: (id: string, d: Record<string, unknown> = {}) =>
+      this.c.post(`/api/v1/governance/change-requests/${id}/approve`, d),
+    reject: (id: string, d: Record<string, unknown> = {}) =>
+      this.c.post(`/api/v1/governance/change-requests/${id}/reject`, d),
+    implement: (id: string, d: Record<string, unknown> = {}) =>
+      this.c.post(`/api/v1/governance/change-requests/${id}/implement`, d),
+    verify: (id: string, d: Record<string, unknown> = {}) =>
+      this.c.post(`/api/v1/governance/change-requests/${id}/verify`, d),
   };
   risks = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -93,6 +103,8 @@ export class GovernanceApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/governance/risks/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/governance/risks/${id}`),
+    assess: (id: string, d: Record<string, unknown>) =>
+      this.c.post(`/api/v1/governance/risks/${id}/assess`, d),
   };
   retention = {
     list: (p?: Record<string, string | number | undefined>) =>

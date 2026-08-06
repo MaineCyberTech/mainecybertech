@@ -8,7 +8,7 @@ jest.mock("@/lib/auth/admin", () => ({
 const mockOnboardingList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    securityOps: { onboarding: { list: mockOnboardingList } },
+    clientOnboarding: { list: mockOnboardingList },
   }),
 }));
 
@@ -75,20 +75,22 @@ describe("OnboardingPage", () => {
         {
           id: "o1",
           client_name: "Acme Corp",
-          discovery_complete: true,
-          m365_setup_complete: false,
-          security_baseline_applied: false,
-          handoff_complete: false,
           status: "active",
+          phase: "discovery",
+          risk_level: "medium",
+          security_baseline_score: null,
+          support_handoff_status: "not_started",
+          created_at: "2026-01-01T00:00:00.000Z",
         },
         {
           id: "o2",
           client_name: "Beta Inc",
-          discovery_complete: true,
-          m365_setup_complete: true,
-          security_baseline_applied: true,
-          handoff_complete: false,
           status: "active",
+          phase: "implementation",
+          risk_level: "high",
+          security_baseline_score: 82,
+          support_handoff_status: "in_progress",
+          created_at: "2026-01-02T00:00:00.000Z",
         },
       ],
     });
@@ -98,24 +100,27 @@ describe("OnboardingPage", () => {
     expect(screen.getByText("Beta Inc")).toBeInTheDocument();
   });
 
-  it("shows checklist status emojis", async () => {
+  it("shows phase, risk, and security score chips", async () => {
     mockOnboardingList.mockResolvedValue({
       items: [
         {
           id: "o1",
           client_name: "Test Co",
-          discovery_complete: true,
-          m365_setup_complete: false,
-          security_baseline_applied: true,
-          handoff_complete: false,
           status: "active",
+          phase: "implementation",
+          risk_level: "high",
+          security_baseline_score: 82,
+          support_handoff_status: "in_progress",
+          created_at: "2026-01-01T00:00:00.000Z",
         },
       ],
     });
     const Page = (await import("@/app/(admin)/admin/onboarding/page")).default;
     render(await Page());
-    expect(screen.getByText(/Discovery/)).toBeInTheDocument();
-    expect(screen.getAllByText(/M365/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/Phase: implementation/)).toBeInTheDocument();
+    expect(screen.getByText(/Risk: high/)).toBeInTheDocument();
+    expect(screen.getByText(/Security: 82\/100/)).toBeInTheDocument();
+    expect(screen.getByText(/Handoff: in_progress/)).toBeInTheDocument();
   });
 
   it("calls requireAdminAccess", async () => {

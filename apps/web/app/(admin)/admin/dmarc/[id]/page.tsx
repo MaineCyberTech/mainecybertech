@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateDmarc } from "@/lib/module-actions";
+import { updateDmarc, deleteDmarc } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DMARC Detail - Admin - Maine CyberTech" };
@@ -49,6 +50,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateDmarc}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/dmarc/${id}`);
+        }}
+        deleteAction={deleteDmarc}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/dmarc");
         }}
         parentHref="/admin/dmarc"
         parentLabel="DMARC"

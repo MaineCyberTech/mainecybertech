@@ -34,20 +34,21 @@ export default async function FieldServicesPage() {
             key={String(item.id)}
             className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
           >
-            <p className="font-medium text-slate-50">{String(item.site_name)}</p>
+            <p className="font-medium text-slate-50">{String(item.client_name)}</p>
             <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
-              <span>Provider: {String(item.provider)}</span>
-              <span>Speed: {String(item.speed_tier)}</span>
+              <span>Provider: {String(item.current_provider || "N/A")}</span>
+              <span>Bandwidth: {String(item.bandwidth_current || "N/A")}</span>
               <span>
                 Monthly Cost:{" "}
                 {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-                  Number(item.monthly_cost ?? 0),
+                  Number(item.current_cost ?? 0),
                 )}
               </span>
-              {item.contract_end != null && (
-                <span>
-                  Contract End: {new Date(String(item.contract_end)).toISOString().slice(0, 10)}
-                </span>
+              {item.contract_status != null && (
+                <span>Contract: {String(item.contract_status)}</span>
+              )}
+              {Number(item.phone_lines ?? 0) > 0 && (
+                <span>Phone Lines: {String(item.phone_lines)}</span>
               )}
             </div>
             <div className="mt-2">

@@ -59,15 +59,15 @@ describe("PortalKnowledgeBasePage", () => {
           id: "k1",
           title: "Password Policy",
           category: "security",
-          status: "published",
-          body: "Use strong passwords with 12+ characters.",
+          is_published: true,
+          content: "Use strong passwords with 12+ characters.",
         },
         {
           id: "k2",
           title: "VPN Setup Guide",
           category: "networking",
-          status: "published",
-          body: "How to configure VPN access.",
+          is_published: true,
+          content: "How to configure VPN access.",
         },
       ],
     });
@@ -92,15 +92,15 @@ describe("PortalKnowledgeBasePage", () => {
     expect(screen.getByText("No knowledge base articles yet.")).toBeInTheDocument();
   });
 
-  it("renders status text for items", async () => {
+  it("renders published status for items", async () => {
     mockKbList.mockResolvedValue({
       items: [
         {
           id: "k1",
           title: "Password Policy",
           category: "security",
-          status: "published",
-          body: "Use strong passwords.",
+          is_published: true,
+          content: "Use strong passwords.",
         },
       ],
     });
@@ -109,7 +109,7 @@ describe("PortalKnowledgeBasePage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByText(/Status: published/i)).toBeInTheDocument();
+    expect(screen.getByText(/Published: Yes/i)).toBeInTheDocument();
   });
 
   it("shows access restricted when no org", async () => {

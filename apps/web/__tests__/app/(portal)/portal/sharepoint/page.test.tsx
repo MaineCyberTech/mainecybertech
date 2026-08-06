@@ -62,15 +62,19 @@ describe("SharePointPage", () => {
       items: [
         {
           id: "s1",
-          title: "Marketing Site",
-          description: "Public facing SharePoint site",
+          site_name: "Marketing Site",
+          team_name: "Marketing Team",
+          structure_type: "team_site",
+          external_sharing: "disabled",
           status: "active",
           created_at: "2026-01-15T00:00:00Z",
         },
         {
           id: "s2",
-          name: "HR Portal",
-          status: "draft",
+          site_name: "HR Portal",
+          structure_type: "communication_site",
+          external_sharing: "disabled",
+          status: "planned",
           created_at: "2026-02-01T00:00:00Z",
         },
       ],
@@ -82,7 +86,8 @@ describe("SharePointPage", () => {
 
     expect(screen.getByText("Marketing Site")).toBeInTheDocument();
     expect(screen.getByText("HR Portal")).toBeInTheDocument();
-    expect(screen.getByText("Public facing SharePoint site")).toBeInTheDocument();
+    expect(screen.getByText(/Team: Marketing Team/)).toBeInTheDocument();
+    expect(screen.getByText(/Structure: team_site/)).toBeInTheDocument();
   });
 
   it("shows empty state", async () => {
@@ -109,7 +114,9 @@ describe("SharePointPage", () => {
       items: [
         {
           id: "s1",
-          title: "Marketing Site",
+          site_name: "Marketing Site",
+          structure_type: "team_site",
+          external_sharing: "disabled",
           status: "active",
           created_at: new Date().toISOString(),
         },

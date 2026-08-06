@@ -73,9 +73,9 @@ describe("DnsChangesPage", () => {
       items: [
         {
           id: "1",
-          name: "Test Change",
-          change_type: "A record",
           domain: "example.com",
+          change_type: "A record",
+          change_description: "Update web record",
           status: "pending",
           created_at: "2026-01-01T00:00:00Z",
         },
@@ -84,6 +84,7 @@ describe("DnsChangesPage", () => {
     const { default: Page } = await import("@/app/(portal)/portal/dns-changes/page");
     const element = await Page();
     render(element);
-    expect(screen.getByText("Test Change")).toBeInTheDocument();
+    expect(screen.getByText("example.com")).toBeInTheDocument();
+    expect(screen.getByText(/Type: A record/)).toBeInTheDocument();
   });
 });

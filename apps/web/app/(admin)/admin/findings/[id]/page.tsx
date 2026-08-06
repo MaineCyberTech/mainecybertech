@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateFinding } from "@/lib/module-actions";
+import { updateFinding, deleteFinding } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Finding Detail - Admin - Maine CyberTech" };
@@ -54,6 +55,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateFinding}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/findings/${id}`);
+        }}
+        deleteAction={deleteFinding}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/findings");
         }}
         parentHref="/admin/findings"
         parentLabel="Findings"

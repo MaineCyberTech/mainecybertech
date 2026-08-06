@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updatePatchGroup } from "@/lib/module-actions";
+import { updatePatchGroup, deletePatchGroup } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Patch Compliance Detail - Admin - Maine CyberTech" };
@@ -15,10 +16,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   const api = getApiClient();
   let record: Record<string, unknown> | null = null;
   try {
-    const items = (await api.securityOps.patchCompliance.list({})).items as unknown as Array<
-      Record<string, unknown>
-    >;
-    record = items.find((r) => r.id === id) ?? null;
+    record = (await api.securityOps.patchCompliance.get(id)) as unknown as Record<string, unknown>;
   } catch {}
 
   return (
@@ -49,6 +47,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updatePatchGroup}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/patch-compliance/${id}`);
+        }}
+        deleteAction={deletePatchGroup}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/patch-compliance");
         }}
         parentHref="/admin/patch-compliance"
         parentLabel="Patches"

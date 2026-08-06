@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateVendorContact } from "@/lib/module-actions";
+import { updateVendorContact, deleteVendorContact } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendor Contact Detail - Admin - Maine CyberTech" };
@@ -49,6 +50,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateVendorContact}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/vendor-contacts/${id}`);
+        }}
+        deleteAction={deleteVendorContact}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/vendor-contacts");
         }}
         parentHref="/admin/vendor-contacts"
         parentLabel="Contacts"

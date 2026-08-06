@@ -73,11 +73,14 @@ describe("SaasAuditPage", () => {
       items: [
         {
           id: "1",
-          name: "Office 365",
-          vendor: "Microsoft",
+          vendor_name: "Microsoft",
+          service_name: "Office 365",
           monthly_cost: 100,
-          category: "Productivity",
-          status: "active",
+          annual_cost: 1200,
+          classification: "Productivity",
+          renewal_date: "2026-06-01",
+          cancellation_risk: "low",
+          has_data_access: true,
         },
       ],
     });
@@ -85,5 +88,7 @@ describe("SaasAuditPage", () => {
     const element = await Page();
     render(element);
     expect(screen.getByText("Microsoft")).toBeInTheDocument();
+    expect(screen.getByText("Office 365")).toBeInTheDocument();
+    expect(screen.getByText(/Classification: Productivity/)).toBeInTheDocument();
   });
 });

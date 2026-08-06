@@ -31,15 +31,20 @@ export default async function PortalRiskRegisterPage() {
         {items.map((a) => (
           <div key={String(a.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
             <div className="flex items-center justify-between">
-              <p className="font-medium text-slate-50">{String(a.title || a.name || "")}</p>
+              <p className="font-medium text-slate-50">{String(a.risk_description || "Risk")}</p>
               <StatusPill status={String(a.status || "unknown")} />
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              Severity: {String(a.severity || "N/A")} &bull; Score: {String(a.risk_score || "N/A")}
+              Category: {String(a.risk_category || "N/A")} &bull; Likelihood:{" "}
+              {String(a.likelihood || "N/A")} &bull; Impact: {String(a.impact || "N/A")}
             </p>
-            {(a.mitigation_due as string | null) && (
+            {a.risk_score != null && (
+              <p className="mt-1 text-xs text-slate-400">Score: {String(a.risk_score)}</p>
+            )}
+            {(a.acceptance_expires as string | null) && (
               <p className="mt-1 text-xs text-slate-400">
-                Mitigation due: {new Date(String(a.mitigation_due)).toISOString().slice(0, 10)}
+                Acceptance expires:{" "}
+                {new Date(String(a.acceptance_expires)).toISOString().slice(0, 10)}
               </p>
             )}
           </div>

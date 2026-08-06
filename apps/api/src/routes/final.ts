@@ -156,7 +156,6 @@ const schemas: Record<string, { schema: z.ZodTypeAny; table: string }> = {
   forms: { schema: form, table: "custom_forms" },
   backups: { schema: backup, table: "backup_status" },
 };
-for (const [p, { schema: s, table }] of Object.entries(schemas)) crud(p, table, s);
 
 router.get("/sharepoint/structure-summary", async (req, res, next) => {
   try {
@@ -303,5 +302,7 @@ router.post("/procurement/compare", async (req, res, next) => {
     next(err);
   }
 });
+
+for (const [p, { schema: s, table }] of Object.entries(schemas)) crud(p, table, s);
 
 export default router;

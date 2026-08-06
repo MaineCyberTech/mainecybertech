@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateWebsiteMonitor } from "@/lib/module-actions";
+import { updateWebsiteMonitor, deleteWebsiteMonitor } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Website Monitor Detail - Admin - Maine CyberTech" };
@@ -47,6 +48,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateWebsiteMonitor}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/website-monitors/${id}`);
+        }}
+        deleteAction={deleteWebsiteMonitor}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/website-monitors");
         }}
         parentHref="/admin/website-monitors"
         parentLabel="Websites"

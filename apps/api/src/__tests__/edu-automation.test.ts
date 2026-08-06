@@ -77,6 +77,15 @@ describe("Edu Automation API", () => {
       const r = await request(app).get(`/api/v1/edu-automation/${p}`).set("Authorization", auth);
       expect(r.status).toBe(200);
     });
+    it(`gets ${p} by id`, async () => {
+      const s = ma();
+      s.from.mockReturnValue(createMockBuilder({ data: { id: "rec-1" }, error: null }));
+      const r = await request(app)
+        .get(`/api/v1/edu-automation/${p}/rec-1`)
+        .set("Authorization", auth);
+      expect(r.status).toBe(200);
+      expect(r.body.success).toBe(true);
+    });
   }
 
   it("creates a sop item", async () => {

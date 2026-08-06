@@ -34,11 +34,9 @@ export default async function SaasAuditPage() {
             key={String(item.id)}
             className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
           >
-            <p className="font-medium text-slate-50">
-              {String(item.vendor ?? item.name ?? "Unknown")}
-            </p>
-            {item.description != null && (
-              <p className="mt-1 text-xs text-slate-400">{String(item.description)}</p>
+            <p className="font-medium text-slate-50">{String(item.vendor_name ?? "Unknown")}</p>
+            {item.service_name != null && (
+              <p className="mt-1 text-xs text-slate-400">{String(item.service_name)}</p>
             )}
             <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
               {item.monthly_cost != null && (
@@ -49,19 +47,27 @@ export default async function SaasAuditPage() {
                   )}
                 </span>
               )}
-              {item.category != null && <span>Category: {String(item.category)}</span>}
-              {item.status != null && (
-                <span
-                  className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                    String(item.status) === "active"
-                      ? "bg-emerald-500/20 text-emerald-400"
-                      : String(item.status) === "trial"
-                        ? "bg-amber-500/20 text-amber-400"
-                        : "bg-slate-500/20 text-slate-400"
-                  }`}
-                >
-                  {String(item.status)}
+              {item.annual_cost != null && (
+                <span>
+                  Annual:{" "}
+                  {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+                    Number(item.annual_cost),
+                  )}
                 </span>
+              )}
+              {item.classification != null && (
+                <span>Classification: {String(item.classification)}</span>
+              )}
+              {item.renewal_date != null && (
+                <span>
+                  Renewal: {new Date(String(item.renewal_date)).toISOString().slice(0, 10)}
+                </span>
+              )}
+              {item.cancellation_risk != null && (
+                <span>Risk: {String(item.cancellation_risk)}</span>
+              )}
+              {item.has_data_access != null && (
+                <span>Data Access: {item.has_data_access ? "Yes" : "No"}</span>
               )}
             </div>
           </div>

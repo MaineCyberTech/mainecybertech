@@ -34,15 +34,13 @@ export default async function DnsChangesPage() {
             key={String(item.id)}
             className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
           >
-            <p className="font-medium text-slate-50">
-              {String(item.title ?? item.name ?? "Untitled")}
-            </p>
-            {item.description != null && (
-              <p className="mt-1 text-xs text-slate-400">{String(item.description)}</p>
+            <p className="font-medium text-slate-50">{String(item.domain || "Untitled")}</p>
+            {item.change_description != null && (
+              <p className="mt-1 text-xs text-slate-400">{String(item.change_description)}</p>
             )}
             <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
               {item.change_type != null && <span>Type: {String(item.change_type)}</span>}
-              {item.domain != null && <span>Domain: {String(item.domain)}</span>}
+              {item.proposed_value != null && <span>Proposed: {String(item.proposed_value)}</span>}
               {item.status != null && (
                 <span
                   className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${

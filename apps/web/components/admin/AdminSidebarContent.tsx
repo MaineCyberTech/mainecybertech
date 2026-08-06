@@ -106,6 +106,12 @@ const GROUPS: Array<{ label: string; items: NavItem[] }> = [
     label: "Clients",
     items: [
       {
+        key: "onboarding",
+        href: "/admin/onboarding",
+        label: "Onboarding",
+        module: "client-onboarding",
+      },
+      {
         key: "offboarding",
         href: "/admin/offboarding",
         label: "Offboarding",

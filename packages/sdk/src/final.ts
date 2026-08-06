@@ -15,6 +15,8 @@ export class FinalApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/final/sharepoint/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/final/sharepoint/${id}`),
+    structureSummary: (p?: Record<string, string | number | undefined>) =>
+      this.c.get<Record<string, unknown>>("/api/v1/final/sharepoint/structure-summary", qp(p)),
   };
   deviceProfiles = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -79,6 +81,8 @@ export class FinalApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/final/budgets/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/final/budgets/${id}`),
+    analysis: (p?: Record<string, string | number | undefined>) =>
+      this.c.get<Record<string, unknown>>("/api/v1/final/budgets/analysis", qp(p)),
   };
   runbooks = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -114,5 +118,7 @@ export class FinalApi {
         offsiteReplicated: number;
         encrypted: number;
       }>("/api/v1/final/backups/stats", qp(p)),
+    riskAnalysis: (p?: Record<string, string | undefined>) =>
+      this.c.get<Record<string, unknown>>("/api/v1/final/backups/risk-analysis", qp(p)),
   };
 }

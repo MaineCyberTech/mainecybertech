@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateService } from "@/lib/module-actions";
+import { updateService, deleteService } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Service Catalog Detail - Admin - Maine CyberTech" };
@@ -42,12 +43,21 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
           { key: "basePrice", label: "Price", type: "number" },
           { key: "unit", label: "Unit" },
           { key: "billingModel", label: "Billing Model" },
+          { key: "includedUnits", label: "Included Units", type: "number" },
+          { key: "overtureRate", label: "Overture Rate", type: "number" },
+          { key: "visibility", label: "Visibility" },
           { key: "isBundled", label: "Bundled", type: "checkbox" },
           { key: "isActive", label: "Active", type: "checkbox" },
         ]}
         updateAction={updateService}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/service-catalog/${id}`);
+        }}
+        deleteAction={deleteService}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/service-catalog");
         }}
         parentHref="/admin/service-catalog"
         parentLabel="Services"

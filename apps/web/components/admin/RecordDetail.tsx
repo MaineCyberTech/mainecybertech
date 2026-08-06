@@ -27,6 +27,15 @@ function snakeToLabel(k: string): string {
   return k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+function toSnakeCase(k: string): string {
+  return k.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
+}
+
+function recordValue(record: Record<string, unknown>, key: string): unknown {
+  if (record[key] !== undefined && record[key] !== null) return record[key];
+  return record[toSnakeCase(key)];
+}
+
 export default function RecordDetail({
   id,
   record,
@@ -117,7 +126,7 @@ export default function RecordDetail({
               <textarea
                 id={`edit-${f.key}`}
                 name={f.key}
-                defaultValue={String(record[f.key] ?? "")}
+                defaultValue={String(recordValue(record, f.key) ?? "")}
                 required={f.required}
                 rows={3}
                 className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
@@ -126,7 +135,7 @@ export default function RecordDetail({
               <select
                 id={`edit-${f.key}`}
                 name={f.key}
-                defaultValue={String(record[f.key] ?? "")}
+                defaultValue={String(recordValue(record, f.key) ?? "")}
                 className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
               >
                 {f.options.map((o) => (
@@ -140,7 +149,7 @@ export default function RecordDetail({
                 id={`edit-${f.key}`}
                 type={f.type ?? "text"}
                 name={f.key}
-                defaultValue={String(record[f.key] ?? "")}
+                defaultValue={String(recordValue(record, f.key) ?? "")}
                 required={f.required}
                 className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
               />
@@ -189,7 +198,7 @@ export default function RecordDetail({
 
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
         {displayFields.map((f) => {
-          const val = record[f.key];
+          const val = recordValue(record, f.key);
           const display =
             val === null || val === undefined || val === ""
               ? "—"

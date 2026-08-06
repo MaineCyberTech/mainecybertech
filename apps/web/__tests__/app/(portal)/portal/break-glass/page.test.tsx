@@ -69,15 +69,17 @@ describe("PortalBreakGlassPage", () => {
           id: "bg1",
           account_name: "emergency-admin",
           status: "active",
-          service: "Azure AD",
-          last_used: "2026-07-20",
+          system: "Azure AD",
+          custodian_name: "Admin",
+          last_used_at: "2026-07-20",
         },
         {
           id: "bg2",
           account_name: "root-backup",
           status: "expired",
-          service: "AWS",
-          last_used: "2026-01-15",
+          system: "AWS",
+          custodian_name: "Ops",
+          last_used_at: "2026-01-15",
         },
       ],
     });
@@ -88,7 +90,7 @@ describe("PortalBreakGlassPage", () => {
 
     expect(screen.getByText("emergency-admin")).toBeInTheDocument();
     expect(screen.getByText("root-backup")).toBeInTheDocument();
-    expect(screen.getAllByText(/Service:/)).toHaveLength(2);
+    expect(screen.getAllByText(/System:/)).toHaveLength(2);
     expect(screen.getAllByText(/Last used:/)).toHaveLength(2);
   });
 

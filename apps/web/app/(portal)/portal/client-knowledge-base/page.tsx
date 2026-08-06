@@ -29,13 +29,13 @@ export default async function PortalKnowledgeBasePage() {
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (
           <div key={String(a.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-            <p className="font-medium text-slate-50">{String(a.title || a.name || "")}</p>
+            <p className="font-medium text-slate-50">{String(a.title || "Article")}</p>
             <p className="mt-1 text-xs text-slate-400">
               {(a.category as string) && <span>Category: {String(a.category)} &bull; </span>}
-              Status: {String(a.status || "active")}
+              Published: {a.is_published ? "Yes" : "No"}
             </p>
-            {(a.body as string) && (
-              <p className="mt-2 line-clamp-2 text-xs text-slate-400">{String(a.body)}</p>
+            {(a.content as string) && (
+              <p className="mt-2 line-clamp-2 text-xs text-slate-400">{String(a.content)}</p>
             )}
           </div>
         ))}

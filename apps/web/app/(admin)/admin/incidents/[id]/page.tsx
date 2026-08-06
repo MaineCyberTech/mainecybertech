@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateIncident } from "@/lib/module-actions";
+import { updateIncident, deleteIncident } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Incident Detail - Admin - Maine CyberTech" };
@@ -58,6 +59,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateIncident}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/incidents/${id}`);
+        }}
+        deleteAction={deleteIncident}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/incidents");
         }}
         parentHref="/admin/incidents"
         parentLabel="Incidents"

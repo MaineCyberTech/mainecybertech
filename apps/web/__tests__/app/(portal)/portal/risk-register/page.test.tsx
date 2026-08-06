@@ -67,17 +67,21 @@ describe("PortalRiskRegisterPage", () => {
       items: [
         {
           id: "rk1",
-          title: "Phishing vulnerability",
+          risk_description: "Phishing vulnerability",
           status: "open",
-          severity: "high",
-          risk_score: "85",
+          risk_category: "security",
+          likelihood: "high",
+          impact: "high",
+          risk_score: 85,
         },
         {
           id: "rk2",
-          title: "Legacy firewall EOL",
+          risk_description: "Legacy firewall EOL",
           status: "mitigated",
-          severity: "medium",
-          risk_score: "45",
+          risk_category: "infrastructure",
+          likelihood: "medium",
+          impact: "medium",
+          risk_score: 45,
         },
       ],
     });
@@ -88,7 +92,7 @@ describe("PortalRiskRegisterPage", () => {
 
     expect(screen.getByText("Phishing vulnerability")).toBeInTheDocument();
     expect(screen.getByText("Legacy firewall EOL")).toBeInTheDocument();
-    expect(screen.getAllByText(/Severity:/)).toHaveLength(2);
+    expect(screen.getAllByText(/Category:/)).toHaveLength(2);
     expect(screen.getAllByText(/Score:/)).toHaveLength(2);
   });
 
@@ -107,8 +111,12 @@ describe("PortalRiskRegisterPage", () => {
       items: [
         {
           id: "rk1",
-          title: "Phishing vulnerability",
+          risk_description: "Phishing vulnerability",
           status: "open",
+          risk_category: "security",
+          likelihood: "high",
+          impact: "high",
+          risk_score: 85,
         },
       ],
     });

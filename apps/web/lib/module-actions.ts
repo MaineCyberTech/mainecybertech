@@ -204,10 +204,26 @@ export async function createOffboarding(formData: FormData) {
 export async function createOnboarding(formData: FormData) {
   const api = getApiClient();
   try {
-    await api.securityOps.onboarding.create({
+    await api.clientOnboarding.create({
       organizationId: String(formData.get("organizationId") || ""),
       clientName: String(formData.get("clientName") || ""),
-      notes: String(formData.get("notes") || ""),
+      clientDomain: String(formData.get("clientDomain") || "") || null,
+      clientContactEmail: String(formData.get("clientContactEmail") || "") || null,
+      clientContactPhone: String(formData.get("clientContactPhone") || "") || null,
+      riskLevel: String(formData.get("riskLevel") || "medium"),
+      discoveryNotes: String(formData.get("notes") || "") || null,
+      status: "discovery",
+      phase: "discovery",
+      m365SetupStatus: "not_started",
+      m365Licenses: {},
+      accessCollectionStatus: "not_started",
+      accessCredentials: {},
+      networkBaselineStatus: "not_started",
+      networkScanResults: {},
+      documentationStatus: "not_started",
+      securityBaselineStatus: "not_started",
+      securityFindings: [],
+      supportHandoffStatus: "not_started",
     });
     revalidatePath("/admin/onboarding");
     return { ok: true };
@@ -1115,15 +1131,239 @@ export async function updateOffboarding(id: string, formData: FormData) {
 export async function updateOnboarding(id: string, formData: FormData) {
   const api = getApiClient();
   try {
-    await api.securityOps.onboarding.update(id, {
+    await api.clientOnboarding.update(id, {
       clientName: String(formData.get("clientName") || ""),
-      discoveryComplete: formData.get("discoveryComplete") === "on",
-      m365SetupComplete: formData.get("m365SetupComplete") === "on",
-      securityBaselineApplied: formData.get("securityBaselineApplied") === "on",
-      handoffComplete: formData.get("handoffComplete") === "on",
-      notes: String(formData.get("notes") || ""),
+      clientDomain: String(formData.get("clientDomain") || "") || null,
+      clientContactEmail: String(formData.get("clientContactEmail") || "") || null,
+      clientContactPhone: String(formData.get("clientContactPhone") || "") || null,
+      status: String(formData.get("status") || "discovery"),
+      phase: String(formData.get("phase") || "discovery"),
+      riskLevel: String(formData.get("riskLevel") || "medium"),
+      m365SetupStatus: String(formData.get("m365SetupStatus") || "not_started"),
+      m365TenantId: String(formData.get("m365TenantId") || "") || null,
+      accessCollectionStatus: String(formData.get("accessCollectionStatus") || "not_started"),
+      networkBaselineStatus: String(formData.get("networkBaselineStatus") || "not_started"),
+      documentationStatus: String(formData.get("documentationStatus") || "not_started"),
+      securityBaselineStatus: String(formData.get("securityBaselineStatus") || "not_started"),
+      securityBaselineScore:
+        formData.get("securityBaselineScore") !== null &&
+        String(formData.get("securityBaselineScore") || "") !== ""
+          ? Number(formData.get("securityBaselineScore"))
+          : null,
+      supportHandoffStatus: String(formData.get("supportHandoffStatus") || "not_started"),
+      supportHandoffNotes: String(formData.get("supportHandoffNotes") || "") || null,
+      discoveryNotes: String(formData.get("discoveryNotes") || "") || null,
     });
     revalidatePath("/admin/onboarding");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteOnboarding(id: string) {
+  const api = getApiClient();
+  try {
+    await api.clientOnboarding.remove(id);
+    revalidatePath("/admin/onboarding");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteAsset(id: string) {
+  const api = getApiClient();
+  try {
+    await api.assets.remove(id);
+    revalidatePath("/admin/assets");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteM365Hardening(id: string) {
+  const api = getApiClient();
+  try {
+    await api.securitySuite.m365.remove(id);
+    revalidatePath("/admin/m365-hardening");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteIncident(id: string) {
+  const api = getApiClient();
+  try {
+    await api.securitySuite.incidents.remove(id);
+    revalidatePath("/admin/incidents");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteIdVerify(id: string) {
+  const api = getApiClient();
+  try {
+    await api.securitySuite.idVerify.remove(id);
+    revalidatePath("/admin/id-verify");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteEndpoint(id: string) {
+  const api = getApiClient();
+  try {
+    await api.securitySuite.endpoints.remove(id);
+    revalidatePath("/admin/endpoint-security");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteService(id: string) {
+  const api = getApiClient();
+  try {
+    await api.serviceCatalog.remove(id);
+    revalidatePath("/admin/service-catalog");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteBreakGlass(id: string) {
+  const api = getApiClient();
+  try {
+    await api.securityOps.breakGlass.remove(id);
+    revalidatePath("/admin/break-glass");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteOffboarding(id: string) {
+  const api = getApiClient();
+  try {
+    await api.securityOps.offboarding.remove(id);
+    revalidatePath("/admin/offboarding");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deletePatchGroup(id: string) {
+  const api = getApiClient();
+  try {
+    await api.securityOps.patchCompliance.remove(id);
+    revalidatePath("/admin/patch-compliance");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteFileRequest(id: string) {
+  const api = getApiClient();
+  try {
+    await api.fileRequests.remove(id);
+    revalidatePath("/admin/file-requests");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteDomainMonitor(id: string) {
+  const api = getApiClient();
+  try {
+    await api.domainMonitors.remove(id);
+    revalidatePath("/admin/domain-monitors");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteFinding(id: string) {
+  const api = getApiClient();
+  try {
+    await api.findings.remove(id);
+    revalidatePath("/admin/findings");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteLicense(id: string) {
+  const api = getApiClient();
+  try {
+    await api.batch.licenses.remove(id);
+    revalidatePath("/admin/licenses");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteDmarc(id: string) {
+  const api = getApiClient();
+  try {
+    await api.batch.dmarc.remove(id);
+    revalidatePath("/admin/dmarc");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteVendorContract(id: string) {
+  const api = getApiClient();
+  try {
+    await api.vendors.contracts.remove(id);
+    revalidatePath("/admin/vendor-contracts");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteVendorContact(id: string) {
+  const api = getApiClient();
+  try {
+    await api.vendors.contacts.remove(id);
+    revalidatePath("/admin/vendor-contacts");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteStatusItem(id: string) {
+  const api = getApiClient();
+  try {
+    await api.batch.status.remove(id);
+    revalidatePath("/admin/status");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function deleteWebsiteMonitor(id: string) {
+  const api = getApiClient();
+  try {
+    await api.batch.websiteMonitors.remove(id);
+    revalidatePath("/admin/website-monitors");
     return { ok: true };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };

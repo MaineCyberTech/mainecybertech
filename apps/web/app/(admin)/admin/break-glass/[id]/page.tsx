@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateBreakGlass } from "@/lib/module-actions";
+import { updateBreakGlass, deleteBreakGlass } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Break Glass Detail - Admin - Maine CyberTech" };
@@ -53,6 +54,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateBreakGlass}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/break-glass/${id}`);
+        }}
+        deleteAction={deleteBreakGlass}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/break-glass");
         }}
         parentHref="/admin/break-glass"
         parentLabel="Break Glass"

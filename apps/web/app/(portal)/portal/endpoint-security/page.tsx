@@ -28,24 +28,38 @@ export default async function PortalEndpointSecurityPage() {
         {items.length} endpoint{items.length !== 1 ? "s" : ""} monitored for your organization.
       </p>
       <div className="grid gap-4 md:grid-cols-2">
-        {items.map((a) => (
-          <div key={String(a.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-            <div className="flex items-center justify-between">
-              <p className="font-medium text-slate-50">
-                {String(a.name || a.hostname || a.device_name || "")}
-              </p>
-              <StatusPill status={String(a.status || "unknown")} />
-            </div>
-            <p className="mt-1 text-xs text-slate-400">
-              OS: {String(a.os || "N/A")} &bull; Agent: {String(a.agent_version || "N/A")}
-            </p>
-            {(a.last_scan as string | null) && (
+        {items.map((a) => {
+          const total = Number(a.total_endpoints ?? 0);
+          const av = Number(a.av_installed ?? 0);
+          const enc = Number(a.disk_encrypted ?? 0);
+          const mdm = Number(a.mdm_enrolled ?? 0);
+          return (
+            <div
+              key={String(a.id)}
+              className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+            >
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-slate-50">{String(a.device_group || "Group")}</p>
+                <StatusPill status={String(a.status || "unknown")} />
+              </div>
               <p className="mt-1 text-xs text-slate-400">
-                Last scan: {new Date(String(a.last_scan)).toISOString().slice(0, 10)}
+                Total endpoints: {String(total)} &bull; AV: {String(av)} &bull; Encrypted:{" "}
+                {String(enc)} &bull; MDM: {String(mdm)}
               </p>
-            )}
-          </div>
-        ))}
+              {a.coverage_pct != null && (
+                <div className="mt-2">
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-emerald-500"
+                      style={{ width: `${Math.min(100, Number(a.coverage_pct))}%` }}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-400">Coverage: {String(a.coverage_pct)}%</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
         {items.length === 0 && (
           <p className="col-span-2 text-sm text-slate-400">No endpoints registered.</p>
         )}

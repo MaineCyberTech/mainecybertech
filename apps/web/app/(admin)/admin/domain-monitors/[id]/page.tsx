@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateDomainMonitor } from "@/lib/module-actions";
+import { updateDomainMonitor, deleteDomainMonitor } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Domain Monitor Detail - Admin - Maine CyberTech" };
@@ -39,13 +40,31 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
           { key: "domain", label: "Domain" },
           { key: "displayName", label: "Display Name" },
           { key: "dnsProvider", label: "DNS Provider" },
+          { key: "sslValid", label: "SSL Valid", type: "checkbox" },
+          { key: "sslExpires", label: "SSL Expires", type: "date" },
+          { key: "spfStatus", label: "SPF" },
+          { key: "dkimStatus", label: "DKIM" },
+          { key: "dmarcStatus", label: "DMARC" },
+          { key: "nameserverMismatch", label: "NS Mismatch", type: "checkbox" },
           { key: "cloudflareProxied", label: "Cloudflare Proxied", type: "checkbox" },
           { key: "checkIntervalHours", label: "Check Interval (hrs)", type: "number" },
           { key: "alertsEnabled", label: "Alerts", type: "checkbox" },
+          {
+            key: "status",
+            label: "Status",
+            type: "select",
+            options: ["healthy", "warning", "critical", "unknown"],
+          },
         ]}
         updateAction={updateDomainMonitor}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/domain-monitors/${id}`);
+        }}
+        deleteAction={deleteDomainMonitor}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/domain-monitors");
         }}
         parentHref="/admin/domain-monitors"
         parentLabel="Domain Monitor"

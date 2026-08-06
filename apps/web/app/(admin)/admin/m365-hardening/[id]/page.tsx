@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateM365 } from "@/lib/module-actions";
+import { updateM365, deleteM365Hardening } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "M365 Hardening Detail - Admin - Maine CyberTech" };
@@ -46,6 +47,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateM365}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/m365-hardening/${id}`);
+        }}
+        deleteAction={deleteM365Hardening}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/m365-hardening");
         }}
         parentHref="/admin/m365-hardening"
         parentLabel="M365"

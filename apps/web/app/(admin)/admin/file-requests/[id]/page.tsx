@@ -4,7 +4,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
-import { updateFileRequest } from "@/lib/module-actions";
+import { updateFileRequest, deleteFileRequest } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "File Request Detail - Admin - Maine CyberTech" };
@@ -52,6 +53,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         updateAction={updateFileRequest}
         onUpdate={async () => {
           "use server";
+          revalidatePath(`/admin/file-requests/${id}`);
+        }}
+        deleteAction={deleteFileRequest}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/file-requests");
         }}
         parentHref="/admin/file-requests"
         parentLabel="File Requests"

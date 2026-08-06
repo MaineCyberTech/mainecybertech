@@ -31,16 +31,22 @@ export default async function PortalBackupDrPage() {
         {items.map((a) => (
           <div key={String(a.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
             <div className="flex items-center justify-between">
-              <p className="font-medium text-slate-50">{String(a.name || a.job_name || "")}</p>
+              <p className="font-medium text-slate-50">{String(a.system_name || "Backup")}</p>
               <StatusPill status={String(a.status || "unknown")} />
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              Type: {String(a.type || a.backup_type || "N/A")} &bull; Target:{" "}
-              {String(a.target || a.destination || "N/A")}
+              Type: {String(a.backup_type || "N/A")} &bull; Status:{" "}
+              {String(a.last_backup_status || "N/A")}
             </p>
-            {(a.last_run as string | null) && (
+            {(a.last_backup_at as string | null) && (
               <p className="mt-1 text-xs text-slate-400">
-                Last run: {new Date(String(a.last_run)).toISOString().slice(0, 10)}
+                Last backup: {new Date(String(a.last_backup_at)).toISOString().slice(0, 10)}
+              </p>
+            )}
+            {a.offsite_replicated != null && (
+              <p className="mt-1 text-xs text-slate-400">
+                Offsite: {a.offsite_replicated ? "Yes" : "No"} &bull; Encrypted:{" "}
+                {a.encryption_enabled ? "Yes" : "No"}
               </p>
             )}
           </div>

@@ -67,17 +67,23 @@ describe("PortalEndpointSecurityPage", () => {
       items: [
         {
           id: "ep1",
-          hostname: "WORK-LT-001",
-          status: "protected",
-          os: "Windows 11",
-          agent_version: "7.2.1",
+          device_group: "Workstations",
+          status: "active",
+          total_endpoints: 50,
+          av_installed: 48,
+          disk_encrypted: 45,
+          mdm_enrolled: 42,
+          coverage_pct: 84,
         },
         {
           id: "ep2",
-          hostname: "SRV-DB-01",
-          status: "warning",
-          os: "Ubuntu 22.04",
-          agent_version: "7.1.0",
+          device_group: "Servers",
+          status: "active",
+          total_endpoints: 20,
+          av_installed: 12,
+          disk_encrypted: 15,
+          mdm_enrolled: 5,
+          coverage_pct: 60,
         },
       ],
     });
@@ -86,10 +92,11 @@ describe("PortalEndpointSecurityPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByText("WORK-LT-001")).toBeInTheDocument();
-    expect(screen.getByText("SRV-DB-01")).toBeInTheDocument();
-    expect(screen.getAllByText(/OS:/)).toHaveLength(2);
-    expect(screen.getAllByText(/Agent:/)).toHaveLength(2);
+    expect(screen.getByText("Workstations")).toBeInTheDocument();
+    expect(screen.getByText("Servers")).toBeInTheDocument();
+    expect(screen.getByText(/Total endpoints: 50/)).toBeInTheDocument();
+    expect(screen.getByText(/Total endpoints: 20/)).toBeInTheDocument();
+    expect(screen.getByText(/Coverage: 84%/)).toBeInTheDocument();
   });
 
   it("shows empty state", async () => {
@@ -107,8 +114,13 @@ describe("PortalEndpointSecurityPage", () => {
       items: [
         {
           id: "ep1",
-          hostname: "WORK-LT-001",
-          status: "protected",
+          device_group: "Workstations",
+          status: "active",
+          total_endpoints: 50,
+          av_installed: 48,
+          disk_encrypted: 45,
+          mdm_enrolled: 42,
+          coverage_pct: 84,
         },
       ],
     });
@@ -119,7 +131,7 @@ describe("PortalEndpointSecurityPage", () => {
 
     const pills = screen.getAllByTestId("status-pill");
     expect(pills).toHaveLength(1);
-    expect(pills[0]).toHaveTextContent("protected");
+    expect(pills[0]).toHaveTextContent("active");
   });
 
   it("shows access restricted when no org", async () => {
