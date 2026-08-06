@@ -1,45 +1,38 @@
 # Risk Acceptance Register
 
-**Category:** Compliance
-**API Routes:** `apps/api/src/routes/risk-register.ts`
-**SDK:** `packages/sdk/src/risk-register.ts`
+**Category:** Governance
+**API Routes:** `apps/api/src/routes/governance.ts` (mounted at `/api/v1/governance`)
+**SDK:** `packages/sdk/src/governance.ts` (`governance.risks`)
+**Table:** `risk_register` (migration `5302071_governance.sql`)
 
 ## Overview
 
-Formal risk acceptance and exception tracking system aligned with CMMC, NIST 800-171, and HIPAA risk management requirements. Documents identified risks, assigns ownership, tracks remediation plans, and captures formal acceptance decisions by authorized approvers when risks cannot be fully remediated.
+Tracks known risks and their acceptance by clients or internal stakeholders, with likelihood/impact scoring, mitigating and compensating controls, acceptance expiry, and review cadence.
 
 ## Key Features
 
-- Risk record CRUD — description, category (technical/operational/regulatory), source (assessment/audit/incident/self-identified)
-- Risk scoring — likelihood (1-5) x impact (1-5) with computed inherent and residual risk levels
-- Remediation planning — planned control, target residual score, due date, assigned owner, status tracking
-- Risk acceptance workflow — formal acceptance request with business justification, compensating controls, approval expiration, and re-review date
-- Exception management — periodic exception review (30/60/90-day cycles), automatic escalation on expiry
-- Risk register dashboard — total risks by level, overdue items, acceptance expirations, risk trend over time
-- Export — risk register as CSV or PDF for audit evidence
+- Risk records with category, description, likelihood, impact, risk score, and status
+- `POST /risks/:id/assess` computes `risk_score = likelihood × impact` and maps to a risk level (low/medium/high/critical)
+- Acceptance tracking with owner, expiry, and review dates
+- Worker candidates for expiring-acceptance reminders
 
 ## Endpoints
 
-| Method | Path                                       | Description                                                     |
-| ------ | ------------------------------------------ | --------------------------------------------------------------- |
-| GET    | /api/v1/risk-register                      | List risks (paginated, filterable by org/category/level/status) |
-| POST   | /api/v1/risk-register                      | Create risk record                                              |
-| GET    | /api/v1/risk-register/:id                  | Get risk with remediation and acceptance history                |
-| PATCH  | /api/v1/risk-register/:id                  | Update risk                                                     |
-| DELETE | /api/v1/risk-register/:id                  | Soft-delete risk                                                |
-| POST   | /api/v1/risk-register/:id/remediation      | Add remediation plan                                            |
-| PATCH  | /api/v1/risk-register/:id/remediation/:rid | Update remediation status                                       |
-| POST   | /api/v1/risk-register/:id/accept           | Submit risk acceptance with justification                       |
-| GET    | /api/v1/risk-register/dashboard            | Risk summary dashboard per org                                  |
-| GET    | /api/v1/risk-register/export               | Export risk register as CSV                                     |
+| Method | Path                                | Description                        |
+| ------ | ----------------------------------- | ---------------------------------- |
+| GET    | /api/v1/governance/risks            | List risks (paginated, org-scoped) |
+| GET    | /api/v1/governance/risks/:id        | Get single risk                    |
+| POST   | /api/v1/governance/risks            | Create risk record                 |
+| PATCH  | /api/v1/governance/risks/:id        | Update risk                        |
+| DELETE | /api/v1/governance/risks/:id        | Delete risk                        |
+| POST   | /api/v1/governance/risks/:id/assess | Score risk (likelihood × impact)   |
 
 ## Data Model
 
-`risk_register` (organization_id, risk_id, title, description, category, source, inherent_likelihood, inherent_impact, inherent_level, residual_likelihood, residual_impact, residual_level, status (open/in-remediation/accepted/accepted-expired/closed), created_by). `risk_remediations` (risk_id, planned_control, target_score, due_date, owner_id, status (planned/in-progress/verified/closed), completed_at). `risk_acceptances` (risk_id, justification, compensating_controls text[], approved_by, approved_at, expires_at, re_review_date, is_active boolean).
+`risk_register` (id, organization_id, risk_description, risk_category, likelihood, impact, risk_score, mitigating_controls, accepted_by, accepted_at, acceptance_expires, compensating_controls, risk_level, accepting_controls, assessed_at, status, owner_user_id, created_by, created_at, updated_at).
 
 ## Access Control
 
-- Admin: full CRUD, acceptance approval, export
-- Client: view risk register for their org, submit remediation updates
-- requireOrgAccess on all endpoints; RLS via organization_id
-- Audit logging on risk create/update, remediation changes, and acceptance decisions
+- `requireAuth` + `requireOrgAccess` on all routes
+- RLS via `risk_register` org policies
+- Admin pages at `apps/web/app/(admin)/admin/governance/risks/` (incl. `RiskAssessButton` on detail); portal read-only list at `apps/web/app/(portal)/portal/risk-register/`

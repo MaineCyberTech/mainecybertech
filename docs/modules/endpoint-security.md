@@ -1,41 +1,40 @@
 # Endpoint Security Coverage Map
 
 **Category:** Security
-**API Routes:** `apps/api/src/routes/endpoint-security.ts`
-**SDK:** `packages/sdk/src/endpoint-security.ts`
+**API Routes:** `apps/api/src/routes/security-suite.ts` (mounted at `/api/v1/security-suite`)
+**SDK:** `packages/sdk/src/security-suite.ts` (`securitySuite.endpoints`)
+**Table:** `endpoint_security` (migration `5302070_security_suite.sql`)
 
 ## Overview
 
-Unified endpoint security coverage dashboard that aggregates status from multiple EDR/XDR/MDM solutions (Microsoft Defender, SentinelOne, CrowdStrike, Sophos, Bitdefender, JAMF, Intune). Displays coverage gaps, outdated agents, policy compliance, detection counts, and a unified health score per device and per org.
+Tracks endpoint protection coverage by device group: antivirus installs, disk encryption, MDM enrollment, local-admin removal, firewall, and EDR deployment. Computes a per-group coverage percentage and flags groups below threshold. The worker task `endpoint-security-check` periodically recomputes coverage and marks low-coverage groups.
 
 ## Key Features
 
-- Multi-vendor aggregation — normalize status data from various endpoint protection platforms via connector API
-- Coverage map — per-device view showing which security layers are active (AV, EDR, firewall, disk encryption, patch management, MDM enrollment)
-- Gap analysis — devices missing critical protection layers flagged with severity
-- Agent health — last check-in, agent version, definition freshness, scan status per device
-- Detection feed — recent alerts per device with severity, type, status, and response action
-- Unified health score — 0-100 score per endpoint based on active layers, recency, and alert severity
-- Coverage trend — week-over-week and month-over-month coverage percentage changes
+- Per-device-group coverage counts for AV, encryption, MDM, local admin, firewall, and EDR
+- `coverage_pct` computed per group
+- Aggregate `GET /endpoint-security/coverage` endpoint (AV/encryption/MDM percentages across groups)
+- Worker `endpoint-security-check` flags groups below 80% coverage
+- Admin CRUD for groups; portal read-only list
 
 ## Endpoints
 
-| Method | Path                                  | Description                                                                    |
-| ------ | ------------------------------------- | ------------------------------------------------------------------------------ |
-| GET    | /api/v1/endpoint-security/devices     | List devices with coverage status (paginated, filterable by org/vendor/health) |
-| GET    | /api/v1/endpoint-security/devices/:id | Device detail with full layer status                                           |
-| GET    | /api/v1/endpoint-security/dashboard   | Org-level coverage summary and trends                                          |
-| GET    | /api/v1/endpoint-security/gaps        | Uncovered/gap devices for remediation                                          |
-| GET    | /api/v1/endpoint-security/alerts      | Recent detection feed (filterable by severity/status)                          |
-| GET    | /api/v1/endpoint-security/export      | Export device coverage report as CSV                                           |
+| Method | Path                                              | Description                                  |
+| ------ | ------------------------------------------------- | -------------------------------------------- |
+| GET    | /api/v1/security-suite/endpoint-security          | List endpoint groups (paginated, org-scoped) |
+| GET    | /api/v1/security-suite/endpoint-security/:id      | Get single endpoint group                    |
+| POST   | /api/v1/security-suite/endpoint-security          | Create endpoint group                        |
+| PATCH  | /api/v1/security-suite/endpoint-security/:id      | Update endpoint group                        |
+| DELETE | /api/v1/security-suite/endpoint-security/:id      | Delete endpoint group                        |
+| GET    | /api/v1/security-suite/endpoint-security/coverage | Aggregate AV/encryption/MDM coverage         |
 
 ## Data Model
 
-`endpoint_devices` (organization_id, device_name, device_type, os, os_version, vendor, agent_version, last_checkin_at, health_score, is_active, created_at). `endpoint_layers` (device_id, layer_key (av/edr/firewall/encryption/patch/mdm), is_active, status, last_scan_at, definition_version, vendor_specific JSON). `endpoint_alerts` (device_id, alert_type, severity (low/medium/high/critical), status (new/investigation/resolved/false-positive), description, detected_at, resolved_at).
+`endpoint_security` (id, organization_id, device_group, total_endpoints, av_installed, disk_encrypted, mdm_enrolled, local_admin_removed, firewall_enabled, edr_deployed, coverage_pct, status, notes, created_by, created_at, updated_at).
 
 ## Access Control
 
-- Admin: full dashboard, device detail, gap list, alert management
-- Client: view org coverage dashboard and device list for their org
-- requireOrgAccess enforced; RLS via organization_id
-- Audit logging on alert status changes and device deactivation
+- `requireAuth` + `requireOrgAccess` on all routes
+- RLS via `endpoint_security` org policies
+- Audit logging on create/update/delete
+- Admin pages at `apps/web/app/(admin)/admin/endpoint-security/`; portal read-only list at `apps/web/app/(portal)/portal/endpoint-security/`

@@ -1,44 +1,40 @@
-# SOP Library Compliance Mapper
+# MSP SOP Library & Compliance Mapper
 
-**Category:** Compliance
-**API Routes:** `apps/api/src/routes/sop-library.ts`
-**SDK:** `packages/sdk/src/sop-library.ts`
+**Category:** Governance / Edu & Automation
+**API Routes:** `apps/api/src/routes/governance.ts` (mounted at `/api/v1/governance`) + `apps/api/src/routes/edu-automation.ts` (mounted at `/api/v1/edu-automation`)
+**SDK:** `packages/sdk/src/governance.ts` (`governance.sopLibrary`) + `packages/sdk/src/edu-automation.ts` (`eduAutomation.sop`)
+**Table:** `sop_library` (migration `5302086_sop_library_compliance.sql`)
 
 ## Overview
 
-Standard Operating Procedure library with compliance framework mapping. Links SOPs to regulatory controls (CMMC 2.0, NIST 800-171, HIPAA, PCI DSS, GDPR) and tracks review cycles, version history, and staff acknowledgment.
+Versioned SOP and procedure library mapped to compliance frameworks (NIST, ISO 27001, CIS, HIPAA-adjacent, PCI-adjacent, CMMC-readiness). Tracks review cycles, ownership, and framework control mappings, with compliance-map and framework-gap reporting.
 
 ## Key Features
 
-- SOP CRUD with rich content (markdown body, category tags, applicable frameworks)
-- Compliance control mapping — link each SOP to specific framework controls with evidence references
-- Version history with diff tracking and mandatory review period configuration
-- Review cycle management with automated reminders at 30/60/90 days before expiry
-- Staff acknowledgment tracking — who has read and accepted each SOP
-- Gap analysis report — which controls lack associated SOPs
+- Versioned SOP records with category, status, review cycle, owner, tags, and document URL
+- Framework mapping via `compliance_framework` + `framework_control_ids`
+- `GET /sop-library/compliance-map` — SOP-to-framework control coverage
+- `GET /sop-library/framework-gaps` — per-framework coverage gaps
+- Accessible via both `/api/v1/governance/sop-library` and `/api/v1/edu-automation/sop` (same table)
 
 ## Endpoints
 
-| Method | Path                         | Description                                                        |
-| ------ | ---------------------------- | ------------------------------------------------------------------ |
-| GET    | /api/v1/sops                 | List SOPs (paginated, filterable by org/framework/category/status) |
-| POST   | /api/v1/sops                 | Create SOP                                                         |
-| GET    | /api/v1/sops/:id             | Get SOP with versions and control mappings                         |
-| PATCH  | /api/v1/sops/:id             | Update SOP                                                         |
-| DELETE | /api/v1/sops/:id             | Delete SOP                                                         |
-| POST   | /api/v1/sops/:id/versions    | Create new version                                                 |
-| GET    | /api/v1/sops/:id/versions    | List version history                                               |
-| POST   | /api/v1/sops/:id/acknowledge | Record staff acknowledgment                                        |
-| GET    | /api/v1/sops/:id/gap-report  | Compliance gap analysis                                            |
-| GET    | /api/v1/sops/reviews         | SOPs due or overdue for review                                     |
+| Method | Path                                          | Description                       |
+| ------ | --------------------------------------------- | --------------------------------- |
+| GET    | /api/v1/governance/sop-library                | List SOPs (paginated, org-scoped) |
+| GET    | /api/v1/governance/sop-library/:id            | Get single SOP                    |
+| POST   | /api/v1/governance/sop-library                | Create SOP                        |
+| PATCH  | /api/v1/governance/sop-library/:id            | Update SOP                        |
+| DELETE | /api/v1/governance/sop-library/:id            | Delete SOP                        |
+| GET    | /api/v1/governance/sop-library/compliance-map | SOP/framework coverage map        |
+| GET    | /api/v1/governance/sop-library/framework-gaps | Per-framework gaps                |
 
 ## Data Model
 
-`sops` (organization_id, title, category, body_markdown, version, status (draft/active/archived), review_interval_days, last_reviewed_at, next_review_at). `sop_control_mappings` (sop_id, framework, control_id, evidence_ref). `sop_acknowledgments` (sop_id, user_id, acknowledged_at). `sop_versions` (sop_id, version, body_markdown, created_by, created_at).
+`sop_library` (id, organization_id, title, description, sop_category, compliance_framework, framework_control_ids text[], status, review_cycle_days, last_reviewed_at, next_review_at, owner_user_id, document_url, tags text[], created_by, created_at, updated_at).
 
 ## Access Control
 
-- Admin: full CRUD, version management, view acknowledgments
-- Client: read active SOPs, acknowledge their own reading
-- requireAuth + requireOrgAccess on all endpoints
-- Audit logging on create, update, delete, version creation, and acknowledgment
+- `requireAuth` + `requireOrgAccess` on all routes
+- RLS via `sop_library` org policies
+- Admin pages at `apps/web/app/(admin)/admin/edu-automation/sop/`; portal read-only list at `apps/web/app/(portal)/portal/sop-library/`

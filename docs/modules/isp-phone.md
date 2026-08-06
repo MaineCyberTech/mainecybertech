@@ -1,42 +1,37 @@
-# ISP Phone Network Consolidation
+# ISP / Phone / Network Consolidation Assessment
 
-**Category:** Network
-**API Routes:** `apps/api/src/routes/isp-phone.ts`
-**SDK:** `packages/sdk/src/isp-phone.ts`
+**Category:** Field Services
+**API Routes:** `apps/api/src/routes/field-services.ts` (mounted at `/api/v1/field-services`)
+**SDK:** `packages/sdk/src/field-services.ts` (`fieldServices.isp`)
+**Table:** `isp_assessments` (migration `5302072_field_services.sql` + `5302097_isp_unifi_scoring_fields.sql`)
 
 ## Overview
 
-Centralized inventory and cost-analysis tool for managing ISP circuits, phone lines, and SD-WAN links across client locations. Provides contract tracking, cost comparison, renewal alerts, and consolidation recommendations.
+Bill/service intake and consolidation recommendation tool for ISP, phone, VoIP, Wi-Fi, and telecom projects. Admins record current vs recommended providers and costs, then score the consolidation opportunity.
 
 ## Key Features
 
-- Circuit inventory (fiber, cable, DSL, LTE, SD-WAN) with provider, bandwidth, contract dates
-- Phone line tracking (POTS, SIP, PRI, hosted VoIP) with usage metrics and cost per line
-- Cost aggregation with monthly/ annual spend totals and per-location breakdowns
-- Renewal calendar with 30/60/90-day alerts and automated notification triggers
-- Consolidation opportunity engine — detects overlapping services at the same site
+- Provider/service intake (current + recommended, costs, bandwidth, phone lines, VoIP readiness)
+- `POST /isp/:id/score` computes a consolidation score and recommendation from monthly cost and contract length
+- Contract status tracking
 
 ## Endpoints
 
-| Method | Path                            | Description                                                       |
-| ------ | ------------------------------- | ----------------------------------------------------------------- |
-| GET    | /api/v1/isp-phone/circuits      | List circuits (paginated, filterable by org/type/provider/status) |
-| POST   | /api/v1/isp-phone/circuits      | Create circuit record                                             |
-| PATCH  | /api/v1/isp-phone/circuits/:id  | Update circuit                                                    |
-| DELETE | /api/v1/isp-phone/circuits/:id  | Soft-delete circuit                                               |
-| GET    | /api/v1/isp-phone/lines         | List phone lines                                                  |
-| POST   | /api/v1/isp-phone/lines         | Create phone line                                                 |
-| GET    | /api/v1/isp-phone/renewals      | Upcoming renewals grouped by month                                |
-| GET    | /api/v1/isp-phone/consolidation | Consolidation opportunities per org                               |
-| GET    | /api/v1/isp-phone/spend         | Cost summary per org/location                                     |
+| Method | Path                                 | Description                                  |
+| ------ | ------------------------------------ | -------------------------------------------- |
+| GET    | /api/v1/field-services/isp           | List assessments (paginated, org-scoped)     |
+| GET    | /api/v1/field-services/isp/:id       | Get single assessment                        |
+| POST   | /api/v1/field-services/isp           | Create assessment                            |
+| PATCH  | /api/v1/field-services/isp/:id       | Update assessment                            |
+| DELETE | /api/v1/field-services/isp/:id       | Delete assessment                            |
+| POST   | /api/v1/field-services/isp/:id/score | Compute consolidation score + recommendation |
 
 ## Data Model
 
-`isp_circuits` (organization_id, location_id, provider, circuit_type, bandwidth_mbps, contract_start, contract_end, monthly_cost, status, notes). `isp_phone_lines` (organization_id, location_id, provider, line_type, number, monthly_cost, usage_monthly_minutes, contract_end). Both have `created_at`, `updated_at`, `created_by`.
+`isp_assessments` (id, organization_id, client_name, current_provider, current_cost, recommended_provider, recommended_cost, services, bandwidth_current, bandwidth_needed, contract_status, phone_lines, voip_ready, notes, status, created_by, created_at, updated_at). Scoring columns added by `5302097`: `monthly_cost`, `contract_length_months`, `consolidation_score`, `recommendation`.
 
 ## Access Control
 
-- Admin: full CRUD across all org circuits and lines
-- Client (portal): read-only view of their org's circuits and lines
-- requireOrgAccess enforced on all endpoints
-- Audit logging on create, update, delete for both entities
+- `requireAuth` + `requireOrgAccess` on all routes
+- RLS via `isp_assessments` org policies
+- Admin pages at `apps/web/app/(admin)/admin/field-services/isp/`; portal read-only list at `apps/web/app/(portal)/portal/field-services/`
