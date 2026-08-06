@@ -45,4 +45,14 @@ begin
     ('82710000-0000-0000-0000-000000000099'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'acme.example', 'v=DMARC1; p=none;', 'v=spf1 ~all', 'v=DKIM1; k=rsa; p=...', 'none', 'relaxed', 100, 'F', jsonb_build_array('No enforcement policy'), jsonb_build_array(jsonb_build_object('action', 'move_to_quarantine')), now() - interval '45 days', 'active', 'f1000000-0000-4000-8000-000000000004'::uuid)
   on conflict (id) do nothing;
 
+  -- Draft phishing campaign (exercises admin Launch workflow button - requires status='draft')
+  insert into public.phishing_campaigns (id, organization_id, campaign_name, target_count, opened_count, clicked_count, reported_count, started_at, ended_at, notes, status, created_by) values
+    ('81520000-0000-0000-0000-000000000003'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Harborview Q3 Phish - Draft', 130, 0, 0, 0, null, null, 'Ready to launch for Q3 awareness.', 'draft', 'd4000000-0000-4000-8000-000000000003'::uuid)
+  on conflict (id) do nothing;
+
+  -- Change request in pending_review (exercises admin CAB approve/reject workflow buttons)
+  insert into public.change_requests (id, organization_id, title, description, change_type, risk_level, rollback_plan, implementation_date, verification_steps, status, requester_id, created_by) values
+    ('64600000-0000-0000-0000-000000000010'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'PACS archive expansion', 'Add 20TB to the PACS archive cluster.', 'infrastructure_change', 'medium', 'Revert to previous archive allocation.', now() + interval '3 days', 'Verify new studies archive and retrieve successfully.', 'pending_review', 'a1000000-0000-4000-8000-000000000002'::uuid, 'd4000000-0000-4000-8000-000000000003'::uuid)
+  on conflict (id) do nothing;
+
 end $$;
