@@ -6,6 +6,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
+import ProcurementCompareClient from "./ProcurementCompareClient";
 import { createProcurement } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +50,11 @@ export default async function ProcurementPage() {
         title="New Procurement"
         action={createProcurement}
       />
+      {items.length >= 2 && (
+        <div className="mt-6">
+          <ProcurementCompareClient items={items as Array<Record<string, unknown>>} />
+        </div>
+      )}
       <section className="cyber-panel mt-6">
         <div className="space-y-3">
           {items.length > 0 ? (

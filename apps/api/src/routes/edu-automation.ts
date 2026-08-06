@@ -206,13 +206,12 @@ router.post("/kb-generator/:id/generate", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
-    const generatedBody = `# ${current.title || "Generated Article"}\n\nThis article was auto-generated from the provided source.\n\n## Overview\n\nGenerated content based on KB generation request.\n\n## Key Points\n\n- Review and customize this content\n- Add relevant internal knowledge\n- Verify against current procedures\n\n## Next Steps\n\n1. Review the generated content\n2. Publish to the knowledge base\n3. Notify relevant team members`;
+    const generatedBody = `# ${current.source_title || "Generated Article"}\n\nThis article was auto-generated from the provided source.\n\n## Overview\n\nGenerated content based on KB generation request.\n\n## Key Points\n\n- Review and customize this content\n- Add relevant internal knowledge\n- Verify against current procedures\n\n## Next Steps\n\n1. Review the generated content\n2. Publish to the knowledge base\n3. Notify relevant team members`;
     const { data, error } = await supabase
       .from("kb_article_generations")
       .update({
-        generated_body: generatedBody,
+        generated_content: generatedBody,
         status: "generated",
-        generated_at: new Date().toISOString(),
         reviewed_by: req.authUser!.userId,
       })
       .eq("id", req.params.id)
@@ -232,7 +231,7 @@ router.get("/kb/search", async (req, res, next) => {
     const { data, error } = await supabase
       .from("knowledge_articles")
       .select("*")
-      .or(`title.ilike.%${q}%,body.ilike.%${q}%,category.ilike.%${q}%`)
+      .or(`title.ilike.%${q}%,content.ilike.%${q}%,category.ilike.%${q}%`)
       .eq("organization_id", req.query.organization_id as string)
       .order("created_at", { ascending: false })
       .limit(20);

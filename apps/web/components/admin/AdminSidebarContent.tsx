@@ -25,6 +25,12 @@ const GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { key: "documents", href: "/admin/documents", label: "Documents", module: "documents" },
       { key: "projects", href: "/admin/projects", label: "Projects", module: "projects" },
       { key: "approvals", href: "/admin/approvals", label: "Approvals", module: "approvals" },
+      {
+        key: "approval-requests",
+        href: "/admin/approval-requests",
+        label: "Approval Workflow",
+        module: "approvals",
+      },
     ],
   },
   {
@@ -187,6 +193,18 @@ const GROUPS: Array<{ label: string; items: NavItem[] }> = [
         module: "edu-automation",
       },
       { key: "final", href: "/admin/final", label: "More", module: "final" },
+      {
+        key: "dynamic-forms",
+        href: "/admin/dynamic-forms",
+        label: "Dynamic Forms",
+        module: "dynamic-forms",
+      },
+      {
+        key: "satisfaction-pulse",
+        href: "/admin/satisfaction-pulse",
+        label: "Satisfaction",
+        module: "satisfaction-pulse",
+      },
       { key: "health", href: "/admin/health", label: "Health", module: "health" },
       { key: "audit", href: "/admin/audit", label: "Audit", module: "audit" },
       {

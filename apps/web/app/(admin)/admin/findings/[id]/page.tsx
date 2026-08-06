@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
+import WorkflowActionButtons from "@/components/admin/WorkflowActionButtons";
 import { updateFinding, deleteFinding } from "@/lib/module-actions";
 import { revalidatePath } from "next/cache";
 
@@ -33,6 +34,29 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
       subnav={<AdminSubnav current="findings" />}
       title={String(record?.title ?? "Record Detail")}
     >
+      {record && (
+        <WorkflowActionButtons
+          id={id}
+          context={record}
+          actions={[
+            {
+              label: "Resolve",
+              endpoint: (fid, api, ctx) =>
+                api.findings.resolve(fid, {
+                  organizationId: String(ctx.organization_id),
+                  resolutionNotes: String(ctx.remediation_plan ?? "") || null,
+                }),
+              confirm: "Mark this finding as resolved?",
+            },
+            {
+              label: "Verify",
+              endpoint: (fid, api, ctx) =>
+                api.findings.verify(fid, { organizationId: String(ctx.organization_id) }),
+              confirm: "Verify this resolved finding?",
+            },
+          ]}
+        />
+      )}
       <RecordDetail
         id={id}
         record={record}

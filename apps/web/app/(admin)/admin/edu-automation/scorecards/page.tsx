@@ -6,6 +6,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
+import ScorecardsEvaluateClient from "./ScorecardsEvaluateClient";
 import { createScorecard } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +48,9 @@ export default async function ScorecardPage() {
         title="New Scorecard"
         action={createScorecard}
       />
+      <div className="mt-6">
+        <ScorecardsEvaluateClient organizationId={""} />
+      </div>
       <section className="cyber-panel mt-6">
         <div className="space-y-3">
           {items.length > 0 ? (

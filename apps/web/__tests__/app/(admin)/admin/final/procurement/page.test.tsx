@@ -16,6 +16,11 @@ jest.mock("@/lib/module-actions", () => ({
   createProcurement: jest.fn(),
 }));
 
+jest.mock("@/app/(admin)/admin/final/procurement/ProcurementCompareClient", () => ({
+  __esModule: true,
+  default: () => <div data-testid="procurement-compare" />,
+}));
+
 jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;

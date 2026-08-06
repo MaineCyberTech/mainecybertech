@@ -5,17 +5,23 @@ import { getClientApi } from "@/lib/client-api";
 
 type Action = {
   label: string;
-  endpoint: (id: string, api: ReturnType<typeof getClientApi>) => Promise<unknown>;
+  endpoint: (
+    id: string,
+    api: ReturnType<typeof getClientApi>,
+    context: Record<string, unknown>,
+  ) => Promise<unknown>;
   confirm?: string;
 };
 
 export default function WorkflowActionButtons({
   id,
   actions,
+  context = {},
   onDone,
 }: {
   id: string;
   actions: Action[];
+  context?: Record<string, unknown>;
   onDone?: () => void;
 }) {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -29,7 +35,7 @@ export default function WorkflowActionButtons({
     startTransition(async () => {
       try {
         const api = getClientApi();
-        await action.endpoint(id, api);
+        await action.endpoint(id, api, context);
         setPendingAction(null);
         onDone?.();
       } catch {

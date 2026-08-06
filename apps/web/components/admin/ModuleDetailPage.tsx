@@ -14,7 +14,11 @@ export const dynamic = "force-dynamic";
 
 export type WorkflowAction = {
   label: string;
-  endpoint: (id: string, api: ReturnType<typeof getClientApi>) => Promise<unknown>;
+  endpoint: (
+    id: string,
+    api: ReturnType<typeof getClientApi>,
+    context: Record<string, unknown>,
+  ) => Promise<unknown>;
   confirm?: string;
 };
 
@@ -56,7 +60,7 @@ export default async function ModuleDetailPage({
       title={String(record?.title ?? record?.name ?? record?.site_name ?? config.label)}
     >
       {workflowActions.length > 0 && record && (
-        <WorkflowActionButtons id={id} actions={workflowActions} />
+        <WorkflowActionButtons id={id} actions={workflowActions} context={record} />
       )}
       <RecordDetail
         id={id}

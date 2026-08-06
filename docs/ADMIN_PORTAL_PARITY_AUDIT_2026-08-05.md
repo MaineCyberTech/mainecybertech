@@ -109,9 +109,15 @@ API + SDK `remove` exist for all, but `deleteAction` prop omitted: 03 m365, 07 i
 | P1-D       | Moved generic `crud()` loops AFTER specific sub-routes in `final.ts` and `edu-automation.ts` — `/scorecards/summary                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | overview | leaderboard`, `/final/backups/stats | risk-analysis`, `/budgets/analysis`, `/sharepoint/structure-summary`, `/procurement/compare`no longer shadowed by`/:id` |
 | P2 partial | `fs-camera` config + `estimatedStorageTb`/`avgBitrateMbps`; `gov-tabletop` + `actionItems`/`afterActionReport` (participants→text); `fn-time-entries` + `ticketId`; service-catalog detail + `includedUnits`/`overtureRate`/`visibility`; domain-monitor detail + full health fields                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
-### Still open (P2)
+### Still open (P2) — Remediated 2026-08-05
 
-- Admin page for module 42 (dynamic-forms) and module 43 (approval_requests workflow engine)
-- Satisfaction widget API (`satisfactionPulse`) surfaced in UI (respond/export/templates/schedules)
-- Portal pages for 05 (unifi) and 53 (data-retention)
-- Admin UI for scorecards evaluate/summary/leaderboard panels, procurement compare view, dmarc analyze action, risks assess button, findings verify/resolve buttons, kb-generator generate/publish
+- ✅ **Admin page for module 42 (dynamic-forms)** — `/admin/dynamic-forms` list + `[id]` detail with publish action + submissions view.
+- ✅ **Admin page for module 43 (approval_requests)** — `/admin/approval-requests` cross-org list + stats + `[id]` detail with approve/reject/cancel workflow buttons (distinct from the membership queue at `/admin/approvals`).
+- ✅ **Satisfaction widget API surfaced** — `/admin/satisfaction-pulse` list + create form + `[id]` respond form; templates/schedules/export panels.
+- ✅ **Portal pages for 05 (unifi) and 53 (data-retention)** — `/portal/unifi-site-surveys` + `/portal/data-retention` created + sidebar links added.
+- ✅ **Scorecards evaluate panel** — `ScorecardsEvaluateClient` on `/admin/edu-automation/scorecards` (assign badges/history, per-org or all).
+- ✅ **Procurement compare view** — `ProcurementCompareClient` on `/admin/final/procurement` (multi-select quotes → side-by-side table).
+- ✅ **DMARC analyze action** — `DmarcAnalyzeForm` on `/admin/dmarc-coach` (record grading).
+- ✅ **Risks assess button** — `RiskAssessButton` on risk detail (likelihood×impact); migration `5302125` adds `risk_level`/`accepting_controls`/`assessed_at` columns the endpoint writes.
+- ✅ **Findings verify/resolve buttons** — wired on `/admin/findings/[id]`.
+- ✅ **KB-generator generate** — "Generate Draft" workflow button on kb-generator detail; endpoint fixed to write `generated_content`/`reviewed_content` (was nonexistent `generated_body`); KB search fixed `body`→`content`.

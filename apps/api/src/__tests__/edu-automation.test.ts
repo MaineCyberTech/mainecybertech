@@ -156,4 +156,31 @@ describe("Edu Automation API", () => {
     const r = await request(app).get("/api/v1/edu-automation/sop");
     expect(r.status).toBe(401);
   });
+
+  it("generates a KB article draft into generated_content", async () => {
+    const s = ma();
+    s.from
+      .mockReturnValueOnce(
+        createMockBuilder({
+          data: { id: "kg-1", source_title: "Password Reset Runbook", status: "draft" },
+          error: null,
+        }),
+      )
+      .mockReturnValueOnce(
+        createMockBuilder({
+          data: {
+            id: "kg-1",
+            generated_content: "# Password Reset Runbook",
+            status: "generated",
+          },
+          error: null,
+        }),
+      );
+    const r = await request(app)
+      .post("/api/v1/edu-automation/kb-generator/kg-1/generate")
+      .set("Authorization", auth);
+    expect(r.status).toBe(200);
+    expect(r.body.data.generated_content).toContain("# Password Reset Runbook");
+    expect(r.body.data.status).toBe("generated");
+  });
 });

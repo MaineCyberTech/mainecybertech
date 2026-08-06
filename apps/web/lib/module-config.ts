@@ -61,6 +61,7 @@ export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
     fields: [
       { key: "riskDescription", label: "Risk Description", type: "textarea" },
       { key: "riskCategory", label: "Category" },
+      { key: "riskScore", label: "Risk Score", type: "number" },
       {
         key: "likelihood",
         label: "Likelihood",
@@ -69,6 +70,7 @@ export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
       },
       { key: "impact", label: "Impact", type: "select", options: ["low", "medium", "high"] },
       { key: "mitigatingControls", label: "Mitigating Controls", type: "textarea" },
+      { key: "compensatingControls", label: "Compensating Controls", type: "textarea" },
       {
         key: "status",
         label: "Status",

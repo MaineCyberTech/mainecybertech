@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import DmarcAnalyzeForm from "./DmarcAnalyzeForm";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DMARC Coach - Admin - Maine CyberTech" };
 
@@ -58,7 +59,8 @@ export default async function DmarcCoachPage() {
       description="Analyze DMARC, SPF, and DKIM records with automated grading and remediation recommendations."
       actions={null}
     >
-      <section className="cyber-panel">
+      <DmarcAnalyzeForm />
+      <section className="cyber-panel mt-6">
         <h2 className="cyber-heading text-lg">Analyzed Domains</h2>
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

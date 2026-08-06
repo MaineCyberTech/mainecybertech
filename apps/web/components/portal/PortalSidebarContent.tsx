@@ -39,6 +39,12 @@ const GROUPS: Array<{ label: string; items: NavItem[] }> = [
         module: "field-services",
       },
       {
+        key: "unifi-site-surveys",
+        href: "/portal/unifi-site-surveys",
+        label: "UniFi Surveys",
+        module: "field-services",
+      },
+      {
         key: "file-requests",
         href: "/portal/file-requests",
         label: "Files",
@@ -68,6 +74,12 @@ const GROUPS: Array<{ label: string; items: NavItem[] }> = [
         module: "domain-monitors",
       },
       { key: "governance", href: "/portal/governance", label: "Governance", module: "governance" },
+      {
+        key: "data-retention",
+        href: "/portal/data-retention",
+        label: "Data Retention",
+        module: "governance",
+      },
       { key: "status", href: "/portal/status", label: "Status", module: "status" },
     ],
   },
