@@ -17,6 +17,7 @@ permissions:
   contents: read
   id-token: write
   pull-requests: write
+  actions: write
 
 # Serialize terraform runs per branch: concurrent applies could corrupt the
 # shared DO Spaces state lock or race each other (e.g. a push and a manual apply).
