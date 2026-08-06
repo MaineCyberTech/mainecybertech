@@ -36,17 +36,6 @@ function mockAuth() {
   return supabase;
 }
 
-function mockAdmin() {
-  const supabase = mockAuth();
-  supabase.from.mockReturnValueOnce(
-    createMockBuilder({
-      data: [{ roles: { id: "role-admin", key: "admin" } }],
-      error: null,
-    }),
-  );
-  return supabase;
-}
-
 const MEMBERSHIP = {
   id: "mem-1",
   organization_id: "00000000-0000-0000-0000-000000000001",
@@ -130,7 +119,7 @@ describe("memberships routes", () => {
 
   describe("POST /invite", () => {
     it("invites a user to an organization (admin only)", async () => {
-      const supabase = mockAdmin();
+      const supabase = mockAuth();
       supabase.from
         .mockReturnValueOnce(createMockBuilder({ data: { id: "user-2" }, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: null, error: null }))
@@ -149,7 +138,7 @@ describe("memberships routes", () => {
     });
 
     it("returns 404 when user email not found", async () => {
-      const supabase = mockAdmin();
+      const supabase = mockAuth();
       supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
@@ -165,7 +154,7 @@ describe("memberships routes", () => {
     });
 
     it("returns 409 when membership already exists", async () => {
-      const supabase = mockAdmin();
+      const supabase = mockAuth();
       supabase.from
         .mockReturnValueOnce(createMockBuilder({ data: { id: "user-2" }, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: { id: "existing-mem" }, error: null }));
@@ -185,7 +174,7 @@ describe("memberships routes", () => {
 
   describe("PATCH /:id", () => {
     it("updates a membership (admin only)", async () => {
-      const supabase = mockAdmin();
+      const supabase = mockAuth();
       supabase.from.mockReturnValue(
         createMockBuilder({ data: { ...MEMBERSHIP, status: "approved" }, error: null }),
       );
@@ -201,7 +190,7 @@ describe("memberships routes", () => {
 
   describe("DELETE /:id", () => {
     it("deletes a membership (admin only)", async () => {
-      const supabase = mockAdmin();
+      const supabase = mockAuth();
       supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
@@ -212,3 +201,4 @@ describe("memberships routes", () => {
     });
   });
 });
+

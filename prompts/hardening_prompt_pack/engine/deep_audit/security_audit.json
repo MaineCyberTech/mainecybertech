@@ -1,20 +1,8 @@
 {
   "domain": "security",
-  "total": 6,
-  "timestamp": "2026-08-01T06:31:20.905727+00:00",
+  "total": 5,
+  "timestamp": "2026-08-06T21:21:29.801232+00:00",
   "findings": [
-    {
-      "severity": "P1",
-      "domain": "security",
-      "category": "auth",
-      "file": "apps/api/src/middleware/auth.ts",
-      "endpoint": "ALL /api/v1/* routes",
-      "data_path": "JWT \u2192 Supabase auth.getUser() \u2192 connection",
-      "issue": "JWT fallback to Supabase getUser() has no timeout",
-      "exploit_chain": "Attacker sends batch of expired/garbage tokens \u2192 each falls through 1-2 JWT secret attempts \u2192 Supabase getUser() hangs for 30s \u2192 connection pool exhaustion \u2192 denial of service for legitimate users",
-      "impact": "DoS via connection pool exhaustion by sending many invalid JWTs",
-      "fix": "Add AbortSignal.timeout(5000) to supabase.auth.getUser(token) call in the fallback path"
-    },
     {
       "severity": "P0",
       "domain": "security",

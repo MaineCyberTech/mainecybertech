@@ -4,7 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { responseCacheNoRenew } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -177,6 +177,29 @@ function camelToSnake(str: string): string {
   return str.replace(/[A-Z]/g, (l: string) => `_${l.toLowerCase()}`);
 }
 
+/**
+ * Tenant-scope gate for project sub-routes: verifies the parent project
+ * belongs to the caller's org (orgId = requireOrgAccess-injected org or the
+ * caller's body org). Platform admins (no injected org) are org-agnostic by
+ * design and skip the check.
+ */
+async function assertProjectInOrg(
+  projectId: string | string[] | undefined,
+  orgId: string | undefined,
+): Promise<void> {
+  if (!orgId || !projectId) return;
+  const projectIdStr = Array.isArray(projectId) ? projectId[0] : projectId;
+  if (!projectIdStr) return;
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", projectIdStr)
+    .eq("organization_id", orgId)
+    .single();
+  if (error || !data) throw new AppError("NOT_FOUND", "Project not found", 404);
+}
+
 function projectSubRoute(
   resource: string,
   table: string,
@@ -192,6 +215,11 @@ function projectSubRoute(
       const supabase = getSupabaseAdmin();
       const projectId = req.query.project_id as string;
       if (!projectId) throw new AppError("VALIDATION", "project_id required", 400);
+
+      await assertProjectInOrg(
+        projectId,
+        (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+      );
 
       const { data, error, count } = await supabase
         .from(table)
@@ -210,6 +238,12 @@ function projectSubRoute(
     try {
       const parsed = createSchema.parse(req.body) as Record<string, unknown>;
       const supabase = getSupabaseAdmin();
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+        | string
+        | undefined;
+
+      await assertProjectInOrg(parsed.projectId as string, orgId);
+
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(parsed)) {
         if (k === "projectId") continue;
@@ -224,7 +258,7 @@ function projectSubRoute(
       if (error) throw new AppError("DB_ERROR", error.message, 500);
 
       await logAuditEvent({
-        organizationId: req.query.organization_id as string,
+        organizationId: orgId ?? (req.query.organization_id as string),
         actorUserId: req.authUser!.userId,
         action: `${resource}.created`,
         entityType: resource,
@@ -241,6 +275,18 @@ function projectSubRoute(
     try {
       const parsed = updateSchema.parse(req.body) as Record<string, unknown>;
       const supabase = getSupabaseAdmin();
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+        | string
+        | undefined;
+
+      const { data: child, error: childError } = await supabase
+        .from(table)
+        .select("project_id")
+        .eq("id", req.params.id)
+        .single();
+      if (childError || !child) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
+      await assertProjectInOrg(child.project_id as string, orgId);
+
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(parsed)) {
         if (v !== undefined) fields[camelToSnake(k)] = v;
@@ -262,6 +308,18 @@ function projectSubRoute(
   router.delete(`/${resource}/:id`, async (req, res, next) => {
     try {
       const supabase = getSupabaseAdmin();
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+        | string
+        | undefined;
+
+      const { data: child, error: childError } = await supabase
+        .from(table)
+        .select("project_id")
+        .eq("id", req.params.id)
+        .single();
+      if (childError || !child) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
+      await assertProjectInOrg(child.project_id as string, orgId);
+
       const { error } = await supabase.from(table).delete().eq("id", req.params.id);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -397,7 +455,7 @@ router.get("/:id/detail", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("projects", "create"), async (req, res, next) => {
   try {
     const parsed = createProjectSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -444,12 +502,13 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateProjectSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
 
-    const { data: current, error: fetchError } = await supabase
-      .from("projects")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
+    let currentQuery = supabase.from("projects").select("version").eq("id", req.params.id);
+    if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+    const { data: current, error: fetchError } = await currentQuery.single();
 
     if (fetchError || !current) {
       throw new AppError("NOT_FOUND", "Project not found", 404);
@@ -469,13 +528,13 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     updateData.version = current.version + 1;
 
-    const { data, error } = await supabase
+    let updateQuery = supabase
       .from("projects")
       .update(updateData)
       .eq("id", req.params.id)
-      .eq("version", current.version)
-      .select()
-      .single();
+      .eq("version", current.version);
+    if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+    const { data, error } = await updateQuery.select().single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     if (!data) throw new AppError("VERSION_CONFLICT", "Project was modified by another user", 409);
@@ -494,7 +553,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", requireAdmin, async (req, res, next) => {
+router.delete("/:id", requirePermission("projects", "delete"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { data: project, error: fetchError } = await supabase
@@ -525,6 +584,10 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
 router.get("/:id/tasks", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
     const { data, error } = await supabase
       .from("project_tasks")
       .select("*")
@@ -542,6 +605,10 @@ router.post("/:id/tasks", async (req, res, next) => {
   try {
     const parsed = createTaskSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
 
     const { data, error } = await supabase
       .from("project_tasks")
@@ -587,6 +654,10 @@ router.patch("/:id/tasks/:taskId", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateTaskSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      String(req.params.id),
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
 
     const { data: currentTask, error: taskFetchError } = await supabase
       .from("project_tasks")
@@ -653,6 +724,10 @@ router.patch("/:id/tasks/:taskId", requireIfMatch, async (req, res, next) => {
 router.delete("/:id/tasks/:taskId", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
     const { error } = await supabase
       .from("project_tasks")
       .delete()
@@ -678,6 +753,10 @@ router.delete("/:id/tasks/:taskId", async (req, res, next) => {
 router.get("/:id/tasks/comments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
     let query = supabase.from("project_task_comments").select("*").eq("project_id", req.params.id);
 
     const orgId = req.query.organization_id as string | undefined;
@@ -711,6 +790,10 @@ router.post("/:id/tasks/:taskId/comments", async (req, res, next) => {
   try {
     const parsed = addTaskCommentSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
 
     const { data, error } = await supabase
       .from("project_task_comments")
@@ -742,6 +825,10 @@ router.post("/:id/tasks/:taskId/comments", async (req, res, next) => {
 router.get("/:id/updates", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
     const { data, error } = await supabase
       .from("project_updates")
       .select("*")
@@ -759,6 +846,10 @@ router.post("/:id/updates", async (req, res, next) => {
   try {
     const parsed = addProjectUpdateSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
 
     const { data, error } = await supabase
       .from("project_updates")
@@ -792,6 +883,10 @@ router.patch("/:id/updates/:updateId", async (req, res, next) => {
   try {
     const parsed = updateProjectUpdateSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
 
     const updateData: Record<string, unknown> = {};
     if (parsed.body !== undefined) updateData.body = parsed.body;
@@ -826,6 +921,10 @@ router.patch("/:id/updates/:updateId", async (req, res, next) => {
 router.delete("/:id/updates/:updateId", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
     const { error } = await supabase
       .from("project_updates")
       .delete()
@@ -852,6 +951,10 @@ router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =>
   try {
     const parsed = updateTaskCommentSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
 
     const updateData: Record<string, unknown> = {};
     if (parsed.body !== undefined) updateData.body = parsed.body;
@@ -885,6 +988,10 @@ router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =>
 router.delete("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
     const { error } = await supabase
       .from("project_task_comments")
       .delete()
@@ -910,6 +1017,10 @@ router.delete("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =
 router.get("/:id/tasks/read-states", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
     let query = supabase
       .from("project_task_comment_reads")
       .select("*")
@@ -940,6 +1051,10 @@ router.post("/:id/tasks/reorder", async (req, res, next) => {
   try {
     const parsed = reorderTasksSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
 
     for (let index = 0; index < parsed.order.length; index++) {
       const { error } = await supabase
@@ -968,6 +1083,10 @@ router.post("/:id/tasks/:taskId/read", async (req, res, next) => {
   try {
     const parsed = markTaskReadSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
 
     // SECURITY DEFINER RPC so the insert path bypasses RLS (a direct
     // upsert hit "new row violates row-level security policy" on hosted
@@ -999,10 +1118,15 @@ router.post("/:id/tasks/:taskId/approve", async (req, res, next) => {
   try {
     const parsed = approveTaskSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
 
     const { error } = await supabase.rpc("approve_project_task", {
       p_task_id: req.params.taskId,
       p_organization_id: parsed.organizationId,
+      p_user_id: req.authUser!.userId,
     });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -1026,11 +1150,16 @@ router.post("/:id/tasks/:taskId/portal-comment", async (req, res, next) => {
   try {
     const parsed = portalTaskCommentSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await assertProjectInOrg(
+      req.params.id,
+      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+    );
 
     const { error } = await supabase.rpc("add_project_task_comment", {
       p_task_id: req.params.taskId,
       p_organization_id: parsed.organizationId,
       p_body: parsed.body,
+      p_user_id: req.authUser!.userId,
     });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

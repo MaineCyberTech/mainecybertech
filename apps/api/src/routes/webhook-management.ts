@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
@@ -78,7 +78,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", requireAdmin, async (req, res, next) => {
+router.post("/", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
     const parsed = createSchema.parse(req.body);
     await assertSafeWebhookUrl(parsed.url);
@@ -114,7 +114,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireAdmin, requireIfMatch, async (req, res, next) => {
+router.patch("/:id", requirePermission("webhooks", "manage"), requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -168,7 +168,7 @@ router.patch("/:id", requireAdmin, requireIfMatch, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", requireAdmin, async (req, res, next) => {
+router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
@@ -224,7 +224,7 @@ router.get("/:id/deliveries", async (req, res, next) => {
   }
 });
 
-router.post("/:id/test", requireAdmin, async (req, res, next) => {
+router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { data: webhook, error: fetchError } = await supabase

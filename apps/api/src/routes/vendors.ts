@@ -153,19 +153,9 @@ function snakeCase(str: string): string {
   return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
 }
 
-crudEndpoints(
-  "vendor-contracts",
-  "vendor_contracts",
-  createVendorContractSchema as unknown as typeof createVendorContractSchema,
-  updateVendorContractSchema as unknown as typeof updateVendorContractSchema,
-);
-crudEndpoints(
-  "vendor-contacts",
-  "vendor_contacts",
-  createVendorContactSchema as unknown as typeof createVendorContractSchema,
-  updateVendorContactSchema as unknown as typeof updateVendorContractSchema,
-);
-
+// Static sub-routes must be registered before `/:id` (Express matches the
+// first registered route — `/vendor-contracts/renewals` was previously
+// shadowed by `/vendor-contracts/:id` with id="renewals").
 router.get("/vendor-contracts/renewals", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
@@ -185,5 +175,18 @@ router.get("/vendor-contracts/renewals", async (req, res, next) => {
     next(err);
   }
 });
+
+crudEndpoints(
+  "vendor-contracts",
+  "vendor_contracts",
+  createVendorContractSchema as unknown as typeof createVendorContractSchema,
+  updateVendorContractSchema as unknown as typeof updateVendorContractSchema,
+);
+crudEndpoints(
+  "vendor-contacts",
+  "vendor_contacts",
+  createVendorContactSchema as unknown as typeof createVendorContractSchema,
+  updateVendorContactSchema as unknown as typeof updateVendorContractSchema,
+);
 
 export default router;

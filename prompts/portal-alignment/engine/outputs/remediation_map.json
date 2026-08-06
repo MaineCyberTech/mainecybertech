@@ -9,7 +9,7 @@
       "severity": "P2",
       "domain": "database",
       "title": "Tables defined in migrations but unreferenced in API code",
-      "recommended_action": "10 table(s) created in migrations but not referenced in API TypeScript source",
+      "recommended_action": "14 table(s) created in migrations but not referenced in API TypeScript source",
       "effort": "medium"
     },
     {
@@ -44,7 +44,7 @@
       "severity": "P2",
       "domain": "cross-domain",
       "title": "Database tables never queried in API code",
-      "recommended_action": "35 table(s) defined in migrations but never used in any .from() call",
+      "recommended_action": "37 table(s) defined in migrations but never used in any .from() call",
       "effort": "medium"
     }
   ],

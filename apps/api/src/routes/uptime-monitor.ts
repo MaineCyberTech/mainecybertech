@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -143,6 +144,9 @@ router.get("/checks/:id", async (req, res, next) => {
 router.post("/checks", async (req, res, next) => {
   try {
     const parsed = checkCreateSchema.parse(req.body);
+    // SSRF guard — the worker fetches this URL; reject private / loopback /
+    // link-local hosts before the check is ever stored.
+    await assertSafeWebhookUrl(parsed.url);
     const supabase = getSupabaseAdmin();
 
     const { data, error } = await supabase
@@ -182,7 +186,10 @@ router.patch("/checks/:id", async (req, res, next) => {
     const supabase = getSupabaseAdmin();
 
     const fields: Record<string, unknown> = {};
-    if (parsed.url !== undefined) fields.url = parsed.url;
+    if (parsed.url !== undefined) {
+      await assertSafeWebhookUrl(parsed.url);
+      fields.url = parsed.url;
+    }
     if (parsed.checkType !== undefined) fields.check_type = parsed.checkType;
     if (parsed.checkIntervalMinutes !== undefined)
       fields.check_interval_minutes = parsed.checkIntervalMinutes;

@@ -32,6 +32,14 @@ jest.mock("../config/env", () => ({
 jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn() }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 
+// Deterministic DNS for the SSRF guard (public hostnames resolve to a
+// public address; private literals are blocked synchronously without DNS).
+jest.mock("node:dns", () => ({
+  promises: {
+    lookup: jest.fn().mockResolvedValue([{ address: "93.184.216.34", family: 4 }]),
+  },
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
 import uptimeMonitorRouter from "../routes/uptime-monitor";
 
@@ -101,6 +109,28 @@ describe("Uptime Monitor API", () => {
         .send({});
       expect(res.status).toBe(400);
     });
+
+    it("rejects private/loopback URLs (SSRF)", async () => {
+      mockAuth();
+      const res = await request(app)
+        .post("/api/v1/uptime-monitor/checks")
+        .set("Authorization", authToken)
+        .send({
+          organizationId: testOrgId,
+          url: "http://169.254.169.254/latest/meta-data",
+        });
+      expect(res.status).toBe(400);
+      expect(res.body.error?.code).toBe("VALIDATION");
+    });
+
+    it("rejects localhost URLs (SSRF)", async () => {
+      mockAuth();
+      const res = await request(app)
+        .post("/api/v1/uptime-monitor/checks")
+        .set("Authorization", authToken)
+        .send({ organizationId: testOrgId, url: "http://localhost:3000/health" });
+      expect(res.status).toBe(400);
+    });
   });
 
   describe("GET /api/v1/uptime-monitor/checks/:id", () => {
@@ -141,6 +171,16 @@ describe("Uptime Monitor API", () => {
         .send({ status: "paused" });
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe("paused");
+    });
+
+    it("rejects private/loopback URLs on update (SSRF)", async () => {
+      mockAuth();
+      const res = await request(app)
+        .patch("/api/v1/uptime-monitor/checks/c1")
+        .set("Authorization", authToken)
+        .send({ url: "http://10.0.0.1/health" });
+      expect(res.status).toBe(400);
+      expect(res.body.error?.code).toBe("VALIDATION");
     });
   });
 

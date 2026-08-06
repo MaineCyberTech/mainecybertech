@@ -133,6 +133,8 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
     { name: "endpoint-security-check", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 53 },
     { name: "saas-audit-scan", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 58 },
     { name: "qbr-scheduled-generate", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 63 },
+    { name: "retention", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 70 },
+    { name: "orphan-cleanup", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 76 },
   ];
   for (const scan of scheduledScans) {
     const interval = setInterval(() => {

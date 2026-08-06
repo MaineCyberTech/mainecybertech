@@ -11,7 +11,7 @@
     "privacy": 2,
     "evolution": 1
   },
-  "timestamp": "2026-08-01T06:31:16.294550+00:00",
-  "commit": "a585f1d feat: comprehensive detailed runbook procedures for all 245 products",
+  "timestamp": "2026-08-06T21:21:19.722604+00:00",
+  "commit": "75d3926 test-data: cover admin workflow-button states (phishing launch + CAB approve/reject)",
   "blocked": true
 }

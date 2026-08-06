@@ -379,5 +379,68 @@ describe("tickets routes", () => {
 
       expect(res.status).toBe(404);
     });
+
+    it("DELETE /:id filters the fetch and delete by organization_id", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({
+        data: { id: "00000000-0000-0000-0000-000000000010", organization_id: ORG },
+        error: null,
+      });
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .delete(`/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(204);
+      expect(builder.eq).toHaveBeenCalledWith("organization_id", ORG);
+    });
+
+    it("DELETE /:id returns 404 for a ticket in another org", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("not found") }),
+      );
+
+      const res = await request(app)
+        .delete(`/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("POST /:id/comments verifies the ticket belongs to the caller's org", async () => {
+      const supabase = mockAuth();
+      const builders: Record<string, any> = {};
+      supabase.from.mockImplementation((table: string) => {
+        const builder = createMockBuilder({ data: COMMENT, error: null });
+        builders[table] = builder;
+        return builder;
+      });
+
+      const res = await request(app)
+        .post(`/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ organizationId: ORG, body: "New comment", isInternal: false });
+
+      expect(res.status).toBe(201);
+      // The ticket ownership fetch must be org-scoped before inserting
+      expect(builders.tickets.eq).toHaveBeenCalledWith("organization_id", ORG);
+    });
+
+    it("POST /:id/comments returns 404 for a ticket in another org", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("not found") }),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/tickets/00000000-0000-0000-0000-000000000010/comments?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ organizationId: ORG, body: "New comment", isInternal: false });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error?.code).toBe("NOT_FOUND");
+    });
   });
 });

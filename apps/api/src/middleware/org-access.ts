@@ -5,8 +5,6 @@ import { getEnv } from "../config/env";
 import { logger } from "../lib/logger";
 import { isPlatformAdminKey } from "../lib/roles";
 
-const isTest = getEnv().NODE_ENV === "test";
-
 function extractOrgId(req: Request): string | null {
   if (req.query.organization_id) return req.query.organization_id as string;
   if (req.body?.organizationId) return req.body.organizationId;
@@ -122,7 +120,8 @@ async function resolveDefaultOrgId(
 }
 
 export async function requireOrgAccess(req: Request, _res: Response, next: NextFunction) {
-  if (isTest) {
+  // Evaluated per-request, not at module load (see requirePermission note).
+  if (getEnv().NODE_ENV === "test") {
     logger.warn("requireOrgAccess bypassed in test mode — tenant isolation not enforced");
     return next();
   }
@@ -166,7 +165,7 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
 }
 
 export async function requireOrgAccessByParam(req: Request, _res: Response, next: NextFunction) {
-  if (isTest) {
+  if (getEnv().NODE_ENV === "test") {
     logger.warn("requireOrgAccessByParam bypassed in test mode — tenant isolation not enforced");
     return next();
   }

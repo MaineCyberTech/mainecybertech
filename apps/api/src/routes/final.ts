@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import {
   sp,
   dp,
@@ -315,9 +316,18 @@ router.post("/procurement/compare", async (req, res, next) => {
   }
 });
 
-router.post("/dns-changes/:id/approve", async (req, res, next) => {
+router.post("/dns-changes/:id/approve", requirePermission("dns-changes", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+    let fetchQuery = supabase.from("dns_change_requests").select("*").eq("id", req.params.id);
+    if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
+    const { data: existing, error: fetchError } = await fetchQuery.single();
+    if (fetchError || !existing) throw new AppError("NOT_FOUND", "DNS change request not found", 404);
+    if (existing.status !== "pending")
+      throw new AppError("INVALID_STATE", "Only pending requests can be approved", 400);
     const { data, error } = await supabase
       .from("dns_change_requests")
       .update({
@@ -325,7 +335,7 @@ router.post("/dns-changes/:id/approve", async (req, res, next) => {
         approved_by: req.authUser!.userId,
       })
       .eq("id", req.params.id)
-      .eq("status", "pending")
+      .eq("organization_id", existing.organization_id)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -343,14 +353,23 @@ router.post("/dns-changes/:id/approve", async (req, res, next) => {
   }
 });
 
-router.post("/dns-changes/:id/reject", async (req, res, next) => {
+router.post("/dns-changes/:id/reject", requirePermission("dns-changes", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+    let fetchQuery = supabase.from("dns_change_requests").select("*").eq("id", req.params.id);
+    if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
+    const { data: existing, error: fetchError } = await fetchQuery.single();
+    if (fetchError || !existing) throw new AppError("NOT_FOUND", "DNS change request not found", 404);
+    if (existing.status !== "pending")
+      throw new AppError("INVALID_STATE", "Only pending requests can be rejected", 400);
     const { data, error } = await supabase
       .from("dns_change_requests")
       .update({ status: "rejected" })
       .eq("id", req.params.id)
-      .eq("status", "pending")
+      .eq("organization_id", existing.organization_id)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -368,9 +387,18 @@ router.post("/dns-changes/:id/reject", async (req, res, next) => {
   }
 });
 
-router.post("/dns-changes/:id/implement", async (req, res, next) => {
+router.post("/dns-changes/:id/implement", requirePermission("dns-changes", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+    let fetchQuery = supabase.from("dns_change_requests").select("*").eq("id", req.params.id);
+    if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
+    const { data: existing, error: fetchError } = await fetchQuery.single();
+    if (fetchError || !existing) throw new AppError("NOT_FOUND", "DNS change request not found", 404);
+    if (existing.status !== "approved")
+      throw new AppError("INVALID_STATE", "Only approved requests can be implemented", 400);
     const { data, error } = await supabase
       .from("dns_change_requests")
       .update({
@@ -378,7 +406,7 @@ router.post("/dns-changes/:id/implement", async (req, res, next) => {
         implemented_at: new Date().toISOString(),
       })
       .eq("id", req.params.id)
-      .eq("status", "approved")
+      .eq("organization_id", existing.organization_id)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);

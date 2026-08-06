@@ -3,14 +3,13 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { AppError } from "../types";
 import { getEnv } from "../config/env";
 
-const isTest = getEnv().NODE_ENV === "test";
-
 export async function requireActiveSubscription(
   req: Request,
   _res: Response,
   next: NextFunction,
 ) {
-  if (isTest) return next();
+  // Evaluated per-request, not at module load (see requirePermission note).
+  if (getEnv().NODE_ENV === "test") return next();
 
   try {
     if (!req.authUser) {

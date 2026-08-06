@@ -9,12 +9,40 @@ export const createChangeSchema = z.object({
   implementationDate: z.string().optional().nullable(),
   verificationSteps: z.string().max(5000).optional().nullable(),
 });
+/**
+ * Update schema for change requests. Deliberately excludes the state-machine
+ * columns (status, approved_by, approved_at, implemented_at, verified_at,
+ * submitted_at, verified_by) — those are only writable through the dedicated
+ * submit/approve/reject/implement/verify transition endpoints, preventing
+ * approver forgery via a generic PATCH.
+ */
+export const updateChangeSchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  description: z.string().max(10000).optional().nullable(),
+  changeType: z.string().optional(),
+  riskLevel: z.string().optional(),
+  rollbackPlan: z.string().max(5000).optional().nullable(),
+  implementationDate: z.string().optional().nullable(),
+  verificationSteps: z.string().max(5000).optional().nullable(),
+});
 export const createRiskSchema = z.object({
   organizationId: z.string().uuid(),
   riskDescription: z.string().min(1).max(2000),
   riskCategory: z.string().default("security"),
   likelihood: z.string().default("medium"),
   impact: z.string().default("medium"),
+  mitigatingControls: z.string().max(5000).optional().nullable(),
+  compensatingControls: z.string().max(5000).optional().nullable(),
+  acceptanceExpires: z.string().optional().nullable(),
+});
+/**
+ * Update schema for risk register entries. Excludes the assessment columns
+ * (likelihood/impact as scores, risk_score, risk_level, assessed_at) which
+ * are only writable through the assess endpoint.
+ */
+export const updateRiskSchema = z.object({
+  riskDescription: z.string().min(1).max(2000).optional(),
+  riskCategory: z.string().optional(),
   mitigatingControls: z.string().max(5000).optional().nullable(),
   compensatingControls: z.string().max(5000).optional().nullable(),
   acceptanceExpires: z.string().optional().nullable(),

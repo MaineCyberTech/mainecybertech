@@ -1,5 +1,6 @@
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
+import { assertSafeUrl } from "../lib/ssrf-guard";
 import type { TaskHandler, TaskResult } from "../task-registry";
 
 type AnyRecord = Record<string, unknown>;
@@ -266,16 +267,23 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
       let responseTimeMs = 0;
       let errorMsg: string | null = null;
 
-      try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
-        const start = performance.now();
-        const response = await fetch(check.url as string, { signal: controller.signal });
-        responseTimeMs = Math.round(performance.now() - start);
-        statusCode = response.status;
-        clearTimeout(timeout);
-      } catch (err) {
-        errorMsg = err instanceof Error ? err.message : String(err);
+      // SSRF guard — uptime check URLs are user-supplied; never fetch
+      // private / loopback / link-local hosts or hostnames resolving to them.
+      const blocked = await assertSafeUrl(check.url as string);
+      if (blocked) {
+        errorMsg = `Blocked: ${blocked}`;
+      } else {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 10000);
+          const start = performance.now();
+          const response = await fetch(check.url as string, { signal: controller.signal });
+          responseTimeMs = Math.round(performance.now() - start);
+          statusCode = response.status;
+          clearTimeout(timeout);
+        } catch (err) {
+          errorMsg = err instanceof Error ? err.message : String(err);
+        }
       }
 
       await (supabase.from("uptime_results") as any).insert({

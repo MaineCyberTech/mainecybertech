@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -365,7 +366,7 @@ router.get("/:id/detail", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id/role", requireAdmin, async (req, res, next) => {
+router.patch("/:id/role", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const { roleId, organizationId } = z
       .object({
@@ -473,7 +474,7 @@ router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
+router.put("/:id/permissions", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const userId = req.params.id;

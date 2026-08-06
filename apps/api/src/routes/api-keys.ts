@@ -4,6 +4,7 @@ import crypto from "crypto";
 import { getSupabaseAdmin } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 
@@ -50,7 +51,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // POST /api/v1/api-keys — create a new API key
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("api-keys", "manage"), async (req, res, next) => {
   try {
     const parsed = createSchema.parse(req.body);
     const { fullKey, prefix, hash } = generateApiKey();
@@ -88,7 +89,7 @@ router.post("/", async (req, res, next) => {
 });
 
 // PATCH /api/v1/api-keys/:id — update (revoke/toggle)
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string;
     const parsed = z
@@ -120,7 +121,7 @@ router.patch("/:id", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "api_key.update",
       entityType: "api_key",
-      entityId: req.params.id,
+      entityId: String(req.params.id),
       metadata: parsed,
     });
 
@@ -131,7 +132,7 @@ router.patch("/:id", async (req, res, next) => {
 });
 
 // DELETE /api/v1/api-keys/:id
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("api-keys", "manage"), async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string;
     const supabase = getSupabaseAdmin();
@@ -145,7 +146,7 @@ router.delete("/:id", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "api_key.delete",
       entityType: "api_key",
-      entityId: req.params.id,
+      entityId: String(req.params.id),
     });
 
     res.status(204).send();

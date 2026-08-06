@@ -189,12 +189,6 @@ crudRoute(
   "onboarding_clients",
   createOnboardingSchema as unknown as Record<string, unknown>,
 );
-crudRoute(
-  "patch-compliance",
-  "patch_compliance",
-  createPatchSchema as unknown as Record<string, unknown>,
-);
-
 router.get("/patch-compliance/stats", async (req, res, next) => {
   try {
     const sb = getSupabaseAdmin();
@@ -230,5 +224,11 @@ router.get("/patch-compliance/stats", async (req, res, next) => {
     next(e);
   }
 });
+
+crudRoute(
+  "patch-compliance",
+  "patch_compliance",
+  createPatchSchema as unknown as Record<string, unknown>,
+);
 
 export default router;

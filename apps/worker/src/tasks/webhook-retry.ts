@@ -1,5 +1,6 @@
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
+import { assertSafeUrl } from "../lib/ssrf-guard";
 import type { TaskResult } from "../task-registry";
 
 const MAX_RETRIES = 5;
@@ -58,6 +59,28 @@ export async function webhookRetry(
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
         };
+
+        // SSRF guard — never retry a webhook URL pointing at private /
+        // loopback / link-local hosts or hostnames resolving to them.
+        const blocked = await assertSafeUrl(endpoint.url);
+        if (blocked) {
+          await supabase
+            .from("webhook_deliveries")
+            .update({ dead_letter: true, next_retry_at: null })
+            .eq("id", delivery.id);
+
+          await supabase.from("webhook_dead_letters").insert({
+            webhook_id: delivery.webhook_id,
+            event: delivery.event,
+            request_body: delivery.request_body,
+            last_error: `Blocked URL: ${blocked}`,
+            attempt_count: (delivery.retry_count ?? 0) + 1,
+            last_attempt_at: new Date().toISOString(),
+          });
+
+          deadLettered++;
+          continue;
+        }
 
         if (endpoint.secret) {
           const crypto = await import("crypto");

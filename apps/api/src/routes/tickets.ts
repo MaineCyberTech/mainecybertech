@@ -5,6 +5,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { createNotification, notifyAndEmail } from "../lib/notify";
@@ -113,7 +114,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("tickets", "create"), async (req, res, next) => {
   try {
     const parsed = createTicketSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -296,12 +297,26 @@ router.post("/:id/comments", async (req, res, next) => {
   try {
     const parsed = addTicketCommentSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+
+    // Verify the ticket exists AND belongs to the caller's org before
+    // commenting — prevents cross-tenant comment injection and notification
+    // spam into the victim org.
+    let ticketQuery = supabase
+      .from("tickets")
+      .select("id, organization_id, title, created_by, assigned_to")
+      .eq("id", req.params.id);
+    if (orgId) ticketQuery = ticketQuery.eq("organization_id", orgId);
+    const { data: ticket, error: ticketError } = await ticketQuery.single();
+    if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
     const { data, error } = await supabase
       .from("ticket_comments")
       .insert({
         ticket_id: req.params.id,
-        organization_id: parsed.organizationId,
+        organization_id: ticket.organization_id,
         author_id: req.authUser!.userId,
         body: parsed.body,
         is_internal: parsed.isInternal,
@@ -312,18 +327,12 @@ router.post("/:id/comments", async (req, res, next) => {
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
-      organizationId: parsed.organizationId,
+      organizationId: ticket.organization_id,
       actorUserId: req.authUser!.userId,
       action: "ticket.comment.add",
       entityType: "ticket_comment",
       entityId: data.id,
     });
-
-    const { data: ticket } = await supabase
-      .from("tickets")
-      .select("title, created_by, assigned_to")
-      .eq("id", req.params.id)
-      .single();
 
     if (ticket) {
       const notifyIds = [ticket.created_by, ticket.assigned_to]
@@ -339,7 +348,7 @@ router.post("/:id/comments", async (req, res, next) => {
         for (const profile of profiles ?? []) {
           await notifyAndEmail({
             userId: profile.id,
-            organizationId: parsed.organizationId,
+            organizationId: ticket.organization_id,
             title: "New Comment on Ticket",
             body: `${req.authUser!.email} commented on "${ticket.title}": "${parsed.body.slice(0, 100)}${parsed.body.length > 100 ? "..." : ""}"`,
             module: "tickets",
@@ -442,18 +451,25 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { data: ticket, error: fetchError } = await supabase
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+
+    let fetchQuery = supabase
       .from("tickets")
       .select("id, organization_id")
-      .eq("id", req.params.id)
-      .single();
+      .eq("id", req.params.id);
+    if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
+    const { data: ticket, error: fetchError } = await fetchQuery.single();
 
     if (fetchError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
-    const { error } = await supabase.from("tickets").delete().eq("id", req.params.id);
+    let deleteQuery = supabase.from("tickets").delete().eq("id", req.params.id);
+    if (orgId) deleteQuery = deleteQuery.eq("organization_id", orgId);
+    const { error } = await deleteQuery;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -462,7 +478,7 @@ router.delete("/:id", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "ticket.delete",
       entityType: "ticket",
-      entityId: req.params.id,
+      entityId: String(req.params.id),
     });
 
     res.status(204).send();

@@ -102,6 +102,100 @@ describe("Governance API", () => {
     expect(r.status).toBe(200);
   });
 
+  it("PATCH /change-requests/:id strips state-machine fields (status/approved_by)", async () => {
+    const s = ma();
+    const builder = createMockBuilder({ data: { id: "ch-1", title: "Updated FW" }, error: null });
+    s.from.mockReturnValue(builder);
+
+    const r = await request(app)
+      .patch(`/api/v1/governance/change-requests/ch-1?organization_id=${org}`)
+      .set("Authorization", auth)
+      .send({
+        title: "Updated FW",
+        status: "approved",
+        approved_by: "attacker-user",
+        approved_at: "2026-08-06T00:00:00Z",
+      });
+
+    expect(r.status).toBe(200);
+    // Only editable content fields reach the UPDATE — status/approver columns
+    // are not writable via PATCH (they are transition-only).
+    expect(builder.update).toHaveBeenCalledWith({ title: "Updated FW" });
+  });
+
+  describe("change-request transitions", () => {
+    it("approves a pending_review change request", async () => {
+      const s = ma();
+      s.from.mockReturnValue(
+        createMockBuilder({
+          data: { id: "ch-1", organization_id: org, status: "approved" },
+          error: null,
+        }),
+      );
+      const r = await request(app)
+        .post(`/api/v1/governance/change-requests/ch-1/approve?organization_id=${org}`)
+        .set("Authorization", auth);
+      expect(r.status).toBe(200);
+      expect(r.body.data.status).toBe("approved");
+    });
+
+    it("approve returns 404 for a change request in another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      const r = await request(app)
+        .post(`/api/v1/governance/change-requests/ch-1/approve?organization_id=${org}`)
+        .set("Authorization", auth);
+      expect(r.status).toBe(404);
+      expect(r.body.error?.code).toBe("NOT_FOUND");
+    });
+
+    it("reject returns 404 for a change request in another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      const r = await request(app)
+        .post(`/api/v1/governance/change-requests/ch-1/reject?organization_id=${org}`)
+        .set("Authorization", auth);
+      expect(r.status).toBe(404);
+    });
+
+    it("implement returns 404 for a change request in another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      const r = await request(app)
+        .post(`/api/v1/governance/change-requests/ch-1/implement?organization_id=${org}`)
+        .set("Authorization", auth);
+      expect(r.status).toBe(404);
+    });
+
+    it("verify returns 404 for a change request in another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      const r = await request(app)
+        .post(`/api/v1/governance/change-requests/ch-1/verify?organization_id=${org}`)
+        .set("Authorization", auth);
+      expect(r.status).toBe(404);
+    });
+
+    it("submit returns 404 for a change request in another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      const r = await request(app)
+        .post(`/api/v1/governance/change-requests/ch-1/submit?organization_id=${org}`)
+        .set("Authorization", auth);
+      expect(r.status).toBe(404);
+    });
+
+    it("risks assess returns 404 for a risk in another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      const r = await request(app)
+        .post(`/api/v1/governance/risks/r-1/assess?organization_id=${org}`)
+        .set("Authorization", auth)
+        .send({ likelihood: 4, impact: 3 });
+      expect(r.status).toBe(404);
+    });
+  });
+
   it("deletes a change request", async () => {
     const s = ma();
     s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));

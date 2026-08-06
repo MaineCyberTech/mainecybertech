@@ -139,9 +139,9 @@ describe("project tracker routes", () => {
   describe("DELETE /phases/:id", () => {
     it("deletes a phase", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
-        createMockBuilder({ data: null, error: null }),
-      );
+      (getSupabaseAdmin as jest.Mock)().from
+        .mockReturnValueOnce(createMockBuilder({ data: PHASE, error: null }))
+        .mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/projects/phases/00000000-0000-0000-0000-000000000050")
@@ -261,15 +261,128 @@ describe("project tracker routes", () => {
   describe("DELETE /milestones/:id", () => {
     it("deletes a milestone", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
-        createMockBuilder({ data: null, error: null }),
-      );
+      (getSupabaseAdmin as jest.Mock)().from
+        .mockReturnValueOnce(createMockBuilder({ data: MILESTONE, error: null }))
+        .mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/projects/milestones/00000000-0000-0000-0000-000000000051")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
+    });
+  });
+
+  describe("by-id tenant scoping", () => {
+    const ORG = "00000000-0000-0000-0000-000000000001";
+    const OTHER_ORG = "00000000-0000-0000-0000-000000000002";
+
+    it("GET /phases returns 404 when the parent project is in another org", async () => {
+      mockAuth();
+      // project ownership check fails -> 404 before any phase rows are read
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("not found") }),
+      );
+
+      const res = await request(app)
+        .get(
+          `/api/v1/projects/phases?project_id=00000000-0000-0000-0000-000000000030&organization_id=${ORG}`,
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("POST /phases returns 404 when the parent project is in another org", async () => {
+      mockAuth();
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("not found") }),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/projects/phases?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({
+          projectId: "00000000-0000-0000-0000-000000000030",
+          name: "Phase 1",
+          status: "planned",
+          sortOrder: 0,
+        });
+
+      expect(res.status).toBe(404);
+    });
+
+    it("PATCH /phases/:id returns 404 for a phase whose project is in another org", async () => {
+      mockAuth();
+      (getSupabaseAdmin as jest.Mock)().from
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { id: "phase-b", project_id: "00000000-0000-0000-0000-000000000099" },
+            error: null,
+          }),
+        )
+        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+
+      const res = await request(app)
+        .patch(`/api/v1/projects/phases/phase-b?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ name: "Renamed" });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error?.code).toBe("NOT_FOUND");
+    });
+
+    it("PATCH /phases/:id scopes the parent project lookup to the caller's org", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({
+        data: { id: "phase-b", project_id: "00000000-0000-0000-0000-000000000030" },
+        error: null,
+      });
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .patch(`/api/v1/projects/phases/phase-b?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ name: "Renamed" });
+
+      expect(res.status).toBe(200);
+      expect(builder.eq).toHaveBeenCalledWith("organization_id", ORG);
+    });
+
+    it("DELETE /phases/:id returns 404 for a phase whose project is in another org", async () => {
+      mockAuth();
+      (getSupabaseAdmin as jest.Mock)().from
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { id: "phase-b", project_id: "00000000-0000-0000-0000-000000000099" },
+            error: null,
+          }),
+        )
+        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+
+      const res = await request(app)
+        .delete(`/api/v1/projects/phases/phase-b?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("DELETE /milestones/:id returns 404 for a milestone in another org", async () => {
+      mockAuth();
+      (getSupabaseAdmin as jest.Mock)().from
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { id: "ms-b", project_id: "00000000-0000-0000-0000-000000000099" },
+            error: null,
+          }),
+        )
+        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+
+      const res = await request(app)
+        .delete(`/api/v1/projects/milestones/ms-b?organization_id=${OTHER_ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
     });
   });
 

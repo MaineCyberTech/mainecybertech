@@ -1,8 +1,4 @@
 {
-  "auth": {
-    "count": 1,
-    "p0": 0
-  },
   "tenancy": {
     "count": 3,
     "p0": 1

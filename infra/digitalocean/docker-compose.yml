@@ -130,13 +130,16 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus.rules.yml:/etc/prometheus/rules.yml:ro
+      # Named volume (not tmpfs): TSDB must survive restarts/deploys or the 30d
+      # retention window is lost on every compose down/up. tmpfs also blew the
+      # 256MB mem_limit. Disk is cheap; metrics history is not.
+      - prom-data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=30d
       - --web.enable-lifecycle
     tmpfs:
-      - /prometheus
       - /tmp
     restart: unless-stopped
     mem_limit: 256m
@@ -166,3 +169,4 @@ volumes:
   redis-data:
   caddy-data:
   caddy-config:
+  prom-data:

@@ -1,19 +1,7 @@
 {
-  "total": 13,
-  "generated_at": "2026-08-01T06:31:21.973976+00:00",
+  "total": 12,
+  "generated_at": "2026-08-06T21:21:31.519069+00:00",
   "findings": [
-    {
-      "severity": "P1",
-      "domain": "security",
-      "category": "auth",
-      "file": "apps/api/src/middleware/auth.ts",
-      "endpoint": "ALL /api/v1/* routes",
-      "data_path": "JWT \u2192 Supabase auth.getUser() \u2192 connection",
-      "issue": "JWT fallback to Supabase getUser() has no timeout",
-      "exploit_chain": "Attacker sends batch of expired/garbage tokens \u2192 each falls through 1-2 JWT secret attempts \u2192 Supabase getUser() hangs for 30s \u2192 connection pool exhaustion \u2192 denial of service for legitimate users",
-      "impact": "DoS via connection pool exhaustion by sending many invalid JWTs",
-      "fix": "Add AbortSignal.timeout(5000) to supabase.auth.getUser(token) call in the fallback path"
-    },
     {
       "severity": "P0",
       "domain": "security",
@@ -79,7 +67,7 @@
       "domain": "resilience",
       "scenario": "Partial write failure in bulk operations",
       "file": "admin\\BulkInviteForm.tsx",
-      "issue": "Bulk operation in 1 file(s) uses catch+console.error instead of checking per-item .ok status",
+      "issue": "Bulk operation in 2 file(s) uses catch+console.error instead of checking per-item .ok status",
       "behavior": "User selects 10 documents \u2192 clicks 'Delete' \u2192 7 succeed, 3 fail \u2192 catch block logs error \u2192 UI shows success toast \u2192 user thinks all 10 deleted \u2192 data inconsistency",
       "impact": "Users unaware of partial failures \u2014 data inconsistency silently introduced",
       "fix": "Return {ok, error} per item from API and surface partial failures in UI with detailed error list"

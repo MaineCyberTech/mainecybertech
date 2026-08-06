@@ -12,6 +12,12 @@ on:
 permissions:
   contents: read
 
+# Serialize migration runs per branch: concurrent `supabase db push` against the
+# same hosted project can interleave and corrupt the migrations table.
+concurrency:
+  group: supabase-migrations-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   migrate:
     runs-on: ubuntu-latest
@@ -32,7 +38,9 @@ jobs:
           corepack prepare pnpm@10 --activate
 
       - name: Install Supabase CLI
-        run: npm install -g supabase
+        # Pinned to 2.107.0 to match the repo's pnpm-lock.yaml (supabase@2.107.0).
+        # Unpinned installs made migration behavior nondeterministic.
+        run: npm install -g supabase@2.107.0
 
       - name: Link project
         run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}

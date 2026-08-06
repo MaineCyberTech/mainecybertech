@@ -552,6 +552,9 @@ describe("projects routes", () => {
   describe("POST /:id/tasks/:taskId/read", () => {
     it("marks a task as read via RPC", async () => {
       const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { id: "00000000-0000-0000-0000-000000000030" }, error: null }),
+      );
       supabase.rpc.mockResolvedValue({ data: null, error: null });
 
       const res = await request(app)
@@ -573,6 +576,7 @@ describe("projects routes", () => {
   describe("POST /:id/tasks/:taskId/approve", () => {
     it("approves a task via RPC", async () => {
       const supabase = mockAuth();
+      supabase.from.mockReturnValue(createMockBuilder({ data: PROJECT, error: null }));
       supabase.rpc.mockResolvedValue({ data: null, error: null });
 
       const res = await request(app)
@@ -590,6 +594,9 @@ describe("projects routes", () => {
   describe("POST /:id/tasks/:taskId/portal-comment", () => {
     it("adds a portal comment via RPC", async () => {
       const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { id: "00000000-0000-0000-0000-000000000030" }, error: null }),
+      );
       supabase.rpc.mockResolvedValue({ data: null, error: null });
 
       const res = await request(app)
@@ -600,6 +607,124 @@ describe("projects routes", () => {
         .send({ organizationId: "00000000-0000-0000-0000-000000000001", body: "Portal comment" });
 
       expect(res.status).toBe(201);
+    });
+  });
+
+  describe("by-id tenant scoping", () => {
+    const ORG = "00000000-0000-0000-0000-000000000001";
+
+    function mockMissingProject() {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("not found") }),
+      );
+      return supabase;
+    }
+
+    it("PATCH /:id filters the fetch and update by organization_id", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: PROJECT, error: null });
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .patch(`/api/v1/projects/00000000-0000-0000-0000-000000000030?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ name: "Updated" });
+
+      expect(res.status).toBe(200);
+      expect(builder.eq).toHaveBeenCalledWith("organization_id", ORG);
+    });
+
+    it("PATCH /:id returns 404 when the project is in another org", async () => {
+      mockMissingProject();
+
+      const res = await request(app)
+        .patch(`/api/v1/projects/00000000-0000-0000-0000-000000000999?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ name: "Updated" });
+
+      expect(res.status).toBe(404);
+    });
+
+    it("GET /:id/tasks returns 404 when the project is in another org", async () => {
+      mockMissingProject();
+
+      const res = await request(app)
+        .get(`/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("POST /:id/tasks returns 404 when the project is in another org", async () => {
+      mockMissingProject();
+
+      const res = await request(app)
+        .post(`/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ title: "New Task", status: "todo", sortOrder: 1, approvalRequired: false });
+
+      expect(res.status).toBe(404);
+    });
+
+    it("DELETE /:id/tasks/:taskId returns 404 when the project is in another org", async () => {
+      mockMissingProject();
+
+      const res = await request(app)
+        .delete(
+          `/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031?organization_id=${ORG}`,
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("POST /:id/tasks/:taskId/comments returns 404 when the project is in another org", async () => {
+      mockMissingProject();
+
+      const res = await request(app)
+        .post(
+          `/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/comments?organization_id=${ORG}`,
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ body: "New comment", isInternal: false });
+
+      expect(res.status).toBe(404);
+    });
+
+    it("POST /:id/tasks/reorder returns 404 when the project is in another org", async () => {
+      mockMissingProject();
+
+      const res = await request(app)
+        .post(`/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/reorder?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ order: ["00000000-0000-0000-0000-000000000031"] });
+
+      expect(res.status).toBe(404);
+    });
+
+    it("POST /:id/updates returns 404 when the project is in another org", async () => {
+      mockMissingProject();
+
+      const res = await request(app)
+        .post(`/api/v1/projects/00000000-0000-0000-0000-000000000030/updates?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ body: "Update", isInternal: false, isPinned: false });
+
+      expect(res.status).toBe(404);
+    });
+
+    it("POST /:id/tasks/:taskId/read returns 404 when the project is in another org", async () => {
+      mockMissingProject();
+
+      const res = await request(app)
+        .post(
+          `/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/00000000-0000-0000-0000-000000000031/read?organization_id=${ORG}`,
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ organizationId: ORG });
+
+      expect(res.status).toBe(404);
     });
   });
 

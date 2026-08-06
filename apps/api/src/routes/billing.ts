@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import { AppError, success } from "../types";
 import { getEnv } from "../config/env";
 import { httpClients } from "../lib/http-client";
@@ -162,7 +162,7 @@ router.get("/billing-customer", async (req, res, next) => {
   }
 });
 
-router.post("/sync", requireAdmin, async (req, res, next) => {
+router.post("/sync", requirePermission("billing", "manage"), async (req, res, next) => {
   try {
     const { organizationId } = z
       .object({ organizationId: z.string().uuid().optional() })
@@ -280,7 +280,13 @@ router.post("/create-portal-session", async (req, res, next) => {
     if (!stripeKey) throw new AppError("CONFIG", "STRIPE_SECRET_KEY not configured", 500);
 
     const supabase = getSupabaseAdmin();
-    const orgId = req.query.organization_id as string | undefined;
+    const activeOrgHeader =
+      typeof req.headers?.["x-active-org"] === "string" ? (req.headers["x-active-org"] as string) : undefined;
+    const orgId =
+      (req.body?.organizationId as string | undefined) ??
+      (req.query.organization_id as string | undefined) ??
+      (activeOrgHeader?.length ? activeOrgHeader : undefined) ??
+      (req.cookies?.["mct_active_org"] as string | undefined);
     if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
 
     const { data: customer, error } = await supabase

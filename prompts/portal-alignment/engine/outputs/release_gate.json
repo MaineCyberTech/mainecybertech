@@ -10,6 +10,6 @@
     "P3": 3
   },
   "total_findings": 6,
-  "timestamp": "2026-08-01T06:33:06.170225+00:00",
-  "commit": "a585f1d feat: comprehensive detailed runbook procedures for all 245 products"
+  "timestamp": "2026-08-06T21:22:14.204060+00:00",
+  "commit": "75d3926 test-data: cover admin workflow-button states (phishing launch + CAB approve/reject)"
 }

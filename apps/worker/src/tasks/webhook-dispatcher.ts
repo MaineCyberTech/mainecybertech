@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
+import { assertSafeUrl } from "../lib/ssrf-guard";
 import type { TaskHandler, TaskResult } from "../task-registry";
 
 type DispatchPayload = {
@@ -54,6 +55,27 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
       if (endpoint.secret) {
         const hmac = crypto.createHmac("sha256", endpoint.secret).update(body).digest("hex");
         headers["X-Webhook-Signature"] = `sha256=${hmac}`;
+      }
+
+      // SSRF guard — endpoint URLs are user-supplied; never dispatch to
+      // private / loopback / link-local hosts or hostnames resolving to them.
+      const blocked = await assertSafeUrl(endpoint.url);
+      if (blocked) {
+        failCount++;
+        await (supabase.from("webhook_deliveries") as any).insert({
+          webhook_id: endpoint.id,
+          event,
+          status: "failed",
+          request_body: { event, data },
+          error: `Blocked URL: ${blocked}`,
+        });
+        await (supabase.from("webhook_endpoints") as any)
+          .update({
+            last_failure_at: new Date().toISOString(),
+            last_error: `Blocked URL: ${blocked}`,
+          })
+          .eq("id", endpoint.id);
+        continue;
       }
 
       const start = Date.now();

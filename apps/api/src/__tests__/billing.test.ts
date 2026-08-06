@@ -13,13 +13,29 @@ jest.mock("../config/env", () => ({
     CORS_ORIGIN: "*",
     LOG_LEVEL: "silent",
     API_PORT: 4000,
+    APP_BASE_URL: "http://localhost:3000",
+    STRIPE_SECRET_KEY: "sk_test_x",
+    STRIPE_WEBHOOK_SECRET: "",
   }),
 }));
 
 jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn() }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../lib/http-client", () => ({
+  httpClients: {
+    stripe: {
+      fetch: jest.fn(),
+      get: jest.fn(),
+      post: jest.fn(),
+      put: jest.fn(),
+      patch: jest.fn(),
+      delete: jest.fn(),
+    },
+  },
+}));
 
 import { getSupabaseAdmin } from "../services/supabase";
+import { httpClients } from "../lib/http-client";
 
 function mockAuth() {
   const supabase: any = { from: jest.fn(), auth: { getUser: jest.fn() } };
@@ -127,5 +143,91 @@ describe("billing routes", () => {
   it("GET / returns 401 without auth", async () => {
     const res = await request(app).get("/api/v1/billing/invoices");
     expect(res.status).toBe(401);
+  });
+
+  describe("POST /create-portal-session", () => {
+    function mockStripePortal() {
+      (httpClients.stripe.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        json: async () => ({ url: "https://billing.stripe.com/session/xyz" }),
+      });
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { stripe_customer_id: "cus_123" },
+          error: null,
+        } as MockResult),
+      );
+    }
+
+    it("reads the org from the body (SDK sends organizationId in the body)", async () => {
+      mockStripePortal();
+      const res = await request(app)
+        .post("/api/v1/billing/create-portal-session")
+        .set("Authorization", "Bearer token")
+        .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
+      expect(res.status).toBe(200);
+      expect(res.body.data.url).toBe("https://billing.stripe.com/session/xyz");
+      const builder = supabase.from.mock.results[0].value as ReturnType<
+        typeof createMockBuilder
+      >;
+      expect(builder.eq).toHaveBeenCalledWith(
+        "organization_id",
+        "00000000-0000-0000-0000-000000000001",
+      );
+    });
+
+    it("still accepts organization_id from the query string", async () => {
+      mockStripePortal();
+      const res = await request(app)
+        .post("/api/v1/billing/create-portal-session?organization_id=00000000-0000-0000-0000-000000000001")
+        .set("Authorization", "Bearer token");
+      expect(res.status).toBe(200);
+      const builder = supabase.from.mock.results[0].value as ReturnType<
+        typeof createMockBuilder
+      >;
+      expect(builder.eq).toHaveBeenCalledWith(
+        "organization_id",
+        "00000000-0000-0000-0000-000000000001",
+      );
+    });
+
+    it("falls back to the X-Active-Org header (web client sends no body org)", async () => {
+      mockStripePortal();
+      const res = await request(app)
+        .post("/api/v1/billing/create-portal-session")
+        .set("Authorization", "Bearer token")
+        .set("X-Active-Org", "00000000-0000-0000-0000-000000000001");
+      expect(res.status).toBe(200);
+      const builder = supabase.from.mock.results[0].value as ReturnType<
+        typeof createMockBuilder
+      >;
+      expect(builder.eq).toHaveBeenCalledWith(
+        "organization_id",
+        "00000000-0000-0000-0000-000000000001",
+      );
+    });
+
+    it("returns 400 when no org can be resolved", async () => {
+      mockStripePortal();
+      const res = await request(app)
+        .post("/api/v1/billing/create-portal-session")
+        .set("Authorization", "Bearer token");
+      expect(res.status).toBe(400);
+    });
+
+    it("returns 404 when the org has no Stripe customer", async () => {
+      mockStripePortal();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: null,
+          error: { code: "PGRST116", message: "No rows" },
+        } as MockResult),
+      );
+      const res = await request(app)
+        .post("/api/v1/billing/create-portal-session")
+        .set("Authorization", "Bearer token")
+        .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
+      expect(res.status).toBe(404);
+    });
   });
 });

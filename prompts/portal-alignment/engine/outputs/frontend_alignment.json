@@ -11,7 +11,7 @@
       "severity": "P3",
       "domain": "frontend",
       "title": "Route groups missing loading/error boundaries",
-      "count": 248,
+      "count": 304,
       "examples": [
         {
           "route": "",
@@ -42,15 +42,15 @@
     }
   ],
   "component_counts": {
-    "admin": 28,
+    "admin": 36,
     "portal": 14,
     "marketing": 4,
-    "total": 75
+    "total": 86
   },
   "route_groups": [
     "(admin)",
     "(portal)",
     "(public)"
   ],
-  "page_count": 279
+  "page_count": 338
 }

@@ -18,6 +18,12 @@ permissions:
   id-token: write
   pull-requests: write
 
+# Serialize terraform runs per branch: concurrent applies could corrupt the
+# shared DO Spaces state lock or race each other (e.g. a push and a manual apply).
+concurrency:
+  group: terraform-do-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   terraform-plan:
     runs-on: ubuntu-latest
@@ -115,9 +121,33 @@ jobs:
           path: infra/terraform/digitalocean/tfplan
           retention-days: 1
 
-  terraform-apply-prod:
+  # ===== Deployment gates =====
+  # validate always runs for every terraform run (test + lint + typecheck).
+  validate-gate:
+    needs: terraform-plan
+    uses: ./.github/workflows/validate.yml
+    secrets: inherit
+
+  # e2e + migrations: required for the PROD apply only (firewall changes must not
+  # ship with untested/ummigrated code — a malicious or broken PR could otherwise
+  # silently open firewall rules). Skipped on develop to keep dev applies fast;
+  # skipped jobs do not block the apply because apply-prod guards with
+  # !failure() && !cancelled().
+  e2e-gate:
     needs: terraform-plan
     if: github.ref_name == 'main'
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+
+  migrate-gate:
+    needs: terraform-plan
+    if: github.ref_name == 'main'
+    uses: ./.github/workflows/supabase-migrations.yml
+    secrets: inherit
+
+  terraform-apply-prod:
+    needs: [terraform-plan, validate-gate, e2e-gate, migrate-gate]
+    if: ${{ github.ref_name == 'main' && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     environment: prod-approval
     defaults:
@@ -156,8 +186,8 @@ jobs:
           echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
 
   terraform-apply-dev:
-    needs: terraform-plan
-    if: github.ref_name == 'develop'
+    needs: [terraform-plan, validate-gate]
+    if: ${{ github.ref_name == 'develop' && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     environment: dev
     defaults:

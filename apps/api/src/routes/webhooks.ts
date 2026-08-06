@@ -7,7 +7,7 @@ import { failure, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
 import { verifyWebhookSignature, validateWebhookTimestamp } from "../lib/webhook-signature";
-import { claimIdempotencyKey, storeIdempotencyKey } from "../lib/idempotency";
+import { claimIdempotencyKey, storeIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
 import { recordWebhookDelivery } from "../lib/metrics";
 
 const router: ReturnType<typeof Router> = Router();
@@ -63,6 +63,7 @@ const JSM_STATUS_MAP: Record<string, string> = {
 };
 
 router.post("/stripe", async (req, res, next) => {
+  let claimedKey: string | null = null;
   try {
     const signature = req.headers["stripe-signature"] as string | undefined;
     if (!signature) {
@@ -94,6 +95,7 @@ router.post("/stripe", async (req, res, next) => {
     logger.info({ type: event.type, id: event.id }, "Stripe webhook received");
 
     const stripeKey = `stripe-${event.id}`;
+    claimedKey = stripeKey;
     if (await dedupWebhook(stripeKey)) {
       res.json(success({ received: true }));
       return;
@@ -202,6 +204,11 @@ router.post("/stripe", async (req, res, next) => {
 
     res.json(success({ received: true }));
   } catch (error) {
+    // Release the claim so Stripe's retry can reprocess the event
+    // (claim-before-process must not persist a "duplicate" on failure).
+    if (claimedKey) {
+      await deleteIdempotencyKey(claimedKey).catch(() => undefined);
+    }
     next(error);
   }
 });
@@ -243,42 +250,53 @@ router.post("/jira", async (req, res, next) => {
       return;
     }
 
-    const jiraKey = `jira-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}`;
+    const jiraKey = `jira-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}-${crypto
+      .createHash("sha256")
+      .update(rawBody)
+      .digest("hex")
+      .slice(0, 16)}`;
     if (await dedupWebhook(jiraKey)) {
       res.json(success({ received: true }));
       return;
     }
 
-    if (issueKey && statusName) {
-      const supabase = getSupabaseAdmin();
-      const mappedStatus =
-        JIRA_STATUS_MAP[statusName] ?? statusName.toLowerCase().replace(/\s+/g, "_");
-      const { data: task } = await supabase
-        .from("project_tasks")
-        .select("id, status")
-        .eq("external_jira_issue_key", issueKey)
-        .single();
+    try {
+      if (issueKey && statusName) {
+        const supabase = getSupabaseAdmin();
+        const mappedStatus =
+          JIRA_STATUS_MAP[statusName] ?? statusName.toLowerCase().replace(/\s+/g, "_");
+        const { data: task } = await supabase
+          .from("project_tasks")
+          .select("id, status")
+          .eq("external_jira_issue_key", issueKey)
+          .single();
 
-      if (task && task.status !== mappedStatus) {
-        await supabase.from("project_tasks").update({ status: mappedStatus }).eq("id", task.id);
-        logger.info(
-          { issueKey, taskId: task.id, from: task.status, to: mappedStatus },
-          "Task status synced from Jira webhook",
-        );
+        if (task && task.status !== mappedStatus) {
+          await supabase.from("project_tasks").update({ status: mappedStatus }).eq("id", task.id);
+          logger.info(
+            { issueKey, taskId: task.id, from: task.status, to: mappedStatus },
+            "Task status synced from Jira webhook",
+          );
+        }
       }
+
+      await logAuditEvent({
+        actorType: "system",
+        action: `jira.${event.webhookEvent ?? "unknown"}`,
+        entityType: "jira_event",
+        metadata: { issue: issueKey, summary, status: statusName },
+      });
+
+      await logWebhookDelivery(`jira.${event.webhookEvent ?? "unknown"}`, req.body, jiraKey);
+      recordWebhookDelivery("success", `jira.${event.webhookEvent ?? "unknown"}`);
+
+      res.json(success({ received: true }));
+    } catch (error) {
+      // Release the claim so the sender's retry can reprocess the event
+      // (claim-before-process must not persist a "duplicate" on failure).
+      await deleteIdempotencyKey(jiraKey).catch(() => undefined);
+      next(error);
     }
-
-    await logAuditEvent({
-      actorType: "system",
-      action: `jira.${event.webhookEvent ?? "unknown"}`,
-      entityType: "jira_event",
-      metadata: { issue: issueKey, summary, status: statusName },
-    });
-
-    await logWebhookDelivery(`jira.${event.webhookEvent ?? "unknown"}`, req.body, jiraKey);
-    recordWebhookDelivery("success", `jira.${event.webhookEvent ?? "unknown"}`);
-
-    res.json(success({ received: true }));
   } catch (error) {
     next(error);
   }
@@ -321,47 +339,58 @@ router.post("/jsm", async (req, res, next) => {
       return;
     }
 
-    const jsmKey = `jsm-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}`;
+    const jsmKey = `jsm-${event.webhookEvent ?? "unknown"}-${issueKey ?? "unknown"}-${crypto
+      .createHash("sha256")
+      .update(rawBody)
+      .digest("hex")
+      .slice(0, 16)}`;
     if (await dedupWebhook(jsmKey)) {
       res.json(success({ received: true }));
       return;
     }
 
-    if (issueKey && statusName) {
-      const supabase = getSupabaseAdmin();
-      const mappedStatus =
-        JSM_STATUS_MAP[statusName] ?? statusName.toLowerCase().replace(/\s+/g, "_");
-      const { data: ticket } = await supabase
-        .from("tickets")
-        .select("id, status")
-        .eq("external_jsm_issue_key", issueKey)
-        .single();
+    try {
+      if (issueKey && statusName) {
+        const supabase = getSupabaseAdmin();
+        const mappedStatus =
+          JSM_STATUS_MAP[statusName] ?? statusName.toLowerCase().replace(/\s+/g, "_");
+        const { data: ticket } = await supabase
+          .from("tickets")
+          .select("id, status")
+          .eq("external_jsm_issue_key", issueKey)
+          .single();
 
-      if (ticket && ticket.status !== mappedStatus) {
-        await supabase.from("tickets").update({ status: mappedStatus }).eq("id", ticket.id);
-        logger.info(
-          {
-            issueKey,
-            ticketId: ticket.id,
-            from: ticket.status,
-            to: mappedStatus,
-          },
-          "Ticket status synced from JSM webhook",
-        );
+        if (ticket && ticket.status !== mappedStatus) {
+          await supabase.from("tickets").update({ status: mappedStatus }).eq("id", ticket.id);
+          logger.info(
+            {
+              issueKey,
+              ticketId: ticket.id,
+              from: ticket.status,
+              to: mappedStatus,
+            },
+            "Ticket status synced from JSM webhook",
+          );
+        }
       }
+
+      await logAuditEvent({
+        actorType: "system",
+        action: `jsm.${event.webhookEvent ?? "unknown"}`,
+        entityType: "jsm_event",
+        metadata: { issue: issueKey, summary, status: statusName },
+      });
+
+      await logWebhookDelivery(`jsm.${event.webhookEvent ?? "unknown"}`, req.body, jsmKey);
+      recordWebhookDelivery("success", `jsm.${event.webhookEvent ?? "unknown"}`);
+
+      res.json(success({ received: true }));
+    } catch (error) {
+      // Release the claim so the sender's retry can reprocess the event
+      // (claim-before-process must not persist a "duplicate" on failure).
+      await deleteIdempotencyKey(jsmKey).catch(() => undefined);
+      next(error);
     }
-
-    await logAuditEvent({
-      actorType: "system",
-      action: `jsm.${event.webhookEvent ?? "unknown"}`,
-      entityType: "jsm_event",
-      metadata: { issue: issueKey, summary, status: statusName },
-    });
-
-    await logWebhookDelivery(`jsm.${event.webhookEvent ?? "unknown"}`, req.body, jsmKey);
-    recordWebhookDelivery("success", `jsm.${event.webhookEvent ?? "unknown"}`);
-
-    res.json(success({ received: true }));
   } catch (error) {
     next(error);
   }
@@ -378,6 +407,7 @@ router.get("/m365", (req, res) => {
 });
 
 router.post("/m365", async (req, res, next) => {
+  let claimedKey: string | null = null;
   try {
     const event = req.body;
     logger.info({ resource: event.resource }, "M365 webhook received");
@@ -430,6 +460,7 @@ router.post("/m365", async (req, res, next) => {
       .digest("hex")
       .slice(0, 16);
     const m365Key = `m365-${resource ?? "unknown"}-${changeType ?? "unknown"}-${notification?.subscriptionExpirationDateTime ?? "no-expiry"}-${eventDigest}`;
+    claimedKey = m365Key;
     if (await dedupWebhook(m365Key)) {
       res.json(success({ received: true }));
       return;
@@ -447,6 +478,11 @@ router.post("/m365", async (req, res, next) => {
 
     res.json(success({ received: true }));
   } catch (error) {
+    // Release the claim so Graph's retry can reprocess the notification
+    // (claim-before-process must not persist a "duplicate" on failure).
+    if (claimedKey) {
+      await deleteIdempotencyKey(claimedKey).catch(() => undefined);
+    }
     next(error);
   }
 });

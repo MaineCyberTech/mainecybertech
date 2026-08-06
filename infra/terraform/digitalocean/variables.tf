@@ -74,7 +74,16 @@ variable "docker_compose_dir" {
 }
 
 variable "admin_ip_ranges" {
-  description = "IP ranges allowed to SSH into the droplet. In production, restrict to office/VPN IPs."
+  # WARNING: the default opens SSH to the entire internet. This is acceptable ONLY
+  # because (a) SSH is key-only (no password auth), (b) the droplet runs no other
+  # inbound services on 22, and (c) production terraform applies are gated by
+  # prod-approval + validate/e2e/migrations in .github/workflows/terraform-do.yml.
+  # For production, SET THIS to your office/VPN CIDRs (e.g. ["203.0.113.0/24"]) —
+  # this restricts both the DigitalOcean firewall (firewall.tf) and the in-droplet
+  # UFW rule (cloud-init.yml) since cloud-init renders per-CIDR `ufw allow from ...`
+  # rules from this list. GitHub Actions egress IPs are dynamic, so the deploy
+  # workflow cannot be pinned; key-only auth is the defense for CI deploys.
+  description = "IP ranges allowed to SSH into the droplet. In production, restrict to office/VPN IPs. Default 0.0.0.0/0 is a convenience for CI deploys (GitHub Actions egress IPs are dynamic); key-only auth is enforced on the droplet."
   type        = list(string)
   default     = ["0.0.0.0/0", "::/0"]
 }

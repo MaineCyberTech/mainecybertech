@@ -1,7 +1,7 @@
 # Portal Alignment Dashboard v3
 
-**Run:** 2026-08-01T06:33:06.170225+00:00
-**Commit:** a585f1d feat: comprehensive detailed runbook procedures for all 245 products
+**Run:** 2026-08-06T21:22:14.204060+00:00
+**Commit:** 75d3926 test-data: cover admin workflow-button states (phishing launch + CAB approve/reject)
 **Readiness Score:** 91/100
 **Release Decision:** APPROVED_FOR_PROD_DEPLOY
 

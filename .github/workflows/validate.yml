@@ -21,8 +21,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Dependency audit
+        # Hard fail: high/critical vulnerabilities block the deploy gate (and
+        # every workflow that calls validate.yml, including terraform-do prod apply).
         run: pnpm audit --audit-level=high
-        continue-on-error: true
 
   test:
     timeout-minutes: 30

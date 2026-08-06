@@ -5,7 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import { updateMembershipSchema } from "../validators/membership";
 
 const router: ReturnType<typeof Router> = Router();
@@ -58,7 +58,7 @@ router.get("/mine", async (req, res, next) => {
   }
 });
 
-router.post("/invite", requireAdmin, async (req, res, next) => {
+router.post("/invite", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const { organizationId, email, roleId } = z
       .object({
@@ -119,7 +119,7 @@ router.post("/invite", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireAdmin, async (req, res, next) => {
+router.patch("/:id", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const parsed = updateMembershipSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -153,7 +153,7 @@ router.patch("/:id", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", requireAdmin, async (req, res, next) => {
+router.delete("/:id", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("memberships").delete().eq("id", req.params.id);

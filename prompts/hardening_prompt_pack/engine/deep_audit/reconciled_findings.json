@@ -1,5 +1,5 @@
 {
-  "total": 13,
+  "total": 12,
   "action_plan": [
     {
       "priority": "P0",
@@ -7,13 +7,6 @@
       "file": "apps/api/src/routes/users.ts",
       "issue": "Users router has no requireOrgAccess \u2014 any authenticated user can access any user's data",
       "action": "Add requireOrgAccess middleware or per-route org membership checks on users router"
-    },
-    {
-      "priority": "P1",
-      "domain": "security",
-      "file": "apps/api/src/middleware/auth.ts",
-      "issue": "JWT fallback to Supabase getUser() has no timeout",
-      "action": "Add AbortSignal.timeout(5000) to supabase.auth.getUser(token) call in the fallback path"
     },
     {
       "priority": "P1",
@@ -61,7 +54,7 @@
       "priority": "P2",
       "domain": "resilience",
       "file": "admin\\BulkInviteForm.tsx",
-      "issue": "Bulk operation in 1 file(s) uses catch+console.error instead of checking per-item .ok status",
+      "issue": "Bulk operation in 2 file(s) uses catch+console.error instead of checking per-item .ok status",
       "action": "Return {ok, error} per item from API and surface partial failures in UI with detailed error list"
     },
     {

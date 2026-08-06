@@ -17,8 +17,13 @@ runcmd:
   - mkdir -p ${docker_compose_dir}/logs
 
   # Configure UFW
+  # SSH is restricted to admin_ip_ranges (same allowlist as the DigitalOcean
+  # firewall in firewall.tf). Default is 0.0.0.0/0 + ::/0 — set admin_ip_ranges
+  # to office/VPN CIDRs in prod.tfvars/dev.tfvars for production. SSH is key-only.
   - ufw --force enable
-  - ufw allow 22/tcp
+%{ for cidr in admin_ip_ranges ~}
+  - ufw allow from ${cidr} to any port 22 proto tcp
+%{ endfor ~}
   - ufw allow 80/tcp
   - ufw allow 443/tcp
   - ufw allow 2376/tcp comment 'Docker'

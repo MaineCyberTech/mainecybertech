@@ -8,6 +8,7 @@ import { requireOrgAccessByParam } from "../middleware/org-access";
 import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import { isPlatformAdminKey } from "../lib/roles";
 import {
   createOrganizationSchema,
@@ -200,7 +201,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireAdmin, requireIfMatch, async (req, res, next) => {
+router.patch("/:id", requirePermission("organizations", "manage"), requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateOrganizationSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -257,7 +258,7 @@ router.patch("/:id", requireAdmin, requireIfMatch, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", requireAdmin, async (req, res, next) => {
+router.delete("/:id", requirePermission("organizations", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("organizations").delete().eq("id", req.params.id);

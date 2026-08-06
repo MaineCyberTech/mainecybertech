@@ -121,6 +121,9 @@
     "/coverage-report",
     "/create-portal-session",
     "/dashboard",
+    "/dns-changes/:id/approve",
+    "/dns-changes/:id/implement",
+    "/dns-changes/:id/reject",
     "/docs",
     "/endpoint-security/coverage",
     "/export",
@@ -152,8 +155,10 @@
     "/offboarding/:id/complete-step",
     "/openapi.json",
     "/org-health",
+    "/organizations",
     "/patch-compliance/stats",
     "/payments",
+    "/permissions",
     "/phishing/:id/launch",
     "/phishing/:id/results",
     "/procurement/compare",
@@ -165,6 +170,7 @@
     "/promotions/admin",
     "/public/:orgId",
     "/public/:token",
+    "/public/:token/upload",
     "/quotes",
     "/recent-activity",
     "/reclaimable/license-list",
@@ -196,6 +202,7 @@
     "/templates",
     "/templates/:id",
     "/test-email",
+    "/time-entries/summary",
     "/track",
     "/triage",
     "/triage/analyze",
@@ -238,7 +245,6 @@
   ],
   "web_usage": [
     "fetch:analytics/track",
-    "fetch:store/quotes",
     "post"
   ]
 }

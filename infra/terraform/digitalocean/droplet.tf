@@ -11,6 +11,7 @@ resource "digitalocean_droplet" "portal" {
   user_data = templatefile("${path.module}/cloud-init.yml", {
     docker_compose_dir = var.docker_compose_dir
     environment        = var.environment
+    admin_ip_ranges    = var.admin_ip_ranges
   })
 
   lifecycle {

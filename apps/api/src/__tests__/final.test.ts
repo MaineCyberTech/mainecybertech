@@ -157,19 +157,30 @@ describe("Final API", () => {
 
   it("approves a DNS change request via workflow endpoint", async () => {
     const s = ma();
-    s.from.mockReturnValue(
-      createMockBuilder({
-        data: {
-          id: "dns-1",
-          organization_id: org,
-          status: "approved",
-          approved_by: "u",
-        },
-        error: null,
-      }),
-    );
+    s.from
+      .mockReturnValueOnce(
+        createMockBuilder({
+          data: {
+            id: "dns-1",
+            organization_id: org,
+            status: "pending",
+          },
+          error: null,
+        }),
+      )
+      .mockReturnValue(
+        createMockBuilder({
+          data: {
+            id: "dns-1",
+            organization_id: org,
+            status: "approved",
+            approved_by: "u",
+          },
+          error: null,
+        }),
+      );
     const r = await request(app)
-      .post("/api/v1/final/dns-changes/dns-1/approve")
+      .post(`/api/v1/final/dns-changes/dns-1/approve?organization_id=${org}`)
       .set("Authorization", auth);
     expect(r.status).toBe(200);
     expect(r.body.data.status).toBe("approved");
@@ -177,17 +188,47 @@ describe("Final API", () => {
 
   it("rejects a DNS change request via workflow endpoint", async () => {
     const s = ma();
-    s.from.mockReturnValue(
-      createMockBuilder({
-        data: { id: "dns-1", organization_id: org, status: "rejected" },
-        error: null,
-      }),
-    );
+    s.from
+      .mockReturnValueOnce(
+        createMockBuilder({
+          data: {
+            id: "dns-1",
+            organization_id: org,
+            status: "pending",
+          },
+          error: null,
+        }),
+      )
+      .mockReturnValue(
+        createMockBuilder({
+          data: { id: "dns-1", organization_id: org, status: "rejected" },
+          error: null,
+        }),
+      );
     const r = await request(app)
-      .post("/api/v1/final/dns-changes/dns-1/reject")
+      .post(`/api/v1/final/dns-changes/dns-1/reject?organization_id=${org}`)
       .set("Authorization", auth);
     expect(r.status).toBe(200);
     expect(r.body.data.status).toBe("rejected");
+  });
+
+  it("returns 404 when approving a DNS change request in another org", async () => {
+    const s = ma();
+    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    const r = await request(app)
+      .post(`/api/v1/final/dns-changes/dns-1/approve?organization_id=${org}`)
+      .set("Authorization", auth);
+    expect(r.status).toBe(404);
+    expect(r.body.error?.code).toBe("NOT_FOUND");
+  });
+
+  it("returns 404 when implementing a DNS change request in another org", async () => {
+    const s = ma();
+    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    const r = await request(app)
+      .post(`/api/v1/final/dns-changes/dns-1/implement?organization_id=${org}`)
+      .set("Authorization", auth);
+    expect(r.status).toBe(404);
   });
 
   it("returns time-entries summary", async () => {

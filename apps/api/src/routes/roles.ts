@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 
 const router: ReturnType<typeof Router> = Router();
@@ -91,7 +92,7 @@ const updateRoleSchema = z.object({
 });
 
 // POST /api/v1/roles - create a custom role (admin)
-router.post("/", requireAdmin, async (req, res, next) => {
+router.post("/", requirePermission("roles", "manage"), async (req, res, next) => {
   try {
     const parsed = createRoleSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -134,7 +135,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
 });
 
 // PATCH /api/v1/roles/:id - update role name/description (admin)
-router.patch("/:id", requireAdmin, async (req, res, next) => {
+router.patch("/:id", requirePermission("roles", "manage"), async (req, res, next) => {
   try {
     const parsed = updateRoleSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -180,7 +181,7 @@ router.patch("/:id", requireAdmin, async (req, res, next) => {
 });
 
 // DELETE /api/v1/roles/:id - delete a custom role (admin)
-router.delete("/:id", requireAdmin, async (req, res, next) => {
+router.delete("/:id", requirePermission("roles", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
 
@@ -242,7 +243,7 @@ router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.put("/:id/permissions", requireAdmin, async (req, res, next) => {
+router.put("/:id/permissions", requirePermission("roles", "manage"), async (req, res, next) => {
   try {
     const { permissionId, hasPermission } = z
       .object({

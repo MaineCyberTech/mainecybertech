@@ -6,7 +6,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import { getEnv } from "../config/env";
 import { responseCacheNoRenew } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -318,11 +318,18 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
 
     if (documentId) {
       const currentVersion = Number(req.body.currentVersion ?? 1);
-      const { data: current, error: fetchError } = await supabase
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+        | string
+        | undefined;
+      let currentQuery = supabase
         .from("documents")
         .select("storage_bucket, storage_path, current_version")
-        .eq("id", documentId)
-        .single();
+        .eq("id", documentId);
+      // Version replacement must be scoped to the caller's org — otherwise a
+      // caller in org A could replace (and delete the storage object of) a
+      // document belonging to org B.
+      if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+      const { data: current, error: fetchError } = await currentQuery.single();
 
       if (fetchError) {
         await supabase.storage.from(bucket).remove([storagePath]);
@@ -335,7 +342,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
 
       const nextVersion = currentVersion + 1;
 
-      const { data, error: updateError } = await supabase
+      let updateQuery = supabase
         .from("documents")
         .update({
           storage_bucket: bucket,
@@ -345,9 +352,9 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
           file_size: file.size,
           current_version: nextVersion,
         })
-        .eq("id", documentId)
-        .select()
-        .single();
+        .eq("id", documentId);
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error: updateError } = await updateQuery.select().single();
 
       if (updateError) {
         await supabase.storage.from(bucket).remove([storagePath]);
@@ -476,14 +483,18 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", requireAdmin, async (req, res, next) => {
+router.delete("/:id", requirePermission("documents", "delete"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { data: doc, error: fetchError } = await supabase
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+    let fetchQuery = supabase
       .from("documents")
       .select("id, organization_id, storage_bucket, storage_path")
-      .eq("id", req.params.id)
-      .single();
+      .eq("id", req.params.id);
+    if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
+    const { data: doc, error: fetchError } = await fetchQuery.single();
 
     if (fetchError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
 
@@ -491,7 +502,9 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
       await supabase.storage.from(doc.storage_bucket).remove([doc.storage_path]);
     }
 
-    const { error } = await supabase.from("documents").delete().eq("id", req.params.id);
+    let deleteQuery = supabase.from("documents").delete().eq("id", req.params.id);
+    if (orgId) deleteQuery = deleteQuery.eq("organization_id", orgId);
+    const { error } = await deleteQuery;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -537,12 +550,39 @@ router.post("/:id/signed-url", async (req, res, next) => {
   }
 });
 
+/**
+ * Resolve which of the given document ids belong to the caller's org.
+ * When orgId is set (client-scoped caller) ids outside the org are dropped
+ * so the bulk-update RPC never touches another tenant's rows.
+ */
+async function resolveOwnedDocumentIds(
+  supabase: any,
+  documentIds: string[],
+  orgId: string | undefined,
+): Promise<string[]> {
+  if (!orgId) return documentIds;
+  const { data, error } = await supabase
+    .from("documents")
+    .select("id")
+    .in("id", documentIds)
+    .eq("organization_id", orgId);
+  if (error) throw new AppError("DB_ERROR", error.message, 500);
+  return (data ?? []).map((d: { id: string }) => d.id);
+}
+
 router.post("/bulk/folder", async (req, res, next) => {
   try {
     const parsed = bulkFolderSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
 
-    const updates = parsed.documentIds.map((id) => ({
+    // The bulk RPC skips its per-row check for service-role calls, so the
+    // document ids MUST be pre-filtered to the caller's org.
+    const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
+
+    const updates = ownedIds.map((id) => ({
       id,
       data: { folder_path: parsed.folderPath },
     }));
@@ -591,7 +631,15 @@ router.post("/bulk/metadata", async (req, res, next) => {
       throw new AppError("VALIDATION", "No fields to update", 400);
     }
 
-    const updates = parsed.documentIds.map((id) => ({
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+
+    // The bulk RPC skips its per-row check for service-role calls, so the
+    // document ids MUST be pre-filtered to the caller's org.
+    const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
+
+    const updates = ownedIds.map((id) => ({
       id,
       data: updateData,
     }));
@@ -629,6 +677,17 @@ router.post("/bulk/metadata", async (req, res, next) => {
 router.get("/:id/versions", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+
+    // Version rows carry no org column — verify the parent document belongs
+    // to the caller's org before exposing version metadata (storage paths).
+    let docQuery = supabase.from("documents").select("id").eq("id", req.params.id);
+    if (orgId) docQuery = docQuery.eq("organization_id", orgId);
+    const { data: doc, error: docError } = await docQuery.single();
+    if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
@@ -650,6 +709,15 @@ router.get("/:id/versions", async (req, res, next) => {
 router.get("/:id/versions/:versionId", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+
+    let docQuery = supabase.from("documents").select("id").eq("id", req.params.id);
+    if (orgId) docQuery = docQuery.eq("organization_id", orgId);
+    const { data: doc, error: docError } = await docQuery.single();
+    if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
     const { data, error } = await supabase
       .from("document_versions")
       .select("*")

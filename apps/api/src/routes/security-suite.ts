@@ -173,12 +173,6 @@ router.post("/identity-verification/:id/verify", async (req, res, next) => {
     next(err);
   }
 });
-crudRoute(
-  "endpoint-security",
-  "endpoint_security",
-  createEndpointSchema as unknown as Record<string, unknown>,
-);
-
 router.get("/endpoint-security/coverage", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
@@ -232,6 +226,12 @@ router.get("/endpoint-security/coverage", async (req, res, next) => {
     next(err);
   }
 });
+
+crudRoute(
+  "endpoint-security",
+  "endpoint_security",
+  createEndpointSchema as unknown as Record<string, unknown>,
+);
 
 router.post("/m365-hardening/:id/scan", async (req, res, next) => {
   try {

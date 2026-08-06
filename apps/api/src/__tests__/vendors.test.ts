@@ -113,6 +113,34 @@ describe("Vendors API", () => {
       .get("/api/v1/vendors/vendor-contracts/renewals")
       .set("Authorization", authToken);
     expect(res.status).toBe(200);
+    expect(res.body.data.items).toEqual([]);
+    expect(res.body.data.total).toBe(0);
+  });
+
+  it("renewals route is NOT shadowed by /vendor-contracts/:id", async () => {
+    const supabase = mockAuth();
+    // null data: the /:id handler would 404 on this, the renewals handler
+    // coerces to an empty list and returns 200.
+    const builder = createMockBuilder({ data: null, error: null });
+    supabase.from.mockReturnValue(builder);
+    const res = await request(app)
+      .get("/api/v1/vendors/vendor-contracts/renewals")
+      .set("Authorization", authToken);
+    expect(res.status).toBe(200);
+    expect(res.body.data.items).toEqual([]);
+    expect(builder.single).not.toHaveBeenCalled();
+  });
+
+  it("renewals runs the date-filtered query (lte on renewal_date)", async () => {
+    const supabase = mockAuth();
+    const builder = createMockBuilder({ data: [], error: null });
+    supabase.from.mockReturnValue(builder);
+    const res = await request(app)
+      .get("/api/v1/vendors/vendor-contracts/renewals")
+      .set("Authorization", authToken);
+    expect(res.status).toBe(200);
+    expect(builder.lte).toHaveBeenCalledWith("renewal_date", expect.any(String));
+    expect(builder.gte).toHaveBeenCalledWith("renewal_date", expect.any(String));
   });
 
   it("creates a contract with renewal_date", async () => {

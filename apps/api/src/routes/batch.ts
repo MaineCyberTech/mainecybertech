@@ -157,23 +157,6 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   });
 }
 
-crudRoute(
-  "licenses",
-  "license_tracking",
-  createLicenseSchema as unknown as Record<string, unknown>,
-);
-crudRoute("status", "status_items", createStatusItemSchema as unknown as Record<string, unknown>);
-crudRoute(
-  "website-monitors",
-  "website_monitors",
-  createWebsiteMonitorSchema as unknown as Record<string, unknown>,
-);
-crudRoute(
-  "dmarc",
-  "dmarc_assessments",
-  createDmarcAssessmentSchema as unknown as Record<string, unknown>,
-);
-
 router.get("/licenses/savings", async (req, res, next) => {
   try {
     const sb = getSupabaseAdmin();
@@ -209,5 +192,22 @@ router.get("/licenses/savings", async (req, res, next) => {
     next(e);
   }
 });
+
+crudRoute(
+  "licenses",
+  "license_tracking",
+  createLicenseSchema as unknown as Record<string, unknown>,
+);
+crudRoute("status", "status_items", createStatusItemSchema as unknown as Record<string, unknown>);
+crudRoute(
+  "website-monitors",
+  "website_monitors",
+  createWebsiteMonitorSchema as unknown as Record<string, unknown>,
+);
+crudRoute(
+  "dmarc",
+  "dmarc_assessments",
+  createDmarcAssessmentSchema as unknown as Record<string, unknown>,
+);
 
 export default router;

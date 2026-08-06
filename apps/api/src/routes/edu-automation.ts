@@ -6,6 +6,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import {
   sop,
   compliance,
@@ -297,7 +298,7 @@ router.post("/compliance/score", async (req, res, next) => {
   }
 });
 
-router.post("/phishing/:id/launch", async (req, res, next) => {
+router.post("/phishing/:id/launch", requirePermission("phishing-simulations", "edit"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase

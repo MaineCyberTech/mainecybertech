@@ -1,7 +1,7 @@
 # Global Risk Report
 
-**Generated:** 2026-08-01T06:31:16.294550+00:00
-**Commit:** a585f1d feat: comprehensive detailed runbook procedures for all 245 products
+**Generated:** 2026-08-06T21:21:19.722604+00:00
+**Commit:** 75d3926 test-data: cover admin workflow-button states (phishing launch + CAB approve/reject)
 **Risk Score:** 50/100
 **Status:** BLOCKED
 

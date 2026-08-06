@@ -7,9 +7,16 @@ function getCsrfToken(): string | undefined {
   return match ? match[1] : undefined;
 }
 
+function getActiveOrgId(): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(/(?:^|;\s*)mct_active_org=([^;]*)/);
+  return match ? match[1] : null;
+}
+
 export function getClientApi(): MCTClient {
   return MCTClient.create({
     baseUrl: getClientEnv().NEXT_PUBLIC_API_URL,
     getCsrfToken,
+    getActiveOrgId,
   });
 }

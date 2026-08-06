@@ -300,7 +300,8 @@ jobs:
             printf '%s\n' "$CF_ORIGIN_CERT" > /opt/mct-portal/certs/fullchain.pem
             printf '%s\n' "$CF_ORIGIN_KEY" > /opt/mct-portal/certs/privkey.pem
             chmod 600 /opt/mct-portal/certs/privkey.pem
-            docker image prune -af 2>/dev/null || true
+            # NOTE: no `docker image prune` here — old mct-* images are still in
+            # use until compose down/up, so pruning pre-pull would remove nothing.
             docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
             docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
             docker pull ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
@@ -326,6 +327,9 @@ jobs:
             ss -tlnp 2>/dev/null | grep :443 || netstat -tlnp 2>/dev/null | grep :443 || echo "no listener"
             echo "=== Caddy logs (last 10 lines) ==="
             docker compose -p mct-portal logs --tail=10 caddy 2>/dev/null || docker logs mct-portal-caddy-1 --tail 10 2>/dev/null || echo "no caddy logs"
+            echo "=== Pruning old mct images (keep current tag) ==="
+            docker images --format '{{.Repository}}:{{.Tag}}' | grep -E "mct-(api|worker|web)" | grep -v ":${{ env.IMAGE_TAG }}$" | xargs -r docker rmi -f 2>/dev/null || true
+            docker image prune -f 2>/dev/null || true
         env:
           CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
           CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
@@ -338,9 +342,7 @@ jobs:
           api_ok=""
           for i in $(seq 1 30); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null | tr -d '\r\n' || echo "000")
-            case "$CODE" in
-              200|526) echo "API ready after $((i*4))s (HTTP $CODE)"; api_ok=1; break ;;
-            esac
+            if [ "$CODE" = "200" ]; then echo "API ready after $((i*4))s (HTTP 200)"; api_ok=1; break; fi
             echo "Attempt $i/30: $CODE"; sleep 4
           done
           if [ -z "$api_ok" ]; then
@@ -350,13 +352,21 @@ jobs:
             exit 1
           fi
           echo "Worker health check via SSH..."
-          ssh -o StrictHostKeyChecking=no root@${{ needs.resolve-ip.outputs.droplet_ip }} \
-            "curl -sf --connect-timeout 5 --max-time 10 http://localhost:3001/health" 2>/dev/null || \
-            echo "Warning: Worker health check failed (non-fatal)"
+          wcode=$(ssh -o StrictHostKeyChecking=no root@${{ needs.resolve-ip.outputs.droplet_ip }} \
+            "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 --max-time 10 http://localhost:3001/health 2>/dev/null | tr -d '\r\n' || echo 000" 2>/dev/null | tr -d '\r\n' || echo "000")
+          if [ "$wcode" = "200" ]; then
+            echo "Worker healthy (HTTP 200)"
+          else
+            echo "Warning: Worker health check returned HTTP $wcode (non-fatal — worker is restart-loop tolerant)"
+          fi
           web_ok=""
           for i in $(seq 1 15); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null | tr -d '\r\n' || echo "000")
-            if [ "$CODE" != "000" ] && [ -n "$CODE" ]; then echo "Web ready after $((i*4))s (HTTP $CODE)"; web_ok=1; break; fi
+            # Only redirect + success codes are healthy (200, 301, 302, 307);
+            # a 500/502/503 means the app booted but is failing.
+            if [ "$CODE" = "200" ] || [ "$CODE" = "301" ] || [ "$CODE" = "302" ] || [ "$CODE" = "307" ]; then
+              echo "Web ready after $((i*4))s (HTTP $CODE)"; web_ok=1; break
+            fi
             echo "Attempt $i/15: $CODE"; sleep 4
           done
           [ -z "$web_ok" ] && { echo "Web health check failed"; exit 1; }

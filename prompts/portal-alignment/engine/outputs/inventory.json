@@ -6,13 +6,13 @@
       ],
       "has_routes": true,
       "routes_dir": "C:\\temp\\mainecybertech-portal\\apps\\api\\src\\routes",
-      "file_count": 5852
+      "file_count": 6684
     },
     "web": {
       "entry_points": [],
       "has_routes": false,
       "routes_dir": null,
-      "file_count": 20548
+      "file_count": 27284
     },
     "worker": {
       "entry_points": [
@@ -20,7 +20,7 @@
       ],
       "has_routes": false,
       "routes_dir": null,
-      "file_count": 4943
+      "file_count": 4986
     }
   },
   "packages": {
@@ -38,11 +38,13 @@
     }
   },
   "infra": {
-    "infra\\digitalocean\\.env.example": 641,
-    "infra\\digitalocean\\Caddyfile": 2435,
-    "infra\\digitalocean\\Caddyfile.dev": 604,
-    "infra\\digitalocean\\Caddyfile.prod": 711,
-    "infra\\digitalocean\\docker-compose.yml": 4539,
+    "infra\\digitalocean\\.env.example": 1527,
+    "infra\\digitalocean\\Caddyfile": 3141,
+    "infra\\digitalocean\\Caddyfile.dev": 1593,
+    "infra\\digitalocean\\Caddyfile.prod": 1687,
+    "infra\\digitalocean\\docker-compose.yml": 5361,
+    "infra\\digitalocean\\prometheus.rules.yml": 1525,
+    "infra\\digitalocean\\prometheus.yml": 701,
     "infra\\digitalocean\\README.md": 84,
     "infra\\terraform\\README.md": 232,
     "infra\\terraform\\.terraform\\modules\\modules.json": 173,
@@ -191,8 +193,8 @@
     "infra\\terraform\\digitalocean\\.terraform\\providers\\registry.terraform.io\\digitalocean\\digitalocean\\2.90.0\\windows_amd64\\LICENSE": 16725,
     "infra\\terraform\\digitalocean\\.terraform\\providers\\registry.terraform.io\\digitalocean\\digitalocean\\2.90.0\\windows_amd64\\README.md": 1139,
     "infra\\terraform\\digitalocean\\.terraform\\providers\\registry.terraform.io\\digitalocean\\digitalocean\\2.90.0\\windows_amd64\\terraform-provider-digitalocean_v2.90.0.exe": 24984064,
-    "infra\\terraform\\digitalocean\\env\\backend.dev.hcl": 368,
-    "infra\\terraform\\digitalocean\\env\\backend.prod.hcl": 376,
+    "infra\\terraform\\digitalocean\\env\\backend.dev.hcl": 462,
+    "infra\\terraform\\digitalocean\\env\\backend.prod.hcl": 468,
     "infra\\terraform\\digitalocean\\env\\dev.tfvars": 295,
     "infra\\terraform\\digitalocean\\env\\dev.tfvars.example": 271,
     "infra\\terraform\\digitalocean\\env\\prod.tfvars": 458,
@@ -900,9 +902,126 @@
         "if",
         "if"
       ]
+    },
+    {
+      "file": "5302110_restore_document_permissions.sql",
+      "tables": [
+        "if",
+        "document_permissions"
+      ]
+    },
+    {
+      "file": "5302111_harden_bulk_update_rpc.sql",
+      "tables": []
+    },
+    {
+      "file": "5302112_fix_rls_approved_membership.sql",
+      "tables": []
+    },
+    {
+      "file": "5302113_add_check_constraints.sql",
+      "tables": [
+        "tickets",
+        "documents",
+        "projects",
+        "organizations",
+        "profiles",
+        "project_tasks",
+        "webhook_endpoints",
+        "notification_preferences",
+        "billing_customers"
+      ]
+    },
+    {
+      "file": "5302114_store_conversion_modules.sql",
+      "tables": [
+        "if",
+        "if",
+        "store_quote_requests",
+        "store_visual_assets"
+      ]
+    },
+    {
+      "file": "5302115_store_v5_sales_ops.sql",
+      "tables": [
+        "if",
+        "if",
+        "store_leads",
+        "store_proposal_drafts"
+      ]
+    },
+    {
+      "file": "5302116_grant_table_privileges.sql",
+      "tables": []
+    },
+    {
+      "file": "5302117_public_interactions_retention.sql",
+      "tables": []
+    },
+    {
+      "file": "5302118_permission_matrix_full_catalog.sql",
+      "tables": [
+        "permissions"
+      ]
+    },
+    {
+      "file": "5302119_demo_test_data.sql",
+      "tables": []
+    },
+    {
+      "file": "5302120_demo_module_data.sql",
+      "tables": []
+    },
+    {
+      "file": "5302121_demo_permission_edge_cases.sql",
+      "tables": []
+    },
+    {
+      "file": "5302122_mark_task_read_rpc.sql",
+      "tables": []
+    },
+    {
+      "file": "5302123_demo_expanded_test_data.sql",
+      "tables": []
+    },
+    {
+      "file": "5302124_fix_worker_schema_columns.sql",
+      "tables": [
+        "uptime_checks",
+        "dmarc_analyses"
+      ]
+    },
+    {
+      "file": "5302125_risk_assess_columns.sql",
+      "tables": [
+        "risk_register"
+      ]
+    },
+    {
+      "file": "5302126_demo_worker_admin_coverage.sql",
+      "tables": []
+    },
+    {
+      "file": "5302127_module_state_columns.sql",
+      "tables": [
+        "change_requests",
+        "compliance_readiness",
+        "m365_hardening",
+        "patch_compliance",
+        "endpoint_security",
+        "qbr_reports"
+      ]
+    },
+    {
+      "file": "5302128_role_catalog_expansion.sql",
+      "tables": []
     }
   ],
   "routes": [
+    {
+      "file": "admin.ts",
+      "path": "/organizations"
+    },
     {
       "file": "admin.ts",
       "path": "/test-email"
@@ -1217,6 +1336,10 @@
     },
     {
       "file": "documents.ts",
+      "path": "/shares/:token"
+    },
+    {
+      "file": "documents.ts",
       "path": "/"
     },
     {
@@ -1274,10 +1397,6 @@
     {
       "file": "documents.ts",
       "path": "/:id/shares/:shareId"
-    },
-    {
-      "file": "documents.ts",
-      "path": "/shares/:token"
     },
     {
       "file": "domain-monitors.ts",
@@ -1417,6 +1536,10 @@
     },
     {
       "file": "file-requests.ts",
+      "path": "/public/:token/upload"
+    },
+    {
+      "file": "file-requests.ts",
       "path": "/"
     },
     {
@@ -1454,6 +1577,22 @@
     {
       "file": "final.ts",
       "path": "/procurement/compare"
+    },
+    {
+      "file": "final.ts",
+      "path": "/dns-changes/:id/approve"
+    },
+    {
+      "file": "final.ts",
+      "path": "/dns-changes/:id/reject"
+    },
+    {
+      "file": "final.ts",
+      "path": "/dns-changes/:id/implement"
+    },
+    {
+      "file": "final.ts",
+      "path": "/time-entries/summary"
     },
     {
       "file": "findings.ts",
@@ -1592,6 +1731,10 @@
       "path": "/summary/data"
     },
     {
+      "file": "me.ts",
+      "path": "/permissions"
+    },
+    {
       "file": "memberships.ts",
       "path": "/"
     },
@@ -1714,6 +1857,10 @@
     {
       "file": "projects.ts",
       "path": "/"
+    },
+    {
+      "file": "projects.ts",
+      "path": "/compound"
     },
     {
       "file": "projects.ts",
@@ -1905,11 +2052,23 @@
     },
     {
       "file": "roles.ts",
+      "path": "/with-permissions"
+    },
+    {
+      "file": "roles.ts",
       "path": "/:id"
     },
     {
       "file": "roles.ts",
-      "path": "/with-permissions"
+      "path": "/"
+    },
+    {
+      "file": "roles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "roles.ts",
+      "path": "/:id"
     },
     {
       "file": "roles.ts",
@@ -2297,9 +2456,11 @@
     "CommentBody.tsx",
     "DocumentPreview.tsx",
     "EmptyState.tsx",
+    "HasPermission.tsx",
     "HealthDashboardClient.tsx",
     "NotificationBell.tsx",
     "NotificationsPageClient.tsx",
+    "RouteGuard.tsx",
     "StatusPill.tsx",
     "version-badge.tsx",
     "admin\\AdminApiKeysClient.tsx",
@@ -2319,17 +2480,26 @@
     "admin\\AvatarPill.tsx",
     "admin\\BulkInviteForm.tsx",
     "admin\\ConfirmIntentButton.tsx",
+    "admin\\CreateOrganizationForm.tsx",
+    "admin\\CreateRoleForm.tsx",
     "admin\\CrudForm.tsx",
     "admin\\InlineStatusDropdown.tsx",
+    "admin\\InviteUserForm.tsx",
+    "admin\\ModuleDetailPage.tsx",
     "admin\\NewWebhookForm.tsx",
     "admin\\OrgBrandingForm.tsx",
-    "admin\\PermissionsMatrix.tsx",
+    "admin\\PermissionMatrixClient.tsx",
     "admin\\ProjectTaskListV5.tsx",
     "admin\\RecordDetail.tsx",
+    "admin\\RoleEditForm.tsx",
     "admin\\RolePermissionsEditor.tsx",
     "admin\\SeverityPill.tsx",
     "admin\\StatusPill.tsx",
+    "admin\\SuperAdminOrgSwitcher.tsx",
     "admin\\TriageAnalyzeClient.tsx",
+    "admin\\UserPermissionOverridesClient.tsx",
+    "admin\\WorkflowActionButtons.tsx",
+    "layout\\SidebarShell.tsx",
     "marketing\\ContactForm.tsx",
     "marketing\\MarketingHeader.tsx",
     "marketing\\ParticleBackground.tsx",
@@ -2370,16 +2540,16 @@
     "store\\TrustBadgeList.tsx"
   ],
   "tests": {
-    "api": 219,
-    "web": 0,
+    "api": 234,
+    "web": 3,
     "sdk": 0,
     "worker": 12,
-    "e2e": 0
+    "e2e": 2
   },
-  "total_files": 3067,
-  "total_lines": 362972,
+  "total_files": 4373,
+  "total_lines": 602319,
   "git": {
-    "commit": "a585f1d feat: comprehensive detailed runbook procedures for all 245 products",
+    "commit": "75d3926 test-data: cover admin workflow-button states (phishing launch + CAB approve/reject)",
     "branch": "develop"
   },
   "summary": {
@@ -2388,10 +2558,10 @@
       "web",
       "worker"
     ],
-    "migrations": 74,
-    "api_routes": 347,
-    "components": 75,
-    "total_files": 3067,
-    "total_lines": 362972
+    "migrations": 93,
+    "api_routes": 358,
+    "components": 86,
+    "total_files": 4373,
+    "total_lines": 602319
   }
 }
