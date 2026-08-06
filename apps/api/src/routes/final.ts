@@ -303,6 +303,129 @@ router.post("/procurement/compare", async (req, res, next) => {
   }
 });
 
+router.post("/dns-changes/:id/approve", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("dns_change_requests")
+      .update({
+        status: "approved",
+        approved_by: req.authUser!.userId,
+      })
+      .eq("id", req.params.id)
+      .eq("status", "pending")
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!data) throw new AppError("INVALID_STATE", "Only pending requests can be approved", 400);
+    await logAuditEvent({
+      organizationId: data.organization_id,
+      actorUserId: req.authUser!.userId,
+      action: "dns_change.approved",
+      entityType: "dns_change_request",
+      entityId: data.id,
+    });
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/dns-changes/:id/reject", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("dns_change_requests")
+      .update({ status: "rejected" })
+      .eq("id", req.params.id)
+      .eq("status", "pending")
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!data) throw new AppError("INVALID_STATE", "Only pending requests can be rejected", 400);
+    await logAuditEvent({
+      organizationId: data.organization_id,
+      actorUserId: req.authUser!.userId,
+      action: "dns_change.rejected",
+      entityType: "dns_change_request",
+      entityId: data.id,
+    });
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/dns-changes/:id/implement", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("dns_change_requests")
+      .update({
+        status: "implemented",
+        implemented_at: new Date().toISOString(),
+      })
+      .eq("id", req.params.id)
+      .eq("status", "approved")
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!data)
+      throw new AppError("INVALID_STATE", "Only approved requests can be implemented", 400);
+    await logAuditEvent({
+      organizationId: data.organization_id,
+      actorUserId: req.authUser!.userId,
+      action: "dns_change.implemented",
+      entityType: "dns_change_request",
+      entityId: data.id,
+    });
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/time-entries/summary", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const orgId = req.query.organization_id as string | undefined;
+    const days = Math.min(90, Math.max(1, parseInt(req.query.days as string) || 30));
+    const since = new Date(Date.now() - days * 86400000).toISOString();
+
+    let query = supabase.from("time_entries").select("*").gte("work_date", since.slice(0, 10));
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.order("work_date", { ascending: false });
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    const items = data ?? [];
+    const totalHours = items.reduce((s: number, t: any) => s + Number(t.hours || 0), 0);
+    const billableHours = items
+      .filter((t: any) => t.billable)
+      .reduce((s: number, t: any) => s + Number(t.hours || 0), 0);
+    const byDate: Record<string, { hours: number; billable: number; entries: number }> = {};
+    for (const t of items) {
+      const key = t.work_date ? String(t.work_date).slice(0, 10) : "unknown";
+      if (!byDate[key]) byDate[key] = { hours: 0, billable: 0, entries: 0 };
+      byDate[key].hours += Number(t.hours || 0);
+      if (t.billable) byDate[key].billable += Number(t.hours || 0);
+      byDate[key].entries++;
+    }
+
+    res.json(
+      success({
+        periodDays: days,
+        totalEntries: items.length,
+        totalHours: Math.round(totalHours * 100) / 100,
+        billableHours: Math.round(billableHours * 100) / 100,
+        nonBillableHours: Math.round((totalHours - billableHours) * 100) / 100,
+        byDate,
+      }),
+    );
+  } catch (err) {
+    next(err);
+  }
+});
+
 for (const [p, { schema: s, table }] of Object.entries(schemas)) crud(p, table, s);
 
 export default router;

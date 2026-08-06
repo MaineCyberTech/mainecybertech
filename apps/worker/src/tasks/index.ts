@@ -26,6 +26,8 @@ import {
   dmarcCoachCheck,
   slaLogCheck,
   businessOsSnapshot,
+  automationRunCheck,
+  approvalOverdueCheck,
 } from "./module-tasks";
 
 export function registerAllTasks(): void {
@@ -56,4 +58,6 @@ export function registerAllTasks(): void {
   registerTask("dmarc-coach-check", dmarcCoachCheck);
   registerTask("sla-log-check", slaLogCheck);
   registerTask("business-os-snapshot", businessOsSnapshot);
+  registerTask("automation-run-check", automationRunCheck);
+  registerTask("approval-overdue-check", approvalOverdueCheck);
 }

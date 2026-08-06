@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
@@ -8,6 +9,31 @@ import { requireOrgAccess } from "../middleware/org-access";
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+
+const createEvidenceSchema = z.object({
+  organizationId: z.string().min(1),
+  evidenceType: z.string().max(100).optional().default("document"),
+  title: z.string().min(1).max(255),
+  description: z.string().max(5000).optional().nullable(),
+  fileUrl: z.string().max(2000).optional().nullable(),
+  status: z.string().max(50).optional().default("pending"),
+  coverageArea: z.string().max(100).optional().nullable(),
+  insuranceProvider: z.string().max(255).optional().nullable(),
+  policyNumber: z.string().max(255).optional().nullable(),
+  expiryDate: z.string().nullable().optional(),
+});
+
+const updateEvidenceSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  fileUrl: z.string().max(2000).optional().nullable(),
+  status: z.string().max(50).optional(),
+  coverageArea: z.string().max(100).optional().nullable(),
+  insuranceProvider: z.string().max(255).optional().nullable(),
+  policyNumber: z.string().max(255).optional().nullable(),
+  expiryDate: z.string().nullable().optional(),
+  evidenceType: z.string().max(100).optional(),
+});
 
 const COVERAGE_AREAS = [
   "network_security",
@@ -97,32 +123,33 @@ router.get("/", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
+    const parsed = createEvidenceSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("insurance_evidence")
       .insert({
-        organization_id: req.body.organizationId,
-        evidence_type: req.body.evidenceType ?? "document",
-        title: req.body.title,
-        description: req.body.description ?? null,
-        file_url: req.body.fileUrl ?? null,
-        status: req.body.status ?? "pending",
-        coverage_area: req.body.coverageArea ?? null,
-        insurance_provider: req.body.insuranceProvider ?? null,
-        policy_number: req.body.policyNumber ?? null,
-        expiry_date: req.body.expiryDate ?? null,
+        organization_id: parsed.organizationId,
+        evidence_type: parsed.evidenceType,
+        title: parsed.title,
+        description: parsed.description ?? null,
+        file_url: parsed.fileUrl ?? null,
+        status: parsed.status,
+        coverage_area: parsed.coverageArea ?? null,
+        insurance_provider: parsed.insuranceProvider ?? null,
+        policy_number: parsed.policyNumber ?? null,
+        expiry_date: parsed.expiryDate ?? null,
         created_by: req.authUser!.userId,
       })
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
-      organizationId: req.body.organizationId,
+      organizationId: parsed.organizationId,
       actorUserId: req.authUser!.userId,
       action: "insurance.evidence.created",
       entityType: "insurance_evidence",
       entityId: data.id,
-      metadata: { title: req.body.title },
+      metadata: { title: parsed.title },
     });
     res.status(201).json(success(data));
   } catch (error) {
@@ -148,20 +175,21 @@ router.get("/:id", async (req, res, next) => {
 
 router.patch("/:id", async (req, res, next) => {
   try {
+    const parsed = updateEvidenceSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
     const updateData: Record<string, unknown> = {};
-    if (req.body.title !== undefined) updateData.title = req.body.title;
-    if (req.body.description !== undefined) updateData.description = req.body.description;
-    if (req.body.fileUrl !== undefined) updateData.file_url = req.body.fileUrl;
-    if (req.body.status !== undefined) updateData.status = req.body.status;
-    if (req.body.coverageArea !== undefined) updateData.coverage_area = req.body.coverageArea;
-    if (req.body.insuranceProvider !== undefined)
-      updateData.insurance_provider = req.body.insuranceProvider;
-    if (req.body.policyNumber !== undefined) updateData.policy_number = req.body.policyNumber;
-    if (req.body.expiryDate !== undefined) updateData.expiry_date = req.body.expiryDate;
-    if (req.body.evidenceType !== undefined) updateData.evidence_type = req.body.evidenceType;
+    if (parsed.title !== undefined) updateData.title = parsed.title;
+    if (parsed.description !== undefined) updateData.description = parsed.description;
+    if (parsed.fileUrl !== undefined) updateData.file_url = parsed.fileUrl;
+    if (parsed.status !== undefined) updateData.status = parsed.status;
+    if (parsed.coverageArea !== undefined) updateData.coverage_area = parsed.coverageArea;
+    if (parsed.insuranceProvider !== undefined)
+      updateData.insurance_provider = parsed.insuranceProvider;
+    if (parsed.policyNumber !== undefined) updateData.policy_number = parsed.policyNumber;
+    if (parsed.expiryDate !== undefined) updateData.expiry_date = parsed.expiryDate;
+    if (parsed.evidenceType !== undefined) updateData.evidence_type = parsed.evidenceType;
 
-    if (req.body.status === "verified" && !updateData.last_verified_at) {
+    if (parsed.status === "verified" && !updateData.last_verified_at) {
       updateData.last_verified_at = new Date().toISOString();
     }
 

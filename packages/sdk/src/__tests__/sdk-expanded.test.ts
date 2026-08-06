@@ -497,6 +497,17 @@ describe("SDK modules — expanded coverage", () => {
       expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
       expect(mockFetch.mock.calls[0][0]).toContain("/final/procurement/compare");
     });
+    it("approves a DNS change request", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "d1", status: "approved" }));
+      await client.final.dnsChanges.approve("d1");
+      expect(mockFetch.mock.calls[0][0]).toContain("/dns-changes/d1/approve");
+    });
+    it("gets time-entries summary", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ totalHours: 7 }));
+      const result = await client.final.timeEntries.summary({ organization_id: "org-1" });
+      expect(result.totalHours).toBe(7);
+      expect(mockFetch.mock.calls[0][0]).toContain("/time-entries/summary");
+    });
     it("gets backup stats", async () => {
       mockFetch.mockResolvedValue(mockResponse({ total: 10, failed: 1 }));
       const result = await client.final.backups.stats({ organization_id: "org-1" });

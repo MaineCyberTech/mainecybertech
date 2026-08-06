@@ -155,6 +155,63 @@ describe("Final API", () => {
     expect(q3.isLowest).toBe(true);
   });
 
+  it("approves a DNS change request via workflow endpoint", async () => {
+    const s = ma();
+    s.from.mockReturnValue(
+      createMockBuilder({
+        data: {
+          id: "dns-1",
+          organization_id: org,
+          status: "approved",
+          approved_by: "u",
+        },
+        error: null,
+      }),
+    );
+    const r = await request(app)
+      .post("/api/v1/final/dns-changes/dns-1/approve")
+      .set("Authorization", auth);
+    expect(r.status).toBe(200);
+    expect(r.body.data.status).toBe("approved");
+  });
+
+  it("rejects a DNS change request via workflow endpoint", async () => {
+    const s = ma();
+    s.from.mockReturnValue(
+      createMockBuilder({
+        data: { id: "dns-1", organization_id: org, status: "rejected" },
+        error: null,
+      }),
+    );
+    const r = await request(app)
+      .post("/api/v1/final/dns-changes/dns-1/reject")
+      .set("Authorization", auth);
+    expect(r.status).toBe(200);
+    expect(r.body.data.status).toBe("rejected");
+  });
+
+  it("returns time-entries summary", async () => {
+    const s = ma();
+    s.from.mockReturnValue(
+      createMockBuilder({
+        data: [
+          { work_date: "2026-07-01", hours: 2, billable: true },
+          { work_date: "2026-07-01", hours: 1, billable: false },
+          { work_date: "2026-07-02", hours: 4, billable: true },
+        ],
+        error: null,
+        count: 3,
+      }),
+    );
+    const r = await request(app)
+      .get("/api/v1/final/time-entries/summary")
+      .set("Authorization", auth);
+    expect(r.status).toBe(200);
+    expect(r.body.data.totalHours).toBe(7);
+    expect(r.body.data.billableHours).toBe(6);
+    expect(r.body.data.totalEntries).toBe(3);
+  });
+
   it("returns 401 without auth token", async () => {
     const r = await request(app).get("/api/v1/final/sharepoint");
     expect(r.status).toBe(401);

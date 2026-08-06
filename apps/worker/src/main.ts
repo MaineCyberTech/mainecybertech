@@ -94,6 +94,26 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
   }, BUSINESS_OS_INTERVAL_MS);
   businessOsInterval.unref();
 
+  // Schedule automation-run-check (scheduled workflows) to run hourly
+  const AUTOMATION_INTERVAL_MS = 60 * 60 * 1000;
+  const automationInterval = setInterval(() => {
+    logger.info("Running scheduled automation-run-check");
+    runScheduledTask("automation-run-check").catch((error) => {
+      logger.error({ error }, "Scheduled automation-run-check failed");
+    });
+  }, AUTOMATION_INTERVAL_MS);
+  automationInterval.unref();
+
+  // Schedule approval-overdue-check to run hourly
+  const APPROVAL_INTERVAL_MS = 60 * 60 * 1000;
+  const approvalInterval = setInterval(() => {
+    logger.info("Running scheduled approval-overdue-check");
+    runScheduledTask("approval-overdue-check").catch((error) => {
+      logger.error({ error }, "Scheduled approval-overdue-check failed");
+    });
+  }, APPROVAL_INTERVAL_MS);
+  approvalInterval.unref();
+
   runWorkerTasks().catch((error) => {
     logger.error(error, "Worker crashed");
     Sentry.captureException(error, { extra: { phase: "main-loop" } });

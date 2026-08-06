@@ -241,4 +241,22 @@ describe("Training Hub API", () => {
     const res = await request(app).get("/api/v1/training-hub/courses");
     expect(res.status).toBe(401);
   });
+
+  it("returns 400 when creating a course without a title", async () => {
+    mockAuth();
+    const res = await request(app)
+      .post("/api/v1/training-hub/courses")
+      .set("Authorization", authToken)
+      .send({ organizationId: testOrgId });
+    expect(res.status).toBe(400);
+  });
+
+  it("returns 400 when progress is out of range", async () => {
+    mockAuth();
+    const res = await request(app)
+      .post("/api/v1/training-hub/courses/c-1/progress")
+      .set("Authorization", authToken)
+      .send({ progress: 150 });
+    expect(res.status).toBe(400);
+  });
 });

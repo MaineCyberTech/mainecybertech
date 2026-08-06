@@ -164,6 +164,16 @@ router.post("/offboarding/:id/complete-step", async (req, res, next) => {
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (data) {
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "offboarding.step_updated",
+        entityType: "offboarding_checklist",
+        entityId: data.id,
+        metadata: { step: parsed.stepName, completed: parsed.completed },
+      });
+    }
     res.json(success(data));
   } catch (err) {
     next(err);

@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
@@ -8,6 +9,46 @@ import { requireOrgAccess } from "../middleware/org-access";
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+
+const createCourseSchema = z.object({
+  organizationId: z.string().min(1),
+  title: z.string().min(1).max(255),
+  description: z.string().max(5000).optional().nullable(),
+  category: z.string().max(100).optional().default("security"),
+  difficulty: z.string().max(50).optional().default("beginner"),
+  estimatedMinutes: z.number().int().min(1).max(100000).optional().default(15),
+  status: z.string().max(50).optional().default("draft"),
+  passingScore: z.number().int().min(0).max(100).optional().default(80),
+});
+
+const updateCourseSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  category: z.string().max(100).optional(),
+  difficulty: z.string().max(50).optional(),
+  estimatedMinutes: z.number().int().min(1).max(100000).optional(),
+  status: z.string().max(50).optional(),
+  passingScore: z.number().int().min(0).max(100).optional(),
+});
+
+const createLessonSchema = z.object({
+  courseId: z.string().min(1),
+  title: z.string().min(1).max(255),
+  content: z.string().max(50000).optional().nullable(),
+  lessonType: z.string().max(50).optional().default("text"),
+  sortOrder: z.number().int().min(0).optional().default(0),
+});
+
+const updateLessonSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  content: z.string().max(50000).optional().nullable(),
+  lessonType: z.string().max(50).optional(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+const progressSchema = z.object({
+  progress: z.number().int().min(0).max(100),
+});
 
 // ── My Courses (before :id) ──────────────────────────────────────────
 
@@ -55,30 +96,31 @@ router.get("/courses", async (req, res, next) => {
 
 router.post("/courses", async (req, res, next) => {
   try {
+    const parsed = createCourseSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("training_courses")
       .insert({
-        organization_id: req.body.organizationId,
-        title: req.body.title,
-        description: req.body.description ?? null,
-        category: req.body.category ?? "security",
-        difficulty: req.body.difficulty ?? "beginner",
-        estimated_minutes: req.body.estimatedMinutes ?? 15,
-        status: req.body.status ?? "draft",
-        passing_score: req.body.passingScore ?? 80,
+        organization_id: parsed.organizationId,
+        title: parsed.title,
+        description: parsed.description ?? null,
+        category: parsed.category,
+        difficulty: parsed.difficulty,
+        estimated_minutes: parsed.estimatedMinutes,
+        status: parsed.status,
+        passing_score: parsed.passingScore,
         created_by: req.authUser!.userId,
       })
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
-      organizationId: req.body.organizationId,
+      organizationId: parsed.organizationId,
       actorUserId: req.authUser!.userId,
       action: "training.course.created",
       entityType: "training_course",
       entityId: data.id,
-      metadata: { title: req.body.title },
+      metadata: { title: parsed.title },
     });
     res.status(201).json(success(data));
   } catch (error) {
@@ -104,16 +146,17 @@ router.get("/courses/:id", async (req, res, next) => {
 
 router.patch("/courses/:id", async (req, res, next) => {
   try {
+    const parsed = updateCourseSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
     const updateData: Record<string, unknown> = {};
-    if (req.body.title !== undefined) updateData.title = req.body.title;
-    if (req.body.description !== undefined) updateData.description = req.body.description;
-    if (req.body.category !== undefined) updateData.category = req.body.category;
-    if (req.body.difficulty !== undefined) updateData.difficulty = req.body.difficulty;
-    if (req.body.estimatedMinutes !== undefined)
-      updateData.estimated_minutes = req.body.estimatedMinutes;
-    if (req.body.status !== undefined) updateData.status = req.body.status;
-    if (req.body.passingScore !== undefined) updateData.passing_score = req.body.passingScore;
+    if (parsed.title !== undefined) updateData.title = parsed.title;
+    if (parsed.description !== undefined) updateData.description = parsed.description;
+    if (parsed.category !== undefined) updateData.category = parsed.category;
+    if (parsed.difficulty !== undefined) updateData.difficulty = parsed.difficulty;
+    if (parsed.estimatedMinutes !== undefined)
+      updateData.estimated_minutes = parsed.estimatedMinutes;
+    if (parsed.status !== undefined) updateData.status = parsed.status;
+    if (parsed.passingScore !== undefined) updateData.passing_score = parsed.passingScore;
 
     const { data, error } = await supabase
       .from("training_courses")
@@ -190,9 +233,10 @@ router.post("/courses/:id/enroll", async (req, res, next) => {
 
 router.post("/courses/:id/progress", async (req, res, next) => {
   try {
+    const parsed = progressSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
     const userId = req.authUser!.userId;
-    const progress = req.body.progress as number;
+    const progress = parsed.progress;
     const { data, error } = await supabase
       .from("training_enrollments")
       .update({
@@ -231,15 +275,16 @@ router.get("/lessons", async (req, res, next) => {
 
 router.post("/lessons", async (req, res, next) => {
   try {
+    const parsed = createLessonSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("training_lessons")
       .insert({
-        course_id: req.body.courseId,
-        title: req.body.title,
-        content: req.body.content ?? null,
-        lesson_type: req.body.lessonType ?? "text",
-        sort_order: req.body.sortOrder ?? 0,
+        course_id: parsed.courseId,
+        title: parsed.title,
+        content: parsed.content ?? null,
+        lesson_type: parsed.lessonType,
+        sort_order: parsed.sortOrder,
       })
       .select()
       .single();
@@ -249,7 +294,7 @@ router.post("/lessons", async (req, res, next) => {
       action: "training.lesson.created",
       entityType: "training_lesson",
       entityId: data.id,
-      metadata: { course_id: req.body.courseId, title: req.body.title },
+      metadata: { course_id: parsed.courseId, title: parsed.title },
     });
     res.status(201).json(success(data));
   } catch (error) {
@@ -274,12 +319,13 @@ router.get("/lessons/:id", async (req, res, next) => {
 
 router.patch("/lessons/:id", async (req, res, next) => {
   try {
+    const parsed = updateLessonSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
     const updateData: Record<string, unknown> = {};
-    if (req.body.title !== undefined) updateData.title = req.body.title;
-    if (req.body.content !== undefined) updateData.content = req.body.content;
-    if (req.body.lessonType !== undefined) updateData.lesson_type = req.body.lessonType;
-    if (req.body.sortOrder !== undefined) updateData.sort_order = req.body.sortOrder;
+    if (parsed.title !== undefined) updateData.title = parsed.title;
+    if (parsed.content !== undefined) updateData.content = parsed.content;
+    if (parsed.lessonType !== undefined) updateData.lesson_type = parsed.lessonType;
+    if (parsed.sortOrder !== undefined) updateData.sort_order = parsed.sortOrder;
 
     const { data, error } = await supabase
       .from("training_lessons")

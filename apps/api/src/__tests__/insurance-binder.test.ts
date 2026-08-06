@@ -196,4 +196,13 @@ describe("Insurance Binder API", () => {
     expect(res.status).toBe(200);
     expect(res.body.data.items).toEqual([]);
   });
+
+  it("returns 400 when creating evidence without a title", async () => {
+    mockAuth();
+    const res = await request(app)
+      .post("/api/v1/insurance-binder")
+      .set("Authorization", authToken)
+      .send({ organizationId: testOrgId });
+    expect(res.status).toBe(400);
+  });
 });

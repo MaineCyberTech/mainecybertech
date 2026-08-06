@@ -54,6 +54,9 @@ export class FinalApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/final/dns-changes/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/final/dns-changes/${id}`),
+    approve: (id: string) => this.c.post(`/api/v1/final/dns-changes/${id}/approve`),
+    reject: (id: string) => this.c.post(`/api/v1/final/dns-changes/${id}/reject`),
+    implement: (id: string) => this.c.post(`/api/v1/final/dns-changes/${id}/implement`),
   };
   satisfaction = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -72,6 +75,8 @@ export class FinalApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/final/time-entries/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/final/time-entries/${id}`),
+    summary: (p?: Record<string, string | number | undefined>) =>
+      this.c.get<Record<string, unknown>>("/api/v1/final/time-entries/summary", qp(p)),
   };
   budgets = {
     list: (p?: Record<string, string | number | undefined>) =>

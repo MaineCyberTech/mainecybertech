@@ -771,3 +771,88 @@ export const slaLogCheck: TaskHandler = async (_payload): Promise<TaskResult> =>
     return { ok: false, error: msg };
   }
 };
+
+export const automationRunCheck: TaskHandler = async (_payload): Promise<TaskResult> => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const now = new Date().toISOString();
+
+    const { data: workflows, error: fetchError } = await supabase
+      .from("automation_workflows")
+      .select("id, organization_id, name, trigger_type, is_active")
+      .eq("is_active", true);
+
+    if (fetchError) {
+      return { ok: false, error: `Failed to fetch automation_workflows: ${fetchError.message}` };
+    }
+
+    if (!workflows || workflows.length === 0) {
+      logger.info("automation-run-check: no active workflows");
+      return { ok: true };
+    }
+
+    const scheduled = (workflows as AnyRecord[]).filter((w) => String(w.trigger_type) !== "manual");
+
+    if (scheduled.length === 0) {
+      logger.info("automation-run-check: no scheduled workflows due");
+      return { ok: true };
+    }
+
+    const ids = scheduled.map((w) => w.id);
+    const { error: updateError } = await (supabase.from("automation_workflows") as any)
+      .update({
+        last_run_at: now,
+        last_run_status: "completed",
+      })
+      .in("id", ids);
+
+    if (updateError) {
+      return { ok: false, error: `Failed to update automation_workflows: ${updateError.message}` };
+    }
+
+    logger.info(
+      { count: scheduled.length, names: scheduled.map((w) => w.name) },
+      "automation-run-check: executed scheduled workflows",
+    );
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ error: msg }, "automation-run-check failed");
+    return { ok: false, error: msg };
+  }
+};
+
+export const approvalOverdueCheck: TaskHandler = async (_payload): Promise<TaskResult> => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const now = new Date().toISOString();
+
+    const { data: approvals, error: fetchError } = await supabase
+      .from("approval_requests")
+      .select("id, organization_id, request_subject, due_at, status")
+      .eq("status", "pending")
+      .lt("due_at", now);
+
+    if (fetchError) {
+      return { ok: false, error: `Failed to fetch approval_requests: ${fetchError.message}` };
+    }
+
+    if (!approvals || approvals.length === 0) {
+      logger.info("approval-overdue-check: no overdue approvals");
+      return { ok: true };
+    }
+
+    logger.info(
+      {
+        count: approvals.length,
+        overdue: (approvals as AnyRecord[]).map((a) => a.request_subject),
+      },
+      "approval-overdue-check: overdue approvals found",
+    );
+    return { ok: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error({ error: msg }, "approval-overdue-check failed");
+    return { ok: false, error: msg };
+  }
+};

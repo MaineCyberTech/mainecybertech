@@ -296,6 +296,15 @@ router.post("/phishing/:id/launch", async (req, res, next) => {
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (data) {
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "phishing.launched",
+        entityType: "phishing_campaign",
+        entityId: data.id,
+      });
+    }
     res.json(success(data));
   } catch (err) {
     next(err);

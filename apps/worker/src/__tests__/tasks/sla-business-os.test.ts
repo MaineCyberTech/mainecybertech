@@ -61,7 +61,12 @@ jest.mock("@supabase/supabase-js", () => ({
   })),
 }));
 
-import { slaLogCheck, businessOsSnapshot } from "../../tasks/module-tasks";
+import {
+  slaLogCheck,
+  businessOsSnapshot,
+  automationRunCheck,
+  approvalOverdueCheck,
+} from "../../tasks/module-tasks";
 
 describe("slaLogCheck", () => {
   beforeEach(() => {
@@ -114,6 +119,42 @@ describe("businessOsSnapshot", () => {
   it("returns { ok: false } when organization fetch fails", async () => {
     currentChain._setResult({ data: null, error: { message: "Org fetch failed" } });
     const result = await businessOsSnapshot({});
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("automationRunCheck", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    currentChain = createThenableChain({ data: [], error: null });
+  });
+
+  it("returns { ok: true } when no active workflows", async () => {
+    const result = await automationRunCheck({});
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("returns { ok: false } when workflow fetch fails", async () => {
+    currentChain._setResult({ data: null, error: { message: "Fetch failed" } });
+    const result = await automationRunCheck({});
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("approvalOverdueCheck", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    currentChain = createThenableChain({ data: [], error: null });
+  });
+
+  it("returns { ok: true } when no overdue approvals", async () => {
+    const result = await approvalOverdueCheck({});
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("returns { ok: false } when approval fetch fails", async () => {
+    currentChain._setResult({ data: null, error: { message: "Fetch failed" } });
+    const result = await approvalOverdueCheck({});
     expect(result.ok).toBe(false);
   });
 });

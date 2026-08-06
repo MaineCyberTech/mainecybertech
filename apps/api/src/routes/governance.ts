@@ -161,6 +161,15 @@ router.post("/change-requests/:id/submit", async (req, res, next) => {
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (data) {
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "change_request.submitted",
+        entityType: "change_request",
+        entityId: data.id,
+      });
+    }
     res.json(success(data));
   } catch (err) {
     next(err);
@@ -181,6 +190,15 @@ router.post("/change-requests/:id/approve", async (req, res, next) => {
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (data) {
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "change_request.approved",
+        entityType: "change_request",
+        entityId: data.id,
+      });
+    }
     res.json(success(data));
   } catch (err) {
     next(err);
@@ -197,6 +215,15 @@ router.post("/change-requests/:id/reject", async (req, res, next) => {
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (data) {
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "change_request.rejected",
+        entityType: "change_request",
+        entityId: data.id,
+      });
+    }
     res.json(success(data));
   } catch (err) {
     next(err);
@@ -213,6 +240,15 @@ router.post("/change-requests/:id/implement", async (req, res, next) => {
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (data) {
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "change_request.implemented",
+        entityType: "change_request",
+        entityId: data.id,
+      });
+    }
     res.json(success(data));
   } catch (err) {
     next(err);
@@ -229,6 +265,15 @@ router.post("/change-requests/:id/verify", async (req, res, next) => {
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (data) {
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "change_request.verified",
+        entityType: "change_request",
+        entityId: data.id,
+      });
+    }
     res.json(success(data));
   } catch (err) {
     next(err);
