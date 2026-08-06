@@ -144,16 +144,18 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
       });
     }, scan.intervalMs);
     interval.unref();
-  }
-  if (scheduledScans.length > 0) {
-    const first = scheduledScans[0];
-    const initialDelayMs = first.offsetMin * 60 * 1000;
-    const initial = setTimeout(() => {
-      logger.info(`Running initial ${first.name}`);
-      runScheduledTask(first.name).catch((error) => {
-        logger.error({ error }, `Initial ${first.name} failed`);
-      });
-    }, initialDelayMs);
+    // Honor each scan's stagger offset so scans don't all fire on the same
+    // tick after a worker restart. Without this only scheduledScans[0] ran
+    // at boot and the remaining offsets were dead config.
+    const initial = setTimeout(
+      () => {
+        logger.info(`Running initial ${scan.name}`);
+        runScheduledTask(scan.name).catch((error) => {
+          logger.error({ error }, `Initial ${scan.name} failed`);
+        });
+      },
+      scan.offsetMin * 60 * 1000,
+    );
     initial.unref();
   }
 
