@@ -169,6 +169,23 @@ insert into public.risk_register (id, organization_id, risk_description, risk_ca
   ('65700000-0000-0000-0000-000000000010'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Regulatory scrutiny on client data retention', 'regulatory', 'medium', 'high', 15, 'Retention policy review scheduled.', 'open', 'c3000000-0000-4000-8000-000000000004'::uuid, null, 'd4000000-0000-4000-8000-000000000003'::uuid)
 on conflict (id) do nothing;
 
+-- Populate risk assessment columns (migration 5302125) for a subset of risks
+update public.risk_register set
+  risk_level = case when risk_score >= 15 then 'critical' when risk_score >= 10 then 'high' when risk_score >= 5 then 'medium' else 'low' end,
+  assessed_at = now() - interval '30 days',
+  accepting_controls = 'Reviewed by leadership at last QBR; compensating controls documented.'
+where id in ('65700000-0000-0000-0000-000000000001','65700000-0000-0000-0000-000000000003','65700000-0000-0000-0000-000000000005');
+
+-- Overdue approval (exercises approval-overdue-check worker + admin approval-requests page)
+insert into public.approval_requests (id, organization_id, request_type, request_subject, request_body, request_metadata, status, priority, requested_by, assigned_to, due_at, source_module, source_entity_type, source_entity_id) values
+  ('57700000-0000-0000-0000-000000000006'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'change', 'Firewall maintenance window (overdue)', 'Scheduled firewall maintenance window missed approval deadline.', jsonb_build_object('seeded', true), 'pending', 'high', 'f1000000-0000-4000-8000-000000000004'::uuid, 'd4000000-0000-4000-8000-000000000004'::uuid, now() - interval '2 days', 'governance', 'change_request', '64600000-0000-0000-0000-000000000001')
+on conflict (id) do nothing;
+
+-- Stale DMARC analysis (exercises dmarc-coach-check worker marking stale)
+insert into public.dmarc_analyses (id, organization_id, domain, dmarc_record, spf_record, dkim_record, dmarc_policy, alignment_mode, pct, overall_grade, issues, recommendations, analyzed_at, status, created_by) values
+  ('82710000-0000-0000-0000-000000000099'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'acme.example', 'v=DMARC1; p=none;', 'v=spf1 ~all', 'v=DKIM1; k=rsa; p=...', 'none', 'relaxed', 100, 'F', jsonb_build_array('No enforcement policy'), jsonb_build_array(jsonb_build_object('action', 'move_to_quarantine')), now() - interval '45 days', 'active', 'd4000000-0000-4000-8000-000000000001'::uuid)
+on conflict (id) do nothing;
+
 -- ---------------------------------------------------------
 -- 9. PROPOSALS (1 per org incl. Northwind) + PHASES + LINE ITEMS
 -- ---------------------------------------------------------
