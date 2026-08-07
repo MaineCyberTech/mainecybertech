@@ -7,6 +7,12 @@ test.describe("accessibility scan", () => {
     { path: "/store", name: "public store" },
     { path: "/portal/dashboard", name: "portal dashboard" },
     { path: "/admin", name: "admin dashboard" },
+    { path: "/portal/support", name: "portal tickets" },
+    { path: "/portal/projects", name: "portal projects" },
+    { path: "/portal/documents", name: "portal documents" },
+    { path: "/admin/tickets", name: "admin tickets" },
+    { path: "/admin/projects", name: "admin projects" },
+    { path: "/portal/findings", name: "portal findings" },
   ];
 
   for (const page of pages) {
