@@ -4,10 +4,24 @@ const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL ?? "superadmin.real@mainecyberte
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? "1";
 
 setup("authenticate as admin", async ({ page }) => {
-  await page.goto("/login");
-  await page.getByPlaceholder("name@clientdomain.com").fill(ADMIN_EMAIL);
-  await page.locator('input[type="password"]').fill(ADMIN_PASSWORD);
-  await page.getByRole("button", { name: /secure login/i }).click();
-  await expect(page).toHaveURL(/\/dashboard|\/admin/);
+  // The API + local Supabase can take a moment to be fully ready after
+  // db reset / container restart; retry the login so a single transient
+  // failure doesn't fail the entire suite.
+  let attempts = 0;
+  for (;;) {
+    attempts += 1;
+    await page.goto("/login");
+    await page.getByPlaceholder("name@clientdomain.com").fill(ADMIN_EMAIL);
+    await page.locator('input[type="password"]').fill(ADMIN_PASSWORD);
+    await page.getByRole("button", { name: /secure login/i }).click();
+    try {
+      await expect(page).toHaveURL(/\/dashboard|\/admin/, { timeout: 15_000 });
+      break;
+    } catch (err) {
+      if (attempts >= 3) throw err;
+      console.warn(`Admin login attempt ${attempts} failed, retrying...`);
+      await page.waitForTimeout(3_000);
+    }
+  }
   await page.context().storageState({ path: ".playwright-auth.json" });
 });

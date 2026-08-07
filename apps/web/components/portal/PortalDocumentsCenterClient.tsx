@@ -183,12 +183,13 @@ export default function PortalDocumentsCenterClient({
           <input type="hidden" name="organizationId" value={organizationId} />
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="cyber-label">Title</label>
-              <input name="name" className="cyber-input" placeholder="Document title..." required />
+              <label htmlFor="portal-doc-title" className="cyber-label">Title</label>
+              <input id="portal-doc-title" name="name" className="cyber-input" placeholder="Document title..." required />
             </div>
             <div className="md:col-span-2">
-              <label className="cyber-label">Description</label>
+              <label htmlFor="portal-doc-description" className="cyber-label">Description</label>
               <textarea
+                id="portal-doc-description"
                 name="description"
                 rows={3}
                 className="cyber-input"
@@ -196,12 +197,12 @@ export default function PortalDocumentsCenterClient({
               />
             </div>
             <div>
-              <label className="cyber-label">File</label>
-              <input type="file" name="file" className="cyber-input" required />
+              <label htmlFor="portal-doc-file" className="cyber-label">File</label>
+              <input id="portal-doc-file" type="file" name="file" className="cyber-input" required />
             </div>
             <div>
-              <label className="cyber-label">Visibility</label>
-              <select name="visibility" className="cyber-input" defaultValue="org">
+              <label htmlFor="portal-doc-visibility" className="cyber-label">Visibility</label>
+              <select id="portal-doc-visibility" name="visibility" className="cyber-input" defaultValue="org">
                 <option value="org">Organization</option>
                 <option value="private">Private</option>
               </select>
