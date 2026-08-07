@@ -8,7 +8,7 @@
     "build": "tsup src/main.ts --format esm,cjs --out-dir dist",
     "start": "node dist/main.js",
     "lint": "eslint src/",
-    "test": "jest --passWithNoTests --forceExit",
+    "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit"
