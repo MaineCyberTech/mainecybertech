@@ -293,6 +293,7 @@ export default function PortalSidebarContent({
                       ref={(el) => {
                         groupLinks.current[`${group.label}-${itemIndex}`] = el;
                       }}
+                      aria-current={isActive(item.href) ? "page" : undefined}
                       className={`block border-l-2 px-3 py-1.5 text-xs transition ${
                         isActive(item.href)
                           ? "border-emerald-500 bg-emerald-500/5 font-medium text-emerald-400"
@@ -320,6 +321,7 @@ export default function PortalSidebarContent({
                       ref={(el) => {
                         groupLinks.current[`${group.label}-${itemIndex}`] = el;
                       }}
+                      aria-current={isActive(item.href) ? "page" : undefined}
                       className={`block rounded px-3 py-1.5 text-xs transition ${
                         isActive(item.href)
                           ? "bg-emerald-600/15 font-medium text-emerald-400"

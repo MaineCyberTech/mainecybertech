@@ -1,6 +1,8 @@
 import { getClientEnv } from "@/lib/env";
 import UploadForm from "./UploadForm";
 
+export const metadata = { title: "Secure Upload - Maine CyberTech" };
+
 export type FileRequestInfo = {
   id: string;
   title: string;
