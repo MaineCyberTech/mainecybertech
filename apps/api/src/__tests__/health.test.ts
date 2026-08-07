@@ -77,4 +77,18 @@ describe("health check", () => {
     expect(res.status).toBe(503);
     expect(res.body.data.checks.database.status).toBe("unhealthy");
   });
+
+  it("reports redis as not_configured when REDIS_URL is unset", async () => {
+    const supabase = {
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue({ error: null }),
+      }),
+    };
+    (getSupabaseAdminNoBreaker as jest.Mock).mockReturnValue(supabase);
+
+    const res = await request(app).get("/health");
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.checks.redis.status).toBe("not_configured");
+  });
 });

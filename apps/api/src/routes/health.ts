@@ -2,6 +2,7 @@ import { Router } from "express";
 import { success } from "../types";
 import { getSupabaseAdminNoBreaker } from "../services/supabase";
 import { getEnv } from "../config/env";
+import { checkRedisHealth } from "../lib/health";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -72,6 +73,13 @@ router.get("/", async (_req, res) => {
   } else {
     checks.jsm = { status: "not_configured" };
   }
+
+  // Redis is used for the response cache + BullMQ queue. It is optional in
+  // single-instance deployments (cache falls back to memory), so a missing
+  // REDIS_URL reports not_configured rather than degrading health.
+  const redis = await checkRedisHealth(env);
+  checks.redis = { status: redis.status, latencyMs: redis.latencyMs, error: redis.error };
+  if (redis.status === "unhealthy") healthy = false;
 
   const status = healthy ? 200 : 503;
   res.status(status).json(
