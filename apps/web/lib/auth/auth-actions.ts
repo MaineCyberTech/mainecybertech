@@ -16,17 +16,20 @@ function unauthClient() {
 }
 
 export async function loginAction(email: string, password: string) {
+  let accessToken: string;
   try {
     const result = await unauthClient().auth.signIn(email, password);
-    const cookieStore = await cookies();
-    const headersList = await headers();
-    const host = headersList.get("host") || "";
-    cookieStore.set(SESSION_COOKIE, result.accessToken, getCookieOptions(host));
-    redirect(await resolveLandingRedirect(result.accessToken));
+    accessToken = result.accessToken;
   } catch (error) {
     const message = error instanceof ApiError ? error.message : "An unexpected error occurred";
     return { error: message };
   }
+  const cookieStore = await cookies();
+  const headersList = await headers();
+  const host = headersList.get("host") || "";
+  cookieStore.set(SESSION_COOKIE, accessToken, getCookieOptions(host));
+  // redirect() throws NEXT_REDIRECT - must NOT be inside the try/catch above.
+  redirect(await resolveLandingRedirect(accessToken));
 }
 
 /**
