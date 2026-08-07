@@ -26,7 +26,14 @@ export async function checkRedisHealth(env?: Env): Promise<DependencyCheck> {
     // connection when the URL already embeds credentials.
     client = createClient({
       url: resolveRedisUrl(e.REDIS_URL ?? "redis://redis:6379", e.REDIS_PASSWORD),
-      socket: { connectTimeout: 3_000, reconnectStrategy: () => 5_000 },
+      socket: {
+        connectTimeout: 3_000,
+        // One-shot connect: NO reconnect strategy, so an unreachable Redis
+        // fails the ping quickly instead of retrying forever and hanging the
+        // /health endpoint (which would fail the deploy gate and take the
+        // site down).
+        reconnectStrategy: false,
+      },
     });
     client.on("error", () => {}); // suppress default error logging during ping
     await client.connect();

@@ -359,9 +359,10 @@ jobs:
             echo "Attempt $i/30: $CODE"; sleep 4
           done
           if [ -z "$api_ok" ]; then
-            echo "API health check failed â€” dumping droplet API container logs:"
-            ssh -o StrictHostKeyChecking=no root@${{ needs.resolve-ip.outputs.droplet_ip }} \
-              "docker compose -p mct-portal logs --tail=40 api 2>/dev/null || docker logs mct-portal-api-1 --tail 40 2>/dev/null || echo 'no api container found'" || true
+            echo "===== API CONTAINER LOGS START ====="
+            ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@${{ needs.resolve-ip.outputs.droplet_ip }} \
+              "docker ps -a --format '{{.Names}} {{.Status}}'; echo '---'; docker compose -p mct-portal logs --tail=50 api 2>/dev/null || docker logs mct-portal-api-1 --tail 50 2>/dev/null || echo 'no api container found'" || echo "SSH to droplet failed"
+            echo "===== API CONTAINER LOGS END ====="
             exit 1
           fi
           echo "Worker health check via SSH..."
