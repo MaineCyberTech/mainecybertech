@@ -6,9 +6,9 @@ test.describe("admin powershell scripts", () => {
     await expect(
       page.getByRole("navigation", { name: "Breadcrumb" }).getByText("PowerShell Script"),
     ).toBeVisible({ timeout: 15000 });
-    await expect(page.getByRole("heading", { name: /PowerShell Script/i })).toBeVisible({
-      timeout: 15000,
-    });
+    await expect(page.getByRole("heading", { name: "PowerShell Script", exact: true })).toBeVisible(
+      { timeout: 15000 },
+    );
   });
 
   test("shows script list or empty state", async ({ page }) => {
