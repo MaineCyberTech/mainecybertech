@@ -120,20 +120,16 @@ export default function EmptyState({
   const Icon = ICON_MAP[icon] ?? ClipboardList;
 
   return (
-    <div className="rounded-2xl border border-dashed border-white/10 bg-[#071018]/70 px-6 py-12 text-center">
+    <div className="rounded-2xl border border-dashed border-white/10 bg-cyber-card-deep/70 px-6 py-12 text-center">
       <div
-        className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-[#0A1118]/60"
+        className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-cyber-base/60"
         aria-hidden="true"
       >
         <Icon className="h-7 w-7 text-slate-400" strokeWidth={1.5} />
       </div>
-      <h3 className="font-orbitron text-base font-semibold text-slate-50">
-        {title}
-      </h3>
+      <h3 className="font-orbitron text-base font-semibold text-slate-50">{title}</h3>
       {description ? (
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">
-          {description}
-        </p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">{description}</p>
       ) : null}
       {actionLabel || secondaryLabel ? (
         <div className="mt-6 flex items-center justify-center gap-3">

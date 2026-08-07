@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 
@@ -102,7 +102,7 @@ export default function AdminSLAClient({
             Object.entries(metrics.byMetric).map(([key, m]) => (
               <div
                 key={key}
-                className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                className="flex items-center justify-between rounded-lg border border-white/10 bg-cyber-base/60 p-4"
               >
                 <div>
                   <p className="font-medium text-slate-50">{metricLabels[key] ?? key}</p>
@@ -134,7 +134,7 @@ export default function AdminSLAClient({
                 className={`flex items-center justify-between rounded-lg border p-3 ${
                   event.breached
                     ? "border-red-500/20 bg-red-500/5"
-                    : "border-white/10 bg-[#0A1118]/60"
+                    : "border-white/10 bg-cyber-base/60"
                 }`}
               >
                 <div className="flex items-center gap-3">

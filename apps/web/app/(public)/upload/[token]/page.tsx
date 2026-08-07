@@ -37,7 +37,7 @@ export default async function PublicUploadPage(props: { params: Promise<{ token:
 
   return (
     <div className="mx-auto flex min-h-[70vh] w-full max-w-xl flex-col items-center justify-center px-6 py-16">
-      <div className="w-full rounded-2xl border border-white/10 bg-[#0A1118]/80 p-8 shadow-2xl">
+      <div className="w-full rounded-2xl border border-white/10 bg-cyber-base/80 p-8 shadow-2xl">
         <h1 className="mb-1 text-2xl font-bold text-slate-50">
           {info ? info.title : "Secure File Upload"}
         </h1>

@@ -37,7 +37,10 @@ export default async function PortalStatusPagesPage() {
       <p className="text-sm text-slate-400">Current operational status of all services.</p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((c) => (
-          <div key={String(c.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div
+            key={String(c.id)}
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+          >
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-medium text-slate-50">{String(c.name)}</p>

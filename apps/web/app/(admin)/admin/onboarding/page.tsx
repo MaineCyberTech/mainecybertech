@@ -61,7 +61,7 @@ export default async function OnboardingPage() {
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
             items.map((o) => (
-              <div key={o.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={o.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <Link
                   className="transition hover:text-emerald-400"
                   href={`/admin/onboarding/${o.id}`}

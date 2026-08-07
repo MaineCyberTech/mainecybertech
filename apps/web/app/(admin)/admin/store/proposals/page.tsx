@@ -40,7 +40,7 @@ export default async function AdminStoreProposalsPage() {
         </h2>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {data.fields.map((field) => (
-            <div key={field} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-3">
+            <div key={field} className="rounded-lg border border-white/10 bg-cyber-base/60 p-3">
               <p className="text-xs text-slate-300">{field}</p>
             </div>
           ))}

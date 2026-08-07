@@ -68,7 +68,7 @@ export default function CreateOrganizationForm() {
       </button>
       <form
         onSubmit={handleSubmit}
-        className="absolute right-0 top-12 z-40 w-80 space-y-3 rounded-lg border border-white/10 bg-[#0F172A] p-4 shadow-2xl"
+        className="absolute right-0 top-12 z-40 w-80 space-y-3 rounded-lg border border-white/10 bg-slate-900 p-4 shadow-2xl"
       >
         <p className="text-sm font-semibold text-slate-100">New Organization</p>
         <div>

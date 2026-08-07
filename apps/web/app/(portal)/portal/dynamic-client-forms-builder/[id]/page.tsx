@@ -149,7 +149,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
                   .map((field) => (
                     <div
                       key={field.key}
-                      className="rounded-lg border border-white/5 bg-[#0A1118]/60 p-3"
+                      className="rounded-lg border border-white/5 bg-cyber-base/60 p-3"
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-slate-50">{field.label}</span>
@@ -191,7 +191,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
                 {submissions.map((sub) => (
                   <div
                     key={sub.id}
-                    className="rounded-lg border border-white/5 bg-[#0A1118]/60 p-3"
+                    className="rounded-lg border border-white/5 bg-cyber-base/60 p-3"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-50">

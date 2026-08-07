@@ -155,7 +155,7 @@ export default function IntakeFormRenderer({
   }
 
   const inputCls = (fieldId: string) =>
-    `w-full rounded border border-white/10 bg-[#0A1118]/60 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-[#0A1118]/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] ${errors[fieldId] ? "border-red-500" : ""}`;
+    `w-full rounded border border-white/10 bg-cyber-base/60 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] ${errors[fieldId] ? "border-red-500" : ""}`;
 
   const labelCls = "mb-2 block text-xs font-semibold uppercase tracking-widest text-slate-300";
 
@@ -245,7 +245,7 @@ export default function IntakeFormRenderer({
           type="checkbox"
           checked={consent}
           onChange={(e) => setConsent(e.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0 rounded border border-white/10 bg-[#0A1118]/60 text-emerald-600 focus:ring-emerald-600"
+          className="mt-1 h-4 w-4 shrink-0 rounded border border-white/10 bg-cyber-base/60 text-emerald-600 focus:ring-emerald-600"
         />
         <label htmlFor="intake-consent" className="text-xs leading-relaxed text-slate-400">
           I agree to the{" "}

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 
@@ -89,7 +89,7 @@ export default function AdminApiKeysClient({
           <p className="mt-2 text-sm text-slate-300">
             Save this key now — it won&apos;t be shown again:
           </p>
-          <div className="mt-2 break-all rounded bg-[#0A1118] p-3 font-mono text-sm text-slate-200">
+          <div className="mt-2 break-all rounded bg-cyber-base p-3 font-mono text-sm text-slate-200">
             {newKeyResult.fullKey}
           </div>
           <button
@@ -208,7 +208,7 @@ export default function AdminApiKeysClient({
             </div>
           ))
         ) : (
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-6 text-center text-sm text-slate-400">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-6 text-center text-sm text-slate-400">
             No API keys found. Create one to get started.
           </div>
         )}

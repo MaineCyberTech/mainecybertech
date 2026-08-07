@@ -345,18 +345,18 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
             <span className="cyber-pill">View</span>
           </div>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Category</p>
               <p className="mt-2 text-slate-200">{ticketCategory(ticket)}</p>
             </div>
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Updated</p>
               <p className="mt-2 text-slate-200">
                 {formatDateTime(ticket.updated_at ?? ticket.created_at)}
               </p>
             </div>
             {ticket.labels?.length ? (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Labels</p>
                 <p className="mt-2 flex flex-wrap gap-1">
                   {ticket.labels.map((l: string) => (
@@ -371,13 +371,13 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
               </div>
             ) : null}
             {ticket.resolution ? (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Resolution</p>
                 <p className="mt-2 text-slate-200">{ticket.resolution}</p>
               </div>
             ) : null}
           </div>
-          <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div className="mt-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4">
             <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Description</p>
             <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
               {ticketDescription(ticket)}
@@ -403,7 +403,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
               return (
                 <div
                   key={comment.id ?? `${comment.created_at}-${commentBody(comment)}`}
-                  className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
@@ -471,7 +471,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
               );
             })
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No comments yet.
             </div>
           )}
@@ -521,7 +521,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
             auditLogs.map((log: any) => (
               <div
                 key={log.id}
-                className="flex items-start gap-3 rounded-lg border border-white/5 bg-[#0A1118]/60 px-4 py-3"
+                className="flex items-start gap-3 rounded-lg border border-white/5 bg-cyber-base/60 px-4 py-3"
               >
                 <div className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500/60" />
                 <div className="min-w-0 flex-1">
@@ -547,7 +547,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
               </div>
             ))
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No activity recorded.
             </div>
           )}

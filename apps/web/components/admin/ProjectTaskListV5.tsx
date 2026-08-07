@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import AvatarPill from "@/components/admin/AvatarPill";
@@ -312,7 +312,7 @@ export default function ProjectTaskListV5({
                   key={owner.id}
                   type="button"
                   onClick={() => setOwnerFilter(owner.id)}
-                  className={`rounded-lg border px-3 py-2 ${active ? "border-emerald-500/50 bg-emerald-600/10" : "border-white/10 bg-[#0A1118]/60"}`}
+                  className={`rounded-lg border px-3 py-2 ${active ? "border-emerald-500/50 bg-emerald-600/10" : "border-white/10 bg-cyber-base/60"}`}
                 >
                   <AvatarPill
                     id={owner.id}
@@ -332,7 +332,7 @@ export default function ProjectTaskListV5({
 
       <form
         onSubmit={handleCreateTask}
-        className="space-y-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+        className="space-y-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4"
       >
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -426,7 +426,7 @@ export default function ProjectTaskListV5({
             />
           ))
         ) : (
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
             No tasks match the current filters.
           </div>
         )}
@@ -673,7 +673,7 @@ function AdminTaskCard({
 
   return (
     <details
-      className="rounded-lg border border-white/10 bg-[#0A1118]/60 open:border-emerald-600/20 open:bg-[#0A1118]/80"
+      className="rounded-lg border border-white/10 bg-cyber-base/60 open:border-emerald-600/20 open:bg-cyber-base/80"
       draggable
       onToggle={(event) => {
         const open = (event.currentTarget as HTMLDetailsElement).open;
@@ -861,7 +861,7 @@ function AdminTaskCard({
           </div>
         </form>
 
-        <div className="mt-6 space-y-3 rounded-lg border border-white/10 bg-[#0A1118]/40 p-4">
+        <div className="mt-6 space-y-3 rounded-lg border border-white/10 bg-cyber-base/40 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
             Task Comments
           </p>
@@ -869,7 +869,7 @@ function AdminTaskCard({
             taskState.comments.map((comment) => (
               <div
                 key={comment.id}
-                className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-3"
+                className="rounded-lg border border-white/10 bg-cyber-base/60 p-3"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
@@ -956,14 +956,14 @@ function AdminTaskCard({
             <input type="hidden" name="projectId" value={projectId} />
             <input type="hidden" name="organizationId" value={organizationId} />
             <input type="hidden" name="taskId" value={taskState.id} />
-<textarea
-  name="body"
-  rows={3}
-  className="cyber-input"
-  placeholder="Add an internal or client-facing comment about this task..."
-  aria-label="Add a comment"
-  required
-/>
+            <textarea
+              name="body"
+              rows={3}
+              className="cyber-input"
+              placeholder="Add an internal or client-facing comment about this task..."
+              aria-label="Add a comment"
+              required
+            />
             <label className="flex items-center gap-2 text-sm text-slate-300">
               <input type="checkbox" name="isInternal" />
               Internal only (hidden from client)

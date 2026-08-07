@@ -45,7 +45,7 @@ export default function ProposalEditForm({
           name="title"
           required
           defaultValue={title}
-          className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
       </div>
       <div>
@@ -57,7 +57,7 @@ export default function ProposalEditForm({
           name="description"
           rows={3}
           defaultValue={description}
-          className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
@@ -69,7 +69,7 @@ export default function ProposalEditForm({
             id="pe-status"
             name="status"
             defaultValue={status}
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           >
             <option value="draft">Draft</option>
             <option value="sent">Sent</option>
@@ -86,7 +86,7 @@ export default function ProposalEditForm({
             id="pe-vis"
             name="visibility"
             defaultValue={visibility}
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           >
             <option value="internal">Internal</option>
             <option value="client_visible">Client Visible</option>
@@ -101,7 +101,7 @@ export default function ProposalEditForm({
             name="validUntil"
             type="date"
             defaultValue={validUntil}
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           />
         </div>
       </div>

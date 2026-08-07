@@ -96,7 +96,7 @@ export default async function AdminPromotionsPage() {
       <div className="hidden overflow-x-auto rounded-lg border border-white/10 md:block">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-white/10 bg-[#0A1118]/60">
+            <tr className="border-b border-white/10 bg-cyber-base/60">
               <th className="px-4 py-3 text-left font-semibold text-slate-300">Name</th>
               <th className="px-4 py-3 text-left font-semibold text-slate-300">Badge</th>
               <th className="px-4 py-3 text-left font-semibold text-slate-300">Type</th>
@@ -218,7 +218,7 @@ export default async function AdminPromotionsPage() {
           );
         })}
         {promotions.length === 0 && (
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-8 text-center text-sm text-slate-400">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-8 text-center text-sm text-slate-400">
             No promotions yet. Click &quot;Create Promotion&quot; to get started.
           </div>
         )}

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -87,7 +87,7 @@ export default function AdminOrganizationsClient({
             }}
             placeholder="Search organizations..."
             aria-label="Search organizations"
-            className="w-full rounded-lg border border-white/10 bg-[#0A1118] py-2 pl-10 pr-3 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-lg border border-white/10 bg-cyber-base py-2 pl-10 pr-3 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
           />
         </div>
         <select
@@ -97,7 +97,7 @@ export default function AdminOrganizationsClient({
             setPage(1);
           }}
           aria-label="Filter by status"
-          className="rounded-lg border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+          className="rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
         >
           <option value="all">All statuses</option>
           {statuses.map((s) => (

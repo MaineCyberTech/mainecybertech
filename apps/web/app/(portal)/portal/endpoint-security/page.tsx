@@ -36,7 +36,7 @@ export default async function PortalEndpointSecurityPage() {
           return (
             <div
               key={String(a.id)}
-              className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+              className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
             >
               <div className="flex items-center justify-between">
                 <p className="font-medium text-slate-50">{String(a.device_group || "Group")}</p>

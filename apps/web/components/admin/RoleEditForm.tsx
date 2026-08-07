@@ -77,7 +77,7 @@ export default function RoleEditForm({ roleId, initialName, initialDescription, 
   return (
     <form
       onSubmit={handleSave}
-      className="flex flex-col gap-3 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:flex-row sm:items-end"
+      className="flex flex-col gap-3 rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:flex-row sm:items-end"
     >
       <div className="flex-1">
         <label

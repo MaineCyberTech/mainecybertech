@@ -110,7 +110,7 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
             <select
               id="org-select"
               name="organizationId"
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-200"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200"
               required
             >
               <option value="">Select organization...</option>
@@ -130,7 +130,7 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
               name="rawDescription"
               rows={6}
               placeholder="e.g. My laptop won't turn on after the power outage yesterday. The battery light blinks amber when I press the power button. I have a Dell Latitude 5540 running Windows 11."
-              className="mt-1 w-full rounded-lg border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500"
+              className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder:text-slate-500"
               required
               minLength={10}
             />
@@ -213,7 +213,7 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
                 <input
                   id="subject-input"
                   defaultValue={result.suggested_subject}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-200"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200"
                 />
               </div>
               <div>
@@ -224,7 +224,7 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
                   id="ticket-body"
                   rows={5}
                   defaultValue={result.raw_description}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-200"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200"
                 />
               </div>
               <button

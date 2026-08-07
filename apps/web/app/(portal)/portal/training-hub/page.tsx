@@ -35,7 +35,10 @@ export default async function PortalTrainingHubPage() {
       <p className="text-sm text-slate-400">Browse available microlearning courses.</p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((c) => (
-          <div key={String(c.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div
+            key={String(c.id)}
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+          >
             <p className="font-medium text-slate-50">{String(c.title)}</p>
             <div className="mt-2 flex items-center gap-2">
               <span className="rounded bg-white/5 px-2 py-0.5 text-xs text-slate-400">

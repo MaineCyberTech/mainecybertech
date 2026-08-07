@@ -36,7 +36,7 @@ export default function PermissionMatrixClient({
     key.charAt(0).toUpperCase() + key.slice(1);
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#0F172A]/60">
+    <div className="overflow-x-auto rounded-xl border border-white/10 bg-slate-900/60">
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-white/10">

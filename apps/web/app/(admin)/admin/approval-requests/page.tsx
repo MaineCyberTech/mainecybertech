@@ -57,7 +57,7 @@ export default async function ApprovalRequestsAdminPage() {
           {["pending", "approved", "rejected", "cancelled"].map((k) => (
             <div
               key={k}
-              className="rounded-lg border border-white/10 bg-[#0A1118]/60 px-4 py-2 text-sm"
+              className="rounded-lg border border-white/10 bg-cyber-base/60 px-4 py-2 text-sm"
             >
               <span className="capitalize text-slate-400">{k}: </span>
               <span className="font-semibold text-slate-50">{stats[k] ?? 0}</span>
@@ -71,7 +71,7 @@ export default async function ApprovalRequestsAdminPage() {
             items.map((a) => (
               <div
                 key={String(a.id)}
-                className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
               >
                 <Link
                   className="transition hover:text-emerald-400"

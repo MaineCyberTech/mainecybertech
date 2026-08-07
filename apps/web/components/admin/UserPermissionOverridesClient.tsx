@@ -123,7 +123,7 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
 
   if (memberships.length === 0) {
     return (
-      <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-sm text-slate-400">
+      <div className="mt-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-sm text-slate-400">
         No memberships — permission overrides require an organization membership.
       </div>
     );
@@ -259,7 +259,7 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
                                 const hasRole = rolePermissionIds.includes(perm.id);
                                 const cellBusy =
                                   busy === `${membership.organization_id}:${perm.id}`;
-                                let bg = "bg-[#0A1118]/60";
+                                let bg = "bg-cyber-base/60";
                                 if (override?.is_allowed) bg = "bg-emerald-500/60";
                                 else if (override && !override.is_allowed) bg = "bg-red-500/60";
                                 else if (hasRole) bg = "bg-emerald-500/15";

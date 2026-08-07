@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { getClientApi } from "@/lib/client-api";
@@ -191,7 +191,7 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
         <div className="flex items-center gap-2 text-xs">
           <span className="inline-block h-3 w-3 rounded border border-emerald-500/30 bg-emerald-500/15" />
           <span className="text-slate-400">Granted</span>
-          <span className="ml-2 inline-block h-3 w-3 rounded border border-white/10 bg-[#0A1118]/60" />
+          <span className="ml-2 inline-block h-3 w-3 rounded border border-white/10 bg-cyber-base/60" />
           <span className="text-slate-400">Not set</span>
         </div>
       </div>
@@ -275,7 +275,7 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
                               className={`inline-flex h-8 w-8 items-center justify-center rounded border text-xs font-bold transition sm:h-7 sm:w-7 ${
                                 hasIt
                                   ? "border-emerald-500/30 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
-                                  : "border-white/10 bg-[#0A1118]/60 text-slate-600 hover:border-slate-600 hover:text-slate-400"
+                                  : "border-white/10 bg-cyber-base/60 text-slate-600 hover:border-slate-600 hover:text-slate-400"
                               } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
                               title={perm.description ?? `${mod} ${action}`}
                             >

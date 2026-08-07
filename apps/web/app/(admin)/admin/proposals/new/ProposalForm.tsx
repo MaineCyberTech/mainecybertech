@@ -28,7 +28,7 @@ export default function ProposalForm() {
           name="title"
           required
           placeholder="e.g. Q4 Managed Services Proposal"
-          className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
       </div>
       <div>
@@ -40,7 +40,7 @@ export default function ProposalForm() {
           name="organizationId"
           required
           placeholder="Org UUID"
-          className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
       </div>
       <div>
@@ -51,7 +51,7 @@ export default function ProposalForm() {
           id="p-desc"
           name="description"
           rows={3}
-          className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -63,7 +63,7 @@ export default function ProposalForm() {
             id="p-valid"
             name="validUntil"
             type="date"
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           />
         </div>
         <div>
@@ -73,7 +73,7 @@ export default function ProposalForm() {
           <select
             id="p-vis"
             name="visibility"
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           >
             <option value="internal">Internal</option>
             <option value="client_visible">Client Visible</option>

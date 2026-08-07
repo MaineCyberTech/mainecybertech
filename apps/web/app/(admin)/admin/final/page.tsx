@@ -52,7 +52,7 @@ export default async function FinalPage() {
               <Link
                 key={i.k}
                 href={`/admin/final/${i.k}`}
-                className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-center transition hover:border-emerald-600/25 hover:bg-[#0A1118]/80"
+                className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-center transition hover:border-emerald-600/25 hover:bg-cyber-base/80"
               >
                 <p className="text-sm font-medium text-slate-50">{i.l}</p>
               </Link>

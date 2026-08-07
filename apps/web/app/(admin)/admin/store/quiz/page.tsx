@@ -148,7 +148,7 @@ export default async function AdminQuizPage() {
 
         <div className="mt-8 rounded-lg border border-slate-700/50 bg-slate-800/30 p-6">
           <h4 className="mb-3 text-sm font-semibold text-slate-400">JSON Preview</h4>
-          <pre className="max-h-96 overflow-auto rounded bg-[#0A1118] p-4 text-xs text-slate-400">
+          <pre className="max-h-96 overflow-auto rounded bg-cyber-base p-4 text-xs text-slate-400">
             {JSON.stringify(quiz, null, 2)}
           </pre>
           <p className="mt-3 text-xs text-slate-500">

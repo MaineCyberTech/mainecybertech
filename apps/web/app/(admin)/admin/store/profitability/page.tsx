@@ -40,7 +40,7 @@ export default async function AdminStoreProfitabilityPage() {
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {data.dimensions.map((dim) => (
-            <div key={dim.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div key={dim.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <p className="text-xs font-medium text-slate-200">{dim.label}</p>
               <p className="mt-1 text-[11px] text-slate-500">Weight: {dim.weight}</p>
             </div>

@@ -38,7 +38,10 @@ export default async function PortalInsuranceBinderPage() {
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((e) => (
-          <div key={String(e.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div
+            key={String(e.id)}
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+          >
             <p className="font-medium text-slate-50">{String(e.title)}</p>
             <p className="mt-1 text-xs text-slate-400">{String(e.coverage_area || "General")}</p>
             <div className="mt-2 flex items-center justify-between">

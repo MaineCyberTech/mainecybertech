@@ -36,7 +36,7 @@ export default async function AdminStoreNurturePage() {
     >
       <section className="mb-8 space-y-4">
         {data.sequences.map((seq) => (
-          <div key={seq.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div key={seq.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
             <div className="mb-2 flex items-center gap-2">
               <span className="rounded bg-emerald-600/10 px-2 py-0.5 text-xs font-medium text-emerald-400">
                 {seq.name}

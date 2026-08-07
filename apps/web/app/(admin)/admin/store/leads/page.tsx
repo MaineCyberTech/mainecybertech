@@ -57,7 +57,7 @@ export default async function AdminStoreLeadsPage() {
         <div className="overflow-x-auto rounded-lg border border-white/10">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10 bg-[#0A1118]/60">
+              <tr className="border-b border-white/10 bg-cyber-base/60">
                 <th className="px-4 py-3 text-left font-semibold text-slate-300">Rule</th>
                 <th className="px-4 py-3 text-right font-semibold text-slate-300">Points</th>
               </tr>
@@ -107,7 +107,7 @@ export default async function AdminStoreLeadsPage() {
         </div>
       </section>
 
-      <div className="mt-8 rounded-lg border border-white/10 bg-[#0A1118]/60 p-6 text-center text-sm text-slate-400">
+      <div className="mt-8 rounded-lg border border-white/10 bg-cyber-base/60 p-6 text-center text-sm text-slate-400">
         Lead records will appear here once scoring is wired to incoming quotes and inquiries.
       </div>
     </AdminPageShell>

@@ -49,7 +49,7 @@ export default async function SatisfactionPulseAdminPage() {
               items.map((p) => (
                 <div
                   key={String(p.id)}
-                  className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                 >
                   <Link
                     className="transition hover:text-emerald-400"
@@ -98,7 +98,7 @@ export default async function SatisfactionPulseAdminPage() {
                 templates.map((t) => (
                   <div
                     key={String(t.id)}
-                    className="rounded-lg border border-white/5 bg-[#0A1118]/60 p-3 text-sm"
+                    className="rounded-lg border border-white/5 bg-cyber-base/60 p-3 text-sm"
                   >
                     <span className="text-slate-50">{String(t.name)}</span>
                     <span className="ml-2 text-xs text-slate-400">
@@ -119,7 +119,7 @@ export default async function SatisfactionPulseAdminPage() {
                 schedules.map((s) => (
                   <div
                     key={String(s.id)}
-                    className="rounded-lg border border-white/5 bg-[#0A1118]/60 p-3 text-sm"
+                    className="rounded-lg border border-white/5 bg-cyber-base/60 p-3 text-sm"
                   >
                     <span className="text-slate-50">{String(s.name)}</span>
                   </div>

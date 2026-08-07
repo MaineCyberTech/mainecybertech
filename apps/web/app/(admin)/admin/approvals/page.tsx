@@ -52,7 +52,7 @@ export default async function ApprovalQueuePage() {
         <div className="mt-6 space-y-4">
           {pendingOrganizations.length > 0 ? (
             pendingOrganizations.map((org: any) => (
-              <div key={org.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={org.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
                     <p className="font-medium text-slate-50">{org.name}</p>
@@ -80,7 +80,7 @@ export default async function ApprovalQueuePage() {
               </div>
             ))
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No pending organizations.
             </div>
           )}
@@ -98,7 +98,7 @@ export default async function ApprovalQueuePage() {
               return (
                 <div
                   key={membership.id}
-                  className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -130,7 +130,7 @@ export default async function ApprovalQueuePage() {
               );
             })
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No pending memberships.
             </div>
           )}

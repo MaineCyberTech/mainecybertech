@@ -29,7 +29,10 @@ export default async function PortalAutomationPage() {
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (
-          <div key={String(a.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div
+            key={String(a.id)}
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+          >
             <div className="flex items-center justify-between">
               <p className="font-medium text-slate-50">{String(a.name || a.title || "")}</p>
               <StatusPill status={String(a.status || "unknown")} />

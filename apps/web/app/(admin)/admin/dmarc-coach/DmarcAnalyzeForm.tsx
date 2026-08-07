@@ -31,7 +31,7 @@ export default function DmarcAnalyzeForm() {
   };
 
   return (
-    <form onSubmit={submit} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <form onSubmit={submit} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <h3 className="text-sm font-medium text-slate-50">Run DMARC Analysis</h3>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <label className="text-xs text-slate-400">
@@ -40,7 +40,7 @@ export default function DmarcAnalyzeForm() {
             name="organizationId"
             required
             placeholder="Org UUID"
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <label className="text-xs text-slate-400">
@@ -49,7 +49,7 @@ export default function DmarcAnalyzeForm() {
             name="domain"
             required
             placeholder="example.com"
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <label className="text-xs text-slate-400">
@@ -57,7 +57,7 @@ export default function DmarcAnalyzeForm() {
           <input
             name="dmarcRecord"
             placeholder="v=DMARC1; p=none; rua=mailto:..."
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <label className="text-xs text-slate-400">
@@ -65,7 +65,7 @@ export default function DmarcAnalyzeForm() {
           <input
             name="spfRecord"
             placeholder="v=spf1 include:_spf.example.com ~all"
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <label className="text-xs text-slate-400">
@@ -73,7 +73,7 @@ export default function DmarcAnalyzeForm() {
           <input
             name="dkimRecord"
             placeholder="v=DKIM1; k=rsa; p=..."
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
       </div>

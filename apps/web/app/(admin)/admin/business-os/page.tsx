@@ -24,7 +24,7 @@ function rel(value?: string | null) {
 
 function statCard(label: string, value: number, description: string, href?: string) {
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-5">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">{label}</p>
         <p className="font-orbitron text-xl text-slate-50">{value}</p>
@@ -141,7 +141,7 @@ export default async function BusinessOsPage() {
               overdue.items.map((item: any) => (
                 <div
                   key={item.id}
-                  className="rounded-lg border border-amber-500/20 bg-[#0A1118]/60 p-4"
+                  className="rounded-lg border border-amber-500/20 bg-cyber-base/60 p-4"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -178,7 +178,7 @@ export default async function BusinessOsPage() {
               activity.slice(0, 10).map((log: any) => (
                 <div
                   key={log.id}
-                  className="flex items-start gap-3 rounded-lg border border-white/5 bg-[#0A1118]/60 px-4 py-3"
+                  className="flex items-start gap-3 rounded-lg border border-white/5 bg-cyber-base/60 px-4 py-3"
                 >
                   <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/60" />
                   <div className="min-w-0 flex-1">
@@ -209,7 +209,7 @@ export default async function BusinessOsPage() {
               <Link
                 key={org.id}
                 href={`/admin/organizations/${org.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <div className="flex items-center justify-between gap-4">
                   <p className="font-medium text-slate-50">{org.name}</p>
@@ -238,7 +238,7 @@ export default async function BusinessOsPage() {
               <Link
                 key={org.id}
                 href={`/admin/organizations/${org.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>

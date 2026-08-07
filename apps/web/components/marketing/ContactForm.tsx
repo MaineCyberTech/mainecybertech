@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { submitLead } from "../../app/(public)/contact/actions";
@@ -107,14 +107,16 @@ export default function ContactForm() {
   }
 
   const inputCls = (field: keyof FormData) =>
-    `w-full rounded border border-white/10 bg-[#0A1118]/60 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-[#0A1118]/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] ${errors[field] ? "border-red-500" : ""}`;
+    `w-full rounded border border-white/10 bg-cyber-base/60 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] ${errors[field] ? "border-red-500" : ""}`;
 
   const labelCls = "mb-2 block text-xs font-semibold uppercase tracking-widest text-slate-300";
 
   return (
     <form onSubmit={handleSubmit} className="intake-widget space-y-5">
       <div>
-        <label htmlFor="contact-company" className={labelCls}>Company Name</label>
+        <label htmlFor="contact-company" className={labelCls}>
+          Company Name
+        </label>
         <input
           id="contact-company"
           type="text"
@@ -127,7 +129,9 @@ export default function ContactForm() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label htmlFor="contact-name" className={labelCls}>Contact Name</label>
+          <label htmlFor="contact-name" className={labelCls}>
+            Contact Name
+          </label>
           <input
             id="contact-name"
             type="text"
@@ -138,7 +142,9 @@ export default function ContactForm() {
           {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
         </div>
         <div>
-          <label htmlFor="contact-email" className={labelCls}>Work Email</label>
+          <label htmlFor="contact-email" className={labelCls}>
+            Work Email
+          </label>
           <input
             id="contact-email"
             type="email"
@@ -149,7 +155,9 @@ export default function ContactForm() {
           {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
         </div>
         <div>
-          <label htmlFor="contact-phone" className={labelCls}>Phone Number</label>
+          <label htmlFor="contact-phone" className={labelCls}>
+            Phone Number
+          </label>
           <input
             id="contact-phone"
             type="tel"
@@ -163,7 +171,9 @@ export default function ContactForm() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label htmlFor="contact-services" className={labelCls}>Services of Interest</label>
+          <label htmlFor="contact-services" className={labelCls}>
+            Services of Interest
+          </label>
           <select
             id="contact-services"
             value={form.services}
@@ -184,7 +194,9 @@ export default function ContactForm() {
           {errors.services && <p className="mt-1 text-xs text-red-400">{errors.services}</p>}
         </div>
         <div>
-          <label htmlFor="contact-employees" className={labelCls}>Employees</label>
+          <label htmlFor="contact-employees" className={labelCls}>
+            Employees
+          </label>
           <select
             id="contact-employees"
             value={form.employees}
@@ -202,7 +214,9 @@ export default function ContactForm() {
           {errors.employees && <p className="mt-1 text-xs text-red-400">{errors.employees}</p>}
         </div>
         <div>
-          <label htmlFor="contact-urgency" className={labelCls}>Urgency</label>
+          <label htmlFor="contact-urgency" className={labelCls}>
+            Urgency
+          </label>
           <select
             id="contact-urgency"
             value={form.urgency}
@@ -221,7 +235,9 @@ export default function ContactForm() {
       </div>
 
       <div>
-        <label htmlFor="contact-message" className={labelCls}>How can we assist your business?</label>
+        <label htmlFor="contact-message" className={labelCls}>
+          How can we assist your business?
+        </label>
         <textarea
           id="contact-message"
           rows={4}
@@ -250,7 +266,7 @@ export default function ContactForm() {
           type="checkbox"
           checked={consent}
           onChange={(e) => setConsent(e.target.checked)}
-          className="mt-1 h-4 w-4 shrink-0 rounded border border-white/10 bg-[#0A1118]/60 text-emerald-600 focus:ring-emerald-600"
+          className="mt-1 h-4 w-4 shrink-0 rounded border border-white/10 bg-cyber-base/60 text-emerald-600 focus:ring-emerald-600"
         />
         <label htmlFor="consent" className="text-xs leading-relaxed text-slate-400">
           I agree to the{" "}

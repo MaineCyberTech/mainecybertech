@@ -35,13 +35,13 @@ export default async function AdminStoreLeadMagnetsPage() {
       }
     >
       {magnets.length === 0 ? (
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-6 text-center text-sm text-slate-400">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-6 text-center text-sm text-slate-400">
           No lead magnets configured yet.
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {magnets.map((m) => (
-            <div key={m.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div key={m.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <div className="flex items-center gap-2">
                 <svg
                   className="h-4 w-4 shrink-0 text-emerald-400"

@@ -49,14 +49,14 @@ export default function FormFillForm({ formId, fields }: { formId: string; field
                 name={`f_${key}`}
                 required={required}
                 rows={3}
-                className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
               />
             ) : type === "select" ? (
               <select
                 id={`f_${key}`}
                 name={`f_${key}`}
                 required={required}
-                className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
               >
                 <option value="">Select...</option>
                 {(field.options ?? []).map((opt: string) => (
@@ -71,7 +71,7 @@ export default function FormFillForm({ formId, fields }: { formId: string; field
                 name={`f_${key}`}
                 type={type === "number" ? "number" : "text"}
                 required={required}
-                className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
               />
             )}
           </div>
@@ -85,7 +85,7 @@ export default function FormFillForm({ formId, fields }: { formId: string; field
           id="f-email"
           name="respondentEmail"
           type="email"
-          className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
       </div>
       {error && <p className="text-sm text-red-300">{error}</p>}

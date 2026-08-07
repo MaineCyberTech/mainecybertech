@@ -32,7 +32,7 @@ export default async function AdminStoreBundleCalculatorPage() {
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {calc.calculationModes.map((mode) => (
-            <div key={mode.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div key={mode.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <p className="text-sm font-medium text-slate-50">{mode.label}</p>
               <p className="mt-1 font-mono text-xs text-slate-500">{mode.id}</p>
               <p className="mt-2 text-xs text-slate-400">{mode.useWhen}</p>
@@ -45,7 +45,7 @@ export default async function AdminStoreBundleCalculatorPage() {
         <h2 className="mb-3 text-sm font-semibold text-slate-200">Display Rules</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {Object.entries(calc.displayRules).map(([mode, rule]) => (
-            <div key={mode} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div key={mode} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <p className="mb-1 text-sm font-medium text-slate-50">{mode}</p>
               <p className="text-xs text-slate-400">{rule}</p>
             </div>
@@ -61,7 +61,7 @@ export default async function AdminStoreBundleCalculatorPage() {
           {calc.exampleBundleValuePanels.map((panel) => (
             <div
               key={panel.bundleId}
-              className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+              className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
             >
               <p className="mb-1 text-sm font-medium text-slate-50">{panel.bundleId}</p>
               <div className="mb-2 flex gap-2">

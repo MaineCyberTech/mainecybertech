@@ -66,7 +66,7 @@ export default async function InsuranceBinderPage() {
             items.map((item) => (
               <div
                 key={item.id}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>

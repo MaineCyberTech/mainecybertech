@@ -28,7 +28,10 @@ export default async function PortalAssetsPage() {
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (
-          <div key={String(a.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div
+            key={String(a.id)}
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+          >
             <p className="font-medium text-slate-50">{String(a.name)}</p>
             <p className="mt-1 text-xs text-slate-400">
               {String(a.make || "")} {String(a.model || "")} &bull; {String(a.asset_type)} &bull;

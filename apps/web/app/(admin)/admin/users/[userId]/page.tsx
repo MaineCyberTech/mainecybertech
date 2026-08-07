@@ -89,7 +89,7 @@ export default async function UserDetailPage({ params }: UserPageProps) {
                 id="user-email"
                 value={profile.email ?? ""}
                 readOnly
-                className="w-full rounded-lg border border-white/10 bg-[#0A1118]/40 px-4 py-3 text-slate-400 outline-none"
+                className="w-full rounded-lg border border-white/10 bg-cyber-base/40 px-4 py-3 text-slate-400 outline-none"
               />
             </div>
 
@@ -152,7 +152,7 @@ export default async function UserDetailPage({ params }: UserPageProps) {
               return (
                 <div
                   key={membership.id}
-                  className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                 >
                   <div className="mb-4">
                     <p className="font-medium text-slate-50">{org?.name ?? "Unknown Org"}</p>
@@ -226,7 +226,7 @@ export default async function UserDetailPage({ params }: UserPageProps) {
               );
             })
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No memberships found.
             </div>
           )}

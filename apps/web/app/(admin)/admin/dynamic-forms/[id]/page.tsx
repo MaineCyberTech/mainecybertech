@@ -53,7 +53,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
                   .map((field) => (
                     <div
                       key={String(field.key)}
-                      className="rounded-lg border border-white/5 bg-[#0A1118]/60 p-3"
+                      className="rounded-lg border border-white/5 bg-cyber-base/60 p-3"
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-slate-50">{String(field.label)}</span>
@@ -79,7 +79,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
                 {submissions.map((sub) => (
                   <div
                     key={String(sub.id)}
-                    className="rounded-lg border border-white/5 bg-[#0A1118]/60 p-3"
+                    className="rounded-lg border border-white/5 bg-cyber-base/60 p-3"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-slate-50">

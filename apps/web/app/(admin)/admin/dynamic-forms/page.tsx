@@ -40,7 +40,7 @@ export default async function DynamicFormsAdminPage() {
               return (
                 <div
                   key={String(f.id)}
-                  className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                 >
                   <Link
                     className="transition hover:text-emerald-400"

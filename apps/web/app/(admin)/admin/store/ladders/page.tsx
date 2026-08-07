@@ -30,7 +30,7 @@ export default async function AdminStoreLaddersPage() {
         {ladders.map((ladder) => (
           <div
             key={ladder.category}
-            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
           >
             <h2 className="mb-4 text-sm font-semibold text-slate-200">{ladder.category}</h2>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -42,7 +42,7 @@ export default async function AdminStoreLaddersPage() {
                 const product = getProductBySlug(slug);
                 const priceRange = product?.priceRange ?? "";
                 return (
-                  <div key={tier} className="rounded-lg border border-white/10 bg-[#0F172A]/60 p-3">
+                  <div key={tier} className="rounded-lg border border-white/10 bg-slate-900/60 p-3">
                     <span
                       className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
                         tier === "Good"

@@ -54,7 +54,7 @@ export default async function BreakGlassPage() {
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
             items.map((a) => (
-              <div key={a.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={a.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <Link

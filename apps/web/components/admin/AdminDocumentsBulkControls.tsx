@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import type {
@@ -135,7 +135,7 @@ export default function AdminDocumentsBulkControls({
 
   return (
     <>
-      <section className="cyber-panel bg-[#071018]/92 border border-emerald-500/20">
+      <section className="cyber-panel bg-cyber-card-deep/92 border border-emerald-500/20">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <p className="text-sm font-semibold text-slate-50">
@@ -259,7 +259,7 @@ export default function AdminDocumentsBulkControls({
                 placeholder="Leave blank to keep current descriptions"
               />
             </div>
-            <div className="mt-4 rounded-xl border border-white/10 bg-[#071018]/80 p-4 text-sm text-slate-400">
+            <div className="mt-4 rounded-xl border border-white/10 bg-cyber-card-deep/80 p-4 text-sm text-slate-400">
               <p>Safe apply summary:</p>
               <ul className="mt-2 list-disc pl-5">
                 <li>Blank description will not overwrite existing descriptions.</li>

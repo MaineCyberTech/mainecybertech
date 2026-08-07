@@ -157,25 +157,25 @@ export default async function AdminProposalDetailPage({ params }: Props) {
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Pricing Breakdown</h2>
         <div className="mt-6 grid gap-4 lg:grid-cols-4">
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-5">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400">Labor</p>
             <p className="font-orbitron mt-3 text-xl text-slate-50">
               {fmtCurrency(proposal.total_labor ?? 0)}
             </p>
           </div>
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-5">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400">Materials</p>
             <p className="font-orbitron mt-3 text-xl text-slate-50">
               {fmtCurrency(proposal.total_materials ?? 0)}
             </p>
           </div>
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-5">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400">Recurring</p>
             <p className="font-orbitron mt-3 text-xl text-slate-50">
               {fmtCurrency(proposal.total_recurring ?? 0)}
             </p>
           </div>
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-5">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400">One-Time</p>
             <p className="font-orbitron mt-3 text-xl text-slate-50">
               {fmtCurrency(proposal.total_one_time ?? 0)}
@@ -194,7 +194,10 @@ export default async function AdminProposalDetailPage({ params }: Props) {
         <div className="mt-6 space-y-3">
           {phases.length > 0 ? (
             phases.map((phase: any) => (
-              <div key={phase.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div
+                key={phase.id}
+                className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="font-medium text-slate-50">{phase.title}</p>
@@ -226,7 +229,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
             items.map((item: any) => (
-              <div key={item.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={item.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span
@@ -270,7 +273,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
             comments.map((comment: any) => (
               <div
                 key={comment.id}
-                className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
               >
                 <CommentBody body={comment.body} className="markdown-body text-sm text-slate-300" />
                 <p className="mt-2 text-xs text-slate-400">
@@ -293,7 +296,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
             timeline.slice(0, 20).map((event: any) => (
               <div
                 key={event.id}
-                className="flex items-start gap-3 rounded-lg border border-white/5 bg-[#0A1118]/60 px-4 py-3"
+                className="flex items-start gap-3 rounded-lg border border-white/5 bg-cyber-base/60 px-4 py-3"
               >
                 <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/60" />
                 <div className="min-w-0 flex-1">

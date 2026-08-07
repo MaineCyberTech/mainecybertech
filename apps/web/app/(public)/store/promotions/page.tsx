@@ -104,7 +104,7 @@ function PromotionCard({ promotion: p }: { promotion: Promotion }) {
     p.endDate && new Date(p.endDate).getTime() - Date.now() < 14 * 24 * 60 * 60 * 1000;
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0F172A]/60 p-6 backdrop-blur-sm transition hover:border-emerald-600/20">
+    <div className="rounded-lg border border-white/10 bg-slate-900/60 p-6 backdrop-blur-sm transition hover:border-emerald-600/20">
       <div className="flex items-start justify-between gap-3">
         <h3 className="font-orbitron text-lg font-bold uppercase tracking-wider text-slate-50">
           {p.name}

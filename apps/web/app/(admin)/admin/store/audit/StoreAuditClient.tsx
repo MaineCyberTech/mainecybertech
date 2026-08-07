@@ -59,7 +59,7 @@ export default function StoreAuditClient() {
     >
       {!ran ? (
         <div className="mt-8 flex flex-col items-center gap-4 py-16 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-[#0A1118]/60 text-3xl">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-cyber-base/60 text-3xl">
             🔍
           </div>
           <p className="text-slate-400">
@@ -90,7 +90,7 @@ export default function StoreAuditClient() {
       ) : (
         <>
           <div className="mb-6 mt-6 grid grid-cols-4 gap-3">
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-3 text-center">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-3 text-center">
               <p className="text-2xl font-bold text-slate-50">{total}</p>
               <p className="text-xs text-slate-500">Total</p>
             </div>
@@ -125,7 +125,7 @@ export default function StoreAuditClient() {
                 return (
                   <section
                     key={type}
-                    className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                    className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                   >
                     <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-200">
                       <Icon />

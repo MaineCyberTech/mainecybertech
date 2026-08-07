@@ -35,7 +35,7 @@ export default async function AdminStoreFulfillmentPage() {
       }
     >
       {checklists.length === 0 ? (
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-6 text-center text-sm text-slate-400">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-6 text-center text-sm text-slate-400">
           No fulfillment checklists yet. Click "Generate Checklist" to create one for a product.
         </div>
       ) : (
@@ -43,7 +43,7 @@ export default async function AdminStoreFulfillmentPage() {
           {checklists.map((cl) => (
             <div
               key={cl.productId}
-              className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+              className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
             >
               <h3 className="mb-3 text-sm font-medium text-slate-200">{cl.productId}</h3>
               <div className="space-y-2">

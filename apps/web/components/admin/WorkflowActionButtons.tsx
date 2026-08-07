@@ -48,7 +48,7 @@ export default function WorkflowActionButtons({
   if (actions.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">Workflow</h3>
       <div className="mt-3 flex flex-wrap gap-2">
         {actions.map((action) => (

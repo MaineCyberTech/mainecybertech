@@ -136,7 +136,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
             name="action"
             defaultValue={params.action ?? ""}
             aria-label="Filter by action"
-            className="rounded-md border border-white/10 bg-[#0A1118]/60 px-3 py-3 text-sm text-slate-50 outline-none focus:border-emerald-600"
+            className="rounded-md border border-white/10 bg-cyber-base/60 px-3 py-3 text-sm text-slate-50 outline-none focus:border-emerald-600"
           >
             <option value="">All Actions</option>
             {ACTIONS.map((a) => (
@@ -149,7 +149,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
             name="entityType"
             defaultValue={params.entityType ?? ""}
             aria-label="Filter by entity type"
-            className="rounded-md border border-white/10 bg-[#0A1118]/60 px-3 py-3 text-sm text-slate-50 outline-none focus:border-emerald-600"
+            className="rounded-md border border-white/10 bg-cyber-base/60 px-3 py-3 text-sm text-slate-50 outline-none focus:border-emerald-600"
           >
             <option value="">All Entity Types</option>
             {ENTITY_TYPES.map((t) => (
@@ -230,7 +230,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
                   </div>
                 </div>
                 {log.metadata && Object.keys(log.metadata).length > 0 ? (
-                  <pre className="mt-4 max-h-48 overflow-x-auto overflow-y-auto rounded-md border border-white/10 bg-[#0A1118]/60 p-4 text-xs text-slate-300">
+                  <pre className="mt-4 max-h-48 overflow-x-auto overflow-y-auto rounded-md border border-white/10 bg-cyber-base/60 p-4 text-xs text-slate-300">
                     {JSON.stringify(log.metadata, null, 2)}
                   </pre>
                 ) : null}

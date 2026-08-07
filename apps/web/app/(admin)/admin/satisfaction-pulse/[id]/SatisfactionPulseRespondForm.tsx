@@ -38,7 +38,7 @@ export default function SatisfactionPulseRespondForm({
   };
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
         Record Response
       </h3>
@@ -51,7 +51,7 @@ export default function SatisfactionPulseRespondForm({
             max={10}
             value={currentRating}
             onChange={(e) => setCurrentRating(Number(e.target.value))}
-            className="mt-1 w-24 rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-24 rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <label className="flex-1 text-xs text-slate-400">
@@ -60,7 +60,7 @@ export default function SatisfactionPulseRespondForm({
             value={feedback}
             onChange={(e) => setFeedback(e.target.value)}
             placeholder="Client feedback"
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
       </div>

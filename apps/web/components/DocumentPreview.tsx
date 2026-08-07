@@ -18,7 +18,7 @@ export default function DocumentPreview({ url, mimeType, fileName, className = "
         <img
           src={url}
           alt={fileName ?? "Preview"}
-          className="h-auto max-h-96 w-full bg-[#071018] object-contain"
+          className="h-auto max-h-96 w-full bg-cyber-card-deep object-contain"
         />
       </div>
     );
@@ -35,7 +35,7 @@ export default function DocumentPreview({ url, mimeType, fileName, className = "
   if (mime.startsWith("video/") || ["mp4", "webm", "ogg"].includes(ext)) {
     return (
       <div className={`overflow-hidden rounded-lg border border-white/10 ${className}`}>
-        <video controls className="h-auto max-h-96 w-full bg-[#071018]">
+        <video controls className="h-auto max-h-96 w-full bg-cyber-card-deep">
           <source src={url} type={mime || undefined} />
         </video>
       </div>
@@ -44,7 +44,7 @@ export default function DocumentPreview({ url, mimeType, fileName, className = "
 
   if (mime.startsWith("audio/") || ["mp3", "wav", "ogg", "flac"].includes(ext)) {
     return (
-      <div className={`rounded-lg border border-white/10 bg-[#0A1118]/60 p-6 ${className}`}>
+      <div className={`rounded-lg border border-white/10 bg-cyber-base/60 p-6 ${className}`}>
         <audio controls className="w-full" src={url} />
       </div>
     );

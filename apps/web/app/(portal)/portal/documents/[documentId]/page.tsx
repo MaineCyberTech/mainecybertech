@@ -113,7 +113,7 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
         <h2 className="cyber-heading text-lg">Document Summary</h2>
 
         <div className="mt-6 space-y-4">
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
               {document.description ?? "No description provided."}
             </p>

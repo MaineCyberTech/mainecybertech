@@ -11,14 +11,11 @@ export default function PublicError({
   reset: () => void;
 }) {
   useEffect(() => {
-    clientLogger.errorWithContext(
-      { area: "public", digest: error.digest },
-      error,
-    );
+    clientLogger.errorWithContext({ area: "public", digest: error.digest }, error);
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center bg-[#0A1118] px-4">
+    <div className="flex min-h-[60vh] items-center justify-center bg-cyber-base px-4">
       <div className="max-w-md text-center">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
           <svg
@@ -35,9 +32,7 @@ export default function PublicError({
             />
           </svg>
         </div>
-        <h2 className="text-xl font-semibold text-slate-100">
-          Something went wrong
-        </h2>
+        <h2 className="text-xl font-semibold text-slate-100">Something went wrong</h2>
         <p className="mt-2 text-sm text-slate-400">
           We encountered an unexpected error. Please try again.
         </p>

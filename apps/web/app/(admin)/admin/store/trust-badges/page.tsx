@@ -32,7 +32,7 @@ export default async function AdminStoreTrustBadgesPage() {
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {data.badges.map((badge) => (
-            <div key={badge.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div key={badge.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <div className="flex items-center gap-2">
                 <span className="text-emerald-500" aria-hidden="true">
                   ✦
@@ -54,7 +54,7 @@ export default async function AdminStoreTrustBadgesPage() {
           {data.placementRules.map((rule) => (
             <div
               key={rule.surface}
-              className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+              className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
             >
               <p className="mb-1 text-sm font-medium text-slate-50">{rule.surface}</p>
               {rule.maxBadges !== undefined && (

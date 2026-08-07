@@ -78,7 +78,7 @@ export default async function GovernancePage() {
           <h2 className="cyber-heading text-lg">Change Requests ({changes.length})</h2>
           <div className="mt-3 space-y-2">
             {changes.slice(0, 5).map((c) => (
-              <div key={c.id} className="rounded border border-white/10 bg-[#0A1118]/60 p-3">
+              <div key={c.id} className="rounded border border-white/10 bg-cyber-base/60 p-3">
                 <p className="text-sm text-slate-50">{c.title}</p>
                 <p className="text-xs text-slate-400">
                   {c.change_type} &bull; {c.risk_level} risk &bull; {c.status}
@@ -94,7 +94,7 @@ export default async function GovernancePage() {
           <h2 className="cyber-heading text-lg">Risk Register ({risks.length})</h2>
           <div className="mt-3 space-y-2">
             {risks.slice(0, 5).map((r) => (
-              <div key={r.id} className="rounded border border-white/10 bg-[#0A1118]/60 p-3">
+              <div key={r.id} className="rounded border border-white/10 bg-cyber-base/60 p-3">
                 <p className="line-clamp-1 text-sm text-slate-50">{r.risk_description}</p>
                 <p className="text-xs text-slate-400">
                   {r.risk_category} &bull; Score: {r.risk_score ?? "—"} &bull; {r.status}
@@ -110,7 +110,7 @@ export default async function GovernancePage() {
           <h2 className="cyber-heading text-lg">Data Retention ({retention.length})</h2>
           <div className="mt-3 space-y-2">
             {retention.slice(0, 5).map((r) => (
-              <div key={r.id} className="rounded border border-white/10 bg-[#0A1118]/60 p-3">
+              <div key={r.id} className="rounded border border-white/10 bg-cyber-base/60 p-3">
                 <p className="text-sm text-slate-50">
                   {r.data_category} — {r.system_name}
                 </p>
@@ -128,7 +128,7 @@ export default async function GovernancePage() {
           <h2 className="cyber-heading text-lg">Tabletop Exercises ({tabletop.length})</h2>
           <div className="mt-3 space-y-2">
             {tabletop.slice(0, 5).map((t) => (
-              <div key={t.id} className="rounded border border-white/10 bg-[#0A1118]/60 p-3">
+              <div key={t.id} className="rounded border border-white/10 bg-cyber-base/60 p-3">
                 <p className="text-sm text-slate-50">{t.title}</p>
                 <p className="text-xs text-slate-400">
                   {t.scenario_type} &bull; {t.status}{" "}

@@ -62,15 +62,15 @@ export default async function PortalTimelinePage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{projects.length}</p>
           <p className="text-xs text-slate-400">Projects</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{allTasks.length}</p>
           <p className="text-xs text-slate-400">Total Tasks</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-emerald-400">
             {allTasks.filter((t: any) => !t.due_at || new Date(t.due_at) >= new Date()).length}
           </p>

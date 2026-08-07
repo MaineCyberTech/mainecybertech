@@ -53,7 +53,7 @@ export default function CrudForm({ fields, title, action, onSuccess }: CrudFormP
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-3 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+      className="space-y-3 rounded-lg border border-white/10 bg-cyber-base/60 p-4"
     >
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold text-slate-50">{title}</h3>
@@ -68,14 +68,19 @@ export default function CrudForm({ fields, title, action, onSuccess }: CrudFormP
 
       {fields.map((f) => (
         <div key={f.key}>
-          <label htmlFor={`crud-${f.key}`} className="mb-1 block text-xs font-medium text-slate-400">{f.label}</label>
+          <label
+            htmlFor={`crud-${f.key}`}
+            className="mb-1 block text-xs font-medium text-slate-400"
+          >
+            {f.label}
+          </label>
           {f.type === "textarea" ? (
             <textarea
               id={`crud-${f.key}`}
               name={f.key}
               required={f.required}
               placeholder={f.placeholder}
-              className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+              className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
               rows={3}
             />
           ) : f.type === "select" && f.options ? (
@@ -83,7 +88,7 @@ export default function CrudForm({ fields, title, action, onSuccess }: CrudFormP
               id={`crud-${f.key}`}
               name={f.key}
               required={f.required}
-              className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+              className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
             >
               {f.options.map((o) => (
                 <option key={o} value={o}>
@@ -96,7 +101,7 @@ export default function CrudForm({ fields, title, action, onSuccess }: CrudFormP
               id={`crud-${f.key}`}
               type="checkbox"
               name={f.key}
-              className="h-4 w-4 rounded border-white/10 bg-[#0A1118] text-emerald-500 focus:ring-emerald-500/50"
+              className="h-4 w-4 rounded border-white/10 bg-cyber-base text-emerald-500 focus:ring-emerald-500/50"
             />
           ) : (
             <input
@@ -105,7 +110,7 @@ export default function CrudForm({ fields, title, action, onSuccess }: CrudFormP
               name={f.key}
               required={f.required}
               placeholder={f.placeholder}
-              className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+              className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
             />
           )}
         </div>

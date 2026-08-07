@@ -53,7 +53,7 @@ export default async function AiTriagePage() {
         {items.map((item) => (
           <div
             key={String(item.id)}
-            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
           >
             <p className="text-xs text-slate-400">{truncate(item.raw_description, 100)}</p>
             <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">

@@ -74,7 +74,7 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+      <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
         <h2 className="text-sm font-medium text-slate-50">New calculation</h2>
         <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           <label className="text-xs text-slate-400">
@@ -84,7 +84,7 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
               min={1}
               value={cameraCount}
               onChange={(e) => setCameraCount(Number(e.target.value))}
-              className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+              className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
             />
           </label>
           <label className="text-xs text-slate-400">
@@ -95,7 +95,7 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
               step={0.1}
               value={bitrateMbps}
               onChange={(e) => setBitrateMbps(Number(e.target.value))}
-              className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+              className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
             />
           </label>
           <label className="text-xs text-slate-400">
@@ -106,7 +106,7 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
               max={365}
               value={retentionDays}
               onChange={(e) => setRetentionDays(Number(e.target.value))}
-              className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+              className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
             />
           </label>
           <label className="text-xs text-slate-400">
@@ -114,7 +114,7 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
             <select
               value={resolution}
               onChange={(e) => setResolution(e.target.value)}
-              className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+              className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
             >
               {["2MP", "4MP", "8MP", "12MP"].map((r) => (
                 <option key={r} value={r}>
@@ -177,7 +177,7 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
           {items.map((a) => (
             <div
               key={String(a.id)}
-              className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+              className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
             >
               <div className="flex items-center justify-between">
                 <p className="font-medium text-slate-50">{String(a.site_name || "Site")}</p>

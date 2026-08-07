@@ -32,7 +32,7 @@ export default async function AdminStorePortalServicesPage() {
         </h2>
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {data.sections.map((s) => (
-            <div key={s} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-3">
+            <div key={s} className="rounded-lg border border-white/10 bg-cyber-base/60 p-3">
               <p className="text-xs text-slate-300">{s}</p>
             </div>
           ))}

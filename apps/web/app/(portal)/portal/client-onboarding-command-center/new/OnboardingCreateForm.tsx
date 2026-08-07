@@ -28,7 +28,7 @@ export default function OnboardingCreateForm() {
           name="clientName"
           required
           placeholder="e.g. New Branch Office"
-          className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -40,7 +40,7 @@ export default function OnboardingCreateForm() {
             id="oc-domain"
             name="clientDomain"
             placeholder="branch.example"
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           />
         </div>
         <div>
@@ -50,7 +50,7 @@ export default function OnboardingCreateForm() {
           <select
             id="oc-risk"
             name="riskLevel"
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           >
             <option value="low">Low</option>
             <option value="medium">Medium</option>
@@ -67,7 +67,7 @@ export default function OnboardingCreateForm() {
             id="oc-email"
             name="clientContactEmail"
             type="email"
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           />
         </div>
         <div>
@@ -77,7 +77,7 @@ export default function OnboardingCreateForm() {
           <input
             id="oc-phone"
             name="clientContactPhone"
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           />
         </div>
       </div>
@@ -89,7 +89,7 @@ export default function OnboardingCreateForm() {
           id="oc-notes"
           name="discoveryNotes"
           rows={3}
-          className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
       </div>
       {error && <p className="text-sm text-red-300">{error}</p>}

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -85,7 +85,7 @@ function priorityClass(priority: string) {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <div className="flex items-center justify-between gap-3 whitespace-nowrap">
         <p className="text-xs uppercase tracking-[0.12em] text-slate-400">{label}</p>
         <p className="text-base font-semibold text-slate-50">{value}</p>
@@ -118,7 +118,7 @@ function TicketList({
               <Link
                 key={ticket.id}
                 href={`/portal/support/${ticket.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
@@ -149,7 +149,7 @@ function TicketList({
             );
           })
         ) : (
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
             {emptyText}
           </div>
         )}
@@ -229,7 +229,7 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
 
       {openModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#071018] shadow-2xl">
+          <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
                 <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">

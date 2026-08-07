@@ -59,7 +59,7 @@ export default async function IncidentsPage() {
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
             items.map((i) => (
-              <div key={i.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={i.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <div className="flex items-center justify-between">
                   <Link
                     className="transition hover:text-emerald-400"

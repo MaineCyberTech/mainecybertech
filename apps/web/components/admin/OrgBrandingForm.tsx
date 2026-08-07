@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef } from "react";
 import { getClientApi } from "@/lib/client-api";
@@ -75,14 +75,16 @@ export default function OrgBrandingForm({
 
       <div className="mt-6 space-y-6">
         <div>
-          <label id="org-logo-label" className="cyber-label">Organization Logo</label>
+          <label id="org-logo-label" className="cyber-label">
+            Organization Logo
+          </label>
           <div className="mt-2 flex items-center gap-4">
             {logoUrl && !imgError ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={logoUrl}
                 alt="Logo"
-                className="h-16 w-16 rounded-lg border border-white/10 bg-[#071018] object-contain"
+                className="h-16 w-16 rounded-lg border border-white/10 bg-cyber-card-deep object-contain"
                 onError={() => setImgError(true)}
               />
             ) : (
@@ -114,7 +116,9 @@ export default function OrgBrandingForm({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label htmlFor="org-brand-color" className="cyber-label">Brand Color</label>
+            <label htmlFor="org-brand-color" className="cyber-label">
+              Brand Color
+            </label>
             <div className="mt-2 flex items-center gap-3">
               <input
                 id="org-brand-color"
@@ -135,7 +139,9 @@ export default function OrgBrandingForm({
           </div>
 
           <div>
-            <label htmlFor="org-accent-color" className="cyber-label">Accent Color</label>
+            <label htmlFor="org-accent-color" className="cyber-label">
+              Accent Color
+            </label>
             <div className="mt-2 flex items-center gap-3">
               <input
                 id="org-accent-color"
@@ -158,7 +164,9 @@ export default function OrgBrandingForm({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <label htmlFor="org-custom-domain" className="cyber-label">Custom Domain</label>
+            <label htmlFor="org-custom-domain" className="cyber-label">
+              Custom Domain
+            </label>
             <input
               id="org-custom-domain"
               type="text"

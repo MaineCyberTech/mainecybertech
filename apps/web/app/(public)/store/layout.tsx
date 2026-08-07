@@ -20,7 +20,7 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
       <div className="pointer-events-none fixed left-0 top-0 z-40 flex h-full flex-col lg:hidden">
         <button
           onClick={() => setDrawerOpen(true)}
-          className="pointer-events-auto flex w-9 flex-col items-center gap-1 rounded-r-lg border border-l-0 border-white/10 bg-[#0F172A]/80 px-1.5 py-3 text-xs font-bold uppercase tracking-widest text-emerald-400 shadow-lg backdrop-blur-sm transition hover:bg-[#0F172A]"
+          className="pointer-events-auto flex w-9 flex-col items-center gap-1 rounded-r-lg border border-l-0 border-white/10 bg-slate-900/80 px-1.5 py-3 text-xs font-bold uppercase tracking-widest text-emerald-400 shadow-lg backdrop-blur-sm transition hover:bg-slate-900"
           style={{ marginTop: "80px" }}
           aria-label="Browse categories"
         >
@@ -40,7 +40,7 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
       {drawerOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
           <div className="fixed inset-0 bg-black/70" onClick={() => setDrawerOpen(false)} />
-          <div className="relative flex h-full w-72 flex-col bg-[#0F172A] shadow-2xl">
+          <div className="relative flex h-full w-72 flex-col bg-slate-900 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
               <span className="text-sm font-semibold uppercase tracking-wider text-slate-200">
                 <span className="text-emerald-400">Store</span> Menu
@@ -69,7 +69,7 @@ export default function StoreLayout({ children }: { children: ReactNode }) {
 
       {/* Desktop: sticky sidebar */}
       <aside className="hidden w-64 shrink-0 lg:block">
-        <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg border border-white/10 bg-[#0F172A]/60 p-4 backdrop-blur-sm">
+        <div className="sticky top-28 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg border border-white/10 bg-slate-900/60 p-4 backdrop-blur-sm">
           <StoreSidebarContent />
         </div>
       </aside>

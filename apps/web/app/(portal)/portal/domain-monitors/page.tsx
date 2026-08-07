@@ -61,7 +61,7 @@ export default async function DomainMonitorsPage() {
         {items.map((item) => (
           <div
             key={String(item.id)}
-            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
           >
             <div className="flex items-center gap-3">
               <p className="font-medium text-slate-50">{String(item.domain)}</p>

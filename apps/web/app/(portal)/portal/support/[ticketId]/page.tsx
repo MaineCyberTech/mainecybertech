@@ -200,7 +200,7 @@ export default async function PortalSupportDetailPage({ params }: Props) {
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Details</h2>
-        <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="mt-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
             {ticketDescription(ticket)}
           </p>
@@ -217,7 +217,7 @@ export default async function PortalSupportDetailPage({ params }: Props) {
             comments.map((comment: any) => (
               <div
                 key={comment.id ?? `${comment.created_at}-${commentBody(comment)}`}
-                className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-medium text-slate-50">{commentAuthor(comment)}</p>
@@ -235,7 +235,7 @@ export default async function PortalSupportDetailPage({ params }: Props) {
               </div>
             ))
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No comments yet.
             </div>
           )}

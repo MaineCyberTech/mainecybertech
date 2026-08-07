@@ -75,7 +75,7 @@ export default async function OrganizationActivityPage({ params }: OrgActivityPa
                 </div>
 
                 {log.metadata ? (
-                  <pre className="mt-4 overflow-x-auto rounded-md border border-white/10 bg-[#0A1118]/60 p-4 text-xs text-slate-300">
+                  <pre className="mt-4 overflow-x-auto rounded-md border border-white/10 bg-cyber-base/60 p-4 text-xs text-slate-300">
                     {JSON.stringify(log.metadata, null, 2)}
                   </pre>
                 ) : null}

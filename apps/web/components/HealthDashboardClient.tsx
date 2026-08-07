@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { getClientEnv } from "@/lib/env";
@@ -81,7 +81,7 @@ export default function HealthDashboardClient() {
               ? "border-emerald-500/20 bg-emerald-500/5"
               : health.api === "down"
                 ? "border-red-500/20 bg-red-500/5"
-                : "border-white/10 bg-[#0A1118]/60"
+                : "border-white/10 bg-cyber-base/60"
           }`}
         >
           <div className="flex items-center justify-between">
@@ -100,7 +100,7 @@ export default function HealthDashboardClient() {
               ? "border-emerald-500/20 bg-emerald-500/5"
               : health.db === "down"
                 ? "border-red-500/20 bg-red-500/5"
-                : "border-white/10 bg-[#0A1118]/60"
+                : "border-white/10 bg-cyber-base/60"
           }`}
         >
           <div className="flex items-center justify-between">
@@ -119,7 +119,7 @@ export default function HealthDashboardClient() {
               ? "border-emerald-500/20 bg-emerald-500/5"
               : health.worker === "down"
                 ? "border-red-500/20 bg-red-500/5"
-                : "border-white/10 bg-[#0A1118]/60"
+                : "border-white/10 bg-cyber-base/60"
           }`}
         >
           <div className="flex items-center justify-between">

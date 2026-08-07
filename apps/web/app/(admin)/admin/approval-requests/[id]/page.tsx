@@ -51,7 +51,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
               {String(record?.request_body ?? "No details provided.")}
             </p>
             {record?.request_metadata != null && (
-              <pre className="mt-3 max-h-48 overflow-auto rounded-lg border border-white/5 bg-[#0A1118]/60 p-3 text-xs text-slate-400">
+              <pre className="mt-3 max-h-48 overflow-auto rounded-lg border border-white/5 bg-cyber-base/60 p-3 text-xs text-slate-400">
                 {JSON.stringify(record.request_metadata, null, 2)}
               </pre>
             )}
@@ -63,7 +63,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
                 {timeline.map((ev, i) => (
                   <div
                     key={i}
-                    className="rounded-lg border border-white/5 bg-[#0A1118]/60 p-3 text-sm"
+                    className="rounded-lg border border-white/5 bg-cyber-base/60 p-3 text-sm"
                   >
                     <span className="text-slate-50">
                       {(ev as Record<string, unknown>).action

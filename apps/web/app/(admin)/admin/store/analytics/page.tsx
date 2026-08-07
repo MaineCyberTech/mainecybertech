@@ -40,7 +40,7 @@ export default async function AdminStoreAnalyticsPage() {
           {eventNames.map((name) => (
             <span
               key={name}
-              className="rounded border border-white/10 bg-[#0A1118]/60 px-3 py-1.5 font-mono text-xs text-slate-300"
+              className="rounded border border-white/10 bg-cyber-base/60 px-3 py-1.5 font-mono text-xs text-slate-300"
             >
               {name}
             </span>
@@ -50,7 +50,7 @@ export default async function AdminStoreAnalyticsPage() {
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-slate-200">Event Shape</h2>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <div className="grid gap-2 sm:grid-cols-2">
             {Object.entries(eventShape).map(([field, type]) => (
               <div key={field} className="flex items-center gap-2">
@@ -68,7 +68,7 @@ export default async function AdminStoreAnalyticsPage() {
           {privacyRules.map((rule, i) => (
             <li
               key={i}
-              className="rounded-lg border border-white/10 bg-[#0A1118]/60 px-4 py-2 text-xs text-slate-400"
+              className="rounded-lg border border-white/10 bg-cyber-base/60 px-4 py-2 text-xs text-slate-400"
             >
               {rule}
             </li>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
@@ -207,7 +207,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-white/10 bg-[#0A1118] shadow-2xl">
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-white/10 bg-cyber-base shadow-2xl">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="text-sm font-semibold text-slate-200">Notifications</span>
             {notifications.length > 0 ? (

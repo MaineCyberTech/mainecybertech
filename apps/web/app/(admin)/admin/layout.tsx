@@ -133,8 +133,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-[#0A1118] text-slate-50">
-      <header className="sticky top-0 z-40 border-b border-emerald-600/20 bg-[#0A1118]/85 backdrop-blur-md">
+    <div className="min-h-screen bg-cyber-base text-slate-50">
+      <header className="sticky top-0 z-40 border-b border-emerald-600/20 bg-cyber-base/85 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="cyber-header-title">

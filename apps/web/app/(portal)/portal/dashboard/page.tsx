@@ -165,7 +165,7 @@ export default async function PortalDashboardPage() {
                 <Link
                   key={project.id}
                   href={`/portal/projects/${project.id}`}
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
                 >
                   <p className="font-medium text-slate-50">{project.name}</p>
                   <p
@@ -199,7 +199,7 @@ export default async function PortalDashboardPage() {
                 <Link
                   key={ticket.id}
                   href={`/portal/support/${ticket.id}`}
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
                 >
                   <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
                   <p
@@ -234,7 +234,7 @@ export default async function PortalDashboardPage() {
               <Link
                 key={doc.id}
                 href={`/portal/documents/${doc.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <p className="font-medium text-slate-50">{doc.name}</p>
                 <p className="mt-1 text-xs text-slate-400">
@@ -267,7 +267,7 @@ export default async function PortalDashboardPage() {
             recentActivity.map((event: any) => (
               <div
                 key={event.id}
-                className="flex items-start gap-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                className="flex items-start gap-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4"
               >
                 <span className="mt-0.5 shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
                   {event.entity_type}

@@ -54,7 +54,7 @@ export default function ProcurementCompareClient({
   };
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <h3 className="text-sm font-medium text-slate-50">Compare Quotes</h3>
       <div className="mt-3 grid gap-2 md:grid-cols-2 lg:grid-cols-3">
         {items.map((q) => (
@@ -63,7 +63,7 @@ export default function ProcurementCompareClient({
             className={`flex cursor-pointer items-center justify-between rounded-md border px-3 py-2 text-sm transition ${
               selected.has(String(q.id))
                 ? "border-emerald-500/40 bg-emerald-500/10"
-                : "border-white/10 bg-[#0A1118] hover:border-white/20"
+                : "border-white/10 bg-cyber-base hover:border-white/20"
             }`}
           >
             <span className="text-slate-50">{String(q.vendor_name ?? "Vendor")}</span>

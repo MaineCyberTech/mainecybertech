@@ -453,7 +453,7 @@ export default function TestAccountsPage() {
 
   if (!isTestAccountsEnabled()) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#0A1118] px-6">
+      <main className="flex min-h-screen items-center justify-center bg-cyber-base px-6">
         <div className="text-center">
           <h1 className="text-xl font-bold text-slate-100">Not Available</h1>
           <p className="mt-2 text-sm text-slate-400">
@@ -494,7 +494,7 @@ export default function TestAccountsPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-y-auto bg-[#0A1118]">
+    <main className="min-h-screen overflow-y-auto bg-cyber-base">
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="mb-8 text-center">
           <h1 className="font-orbitron text-3xl font-bold uppercase tracking-[0.1em] text-slate-100">
@@ -520,7 +520,7 @@ export default function TestAccountsPage() {
               key={account.email}
               onClick={() => handleLogin(account.email)}
               disabled={loading !== null}
-              className="group flex items-center gap-3 rounded-lg border border-white/10 bg-[#0F172A]/70 p-4 text-left transition hover:border-emerald-600/30 hover:bg-[#0F172A] disabled:cursor-not-allowed disabled:opacity-50"
+              className="group flex items-center gap-3 rounded-lg border border-white/10 bg-slate-900/70 p-4 text-left transition hover:border-emerald-600/30 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <div
                 className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"

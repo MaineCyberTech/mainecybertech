@@ -26,15 +26,15 @@ export default async function AdminRolesPage() {
       description="Manage system roles and their permission mappings."
     >
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{roles.length}</p>
           <p className="text-xs text-slate-400">Roles</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-emerald-400">{totalPerms}</p>
           <p className="text-xs text-slate-400">Total Permissions Granted</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-slate-50">
             {roles.filter((r: any) => r.is_system).length}
           </p>
@@ -54,7 +54,7 @@ export default async function AdminRolesPage() {
 
       <div className="space-y-4">
         {roles.length === 0 ? (
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-8 text-center text-sm text-slate-400">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-8 text-center text-sm text-slate-400">
             No roles found.
           </div>
         ) : (
@@ -64,7 +64,7 @@ export default async function AdminRolesPage() {
               <Link
                 key={role.id}
                 href={`/admin/roles/${role.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-600/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-600/20 hover:bg-cyber-base/80"
               >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0">

@@ -55,7 +55,7 @@ export default function SuperAdminOrgSwitcher() {
       onChange={handleChange}
       aria-label="Switch active tenant (super admin)"
       title="Switch active tenant"
-      className="max-w-[180px] truncate rounded-lg border border-purple-500/30 bg-[#0A1118]/80 px-2 py-1.5 text-[11px] text-purple-300 outline-none transition focus:border-purple-500 sm:max-w-[220px] sm:px-3 sm:py-2 sm:text-xs"
+      className="max-w-[180px] truncate rounded-lg border border-purple-500/30 bg-cyber-base/80 px-2 py-1.5 text-[11px] text-purple-300 outline-none transition focus:border-purple-500 sm:max-w-[220px] sm:px-3 sm:py-2 sm:text-xs"
     >
       {!orgs || orgs.length === 0 ? (
         <option value="">No tenants</option>

@@ -50,7 +50,7 @@ export default async function EndpointPage() {
         <div className="grid gap-4 md:grid-cols-2">
           {items.length > 0 ? (
             items.map((e) => (
-              <div key={e.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={e.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <Link
                   className="transition hover:text-emerald-400"
                   href={`/admin/endpoint-security/${e.id}`}

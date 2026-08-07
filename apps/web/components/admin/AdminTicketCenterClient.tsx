@@ -117,7 +117,7 @@ function priorityPillClass(priority: string) {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <div className="flex items-center justify-between gap-3 whitespace-nowrap">
         <p className="text-xs uppercase tracking-[0.12em] text-slate-400">{label}</p>
         <p className="text-base font-semibold text-slate-50">{value}</p>
@@ -148,7 +148,7 @@ function StatusDropdown({
   return (
     <div
       ref={ref}
-      className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-white/10 bg-[#0A1118] py-1 shadow-2xl"
+      className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-white/10 bg-cyber-base py-1 shadow-2xl"
     >
       {STATUS_OPTIONS.map((s) => (
         <button
@@ -208,7 +208,7 @@ function TicketCard({
     <div className="relative">
       <Link
         href={`/admin/tickets/${ticket.id}`}
-        className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+        className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -217,7 +217,7 @@ function TicketCard({
                 type="checkbox"
                 checked={selected}
                 onChange={handleCheckboxChange}
-                className="h-4 w-4 rounded border-white/20 bg-[#0A1118] text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
+                className="h-4 w-4 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
                 aria-label="Select ticket"
               />
               <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
@@ -578,7 +578,7 @@ export default function AdminTicketCenterClient({
                     if (selectAllRef.current) selectAllRef.current.indeterminate = false;
                   }
                 }}
-                className="h-4 w-4 rounded border-white/20 bg-[#0A1118] text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
+                className="h-4 w-4 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
               />
               Select all on page
             </label>
@@ -719,7 +719,7 @@ export default function AdminTicketCenterClient({
 
       {openModal ? (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:items-center">
-          <div className="my-8 w-full max-w-2xl rounded-xl border border-white/10 bg-[#071018] shadow-2xl">
+          <div className="my-8 w-full max-w-2xl rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
                 <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">

@@ -75,7 +75,7 @@ export default function MarketingHeader() {
     <header
       className={`fixed top-0 z-50 w-full border-b transition-all duration-300 ${
         scrolled
-          ? "border-emerald-600/20 bg-[#0A1118]/85 backdrop-blur-md"
+          ? "border-emerald-600/20 bg-cyber-base/85 backdrop-blur-md"
           : "border-transparent bg-transparent"
       }`}
     >
@@ -110,7 +110,7 @@ export default function MarketingHeader() {
           role="navigation"
           aria-label="Main navigation"
           onKeyDown={handleMenuKeyDown}
-          className={`${menuOpen ? "flex" : "hidden"} absolute left-0 top-full w-full flex-col border-b border-emerald-600/20 bg-[#0A1118]/95 px-6 pb-6 pt-4 backdrop-blur-md sm:static sm:flex sm:w-auto sm:flex-row sm:items-center sm:gap-2 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none`}
+          className={`${menuOpen ? "flex" : "hidden"} absolute left-0 top-full w-full flex-col border-b border-emerald-600/20 bg-cyber-base/95 px-6 pb-6 pt-4 backdrop-blur-md sm:static sm:flex sm:w-auto sm:flex-row sm:items-center sm:gap-2 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none`}
         >
           {navItems.map((item) => (
             <Link

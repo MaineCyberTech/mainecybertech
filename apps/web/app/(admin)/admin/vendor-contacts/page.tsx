@@ -58,7 +58,7 @@ export default async function VendorContactsPage() {
               <Link
                 key={c.id}
                 href={`/admin/vendor-contacts/${c.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <p className="font-medium text-slate-50">
                   {c.contact_name || "Unknown Contact"}{" "}

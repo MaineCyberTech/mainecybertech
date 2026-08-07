@@ -103,7 +103,7 @@ export default async function DomainMonitorsPage() {
               <Link
                 key={d.id}
                 href={`/admin/domain-monitors/${d.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>

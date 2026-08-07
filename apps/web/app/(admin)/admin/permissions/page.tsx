@@ -85,7 +85,7 @@ export default async function PermissionMatrixPage() {
       </div>
 
       {modules.length === 0 ? (
-        <div className="rounded-xl border border-white/10 bg-[#0F172A]/60 p-8 text-center text-sm text-slate-400">
+        <div className="rounded-xl border border-white/10 bg-slate-900/60 p-8 text-center text-sm text-slate-400">
           Unable to load the permission matrix.
         </div>
       ) : (

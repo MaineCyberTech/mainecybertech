@@ -1,12 +1,5 @@
 import type { Config } from "tailwindcss";
-import {
-  colors,
-  spacing,
-  typography,
-  borders,
-  shadows,
-  motion,
-} from "@mct/ui/tokens";
+import { colors, spacing, typography, borders, shadows, motion } from "@mct/ui/tokens";
 
 const config: Config = {
   content: [
@@ -18,7 +11,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        cyber: colors.cyber,
+        cyber: {
+          ...colors.cyber,
+          "card-deep": colors.cyber.cardDeep,
+          "card-alt": colors.cyber.cardAlt,
+        },
         slate: {
           ...colors.slate,
           400: "#c7d3e0",

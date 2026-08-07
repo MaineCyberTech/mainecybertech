@@ -142,9 +142,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const logoUrl = org?.logo_url ?? null;
 
   return (
-    <div className="min-h-screen bg-[#0A1118] text-slate-50">
+    <div className="min-h-screen bg-cyber-base text-slate-50">
       <header
-        className="sticky top-0 z-40 border-b bg-[#0A1118]/85 backdrop-blur-md"
+        className="sticky top-0 z-40 border-b bg-cyber-base/85 backdrop-blur-md"
         style={{ borderColor: `${brandColor}33` }}
       >
         <div className="mx-auto max-w-7xl px-6 py-4">

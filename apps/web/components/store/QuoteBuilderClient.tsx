@@ -137,7 +137,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
             return (
               <div
                 key={p.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-[#0A1118]/60 p-3"
+                className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-cyber-base/60 p-3"
               >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-50">{p.name}</p>
@@ -221,7 +221,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
 
         <div className="lg:col-span-2">
           <div className="sticky top-24 space-y-6">
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-50">
                 Your Quote ({items.length})
               </h2>
@@ -239,7 +239,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   {items.map((item) => (
                     <div
                       key={item.productId}
-                      className="rounded border border-white/10 bg-[#0A1118]/40 p-3"
+                      className="rounded border border-white/10 bg-cyber-base/40 p-3"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div>
@@ -300,7 +300,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   type="text"
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-[#0A1118]/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-[#0A1118]/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
                   required
                 />
               </div>
@@ -316,7 +316,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-[#0A1118]/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-[#0A1118]/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
                   required
                 />
               </div>
@@ -332,7 +332,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-[#0A1118]/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-[#0A1118]/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
                   required
                 />
               </div>
@@ -348,7 +348,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                   rows={3}
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  className="w-full rounded border border-white/10 bg-[#0A1118]/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-[#0A1118]/90"
+                  className="w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90"
                 />
               </div>
 

@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-md border border-white/10 bg-[#0A1118]/60 px-4 py-3 text-slate-50 outline-none transition focus:border-emerald-600"
+                  className="w-full rounded-md border border-white/10 bg-cyber-base/60 px-4 py-3 text-slate-50 outline-none transition focus:border-emerald-600"
                 />
               </div>
               <Button type="submit" disabled={loading} loading={loading} className="w-full">

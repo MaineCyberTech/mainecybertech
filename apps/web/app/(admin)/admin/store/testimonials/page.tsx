@@ -30,13 +30,13 @@ export default async function AdminStoreTestimonialsPage() {
       description={`${testimonials.length} total, ${approved.length} approved, ${pending.length} pending`}
     >
       {testimonials.length === 0 ? (
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-6 text-center text-sm text-slate-400">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-6 text-center text-sm text-slate-400">
           No testimonial records yet. Use the management tools to add new testimonials.
         </div>
       ) : (
         <div className="space-y-4">
           {testimonials.map((t) => (
-            <div key={t.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div key={t.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <p className="text-sm text-slate-200">&ldquo;{t.quote}&rdquo;</p>

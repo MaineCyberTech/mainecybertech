@@ -22,7 +22,7 @@ function CampaignCard({ campaign, enabled, onToggle }: CampaignCardProps) {
     >
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-[#0A1118]/60">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-cyber-base/60">
             <StoreIconTile iconName={campaign.visual.icon} className="h-5 w-5" size={20} />
           </div>
           <div>

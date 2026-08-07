@@ -32,7 +32,7 @@ export default function FormCreateForm() {
           name="title"
           required
           placeholder="e.g. Office Access Request"
-          className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -43,7 +43,7 @@ export default function FormCreateForm() {
           <select
             id="f-type"
             name="formType"
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           >
             <option value="request">Request</option>
             <option value="access_request">Access Request</option>
@@ -58,7 +58,7 @@ export default function FormCreateForm() {
           <input
             id="f-desc"
             name="description"
-            className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
           />
         </div>
       </div>
@@ -71,7 +71,7 @@ export default function FormCreateForm() {
           value={fieldsJson}
           onChange={(e) => setFieldsJson(e.target.value)}
           rows={4}
-          className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 font-mono text-xs text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 font-mono text-xs text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
         <p className="mt-1 text-[11px] text-slate-500">
           Example: [{'{key: "department", label: "Department", type: "text"}'}]

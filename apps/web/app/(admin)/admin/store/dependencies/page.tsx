@@ -62,7 +62,7 @@ export default async function AdminStoreDependenciesPage() {
           {data.dependencies.map((rule) => (
             <div
               key={rule.productId}
-              className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+              className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
             >
               <div className="mb-3 flex items-center gap-2">
                 <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-xs text-slate-200">

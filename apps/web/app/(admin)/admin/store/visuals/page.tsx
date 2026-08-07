@@ -64,7 +64,7 @@ export default async function AdminVisualsPage() {
               className="glass-card group rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5 transition hover:border-emerald-600/30"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-[#0A1118]/60">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-cyber-base/60">
                   <StoreIconTile iconName={cv.icon} className="h-6 w-6" size={24} />
                 </div>
                 <div>
@@ -94,7 +94,7 @@ export default async function AdminVisualsPage() {
 
         <div className="rounded-lg border border-slate-700/50 bg-slate-800/30 p-6">
           <h4 className="mb-3 text-sm font-semibold text-slate-400">JSON Preview</h4>
-          <pre className="max-h-80 overflow-auto rounded bg-[#0A1118] p-4 text-xs text-slate-400">
+          <pre className="max-h-80 overflow-auto rounded bg-cyber-base p-4 text-xs text-slate-400">
             {JSON.stringify(visualMap, null, 2)}
           </pre>
           <p className="mt-3 text-xs text-slate-500">

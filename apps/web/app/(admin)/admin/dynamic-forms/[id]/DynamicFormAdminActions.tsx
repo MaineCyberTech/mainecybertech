@@ -22,7 +22,7 @@ export default function DynamicFormAdminActions({ id, status }: { id: string; st
   };
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
         Admin Actions
       </h3>

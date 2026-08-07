@@ -38,13 +38,13 @@ export default async function AdminStoreCaseStudiesPage() {
       }
     >
       {caseStudies.length === 0 ? (
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-6 text-center text-sm text-slate-400">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-6 text-center text-sm text-slate-400">
           No case studies yet. Click "Generate Case Study" to create a new one.
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {caseStudies.map((cs) => (
-            <div key={cs.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div key={cs.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <div className="flex items-start justify-between gap-2">
                 <p className="text-sm font-medium text-slate-50">{cs.title}</p>
                 <span

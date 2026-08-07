@@ -32,7 +32,7 @@ export default function SatisfactionPulseCreateForm() {
   };
 
   return (
-    <form onSubmit={submit} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <form onSubmit={submit} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <h3 className="text-sm font-medium text-slate-50">New Pulse Survey</h3>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <label className="text-xs text-slate-400">
@@ -41,7 +41,7 @@ export default function SatisfactionPulseCreateForm() {
             name="organizationId"
             required
             placeholder="Org UUID"
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <label className="text-xs text-slate-400">
@@ -50,7 +50,7 @@ export default function SatisfactionPulseCreateForm() {
             name="subject"
             required
             placeholder="How did your support experience go?"
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <label className="text-xs text-slate-400">
@@ -58,14 +58,14 @@ export default function SatisfactionPulseCreateForm() {
           <input
             name="question"
             placeholder="Optional question text"
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <label className="text-xs text-slate-400">
           Source
           <select
             name="source"
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           >
             {["ticket", "project", "qbr", "onboarding", "follow_up"].map((s) => (
               <option key={s} value={s}>
@@ -82,7 +82,7 @@ export default function SatisfactionPulseCreateForm() {
             min={0}
             max={10}
             defaultValue={5}
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <label className="text-xs text-slate-400">
@@ -90,7 +90,7 @@ export default function SatisfactionPulseCreateForm() {
           <input
             name="sendAt"
             type="datetime-local"
-            className="mt-1 w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
       </div>

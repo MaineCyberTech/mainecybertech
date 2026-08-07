@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -218,7 +218,7 @@ function FileThumb({ doc, large = false }: { doc: DocumentRecord; large?: boolea
             : type;
   return (
     <div
-      className={`flex ${size} items-center justify-center rounded-xl border border-white/10 bg-[#071018]/80 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-300 ring-1 ring-white/5`}
+      className={`flex ${size} items-center justify-center rounded-xl border border-white/10 bg-cyber-card-deep/80 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-300 ring-1 ring-white/5`}
     >
       {label}
     </div>
@@ -1088,7 +1088,7 @@ export default function AdminDocumentsCenterClient({
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-4">
-            <div className="rounded-xl border border-white/10 bg-[#071018]/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
+            <div className="rounded-xl border border-white/10 bg-cyber-card-deep/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
               <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                 Total
               </span>
@@ -1096,19 +1096,19 @@ export default function AdminDocumentsCenterClient({
                 {localDocuments.length}
               </span>
             </div>
-            <div className="rounded-xl border border-white/10 bg-[#071018]/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
+            <div className="rounded-xl border border-white/10 bg-cyber-card-deep/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
               <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                 Selected
               </span>
               <span className="mt-1 block font-semibold text-slate-50">{selectedIds.length}</span>
             </div>
-            <div className="rounded-xl border border-white/10 bg-[#071018]/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
+            <div className="rounded-xl border border-white/10 bg-cyber-card-deep/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
               <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                 Private
               </span>
               <span className="mt-1 block font-semibold text-slate-50">{privateCount}</span>
             </div>
-            <div className="rounded-xl border border-white/10 bg-[#071018]/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
+            <div className="rounded-xl border border-white/10 bg-cyber-card-deep/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
               <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                 Internal
               </span>
@@ -1244,7 +1244,7 @@ export default function AdminDocumentsCenterClient({
 
       {selectedIds.length > 0 ? (
         <>
-          <section className="cyber-panel bg-[#071018]/92 border border-emerald-500/20">
+          <section className="cyber-panel bg-cyber-card-deep/92 border border-emerald-500/20">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-50">
@@ -1380,9 +1380,9 @@ export default function AdminDocumentsCenterClient({
               }}
             />
           ) : viewMode === "table" ? (
-            <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10 bg-[#071018]/70">
+            <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10 bg-cyber-card-deep/70">
               <table className="min-w-full divide-y divide-white/10 text-sm">
-                <thead className="bg-[#071018]/95">
+                <thead className="bg-cyber-card-deep/95">
                   <tr className="text-left text-xs uppercase tracking-[0.12em] text-slate-400">
                     <th className="px-4 py-3">Select</th>
                     <th className="px-4 py-3">File</th>
@@ -1395,7 +1395,7 @@ export default function AdminDocumentsCenterClient({
                     <th className="px-4 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/10 bg-[#0A1118]/60">
+                <tbody className="divide-y divide-white/10 bg-cyber-base/60">
                   {visibleItems.map((document) => (
                     <tr key={document.id} className="hover:bg-white/[0.02]">
                       <td className="px-4 py-3 align-top">
@@ -1540,7 +1540,7 @@ export default function AdminDocumentsCenterClient({
                     <p className="line-clamp-3 text-sm text-slate-400">
                       {docDescription(document)}
                     </p>
-                    <div className="rounded-xl border border-white/10 bg-[#071018]/70 p-3 text-xs text-slate-400">
+                    <div className="rounded-xl border border-white/10 bg-cyber-card-deep/70 p-3 text-xs text-slate-400">
                       <div className="flex items-center justify-between">
                         <span>Version</span>
                         <span>{String(document.current_version ?? 1)}</span>
@@ -1711,7 +1711,7 @@ export default function AdminDocumentsCenterClient({
               <h2 className="cyber-heading text-lg">Polish Notes</h2>
               <span className="cyber-pill">2.2.3.3b</span>
             </div>
-            <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-[#071018]/80 p-4 text-sm text-slate-400">
+            <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-cyber-card-deep/80 p-4 text-sm text-slate-400">
               <p>• Bulk actions still confirm before destructive updates.</p>
               <p>• Active filters remain surfaced as removable chips.</p>
               <p>
@@ -1854,7 +1854,7 @@ export default function AdminDocumentsCenterClient({
       {drawerDoc ? (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/70 p-4 backdrop-blur-sm">
           <div className="h-full w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#071018]/95 px-6 py-4 backdrop-blur">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-cyber-card-deep/95 px-6 py-4 backdrop-blur">
               <div>
                 <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">
                   {docName(drawerDoc)}
@@ -1876,7 +1876,7 @@ export default function AdminDocumentsCenterClient({
             </div>
             <div className="space-y-6 px-6 py-6">
               <div className="grid gap-4 md:grid-cols-4">
-                <div className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4 text-sm text-slate-400">
+                <div className="rounded-xl border border-white/10 bg-cyber-base/60 p-4 text-sm text-slate-400">
                   <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                     Visibility
                   </span>
@@ -1886,7 +1886,7 @@ export default function AdminDocumentsCenterClient({
                     </span>
                   </span>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4 text-sm text-slate-400">
+                <div className="rounded-xl border border-white/10 bg-cyber-base/60 p-4 text-sm text-slate-400">
                   <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                     Type
                   </span>
@@ -1894,7 +1894,7 @@ export default function AdminDocumentsCenterClient({
                     <span className={typeClass(fileType(drawerDoc))}>{fileType(drawerDoc)}</span>
                   </span>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4 text-sm text-slate-400">
+                <div className="rounded-xl border border-white/10 bg-cyber-base/60 p-4 text-sm text-slate-400">
                   <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                     Version
                   </span>
@@ -1902,7 +1902,7 @@ export default function AdminDocumentsCenterClient({
                     {String(drawerDoc.current_version ?? 1)}
                   </span>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4 text-sm text-slate-400">
+                <div className="rounded-xl border border-white/10 bg-cyber-base/60 p-4 text-sm text-slate-400">
                   <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                     Size
                   </span>
@@ -1925,7 +1925,7 @@ export default function AdminDocumentsCenterClient({
               </div>
 
               {drawerTab === "overview" ? (
-                <section className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4">
+                <section className="rounded-xl border border-white/10 bg-cyber-base/60 p-4">
                   <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Overview</p>
                   <div className="mt-3 space-y-2 text-sm text-slate-300">
                     <p>
@@ -1950,7 +1950,7 @@ export default function AdminDocumentsCenterClient({
                       {formatRelativeTime(drawerDoc.updated_at ?? drawerDoc.created_at)}
                     </p>
                   </div>
-                  <div className="mt-4 rounded-xl border border-white/10 bg-[#071018]/80 p-4 text-sm text-slate-400">
+                  <div className="mt-4 rounded-xl border border-white/10 bg-cyber-card-deep/80 p-4 text-sm text-slate-400">
                     {docDescription(drawerDoc)}
                   </div>
                   <div className="mt-4 flex flex-wrap gap-3">
@@ -1987,7 +1987,7 @@ export default function AdminDocumentsCenterClient({
               ) : null}
 
               {drawerTab === "edit" ? (
-                <section className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4">
+                <section className="rounded-xl border border-white/10 bg-cyber-base/60 p-4">
                   <p className="text-xs uppercase tracking-[0.12em] text-slate-400">
                     Metadata Editor
                   </p>
@@ -2068,7 +2068,7 @@ export default function AdminDocumentsCenterClient({
 
               {drawerTab === "file" ? (
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-                  <section className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4">
+                  <section className="rounded-xl border border-white/10 bg-cyber-base/60 p-4">
                     <p className="text-xs uppercase tracking-[0.12em] text-slate-400">
                       Replace File
                     </p>
@@ -2107,7 +2107,7 @@ export default function AdminDocumentsCenterClient({
                       </div>
                     </form>
                   </section>
-                  <section className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4">
+                  <section className="rounded-xl border border-white/10 bg-cyber-base/60 p-4">
                     <p className="text-xs uppercase tracking-[0.12em] text-slate-400">
                       Danger Zone
                     </p>
@@ -2132,7 +2132,7 @@ export default function AdminDocumentsCenterClient({
               ) : null}
 
               {drawerTab === "preview" ? (
-                <section className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4">
+                <section className="rounded-xl border border-white/10 bg-cyber-base/60 p-4">
                   <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Preview</p>
                   {drawerDoc.resolved_url && canPreview(drawerDoc) ? (
                     <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-black/30">
@@ -2152,7 +2152,7 @@ export default function AdminDocumentsCenterClient({
                       )}
                     </div>
                   ) : (
-                    <div className="mt-4 rounded-xl border border-white/10 bg-[#071018]/80 p-4 text-sm text-slate-400">
+                    <div className="mt-4 rounded-xl border border-white/10 bg-cyber-card-deep/80 p-4 text-sm text-slate-400">
                       Inline preview is not available for this file type. Use Open to view it in a
                       new tab. If the file should preview inline, verify the stored MIME type and
                       extension are accurate.

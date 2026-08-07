@@ -85,7 +85,7 @@ export default async function QbrDetailPage(props: { params: Promise<{ id: strin
                   {value.map((item: unknown, i: number) => (
                     <li key={i} className="text-sm text-slate-300">
                       {typeof item === "object" && item !== null ? (
-                        <pre className="whitespace-pre-wrap rounded-md bg-[#0A1118] p-3 text-xs text-slate-300">
+                        <pre className="whitespace-pre-wrap rounded-md bg-cyber-base p-3 text-xs text-slate-300">
                           {JSON.stringify(item, null, 2)}
                         </pre>
                       ) : (
@@ -97,7 +97,7 @@ export default async function QbrDetailPage(props: { params: Promise<{ id: strin
               ) : typeof value === "object" ? (
                 <dl className="mt-3 grid gap-2 sm:grid-cols-2">
                   {Object.entries(value as Record<string, unknown>).map(([k, v]) => (
-                    <div key={k} className="rounded-md bg-[#0A1118]/60 p-3">
+                    <div key={k} className="rounded-md bg-cyber-base/60 p-3">
                       <dt className="text-[11px] uppercase tracking-widest text-slate-500">
                         {k.replace(/_/g, " ")}
                       </dt>
@@ -115,7 +115,7 @@ export default async function QbrDetailPage(props: { params: Promise<{ id: strin
             </section>
           ))
         ) : (
-          <p className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-sm text-slate-400">
+          <p className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-sm text-slate-400">
             No aggregated data for this report yet.
           </p>
         )}

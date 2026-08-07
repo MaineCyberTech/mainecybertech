@@ -38,7 +38,7 @@ export default async function AdminStoreSEOPagesPage() {
         <h2 className="mb-3 text-sm font-semibold text-slate-200">SEO Pages ({seoPages.length})</h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {seoPages.map((page) => (
-            <div key={page.slug} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div key={page.slug} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <span className="inline-block rounded bg-emerald-600/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
                 {page.title}
               </span>

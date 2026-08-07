@@ -57,7 +57,7 @@ export default function CategoryVisualHeader({
       className={`relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br ${gradient} p-8 sm:p-12`}
     >
       <div className="relative z-10 flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-[#0A1118]/60 backdrop-blur-sm">
+        <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-white/10 bg-cyber-base/60 backdrop-blur-sm">
           <StoreIconTile iconName={iconName} className="h-10 w-10" size={40} />
         </div>
         <div className="flex-1">

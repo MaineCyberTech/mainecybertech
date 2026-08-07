@@ -32,7 +32,7 @@ export default async function AdminStoreRecommendationsPage() {
           {data.recommendationTypes.map((type) => (
             <span
               key={type}
-              className="rounded border border-white/10 bg-[#0A1118]/60 px-3 py-1.5 font-mono text-xs text-slate-300"
+              className="rounded border border-white/10 bg-cyber-base/60 px-3 py-1.5 font-mono text-xs text-slate-300"
             >
               {type}
             </span>
@@ -47,7 +47,7 @@ export default async function AdminStoreRecommendationsPage() {
         <div className="overflow-x-auto rounded-lg border border-white/10">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10 bg-[#0A1118]/60">
+              <tr className="border-b border-white/10 bg-cyber-base/60">
                 <th className="px-4 py-3 text-left font-semibold text-slate-300">Source Product</th>
                 <th className="px-4 py-3 text-left font-semibold text-slate-300">Recommended</th>
               </tr>
@@ -81,7 +81,7 @@ export default async function AdminStoreRecommendationsPage() {
           {data.adminRules.map((rule, i) => (
             <li
               key={i}
-              className="rounded-lg border border-white/10 bg-[#0A1118]/60 px-4 py-2 text-xs text-slate-400"
+              className="rounded-lg border border-white/10 bg-cyber-base/60 px-4 py-2 text-xs text-slate-400"
             >
               {rule}
             </li>

@@ -62,7 +62,7 @@ export default async function StoreBundlesPage() {
           {rules.map((rule) => {
             const recommended = rule.recommend.map((id) => getProductById(id)).filter(Boolean);
             return (
-              <div key={rule.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={rule.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <p className="mb-1 font-mono text-xs text-slate-500">{rule.id}</p>
                 <p className="mb-2 text-sm text-slate-300">
                   When viewing{" "}
@@ -107,7 +107,7 @@ export default async function StoreBundlesPage() {
         </h2>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {bundles.map((b) => (
-            <div key={b.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+            <div key={b.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <p className="mb-1 text-sm font-medium text-slate-50">{b.name}</p>
               <p className="mb-2 text-xs text-slate-500">{b.category}</p>
               {b.priceRange ? (
@@ -130,7 +130,7 @@ export default async function StoreBundlesPage() {
             .map((p) => {
               const recs = getRecommendationsForProduct(p.id);
               return (
-                <div key={p.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-3">
+                <div key={p.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-3">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className="text-sm font-medium text-slate-50">{p.name}</p>
                     <span className="shrink-0 text-[11px] text-slate-500">

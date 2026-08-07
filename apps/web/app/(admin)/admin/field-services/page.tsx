@@ -48,7 +48,7 @@ export default async function FieldServicesPage() {
           <Link
             key={m.key}
             href={`/admin/field-services/${m.key}`}
-            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-center transition hover:border-emerald-600/25 hover:bg-[#0A1118]/80"
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-center transition hover:border-emerald-600/25 hover:bg-cyber-base/80"
           >
             <p className="font-orbitron text-xl text-slate-50">{m.count}</p>
             <p className="mt-1 text-xs text-slate-400">{m.label}</p>

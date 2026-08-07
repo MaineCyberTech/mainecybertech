@@ -20,7 +20,9 @@ export default async function PortalFileRequestsPage() {
 
   return (
     <div className="space-y-6" role="region" aria-label="Secure File Requests">
-      <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "File Requests" }]} />
+      <Breadcrumbs
+        items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "File Requests" }]}
+      />
       <PortalSubnav current="file-requests" />
       <h1 className="text-2xl font-semibold text-slate-50">Secure File Requests</h1>
       <p className="text-sm text-slate-400">{items.length} file request links available.</p>
@@ -28,7 +30,7 @@ export default async function PortalFileRequestsPage() {
         {items.map((fr) => (
           <div
             key={String(fr.id)}
-            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
           >
             <div className="flex items-start justify-between">
               <div>

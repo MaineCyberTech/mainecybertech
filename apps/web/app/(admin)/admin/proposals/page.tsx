@@ -68,7 +68,7 @@ export default async function ProposalsPage() {
               <Link
                 key={p.id}
                 href={`/admin/proposals/${p.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -101,7 +101,7 @@ export default async function ProposalsPage() {
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
           <Link
             href="/admin/organizations"
-            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-600/25 hover:bg-[#0A1118]/80"
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-600/25 hover:bg-cyber-base/80"
           >
             <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
               Select Client
@@ -112,7 +112,7 @@ export default async function ProposalsPage() {
           </Link>
           <Link
             href="/admin/approvals"
-            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-600/25 hover:bg-[#0A1118]/80"
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-600/25 hover:bg-cyber-base/80"
           >
             <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
               Approval Queue
@@ -123,7 +123,7 @@ export default async function ProposalsPage() {
           </Link>
           <Link
             href="/admin/projects"
-            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-600/25 hover:bg-[#0A1118]/80"
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-600/25 hover:bg-cyber-base/80"
           >
             <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
               Projects

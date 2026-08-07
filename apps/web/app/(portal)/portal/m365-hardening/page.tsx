@@ -30,7 +30,7 @@ export default async function PortalM365HardeningPage() {
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (
-          <div key={a.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div key={a.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
             <div className="flex items-center justify-between">
               <p className="font-medium text-slate-50">{a.tenant_domain}</p>
               <StatusPill status={a.status} />

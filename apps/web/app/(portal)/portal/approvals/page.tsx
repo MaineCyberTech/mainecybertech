@@ -64,7 +64,7 @@ export default async function ApprovalsPage() {
         {items.map((item) => (
           <div
             key={String(item.id)}
-            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
           >
             <p className="font-medium text-slate-50">
               {String(item.request_subject ?? "Untitled")}

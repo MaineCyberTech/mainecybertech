@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { getClientApi } from "@/lib/client-api";
@@ -34,7 +34,7 @@ export default function DocumentVersionsClient({ documentId }: Props) {
   if (versions.length <= 1) return null;
 
   return (
-    <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/40 p-4">
+    <div className="mt-4 rounded-lg border border-white/10 bg-cyber-base/40 p-4">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
         Version History
       </p>

@@ -102,7 +102,7 @@ export default function RecordDetail({
     return (
       <form
         onSubmit={handleSubmit}
-        className="space-y-3 rounded-lg border border-white/10 bg-[#0A1118]/60 p-6"
+        className="space-y-3 rounded-lg border border-white/10 bg-cyber-base/60 p-6"
       >
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-slate-50">Edit Record</h3>
@@ -129,14 +129,14 @@ export default function RecordDetail({
                 defaultValue={String(recordValue(record, f.key) ?? "")}
                 required={f.required}
                 rows={3}
-                className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
               />
             ) : f.type === "select" && f.options ? (
               <select
                 id={`edit-${f.key}`}
                 name={f.key}
                 defaultValue={String(recordValue(record, f.key) ?? "")}
-                className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
               >
                 {f.options.map((o) => (
                   <option key={o} value={o}>
@@ -151,7 +151,7 @@ export default function RecordDetail({
                 name={f.key}
                 defaultValue={String(recordValue(record, f.key) ?? "")}
                 required={f.required}
-                className="w-full rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
               />
             )}
           </div>
@@ -169,7 +169,7 @@ export default function RecordDetail({
   }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-6">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <a href={parentHref} className="text-sm text-emerald-500 hover:text-emerald-400">

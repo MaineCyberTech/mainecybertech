@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
@@ -166,7 +166,9 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
             <div
               key={n.id}
               className={`flex items-start gap-4 rounded-lg border p-4 transition ${
-                n.read ? "border-white/5 bg-[#0A1118]/40" : "border-emerald-500/20 bg-[#0A1118]/70"
+                n.read
+                  ? "border-white/5 bg-cyber-base/40"
+                  : "border-emerald-500/20 bg-cyber-base/70"
               }`}
             >
               <div className="min-w-0 flex-1">

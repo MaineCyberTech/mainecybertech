@@ -33,7 +33,7 @@ export default async function SlaPage() {
       <PortalSubnav current="sla" />
       <h1 className="text-2xl font-semibold text-slate-50">SLA Metrics</h1>
 
-      <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+      <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
         <h2 className="text-sm font-medium text-slate-300">Summary</h2>
         <div className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
@@ -56,7 +56,7 @@ export default async function SlaPage() {
       </div>
 
       {byMetric.length > 0 && (
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <h2 className="text-sm font-medium text-slate-300">By Metric</h2>
           <div className="mt-3 space-y-3">
             {byMetric.map((m, idx) => (

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { getClientApi } from "@/lib/client-api";
@@ -165,7 +165,7 @@ export default function NotificationPreferencesClient() {
         </button>
       </div>
 
-      <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-xs text-slate-400">
+      <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-xs text-slate-400">
         Changes take effect immediately. In-app notifications appear in the bell icon in the header.
         Email notifications require SMTP to be configured on the server.
       </div>

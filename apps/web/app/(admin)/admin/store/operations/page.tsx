@@ -42,7 +42,7 @@ export default async function AdminStoreOperationsPage() {
           {data.entities.map((obj) => (
             <span
               key={obj}
-              className="rounded border border-white/10 bg-[#0A1118]/60 px-3 py-1.5 font-mono text-xs text-slate-300"
+              className="rounded border border-white/10 bg-cyber-base/60 px-3 py-1.5 font-mono text-xs text-slate-300"
             >
               {obj}
             </span>
@@ -52,14 +52,14 @@ export default async function AdminStoreOperationsPage() {
 
       <section>
         <h2 className="mb-3 text-sm font-semibold text-slate-200">Status Map</h2>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <pre className="text-xs text-slate-400">
             {JSON.stringify(data.statusMap, null, 2) || "{}"}
           </pre>
         </div>
       </section>
 
-      <div className="mt-8 rounded-lg border border-white/10 bg-[#0A1118]/60 p-6 text-center text-sm text-slate-400">
+      <div className="mt-8 rounded-lg border border-white/10 bg-cyber-base/60 p-6 text-center text-sm text-slate-400">
         Active intake-to-project mappings will appear here once wired to quote and proposal data.
       </div>
     </AdminPageShell>

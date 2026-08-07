@@ -42,7 +42,7 @@ export default async function AdminStoreFAQsPage() {
           {data.faqs.map((faq) => (
             <details
               key={faq.id}
-              className="group rounded-lg border border-white/10 bg-[#0A1118]/60"
+              className="group rounded-lg border border-white/10 bg-cyber-base/60"
             >
               <summary className="flex cursor-pointer items-center justify-between px-4 py-3 text-sm font-medium text-slate-200">
                 <span>{faq.question}</span>

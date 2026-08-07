@@ -76,7 +76,7 @@ export default async function VendorContractsPage() {
               <Link
                 key={c.id}
                 href={`/admin/vendor-contracts/${c.id}`}
-                className="block rounded-lg border border-amber-500/20 bg-[#0A1118]/60 p-3 transition hover:border-amber-500/40"
+                className="block rounded-lg border border-amber-500/20 bg-cyber-base/60 p-3 transition hover:border-amber-500/40"
               >
                 <p className="text-sm font-medium text-slate-50">
                   {c.vendor_name} — {c.service_name}
@@ -98,7 +98,7 @@ export default async function VendorContractsPage() {
               <Link
                 key={c.id}
                 href={`/admin/vendor-contracts/${c.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>

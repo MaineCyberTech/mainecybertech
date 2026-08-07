@@ -162,7 +162,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
           return (
             <details
               key={task.id}
-              className="rounded-lg border border-white/10 bg-[#0A1118]/60 open:border-emerald-600/20 open:bg-[#0A1118]/80"
+              className="rounded-lg border border-white/10 bg-cyber-base/60 open:border-emerald-600/20 open:bg-cyber-base/80"
             >
               <summary className="cursor-pointer list-none p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -205,7 +205,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                 </div>
               </summary>
               <div className="space-y-4 border-t border-white/10 px-4 pb-4 pt-4">
-                <div className="rounded-lg border border-white/10 bg-[#0A1118]/40 p-4">
+                <div className="rounded-lg border border-white/10 bg-cyber-base/40 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
                     Task Details
                   </p>
@@ -222,7 +222,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                     </button>
                   </form>
                 ) : null}
-                <div className="rounded-lg border border-white/10 bg-[#0A1118]/40 p-4">
+                <div className="rounded-lg border border-white/10 bg-cyber-base/40 p-4">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
                     Comments
                   </p>
@@ -233,7 +233,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                         return (
                           <div
                             key={comment.id}
-                            className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-3"
+                            className="rounded-lg border border-white/10 bg-cyber-base/60 p-3"
                           >
                             <CommentBody
                               body={comment.body}
@@ -277,7 +277,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
           );
         })
       ) : (
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
           No tasks published for this project yet.
         </div>
       )}
@@ -344,7 +344,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                 return (
                   <div
                     key={update.id}
-                    className={`rounded-lg border p-4 ${update.is_pinned ? "border-amber-400/30 bg-amber-500/5 shadow-[0_0_0_1px_rgba(245,158,11,0.15),0_0_18px_rgba(245,158,11,0.12)]" : "border-white/10 bg-[#0A1118]/60"}`}
+                    className={`rounded-lg border p-4 ${update.is_pinned ? "border-amber-400/30 bg-amber-500/5 shadow-[0_0_0_1px_rgba(245,158,11,0.15),0_0_18px_rgba(245,158,11,0.12)]" : "border-white/10 bg-cyber-base/60"}`}
                   >
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
@@ -371,7 +371,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                 );
               })
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No updates yet.
             </div>
           )}

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
@@ -257,7 +257,7 @@ export default function AdminProjectsClient({
                 <Link
                   key={project.id}
                   href={`/admin/projects/${project.id}`}
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-600/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-600/20 hover:bg-cyber-base/80"
                 >
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="min-w-0">
@@ -307,7 +307,7 @@ export default function AdminProjectsClient({
 
       {openModal ? (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:items-center">
-          <div className="my-8 w-full max-w-2xl rounded-xl border border-white/10 bg-[#071018] shadow-2xl">
+          <div className="my-8 w-full max-w-2xl rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
                 <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">

@@ -55,7 +55,7 @@ export default async function UnifiPage() {
         <div className="space-y-3">
           {items.length > 0 ? (
             items.map((item) => (
-              <div key={item.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={item.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <Link
                   className="transition hover:text-emerald-400"
                   href={`/admin/field-services/unifi/${item.id}`}

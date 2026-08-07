@@ -57,7 +57,7 @@ function pill(c: "emerald" | "amber" | "blue" | "red" | "slate") {
   return `inline-flex min-h-8 items-center justify-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] leading-none ${map[c]}`;
 }
 const quick =
-  "rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-600/25 hover:bg-[#0A1118]/80";
+  "rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-600/25 hover:bg-cyber-base/80";
 
 export default async function AdminHomePage() {
   await requireAdminAccess();
@@ -100,7 +100,7 @@ export default async function AdminHomePage() {
       <AdminSubnav current="home" />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:p-5">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Organizations
@@ -111,7 +111,7 @@ export default async function AdminHomePage() {
             Total customer organizations in the platform.
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:p-5">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Tickets
@@ -124,7 +124,7 @@ export default async function AdminHomePage() {
             {openTicketCount} open or in progress from recent queue items.
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:p-5">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Documents
@@ -137,7 +137,7 @@ export default async function AdminHomePage() {
             Document records across all client organizations.
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:p-5">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Projects
@@ -150,7 +150,7 @@ export default async function AdminHomePage() {
             Tracked project work across organizations.
           </p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 sm:p-5">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Pending Approvals
@@ -180,7 +180,7 @@ export default async function AdminHomePage() {
                 <Link
                   key={t.id}
                   href={`/admin/tickets/${t.id}`}
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -239,7 +239,7 @@ export default async function AdminHomePage() {
                 <Link
                   key={d.id}
                   href="/admin/documents"
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
@@ -285,7 +285,7 @@ export default async function AdminHomePage() {
                 <Link
                   key={p.id}
                   href={`/admin/projects/${p.id}`}
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
                 >
                   <p className="font-medium text-slate-50">{projectName(p)}</p>
                   <p className="mt-2 text-xs text-slate-400">
@@ -314,7 +314,7 @@ export default async function AdminHomePage() {
               recentAudit.map((log) => (
                 <div
                   key={log.id}
-                  className="flex items-start gap-3 rounded-lg border border-white/5 bg-[#0A1118]/60 px-4 py-3"
+                  className="flex items-start gap-3 rounded-lg border border-white/5 bg-cyber-base/60 px-4 py-3"
                 >
                   <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/60" />
                   <div className="min-w-0 flex-1">
@@ -345,7 +345,7 @@ export default async function AdminHomePage() {
           <div className="mt-6 space-y-4">
             {pendingMemberships.length > 0 ? (
               pendingMemberships.map((m) => (
-                <div key={m.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+                <div key={m.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                   <p className="font-medium text-slate-50">
                     {orgMap.get(m.organization_id) ?? m.organization_id}
                   </p>
@@ -372,7 +372,7 @@ export default async function AdminHomePage() {
           <div className="mt-6 space-y-4">
             {pendingOrganizations.length > 0 ? (
               pendingOrganizations.map((o) => (
-                <div key={o.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+                <div key={o.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                   <p className="font-medium text-slate-50">{o.name ?? o.id}</p>
                   <p className="mt-2 text-xs text-slate-400">Requested {rel(o.created_at)}</p>
                 </div>

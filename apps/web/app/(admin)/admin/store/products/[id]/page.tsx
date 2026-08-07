@@ -1,4 +1,4 @@
-﻿import { requireAdminAccess } from "@/lib/auth/admin";
+import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -110,7 +110,7 @@ export default async function AdminStoreProductDetailPage(props: {
             <div className="overflow-x-auto rounded-lg border border-white/10">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 bg-[#0A1118]/60">
+                  <tr className="border-b border-white/10 bg-cyber-base/60">
                     <th className="px-3 py-2 text-left font-semibold text-slate-300">ID</th>
                     <th className="px-3 py-2 text-left font-semibold text-slate-300">Label</th>
                     <th className="px-3 py-2 text-left font-semibold text-slate-300">Type</th>
@@ -168,7 +168,7 @@ export default async function AdminStoreProductDetailPage(props: {
         </Section>
 
         {/* Internal Fulfillment */}
-        <details className="group rounded-lg border border-white/10 bg-[#0A1118]/60">
+        <details className="group rounded-lg border border-white/10 bg-cyber-base/60">
           <summary className="cursor-pointer px-5 py-4 font-semibold text-slate-200 transition hover:text-emerald-400">
             Internal Fulfillment Details
           </summary>
@@ -221,7 +221,7 @@ export default async function AdminStoreProductDetailPage(props: {
         </details>
 
         {/* JSON Preview */}
-        <details className="group rounded-lg border border-white/10 bg-[#0A1118]/60">
+        <details className="group rounded-lg border border-white/10 bg-cyber-base/60">
           <summary className="cursor-pointer px-5 py-4 font-semibold text-slate-200 transition hover:text-emerald-400">
             JSON Preview
           </summary>
@@ -238,7 +238,7 @@ export default async function AdminStoreProductDetailPage(props: {
 
 function Section({ heading, children }: { heading: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-5">
+    <section className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
       <h2 className="mb-4 text-base font-semibold text-slate-200">{heading}</h2>
       <div className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
         {children}

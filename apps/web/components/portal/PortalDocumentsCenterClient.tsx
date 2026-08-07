@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useMemo, useCallback } from "react";
 import Link from "next/link";
@@ -183,11 +183,21 @@ export default function PortalDocumentsCenterClient({
           <input type="hidden" name="organizationId" value={organizationId} />
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label htmlFor="portal-doc-title" className="cyber-label">Title</label>
-              <input id="portal-doc-title" name="name" className="cyber-input" placeholder="Document title..." required />
+              <label htmlFor="portal-doc-title" className="cyber-label">
+                Title
+              </label>
+              <input
+                id="portal-doc-title"
+                name="name"
+                className="cyber-input"
+                placeholder="Document title..."
+                required
+              />
             </div>
             <div className="md:col-span-2">
-              <label htmlFor="portal-doc-description" className="cyber-label">Description</label>
+              <label htmlFor="portal-doc-description" className="cyber-label">
+                Description
+              </label>
               <textarea
                 id="portal-doc-description"
                 name="description"
@@ -197,12 +207,27 @@ export default function PortalDocumentsCenterClient({
               />
             </div>
             <div>
-              <label htmlFor="portal-doc-file" className="cyber-label">File</label>
-              <input id="portal-doc-file" type="file" name="file" className="cyber-input" required />
+              <label htmlFor="portal-doc-file" className="cyber-label">
+                File
+              </label>
+              <input
+                id="portal-doc-file"
+                type="file"
+                name="file"
+                className="cyber-input"
+                required
+              />
             </div>
             <div>
-              <label htmlFor="portal-doc-visibility" className="cyber-label">Visibility</label>
-              <select id="portal-doc-visibility" name="visibility" className="cyber-input" defaultValue="org">
+              <label htmlFor="portal-doc-visibility" className="cyber-label">
+                Visibility
+              </label>
+              <select
+                id="portal-doc-visibility"
+                name="visibility"
+                className="cyber-input"
+                defaultValue="org"
+              >
                 <option value="org">Organization</option>
                 <option value="private">Private</option>
               </select>
@@ -271,7 +296,7 @@ export default function PortalDocumentsCenterClient({
         ) : null}
 
         {bulkFolderOpen ? (
-          <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/80 p-4">
+          <div className="mt-4 rounded-lg border border-white/10 bg-cyber-base/80 p-4">
             <form onSubmit={handleBulkFolder} className="flex flex-wrap items-end gap-4">
               <div className="min-w-[200px] flex-1">
                 <label className="cyber-label">Folder Path</label>
@@ -297,7 +322,7 @@ export default function PortalDocumentsCenterClient({
         ) : null}
 
         {bulkMetaOpen ? (
-          <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/80 p-4">
+          <div className="mt-4 rounded-lg border border-white/10 bg-cyber-base/80 p-4">
             <form onSubmit={handleBulkMetadata} className="space-y-3">
               <div>
                 <label className="cyber-label">Description</label>
@@ -340,7 +365,7 @@ export default function PortalDocumentsCenterClient({
               {sorted.map((doc) => (
                 <div
                   key={doc.id}
-                  className="flex items-center gap-3 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:bg-[#0A1118]/80"
+                  className="flex items-center gap-3 rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:bg-cyber-base/80"
                 >
                   {hasBulk ? (
                     <input
@@ -460,7 +485,7 @@ export default function PortalDocumentsCenterClient({
                 <Link
                   key={doc.id}
                   href={`/portal/documents/${doc.id}`}
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-600/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-600/20 hover:bg-cyber-base/80"
                 >
                   {doc.resolved_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -470,7 +495,7 @@ export default function PortalDocumentsCenterClient({
                       className="h-32 w-full rounded-lg object-cover"
                     />
                   ) : (
-                    <div className="flex h-32 items-center justify-center rounded-lg border border-white/10 bg-[#071018] text-3xl text-slate-600">
+                    <div className="flex h-32 items-center justify-center rounded-lg border border-white/10 bg-cyber-card-deep text-3xl text-slate-600">
                       {docExtension(doc.file_name) || "📄"}
                     </div>
                   )}

@@ -26,7 +26,7 @@ export default async function AdminWebhooksPage() {
     >
       <div className="space-y-4">
         {endpoints.length === 0 ? (
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-8 text-center text-sm text-slate-400">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-8 text-center text-sm text-slate-400">
             No webhook endpoints configured.
           </div>
         ) : (
@@ -34,7 +34,7 @@ export default async function AdminWebhooksPage() {
             <Link
               key={wh.id}
               href={`/admin/webhooks/${wh.id}`}
-              className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-600/20 hover:bg-[#0A1118]/80"
+              className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-600/20 hover:bg-cyber-base/80"
             >
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="min-w-0">

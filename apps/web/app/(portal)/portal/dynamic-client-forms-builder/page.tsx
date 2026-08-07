@@ -110,7 +110,7 @@ export default async function DynamicFormsListPage() {
             <Link
               key={form.id}
               href={`/portal/dynamic-client-forms-builder/${form.id}`}
-              className="cyber-panel block p-5 transition hover:border-emerald-500/30 hover:bg-[#0A1118]/80"
+              className="cyber-panel block p-5 transition hover:border-emerald-500/30 hover:bg-cyber-base/80"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">

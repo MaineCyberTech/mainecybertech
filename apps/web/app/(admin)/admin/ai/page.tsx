@@ -76,7 +76,7 @@ export default async function AiToolsPage() {
         <div className="mt-6 space-y-3">
           {drafts.length > 0 ? (
             drafts.slice(0, 10).map((d) => (
-              <div key={d.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={d.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="line-clamp-2 text-sm text-slate-300">{d.raw_description}</p>

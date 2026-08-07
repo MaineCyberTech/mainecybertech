@@ -106,7 +106,7 @@ function phaseCard({
           items.map((item) => (
             <div
               key={item.item_key}
-              className="flex items-center gap-3 rounded-lg border border-white/5 bg-[#0A1118]/60 p-3"
+              className="flex items-center gap-3 rounded-lg border border-white/5 bg-cyber-base/60 p-3"
             >
               <input
                 type="checkbox"

@@ -128,7 +128,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
             domains.map((domain: any) => (
               <div
                 key={domain.id}
-                className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
               >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div>
@@ -163,7 +163,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
               </div>
             ))
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No domains configured.
             </div>
           )}
@@ -173,9 +173,19 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
           <input type="hidden" name="organizationId" value={org.id} />
 
           <div className="grid gap-4 md:grid-cols-[1fr,220px,auto]">
-            <input name="domain" placeholder="example.com" aria-label="New domain name" className="cyber-input" />
+            <input
+              name="domain"
+              placeholder="example.com"
+              aria-label="New domain name"
+              className="cyber-input"
+            />
 
-            <select name="autoApprove" defaultValue="false" aria-label="New domain approval mode" className="cyber-input">
+            <select
+              name="autoApprove"
+              defaultValue="false"
+              aria-label="New domain approval mode"
+              className="cyber-input"
+            >
               <option value="false">Manual approval</option>
               <option value="true">Auto-approve</option>
             </select>
@@ -200,7 +210,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
                 <Link
                   key={membership.id}
                   href={`/admin/users/${membership.user_id}`}
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-600/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-600/20 hover:bg-cyber-base/80"
                 >
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div>
@@ -228,7 +238,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
               );
             })
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No memberships found.
             </div>
           )}

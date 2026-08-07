@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
@@ -83,7 +83,7 @@ export default function PortalGlobalSearch() {
         onFocus={() => results && resultCount() > 0 && setOpen(true)}
         placeholder="Search tickets, projects..."
         aria-label="Search portal"
-        className="w-full rounded-lg border border-white/10 bg-[#0A1118]/80 px-4 py-2.5 pl-10 text-sm text-slate-50 outline-none transition focus:border-emerald-600"
+        className="w-full rounded-lg border border-white/10 bg-cyber-base/80 px-4 py-2.5 pl-10 text-sm text-slate-50 outline-none transition focus:border-emerald-600"
       />
       <svg
         className="absolute left-3 top-3 h-4 w-4 text-slate-400"
@@ -102,7 +102,7 @@ export default function PortalGlobalSearch() {
       {open && results && resultCount() > 0 ? (
         <div
           ref={dropdownRef}
-          className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-white/10 bg-[#0F1923] shadow-2xl backdrop-blur-xl"
+          className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-lg border border-white/10 bg-cyber-card-alt shadow-2xl backdrop-blur-xl"
         >
           {results.tickets.length > 0 ? (
             <div className="p-3">
@@ -153,7 +153,7 @@ export default function PortalGlobalSearch() {
       {open && query.length >= 2 && resultCount() === 0 && !loading ? (
         <div
           ref={dropdownRef}
-          className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-white/10 bg-[#0F1923] p-4 text-center text-sm text-slate-400"
+          className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-white/10 bg-cyber-card-alt p-4 text-center text-sm text-slate-400"
         >
           No results found for &ldquo;{query}&rdquo;
         </div>

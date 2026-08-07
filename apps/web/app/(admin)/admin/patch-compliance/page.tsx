@@ -64,7 +64,7 @@ export default async function PatchPage() {
         <div className="grid gap-4 md:grid-cols-2">
           {items.length > 0 ? (
             items.map((p) => (
-              <div key={p.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={p.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <Link
                   className="transition hover:text-emerald-400"
                   href={`/admin/patch-compliance/${p.id}`}

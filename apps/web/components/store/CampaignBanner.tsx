@@ -42,7 +42,7 @@ export default function CampaignBanner() {
                 className={`flex flex-col rounded-xl border ${cardBorder.split(" ")[0]} bg-[rgba(18,30,45,0.5)] p-8 backdrop-blur-sm transition hover:bg-[rgba(18,30,45,0.7)]`}
               >
                 <div className="mb-5 flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-[#0A1118]/60">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-white/10 bg-cyber-base/60">
                     <StoreIconTile iconName={campaign.visual.icon} className="h-6 w-6" size={24} />
                   </div>
                   <div>

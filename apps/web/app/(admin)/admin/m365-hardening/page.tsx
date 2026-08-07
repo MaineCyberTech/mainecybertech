@@ -50,7 +50,7 @@ export default async function M365Page() {
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
             items.map((t) => (
-              <div key={t.id} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+              <div key={t.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <Link
                   className="transition hover:text-emerald-400"
                   href={`/admin/m365-hardening/${t.id}`}

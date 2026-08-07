@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function ForbiddenPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0A1118] px-4">
-      <div className="w-full max-w-md rounded-xl border border-red-500/20 bg-[#0F172A]/80 p-8 text-center shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-cyber-base px-4">
+      <div className="w-full max-w-md rounded-xl border border-red-500/20 bg-slate-900/80 p-8 text-center shadow-2xl">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-red-500/30 bg-red-500/10 text-3xl font-bold text-red-400">
           403
         </div>

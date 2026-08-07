@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { getClientApi } from "@/lib/client-api";
@@ -120,11 +120,11 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
       ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{summary?.activeSubscriptions ?? 0}</p>
           <p className="text-xs text-slate-400">Active Plans</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p
             className={`text-2xl font-bold ${(summary?.overdueInvoices ?? 0) > 0 ? "text-red-400" : "text-slate-50"}`}
           >
@@ -132,11 +132,11 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
           </p>
           <p className="text-xs text-slate-400">Overdue</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{summary?.paidInvoices ?? 0}</p>
           <p className="text-xs text-slate-400">Paid</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{summary?.totalInvoices ?? 0}</p>
           <p className="text-xs text-slate-400">Total Invoices</p>
         </div>
@@ -189,8 +189,8 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
                 {portalLoading ? "Opening..." : "Manage Billing"}
               </button>
               <p className="mt-2 text-xs text-slate-400">
-                Securely manage your subscription, payment methods, and billing history in the Stripe
-                Customer Portal.
+                Securely manage your subscription, payment methods, and billing history in the
+                Stripe Customer Portal.
               </p>
             </div>
           ) : null}
@@ -290,7 +290,7 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
             {subscriptions.map((sub) => (
               <div
                 key={sub.id}
-                className="flex items-center justify-between rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                className="flex items-center justify-between rounded-lg border border-white/10 bg-cyber-base/60 p-4"
               >
                 <div>
                   <p className="font-medium text-slate-200">{sub.plan_name}</p>

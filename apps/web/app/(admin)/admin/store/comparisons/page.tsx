@@ -28,7 +28,7 @@ export default async function AdminStoreComparisonsPage() {
     >
       <div className="space-y-4">
         {data.comparisons.map((cmp) => (
-          <div key={cmp.slug} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div key={cmp.slug} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-slate-50">{cmp.title}</p>

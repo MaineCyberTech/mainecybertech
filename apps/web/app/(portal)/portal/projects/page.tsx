@@ -132,7 +132,7 @@ export default async function PortalProjectsPage() {
                 <Link
                   key={project.id}
                   href={`/portal/projects/${project.id}`}
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <h3 className="font-orbitron text-lg uppercase tracking-[0.12em] text-slate-50">
@@ -162,7 +162,7 @@ export default async function PortalProjectsPage() {
               );
             })
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No projects found.
             </div>
           )}

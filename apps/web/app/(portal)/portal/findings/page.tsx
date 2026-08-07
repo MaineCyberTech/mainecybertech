@@ -30,7 +30,9 @@ export default async function PortalFindingsPage() {
 
   return (
     <div className="space-y-6" role="region" aria-label="Findings">
-      <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Findings" }]} />
+      <Breadcrumbs
+        items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Findings" }]}
+      />
       <PortalSubnav current="findings" />
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-slate-50">Findings &amp; Remediation</h1>
@@ -45,7 +47,10 @@ export default async function PortalFindingsPage() {
       </p>
       <div className="space-y-3">
         {items.map((f) => (
-          <div key={String(f.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div
+            key={String(f.id)}
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+          >
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-medium text-slate-50">{String(f.title)}</p>

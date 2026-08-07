@@ -25,7 +25,7 @@ export default function RiskAssessButton({ id }: { id: string }) {
   };
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <h3 className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-400">
         Assess Risk
       </h3>
@@ -38,7 +38,7 @@ export default function RiskAssessButton({ id }: { id: string }) {
             max={5}
             value={likelihood}
             onChange={(e) => setLikelihood(Number(e.target.value))}
-            className="mt-1 w-20 rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-20 rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <label className="text-xs text-slate-400">
@@ -49,7 +49,7 @@ export default function RiskAssessButton({ id }: { id: string }) {
             max={5}
             value={impact}
             onChange={(e) => setImpact(Number(e.target.value))}
-            className="mt-1 w-20 rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50"
+            className="mt-1 w-20 rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50"
           />
         </label>
         <button

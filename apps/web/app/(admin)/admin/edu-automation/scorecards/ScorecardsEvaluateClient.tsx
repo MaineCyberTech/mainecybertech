@@ -26,7 +26,7 @@ export default function ScorecardsEvaluateClient({ organizationId }: { organizat
   };
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <h3 className="text-sm font-medium text-slate-50">Evaluate Scorecards</h3>
       <p className="mt-1 text-xs text-slate-400">
         Leave org blank to evaluate all organizations. Assigns badges and records score history.
@@ -36,7 +36,7 @@ export default function ScorecardsEvaluateClient({ organizationId }: { organizat
           value={orgId}
           onChange={(e) => setOrgId(e.target.value)}
           placeholder="Org UUID (blank = all orgs)"
-          className="w-72 rounded-md border border-white/10 bg-[#0A1118] px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-72 rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
         />
         <button
           type="button"

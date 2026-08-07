@@ -30,7 +30,10 @@ export default async function PortalStatusPage() {
       <h1 className="text-2xl font-semibold text-slate-50">Service Status</h1>
       <div className="space-y-3">
         {items.map((s) => (
-          <div key={String(s.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div
+            key={String(s.id)}
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+          >
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-medium text-slate-50">{String(s.title)}</p>
@@ -52,7 +55,7 @@ export default async function PortalStatusPage() {
           </div>
         ))}
         {items.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-white/10 bg-[#071018]/70 px-6 py-12 text-center">
+          <div className="rounded-2xl border border-dashed border-white/10 bg-cyber-card-deep/70 px-6 py-12 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-2xl">
               &#10003;
             </div>

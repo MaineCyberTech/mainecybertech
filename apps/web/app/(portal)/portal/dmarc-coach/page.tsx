@@ -36,7 +36,10 @@ export default async function PortalDmarcCoachPage() {
       <p className="text-sm text-slate-400">Review DNS security analysis for your domains.</p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((d) => (
-          <div key={String(d.id)} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div
+            key={String(d.id)}
+            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+          >
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-medium text-slate-50">{String(d.domain)}</p>

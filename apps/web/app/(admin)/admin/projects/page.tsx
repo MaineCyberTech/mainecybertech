@@ -35,15 +35,15 @@ export default async function AdminProjectsPage() {
       description="Manage projects, publish tasks, and post client-visible or internal updates."
     >
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-slate-50">{projects.length}</p>
           <p className="text-xs text-slate-400">Total Projects</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-amber-400">{activeCount}</p>
           <p className="text-xs text-slate-400">Active</p>
         </div>
-        <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+        <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-emerald-400">{completedCount}</p>
           <p className="text-xs text-slate-400">Completed</p>
         </div>
