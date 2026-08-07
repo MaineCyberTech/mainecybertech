@@ -65,7 +65,7 @@ export default async function PortMapPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ”Œ"
+              icon="🔌"
               title="No port maps"
               description="Use the form above to create one."
             />

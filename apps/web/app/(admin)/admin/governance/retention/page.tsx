@@ -66,7 +66,7 @@ export default async function RetentionPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ—„ï¸"
+              icon="🗄️"
               title="No retention policies"
               description="Use the form above to create one."
             />

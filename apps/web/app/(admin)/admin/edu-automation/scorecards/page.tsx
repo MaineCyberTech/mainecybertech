@@ -66,7 +66,7 @@ export default async function ScorecardPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ“Š"
+              icon="📊"
               title="No scorecards"
               description="Use the form above to create one."
             />

@@ -64,7 +64,7 @@ export default async function SaasAuditPage() {
             ))
           ) : (
             <EmptyState
-              icon="â˜ï¸"
+              icon="☁️"
               title="No SaaS audits"
               description="Use the form above to create one."
             />

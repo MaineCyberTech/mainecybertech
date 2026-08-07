@@ -64,7 +64,7 @@ export default async function DnsChangePage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸŒ"
+              icon="🌐"
               title="No DNS changes"
               description="Use the form above to create one."
             />

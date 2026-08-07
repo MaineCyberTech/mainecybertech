@@ -66,7 +66,7 @@ export default async function NetworkDiagramPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ“"
+              icon="📐"
               title="No network diagrams"
               description="Use the form above to create one."
             />

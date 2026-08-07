@@ -63,7 +63,7 @@ export default async function KbGenPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ“"
+              icon="📝"
               title="No KB generated entries"
               description="Use the form above to create one."
             />

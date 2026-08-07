@@ -21,6 +21,7 @@ if (env.SENTRY_DSN) {
 import { registerAllTasks } from "./tasks";
 import { enqueueTask } from "./producer";
 import { markShuttingDown } from "./shutdown";
+import { scheduledScans, initialScanDelayMs } from "./schedule-config";
 registerAllTasks();
 
 // ============= Uncaught Error Handling =============
@@ -116,26 +117,6 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
 
   // Schedule the module scan tasks. Each runs on a staggered offset so the
   // scans don't all fire on the same tick.
-  const SCAN_INTERVAL_MS = 60 * 60 * 1000; // hourly
-  const SCAN_INTERVAL_6H_MS = 6 * 60 * 60 * 1000; // every 6 hours
-  const SCAN_INTERVAL_DAILY_MS = 24 * 60 * 60 * 1000; // daily
-  const scheduledScans: Array<{ name: string; intervalMs: number; offsetMin: number }> = [
-    { name: "domain-monitor-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 3 },
-    { name: "website-monitor-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 8 },
-    { name: "vendor-contract-renewal-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 13 },
-    { name: "patch-compliance-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 18 },
-    { name: "license-optimizer-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 23 },
-    { name: "backup-dr-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 28 },
-    { name: "phishing-campaign-send", intervalMs: SCAN_INTERVAL_MS, offsetMin: 33 },
-    { name: "status-maintenance-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 38 },
-    { name: "dmarc-coach-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 43 },
-    { name: "m365-hardening-scan", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 48 },
-    { name: "endpoint-security-check", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 53 },
-    { name: "saas-audit-scan", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 58 },
-    { name: "qbr-scheduled-generate", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 63 },
-    { name: "retention", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 70 },
-    { name: "orphan-cleanup", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 76 },
-  ];
   for (const scan of scheduledScans) {
     const interval = setInterval(() => {
       logger.info(`Running scheduled ${scan.name}`);
@@ -147,15 +128,12 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
     // Honor each scan's stagger offset so scans don't all fire on the same
     // tick after a worker restart. Without this only scheduledScans[0] ran
     // at boot and the remaining offsets were dead config.
-    const initial = setTimeout(
-      () => {
-        logger.info(`Running initial ${scan.name}`);
-        runScheduledTask(scan.name).catch((error) => {
-          logger.error({ error }, `Initial ${scan.name} failed`);
-        });
-      },
-      scan.offsetMin * 60 * 1000,
-    );
+    const initial = setTimeout(() => {
+      logger.info(`Running initial ${scan.name}`);
+      runScheduledTask(scan.name).catch((error) => {
+        logger.error({ error }, `Initial ${scan.name} failed`);
+      });
+    }, initialScanDelayMs(scan));
     initial.unref();
   }
 

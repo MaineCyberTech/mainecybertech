@@ -65,7 +65,7 @@ export default async function DeviceProfilePage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ–¥ï¸"
+              icon="🖥️"
               title="No device profiles"
               description="Use the form above to create one."
             />

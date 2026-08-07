@@ -63,7 +63,7 @@ export default async function AutomationPage() {
             ))
           ) : (
             <EmptyState
-              icon="âš¡"
+              icon="⚡"
               title="No automation workflows"
               description="Use the form above to create one."
             />

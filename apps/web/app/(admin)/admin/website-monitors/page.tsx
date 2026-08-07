@@ -73,7 +73,7 @@ export default async function WebsiteMonitorPage() {
             ))
           ) : (
             <EmptyState
-              icon="Ã°Å¸Å’Â"
+              icon="🌐"
               title="No websites monitored"
               description="Add websites to monitor uptime and SSL."
             />

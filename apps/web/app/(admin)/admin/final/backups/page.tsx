@@ -65,7 +65,7 @@ export default async function BackupPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ’¾"
+              icon="💾"
               title="No backup plans"
               description="Use the form above to create one."
             />

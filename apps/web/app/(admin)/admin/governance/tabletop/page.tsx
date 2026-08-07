@@ -67,7 +67,7 @@ export default async function TabletopPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸŽ¯"
+              icon="🎯"
               title="No tabletop exercises"
               description="Use the form above to create one."
             />

@@ -61,7 +61,7 @@ export default async function PowerShellPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ’»"
+              icon="💻"
               title="No PowerShell scripts"
               description="Use the form above to create one."
             />

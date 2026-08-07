@@ -66,7 +66,7 @@ export default async function UnifiPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ“¡"
+              icon="📡"
               title="No UniFi surveys"
               description="Use the form above to create one."
             />

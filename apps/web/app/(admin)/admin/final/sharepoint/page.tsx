@@ -64,7 +64,7 @@ export default async function SharePointPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ“"
+              icon="📁"
               title="No SharePoint plans"
               description="Use the form above to create one."
             />

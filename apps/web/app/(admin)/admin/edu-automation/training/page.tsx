@@ -63,7 +63,7 @@ export default async function TrainingPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸŽ“"
+              icon="🎓"
               title="No training modules"
               description="Use the form above to create one."
             />

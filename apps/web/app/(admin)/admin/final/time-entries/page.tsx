@@ -62,7 +62,7 @@ export default async function TimeEntryPage() {
             ))
           ) : (
             <EmptyState
-              icon="â±ï¸"
+              icon="⏱️"
               title="No time entries"
               description="Use the form above to create one."
             />

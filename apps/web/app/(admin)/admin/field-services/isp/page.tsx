@@ -63,7 +63,7 @@ export default async function IspPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸŒ"
+              icon="🌐"
               title="No ISP assessments"
               description="Use the form above to create one."
             />

@@ -63,7 +63,7 @@ export default async function AiPolicyPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ¤–"
+              icon="🤖"
               title="No AI policies"
               description="Use the form above to create one."
             />

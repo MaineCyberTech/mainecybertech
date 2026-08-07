@@ -63,7 +63,7 @@ export default async function SatisfactionPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ˜Š"
+              icon="😊"
               title="No satisfaction surveys"
               description="Use the form above to create one."
             />

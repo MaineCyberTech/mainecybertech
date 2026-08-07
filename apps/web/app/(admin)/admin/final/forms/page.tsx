@@ -61,7 +61,7 @@ export default async function FormsPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ“„"
+              icon="📄"
               title="No custom forms"
               description="Use the form above to create one."
             />

@@ -65,7 +65,7 @@ export default async function CameraCalcPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ“·"
+              icon="📷"
               title="No camera calculations"
               description="Use the form above to create one."
             />

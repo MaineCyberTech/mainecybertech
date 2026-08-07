@@ -64,7 +64,7 @@ export default async function PhishingPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸŽ£"
+              icon="🎣"
               title="No phishing campaigns"
               description="Use the form above to create one."
             />

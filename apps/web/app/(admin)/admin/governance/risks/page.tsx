@@ -66,7 +66,7 @@ export default async function RiskRegisterPage() {
             ))
           ) : (
             <EmptyState
-              icon="âš ï¸"
+              icon="⚠️"
               title="No risks registered"
               description="Use the form above to create one."
             />

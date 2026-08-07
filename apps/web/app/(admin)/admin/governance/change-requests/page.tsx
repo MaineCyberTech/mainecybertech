@@ -65,7 +65,7 @@ export default async function ChangeRequestPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ”„"
+              icon="🔄"
               title="No change requests"
               description="Use the form above to create one."
             />

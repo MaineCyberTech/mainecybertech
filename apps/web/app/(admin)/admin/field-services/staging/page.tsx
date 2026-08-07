@@ -64,7 +64,7 @@ export default async function StagingPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ–¥ï¸"
+              icon="🖥️"
               title="No staged devices"
               description="Use the form above to create one."
             />

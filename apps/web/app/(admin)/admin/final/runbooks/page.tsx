@@ -63,7 +63,7 @@ export default async function RunbookPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ“–"
+              icon="📖"
               title="No runbooks"
               description="Use the form above to create one."
             />

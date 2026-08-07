@@ -63,11 +63,7 @@ export default async function SopPage() {
               </div>
             ))
           ) : (
-            <EmptyState
-              icon="ðŸ“‹"
-              title="No SOPs"
-              description="Use the form above to create one."
-            />
+            <EmptyState icon="📋" title="No SOPs" description="Use the form above to create one." />
           )}
         </div>
       </section>

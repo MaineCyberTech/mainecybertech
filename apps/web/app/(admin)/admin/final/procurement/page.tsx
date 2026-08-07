@@ -70,7 +70,7 @@ export default async function ProcurementPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ›’"
+              icon="🛒"
               title="No procurement records"
               description="Use the form above to create one."
             />

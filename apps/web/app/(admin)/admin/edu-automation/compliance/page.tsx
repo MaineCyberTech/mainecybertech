@@ -63,7 +63,7 @@ export default async function CompliancePage() {
             ))
           ) : (
             <EmptyState
-              icon="âœ…"
+              icon="✅"
               title="No compliance records"
               description="Use the form above to create one."
             />

@@ -64,7 +64,7 @@ export default async function BudgetPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ’°"
+              icon="💰"
               title="No budget items"
               description="Use the form above to create one."
             />

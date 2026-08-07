@@ -64,7 +64,7 @@ export default async function InsurancePage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ›¡ï¸"
+              icon="🛡️"
               title="No insurance records"
               description="Use the form above to create one."
             />

@@ -62,7 +62,7 @@ export default async function KbPage() {
             ))
           ) : (
             <EmptyState
-              icon="ðŸ“š"
+              icon="📚"
               title="No knowledge base articles"
               description="Use the form above to create one."
             />
