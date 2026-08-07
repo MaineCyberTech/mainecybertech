@@ -21,7 +21,12 @@ jest.mock("../services/supabase", () => ({
   getSupabaseAdminNoBreaker: jest.fn(),
 }));
 
+jest.mock("../lib/health", () => ({
+  checkRedisHealth: jest.fn().mockResolvedValue({ status: "not_configured" }),
+}));
+
 import { getSupabaseAdminNoBreaker } from "../services/supabase";
+import { checkRedisHealth } from "../lib/health";
 
 const app = createTestApp();
 app.use("/health", healthRouter);
@@ -90,5 +95,27 @@ describe("health check", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.checks.redis.status).toBe("not_configured");
+  });
+
+  it("does not degrade overall health when redis is unhealthy (optional dependency)", async () => {
+    const supabase = {
+      from: jest.fn().mockReturnValue({
+        select: jest.fn().mockResolvedValue({ error: null }),
+      }),
+    };
+    (getSupabaseAdminNoBreaker as jest.Mock).mockReturnValue(supabase);
+
+    const mockCheckRedisHealth = jest.fn().mockResolvedValue({
+      status: "unhealthy",
+      latencyMs: 5,
+      error: "connection refused",
+    });
+    (checkRedisHealth as jest.Mock).mockImplementation(mockCheckRedisHealth);
+
+    const res = await request(app).get("/health");
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.checks.redis.status).toBe("unhealthy");
+    expect(res.body.data.status).toBe("healthy");
   });
 });

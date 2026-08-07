@@ -75,11 +75,11 @@ router.get("/", async (_req, res) => {
   }
 
   // Redis is used for the response cache + BullMQ queue. It is optional in
-  // single-instance deployments (cache falls back to memory), so a missing
-  // REDIS_URL reports not_configured rather than degrading health.
+  // single-instance deployments (cache falls back to memory), so Redis status
+  // is REPORTED but never degrades the overall health to 503 — a Redis outage
+  // must not take down the deploy gate or make the API appear down.
   const redis = await checkRedisHealth(env);
   checks.redis = { status: redis.status, latencyMs: redis.latencyMs, error: redis.error };
-  if (redis.status === "unhealthy") healthy = false;
 
   const status = healthy ? 200 : 503;
   res.status(status).json(
