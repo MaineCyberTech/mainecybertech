@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
         with:
           node-version: 20
-- name: Enable pnpm
+      - name: Enable pnpm
         run: |
           corepack enable
           corepack prepare pnpm@10 --activate
@@ -25,7 +25,7 @@ jobs:
       - name: Dependency audit
         # Hard fail: high/critical vulnerabilities block the deploy gate (and
         # every workflow that calls validate.yml, including terraform-do prod 
-        apply).
+        # apply).
         # --prod: only audit production dependencies (dev deps like storybook 
         # have unpatchable image-size vulns)
         run: pnpm audit --audit-level=high --prod
