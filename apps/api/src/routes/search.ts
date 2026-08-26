@@ -3,11 +3,12 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
+import { requireOrgAccess } from "../middleware/org-access";
 import { logAuditEvent } from "../services/audit";
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth, requireAdmin);
+router.use(requireAuth, requireAdmin, requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {

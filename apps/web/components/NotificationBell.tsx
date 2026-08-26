@@ -37,7 +37,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
       setUnread(result.count);
       setConnectionError(false);
     } catch {
-      console.warn("NotificationBell: failed to fetch unread count");
+      // Silently handle — notification count is non-critical UI
       setConnectionError(true);
     }
   }, []);
@@ -50,7 +50,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
       });
       setNotifications(result.items as NotificationItem[]);
     } catch {
-      console.warn("NotificationBell: failed to fetch recent notifications");
+      // Silently handle — recent notifications are non-critical
     }
   }, []);
 
@@ -68,7 +68,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.3);
     } catch {
-      console.warn("NotificationBell: audio chime unavailable");
+      // Audio chime unavailable — non-critical
     }
   }, []);
 
@@ -91,7 +91,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
           playNotificationChime();
         }
       } catch {
-        console.warn("NotificationBell: failed to parse SSE notification data");
+        // SSE data parse error — non-critical
       }
     });
 
@@ -120,7 +120,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
       }
       setPrefs(map);
     } catch {
-      console.warn("NotificationBell: failed to load preferences");
+      // Preferences load failed — non-critical
     }
     setLoadingPrefs(false);
   }, []);
@@ -144,7 +144,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     try {
       await getClientApi().notifications.markAllRead();
     } catch {
-      console.warn("NotificationBell: failed to mark all read");
+      // Mark all read failed — non-critical
     }
     await fetchUnread();
     await fetchRecent();
@@ -154,7 +154,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     try {
       await getClientApi().notifications.markRead(id);
     } catch {
-      console.warn("NotificationBell: failed to mark notification read");
+      // Mark read failed — non-critical
     }
     await fetchUnread();
     await fetchRecent();
@@ -167,7 +167,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
         preferences: [{ moduleKey, channel: "email", enabled }],
       });
     } catch {
-      console.warn("NotificationBell: failed to update preference");
+      // Preference update failed — revert optimistic update
       setPrefs((prev) => ({ ...prev, [moduleKey]: !enabled }));
     }
   }

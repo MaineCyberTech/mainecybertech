@@ -1,4 +1,4 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+﻿import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { getEnv } from "../config/env";
 import WebSocket from "ws";
 import {
@@ -54,7 +54,7 @@ export function getSupabaseAdmin(): SupabaseClient {
 
 /**
  * Unwrapped admin client for health probes and other non-request paths.
- * Circuit-breaker failures must NOT be counted from liveness/readiness probes —
+ * Circuit-breaker failures must NOT be counted from liveness/readiness probes â€”
  * a cold-starting dependency would otherwise trip the breaker and wedge the
  * whole API behind fail-fast "Circuit breaker is OPEN" errors.
  */

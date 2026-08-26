@@ -1,8 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { AppError } from "../types";
-import { getEnv } from "../config/env";
-import { logger } from "../lib/logger";
 import { isPlatformAdminKey } from "../lib/roles";
 
 function extractOrgId(req: Request): string | null {
@@ -121,10 +119,6 @@ async function resolveDefaultOrgId(
 
 export async function requireOrgAccess(req: Request, _res: Response, next: NextFunction) {
   // Evaluated per-request, not at module load (see requirePermission note).
-  if (getEnv().NODE_ENV === "test") {
-    logger.warn("requireOrgAccess bypassed in test mode — tenant isolation not enforced");
-    return next();
-  }
 
   try {
     if (!req.authUser) {
@@ -165,11 +159,6 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
 }
 
 export async function requireOrgAccessByParam(req: Request, _res: Response, next: NextFunction) {
-  if (getEnv().NODE_ENV === "test") {
-    logger.warn("requireOrgAccessByParam bypassed in test mode — tenant isolation not enforced");
-    return next();
-  }
-
   try {
     if (!req.authUser) {
       throw new AppError("UNAUTHORIZED", "Authentication required", 401);

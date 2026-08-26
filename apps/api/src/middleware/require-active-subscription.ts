@@ -1,16 +1,12 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { AppError } from "../types";
-import { getEnv } from "../config/env";
 
 export async function requireActiveSubscription(
   req: Request,
   _res: Response,
   next: NextFunction,
 ) {
-  // Evaluated per-request, not at module load (see requirePermission note).
-  if (getEnv().NODE_ENV === "test") return next();
-
   try {
     if (!req.authUser) {
       throw new AppError("UNAUTHORIZED", "Authentication required", 401);

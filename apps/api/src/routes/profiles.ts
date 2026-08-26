@@ -5,6 +5,7 @@ import { getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
+import { requireOrgAccess } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 
 const upload = multer({
@@ -20,7 +21,7 @@ const updateProfileSchema = z.object({
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth);
+router.use(requireAuth, requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {

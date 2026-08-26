@@ -45,7 +45,7 @@ export default function PortalGlobalSearch() {
         setResults(result);
         setOpen(true);
       } catch {
-        console.warn("PortalGlobalSearch: search failed");
+        // Search failed — non-critical
       } finally {
         setLoading(false);
       }

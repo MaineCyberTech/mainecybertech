@@ -111,7 +111,7 @@ const ALLOWED_MIME_TYPES = [
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ext = "." + file.originalname.split(".").pop()?.toLowerCase();
     if (BLOCKED_EXTENSIONS.has(ext)) {

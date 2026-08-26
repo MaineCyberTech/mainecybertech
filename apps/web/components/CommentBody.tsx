@@ -18,10 +18,16 @@ function parseMarkdown(text: string): string {
   // Italic
   html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
 
-  // Links [text](url)
+  // Links [text](url) — block javascript:/data:/vbscript: schemes to prevent XSS
   html = html.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" class="text-emerald-400 underline" target="_blank" rel="noopener noreferrer">$1</a>',
+    (_match, text, url) => {
+      const trimmed = (url as string).trim().toLowerCase();
+      if (trimmed.startsWith("javascript:") || trimmed.startsWith("data:") || trimmed.startsWith("vbscript:")) {
+        return text as string;
+      }
+      return `<a href="${url}" class="text-emerald-400 underline" target="_blank" rel="noopener noreferrer">${text}</a>`;
+    },
   );
 
   // Numbered lists

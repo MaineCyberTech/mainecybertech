@@ -19,7 +19,7 @@ setup("authenticate as admin", async ({ page }) => {
       break;
     } catch (err) {
       if (attempts >= 3) throw err;
-      console.warn(`Admin login attempt ${attempts} failed, retrying...`);
+      // Retry login — transient failure after db reset
       await page.waitForTimeout(3_000);
     }
   }

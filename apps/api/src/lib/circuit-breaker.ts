@@ -1,3 +1,5 @@
+import { setCircuitBreakerStatus } from "./metrics";
+
 export type CircuitState = "closed" | "open" | "half-open";
 
 export interface CircuitBreakerConfig {
@@ -24,14 +26,16 @@ export class CircuitBreaker {
   private lastSuccess?: Date;
   private nextAttempt?: Date;
   private readonly config: Required<CircuitBreakerConfig>;
+  private readonly name: string;
 
-  constructor(config: CircuitBreakerConfig) {
+  constructor(config: CircuitBreakerConfig, name = "default") {
     this.config = {
       failureThreshold: config.failureThreshold,
       successThreshold: config.successThreshold,
       timeout: config.timeout,
       monitoringWindow: config.monitoringWindow ?? 60_000,
     };
+    this.name = name;
   }
 
   getState(): CircuitBreakerStats {
@@ -82,6 +86,10 @@ export class CircuitBreaker {
     }
   }
 
+  private emitState(): void {
+    setCircuitBreakerStatus(this.name, this.state);
+  }
+
   private onSuccess(): void {
     this.failures = 0;
     this.lastSuccess = new Date();
@@ -93,6 +101,7 @@ export class CircuitBreaker {
         this.successes = 0;
       }
     }
+    this.emitState();
   }
 
   private onFailure(): void {
@@ -106,6 +115,7 @@ export class CircuitBreaker {
       this.state = "open";
       this.nextAttempt = new Date(Date.now() + this.config.timeout);
     }
+    this.emitState();
   }
 
   reset(): void {
@@ -124,5 +134,5 @@ export function createSupabaseCircuitBreaker(): CircuitBreaker {
     successThreshold: 2,
     timeout: 30_000,
     monitoringWindow: 60_000,
-  });
+  }, "supabase");
 }

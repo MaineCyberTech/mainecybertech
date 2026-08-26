@@ -6,10 +6,11 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
+import { requireOrgAccess } from "../middleware/org-access";
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth);
+router.use(requireAuth, requireOrgAccess);
 
 router.get("/", requireAdmin, async (req, res, next) => {
   try {

@@ -20,14 +20,8 @@
  * project-manager, finance, onboarding-specialist) are NOT bypassed —
  * they are governed by their role_permissions from the migration
  * 5302128 catalog. See docs for catalog gaps this surfaces.
- *
- * Bypassed in test mode (NODE_ENV === "test") like requireOrgAccess —
- * route unit tests keep their existing supabase mocks; the middleware's
- * own tests exercise the real logic by mocking NODE_ENV=production.
  */
 import { type Request, type Response, type NextFunction } from "express";
-import { getEnv } from "../config/env";
-import { logger } from "../lib/logger";
 import { AppError } from "../types";
 import { resolveEffectivePermissions, ADMIN_BYPASS_KEYS } from "../lib/permissions";
 
@@ -52,13 +46,7 @@ function extractOrgId(req: Request): string | null {
 
 export function requirePermission(moduleKey: string, action: PermissionAction) {
   return async (req: Request, _res: Response, next: NextFunction) => {
-    // Evaluated per-request, not at module load: test files mock getEnv()
-    // differently, and a module-load capture would make bypass behavior
-    // depend on which test file happened to import this module first.
-    if (getEnv().NODE_ENV === "test") {
-      logger.warn(`requirePermission(${moduleKey}:${action}) bypassed in test mode`);
-      return next();
-    }
+    // Evaluated per-request, not at module load.
 
     try {
       if (!req.authUser) {
