@@ -26,7 +26,7 @@ jobs:
         apply).
         # --prod: only audit production dependencies (dev deps like storybook 
         # have unpatchable image-size vulns)
-        run: pnpm audit --audit-level=high --prod
+        run: pnpm audit --audit-level=high --prod  # cache-bust: 2026-08-26-1
 
   test:
     timeout-minutes: 30
