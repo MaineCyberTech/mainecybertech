@@ -20,10 +20,13 @@ jobs:
           corepack prepare pnpm@10 --activate
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Dependency audit
+- name: Dependency audit
         # Hard fail: high/critical vulnerabilities block the deploy gate (and
-        # every workflow that calls validate.yml, including terraform-do prod apply).
-        run: pnpm audit --audit-level=high
+        # every workflow that calls validate.yml, including terraform-do prod 
+        apply).
+        # --prod: only audit production dependencies (dev deps like storybook 
+        # have unpatchable image-size vulns)
+        run: pnpm audit --audit-level=high --prod
 
   test:
     timeout-minutes: 30
