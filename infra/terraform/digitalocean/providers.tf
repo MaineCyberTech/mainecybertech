@@ -2,8 +2,8 @@ terraform {
   required_version = ">= 1.5"
 
   backend "s3" {
-    key                         = "digitalocean/terraform.tfstate"
-    region                      = "us-east-1"
+    key    = "digitalocean/terraform.tfstate"
+    region = "us-east-1"
     endpoints = {
       s3 = "https://nyc3.digitaloceanspaces.com"
     }
