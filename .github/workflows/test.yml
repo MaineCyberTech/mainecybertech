@@ -76,7 +76,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Audit production dependencies (high/critical fail the build)
-        run: pnpm audit --audit-level=high
+        run: pnpm audit --audit-level=high --prod
 
       - name: Run Trivy filesystem vulnerability scanner
         uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
