@@ -78,7 +78,7 @@ jobs:
           echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status --output json | jq -r '.SERVICE_ROLE_KEY')" >> $API_ENV
           echo "CORS_ORIGIN=*" >> $API_ENV
           echo "LOG_LEVEL=silent" >> $API_ENV
-          echo "JWT_SECRET=e2e-test-secret" >> $API_ENV
+          echo "JWT_SECRET=e2e-test-secret-32-characters-long" >> $API_ENV
           # Also write root .env.local for dotenv.config({ path: ".env.local" }) in main.ts
           cp $API_ENV .env.local
 
@@ -104,7 +104,7 @@ jobs:
           NODE_ENV: production
           CORS_ORIGIN: "*"
           LOG_LEVEL: silent
-          JWT_SECRET: ${{ secrets.E2E_JWT_SECRET || 'e2e-test-secret' }}
+          JWT_SECRET: ${{ secrets.E2E_JWT_SECRET || 'e2e-test-secret-32-characters-long' }}
 
       - name: Build web app
         run: pnpm --filter=web build
