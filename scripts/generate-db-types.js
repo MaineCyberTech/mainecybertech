@@ -83,7 +83,7 @@ function parseSqlType(sqlType) {
 
   // Custom enum types → union of their values
   if (ENUMS[withoutPrecision]) {
-    const union = ENUMS[withoutPrecision].map(v => JSON.stringify(v)).join(" | ");
+    const union = ENUMS[withoutPrecision].map((v) => JSON.stringify(v)).join(" | ");
     return isArray ? `(${union})[]` : union;
   }
 
@@ -98,7 +98,8 @@ function parseSqlType(sqlType) {
 function parseCreateTable(sql) {
   const tables = {};
   // Match CREATE TABLE (with optional IF NOT EXISTS) — handles multi-line
-  const tableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s*\(([\s\S]*?)\)\s*;/gi;
+  const tableRegex =
+    /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s*\(([\s\S]*?)\)\s*;/gi;
   let match;
 
   while ((match = tableRegex.exec(sql)) !== null) {
@@ -125,7 +126,10 @@ function parseCreateTable(sql) {
     for (const part of parts) {
       const trimmed = part.trim();
       // Skip constraints, indexes, PRIMARY KEY, UNIQUE, CHECK, FOREIGN KEY, CONSTRAINT
-      if (/^\s*(PRIMARY\s+KEY|UNIQUE|CHECK|FOREIGN\s+KEY|CONSTRAINT|INDEX|EXCLUDE)\s/i.test(trimmed)) continue;
+      if (
+        /^\s*(PRIMARY\s+KEY|UNIQUE|CHECK|FOREIGN\s+KEY|CONSTRAINT|INDEX|EXCLUDE)\s/i.test(trimmed)
+      )
+        continue;
 
       // Match column definition: column_name type [constraints]
       const colMatch = trimmed.match(/^[""]?(\w+)[""]?\s+([\w\s().,\[\].]+?)(\s+.*)?$/i);
@@ -148,7 +152,13 @@ function parseCreateTable(sql) {
         };
         const refMatch = trimmed.match(REF_RE);
         if (refMatch) {
-          addRel(tableName, colName, refMatch[1].toLowerCase(), refMatch[2].toLowerCase(), `${tableName}_${colName}_fkey`);
+          addRel(
+            tableName,
+            colName,
+            refMatch[1].toLowerCase(),
+            refMatch[2].toLowerCase(),
+            `${tableName}_${colName}_fkey`,
+          );
         }
       }
     }
@@ -169,25 +179,26 @@ function parseAlterTable(sql) {
 
   for (const stmt of statements) {
     // Find the ALTER TABLE name
-    const tableMatch = stmt.match(/ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s+/i);
+    const tableMatch = stmt.match(
+      /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s+/i,
+    );
     if (!tableMatch) continue;
     const tableName = tableMatch[1].toLowerCase();
 
     // Split by commas to get individual ADD COLUMN clauses
-    const addIdx = stmt.toUpperCase().indexOf('ADD COLUMN');
+    const addIdx = stmt.toUpperCase().indexOf("ADD COLUMN");
     if (addIdx === -1) continue;
     const addBlock = stmt.substring(addIdx);
     const colClauses = addBlock.split(/\s*,\s*ADD\s+COLUMN\s+/i);
 
     for (let i = 0; i < colClauses.length; i++) {
       let clause = colClauses[i].trim();
-      // First clause still has "ADD COLUMN" prefix
-      if (i === 0) {
-        clause = clause.replace(/^ADD\s+(?:IF\s+NOT\s+EXISTS\s+)?COLUMN\s+/i, '');
-      }
+      clause = clause.replace(/^ADD\s+(?:IF\s+NOT\s+EXISTS\s+)?COLUMN\s+/i, "");
 
       // Now parse: "if not exists col_name type [constraints]"
-      const colMatch = clause.match(/^(?:IF\s+NOT\s+EXISTS\s+)?["']?(\w+)["']?\s+([\w\s().,\[\].]+?)(?:\s+(?:NOT\s+NULL|NULL|DEFAULT|PRIMARY|UNIQUE|CHECK|FOREIGN|REFERENCES|CONSTRAINT|GENERATED|COLLATE)\b.*)?$/i);
+      const colMatch = clause.match(
+        /^(?:IF\s+NOT\s+EXISTS\s+)?["']?(\w+)["']?\s+([\w\s().,\[\].]+?)(?:\s+(?:NOT\s+NULL|NULL|DEFAULT|PRIMARY|UNIQUE|CHECK|FOREIGN|REFERENCES|CONSTRAINT|GENERATED|COLLATE)\b.*)?$/i,
+      );
       if (!colMatch) continue;
 
       const colName = colMatch[1].toLowerCase();
@@ -206,7 +217,13 @@ function parseAlterTable(sql) {
       };
       const refMatch = clause.match(REF_RE);
       if (refMatch) {
-        addRel(tableName, colName, refMatch[1].toLowerCase(), refMatch[2].toLowerCase(), `${tableName}_${colName}_fkey`);
+        addRel(
+          tableName,
+          colName,
+          refMatch[1].toLowerCase(),
+          refMatch[2].toLowerCase(),
+          `${tableName}_${colName}_fkey`,
+        );
       }
     }
   }
@@ -226,7 +243,8 @@ function parseDropTable(sql) {
 
 function parseAlterTableDrop(sql) {
   const drops = new Map();
-  const regex = /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s+DROP\s+(?:IF\s+EXISTS\s+)?COLUMN\s+["']?(\w+)["']?/gi;
+  const regex =
+    /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s+DROP\s+(?:IF\s+EXISTS\s+)?COLUMN\s+["']?(\w+)["']?/gi;
   let match;
   while ((match = regex.exec(sql)) !== null) {
     const table = match[1].toLowerCase();
@@ -239,17 +257,23 @@ function parseAlterTableDrop(sql) {
 
 function parseAlterTableRename(sql) {
   const renames = [];
-  const regex = /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s+RENAME\s+(?:IF\s+EXISTS\s+)?COLUMN\s+["']?(\w+)["']?\s+TO\s+["']?(\w+)["']?/gi;
+  const regex =
+    /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s+RENAME\s+(?:IF\s+EXISTS\s+)?COLUMN\s+["']?(\w+)["']?\s+TO\s+["']?(\w+)["']?/gi;
   let match;
   while ((match = regex.exec(sql)) !== null) {
-    renames.push({ table: match[1].toLowerCase(), from: match[2].toLowerCase(), to: match[3].toLowerCase() });
+    renames.push({
+      table: match[1].toLowerCase(),
+      from: match[2].toLowerCase(),
+      to: match[3].toLowerCase(),
+    });
   }
   return renames;
 }
 
 // Read all migration files in sorted order
-const files = fs.readdirSync(MIGRATIONS_DIR)
-  .filter(f => f.endsWith(".sql"))
+const files = fs
+  .readdirSync(MIGRATIONS_DIR)
+  .filter((f) => f.endsWith(".sql"))
   .sort();
 
 console.log(`Processing ${files.length} migration files...`);
@@ -261,7 +285,7 @@ function parseEnums(sql) {
   let m;
   while ((m = re.exec(sql)) !== null) {
     const name = m[1].toLowerCase();
-    const values = [...m[2].matchAll(/'([^']*)'/g)].map(v => v[1]);
+    const values = [...m[2].matchAll(/'([^']*)'/g)].map((v) => v[1]);
     if (values.length > 0) ENUMS[name] = values;
   }
 }
@@ -272,7 +296,7 @@ const RELS = {};
 function addRel(table, col, refTable, refCol, name) {
   if (!RELS[table]) RELS[table] = [];
   const k = `${col}>${refTable}.${refCol}`;
-  if (RELS[table].some(r => r._k === k)) return;
+  if (RELS[table].some((r) => r._k === k)) return;
   RELS[table].push({ _k: k, col, refTable, refCol, name });
 }
 const REF_RE = /references\s+(?:only\s+)?(?:public\.)?["']?(\w+)["']?\s*\(\s*["']?(\w+)["']?\s*\)/i;
@@ -282,13 +306,22 @@ function parseConstraintFks(sql) {
   const stmts = sql.split(/;\s*(?:--.*)?$/m);
   for (const stmt of stmts) {
     if (!/foreign\s+key/i.test(stmt)) continue;
-    const tableMatch = stmt.match(/(?:create\s+table\s+(?:if\s+not\s+exists\s+)?|alter\s+table\s+(?:if\s+exists\s+)?|create\s+table\s+)(?:public\.)?["']?(\w+)["']?\s/i);
+    const tableMatch = stmt.match(
+      /(?:create\s+table\s+(?:if\s+not\s+exists\s+)?|alter\s+table\s+(?:if\s+exists\s+)?|create\s+table\s+)(?:public\.)?["']?(\w+)["']?\s/i,
+    );
     if (!tableMatch) continue;
     const tableName = tableMatch[1].toLowerCase();
-    const re = /constraint\s+["']?(\w+)["']?\s+foreign\s+key\s*\(\s*["']?(\w+)["']?\s*\)\s*references\s+(?:public\.)?["']?(\w+)["']?\s*\(\s*["']?(\w+)["']?\s*\)/gi;
+    const re =
+      /constraint\s+["']?(\w+)["']?\s+foreign\s+key\s*\(\s*["']?(\w+)["']?\s*\)\s*references\s+(?:public\.)?["']?(\w+)["']?\s*\(\s*["']?(\w+)["']?\s*\)/gi;
     let m;
     while ((m = re.exec(stmt)) !== null) {
-      addRel(tableName, m[2].toLowerCase(), m[3].toLowerCase(), m[4].toLowerCase(), m[1].toLowerCase());
+      addRel(
+        tableName,
+        m[2].toLowerCase(),
+        m[3].toLowerCase(),
+        m[4].toLowerCase(),
+        m[1].toLowerCase(),
+      );
     }
   }
 }
@@ -422,7 +455,7 @@ output += `    };
     Enums: {
 `;
 for (const enumName of Object.keys(ENUMS).sort()) {
-  const union = ENUMS[enumName].map(v => JSON.stringify(v)).join(" | ");
+  const union = ENUMS[enumName].map((v) => JSON.stringify(v)).join(" | ");
   output += `      ${enumName}: ${union};\n`;
 }
 output += `    };
