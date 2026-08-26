@@ -343,3 +343,5 @@ export class MCTClient {
     return new MCTClient(client);
   }
 }
+
+export type { Database } from "./database.types";
