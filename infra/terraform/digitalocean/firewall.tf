@@ -5,6 +5,10 @@ resource "digitalocean_firewall" "web" {
   name        = "mct-portal-${var.environment}-${digitalocean_droplet.portal.id}"
   droplet_ids = [digitalocean_droplet.portal.id]
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   # WARNING: SSH is open to admin_ip_ranges, which DEFAULTS to 0.0.0.0/0 + ::/0
   # (see variables.tf). Mitigations: (1) droplet SSH is key-only (ssh_keys =
   # [var.ssh_fingerprint] in droplet.tf, no password auth), (2) UFW on the droplet

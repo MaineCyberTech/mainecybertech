@@ -35,3 +35,21 @@ updates:
       day: "monday"
     labels:
       - "ci"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "terraform"
+    directory: "/infra/terraform/digitalocean"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "infra"

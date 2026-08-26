@@ -117,7 +117,7 @@ services:
       api:
         condition: service_started
     restart: unless-stopped
-    mem_limit: 256m
+    mem_limit: 512m
     read_only: true
     tmpfs:
       - /tmp

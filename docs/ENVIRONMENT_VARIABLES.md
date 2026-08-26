@@ -32,6 +32,8 @@
 | `SUPABASE_SERVICE_ROLE_KEY`  | Yes      | —                            | Supabase service role key (admin access)                                              |
 | `JWT_SECRET`                 | Yes      | —                            | JWT signing secret (required; multi-secret rotation via comma-separated values)       |
 | `CORS_ORIGIN`                | No       | `http://localhost:3000`      | Allowed CORS origin; comma-separated for multiple (deploy includes `app.*` + `www.*`) |
+| `APP_DOMAIN`                 | No       | `app.mainecybertech.com`    | Public app domain (used by Caddy reverse proxy and APP_BASE_URL)                      |
+| `API_DOMAIN`                 | No       | `api.mainecybertech.com`    | Public API domain (used by Caddy reverse proxy and worker API_BASE_URL)               |
 | `LOG_LEVEL`                  | No       | `info`                       | Logging level (`debug`, `info`, `warn`, `error`)                                      |
 | `SMTP_HOST`                  | No       | —                            | SMTP host for email sending                                                           |
 | `SMTP_PORT`                  | No       | `587`                        | SMTP port                                                                             |
@@ -49,6 +51,8 @@
 | `STRIPE_SECRET_KEY`          | No       | —                            | Stripe secret key for API calls and sync endpoint                                     |
 | `STRIPE_WEBHOOK_SECRET`      | No       | —                            | Stripe webhook signing secret for signature verification                              |
 | `REDIS_URL`                  | No       | —                            | Redis URL for caching, idempotency, and BullMQ (required in production)               |
+| `REDIS_PASSWORD`             | No       | —                            | Redis password (required in production; used by docker-compose and worker)            |
+| `QUEUE_BACKEND`              | No       | `sqs`                        | Queue backend (`sqs` or `bullmq`; set to `bullmq` in docker-compose)                  |
 | `JIRA_WEBHOOK_SECRET`        | No       | —                            | Jira webhook secret for HMAC signature verification                                   |
 | `JSM_WEBHOOK_SECRET`         | No       | —                            | JSM webhook secret for HMAC signature verification                                    |
 | `M365_WEBHOOK_SECRET`        | No       | —                            | M365 webhook secret for HMAC signature verification                                   |

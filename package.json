@@ -1,5 +1,5 @@
 {
-  "name": "client-portal",
+  "name": "mct-portal",
   "private": true,
   "license": "ISC",
   "packageManager": "pnpm@10.34.3",
@@ -44,7 +44,7 @@
     "storybook": "^8.6.18",
     "supabase": "^2.107.0",
     "turbo": "^2.9.18",
-    "typescript": "^6.0.3"
+    "typescript": "^5.9.3"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -67,6 +67,7 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": [
+      "eslint --fix --max-warnings=0",
       "prettier --write"
     ],
     "*.{js,mjs,cjs,json,md}": [

@@ -2,16 +2,8 @@ name: build-push
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main, develop]
-    paths:
-      - "apps/api/**"
-      - "apps/web/**"
-      - "apps/worker/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - ".dockerignore"
-      - ".github/workflows/build-push.yml"
+  # Push triggers removed — deploy-do.yml handles building + deploying on push.
+  # This workflow is kept for manual dispatch and as a reusable build pipeline.
 
 concurrency:
   group: build-push-${{ github.ref }}

@@ -7,6 +7,10 @@ resource "cloudflare_dns_record" "prod_www" {
   content = digitalocean_droplet.portal.ipv4_address
   ttl     = 1
   proxied = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "cloudflare_dns_record" "prod_app" {
@@ -17,6 +21,10 @@ resource "cloudflare_dns_record" "prod_app" {
   content = digitalocean_droplet.portal.ipv4_address
   ttl     = 1
   proxied = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "cloudflare_dns_record" "prod_api" {
@@ -27,6 +35,10 @@ resource "cloudflare_dns_record" "prod_api" {
   content = digitalocean_droplet.portal.ipv4_address
   ttl     = 1
   proxied = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Dev/Testing DNS — mainecybertech.us
