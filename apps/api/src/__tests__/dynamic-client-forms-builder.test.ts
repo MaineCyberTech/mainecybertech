@@ -1,7 +1,7 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
 import dynamicFormsRouter from "../routes/dynamic-client-forms-builder";
-import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult , tableAwareFrom } from "./helpers";
 import { invalidateCache } from "../middleware/cache";
 import { errorHandler } from "../middleware/error";
 
@@ -52,7 +52,7 @@ function mockSupabase() {
 function mockFrom(result: MockResult) {
   const mock = mockSupabase();
   const builder = createMockBuilder(result);
-  mock.from.mockReturnValue(builder);
+  mock.from.mockImplementation(tableAwareFrom(builder));
   return { mock, builder };
 }
 

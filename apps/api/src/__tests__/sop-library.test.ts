@@ -1,6 +1,6 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -58,19 +58,19 @@ describe("SOP Library API", () => {
 
   it("lists sop-library entries", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app).get("/api/v1/governance/sop-library").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
 
   it("creates an sop-library entry", async () => {
     const s = ma();
-    s.from.mockReturnValue(
+    s.from.mockImplementation(tableAwareFrom(
       createMockBuilder({
         data: { id: "sop-1", title: "Data Handling SOP", sop_category: "general" },
         error: null,
       }),
-    );
+    ));
     const r = await request(app)
       .post("/api/v1/governance/sop-library")
       .set("Authorization", auth)
@@ -86,12 +86,12 @@ describe("SOP Library API", () => {
 
   it("gets a single sop-library entry", async () => {
     const s = ma();
-    s.from.mockReturnValue(
+    s.from.mockImplementation(tableAwareFrom(
       createMockBuilder({
         data: { id: "sop-1", title: "Data Handling SOP" },
         error: null,
       }),
-    );
+    ));
     const r = await request(app)
       .get("/api/v1/governance/sop-library/sop-1")
       .set("Authorization", auth);
@@ -100,12 +100,12 @@ describe("SOP Library API", () => {
 
   it("updates an sop-library entry", async () => {
     const s = ma();
-    s.from.mockReturnValue(
+    s.from.mockImplementation(tableAwareFrom(
       createMockBuilder({
         data: { id: "sop-1", title: "Updated Data Handling SOP" },
         error: null,
       }),
-    );
+    ));
     const r = await request(app)
       .patch("/api/v1/governance/sop-library/sop-1")
       .set("Authorization", auth)
@@ -115,7 +115,7 @@ describe("SOP Library API", () => {
 
   it("deletes an sop-library entry", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: null, error: null })));
     const r = await request(app)
       .delete("/api/v1/governance/sop-library/sop-1")
       .set("Authorization", auth);
@@ -124,7 +124,7 @@ describe("SOP Library API", () => {
 
   it("returns compliance map", async () => {
     const s = ma();
-    s.from.mockReturnValue(
+    s.from.mockImplementation(tableAwareFrom(
       createMockBuilder({
         data: [
           {
@@ -137,7 +137,7 @@ describe("SOP Library API", () => {
         ],
         error: null,
       }),
-    );
+    ));
     const r = await request(app)
       .get("/api/v1/governance/sop-library/compliance-map?organization_id=org-1")
       .set("Authorization", auth);
@@ -153,7 +153,7 @@ describe("SOP Library API", () => {
 
   it("returns 404 for missing sop entry", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: null, error: { message: "Not found" } }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: null, error: { message: "Not found" } })));
     const r = await request(app)
       .get("/api/v1/governance/sop-library/missing-id")
       .set("Authorization", auth);

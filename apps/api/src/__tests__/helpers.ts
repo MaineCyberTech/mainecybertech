@@ -51,3 +51,48 @@ export function createTestApp() {
   );
   return app;
 }
+
+/**
+ * Fixture rows served to auth/permission middleware so route tests exercise
+ * the REAL requireOrgAccess/requirePermission chain (test-mode bypasses were
+ * removed for security) without each suite re-mocking membership lookups.
+ */
+export const MIDDLEWARE_TABLES = ["profiles", "memberships", "subscriptions"];
+
+export function tableAwareFrom(routeBuilder: ReturnType<typeof createMockBuilder>) {
+  return (table: string) => {
+    if (table === "profiles") {
+      return createMockBuilder({ data: [{ is_super_admin: true }], error: null });
+    }
+    if (table === "memberships") {
+      return createMockBuilder({
+        data: [
+          {
+            id: "membership-1",
+            user_id: "user-1",
+            organization_id: "00000000-0000-0000-0000-000000000001",
+            role_id: "role-1",
+            status: "approved",
+            roles: [{ id: "role-1", key: "super_admin" }],
+          },
+        ],
+        error: null,
+      });
+    }
+    if (table === "subscriptions") {
+      return createMockBuilder({
+        data: [
+          {
+            id: "subscription-1",
+            organization_id: "00000000-0000-0000-0000-000000000001",
+            status: "active",
+            plan: "pro",
+            current_period_end: "2027-12-31T23:59:59Z",
+          },
+        ],
+        error: null,
+      });
+    }
+    return routeBuilder;
+  };
+}

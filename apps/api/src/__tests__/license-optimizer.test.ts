@@ -1,6 +1,6 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -60,7 +60,7 @@ describe("License Optimizer API", () => {
 
   it("lists licenses", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const res = await request(app)
       .get("/api/v1/license-optimizer")
       .query({ organization_id: testOrgId })
@@ -70,7 +70,7 @@ describe("License Optimizer API", () => {
 
   it("creates a license allocation", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(
+    supabase.from.mockImplementation(tableAwareFrom(
       createMockBuilder({
         data: {
           id: "00000000-0000-0000-0000-000000000100",
@@ -81,7 +81,7 @@ describe("License Optimizer API", () => {
         },
         error: null,
       }),
-    );
+    ));
     const res = await request(app)
       .post("/api/v1/license-optimizer")
       .set("Authorization", authToken)
@@ -98,7 +98,7 @@ describe("License Optimizer API", () => {
 
   it("gets a single license", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(
+    supabase.from.mockImplementation(tableAwareFrom(
       createMockBuilder({
         data: {
           id: "00000000-0000-0000-0000-000000000100",
@@ -109,7 +109,7 @@ describe("License Optimizer API", () => {
         },
         error: null,
       }),
-    );
+    ));
     const res = await request(app)
       .get("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000100")
       .set("Authorization", authToken);
@@ -119,7 +119,7 @@ describe("License Optimizer API", () => {
 
   it("updates a license allocation", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(
+    supabase.from.mockImplementation(tableAwareFrom(
       createMockBuilder({
         data: {
           id: "00000000-0000-0000-0000-000000000100",
@@ -129,7 +129,7 @@ describe("License Optimizer API", () => {
         },
         error: null,
       }),
-    );
+    ));
     const res = await request(app)
       .patch("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000100")
       .set("Authorization", authToken)
@@ -140,7 +140,7 @@ describe("License Optimizer API", () => {
 
   it("deletes a license allocation", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ error: null }));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ error: null })));
     const res = await request(app)
       .delete("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000100")
       .set("Authorization", authToken);
@@ -149,7 +149,7 @@ describe("License Optimizer API", () => {
 
   it("returns reclaimable licenses", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(
+    supabase.from.mockImplementation(tableAwareFrom(
       createMockBuilder({
         data: [
           {
@@ -171,7 +171,7 @@ describe("License Optimizer API", () => {
         ],
         error: null,
       }),
-    );
+    ));
     const res = await request(app)
       .get("/api/v1/license-optimizer/reclaimable/license-list")
       .query({ organization_id: testOrgId })
@@ -183,7 +183,7 @@ describe("License Optimizer API", () => {
 
   it("returns summary data", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(
+    supabase.from.mockImplementation(tableAwareFrom(
       createMockBuilder({
         data: [
           {
@@ -205,7 +205,7 @@ describe("License Optimizer API", () => {
         ],
         error: null,
       }),
-    );
+    ));
     const res = await request(app)
       .get("/api/v1/license-optimizer/summary/data")
       .query({ organization_id: testOrgId })
@@ -222,9 +222,9 @@ describe("License Optimizer API", () => {
 
   it("returns 404 for non-existent license", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(
+    supabase.from.mockImplementation(tableAwareFrom(
       createMockBuilder({ data: null, error: { message: "Not found" } }),
-    );
+    ));
     const res = await request(app)
       .get("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000999")
       .set("Authorization", authToken);

@@ -1,7 +1,7 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
 import projectsRouter from "../routes/projects";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder  } from "./helpers";
 import { invalidateCache } from "../middleware/cache";
 import { errorHandler } from "../middleware/error";
 
@@ -61,6 +61,25 @@ const DEPENDENCY = {
   project_id: "00000000-0000-0000-0000-000000000030",
   dependency_type: "finish_to_start",
 };
+
+/*
+ * Route-level suites: auth/permission middleware is stubbed so the shared
+ * Supabase mock serves only route queries. Middleware enforcement itself is
+ * covered by security-suite / edge-cases / dedicated middleware tests.
+ */
+jest.mock("../middleware/org-access", () => ({
+  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission:
+    () =>
+    (_req: unknown, _res: unknown, next: () => void) =>
+      next(),
+}));
+jest.mock("../middleware/require-active-subscription", () => ({
+  requireActiveSubscription: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 
 const app = createTestApp();
 app.use("/api/v1/projects", projectsRouter);

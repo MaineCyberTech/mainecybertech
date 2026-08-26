@@ -1,6 +1,6 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder  } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -55,6 +55,25 @@ function mockAuthAndAdmin() {
   return supabase;
 }
 
+/*
+ * Route-level suites: auth/permission middleware is stubbed so the shared
+ * Supabase mock serves only route queries. Middleware enforcement itself is
+ * covered by security-suite / edge-cases / dedicated middleware tests.
+ */
+jest.mock("../middleware/org-access", () => ({
+  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission:
+    () =>
+    (_req: unknown, _res: unknown, next: () => void) =>
+      next(),
+}));
+jest.mock("../middleware/require-active-subscription", () => ({
+  requireActiveSubscription: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+
 const app = createTestApp();
 app.use("/api/v1/bulk", bulkRouter);
 app.use(errorHandler);
@@ -74,9 +93,9 @@ describe("Bulk API", () => {
 
   it("returns error for invalid email in CSV", async () => {
     const supabase = mockAuthAndAdmin();
-    // requireAdmin → memberships query
+    // requireAdmin â†’ memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
-    // Route handler → profiles query for existing user
+    // Route handler â†’ profiles query for existing user
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
 
     const res = await request(app)
@@ -93,18 +112,18 @@ describe("Bulk API", () => {
 
   it("returns results for valid CSV with new user", async () => {
     const supabase = mockAuthAndAdmin();
-    // requireAdmin → memberships query
+    // requireAdmin â†’ memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
-    // profiles query → no existing user
+    // profiles query â†’ no existing user
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
-    // auth.admin.createUser → success
+    // auth.admin.createUser â†’ success
     supabase.auth.admin.createUser.mockResolvedValue({
       data: { user: { id: "new-user-1" } },
       error: null,
     });
-    // memberships query → no existing membership
+    // memberships query â†’ no existing membership
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
-    // memberships insert → success
+    // memberships insert â†’ success
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: { id: "m-1" }, error: null }));
 
     const res = await request(app)
@@ -122,15 +141,15 @@ describe("Bulk API", () => {
 
   it("returns exists for existing users", async () => {
     const supabase = mockAuthAndAdmin();
-    // requireAdmin → memberships query
+    // requireAdmin â†’ memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
-    // profiles query → existing user found
+    // profiles query â†’ existing user found
     supabase.from.mockReturnValueOnce(
       createMockBuilder({ data: { id: "existing-user" }, error: null }),
     );
-    // memberships query → no existing membership
+    // memberships query â†’ no existing membership
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
-    // memberships insert → success
+    // memberships insert â†’ success
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: { id: "m-2" }, error: null }));
 
     const res = await request(app)

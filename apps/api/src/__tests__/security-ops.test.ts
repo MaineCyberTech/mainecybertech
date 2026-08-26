@@ -1,6 +1,6 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -58,13 +58,13 @@ describe("Security Ops API", () => {
 
   it("lists offboarding", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app).get("/api/v1/security-ops/offboarding").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
   it("creates offboarding", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: { id: "o-1" }, error: null }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: { id: "o-1" }, error: null })));
     const r = await request(app)
       .post("/api/v1/security-ops/offboarding")
       .set("Authorization", auth)
@@ -73,19 +73,19 @@ describe("Security Ops API", () => {
   });
   it("lists break-glass", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app).get("/api/v1/security-ops/break-glass").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
   it("lists onboarding", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app).get("/api/v1/security-ops/onboarding").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
   it("lists patches", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app)
       .get("/api/v1/security-ops/patch-compliance")
       .set("Authorization", auth);
@@ -93,7 +93,7 @@ describe("Security Ops API", () => {
   });
   it("patch stats", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null })));
     const r = await request(app)
       .get("/api/v1/security-ops/patch-compliance/stats")
       .set("Authorization", auth);

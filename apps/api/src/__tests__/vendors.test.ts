@@ -1,6 +1,6 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -60,7 +60,7 @@ describe("Vendors API", () => {
 
   it("lists contracts", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contracts")
       .set("Authorization", authToken);
@@ -69,7 +69,7 @@ describe("Vendors API", () => {
 
   it("lists contacts", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contacts")
       .set("Authorization", authToken);
@@ -108,7 +108,7 @@ describe("Vendors API", () => {
 
   it("returns renewals", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null })));
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contracts/renewals")
       .set("Authorization", authToken);
@@ -122,7 +122,7 @@ describe("Vendors API", () => {
     // null data: the /:id handler would 404 on this, the renewals handler
     // coerces to an empty list and returns 200.
     const builder = createMockBuilder({ data: null, error: null });
-    supabase.from.mockReturnValue(builder);
+    supabase.from.mockImplementation(tableAwareFrom(builder));
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contracts/renewals")
       .set("Authorization", authToken);
@@ -134,7 +134,7 @@ describe("Vendors API", () => {
   it("renewals runs the date-filtered query (lte on renewal_date)", async () => {
     const supabase = mockAuth();
     const builder = createMockBuilder({ data: [], error: null });
-    supabase.from.mockReturnValue(builder);
+    supabase.from.mockImplementation(tableAwareFrom(builder));
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contracts/renewals")
       .set("Authorization", authToken);
@@ -196,7 +196,7 @@ describe("Vendors API", () => {
 
   it("deletes a contract", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ error: null }));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ error: null })));
     const res = await request(app)
       .delete("/api/v1/vendors/vendor-contracts/vc-1?organization_id=" + testOrgId)
       .set("Authorization", authToken);
@@ -220,7 +220,7 @@ describe("Vendors API", () => {
 
   it("filters contracts by status", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contracts")
       .query({ organization_id: testOrgId, status: "expiring" })
@@ -230,7 +230,7 @@ describe("Vendors API", () => {
 
   it("searches contracts by vendor name", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contracts")
       .query({ organization_id: testOrgId, search: "Microsoft" })
@@ -240,7 +240,7 @@ describe("Vendors API", () => {
 
   it("renewals endpoint filters by organization_id", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null })));
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contracts/renewals")
       .query({ organization_id: testOrgId })

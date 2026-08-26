@@ -1,6 +1,6 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -61,7 +61,7 @@ describe("Field Services API", () => {
   for (const p of paths) {
     it(`lists ${p}`, async () => {
       const s = ma();
-      s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+      s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
       const r = await request(app).get(`/api/v1/field-services/${p}`).set("Authorization", auth);
       expect(r.status).toBe(200);
     });
@@ -69,9 +69,9 @@ describe("Field Services API", () => {
 
   it("creates isp assessment", async () => {
     const s = ma();
-    s.from.mockReturnValue(
+    s.from.mockImplementation(tableAwareFrom(
       createMockBuilder({ data: { id: "i-1", clientName: "Test" }, error: null }),
-    );
+    ));
     const r = await request(app)
       .post("/api/v1/field-services/isp")
       .set("Authorization", auth)
@@ -81,9 +81,9 @@ describe("Field Services API", () => {
 
   it("updates isp assessment", async () => {
     const s = ma();
-    s.from.mockReturnValue(
+    s.from.mockImplementation(tableAwareFrom(
       createMockBuilder({ data: { id: "i-1", clientName: "Updated" }, error: null }),
-    );
+    ));
     const r = await request(app)
       .patch("/api/v1/field-services/isp/i-1")
       .set("Authorization", auth)
@@ -93,7 +93,7 @@ describe("Field Services API", () => {
 
   it("deletes isp assessment", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: null, error: null })));
     const r = await request(app)
       .delete("/api/v1/field-services/isp/i-1")
       .set("Authorization", auth);
@@ -102,9 +102,9 @@ describe("Field Services API", () => {
 
   it("creates unifi survey", async () => {
     const s = ma();
-    s.from.mockReturnValue(
+    s.from.mockImplementation(tableAwareFrom(
       createMockBuilder({ data: { id: "u-1", siteName: "Office" }, error: null }),
-    );
+    ));
     const r = await request(app)
       .post("/api/v1/field-services/unifi")
       .set("Authorization", auth)
@@ -114,9 +114,9 @@ describe("Field Services API", () => {
 
   it("gets a single record by id (crudRoute GET /:id)", async () => {
     const s = ma();
-    s.from.mockReturnValue(
+    s.from.mockImplementation(tableAwareFrom(
       createMockBuilder({ data: { id: "i-1", clientName: "Test" }, error: null }),
-    );
+    ));
     const r = await request(app).get("/api/v1/field-services/isp/i-1").set("Authorization", auth);
     expect(r.status).toBe(200);
     expect(r.body.success).toBe(true);
@@ -124,7 +124,7 @@ describe("Field Services API", () => {
 
   it("camera-calc calculate returns storage estimate", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: null, error: null })));
     const r = await request(app)
       .post("/api/v1/field-services/camera-calc/calculate")
       .set("Authorization", auth)

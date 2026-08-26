@@ -1,6 +1,6 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -40,7 +40,7 @@ const testOrgId = "00000000-0000-0000-0000-000000000001";
 
 function mockAuth() {
   const supabase = {
-    from: jest.fn().mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 })),
+    from: jest.fn().mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 }))),
     auth: {
       getUser: jest.fn().mockResolvedValue({
         data: { user: { id: "user-1", email: "test@example.com" } },
@@ -107,9 +107,9 @@ describe("Status Page API", () => {
   describe("POST /api/v1/status-page/components", () => {
     it("creates a component", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(
+      supabase.from.mockImplementation(tableAwareFrom(
         createMockBuilder({ data: { id: "c1", name: "API", status: "operational" }, error: null }),
-      );
+      ));
       const res = await request(app)
         .post("/api/v1/status-page/components")
         .set("Authorization", authToken)
@@ -131,7 +131,7 @@ describe("Status Page API", () => {
   describe("GET /api/v1/status-page/components/:id", () => {
     it("returns 404 for missing component", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: null, error: null })));
       const res = await request(app)
         .get("/api/v1/status-page/components/missing-id")
         .set("Authorization", authToken);
@@ -153,9 +153,9 @@ describe("Status Page API", () => {
   describe("POST /api/v1/status-page/incidents", () => {
     it("creates an incident", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(
+      supabase.from.mockImplementation(tableAwareFrom(
         createMockBuilder({ data: { id: "i1", title: "Outage", severity: "major" }, error: null }),
-      );
+      ));
       const res = await request(app)
         .post("/api/v1/status-page/incidents")
         .set("Authorization", authToken)
@@ -178,9 +178,9 @@ describe("Status Page API", () => {
   describe("POST /api/v1/status-page/maintenance", () => {
     it("creates a maintenance notice", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(
+      supabase.from.mockImplementation(tableAwareFrom(
         createMockBuilder({ data: { id: "m1", title: "Scheduled Upgrade" }, error: null }),
-      );
+      ));
       const res = await request(app)
         .post("/api/v1/status-page/maintenance")
         .set("Authorization", authToken)

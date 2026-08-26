@@ -1,7 +1,7 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
 import notificationsRouter from "../routes/notifications";
-import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -34,26 +34,26 @@ describe("notifications routes", () => {
   beforeEach(() => { supabase = mockAuth(); jest.clearAllMocks(); });
 
   it("GET / lists notifications", async () => {
-    supabase.from.mockReturnValue(createMockBuilder({ data: [{ id: "n1", title: "Test" }], error: null, count: 1 } as MockResult));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [{ id: "n1", title: "Test" }], error: null, count: 1 } as MockResult)));
     const res = await request(app).get("/api/v1/notifications").set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
   });
 
   it("GET /unread-count returns unread count", async () => {
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 3 } as MockResult));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 3 } as MockResult)));
     const res = await request(app).get("/api/v1/notifications/unread-count").set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
     expect(res.body.data.count).toBe(3);
   });
 
   it("POST /:id/read marks notification read", async () => {
-    supabase.from.mockReturnValue(createMockBuilder({ data: { id: "n1", read: true }, error: null } as MockResult));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: { id: "n1", read: true }, error: null } as MockResult)));
     const res = await request(app).post("/api/v1/notifications/n1/read").set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
   });
 
   it("POST /mark-all-read marks all read", async () => {
-    supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: null, error: null } as MockResult)));
     const res = await request(app).post("/api/v1/notifications/mark-all-read").set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
   });
@@ -66,7 +66,7 @@ describe("notifications routes", () => {
   });
 
   it("DELETE /:id deletes notification", async () => {
-    supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: null, error: null } as MockResult)));
     const res = await request(app).delete("/api/v1/notifications/n1").set("Authorization", "Bearer token");
     expect(res.status).toBe(204);
   });

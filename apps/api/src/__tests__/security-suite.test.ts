@@ -1,6 +1,6 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -57,7 +57,7 @@ describe("Security Suite API", () => {
   beforeEach(() => jest.clearAllMocks());
   it("lists m365", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app)
       .get("/api/v1/security-suite/m365-hardening")
       .set("Authorization", auth);
@@ -65,13 +65,13 @@ describe("Security Suite API", () => {
   });
   it("lists incidents", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app).get("/api/v1/security-suite/incidents").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
   it("lists id verification", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app)
       .get("/api/v1/security-suite/identity-verification")
       .set("Authorization", auth);
@@ -79,7 +79,7 @@ describe("Security Suite API", () => {
   });
   it("lists endpoints", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app)
       .get("/api/v1/security-suite/endpoint-security")
       .set("Authorization", auth);
@@ -87,7 +87,7 @@ describe("Security Suite API", () => {
   });
   it("creates incident", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: { id: "i-1", title: "Test" }, error: null }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: { id: "i-1", title: "Test" }, error: null })));
     const r = await request(app)
       .post("/api/v1/security-suite/incidents")
       .set("Authorization", auth)

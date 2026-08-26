@@ -1,7 +1,7 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
 import ticketsRouter from "../routes/tickets";
-import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -34,6 +34,25 @@ jest.mock("../lib/logger", () => ({
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
+
+/*
+ * Route-level suite: auth/permission/subscription middleware is stubbed so
+ * mocks serve route queries only. Enforcement itself is covered by the
+ * dedicated middleware-*.test.ts suites.
+ */
+jest.mock("../middleware/org-access", () => ({
+  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission:
+    () =>
+    (_req: unknown, _res: unknown, next: () => void) =>
+      next(),
+}));
+jest.mock("../middleware/require-active-subscription", () => ({
+  requireActiveSubscription: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 
 const app = createTestApp();
 app.use("/api/v1/tickets", ticketsRouter);

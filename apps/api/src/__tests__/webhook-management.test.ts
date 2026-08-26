@@ -1,7 +1,7 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
 import webhookManagementRouter from "../routes/webhook-management";
-import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -34,13 +34,13 @@ describe("webhook-management routes", () => {
   beforeEach(() => { supabase = mockAuth(); jest.clearAllMocks(); });
 
   it("GET / lists webhook endpoints", async () => {
-    supabase.from.mockReturnValue(createMockBuilder({ data: [{ id: "wh1", name: "Test" }], error: null } as MockResult));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [{ id: "wh1", name: "Test" }], error: null } as MockResult)));
     const res = await request(app).get("/api/v1/webhook-endpoints").set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
   });
 
   it("GET / masks secret in response", async () => {
-    supabase.from.mockReturnValue(createMockBuilder({ data: { id: "wh1", name: "Test", secret: "my-super-secret-key-12345" }, error: null } as MockResult));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: { id: "wh1", name: "Test", secret: "my-super-secret-key-12345" }, error: null } as MockResult)));
     const res = await request(app).get("/api/v1/webhook-endpoints/wh1").set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
     expect(res.body.data.secret).toBe("my-s****2345");
@@ -48,13 +48,13 @@ describe("webhook-management routes", () => {
   });
 
   it("GET /:id returns single endpoint", async () => {
-    supabase.from.mockReturnValue(createMockBuilder({ data: { id: "wh1", name: "Test" }, error: null } as MockResult));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: { id: "wh1", name: "Test" }, error: null } as MockResult)));
     const res = await request(app).get("/api/v1/webhook-endpoints/wh1").set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
   });
 
   it("GET /:id/deliveries returns delivery log", async () => {
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 } as MockResult));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 } as MockResult)));
     const res = await request(app).get("/api/v1/webhook-endpoints/wh1/deliveries").set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
   });

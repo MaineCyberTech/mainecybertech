@@ -1,6 +1,6 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder, tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -42,7 +42,7 @@ const authToken = "Bearer test-token";
 
 function mockAuth() {
   const supabase = {
-    from: jest.fn().mockReturnValue(createMockBuilder({ data: [], error: null })),
+    from: jest.fn().mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null }))),
     auth: {
       getUser: jest.fn().mockResolvedValue({
         data: { user: { id: "user-1", email: "test@example.com" } },
@@ -81,7 +81,7 @@ describe("Search API", () => {
   it("returns search results for valid query", async () => {
     const supabase = mockAuth();
     const emptyResult = { data: [], error: null };
-    supabase.from.mockImplementation(() => createMockBuilder(emptyResult));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder(emptyResult)));
     const res = await request(app).get("/api/v1/search?q=test").set("Authorization", authToken);
     expect(res.status).toBe(200);
     expect(res.body.data).toHaveProperty("users");
