@@ -3,11 +3,12 @@ import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
 import { assertSafeUrl } from "../lib/ssrf-guard";
 import type { TaskHandler, TaskResult } from "../task-registry";
+import type { Json } from "@mct/sdk/database.types";
 
 type DispatchPayload = {
   event: string;
   organizationId: string;
-  data: Record<string, unknown>;
+  data: Record<string, Json>;
 };
 
 export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResult> => {
@@ -62,14 +63,14 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
       const blocked = await assertSafeUrl(endpoint.url);
       if (blocked) {
         failCount++;
-        await (supabase.from("webhook_deliveries") as any).insert({
+        await supabase.from("webhook_deliveries").insert({
           webhook_id: endpoint.id,
           event,
           status: "failed",
           request_body: { event, data },
           error: `Blocked URL: ${blocked}`,
         });
-        await (supabase.from("webhook_endpoints") as any)
+        await supabase.from("webhook_endpoints")
           .update({
             last_failure_at: new Date().toISOString(),
             last_error: `Blocked URL: ${blocked}`,
@@ -101,7 +102,7 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
 
       const duration = Date.now() - start;
 
-      await (supabase.from("webhook_deliveries") as any).insert({
+      await supabase.from("webhook_deliveries").insert({
         webhook_id: endpoint.id,
         event,
         status: error
@@ -118,7 +119,7 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
 
       if (error || responseStatus >= 400) {
         failCount++;
-        await (supabase.from("webhook_endpoints") as any)
+        await supabase.from("webhook_endpoints")
           .update({
             last_failure_at: new Date().toISOString(),
             last_error: error || `HTTP ${responseStatus}`,
@@ -126,7 +127,7 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
           .eq("id", endpoint.id);
       } else {
         successCount++;
-        await (supabase.from("webhook_endpoints") as any)
+        await supabase.from("webhook_endpoints")
           .update({ last_success_at: new Date().toISOString(), last_error: null })
           .eq("id", endpoint.id);
       }

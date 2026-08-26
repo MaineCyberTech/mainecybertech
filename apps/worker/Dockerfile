@@ -32,6 +32,7 @@ WORKDIR /app/apps/worker
 USER appuser
 ENV NODE_ENV=production
 ENV HEALTH_PORT=3001
+EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1

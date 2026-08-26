@@ -1,9 +1,10 @@
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
+import type { TablesInsert } from "@mct/sdk/database.types";
 import { assertSafeUrl } from "../lib/ssrf-guard";
 import type { TaskHandler, TaskResult } from "../task-registry";
 
-type AnyRecord = Record<string, unknown>;
+type Row = Record<string, unknown>;
 
 export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResult> => {
   try {
@@ -24,10 +25,11 @@ export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResu
       return { ok: true };
     }
 
-    const ids = (records as AnyRecord[]).map((r) => r.id);
+    const ids = (records as Array<{ id: string }>).map((r) => r.id);
     const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const { error: updateError } = await (supabase.from("m365_hardening") as any)
+    const { error: updateError } = await supabase
+      .from("m365_hardening")
       .update({
         last_assessment_at: now,
         status: "healthy",
@@ -74,24 +76,25 @@ export const backupDrCheck: TaskHandler = async (_payload): Promise<TaskResult> 
     const warningIds: string[] = [];
     const criticalIds: string[] = [];
 
-    for (const record of records as AnyRecord[]) {
+    for (const record of records as Array<{ id: string; last_backup_at: string | null }>) {
       if (!record.last_backup_at) {
-        criticalIds.push(record.id as string);
-      } else if ((record.last_backup_at as string) < fortyEightHoursAgo) {
-        criticalIds.push(record.id as string);
-      } else if ((record.last_backup_at as string) < twentyFourHoursAgo) {
-        warningIds.push(record.id as string);
+        criticalIds.push(record.id);
+      } else if (record.last_backup_at < fortyEightHoursAgo) {
+        criticalIds.push(record.id);
+      } else if (record.last_backup_at < twentyFourHoursAgo) {
+        warningIds.push(record.id);
       }
     }
 
     if (warningIds.length > 0) {
-      await (supabase.from("backup_status") as any)
+      await supabase
+        .from("backup_status")
         .update({ status: "warning" })
         .in("id", warningIds);
     }
 
     if (criticalIds.length > 0) {
-      await (supabase.from("backup_status") as any)
+      await supabase.from("backup_status")
         .update({ status: "critical" })
         .in("id", criticalIds);
     }
@@ -100,7 +103,7 @@ export const backupDrCheck: TaskHandler = async (_payload): Promise<TaskResult> 
       {
         warnings: warningIds.length,
         criticals: criticalIds.length,
-        total: (records as AnyRecord[]).length,
+        total: records.length,
       },
       "backup-dr-check: completed",
     );
@@ -129,7 +132,7 @@ export const licenseOptimizerCheck: TaskHandler = async (_payload): Promise<Task
       return { ok: true };
     }
 
-    const underutilized = (allocations as AnyRecord[]).filter(
+    const underutilized = (allocations as Array<Row>).filter(
       (a) => Number(a.total_seats) > 0 && Number(a.used_seats) < Number(a.total_seats) * 0.7,
     );
 
@@ -175,8 +178,8 @@ export const dmarcCoachCheck: TaskHandler = async (_payload): Promise<TaskResult
       return { ok: true };
     }
 
-    const ids = (analyses as AnyRecord[]).map((a) => a.id);
-    const { error: updateError } = await (supabase.from("dmarc_analyses") as any)
+    const ids = (analyses as Array<{ id: string }>).map((a) => a.id);
+    const { error: updateError } = await supabase.from("dmarc_analyses")
       .update({ status: "stale" })
       .in("id", ids);
 
@@ -215,8 +218,8 @@ export const statusMaintenanceCheck: TaskHandler = async (_payload): Promise<Tas
       return { ok: true };
     }
 
-    const ids = (notices as AnyRecord[]).map((n) => n.id);
-    const { error: updateError } = await (supabase.from("maintenance_notices") as any)
+    const ids = (notices as Array<{ id: string }>).map((n) => n.id);
+    const { error: updateError } = await supabase.from("maintenance_notices")
       .update({ status: "upcoming" })
       .in("id", ids);
 
@@ -253,10 +256,10 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
 
     let performed = 0;
 
-    for (const check of checks as AnyRecord[]) {
+    for (const check of checks as Array<{ id: string; url: string; check_interval_minutes: number; last_checked_at: string | null }>) {
       const intervalMs = (Number(check.check_interval_minutes) || 5) * 60 * 1000;
       const lastChecked = check.last_checked_at
-        ? new Date(check.last_checked_at as string).getTime()
+        ? new Date(check.last_checked_at).getTime()
         : 0;
       const due = Date.now() - lastChecked >= intervalMs;
 
@@ -269,7 +272,7 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
 
       // SSRF guard — uptime check URLs are user-supplied; never fetch
       // private / loopback / link-local hosts or hostnames resolving to them.
-      const blocked = await assertSafeUrl(check.url as string);
+      const blocked = await assertSafeUrl(check.url);
       if (blocked) {
         errorMsg = `Blocked: ${blocked}`;
       } else {
@@ -277,7 +280,7 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 10000);
           const start = performance.now();
-          const response = await fetch(check.url as string, { signal: controller.signal });
+          const response = await fetch(check.url, { signal: controller.signal });
           responseTimeMs = Math.round(performance.now() - start);
           statusCode = response.status;
           clearTimeout(timeout);
@@ -286,7 +289,7 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
         }
       }
 
-      await (supabase.from("uptime_results") as any).insert({
+      await supabase.from("uptime_results").insert({
         check_id: check.id,
         response_status: statusCode,
         response_time_ms: responseTimeMs,
@@ -295,9 +298,9 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
         checked_at: now,
       });
 
-      await (supabase.from("uptime_checks") as any)
+      await supabase.from("uptime_checks")
         .update({ last_checked_at: now, last_status_code: statusCode })
-        .eq("id", check.id as string);
+        .eq("id", check.id);
     }
 
     logger.info(
@@ -332,8 +335,8 @@ export const phishingCampaignSend: TaskHandler = async (_payload): Promise<TaskR
       return { ok: true };
     }
 
-    const ids = (campaigns as AnyRecord[]).map((c) => c.id);
-    const { error: updateError } = await (supabase.from("phishing_campaigns") as any)
+    const ids = (campaigns as Array<{ id: string }>).map((c) => c.id);
+    const { error: updateError } = await supabase.from("phishing_campaigns")
       .update({ status: "completed" })
       .in("id", ids);
 
@@ -371,8 +374,8 @@ export const domainMonitorCheck: TaskHandler = async (_payload): Promise<TaskRes
       return { ok: true };
     }
 
-    const ids = (records as AnyRecord[]).map((r) => r.id);
-    const { error: updateError } = await (supabase.from("domain_monitors") as any)
+    const ids = (records as Array<{ id: string }>).map((r) => r.id);
+    const { error: updateError } = await supabase.from("domain_monitors")
       .update({ last_checked_at: now })
       .in("id", ids);
 
@@ -417,7 +420,7 @@ export const vendorContractRenewalCheck: TaskHandler = async (_payload): Promise
     logger.info(
       {
         count: contracts.length,
-        upcoming: (contracts as AnyRecord[]).map((c) => `${c.vendor_name}/${c.service_name}`),
+        upcoming: (contracts as Array<{ vendor_name: string; service_name: string }>).map((c) => `${c.vendor_name}/${c.service_name}`),
       },
       "vendor-contract-renewal-check: upcoming renewals found",
     );
@@ -450,15 +453,15 @@ export const patchComplianceCheck: TaskHandler = async (_payload): Promise<TaskR
     }
 
     let lowCompliance = 0;
-    for (const record of records as AnyRecord[]) {
+    for (const record of records as Array<{ total_devices: number; patched_devices: number }>) {
       const total = Number(record.total_devices) || 0;
       const patched = Number(record.patched_devices) || 0;
       const pct = total > 0 ? Math.round((patched / total) * 10000) / 100 : 0;
       if (pct < 80) lowCompliance++;
     }
 
-    const ids = (records as AnyRecord[]).map((r) => r.id);
-    const { error: updateError } = await (supabase.from("patch_compliance") as any)
+    const ids = (records as Array<{ id: string }>).map((r) => r.id);
+    const { error: updateError } = await supabase.from("patch_compliance")
       .update({ last_checked_at: now })
       .in("id", ids);
 
@@ -495,8 +498,8 @@ export const qbrScheduledGenerate: TaskHandler = async (_payload): Promise<TaskR
       return { ok: true };
     }
 
-    const ids = (reports as AnyRecord[]).map((r) => r.id);
-    const { error: updateError } = await (supabase.from("qbr_reports") as any)
+    const ids = (reports as Array<{ id: string }>).map((r) => r.id);
+    const { error: updateError } = await supabase.from("qbr_reports")
       .update({ status: "generated", generated_at: now })
       .in("id", ids);
 
@@ -534,15 +537,15 @@ export const endpointSecurityCheck: TaskHandler = async (_payload): Promise<Task
     }
 
     let lowCoverage = 0;
-    for (const record of records as AnyRecord[]) {
+    for (const record of records as Array<{ total_endpoints: number; av_installed: number }>) {
       const total = Number(record.total_endpoints) || 0;
       const av = Number(record.av_installed) || 0;
       const pct = total > 0 ? Math.round((av / total) * 10000) / 100 : 0;
       if (pct < 80) lowCoverage++;
     }
 
-    const ids = (records as AnyRecord[]).map((r) => r.id);
-    const { error: updateError } = await (supabase.from("endpoint_security") as any)
+    const ids = (records as Array<{ id: string }>).map((r) => r.id);
+    const { error: updateError } = await supabase.from("endpoint_security")
       .update({ last_checked_at: now })
       .in("id", ids);
 
@@ -583,7 +586,7 @@ export const saasAuditScan: TaskHandler = async (_payload): Promise<TaskResult> 
       return { ok: true };
     }
 
-    const totalAnnual = (audits as AnyRecord[]).reduce(
+    const totalAnnual = (audits as Array<{ annual_cost: number; monthly_cost: number }>).reduce(
       (sum, a) => sum + (Number(a.annual_cost) || Number(a.monthly_cost || 0) * 12 || 0),
       0,
     );
@@ -610,7 +613,7 @@ export const businessOsSnapshot: TaskHandler = async (_payload): Promise<TaskRes
     if (orgsError) {
       return { ok: false, error: `Failed to fetch organizations: ${orgsError.message}` };
     }
-    const approvedCount = (orgs ?? []).filter((o: AnyRecord) => o.status === "approved").length;
+    const approvedCount = (orgs ?? []).filter((o) => o.status === "approved").length;
 
     const { count: openTickets, error: ticketsError } = await supabase
       .from("tickets")
@@ -681,7 +684,7 @@ export const slaLogCheck: TaskHandler = async (_payload): Promise<TaskResult> =>
       return { ok: true };
     }
 
-    const ticketIds = (tickets as AnyRecord[]).map((t) => t.id);
+    const ticketIds = (tickets as Array<{ id: string }>).map((t) => t.id);
 
     const { data: existing, error: existingError } = await supabase
       .from("sla_logs")
@@ -692,7 +695,7 @@ export const slaLogCheck: TaskHandler = async (_payload): Promise<TaskResult> =>
       return { ok: false, error: `Failed to fetch existing sla_logs: ${existingError.message}` };
     }
 
-    const seen = new Set((existing ?? []).map((l: AnyRecord) => `${l.ticket_id}:${l.metric}`));
+    const seen = new Set((existing ?? []).map((l) => `${l.ticket_id}:${l.metric}`));
 
     const { data: comments, error: commentsError } = await supabase
       .from("ticket_comments")
@@ -706,16 +709,15 @@ export const slaLogCheck: TaskHandler = async (_payload): Promise<TaskResult> =>
 
     const firstCommentAt = new Map<string, string>();
     for (const c of comments ?? []) {
-      const key = c.ticket_id as string;
-      if (!firstCommentAt.has(key)) firstCommentAt.set(key, c.created_at as string);
+      if (!firstCommentAt.has(c.ticket_id)) firstCommentAt.set(c.ticket_id, c.created_at);
     }
 
-    const rows: Array<Record<string, unknown>> = [];
+    const rows: TablesInsert<"sla_logs">[] = [];
     let created = 0;
 
-    for (const ticket of tickets as AnyRecord[]) {
-      const createdMs = new Date(ticket.created_at as string).getTime();
-      const orgId = ticket.organization_id as string;
+    for (const ticket of tickets as Array<{ id: string; organization_id: string; created_at: string; updated_at: string; status: string }>) {
+      const createdMs = new Date(ticket.created_at).getTime();
+      const orgId = ticket.organization_id;
 
       for (const metric of SLA_METRICS) {
         if (seen.has(`${ticket.id}:${metric}`)) continue;
@@ -724,7 +726,7 @@ export const slaLogCheck: TaskHandler = async (_payload): Promise<TaskResult> =>
         let breached = false;
 
         if (metric === "first_response") {
-          const firstComment = firstCommentAt.get(ticket.id as string);
+          const firstComment = firstCommentAt.get(ticket.id);
           if (firstComment) {
             actualMinutes = Math.max(
               0,
@@ -735,7 +737,7 @@ export const slaLogCheck: TaskHandler = async (_payload): Promise<TaskResult> =>
         } else {
           const status = String(ticket.status || "");
           if (status === "resolved" || status === "closed") {
-            const updatedMs = new Date(ticket.updated_at as string).getTime();
+            const updatedMs = new Date(ticket.updated_at).getTime();
             actualMinutes = Math.max(0, Math.round((updatedMs - createdMs) / 60000));
             breached = actualMinutes > TARGET_MINUTES[metric];
           }
@@ -760,7 +762,7 @@ export const slaLogCheck: TaskHandler = async (_payload): Promise<TaskResult> =>
     }
 
     if (rows.length > 0) {
-      const { error: insertError } = await (supabase.from("sla_logs") as any).insert(rows);
+      const { error: insertError } = await supabase.from("sla_logs").insert(rows);
       if (insertError) {
         return { ok: false, error: `Failed to insert sla_logs: ${insertError.message}` };
       }
@@ -797,7 +799,9 @@ export const automationRunCheck: TaskHandler = async (_payload): Promise<TaskRes
       return { ok: true };
     }
 
-    const scheduled = (workflows as AnyRecord[]).filter((w) => String(w.trigger_type) !== "manual");
+    const scheduled = (workflows as Array<{ id: string; trigger_type: string; name: string }>).filter(
+      (w) => w.trigger_type !== "manual",
+    );
 
     if (scheduled.length === 0) {
       logger.info("automation-run-check: no scheduled workflows due");
@@ -805,7 +809,7 @@ export const automationRunCheck: TaskHandler = async (_payload): Promise<TaskRes
     }
 
     const ids = scheduled.map((w) => w.id);
-    const { error: updateError } = await (supabase.from("automation_workflows") as any)
+    const { error: updateError } = await supabase.from("automation_workflows")
       .update({
         last_run_at: now,
         last_run_status: "completed",
@@ -851,7 +855,7 @@ export const approvalOverdueCheck: TaskHandler = async (_payload): Promise<TaskR
     logger.info(
       {
         count: approvals.length,
-        overdue: (approvals as AnyRecord[]).map((a) => a.request_subject),
+        overdue: (approvals as Array<{ request_subject: string }>).map((a) => a.request_subject),
       },
       "approval-overdue-check: overdue approvals found",
     );

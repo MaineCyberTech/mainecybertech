@@ -1,6 +1,7 @@
 import { env } from "../env";
 import { logger } from "../logger";
 import { sendEmail } from "../email";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TaskHandler, TaskResult } from "../task-registry";
 
 interface NotificationPayload {
@@ -12,7 +13,7 @@ interface NotificationPayload {
   metadata?: Record<string, unknown>;
 }
 
-async function createInAppNotification(supabase: any, userId: string, title: string, body: string, module: string, moduleId?: string, action: string = "updated") {
+async function createInAppNotification(supabase: SupabaseClient, userId: string, title: string, body: string, module: string, moduleId?: string, action: string = "updated") {
   try {
     await supabase.from("notifications").insert({
       user_id: userId,
@@ -65,7 +66,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           const isOverdue = task.due_at && new Date(task.due_at) < new Date();
           const action = isOverdue ? "overdue" : "due_soon";
           const title = isOverdue ? "Task Overdue" : "Task Due Soon";
-          const projName = Array.isArray(task.projects) ? (task.projects as any[])[0]?.name : null;
+          const projName = Array.isArray(task.projects) ? (task.projects as Array<{ name: string }>)[0]?.name : null;
           const body = `"${task.title}"${isOverdue ? " is overdue" : " is due within 24 hours"}${projName ? ` in project ${projName}` : ""}.`;
 
           await createInAppNotification(supabase, task.owner_id, title, body, "tickets", task.id, action);
