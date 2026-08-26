@@ -7,6 +7,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RolePermissionsEditor from "@/components/admin/RolePermissionsEditor";
 import RoleEditForm from "@/components/admin/RoleEditForm";
+import type { Role } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function RoleDetailPage({ params }: Props) {
   const { roleId } = await params;
   const api = getApiClient();
 
-  let role: any;
+  let role: Role;
   try {
     role = await api.roles.get(roleId);
   } catch {
@@ -60,8 +61,8 @@ export default async function RoleDetailPage({ params }: Props) {
           <RoleEditForm
             roleId={roleId}
             initialName={role.name}
-            initialDescription={role.description}
-            isSystem={role.is_system}
+            initialDescription={role.description ?? null}
+            isSystem={role.is_system ?? false}
           />
         </div>
       </section>
@@ -72,7 +73,7 @@ export default async function RoleDetailPage({ params }: Props) {
           Click a cell to grant or revoke the permission for this role.
         </p>
         <div className="mt-6">
-          <RolePermissionsEditor roleId={roleId} roleKey={role.key} isSystem={role.is_system} />
+          <RolePermissionsEditor roleId={roleId} roleKey={role.key} isSystem={role.is_system ?? false} />
         </div>
       </section>
     </AdminPageShell>

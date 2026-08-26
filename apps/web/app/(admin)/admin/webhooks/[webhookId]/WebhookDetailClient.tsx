@@ -18,8 +18,22 @@ const EVENT_OPTIONS = [
 ];
 
 type Props = {
-  webhook: any;
-  deliveries: any[];
+  webhook: {
+    id: string;
+    name: string;
+    url: string;
+    secret?: string | null;
+    events?: string[];
+    is_active: boolean;
+  };
+  deliveries: Array<{
+    id: string;
+    event: string;
+    status: string;
+    response_status?: number | null;
+    duration_ms?: number | null;
+    created_at: string;
+  }>;
   totalDeliveries: number;
 };
 
@@ -193,7 +207,7 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
                 </tr>
               </thead>
               <tbody>
-                {deliveries.map((d: any) => (
+                {deliveries.map((d) => (
                   <tr key={d.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                     <td className="px-3 py-3 font-mono text-xs text-slate-200">{d.event}</td>
                     <td className="px-3 py-3">

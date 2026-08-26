@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import ProposalEditForm from "./ProposalEditForm";
+import type { ProposalDetail } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Edit Proposal - Admin - Maine CyberTech" };
@@ -14,7 +15,7 @@ export default async function EditProposalPage(props: { params: Promise<{ id: st
   const { id } = await props.params;
   const api = getApiClient();
 
-  let proposal: any = null;
+  let proposal: ProposalDetail | null = null;
   try {
     proposal = await api.proposals.get(id);
   } catch {

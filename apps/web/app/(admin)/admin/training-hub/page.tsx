@@ -28,8 +28,8 @@ export default async function TrainingHubPage() {
   try {
     const r = (await api.trainingHub.courses.list({})) as any;
     items = r.items as typeof items;
-  } catch {
-    /* graceful */
+  } catch (e) {
+    console.error("Training Hub: failed to load data", e);
   }
 
   return (

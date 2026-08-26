@@ -5,6 +5,7 @@ import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import type { QbrReport } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "QBR Report - Admin - Maine CyberTech" };
@@ -31,7 +32,7 @@ export default async function QbrDetailPage(props: { params: Promise<{ id: strin
   const { id } = await props.params;
   const api = getApiClient();
 
-  let report: any = null;
+  let report: (QbrReport & { visibility?: string }) | null = null;
   try {
     report = await api.qbr.get(id);
   } catch {

@@ -5,6 +5,12 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import ProjectTaskListV5 from "@/components/admin/ProjectTaskListV5";
+import type { ProjectDetail, Profile, ProjectTask, ProjectTaskComment, ProjectTaskReadState } from "@mct/sdk";
+
+type ExtendedTask = ProjectTask & {
+  created_by?: string | null;
+  approved_by?: string | null;
+};
 import {
   reorderProjectTasks,
   addProjectTask,
@@ -61,7 +67,7 @@ export default async function AdminProjectDetailPage({ params }: Props) {
   const { projectId } = await params;
   const api = getApiClient();
 
-  let detail: any;
+  let detail: ProjectDetail;
   try {
     detail = await api.projects.getDetail(projectId);
   } catch {
@@ -78,20 +84,27 @@ export default async function AdminProjectDetailPage({ params }: Props) {
   const rawComments = detail.comments ?? [];
   const readStates = detail.readStates ?? [];
 
-  const profileMap = new Map<string, any>(profiles.map((p: any) => [p.id, p]));
-  const readMap = new Map<string, any>(
-    (readStates ?? []).map((row: any) => [row.task_id, row.last_seen_at]),
+  const profileMap = new Map<string, Profile>(profiles.map((p) => [p.id, p]));
+  const readMap = new Map<string, string>(
+    (readStates ?? []).map((row) => [row.task_id, row.last_seen_at]),
   );
-  const owners = [...new Set(rawTasks.map((t: any) => t.owner_id).filter(Boolean))].map(
-    (id: any) => ({
+  const owners = [...new Set(rawTasks.map((t) => t.owner_id).filter(Boolean) as string[])].map(
+    (id) => ({
       id,
       full_name: profileMap.get(id)?.full_name ?? null,
       email: profileMap.get(id)?.email ?? null,
     }),
   );
 
-  const commentsByTask = new Map<string, any[]>();
-  (rawComments ?? []).forEach((comment: any) => {
+  const commentsByTask = new Map<string, Array<{
+    id: string;
+    body: string;
+    is_internal: boolean;
+    created_at: string;
+    author_name: string | null;
+    author_email: string | null;
+  }>>();
+  (rawComments ?? []).forEach((comment: ProjectTaskComment) => {
     const author = profileMap.get(comment.author_id);
     const list = commentsByTask.get(comment.task_id) ?? [];
     list.push({
@@ -105,14 +118,14 @@ export default async function AdminProjectDetailPage({ params }: Props) {
     commentsByTask.set(comment.task_id, list);
   });
 
-  const tasks = (rawTasks ?? []).map((task: any) => {
+  const tasks = (rawTasks ?? []).map((task: ExtendedTask) => {
     const owner = task.owner_id ? profileMap.get(task.owner_id) : null;
     const creator = task.created_by ? profileMap.get(task.created_by) : null;
     const approver = task.approved_by ? profileMap.get(task.approved_by) : null;
     const comments = commentsByTask.get(task.id) ?? [];
     const lastSeenAt = readMap.get(task.id);
     const unreadCount = comments.filter(
-      (comment: any) =>
+      (comment: { created_at: string }) =>
         !lastSeenAt || new Date(comment.created_at).getTime() > new Date(lastSeenAt).getTime(),
     ).length;
     return {

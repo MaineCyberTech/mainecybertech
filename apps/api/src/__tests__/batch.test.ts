@@ -1,6 +1,6 @@
-import { jest } from "@jest/globals";
+﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -58,13 +58,13 @@ describe("Batch API", () => {
 
   it("lists licenses", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app).get("/api/v1/batch/licenses").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
   it("creates a license", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: { id: "l-1" }, error: null }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: { id: "l-1" }, error: null })));
     const r = await request(app)
       .post("/api/v1/batch/licenses")
       .set("Authorization", auth)
@@ -73,31 +73,31 @@ describe("Batch API", () => {
   });
   it("license savings", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null })));
     const r = await request(app).get("/api/v1/batch/licenses/savings").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
   it("lists status items", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app).get("/api/v1/batch/status").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
   it("public status", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null })));
     const r = await request(app).get("/api/v1/batch/status/public").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
   it("lists websites", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app).get("/api/v1/batch/website-monitors").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
   it("lists dmarc", async () => {
     const s = ma();
-    s.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
+    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
     const r = await request(app).get("/api/v1/batch/dmarc").set("Authorization", auth);
     expect(r.status).toBe(200);
   });

@@ -28,8 +28,8 @@ export default async function InsuranceBinderPage() {
   try {
     const r = (await api.insuranceBinder.list({})) as any;
     items = r.items as typeof items;
-  } catch {
-    /* graceful */
+  } catch (e) {
+    console.error("Insurance Binder: failed to load data", e);
   }
 
   return (

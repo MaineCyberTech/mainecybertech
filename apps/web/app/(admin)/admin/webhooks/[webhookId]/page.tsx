@@ -17,7 +17,14 @@ export default async function WebhookDetailPage({ params }: Props) {
   const { webhookId } = await params;
   const api = getApiClient();
 
-  let webhook: any;
+  let webhook: {
+    id: string;
+    name: string;
+    url: string;
+    secret?: string | null;
+    events?: string[];
+    is_active: boolean;
+  };
   try {
     webhook = await api.webhooks.get(webhookId);
   } catch {
@@ -28,7 +35,14 @@ export default async function WebhookDetailPage({ params }: Props) {
     );
   }
 
-  let deliveries: any = { items: [], total: 0 };
+  let deliveries: { items: Array<{
+    id: string;
+    event: string;
+    status: string;
+    response_status?: number | null;
+    duration_ms?: number | null;
+    created_at: string;
+  }>; total: number } = { items: [], total: 0 };
   try {
     deliveries = await api.webhooks.listDeliveries(webhookId, { limit: 20 });
   } catch {}

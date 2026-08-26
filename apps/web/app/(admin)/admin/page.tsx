@@ -4,6 +4,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import EmptyState from "@/components/EmptyState";
+import type { Ticket, Document, Project, Organization, Membership, AuditLog } from "@mct/sdk";
 
 export const metadata = { title: "Admin Dashboard - Maine CyberTech" };
 
@@ -21,28 +22,28 @@ function rel(value?: string | null) {
   if (d < 7) return `${d}d ago`;
   return new Date(value).toISOString().slice(0, 10);
 }
-function ticketSubject(t: any) {
-  return t?.subject ?? t?.title ?? t?.name ?? `Ticket ${t?.id}`;
+function ticketSubject(t: Ticket & { subject?: string }) {
+  return t?.subject ?? t?.title ?? `Ticket ${t?.id}`;
 }
-function ticketStatus(t: any) {
-  return String(t?.status ?? t?.state ?? t?.ticket_status ?? "new").toLowerCase();
+function ticketStatus(t: Ticket & { state?: string }) {
+  return String(t?.status ?? t?.state ?? "new").toLowerCase();
 }
-function ticketPriority(t: any) {
+function ticketPriority(t: Ticket & { severity?: string }) {
   return String(t?.priority ?? t?.severity ?? "normal").toLowerCase();
 }
-function documentName(d: any) {
+function documentName(d: Document & { title?: string }) {
   return d?.name ?? d?.title ?? d?.file_name ?? `Document ${d?.id}`;
 }
-function documentVisibility(d: any) {
+function documentVisibility(d: Document) {
   return String(d?.visibility ?? "private").toLowerCase();
 }
-function projectName(p: any) {
+function projectName(p: Project & { title?: string }) {
   return p?.name ?? p?.title ?? `Project ${p?.id}`;
 }
-function isDeletedTicket(t: any) {
+function isDeletedTicket(t: Ticket & { subject?: string; is_deleted?: boolean; deleted?: boolean; deleted_at?: string; archived_at?: string }) {
   const title = String(t?.title ?? t?.subject ?? "");
   return (
-    Boolean(t?.is_deleted ?? t?.deleted ?? t?.deleted_at ?? t?.archived_at) ||
+    Boolean(t?.is_deleted ?? t?.deleted ?? t?.deleted_at ?? t?.archived_at ?? t?.resolution) ||
     title.startsWith("[Deleted] ")
   );
 }
@@ -80,19 +81,19 @@ export default async function AdminHomePage() {
     api.audit.list({ limit: 8 }),
   ]);
   const orgs = orgsResult;
-  const orgMap = new Map(orgs.map((o: any) => [o.id, o.name ?? o.id]));
-  const recentTicketsAll = (ticketsResult.items ?? []) as any[];
+  const orgMap = new Map(orgs.map((o: Organization) => [o.id, o.name ?? o.id]));
+  const recentTicketsAll = (ticketsResult.items ?? []) as Ticket[];
   const recentTickets = recentTicketsAll.filter((t) => !isDeletedTicket(t)).slice(0, 8);
-  const recentDocs = (docsResult.items ?? []).slice(0, 5) as any[];
-  const recentProjects = (projectsResult.items ?? []).slice(0, 5) as any[];
-  const pendingMemberships = pendingMembershipsResult.slice(0, 5) as any[];
-  const pendingOrganizations = pendingOrgsResult.slice(0, 5) as any[];
+  const recentDocs = (docsResult.items ?? []).slice(0, 5) as Document[];
+  const recentProjects = (projectsResult.items ?? []).slice(0, 5) as Project[];
+  const pendingMemberships = pendingMembershipsResult.slice(0, 5) as Membership[];
+  const pendingOrganizations = pendingOrgsResult.slice(0, 5) as Organization[];
   const openTicketCount = recentTicketsAll.filter(
     (t) =>
       !isDeletedTicket(t) &&
       !["resolved", "closed", "complete", "completed"].includes(ticketStatus(t)),
   ).length;
-  const recentAudit = (auditResult.items ?? []).slice(0, 5) as any[];
+  const recentAudit = (auditResult.items ?? []).slice(0, 5) as AuditLog[];
 
   return (
     <div className="space-y-6">

@@ -6,6 +6,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import OrgBrandingForm from "@/components/admin/OrgBrandingForm";
 import AdminDocUpload from "@/components/admin/AdminDocUpload";
+import type { OrganizationDetail, Profile, Role } from "@mct/sdk";
 import {
   updateOrganizationBasics,
   createOrganizationDomain,
@@ -26,7 +27,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
   const { orgId } = await params;
   const api = getApiClient();
 
-  let detail: any;
+  let detail: OrganizationDetail;
   try {
     detail = await api.organizations.getDetail(orgId);
   } catch {
@@ -43,8 +44,8 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
   const profiles = detail.profiles ?? [];
   const roles = detail.roles ?? [];
 
-  const profileMap = new Map<string, any>(profiles.map((p: any) => [p.id, p]));
-  const roleMap = new Map<string, any>(roles.map((r: any) => [r.id, r]));
+  const profileMap = new Map<string, Profile>(profiles.map((p) => [p.id, p]));
+  const roleMap = new Map<string, Role>(roles.map((r) => [r.id, r]));
 
   return (
     <AdminPageShell
@@ -125,7 +126,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
 
         <div className="mt-6 space-y-4">
           {domains && domains.length > 0 ? (
-            domains.map((domain: any) => (
+            domains.map((domain: { id: string; domain: string; auto_approve: boolean }) => (
               <div
                 key={domain.id}
                 className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
@@ -202,7 +203,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
 
         <div className="mt-6 space-y-4">
           {memberships && memberships.length > 0 ? (
-            memberships.map((membership: any) => {
+            memberships.map((membership: { id: string; user_id: string; role_id: string; status: string; is_billing_contact: boolean; is_security_contact: boolean }) => {
               const profile = profileMap.get(membership.user_id);
               const role = roleMap.get(membership.role_id);
 

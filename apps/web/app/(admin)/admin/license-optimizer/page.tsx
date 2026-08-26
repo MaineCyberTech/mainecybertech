@@ -28,8 +28,8 @@ export default async function LicenseOptimizerPage() {
   try {
     const r = (await api.licenseOptimizer.list({})) as any;
     items = r.items as typeof items;
-  } catch {
-    /* graceful */
+  } catch (e) {
+    console.error("License Optimizer: failed to load data", e);
   }
 
   return (

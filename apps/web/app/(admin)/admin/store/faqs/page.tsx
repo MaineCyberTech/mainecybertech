@@ -28,7 +28,9 @@ export default async function AdminStoreFAQsPage() {
       actions={
         <button
           type="button"
-          className="rounded-lg border border-emerald-600/50 px-4 py-2 text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:bg-emerald-600/10"
+          disabled
+          title="Coming soon"
+          className="cursor-not-allowed rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-500"
         >
           Manage FAQs
         </button>

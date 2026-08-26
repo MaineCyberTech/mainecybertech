@@ -4,6 +4,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import CommentBody from "@/components/CommentBody";
+import type { Ticket, TicketComment, AuditLog } from "@mct/sdk";
 import {
   InlineStatusDropdown,
   InlinePriorityDropdown,
@@ -22,16 +23,33 @@ export const metadata = { title: "Ticket Details - Admin - Maine CyberTech" };
 
 const DELETED_PREFIX = "[Deleted] ";
 
-function storedTicketTitle(ticket: any) {
+type TicketRecord = Ticket & {
+  subject?: string;
+  name?: string;
+  details?: string;
+  body?: string;
+  message?: string;
+  type?: string;
+  classification?: string;
+  state?: string;
+  ticket_status?: string;
+  severity?: string;
+  is_deleted?: boolean;
+  deleted?: boolean;
+  deleted_at?: string | null;
+  archived_at?: string | null;
+};
+
+function storedTicketTitle(ticket: TicketRecord) {
   return String(ticket?.title ?? ticket?.subject ?? ticket?.name ?? `Ticket ${ticket?.id}`);
 }
 
-function displayTicketTitle(ticket: any) {
+function displayTicketTitle(ticket: TicketRecord) {
   const title = storedTicketTitle(ticket);
   return title.startsWith(DELETED_PREFIX) ? title.slice(DELETED_PREFIX.length) : title;
 }
 
-function ticketDescription(ticket: any) {
+function ticketDescription(ticket: TicketRecord) {
   return (
     ticket?.description ??
     ticket?.details ??
@@ -41,34 +59,34 @@ function ticketDescription(ticket: any) {
   );
 }
 
-function ticketCategory(ticket: any) {
+function ticketCategory(ticket: TicketRecord) {
   return ticket?.category ?? ticket?.type ?? ticket?.classification ?? "Uncategorized";
 }
 
-function ticketStatus(ticket: any) {
+function ticketStatus(ticket: TicketRecord) {
   return String(ticket?.status ?? ticket?.state ?? ticket?.ticket_status ?? "new").toLowerCase();
 }
 
-function ticketPriority(ticket: any) {
+function ticketPriority(ticket: TicketRecord) {
   return String(ticket?.priority ?? ticket?.severity ?? "normal").toLowerCase();
 }
 
-function isDeletedTicket(ticket: any) {
+function isDeletedTicket(ticket: TicketRecord) {
   return (
     Boolean(ticket?.is_deleted ?? ticket?.deleted ?? ticket?.deleted_at ?? ticket?.archived_at) ||
     storedTicketTitle(ticket).startsWith(DELETED_PREFIX)
   );
 }
 
-function commentBody(comment: any) {
+function commentBody(comment: TicketComment & { comment?: string; message?: string; author_name?: string; created_by_name?: string; author_email?: string; created_by?: string }) {
   return comment?.body ?? comment?.comment ?? comment?.message ?? "";
 }
 
-function commentInternal(comment: any) {
+function commentInternal(comment: TicketComment & { internal_only?: boolean }) {
   return Boolean(comment?.is_internal ?? comment?.internal_only ?? false);
 }
 
-function commentAuthor(comment: any) {
+function commentAuthor(comment: TicketComment & { author_name?: string; created_by_name?: string; author_email?: string; created_by?: string }) {
   return (
     comment?.author_name ??
     comment?.created_by_name ??
@@ -143,7 +161,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
   const showDeleteConfirm = confirmDelete === "1";
   const api = getApiClient();
 
-  let ticket: any;
+  let ticket: Ticket;
   try {
     ticket = await api.tickets.get(ticketId);
   } catch {
@@ -393,7 +411,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
         </div>
         <div className="mt-6 space-y-4">
           {comments.length > 0 ? (
-            comments.map((comment: any) => {
+            comments.map((comment: TicketComment & { edited_at?: string; author_name?: string; created_by_name?: string; author_email?: string; created_by?: string; comment?: string; message?: string; internal_only?: boolean }) => {
               const isEditing = editComment === comment.id;
               const fiveMinMs = 5 * 60 * 1000;
               const canEdit =
@@ -518,7 +536,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
         </div>
         <div className="mt-6 space-y-2">
           {auditLogs.length > 0 ? (
-            auditLogs.map((log: any) => (
+            auditLogs.map((log: AuditLog) => (
               <div
                 key={log.id}
                 className="flex items-start gap-3 rounded-lg border border-white/5 bg-cyber-base/60 px-4 py-3"

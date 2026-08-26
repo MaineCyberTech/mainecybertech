@@ -28,7 +28,9 @@ export default async function AdminStoreOperationsPage() {
       actions={
         <button
           type="button"
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500"
+          disabled
+          title="Coming soon"
+          className="cursor-not-allowed rounded-lg bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-500"
         >
           Convert to Project
         </button>

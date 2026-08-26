@@ -7,6 +7,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CommentBody from "@/components/CommentBody";
+import type { ProposalDetail } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Proposal Detail - Admin - Maine CyberTech" };
@@ -63,7 +64,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
   const { id } = await params;
   const api = getApiClient();
 
-  let proposal: any = null;
+  let proposal: ProposalDetail | null = null;
 
   try {
     proposal = await api.proposals.get(id);
@@ -75,8 +76,18 @@ export default async function AdminProposalDetailPage({ params }: Props) {
 
   const phases = proposal.phases ?? [];
   const items = proposal.items ?? [];
-  const comments = proposal.comments ?? [];
-  const timeline = proposal.timeline ?? [];
+  const comments = (proposal.comments ?? []) as Array<{
+    id: string;
+    body: string;
+    is_internal?: boolean;
+    created_at: string;
+    author?: { full_name?: string | null; email?: string } | null;
+  }>;
+  const timeline = (proposal.timeline ?? []) as Array<{
+    id: string;
+    event_type: string;
+    created_at: string;
+  }>;
 
   return (
     <AdminPageShell
@@ -193,7 +204,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
         <h2 className="cyber-heading text-lg">Phases</h2>
         <div className="mt-6 space-y-3">
           {phases.length > 0 ? (
-            phases.map((phase: any) => (
+            phases.map((phase) => (
               <div
                 key={phase.id}
                 className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
@@ -228,7 +239,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
         <h2 className="cyber-heading text-lg">Line Items</h2>
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (
-            items.map((item: any) => (
+            items.map((item) => (
               <div key={item.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -270,7 +281,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
         <h2 className="cyber-heading text-lg">Comments</h2>
         <div className="mt-6 space-y-4">
           {comments.length > 0 ? (
-            comments.map((comment: any) => (
+            comments.map((comment) => (
               <div
                 key={comment.id}
                 className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
@@ -293,7 +304,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
         <h2 className="cyber-heading text-lg">Activity Timeline</h2>
         <div className="mt-6 space-y-3">
           {timeline.length > 0 ? (
-            timeline.slice(0, 20).map((event: any) => (
+            timeline.slice(0, 20).map((event) => (
               <div
                 key={event.id}
                 className="flex items-start gap-3 rounded-lg border border-white/5 bg-cyber-base/60 px-4 py-3"
