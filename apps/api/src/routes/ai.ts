@@ -221,7 +221,7 @@ router.post("/triage/convert", async (req, res, next) => {
       .from("tickets")
       .insert({
         organization_id: parsed.organizationId,
-        subject: parsed.subject,
+        title: parsed.subject,
         description: parsed.ticketBody,
         category: parsed.category || (draft as { suggested_category: string }).suggested_category,
         priority: parsed.priority,
@@ -286,7 +286,7 @@ router.get("/copilot/:ticketId/summarize", async (req, res, next) => {
 
     const { data: ticket, error: ticketError } = await supabase
       .from("tickets")
-      .select("id, subject, description, status, priority, category, created_at")
+      .select("id, title, description, status, priority, category, created_at")
       .eq("id", req.params.ticketId)
       .single();
     if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
@@ -300,7 +300,7 @@ router.get("/copilot/:ticketId/summarize", async (req, res, next) => {
 
     const summary = {
       ticketId: ticket.id,
-      subject: (ticket as { subject: string }).subject,
+      subject: (ticket as { title: string }).title,
       status: (ticket as { status: string }).status,
       priority: (ticket as { priority: string }).priority,
       category: (ticket as { category: string }).category,
@@ -344,7 +344,7 @@ router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
 
     const { data: ticket, error: ticketError } = await supabase
       .from("tickets")
-      .select("id, subject, description, status, priority")
+      .select("id, title, description, status, priority")
       .eq("id", req.params.ticketId)
       .single();
     if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
@@ -372,7 +372,7 @@ router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
       "",
       lastComment
         ? `Regarding your latest update: "${lastComment.slice(0, 200)}${lastComment.length > 200 ? "..." : ""}"`
-        : `Regarding: ${(ticket as { subject: string }).subject}`,
+        : `Regarding: ${(ticket as { title: string }).title}`,
       "",
       "We are reviewing this and will follow up shortly.",
       "",
@@ -391,7 +391,7 @@ router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
     res.json(
       success({
         draftReply,
-        ticketSubject: (ticket as { subject: string }).subject,
+        ticketSubject: (ticket as { title: string }).title,
         tone: parsed.tone,
       }),
     );
