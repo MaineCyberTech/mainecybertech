@@ -1,4 +1,5 @@
 import { ApiClient, type ClientOptions, type RetryOptions, ApiError } from "./client";
+import type { OrganizationOnboardInput, OrganizationOnboardResult } from "./types";
 import { AuthApi, type SignInResult, type SignUpResult } from "./auth";
 import { OrganizationsApi } from "./organizations";
 import { MembershipsApi } from "./memberships";
@@ -238,6 +239,8 @@ export type {
   StoreQuote,
   StoreQuoteItem,
   SubmitStoreQuoteInput,
+  OrganizationOnboardInput,
+  OrganizationOnboardResult,
 };
 export class MCTClient {
   public auth: AuthApi;

@@ -62,6 +62,23 @@ export interface Membership {
   created_at: string;
 }
 
+export interface OrganizationOnboardInput {
+  name: string;
+  slug: string;
+  primaryDomain?: string | null;
+  supportPlan?: string | null;
+  adminEmail: string;
+  adminFullName?: string | null;
+  adminRoleKey?: string;
+}
+
+export interface OrganizationOnboardResult {
+  organization: Organization;
+  adminUser: { id: string; email: string };
+  membership: Membership;
+  invited: boolean;
+}
+
 export interface Ticket {
   id: string;
   organization_id: string;

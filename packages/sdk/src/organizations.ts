@@ -1,5 +1,11 @@
 import { ApiClient } from "./client";
-import type { Organization, OrganizationDomain, OrganizationDetail } from "./types";
+import type {
+  Organization,
+  OrganizationDomain,
+  OrganizationDetail,
+  OrganizationOnboardInput,
+  OrganizationOnboardResult,
+} from "./types";
 
 export class OrganizationsApi {
   constructor(private client: ApiClient) {}
@@ -30,6 +36,13 @@ export class OrganizationsApi {
     supportPlan?: string | null;
   }) {
     return this.client.post<Organization>("/api/v1/organizations", data);
+  }
+
+  onboard(data: OrganizationOnboardInput) {
+    return this.client.post<OrganizationOnboardResult>(
+      "/api/v1/organizations/onboard",
+      data,
+    );
   }
 
   update(

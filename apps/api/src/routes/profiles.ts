@@ -4,6 +4,7 @@ import multer from "multer";
 import { getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
+import { encryptProfilePii, type ProfilePiiMap } from "../lib/profile-pii";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -114,7 +115,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     const { data: current, error: fetchError } = await supabase
       .from("profiles")
-      .select("version")
+      .select("version, full_name, email, phone, title, encrypted_pii")
       .eq("id", req.params.id)
       .single();
 
@@ -128,6 +129,19 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     if (parsed.fullName !== undefined) updateData.full_name = parsed.fullName;
     if (parsed.phone !== undefined) updateData.phone = parsed.phone;
     if (parsed.title !== undefined) updateData.title = parsed.title;
+
+    const currentPii: ProfilePiiMap = {
+      full_name: current.full_name ?? null,
+      email: current.email ?? null,
+      phone: current.phone ?? null,
+      title: current.title ?? null,
+    };
+    const changesPii: ProfilePiiMap = {
+      full_name: (updateData.full_name as string | undefined) ?? undefined,
+      phone: (updateData.phone as string | undefined) ?? undefined,
+      title: (updateData.title as string | undefined) ?? undefined,
+    };
+    updateData.encrypted_pii = encryptProfilePii(currentPii, changesPii);
 
     updateData.version = current.version + 1;
 

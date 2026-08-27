@@ -28,6 +28,20 @@ export const updateOrganizationSchema = z.object({
   customDomain: z.string().max(255).optional().nullable(),
 });
 
+export const onboardSchema = z.object({
+  name: z.string().min(1, "Name is required").max(255),
+  slug: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
+  primaryDomain: z.string().max(255).optional().nullable(),
+  supportPlan: z.string().max(100).optional().nullable(),
+  adminEmail: z.string().email("A valid admin email is required"),
+  adminFullName: z.string().max(255).optional().nullable(),
+  adminRoleKey: z.string().min(1).default("client_admin"),
+});
+
 export const createDomainSchema = z.object({
   domain: z.string().min(1).max(255),
   autoApprove: z.boolean().default(false),

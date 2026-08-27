@@ -1,6 +1,7 @@
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { requirePermission } from "@/lib/auth/permissions";
 import { getApiClient } from "@/lib/api";
+import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -25,7 +26,14 @@ export default async function OrganizationsPage() {
       subnav={<AdminSubnav current="organizations" />}
       title="Organizations"
       description="View and manage client tenants, domains, status, and service plans."
-      actions={<CreateOrganizationForm />}
+      actions={
+        <div className="flex items-center gap-2">
+          <Link href="/admin/organizations/new" className="cyber-button">
+            Onboard organization
+          </Link>
+          <CreateOrganizationForm />
+        </div>
+      }
     >
       <AdminOrganizationsClient organizations={organizations ?? []} />
     </AdminPageShell>

@@ -15,6 +15,7 @@ import {
   updateOrganizationSchema,
   createDomainSchema,
   updateDomainSchema,
+  onboardSchema,
 } from "../validators/organization";
 
 const upload = multer({
@@ -25,6 +26,102 @@ const upload = multer({
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
+
+router.post("/onboard", requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = onboardSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+
+    const { data: org, error: orgError } = await supabase
+      .from("organizations")
+      .insert({
+        name: parsed.name,
+        slug: parsed.slug,
+        primary_domain: parsed.primaryDomain ?? null,
+        support_plan: parsed.supportPlan ?? null,
+      })
+      .select()
+      .single();
+
+    if (orgError) throw new AppError("DB_ERROR", orgError.message, 500);
+
+    const { data: role, error: roleError } = await supabase
+      .from("roles")
+      .select("id")
+      .eq("key", parsed.adminRoleKey)
+      .maybeSingle();
+
+    if (roleError) throw new AppError("DB_ERROR", roleError.message, 500);
+    if (!role) throw new AppError("NOT_FOUND", `Role ${parsed.adminRoleKey} not found`, 404);
+
+    const { data: existingProfile } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .eq("email", parsed.adminEmail)
+      .maybeSingle();
+
+    let userId = existingProfile?.id ?? null;
+    let invited = false;
+
+    if (!userId) {
+      const { data: authUser, error: authError } = await supabase.auth.admin.inviteUserByEmail(
+        parsed.adminEmail,
+        { data: { full_name: parsed.adminFullName ?? null } },
+      );
+
+      if (authError || !authUser?.user) {
+        throw new AppError("AUTH_ERROR", authError?.message ?? "Failed to invite admin user", 400);
+      }
+
+      userId = authUser.user.id;
+      invited = true;
+
+      await supabase
+        .from("profiles")
+        .upsert(
+          {
+            id: userId,
+            email: parsed.adminEmail,
+            full_name: parsed.adminFullName ?? null,
+          },
+          { onConflict: "id" },
+        );
+    }
+
+    const { data: membership, error: memError } = await supabase
+      .from("memberships")
+      .insert({
+        organization_id: org.id,
+        user_id: userId,
+        role_id: role.id,
+        status: "approved",
+      })
+      .select()
+      .single();
+
+    if (memError) throw new AppError("DB_ERROR", memError.message, 500);
+
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "organization.onboard",
+      entityType: "organization",
+      entityId: org.id,
+      metadata: { name: parsed.name, adminEmail: parsed.adminEmail, invited },
+    });
+
+    invalidateCache(`/api/v1/organizations`);
+    res.status(201).json(
+      success({
+        organization: org,
+        adminUser: { id: userId, email: parsed.adminEmail },
+        membership,
+        invited,
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
   try {
