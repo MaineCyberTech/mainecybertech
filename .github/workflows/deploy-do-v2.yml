@@ -21,7 +21,7 @@ on:
       - "apps/worker/**"
       - "packages/**"
       - "infra/digitalocean/**"
-      - ".github/workflows/deploy-do.yml"
+      - ".github/workflows/deploy-do-v2.yml"
 
 permissions:
   contents: read
@@ -393,3 +393,5 @@ jobs:
  
 #   f o r c e   r e f r e s h 
  
+
+
