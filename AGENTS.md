@@ -36,12 +36,12 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-08-26 Verified)
 
-**2,601 tests, all passing. 300 suites.**
+**2,674 tests, all passing. 312 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 801           | 79     | Jest + supertest                  |
-| Web     | 1,462         | 211    | Jest + Testing Library            |
+| API     | 822           | 82     | Jest + supertest                  |
+| Web     | 1,514         | 220    | Jest + Testing Library            |
 | SDK     | 264           | 2      | Jest (mocked fetch)               |
 | Worker  | 74            | 8      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -304,7 +304,7 @@ cross-tenant access is now recorded with actor/role/org/IP/reason. See `apps/api
 | 3   | Root `test` file contains stale architecture analysis (misleading name)                                         | Comprehensive    | `test`                                                                                                    | **FIXED** 2026-08-26 (deleted)                                                                                                                                                |
 | 4   | Root `package.json` name is "client-portal" (misleading)                                                        | Comprehensive    | `package.json:2`                                                                                          | **FIXED** 2026-08-26                                                                                                                                                          |
 | 5   | TypeScript ^6.0.3 in root vs ^5.x in apps                                                                       | Comprehensive    | `package.json:47`                                                                                         | **FIXED** 2026-08-26 (root aligned to ^5.9.3)                                                                                                                                 |
-| 6   | ~200 `any` type annotations (`: any` + `as any`) across production code                                         | Comprehensive    | `apps/worker/src/tasks/module-tasks.ts`, `apps/web/app/(admin)/admin/page.tsx`, + ~30 files               | **PARTIAL** — Worker 28→0 (clean), Admin dashboard 14→0, 9 admin detail pages fixed (~50→0). 265 remain across API routes (97), web pages (146), web components (21), SDK (1) |
+| 6   | ~200 `any` type annotations (`: any` + `as any`) across production code                                         | Comprehensive    | `apps/worker/src/tasks/module-tasks.ts`, `apps/web/app/(admin)/admin/page.tsx`, + ~30 files               | **PARTIAL** — Worker 28→0 (clean), Admin dashboard 14→0, 9 admin detail pages fixed (~50→0). 192 remain across API routes (~70), web pages (~90), web components (~18), SDK (0). Further 89 removed 2026-08-27 (281→192) via SDK types |
 | 7   | 10 `console.warn` statements remain in web components (bypass structured logging/Sentry)                        | Verified         | `apps/web/components/NotificationBell.tsx` (8), `AdminGlobalSearch.tsx` (1), `PortalGlobalSearch.tsx` (1) | **FIXED** 2026-08-26                                                                                                                                                          |
 | 8   | OpenAPI spec incomplete                                                                                         | Comprehensive    | —                                                                                                         | **FIXED** 2026-08-27 — runtime route extractor + `generate:openapi` script; `openapi.yaml` regenerated (317 paths). Audit helper: `scripts/openapi-audit.js` |
 | 9   | No SSE/WebSocket for real-time notifications (30s polling)                                                      | Comprehensive    | —                                                                                                         | **FIXED** 2026-08-27 — SSE `/notifications/stream` already implemented server+client; fixed client handler so server-emitted objects trigger refresh |
@@ -474,10 +474,17 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 
 ### Testing
 
-- 2,601 unit tests across 300 suites (all green)
+- 2,674 unit tests across 312 suites (all green)
 - 90 Playwright E2E spec files
 - ESLint: 0 errors
 - TypeScript: clean
+
+### Completed Work (2026-08-27 — final integration)
+
+- **Dependency vulnerabilities:** root `package.json` `pnpm.overrides` already neutralized the remediable Dependabot CVEs (postcss, multer, form-data, sharp, body-parser, esbuild, js-yaml, etc.). `pnpm audit` on develop shows only 3 remaining (image-size + elliptic, both pulled in via `@storybook/*`), which have **no upstream patch** and are dev-only — correctly left.
+- **`any` type reduction (P2-6):** ~281 → ~192 (89 removed, ~32%) across 19 files using SDK types (`Ticket`, `AuditLog`, `Organization`, `Profile`, `Membership`, `ProjectTask`, etc.); all typecheck/tests green (api 822, web 1514, sdk 264, worker 74).
+- **Migration-drift audit:** 100 migrations present; `5302135` confirmed fixed/idempotent; all app-referenced tables (`impersonation_log`, `store_products`/`store_categories`, `profiles.encrypted_pii`) have migrations; no missing tables. Residual note: ~40 bare `CREATE POLICY` / 17 `CREATE TRIGGER` lack drop-if-exists guards (robustness only, no immediate drift risk).
+- **Integration:** merged `agent/any-types` + `agent/audit-docs` into `develop`; deploy `33108230365` passed (green) — store UI, `any`-types, and docs now live. Worktrees/branches cleaned up.
 
 ## Audit Reports
 
