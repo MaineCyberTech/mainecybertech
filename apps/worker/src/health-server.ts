@@ -10,7 +10,8 @@ export function startHealthServer(port: number = 3001): http.Server {
     if (req.url === "/health") {
       const queueHealth = getTaskQueueHealth();
       const shuttingDown = isShuttingDown();
-      const healthy = !shuttingDown && queueHealth.connected;
+      // Health check should pass if not shutting down; queue degraded is OK for liveness
+      const healthy = !shuttingDown;
 
       res.statusCode = healthy ? 200 : 503;
       res.setHeader("Content-Type", "application/json");
@@ -48,7 +49,7 @@ export function startHealthServer(port: number = 3001): http.Server {
     }
   });
 
-  server.listen(port, () => {
+  server.listen(port, "0.0.0.0", () => {
     logger.info({ port }, "Health check server started");
   });
   server.unref();
