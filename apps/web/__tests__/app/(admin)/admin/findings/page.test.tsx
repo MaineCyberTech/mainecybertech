@@ -55,21 +55,21 @@ describe("FindingsPage", () => {
 
   it("renders page title and description", async () => {
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { name: "Open Findings & Remediation Tracker" })).toBeInTheDocument();
     expect(screen.getByText(/P0\/P1\/P2\/P3 finding lifecycle/)).toBeInTheDocument();
   });
 
   it("renders breadcrumbs and subnav", async () => {
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
     expect(screen.getByTestId("subnav")).toHaveTextContent("findings");
   });
 
   it("renders severity pills showing zero counts", async () => {
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("P0: 0")).toBeInTheDocument();
     expect(screen.getByText("P1: 0")).toBeInTheDocument();
     expect(screen.getByText("P2: 0")).toBeInTheDocument();
@@ -78,19 +78,19 @@ describe("FindingsPage", () => {
 
   it("renders CrudForm for new finding", async () => {
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByTestId("crudform")).toHaveTextContent("New Finding");
   });
 
   it("renders findings count in heading", async () => {
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Findings (0)")).toBeInTheDocument();
   });
 
   it("renders empty state when no findings", async () => {
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("No findings yet")).toBeInTheDocument();
   });
 
@@ -102,7 +102,7 @@ describe("FindingsPage", () => {
     });
     mockFindingsStats.mockResolvedValue({ bySeverity: { p0: 1, p1: 0, p2: 0, p3: 0 }, byStatus: { open: 1 }, total: 1 });
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("SQL Injection")).toBeInTheDocument();
     expect(screen.getByText(/pentest/)).toBeInTheDocument();
     expect(screen.getByText("Findings (1)")).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe("FindingsPage", () => {
   it("renders severity count updates when stats returned", async () => {
     mockFindingsStats.mockResolvedValue({ bySeverity: { p0: 1, p1: 2, p2: 3, p3: 4 }, byStatus: {}, total: 10 });
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("P0: 1")).toBeInTheDocument();
     expect(screen.getByText("P1: 2")).toBeInTheDocument();
     expect(screen.getByText("P2: 3")).toBeInTheDocument();
@@ -120,7 +120,7 @@ describe("FindingsPage", () => {
 
   it("calls requireAdminAccess", async () => {
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(mockRequireAdminAccess).toHaveBeenCalled();
   });
 
@@ -128,7 +128,7 @@ describe("FindingsPage", () => {
     mockFindingsList.mockRejectedValue(new Error("API down"));
     mockFindingsStats.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("No findings yet")).toBeInTheDocument();
   });
 });

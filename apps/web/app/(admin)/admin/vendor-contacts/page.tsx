@@ -15,7 +15,7 @@ export const metadata = { title: "Vendor Contacts - Admin - Maine CyberTech" };
 const DEFAULT_LIMIT = 25;
 
 type VendorContactsPageProps = {
-  searchParams?: Promise<{ page?: string; limit?: string }>;
+  searchParams: Promise<{ page?: string; limit?: string }>;
 };
 
 export default async function VendorContactsPage({ searchParams }: VendorContactsPageProps) {

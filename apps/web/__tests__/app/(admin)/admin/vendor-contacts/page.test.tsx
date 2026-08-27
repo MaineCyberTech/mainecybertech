@@ -41,7 +41,7 @@ describe("VendorContactsPage", () => {
 
   it("renders page title", async () => {
     const Page = (await import("@/app/(admin)/admin/vendor-contacts/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(
       screen.getByRole("heading", { name: /vendor contact escalation directory/i }),
     ).toBeInTheDocument();
@@ -49,14 +49,14 @@ describe("VendorContactsPage", () => {
 
   it("renders breadcrumbs and subnav", async () => {
     const Page = (await import("@/app/(admin)/admin/vendor-contacts/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
     expect(screen.getByTestId("subnav")).toHaveTextContent("vendor-contacts");
   });
 
   it("shows empty state when no data", async () => {
     const Page = (await import("@/app/(admin)/admin/vendor-contacts/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText(/no vendor contacts/i)).toBeInTheDocument();
   });
 
@@ -75,20 +75,20 @@ describe("VendorContactsPage", () => {
       ],
     });
     const Page = (await import("@/app/(admin)/admin/vendor-contacts/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("John Doe")).toBeInTheDocument();
   });
 
   it("calls requireAdminAccess", async () => {
     const Page = (await import("@/app/(admin)/admin/vendor-contacts/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(mockRequireAdminAccess).toHaveBeenCalled();
   });
 
   it("handles API error gracefully", async () => {
     mockVendorContactsList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/vendor-contacts/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText(/no vendor contacts/i)).toBeInTheDocument();
   });
 });

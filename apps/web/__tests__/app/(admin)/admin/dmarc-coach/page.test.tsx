@@ -43,31 +43,31 @@ describe("DmarcCoachPage", () => {
 
   it("renders page shell with heading 'DMARC Coach'", async () => {
     const Page = (await import("@/app/(admin)/admin/dmarc-coach/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { name: "DMARC Coach" })).toBeInTheDocument();
   });
 
   it("calls requireAdminAccess", async () => {
     const Page = (await import("@/app/(admin)/admin/dmarc-coach/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(mocks.requireAdminAccess).toHaveBeenCalledTimes(1);
   });
 
   it("renders breadcrumbs", async () => {
     const Page = (await import("@/app/(admin)/admin/dmarc-coach/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
   });
 
   it("does not show removed action buttons", async () => {
     const Page = (await import("@/app/(admin)/admin/dmarc-coach/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.queryByText("Analyze Domain")).toBeNull();
   });
 
   it("shows empty state when no items", async () => {
     const Page = (await import("@/app/(admin)/admin/dmarc-coach/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("No domains analyzed yet")).toBeInTheDocument();
   });
 
@@ -84,7 +84,7 @@ describe("DmarcCoachPage", () => {
       ],
     });
     const Page = (await import("@/app/(admin)/admin/dmarc-coach/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("example.com")).toBeInTheDocument();
     expect(screen.getByText("A+")).toBeInTheDocument();
   });
