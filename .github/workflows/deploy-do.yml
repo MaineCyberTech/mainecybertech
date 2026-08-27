@@ -388,7 +388,8 @@ jobs:
             echo "Attempt $i/15: $CODE"; sleep 4
           done
           [ -z "$web_ok" ] && { echo "Web health check failed"; exit 1; }
-          echo "--- ALL HEALTH CHECKS PASSED ---" 
+          echo "--- ALL HEALTH CHECKS PASSED ---"
  
-#   f o r c e   r e f r e s h  
+ 
+#   f o r c e   r e f r e s h 
  
