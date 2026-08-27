@@ -12,7 +12,8 @@ export const metadata = { title: "Bulk Invite - Admin - Maine CyberTech" };
 export default async function BulkInvitePage() {
   await requireAdminAccess();
   const api = getApiClient();
-  const [organizations, roles] = await Promise.all([api.organizations.list(), api.roles.list()]);
+  const [organizationsResult, roles] = await Promise.all([api.organizations.list({ limit: 100 }), api.roles.list()]);
+  const organizations = organizationsResult.items ?? [];
 
   return (
     <AdminPageShell

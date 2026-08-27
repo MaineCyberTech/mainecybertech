@@ -23,10 +23,11 @@ export default function InviteUserForm() {
     if (!open) return;
     const client = getClientApi();
     client.organizations
-      .list()
-      .then((data) => {
-        setOrgs(data ?? []);
-        if ((data ?? []).length > 0) setOrganizationId(data[0].id);
+      .list({ limit: 100 })
+      .then((res) => {
+        const data = res?.items ?? [];
+        setOrgs(data);
+        if (data.length > 0) setOrganizationId(data[0].id);
       })
       .catch(() => {});
     client.roles

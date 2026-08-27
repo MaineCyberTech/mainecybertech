@@ -32,7 +32,7 @@ jest.mock("next/navigation", () => ({
 
 jest.mock("@/lib/client-api", () => ({
   getClientApi: () => ({
-    organizations: { list: jest.fn().mockResolvedValue([]) },
+    organizations: { list: jest.fn().mockResolvedValue({ items: [], total: 0 }) },
     roles: { list: jest.fn().mockResolvedValue([]) },
     memberships: { invite: jest.fn() },
   }),

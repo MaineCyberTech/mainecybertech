@@ -106,10 +106,11 @@ export default async function AdminTicketsPage() {
     }
   }
 
-  const [organizations, ticketsResult] = await Promise.all([
-    api.organizations.list(),
+  const [organizationsResult, ticketsResult] = await Promise.all([
+    api.organizations.list({ limit: 100 }),
     api.tickets.list({}),
   ]);
+  const organizations = organizationsResult.items ?? [];
   const tickets = ticketsResult.items ?? [];
 
   return (

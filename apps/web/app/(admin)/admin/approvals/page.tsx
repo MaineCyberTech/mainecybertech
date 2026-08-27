@@ -18,17 +18,19 @@ export default async function ApprovalQueuePage() {
   await requireAdminAccess();
   const api = getApiClient();
 
-  const pendingOrganizations = await api.organizations.list({ status: "pending" });
+  const pendingOrganizationsResult = await api.organizations.list({ status: "pending" });
+  const pendingOrganizations = pendingOrganizationsResult.items ?? [];
   const pendingMemberships = await api.memberships.list({ status: "pending" });
 
   const orgIds = pendingMemberships.map((m) => m.organization_id).filter(Boolean);
   const userIds = pendingMemberships.map((m) => m.user_id).filter(Boolean);
 
-  const [orgs, profiles] = await Promise.all([
-    orgIds.length ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as Organization[]),
+  const [orgsResult, profiles] = await Promise.all([
+    orgIds.length ? api.organizations.list({ ids: orgIds, limit: 100 }) : Promise.resolve({ items: [] as Organization[], total: 0, page: 1, limit: 100 }),
     userIds.length ? api.profiles.list({ ids: userIds }) : Promise.resolve([] as Profile[]),
   ]);
 
+  const orgs = orgsResult.items ?? [];
   const orgMap = new Map(orgs.map((o) => [o.id, o]));
   const profileMap = new Map(profiles.map((p) => [p.id, p]));
 

@@ -438,11 +438,12 @@ export default async function AdminDocumentsPage() {
     }
   }
 
-  const [organizations, docsResult] = await Promise.all([
-    api.organizations.list(),
+  const [organizationsResult, docsResult] = await Promise.all([
+    api.organizations.list({ limit: 100 }),
     api.documents.list({}),
   ]);
   const rows = docsResult.items ?? [];
+  const organizations = organizationsResult.items ?? [];
 
   const orgMap = new Map<string, string>(
     (organizations as { id: string; name?: string | null }[]).map((org) => [

@@ -24,7 +24,7 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
 
   const orgIds = [...new Set(logs.map((l: AuditLog) => l.organization_id).filter(Boolean))] as string[];
 
-  const organizations = orgIds.length > 0 ? await api.organizations.list({ ids: orgIds }) : [];
+  const organizations = orgIds.length > 0 ? (await api.organizations.list({ ids: orgIds, limit: 100 })).items ?? [] : [];
 
   const orgMap = new Map(organizations.map((o: Organization) => [o.id, o]));
 

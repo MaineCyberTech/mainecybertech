@@ -17,10 +17,12 @@ export default async function AdminProjectsPage() {
   const projects = projectsResult.items ?? [];
 
   const orgIds = projects.map((p: Project) => p.organization_id).filter(Boolean);
-  const [organizations, allOrganizations] = await Promise.all([
-    orgIds.length ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as Organization[]),
-    api.organizations.list(),
+  const [organizationsResult, allOrganizationsResult] = await Promise.all([
+    orgIds.length ? api.organizations.list({ ids: orgIds, limit: 100 }) : Promise.resolve({ items: [] as Organization[], total: 0, page: 1, limit: 100 }),
+    api.organizations.list({ limit: 100 }),
   ]);
+  const organizations = organizationsResult.items ?? [];
+  const allOrganizations = allOrganizationsResult.items ?? [];
   const orgMap = new Map(organizations.map((o: Organization) => [o.id, o]));
 
   const activeCount = projects.filter((p: Project) => p.status === "active").length;

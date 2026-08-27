@@ -11,10 +11,11 @@ export const metadata = { title: "SLA Tracking - Admin - Maine CyberTech" };
 export default async function AdminSLAPage() {
   await requireAdminAccess();
   const api = getApiClient();
-  const [organizations, slaMetrics] = await Promise.all([
-    api.organizations.list(),
+  const [organizationsResult, slaMetrics] = await Promise.all([
+    api.organizations.list({ limit: 100 }),
     api.sla.metrics({ days: 30 }).catch(() => null),
   ]);
+  const organizations = organizationsResult.items ?? [];
 
   return (
     <AdminPageShell
@@ -25,7 +26,7 @@ export default async function AdminSLAPage() {
       title="SLA Tracking"
       description="Monitor service-level agreement metrics across organizations."
     >
-      <AdminSLAClient organizations={organizations ?? []} initialMetrics={slaMetrics} />
+      <AdminSLAClient organizations={organizations} initialMetrics={slaMetrics} />
     </AdminPageShell>
   );
 }

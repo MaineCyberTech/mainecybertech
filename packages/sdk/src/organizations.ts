@@ -5,16 +5,19 @@ import type {
   OrganizationDetail,
   OrganizationOnboardInput,
   OrganizationOnboardResult,
+  PaginatedResult,
 } from "./types";
 
 export class OrganizationsApi {
   constructor(private client: ApiClient) {}
 
-  list(params?: { status?: string; ids?: string[] }) {
+  list(params?: { page?: number; limit?: number; status?: string; ids?: string[] }) {
     const qp: Record<string, string | number | undefined> = {};
+    qp.page = params?.page ?? 1;
+    qp.limit = params?.limit ?? 25;
     if (params?.status) qp.status = params.status;
     if (params?.ids?.length) qp.ids = params.ids.join(",");
-    return this.client.get<Organization[]>("/api/v1/organizations", qp);
+    return this.client.get<PaginatedResult<Organization>>("/api/v1/organizations", qp);
   }
 
   listAll() {

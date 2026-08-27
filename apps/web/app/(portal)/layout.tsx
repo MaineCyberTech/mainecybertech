@@ -101,8 +101,8 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       getApprovedMembership().catch(() => null),
       getUnreadCount().catch(() => 0),
       getApiClient()
-        .organizations.list()
-        .catch(() => [] as Organization[]),
+        .organizations.list({ limit: 100 })
+        .catch(() => ({ items: [] as Organization[], total: 0, page: 1, limit: 100 })),
       getApiClient()
         .permissions.getMyPermissions()
         .catch(() => null),
@@ -122,7 +122,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const user = userResult;
   const membership = membershipResult;
   const unreadCount = unreadCountResult;
-  const allOrgs = allOrgsResult;
+  const allOrgs = allOrgsResult.items ?? [];
 
   // Fetch org details and memberships in parallel (both depend on batch 1)
   const [org, allMemberships] = await Promise.all([

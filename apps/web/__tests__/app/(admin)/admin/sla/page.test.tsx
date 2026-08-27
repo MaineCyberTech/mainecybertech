@@ -7,7 +7,13 @@ const mockOrganizationsList = jest.fn();
 const mockSlaMetrics = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    organizations: { list: mockOrganizationsList },
+    organizations: {
+    list: (...args: any[]) =>
+      mockOrganizationsList(...args).then((data: any) => ({
+        items: Array.isArray(data) ? data : data?.items ?? [],
+        total: Array.isArray(data) ? data.length : data?.total ?? 0,
+      })),
+  },
     sla: { metrics: mockSlaMetrics },
   }),
 }));

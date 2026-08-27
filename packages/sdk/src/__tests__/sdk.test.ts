@@ -294,21 +294,27 @@ describe("MCTClient", () => {
     };
 
     it("list fetches organizations", async () => {
-      mockFetch.mockResolvedValue(mockResponse([org]));
+      mockFetch.mockResolvedValue(
+        mockResponse({ items: [org], total: 1, page: 1, limit: 25 }),
+      );
 
       const result = await client.organizations.list();
 
-      expect(result).toHaveLength(1);
+      expect(result.items).toHaveLength(1);
     });
 
     it("list with status and ids", async () => {
-      mockFetch.mockResolvedValue(mockResponse([org]));
+      mockFetch.mockResolvedValue(
+        mockResponse({ items: [org], total: 1, page: 1, limit: 25 }),
+      );
 
       await client.organizations.list({ status: "active", ids: ["1"] });
 
       const url = mockFetch.mock.calls[0][0] as string;
       expect(url).toContain("status=active");
       expect(url).toContain("ids=1");
+      expect(url).toContain("page=1");
+      expect(url).toContain("limit=25");
     });
 
     it("get fetches by id", async () => {

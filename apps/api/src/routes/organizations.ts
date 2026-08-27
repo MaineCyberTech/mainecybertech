@@ -133,7 +133,7 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
       .eq("id", req.authUser!.userId)
       .single();
 
-    let query = supabase.from("organizations").select("*");
+    let query = supabase.from("organizations").select("*", { count: "exact" });
 
     // Platform admins (super_admin profile OR admin/super_admin role in any
     // approved membership) see every tenant. Client-scoped users see only
@@ -175,10 +175,33 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
       if (ids.length) query = query.in("id", ids);
     }
 
-    const { data, error } = await query.order("name");
+    const hasPaging = req.query.page !== undefined || req.query.limit !== undefined;
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const offset = (page - 1) * limit;
+
+    if (hasPaging) query = query.range(offset, offset + limit - 1);
+
+    const {
+      data,
+      error,
+      count,
+    } = await query.order("name");
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data));
+
+    if (hasPaging) {
+      res.json(
+        success({
+          items: data ?? [],
+          total: count ?? 0,
+          page,
+          limit,
+        }),
+      );
+    } else {
+      res.json(success(data ?? []));
+    }
   } catch (error) {
     next(error);
   }

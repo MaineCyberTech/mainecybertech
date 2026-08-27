@@ -83,11 +83,12 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
   const orgIds = [...new Set(logs.map((l) => l.organization_id).filter(Boolean))] as string[];
   const userIds = [...new Set(logs.map((l) => l.actor_user_id).filter(Boolean))] as string[];
 
-  const [organizations, profiles] = await Promise.all([
-    orgIds.length > 0 ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as Organization[]),
+  const [organizationsResult, profiles] = await Promise.all([
+    orgIds.length > 0 ? api.organizations.list({ ids: orgIds, limit: 100 }) : Promise.resolve({ items: [] as Organization[], total: 0, page: 1, limit: 100 }),
     userIds.length > 0 ? api.profiles.list({ ids: userIds }) : Promise.resolve([] as Profile[]),
   ]);
 
+  const organizations = organizationsResult.items ?? [];
   const orgMap = new Map(organizations.map((o) => [o.id, o]));
   const profileMap = new Map(profiles.map((p) => [p.id, p]));
 

@@ -15,8 +15,8 @@ export default async function TriagePage() {
 
   let orgs: { id: string; name: string }[] = [];
   try {
-    const list = await api.organizations.list({});
-    orgs = list.map((o: Organization) => ({ id: o.id, name: o.name }));
+    const list = await api.organizations.list({ limit: 100 });
+    orgs = (list.items ?? []).map((o: Organization) => ({ id: o.id, name: o.name }));
   } catch {
     /* graceful */
   }

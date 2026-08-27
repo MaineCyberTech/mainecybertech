@@ -72,22 +72,22 @@ export default async function AdminHomePage() {
     pendingOrgsResult,
     auditResult,
   ] = await Promise.all([
-    api.organizations.list(),
+    api.organizations.list({ limit: 100 }),
     api.tickets.list({}),
     api.documents.list({}),
     api.projects.list({}),
     api.memberships.list({ status: "pending" }),
-    api.organizations.list({ status: "pending" }),
+    api.organizations.list({ status: "pending", limit: 100 }),
     api.audit.list({ limit: 8 }),
   ]);
-  const orgs = orgsResult;
+  const orgs = orgsResult.items ?? [];
   const orgMap = new Map(orgs.map((o: Organization) => [o.id, o.name ?? o.id]));
   const recentTicketsAll = (ticketsResult.items ?? []) as Ticket[];
   const recentTickets = recentTicketsAll.filter((t) => !isDeletedTicket(t)).slice(0, 8);
   const recentDocs = (docsResult.items ?? []).slice(0, 5) as Document[];
   const recentProjects = (projectsResult.items ?? []).slice(0, 5) as Project[];
   const pendingMemberships = pendingMembershipsResult.slice(0, 5) as Membership[];
-  const pendingOrganizations = pendingOrgsResult.slice(0, 5) as Organization[];
+  const pendingOrganizations = pendingOrgsResult.items?.slice(0, 5) ?? [];
   const openTicketCount = recentTicketsAll.filter(
     (t) =>
       !isDeletedTicket(t) &&
@@ -157,11 +157,11 @@ export default async function AdminHomePage() {
               Pending Approvals
             </p>
             <p className="font-orbitron text-lg text-slate-50 sm:text-xl">
-              {pendingOrgsResult.length + pendingMembershipsResult.length}
+              {pendingOrganizations.length + pendingMembershipsResult.length}
             </p>
           </div>
           <p className="mt-2 text-xs text-slate-400 sm:mt-3 sm:text-sm">
-            {pendingOrgsResult.length} orgs &bull; {pendingMembershipsResult.length} memberships
+            {pendingOrganizations.length} orgs &bull; {pendingMembershipsResult.length} memberships
             waiting.
           </p>
         </div>

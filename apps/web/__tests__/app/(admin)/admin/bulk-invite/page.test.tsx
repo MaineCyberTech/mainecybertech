@@ -7,7 +7,13 @@ const mockOrgsList = jest.fn();
 const mockRolesList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    organizations: { list: mockOrgsList },
+    organizations: {
+    list: (...args: any[]) =>
+      mockOrgsList(...args).then((data: any) => ({
+        items: Array.isArray(data) ? data : data?.items ?? [],
+        total: Array.isArray(data) ? data.length : data?.total ?? 0,
+      })),
+  },
     roles: { list: mockRolesList },
   }),
 }));

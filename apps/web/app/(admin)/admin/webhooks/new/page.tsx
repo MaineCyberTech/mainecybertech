@@ -12,7 +12,7 @@ export const metadata = { title: "New Webhook - Admin - Maine CyberTech" };
 export default async function NewWebhookPage() {
   await requireAdminAccess();
   const api = getApiClient();
-  const organizations = await api.organizations.list();
+  const organizations = (await api.organizations.list({ limit: 100 })).items ?? [];
 
   return (
     <AdminPageShell

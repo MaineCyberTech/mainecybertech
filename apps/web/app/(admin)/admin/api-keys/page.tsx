@@ -13,10 +13,11 @@ export default async function AdminApiKeysPage() {
   await requireAdminAccess();
   await requirePermission("api-keys", "view");
   const api = getApiClient();
-  const [organizations, apiKeys] = await Promise.all([
-    api.organizations.list(),
+  const [organizationsResult, apiKeys] = await Promise.all([
+    api.organizations.list({ limit: 100 }),
     api.apiKeys.list(),
   ]);
+  const organizations = organizationsResult.items ?? [];
 
   return (
     <AdminPageShell
@@ -27,7 +28,7 @@ export default async function AdminApiKeysPage() {
       title="API Keys"
       description="Manage API keys for programmatic access across organizations."
     >
-      <AdminApiKeysClient organizations={organizations ?? []} initialKeys={apiKeys ?? []} />
+      <AdminApiKeysClient organizations={organizations} initialKeys={apiKeys ?? []} />
     </AdminPageShell>
   );
 }
