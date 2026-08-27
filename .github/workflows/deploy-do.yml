@@ -1,4 +1,4 @@
-﻿name: deploy-do
+name: deploy-do
 
 on:
   workflow_dispatch:
@@ -200,7 +200,7 @@ jobs:
     uses: ./.github/workflows/validate.yml
 
   # e2e + migrations: required for prod (main) deploys only; skipped on dev to keep deploys fast.
-  # Skipped jobs do NOT block deploy â€” deploy uses always() && !failure() && !cancelled().
+  # Skipped jobs do NOT block deploy — deploy uses always() && !failure() && !cancelled().
   e2e-gate:
     needs: [setup]
     if: ${{ needs.setup.outputs.name == 'prod' && (github.event_name == 'push' || github.event.inputs.rollback_sha == '') }}
@@ -304,9 +304,9 @@ jobs:
             chmod 600 /opt/mct-portal/certs/privkey.pem
             # Ensure REDIS_PASSWORD is in .env for docker-compose
             echo "REDIS_PASSWORD=$REDIS_PASSWORD" >> /opt/mct-portal/.env
-            # NOTE: no `docker image prune` here — old mct-* images are still in
+            # NOTE: no `docker image prune` here � old mct-* images are still in
             # use until compose down/up, so pruning pre-pull would remove nothing.
-            # Retry pulls — the droplet's connection to GHCR can reset mid-pull.
+            # Retry pulls � the droplet's connection to GHCR can reset mid-pull.
             pull_retry() {
               local img="$1" attempt=1
               until docker pull "$img"; do
@@ -314,7 +314,7 @@ jobs:
                   echo "ERROR: failed to pull $img after 3 attempts" >&2
                   return 1
                 fi
-                echo "WARNING: pull of $img failed (attempt $attempt/3) — retrying in 10s"
+                echo "WARNING: pull of $img failed (attempt $attempt/3) � retrying in 10s"
                 attempt=$((attempt + 1))
                 sleep 10
               done
@@ -375,7 +375,7 @@ jobs:
           if [ "$wcode" = "200" ]; then
             echo "Worker healthy (HTTP 200)"
           else
-            echo "Warning: Worker health check returned HTTP $wcode (non-fatal — worker is restart-loop tolerant)"
+            echo "Warning: Worker health check returned HTTP $wcode (non-fatal � worker is restart-loop tolerant)"
           fi
           web_ok=""
           for i in $(seq 1 15); do
