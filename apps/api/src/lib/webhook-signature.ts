@@ -25,11 +25,11 @@ const TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000; // 5 minutes
 function extractTimestamp(payload: Record<string, unknown>): number | null {
   // Check common timestamp fields in webhook payloads
   const ts =
-    (payload as any).timestamp ??
-    (payload as any).timestampMillis ??
-    (payload as any).created_at ??
-    (payload as any).occurred_at ??
-    (payload as any).event_date;
+    payload.timestamp ??
+    payload.timestampMillis ??
+    payload.created_at ??
+    payload.occurred_at ??
+    payload.event_date;
   if (ts === undefined || ts === null || ts === "") return null;
 
   let parsed: number;

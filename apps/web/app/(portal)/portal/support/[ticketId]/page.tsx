@@ -7,15 +7,53 @@ import PortalSubnav from "@/components/portal/PortalSubnav";
 import CommentBody from "@/components/CommentBody";
 import TicketReplyForm from "./TicketReplyForm";
 
+type TicketLike = {
+  id?: string;
+  title?: string | null;
+  subject?: string | null;
+  name?: string | null;
+  description?: string | null;
+  details?: string | null;
+  body?: string | null;
+  message?: string | null;
+  category?: string | null;
+  type?: string | null;
+  classification?: string | null;
+  status?: string | null;
+  state?: string | null;
+  ticket_status?: string | null;
+  priority?: string | null;
+  severity?: string | null;
+  is_deleted?: boolean | null;
+  deleted?: boolean | null;
+  deleted_at?: string | null;
+  archived_at?: string | null;
+  created_at?: string | null;
+};
+
+type CommentLike = {
+  id?: string;
+  created_at?: string | null;
+  body?: string | null;
+  comment?: string | null;
+  message?: string | null;
+  author_name?: string | null;
+  created_by_name?: string | null;
+  author_email?: string | null;
+  created_by?: string | null;
+  is_internal?: boolean | null;
+  internal_only?: boolean | null;
+};
+
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Ticket Details - Portal - Maine CyberTech" };
 
-function ticketSubject(ticket: any) {
+function ticketSubject(ticket: TicketLike) {
   return ticket?.subject ?? ticket?.title ?? ticket?.name ?? `Ticket ${ticket?.id}`;
 }
 
-function ticketDescription(ticket: any) {
+function ticketDescription(ticket: TicketLike) {
   return (
     ticket?.description ??
     ticket?.details ??
@@ -25,19 +63,19 @@ function ticketDescription(ticket: any) {
   );
 }
 
-function ticketCategory(ticket: any) {
+function ticketCategory(ticket: TicketLike) {
   return ticket?.category ?? ticket?.type ?? ticket?.classification ?? "General";
 }
 
-function ticketStatus(ticket: any) {
+function ticketStatus(ticket: TicketLike) {
   return String(ticket?.status ?? ticket?.state ?? ticket?.ticket_status ?? "new").toLowerCase();
 }
 
-function ticketPriority(ticket: any) {
+function ticketPriority(ticket: TicketLike) {
   return String(ticket?.priority ?? ticket?.severity ?? "normal").toLowerCase();
 }
 
-function isDeletedTicket(ticket: any) {
+function isDeletedTicket(ticket: TicketLike) {
   const title = String(ticket?.title ?? ticket?.subject ?? "");
   return (
     Boolean(ticket?.is_deleted ?? ticket?.deleted ?? ticket?.deleted_at ?? ticket?.archived_at) ||
@@ -45,15 +83,15 @@ function isDeletedTicket(ticket: any) {
   );
 }
 
-function commentBody(comment: any) {
+function commentBody(comment: CommentLike) {
   return comment?.body ?? comment?.comment ?? comment?.message ?? "";
 }
 
-function commentInternal(comment: any) {
+function commentInternal(comment: CommentLike) {
   return Boolean(comment?.is_internal ?? comment?.internal_only ?? false);
 }
 
-function commentAuthor(comment: any) {
+function commentAuthor(comment: CommentLike) {
   return (
     comment?.author_name ??
     comment?.created_by_name ??
@@ -135,7 +173,7 @@ export default async function PortalSupportDetailPage({ params }: Props) {
     );
   }
 
-  let ticket: any;
+  let ticket: TicketLike;
   try {
     ticket = await api.tickets.get(ticketId);
   } catch {
@@ -153,7 +191,7 @@ export default async function PortalSupportDetailPage({ params }: Props) {
     );
 
   const rawComments = await api.tickets.listComments(ticketId);
-  const comments = (rawComments ?? []).filter((comment: any) => !commentInternal(comment));
+  const comments = (rawComments ?? []).filter((comment: CommentLike) => !commentInternal(comment));
   const status = ticketStatus(ticket);
   const priority = ticketPriority(ticket);
 
@@ -214,7 +252,7 @@ export default async function PortalSupportDetailPage({ params }: Props) {
         </div>
         <div className="mt-6 space-y-4">
           {comments.length > 0 ? (
-            comments.map((comment: any) => (
+            comments.map((comment: CommentLike) => (
               <div
                 key={comment.id ?? `${comment.created_at}-${commentBody(comment)}`}
                 className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"

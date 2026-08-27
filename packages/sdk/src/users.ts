@@ -1,5 +1,5 @@
 import { ApiClient } from "./client";
-import type { User, AuthUser, UserDetail, UserCompound } from "./types";
+import type { User, AuthUser, UserDetail, UserCompound, Membership } from "./types";
 
 export interface PermissionOverride {
   id: string;
@@ -9,7 +9,7 @@ export interface PermissionOverride {
 }
 
 export interface UserPermissionsResponse {
-  memberships: any[];
+  memberships: Membership[];
   permissions: Array<{
     id: string;
     module_key: string;

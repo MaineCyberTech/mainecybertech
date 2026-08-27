@@ -1,5 +1,6 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import type { Membership, Organization, Profile } from "@mct/sdk";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -20,16 +21,16 @@ export default async function ApprovalQueuePage() {
   const pendingOrganizations = await api.organizations.list({ status: "pending" });
   const pendingMemberships = await api.memberships.list({ status: "pending" });
 
-  const orgIds = pendingMemberships.map((m: any) => m.organization_id).filter(Boolean);
-  const userIds = pendingMemberships.map((m: any) => m.user_id).filter(Boolean);
+  const orgIds = pendingMemberships.map((m) => m.organization_id).filter(Boolean);
+  const userIds = pendingMemberships.map((m) => m.user_id).filter(Boolean);
 
   const [orgs, profiles] = await Promise.all([
-    orgIds.length ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as any[]),
-    userIds.length ? api.profiles.list({ ids: userIds }) : Promise.resolve([] as any[]),
+    orgIds.length ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as Organization[]),
+    userIds.length ? api.profiles.list({ ids: userIds }) : Promise.resolve([] as Profile[]),
   ]);
 
-  const orgMap = new Map(orgs.map((o: any) => [o.id, o]));
-  const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
+  const orgMap = new Map(orgs.map((o) => [o.id, o]));
+  const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
   return (
     <AdminPageShell
@@ -51,7 +52,7 @@ export default async function ApprovalQueuePage() {
 
         <div className="mt-6 space-y-4">
           {pendingOrganizations.length > 0 ? (
-            pendingOrganizations.map((org: any) => (
+            pendingOrganizations.map((org) => (
               <div key={org.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div>
@@ -92,7 +93,7 @@ export default async function ApprovalQueuePage() {
 
         <div className="mt-6 space-y-4">
           {pendingMemberships.length > 0 ? (
-            pendingMemberships.map((membership: any) => {
+            pendingMemberships.map((membership) => {
               const profile = profileMap.get(membership.user_id);
               const org = orgMap.get(membership.organization_id);
               return (

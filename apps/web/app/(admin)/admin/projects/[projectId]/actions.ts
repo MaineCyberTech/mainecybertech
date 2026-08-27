@@ -2,6 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
+import type {
+  ProjectTask,
+  ProjectTaskComment,
+  ProjectTaskReadState,
+  Profile,
+} from "@mct/sdk";
 
 type TaskComment = {
   id: string;
@@ -56,43 +62,42 @@ async function fetchTaskRecord(
 ): Promise<TaskRecord | null> {
   const api = getApiClient();
 
-  const allTasks = (await api.projects.listTasks(projectId)) as any[];
+  const allTasks = await api.projects.listTasks(projectId);
   const task = allTasks.find((t) => t.id === taskId);
   if (!task) return null;
 
-  const comments = (await api.projects.listTaskComments(projectId, { taskIds: [taskId] })) as any[];
+  const comments = await api.projects.listTaskComments(projectId, { taskIds: [taskId] });
 
   let lastSeenAt: string | null = null;
   if (currentUserId) {
-    const readStates = (await api.projects.listReadStates(projectId, {
+    const readStates = await api.projects.listReadStates(projectId, {
       taskIds: [taskId],
-    })) as any[];
-    const state = readStates.find((rs: any) => rs.user_id === currentUserId);
+    });
+    const state = readStates.find((rs) => rs.user_id === currentUserId);
     lastSeenAt = state?.last_seen_at ?? null;
   }
 
+  const candidateIds = [
+    task.created_by,
+    task.owner_id,
+    task.approved_by,
+    ...(comments ?? []).map((c) => c.author_id),
+  ];
   const profileIds = Array.from(
-    new Set(
-      [
-        task.created_by,
-        task.owner_id,
-        task.approved_by,
-        ...(comments ?? []).map((c: any) => c.author_id),
-      ].filter(Boolean),
-    ),
+    new Set(candidateIds.filter((id): id is string => id !== null)),
   );
 
   const profiles = profileIds.length
-    ? ((await api.profiles.list({ ids: profileIds })) as any[])
+    ? await api.profiles.list({ ids: profileIds })
     : [];
 
-  const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
+  const profileMap = new Map(profiles.map((p) => [p.id, p]));
   const owner = task.owner_id ? profileMap.get(task.owner_id) : null;
   const creator = task.created_by ? profileMap.get(task.created_by) : null;
   const approver = task.approved_by ? profileMap.get(task.approved_by) : null;
   const unreadCount = currentUserId
     ? (comments ?? []).filter(
-        (c: any) =>
+        (c) =>
           !lastSeenAt || new Date(c.created_at).getTime() > new Date(lastSeenAt).getTime(),
       ).length
     : 0;
@@ -116,7 +121,7 @@ async function fetchTaskRecord(
     owner_name: owner?.full_name ?? null,
     owner_email: owner?.email ?? null,
     unread_count: unreadCount,
-    comments: (comments ?? []).map((c: any) => {
+    comments: (comments ?? []).map((c) => {
       const author = profileMap.get(c.author_id);
       return {
         id: c.id,

@@ -60,6 +60,8 @@ export interface Membership {
   is_billing_contact: boolean;
   is_security_contact: boolean;
   created_at: string;
+  roles?: { key: string; name?: string } | null;
+  organizations?: Organization | null;
 }
 
 export interface OrganizationOnboardInput {
@@ -126,11 +128,15 @@ export interface ProjectTask {
   project_id: string;
   title: string;
   description: string | null;
+  details: string | null;
   status: string;
   sort_order: number;
   due_at: string | null;
   approval_required: boolean;
   owner_id: string | null;
+  created_by: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
   external_jira_issue_key?: string | null;
   issue_type?: string | null;
   priority?: string | null;
@@ -164,6 +170,7 @@ export interface ProjectTaskComment {
 
 export interface ProjectTaskReadState {
   task_id: string;
+  user_id?: string | null;
   last_seen_at: string;
 }
 

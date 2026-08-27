@@ -12,6 +12,13 @@ import {
   createEndpointSchema,
 } from "../validators/security-suite";
 
+type EndpointSecurity = {
+  total_endpoints?: number | null;
+  av_installed?: boolean | null;
+  disk_encrypted?: boolean | null;
+  mdm_enrolled?: boolean | null;
+};
+
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
@@ -181,14 +188,14 @@ router.get("/endpoint-security/coverage", async (req, res, next) => {
       .select("*")
       .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    const items = data ?? [];
-    const totalEndpoints = items.reduce((s: number, e: any) => s + (e.total_endpoints || 0), 0);
+    const items = (data ?? []) as EndpointSecurity[];
+    const totalEndpoints = items.reduce((s: number, e) => s + (e.total_endpoints || 0), 0);
     const avCoverage =
       totalEndpoints > 0
         ? Math.round(
             (items
-              .filter((e: any) => e.av_installed)
-              .reduce((s: number, e: any) => s + (e.total_endpoints || 0), 0) /
+              .filter((e) => e.av_installed)
+              .reduce((s: number, e) => s + (e.total_endpoints || 0), 0) /
               totalEndpoints) *
               100,
           )
@@ -197,8 +204,8 @@ router.get("/endpoint-security/coverage", async (req, res, next) => {
       totalEndpoints > 0
         ? Math.round(
             (items
-              .filter((e: any) => e.disk_encrypted)
-              .reduce((s: number, e: any) => s + (e.total_endpoints || 0), 0) /
+              .filter((e) => e.disk_encrypted)
+              .reduce((s: number, e) => s + (e.total_endpoints || 0), 0) /
               totalEndpoints) *
               100,
           )
@@ -207,8 +214,8 @@ router.get("/endpoint-security/coverage", async (req, res, next) => {
       totalEndpoints > 0
         ? Math.round(
             (items
-              .filter((e: any) => e.mdm_enrolled)
-              .reduce((s: number, e: any) => s + (e.total_endpoints || 0), 0) /
+              .filter((e) => e.mdm_enrolled)
+              .reduce((s: number, e) => s + (e.total_endpoints || 0), 0) /
               totalEndpoints) *
               100,
           )

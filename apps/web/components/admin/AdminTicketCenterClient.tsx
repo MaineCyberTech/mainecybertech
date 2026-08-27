@@ -426,11 +426,11 @@ export default function AdminTicketCenterClient({
     setPage(1);
   }, []);
   const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatusFilter(e.target.value as any);
+    setStatusFilter(e.target.value as "all" | "open" | "closed");
     setPage(1);
   }, []);
   const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSortBy(e.target.value as any);
+    setSortBy(e.target.value as "newest" | "oldest" | "updated");
     setPage(1);
   }, []);
 

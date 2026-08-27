@@ -32,7 +32,7 @@ export async function requireAdminAccess(): Promise<AdminAccessResult> {
     redirect("/portal/dashboard");
   }
 
-  const adminMembership = (memberships as any[]).find((m) => {
+  const adminMembership = memberships.find((m) => {
     const role = m.roles;
     return role && isPlatformAdminKey(role.key);
   });
@@ -43,6 +43,6 @@ export async function requireAdminAccess(): Promise<AdminAccessResult> {
 
   return {
     userId: user.userId,
-    roleKey: adminMembership.roles.key,
+    roleKey: adminMembership.roles?.key ?? "",
   };
 }

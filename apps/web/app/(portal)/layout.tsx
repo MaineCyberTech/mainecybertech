@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getApiClient } from "@/lib/api";
+import type { Membership, Organization } from "@mct/sdk";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import PortalHeaderActions from "@/components/portal/PortalHeaderActions";
 import NotificationBell from "@/components/NotificationBell";
@@ -95,20 +96,20 @@ export default async function PortalLayout({ children }: { children: ReactNode }
           // /login — the middleware would bounce an authenticated user back
           // to /portal/dashboard, producing an infinite redirect loop.
           const status = (err as { status?: number })?.status;
-          return status === 401 || status === 403 ? null : ({ error: true } as any);
+          return status === 401 || status === 403 ? null : { error: true };
         }),
       getApprovedMembership().catch(() => null),
       getUnreadCount().catch(() => 0),
       getApiClient()
         .organizations.list()
-        .catch(() => [] as any[]),
+        .catch(() => [] as Organization[]),
       getApiClient()
         .permissions.getMyPermissions()
         .catch(() => null),
     ]);
 
-  if (!userResult?.userId) {
-    if ((userResult as { error?: boolean })?.error) {
+  if (!userResult || !("userId" in userResult)) {
+    if (userResult && "error" in userResult) {
       throw new Error("Unable to load your profile. Please try again.");
     }
     redirect("/login");
@@ -129,14 +130,14 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       .organizations.get(membership.organization_id)
       .catch(() => null),
     getApiClient()
-      .memberships.list({ userId: user.userId, status: "approved" })
-      .catch(() => [] as any[]),
+        .memberships.list({ userId: user.userId, status: "approved" })
+        .catch(() => [] as Membership[]),
   ]);
 
-  const orgIds = new Set(allMemberships.map((m: any) => m.organization_id));
+  const orgIds = new Set(allMemberships.map((m) => m.organization_id));
   const userOrgs = allOrgs
-    .filter((o: any) => orgIds.has(o.id))
-    .map((o: any) => ({ id: o.id, name: o.name }));
+    .filter((o) => orgIds.has(o.id))
+    .map((o) => ({ id: o.id, name: o.name }));
 
   const brandColor = org?.brand_color ?? "#059669";
   const logoUrl = org?.logo_url ?? null;

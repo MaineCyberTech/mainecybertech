@@ -24,16 +24,16 @@ export default function InviteUserForm() {
     const client = getClientApi();
     client.organizations
       .list()
-      .then((data: any) => {
+      .then((data) => {
         setOrgs(data ?? []);
         if ((data ?? []).length > 0) setOrganizationId(data[0].id);
       })
       .catch(() => {});
     client.roles
       .list()
-      .then((data: any) => {
+      .then((data) => {
         setRoles(data ?? []);
-        const clientRole = (data ?? []).find((r: any) => r.key === "client_user");
+        const clientRole = (data ?? []).find((r) => r.key === "client_user");
         if (clientRole) setRoleId(clientRole.id);
         else if ((data ?? []).length > 0) setRoleId(data[0].id);
       })

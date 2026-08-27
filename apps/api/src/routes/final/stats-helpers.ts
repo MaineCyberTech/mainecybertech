@@ -1,4 +1,33 @@
-export function computeSharepointSummary(items: any[]) {
+type SharepointSite = {
+  status?: string | null;
+  external_sharing?: string | null;
+};
+
+type BackupItem = {
+  last_backup_status?: string | null;
+  status?: string | null;
+  restore_test_result?: unknown;
+  restore_tested_at?: unknown;
+  offsite_replicated?: boolean;
+  encryption_enabled?: boolean;
+};
+
+type BudgetItem = {
+  estimated_cost?: number | null;
+  category?: string | null;
+};
+
+type QuoteItem = Record<string, unknown> & {
+  quote_amount?: number | string | null;
+};
+
+type TimeEntry = {
+  hours?: number | string | null;
+  billable?: boolean;
+  work_date?: string | null;
+};
+
+export function computeSharepointSummary(items: SharepointSite[]) {
   return {
     totalPlans: items.length,
     plannedSites: items.filter((s) => s.status === "planned").length,
@@ -7,7 +36,7 @@ export function computeSharepointSummary(items: any[]) {
   };
 }
 
-export function computeBackupStats(items: any[]) {
+export function computeBackupStats(items: BackupItem[]) {
   const failed = items.filter((b) => b.last_backup_status === "failed").length;
   const untested = items.filter((b) => !b.restore_test_result).length;
   const offsite = items.filter((b) => b.offsite_replicated).length;
@@ -15,7 +44,7 @@ export function computeBackupStats(items: any[]) {
   return { total: items.length, failed, untested, offsiteReplicated: offsite, encrypted };
 }
 
-export function computeBackupRisk(items: any[]) {
+export function computeBackupRisk(items: BackupItem[]) {
   const total = items.length;
   const failed = items.filter(
     (b) => b.last_backup_status === "failed" || b.status === "failed",
@@ -31,9 +60,9 @@ export function computeBackupRisk(items: any[]) {
   };
 }
 
-export function computeBudgetAnalysis(items: any[]) {
-  const totalProjected = items.reduce((s: number, b: any) => s + (b.estimated_cost || 0), 0);
-  const totalActual = items.reduce((s: number, b: any) => s + (b.estimated_cost || 0), 0);
+export function computeBudgetAnalysis(items: BudgetItem[]) {
+  const totalProjected = items.reduce((s: number, b) => s + (b.estimated_cost || 0), 0);
+  const totalActual = items.reduce((s: number, b) => s + (b.estimated_cost || 0), 0);
   const variance =
     totalProjected > 0 ? Math.round(((totalActual - totalProjected) / totalProjected) * 100) : 0;
   return {
@@ -41,7 +70,7 @@ export function computeBudgetAnalysis(items: any[]) {
     totalActual,
     variance,
     totalCategories: items.length,
-    categories: items.map((b: any) => ({
+    categories: items.map((b) => ({
       category: b.category,
       projected: b.estimated_cost,
       actual: null,
@@ -50,15 +79,15 @@ export function computeBudgetAnalysis(items: any[]) {
   };
 }
 
-export function computeProcurementCompare(quotes: any[]) {
-  const priced = quotes.map((q: any) => ({
+export function computeProcurementCompare(quotes: QuoteItem[]) {
+  const priced = quotes.map((q) => ({
     ...q,
     price: Number(q.quote_amount) || 0,
   }));
-  const lowestPrice = priced.length > 0 ? Math.min(...priced.map((q: any) => q.price)) : 0;
-  const highestPrice = priced.length > 0 ? Math.max(...priced.map((q: any) => q.price)) : 0;
+  const lowestPrice = priced.length > 0 ? Math.min(...priced.map((q) => q.price)) : 0;
+  const highestPrice = priced.length > 0 ? Math.max(...priced.map((q) => q.price)) : 0;
   return {
-    quotes: priced.map((q: any) => ({
+    quotes: priced.map((q) => ({
       ...q,
       savings: q.price ? Math.round((1 - q.price / highestPrice) * 100) : 0,
       isLowest: q.price === lowestPrice,
@@ -67,17 +96,16 @@ export function computeProcurementCompare(quotes: any[]) {
     highestPrice,
     averagePrice:
       priced.length > 0
-        ? Math.round((priced.reduce((s: number, q: any) => s + q.price, 0) / priced.length) * 100) /
-          100
+        ? Math.round((priced.reduce((s: number, q) => s + q.price, 0) / priced.length) * 100) / 100
         : 0,
   };
 }
 
-export function computeTimeEntriesSummary(items: any[], days: number) {
-  const totalHours = items.reduce((s: number, t: any) => s + Number(t.hours || 0), 0);
+export function computeTimeEntriesSummary(items: TimeEntry[], days: number) {
+  const totalHours = items.reduce((s: number, t) => s + Number(t.hours || 0), 0);
   const billableHours = items
-    .filter((t: any) => t.billable)
-    .reduce((s: number, t: any) => s + Number(t.hours || 0), 0);
+    .filter((t) => t.billable)
+    .reduce((s: number, t) => s + Number(t.hours || 0), 0);
   const byDate: Record<string, { hours: number; billable: number; entries: number }> = {};
   for (const t of items) {
     const key = t.work_date ? String(t.work_date).slice(0, 10) : "unknown";

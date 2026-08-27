@@ -988,7 +988,7 @@ export async function updateEndpoint(id: string, formData: FormData) {
 export async function updateFileRequest(id: string, formData: FormData) {
   const api = getApiClient();
   try {
-    await (api.fileRequests as any).update(id, {
+    await api.fileRequests.update(id, {
       title: String(formData.get("title") || ""),
       description: String(formData.get("description") || ""),
       token: String(formData.get("token") || ""),

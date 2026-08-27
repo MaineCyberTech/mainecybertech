@@ -49,7 +49,16 @@ export class FileRequestsApi {
 
   update(
     id: string,
-    data: { title?: string; description?: string | null; status?: string; visibility?: string },
+    data: {
+      title?: string;
+      description?: string | null;
+      status?: string;
+      visibility?: string;
+      token?: string;
+      expiresAt?: string;
+      maxFileSizeMb?: number;
+      maxFiles?: number;
+    },
   ) {
     return this.client.patch<FileRequest>(`/api/v1/file-requests/${id}`, data);
   }

@@ -48,7 +48,7 @@ async function resolveLandingRedirect(accessToken: string): Promise<string> {
         userId: me.userId,
         status: "approved",
       });
-      const isAdmin = (memberships as any[]).some((m) => {
+      const isAdmin = memberships.some((m) => {
         const role = m.roles;
         return role && isPlatformAdminKey(role.key);
       });

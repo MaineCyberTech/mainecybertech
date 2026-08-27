@@ -88,7 +88,7 @@ export async function deleteTicketAction(ticketId: string, formData: FormData) {
     }
 
     const api = getApiClient();
-    await api.tickets.update(ticketId, { status: "closed" } as any);
+    await api.tickets.update(ticketId, { status: "closed" });
 
     revalidatePath(`/admin/tickets/${ticketId}`);
     revalidatePath("/admin/tickets");
@@ -110,7 +110,7 @@ export async function inlineUpdateAction(ticketId: string, formData: FormData) {
     if (status) updates.status = status;
     if (priority) updates.priority = priority;
     if (Object.keys(updates).length === 0) return { ok: true as const };
-    await api.tickets.update(ticketId, updates as any);
+    await api.tickets.update(ticketId, updates);
     revalidatePath(`/admin/tickets/${ticketId}`);
     redirect(`/admin/tickets/${ticketId}`);
   } catch (error) {
@@ -123,7 +123,7 @@ export async function restoreTicketAction(ticketId: string) {
   try {
     await requireAdminAccess();
     const api = getApiClient();
-    await api.tickets.update(ticketId, { status: "new" } as any);
+    await api.tickets.update(ticketId, { status: "new" });
 
     revalidatePath(`/admin/tickets/${ticketId}`);
     revalidatePath("/admin/tickets");

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { requirePermission } from "@/lib/auth/permissions";
+import type { AuditLog, Organization, Profile } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Audit Log - Admin - Maine CyberTech" };
@@ -79,16 +80,16 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
   const currentPage = logsResult.page ?? 1;
   const totalPages = Math.ceil(total / (logsResult.limit ?? 50));
 
-  const orgIds = [...new Set(logs.map((l: any) => l.organization_id).filter(Boolean))] as string[];
-  const userIds = [...new Set(logs.map((l: any) => l.actor_user_id).filter(Boolean))] as string[];
+  const orgIds = [...new Set(logs.map((l) => l.organization_id).filter(Boolean))] as string[];
+  const userIds = [...new Set(logs.map((l) => l.actor_user_id).filter(Boolean))] as string[];
 
   const [organizations, profiles] = await Promise.all([
-    orgIds.length > 0 ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as any[]),
-    userIds.length > 0 ? api.profiles.list({ ids: userIds }) : Promise.resolve([] as any[]),
+    orgIds.length > 0 ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as Organization[]),
+    userIds.length > 0 ? api.profiles.list({ ids: userIds }) : Promise.resolve([] as Profile[]),
   ]);
 
-  const orgMap = new Map(organizations.map((o: any) => [o.id, o]));
-  const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
+  const orgMap = new Map(organizations.map((o) => [o.id, o]));
+  const profileMap = new Map(profiles.map((p) => [p.id, p]));
 
   function actionBadge(action: string) {
     if (action.includes("create") || action.includes("invite") || action.includes("add")) {
@@ -198,7 +199,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
         </h2>
 
         {logs.length > 0 ? (
-          logs.map((log: any) => {
+          logs.map((log: AuditLog) => {
             const org = log.organization_id ? orgMap.get(log.organization_id) : null;
             const actor = log.actor_user_id ? profileMap.get(log.actor_user_id) : null;
             return (

@@ -16,6 +16,8 @@ type NotificationItem = {
   created_at: string;
 };
 
+type NotificationPreference = { module_key?: string; channel?: string; enabled?: boolean };
+
 type Props = {
   basePath: string;
   initialUnread?: number;
@@ -56,7 +58,8 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
 
   const playNotificationChime = useCallback(() => {
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = new (window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -116,11 +119,13 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     setLoadingPrefs(true);
     try {
       const result = await getClientApi().notifications.listPreferences();
-      const rows: any[] = Array.isArray(result) ? result : ((result as any)?.preferences ?? []);
+      const rows: NotificationPreference[] = Array.isArray(result)
+        ? result
+        : ((result as { preferences?: NotificationPreference[] }).preferences ?? []);
       const map: Record<string, boolean> = {};
       for (const m of MODULES) {
-        const row = rows.find((r: any) => r.module_key === m && r.channel === "email");
-        map[m] = row ? row.enabled : true;
+        const row = rows.find((r) => r.module_key === m && r.channel === "email");
+        map[m] = row ? (row.enabled ?? true) : true;
       }
       setPrefs(map);
     } catch {
