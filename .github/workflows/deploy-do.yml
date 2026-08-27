@@ -332,7 +332,7 @@ jobs:
             cd /opt/mct-portal
             docker compose -p mct-portal down --remove-orphans || true
             docker rm -f mct-portal-caddy-1 2>/dev/null || true
-            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} REDIS_PASSWORD=${{ needs.setup.outputs.redis_password }} docker compose -p mct-portal up -d --remove-orphans
+            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} REDIS_PASSWORD=$REDIS_PASSWORD docker compose -p mct-portal up -d --remove-orphans
             sleep 15
             echo "=== Docker compose ps ==="
             docker compose -p mct-portal ps --format 'table {{.Name}}\t{{.Status}}\t{{.Ports}}'
