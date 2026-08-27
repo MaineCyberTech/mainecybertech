@@ -285,7 +285,7 @@ jobs:
             chmod 600 /opt/mct-portal/.env
             echo "Droplet ready"
 
-      - name: Deploy containers
+- name: Deploy containers
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
         with:
           host: ${{ needs.resolve-ip.outputs.droplet_ip }}
@@ -293,7 +293,9 @@ jobs:
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           command_timeout: 45m
           envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY,REDIS_PASSWORD
-          script: |
+        env:
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+        script: |
             set -e
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             mkdir -p /opt/mct-portal/certs
