@@ -51,7 +51,13 @@ function fileHashes() {
   const files = listFiles().sort();
   const entries = {};
   for (const rel of files) {
-    entries[rel] = sha256(fs.readFileSync(path.join(PROMPTS_DIR, rel)));
+    // Normalize line endings (CRLF -> LF) before hashing. Git's `* text=auto`
+    // checks files out with platform-native EOLs (CRLF on Windows, LF on Linux),
+    // so a byte-exact hash would spuriously fail the cross-platform CI gate.
+    // Normalizing preserves detection of genuine content changes.
+    const raw = fs.readFileSync(path.join(PROMPTS_DIR, rel));
+    const normalized = Buffer.from(raw.toString("utf8").replace(/\r\n/g, "\n"));
+    entries[rel] = sha256(normalized);
   }
   return entries;
 }
