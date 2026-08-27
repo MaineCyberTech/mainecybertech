@@ -84,10 +84,11 @@ pnpm e2e                     # Playwright E2E
 | Worker task files        | 13    | Registered in `apps/worker/src/main.ts` |
 | Web pages                | 301   | Admin 196, Portal 77, Public 26, Root 2 |
 | Web components           | 86    | `apps/web/components/`                  |
-| SQL migrations           | 97    | `supabase/migrations/`                  |
+| SQL migrations           | 99    | `supabase/migrations/` (incl. 5302133 impersonation_log, 5302134 store catalog, 5302135 profiles encrypted_pii) |
 | Seed files               | 9     | `supabase/seeds/`                       |
 | GitHub Actions workflows | 13    | `.github/workflows/`                    |
-| AI prompt files          | 787   | `prompts/` (6 packs)                    |
+| AI prompt files          | 787   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md` |
+| Build/dev/utility scripts | 8     | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `seed-store.ts`, `generate-db-types.js`, etc.) |
 
 ## Database Types (2026-08-26)
 
@@ -317,10 +318,10 @@ cross-tenant access is now recorded with actor/role/org/IP/reason. See `apps/api
 | 17  | Default `NEXT_PUBLIC_API_URL` build arg points to production                                                    | Comprehensive    | `apps/web/Dockerfile`                                                                                     | **FIXED** 2026-08-26                                                                                                                                                          |
 | 18  | **Logger factory not implemented** — singleton pino instance only; no `createLogger()` or module-scoped factory | Repo Audit       | `apps/api/src/lib/logger.ts`                                                                              | **FIXED** 2026-08-26                                                                                                                                                          |
 | 19  | **Circuit breaker Prometheus metrics not wired** — `circuitBreakerStatus` gauge exists but never called         | Hardening        | `apps/api/src/lib/metrics.ts:86-91`, `apps/api/src/lib/circuit-breaker.ts`                                | **FIXED** 2026-08-26                                                                                                                                                          |
-| 20  | **Admin onboarding wizard missing** — new orgs created via inline form only                                     | Portal Alignment | `apps/web/app/(admin)/admin/organizations/`                                                               | **OPEN**                                                                                                                                                                      |
+| 20  | **Admin onboarding wizard missing** — new orgs created via inline form only                                     | Portal Alignment | `apps/web/app/(admin)/admin/organizations/`                                                               | **FIXED** 2026-08-27 — `OrganizationOnboardingWizard.tsx` (3-step) + `/admin/organizations/new` page; SDK `organizations.onboard()` + additive `POST /api/v1/organizations/onboard` (requireAdmin); "Onboard" link on orgs list |
 | 21  | **Admin list pagination missing** — most list endpoints return all rows                                         | Portal Alignment | `apps/web/app/(admin)/admin/organizations/page.tsx`                                                       | **PARTIAL** 2026-08-27 — reusable `apps/api/src/lib/pagination.ts` added; most API list endpoints already paginate (`tickets`, `projects`, `audit`, `assets`, `billing`, `dmarc-coach`, `approvals`, `notifications`, etc.) |
 | 22  | **Store catalog is static JSON** — API wraps same JSON files; no DB-backed product CRUD                         | Webstore Pack    | `apps/api/src/lib/store-catalog.ts`                                                                       | **PARTIAL** 2026-08-27 — `store_products`/`store_categories` tables (migration 5302134) + admin CRUD API + JSON fallback; seed via `scripts/seed-store.ts`. 37 admin UI pages remain read-only (separate UI effort) |
-| 23  | **37/39 admin store pages are read-only** — load from static JSON                                               | Webstore Pack    | `apps/web/app/(admin)/admin/store/`                                                                       | **OPEN** — depends on store UI buildout (data layer done, see #22)                                                                          |
+| 23  | **37/39 admin store pages are read-only** — load from static JSON                                               | Webstore Pack    | `apps/web/app/(admin)/admin/store/`                                                                       | **OPEN** — store data layer + CRUD API done (#22); 37 admin UI pages remain read-only (separate UI buildout) |
 | 24  | **8+ non-functional buttons** — store admin buttons with no onClick handlers                                    | Webstore Pack    | `apps/web/app/(admin)/admin/store/faqs/page.tsx:31`                                                       | **FIXED** 2026-08-26 — 5 buttons disabled with "Coming soon" title                                                                                                            |
 | 25  | **Zero admin store page tests** — 1 API test for catalog reads only                                             | Webstore Pack    | `apps/api/src/__tests__/store-catalog.test.ts`                                                            | **FIXED** 2026-08-26 — 12 tests across 5 store pages                                                                                                                          |
 
@@ -328,13 +329,13 @@ cross-tenant access is now recorded with actor/role/org/IP/reason. See `apps/api
 
 | #   | Issue                                                                                    | Source         | Status                                                                             |
 | --- | ---------------------------------------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------- |
-| 1   | ~30 admin list pages copy-paste boilerplate — could use shared `AdminListPage` component | Comprehensive  | **OPEN**                                                                           |
-| 2   | `final.ts` is a grab-bag of unrelated stats endpoints (471 lines)                        | Comprehensive  | **OPEN**                                                                           |
+| 1   | ~30 admin list pages copy-paste boilerplate — could use shared `AdminListPage` component | Comprehensive  | **FIXED** 2026-08-27 — `components/admin/AdminListPage.tsx` + `AdminListPageSearch.tsx` (generic, tested); refactored webhooks/roles/approval-requests pages to use it (markup preserved) |
+| 2   | `final.ts` is a grab-bag of unrelated stats endpoints (471 lines)                        | Comprehensive  | **FIXED** 2026-08-27 — split into `routes/final/{crud,sharepoint,backups,budgets,procurement,dns-changes,time-entries,stats-helpers}.ts`; `final.ts` thin aggregator; all endpoints/order preserved + helper unit tests |
 | 3   | E2E default credentials in docker-compose (`password=1`)                                 | Comprehensive  | **FALSE POSITIVE** — fallback in e2e/global.setup.ts only; env var overrides in CI |
 | 4   | No ESLint in pre-commit (only secret scanner + Prettier)                                 | Comprehensive  | **FIXED** 2026-08-26                                                               |
 | 5   | Web container memory limit 256MB — may OOM on complex pages                              | Comprehensive  | **FIXED** 2026-08-26 (increased to 512MB)                                          |
 | 6   | Terraform prod apply has no required E2E/test dependency before apply                    | Hardening (P3) | **FIXED** 2026-08-26                                                               |
-| 7   | PII fields in profiles table without encryption at rest                                  | Hardening (P2) | **PARTIAL** 2026-08-27 — `apps/api/src/lib/field-encryption.ts` (AES-256-GCM) implemented + tested; applying to `profiles` needs a migration + backfill (follow-up) |
+| 7   | PII fields in profiles table without encryption at rest                                  | Hardening (P2) | **FIXED** 2026-08-27 — `field-encryption.ts` (AES-256-GCM) + `lib/profile-pii.ts` (full_name, email, phone, title) + migration 5302135 (`encrypted_pii jsonb` on `profiles` + RLS); PATCH writes encrypted copy; plaintext responses unchanged (non-breaking). Backfill of existing rows deferred |
 
 ## Prompt Pack Verification (2026-08-26)
 
@@ -451,12 +452,15 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 - **P2-9 SSE:** server `/notifications/stream` (Supabase realtime) + client `EventSource` already existed; fixed `NotificationBell.tsx` handler so server-emitted notification objects (not just arrays) trigger refresh.
 - **P2-22/23 store catalog DB-backed:** `store_products`/`store_categories` tables (migration 5302134) + `scripts/seed-store.ts` + admin CRUD API in `routes/store.ts` + DB-first `lib/store-catalog.ts` with JSON fallback. (37 admin UI pages remain read-only — separate UI effort.)
 - **P2-21 pagination:** reusable `apps/api/src/lib/pagination.ts`; most API list endpoints already paginate.
-- **P3-7 PII encryption:** `apps/api/src/lib/field-encryption.ts` (AES-256-GCM) implemented + tested. Applying to `profiles` table needs a migration + backfill (deferred to avoid breaking live API).
+- **P3-7 PII encryption:** applied to `profiles` — `apps/api/src/lib/field-encryption.ts` (AES-256-GCM) + `apps/api/src/lib/profile-pii.ts` (full_name, email, phone, title) + migration 5302135 (`encrypted_pii jsonb` on `profiles` + RLS); PATCH writes encrypted copy; plaintext responses unchanged (non-breaking). Backfill of existing rows deferred.
+- **P2-20 admin onboarding wizard:** `components/admin/OrganizationOnboardingWizard.tsx` (3-step) + `app/(admin)/admin/organizations/new/page.tsx` + tests; SDK `MCTClient.organizations.onboard()` + additive `POST /api/v1/organizations/onboard` (requireAdmin) creating org + admin membership; "Onboard" link on orgs list.
+- **P3-1 shared AdminListPage:** `components/admin/AdminListPage.tsx` + `AdminListPageSearch.tsx` (generic, tested); refactored webhooks/roles/approval-requests pages (markup/classes preserved).
+- **P3-2 refactor final.ts:** split into `routes/final/{crud,sharepoint,backups,budgets,procurement,dns-changes,time-entries,stats-helpers}.ts`; `final.ts` thin aggregator preserving all endpoints/order; added pure-helper unit tests.
 
 ### Features
 
 - 301 pages (196 admin, 77 portal, 26 public)
-- 55 API route files covering ~90 module areas
+- 55+ API route files (incl. `routes/final/` submodule split) covering ~90 module areas
 - 13 worker task handlers
 - RBAC with 13 roles, 90-module permission matrix
 - Multi-org switching (`X-Active-Org` header + cookie)
