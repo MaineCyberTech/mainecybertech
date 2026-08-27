@@ -7,6 +7,10 @@ import { isShuttingDown, drainInFlight } from "./shutdown";
 let bullWorker: BullWorker | null = null;
 
 export async function runBullMQWorker(): Promise<void> {
+  if (!env.REDIS_URL) {
+    logger.warn("REDIS_URL not configured — BullMQ worker cannot start");
+    return;
+  }
   const connection = { url: resolveRedisUrl(env.REDIS_URL, env.REDIS_PASSWORD) };
   const concurrency = env.WORKER_CONCURRENCY;
 

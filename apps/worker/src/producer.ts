@@ -16,7 +16,8 @@ function isTaskQueueEnabled(): boolean {
   return env.NODE_ENV === "production";
 }
 
-function buildConnection(): { url: string; password?: string } {
+function buildConnection(): { url: string; password?: string } | null {
+  if (!env.REDIS_URL) return null;
   const connection: { url: string; password?: string } = { url: env.REDIS_URL };
   if (env.REDIS_PASSWORD) {
     connection.password = env.REDIS_PASSWORD;
@@ -29,10 +30,16 @@ function getQueue(): Queue | null {
   if (queueAttempted) return null;
   if (!isTaskQueueEnabled()) return null;
 
+  const connection = buildConnection();
+  if (!connection) {
+    logger.debug("REDIS_URL not configured — task queue unavailable");
+    return null;
+  }
+
   queueAttempted = true;
   try {
     queue = new Queue(TASK_QUEUE_NAME, {
-      connection: buildConnection(),
+      connection,
       defaultJobOptions: {
         removeOnComplete: 100,
         removeOnFail: 500,

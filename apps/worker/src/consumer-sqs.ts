@@ -86,8 +86,14 @@ export async function runWorkerTasks(): Promise<void> {
     return;
   }
 
+  if (backend === "inline") {
+    logger.info("Running in inline mode — tasks execute directly without queue");
+    await new Promise(() => {});
+    return;
+  }
+
   if (backend !== "sqs") {
-    logger.warn(`Unknown QUEUE_BACKEND "${backend}", defaulting to sqs`);
+    logger.warn(`Unknown QUEUE_BACKEND "${backend}", defaulting to inline`);
   }
 
   queueUrl = env.SQS_QUEUE_URL!;
