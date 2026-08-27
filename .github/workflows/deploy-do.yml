@@ -292,9 +292,7 @@ jobs:
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           command_timeout: 45m
-          envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY,REDIS_PASSWORD
-        env:
-          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY
         script: |
             set -e
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
@@ -302,6 +300,8 @@ jobs:
             printf '%s\n' "$CF_ORIGIN_CERT" > /opt/mct-portal/certs/fullchain.pem
             printf '%s\n' "$CF_ORIGIN_KEY" > /opt/mct-portal/certs/privkey.pem
             chmod 600 /opt/mct-portal/certs/privkey.pem
+            # Ensure REDIS_PASSWORD is in .env for docker-compose
+            echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> /opt/mct-portal/.env
             # NOTE: no `docker image prune` here — old mct-* images are still in
             # use until compose down/up, so pruning pre-pull would remove nothing.
             # Retry pulls — the droplet's connection to GHCR can reset mid-pull.
@@ -334,7 +334,7 @@ jobs:
             cd /opt/mct-portal
             docker compose -p mct-portal down --remove-orphans || true
             docker rm -f mct-portal-caddy-1 2>/dev/null || true
-            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} REDIS_PASSWORD=$REDIS_PASSWORD docker compose -p mct-portal up -d --remove-orphans
+            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans
             sleep 15
             echo "=== Docker compose ps ==="
             docker compose -p mct-portal ps --format 'table {{.Name}}\t{{.Status}}\t{{.Ports}}'
@@ -386,4 +386,5 @@ jobs:
             echo "Attempt $i/15: $CODE"; sleep 4
           done
           [ -z "$web_ok" ] && { echo "Web health check failed"; exit 1; }
-          echo "--- ALL HEALTH CHECKS PASSED ---"
+          echo "--- ALL HEALTH CHECKS PASSED ---" 
+ 
