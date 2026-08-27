@@ -18,7 +18,12 @@ jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
 }));
 
+jest.mock("../services/impersonation", () => ({
+  logImpersonation: jest.fn(),
+}));
+
 import { getSupabaseAdmin } from "../services/supabase";
+import { logImpersonation } from "../services/impersonation";
 import { requireOrgAccess, requireOrgAccessByParam } from "../middleware/org-access";
 
 function mockReq(
@@ -357,6 +362,73 @@ describe("requireOrgAccess middleware", () => {
       await requireOrgAccess(mockReq({}), mockRes(), next);
 
       expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 }));
+    });
+  });
+
+  describe("impersonation logging", () => {
+    beforeEach(() => {
+      (logImpersonation as jest.Mock).mockClear();
+    });
+
+    it("logs impersonation when a platform admin enters a tenant they are not a member of", async () => {
+      mockSupabase({
+        membershipRow: null,
+        allMemberships: [{ id: "m1", roles: { id: "r1", key: "super_admin" } }],
+      });
+      const next = jest.fn();
+
+      await requireOrgAccess(
+        mockReq({ userId: "user-1", orgId: "00000000-0000-0000-0000-000000000001" }),
+        mockRes(),
+        next,
+      );
+
+      expect(next).toHaveBeenCalledWith();
+      expect(logImpersonation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: "user-1",
+          actorRoleKey: "super_admin",
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          reason: "platform_admin_cross_tenant_access",
+        }),
+      );
+    });
+
+    it("does NOT log impersonation when the user is a direct member", async () => {
+      mockSupabase({
+        membershipRow: { id: "m1", roles: { id: "r1", key: "client_user" } },
+      });
+      const next = jest.fn();
+
+      await requireOrgAccess(
+        mockReq({ userId: "user-1", orgId: "00000000-0000-0000-0000-000000000001" }),
+        mockRes(),
+        next,
+      );
+
+      expect(next).toHaveBeenCalledWith();
+      expect(logImpersonation).not.toHaveBeenCalled();
+    });
+
+    it("logs impersonation on active-org cross-tenant switch", async () => {
+      mockSupabase({
+        membershipRow: null,
+        allMemberships: [{ id: "m1", roles: { id: "r1", key: "admin" } }],
+      });
+      const next = jest.fn();
+      const req = mockReq({ userId: "user-1" });
+      req.headers = { "x-active-org": "00000000-0000-0000-0000-000000000099" };
+
+      await requireOrgAccess(req, mockRes(), next);
+
+      expect(next).toHaveBeenCalledWith();
+      expect(logImpersonation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: "user-1",
+          organizationId: "00000000-0000-0000-0000-000000000099",
+          reason: "active_org_switch_cross_tenant",
+        }),
+      );
     });
   });
 });

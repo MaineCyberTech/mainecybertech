@@ -1,5 +1,6 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
+import { logImpersonation } from "../services/impersonation";
 import { AppError } from "../types";
 import { isPlatformAdminKey } from "../lib/roles";
 
@@ -9,7 +10,11 @@ function extractOrgId(req: Request): string | null {
   return null;
 }
 
-async function checkOrgAccess(userId: string, orgId: string): Promise<boolean> {
+async function checkOrgAccess(
+  userId: string,
+  orgId: string,
+  req?: Request,
+): Promise<boolean> {
   const supabase = getSupabaseAdmin();
 
   const { data: membership } = await supabase
@@ -29,10 +34,22 @@ async function checkOrgAccess(userId: string, orgId: string): Promise<boolean> {
     .eq("status", "approved");
 
   if (allMemberships && allMemberships.length > 0) {
-    const isAdmin = allMemberships.some((row) =>
-      isPlatformAdminKey((row.roles as unknown as { key: string }).key),
-    );
-    if (isAdmin) return true;
+    const adminRole = allMemberships.find((row) => {
+      const key = (row.roles as unknown as { key?: string } | null)?.key;
+      return isPlatformAdminKey(key);
+    });
+    if (adminRole) {
+      // Platform admin entering a tenant they are NOT a member of => impersonation
+      const roleKey = (adminRole.roles as unknown as { key: string }).key;
+      void logImpersonation({
+        actorUserId: userId,
+        actorRoleKey: roleKey,
+        organizationId: orgId,
+        reason: "platform_admin_cross_tenant_access",
+        req: req ?? null,
+      });
+      return true;
+    }
   }
 
   return false;
@@ -60,7 +77,7 @@ function extractActiveOrgId(req: Request): string | null {
 async function resolveDefaultOrgId(
   userId: string,
   activeOrgId: string | null,
-): Promise<{ orgId: string | null; platformAdmin: boolean }> {
+): Promise<{ orgId: string | null; platformAdmin: boolean; impersonation: boolean }> {
   const supabase = getSupabaseAdmin();
 
   if (activeOrgId) {
@@ -73,11 +90,12 @@ async function resolveDefaultOrgId(
       .limit(1);
 
     if (active && active.length > 0) {
-      return { orgId: active[0].organization_id as string, platformAdmin: false };
+      return { orgId: active[0].organization_id as string, platformAdmin: false, impersonation: false };
     }
 
     // Platform admins (admin/super_admin in any org) can switch into any
     // tenant — honor the active org even without a membership there.
+    // This is a cross-tenant access (impersonation).
     const { data: allMemberships } = await supabase
       .from("memberships")
       .select("id, roles!inner(id, key)")
@@ -85,11 +103,13 @@ async function resolveDefaultOrgId(
       .eq("status", "approved");
 
     if (allMemberships && allMemberships.length > 0) {
-      const isPlatformAdmin = allMemberships.some((row) => {
+      const adminRole = allMemberships.find((row) => {
         const key = (row.roles as unknown as { key?: string } | null)?.key;
         return isPlatformAdminKey(key);
       });
-      if (isPlatformAdmin) return { orgId: activeOrgId, platformAdmin: true };
+      if (adminRole) {
+        return { orgId: activeOrgId, platformAdmin: true, impersonation: true };
+      }
     }
   }
 
@@ -102,7 +122,7 @@ async function resolveDefaultOrgId(
     .limit(50);
 
   if (!memberships || memberships.length === 0) {
-    return { orgId: null, platformAdmin: false };
+    return { orgId: null, platformAdmin: false, impersonation: false };
   }
 
   const isPlatformAdmin = memberships.some((row) => {
@@ -112,9 +132,9 @@ async function resolveDefaultOrgId(
 
   // Platform admins are org-agnostic: without an explicit org they see
   // all tenants, so do NOT pin them to the first membership's org.
-  if (isPlatformAdmin) return { orgId: null, platformAdmin: true };
+  if (isPlatformAdmin) return { orgId: null, platformAdmin: true, impersonation: false };
 
-  return { orgId: memberships[0].organization_id as string, platformAdmin: false };
+  return { orgId: memberships[0].organization_id as string, platformAdmin: false, impersonation: false };
 }
 
 export async function requireOrgAccess(req: Request, _res: Response, next: NextFunction) {
@@ -128,10 +148,22 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
     const orgId = extractOrgId(req);
     if (!orgId) {
       const activeOrgId = extractActiveOrgId(req);
-      const { orgId: defaultOrgId, platformAdmin } = await resolveDefaultOrgId(
+      const { orgId: defaultOrgId, platformAdmin, impersonation } = await resolveDefaultOrgId(
         req.authUser.userId,
         activeOrgId,
       );
+
+      if (impersonation && defaultOrgId) {
+        // Platform admin entering a tenant via active-org switch without a
+        // membership there => impersonation.
+        void logImpersonation({
+          actorUserId: req.authUser.userId,
+          actorRoleKey: "platform-admin",
+          organizationId: defaultOrgId,
+          reason: "active_org_switch_cross_tenant",
+          req,
+        });
+      }
 
       if (!defaultOrgId && !platformAdmin) {
         throw new AppError("FORBIDDEN", "No approved organization membership found", 403);
@@ -147,7 +179,7 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
       return;
     }
 
-    const hasAccess = await checkOrgAccess(req.authUser.userId, orgId);
+    const hasAccess = await checkOrgAccess(req.authUser.userId, orgId, req);
     if (!hasAccess) {
       throw new AppError("FORBIDDEN", "You do not have access to this organization", 403);
     }
@@ -169,7 +201,7 @@ export async function requireOrgAccessByParam(req: Request, _res: Response, next
       throw new AppError("VALIDATION", "Organization ID is required", 400);
     }
 
-    const hasAccess = await checkOrgAccess(req.authUser.userId, orgId);
+    const hasAccess = await checkOrgAccess(req.authUser.userId, orgId, req);
     if (!hasAccess) {
       throw new AppError("FORBIDDEN", "You do not have access to this organization", 403);
     }

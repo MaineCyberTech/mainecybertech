@@ -1,4 +1,4 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
@@ -180,7 +180,7 @@ router.delete("/promotions/:id", requireAuth, requireAdmin, async (req, res, nex
     await logAuditEvent({
       action: "store.promotion.delete",
       entityType: "store_promotion",
-      entityId: req.params.id as string,
+      entityId: String(req.params.id) as string,
     });
 
     res.json(success({ deleted: true }));
@@ -243,33 +243,43 @@ router.get("/quotes", requireAuth, requireAdmin, async (_req, res, next) => {
 });
 
 // GET /api/v1/store/products - list products (public)
-router.get("/products", (req, res) => {
-  const category = String(req.query.category ?? "");
-  const allProducts = getProducts();
-  const result = category
-    ? allProducts.filter((p) => p.category === category || p.categoryId === category)
-    : allProducts;
-  res.json(success(result));
+router.get("/products", async (req, res, next) => {
+  try {
+    const category = String(req.query.category ?? "");
+    const allProducts = await getProducts();
+    const result = category
+      ? allProducts.filter((p) => p.category === category || p.categoryId === category)
+      : allProducts;
+    res.json(success(result));
+  } catch (err) {
+    next(err);
+  }
 });
 
 // GET /api/v1/store/products/:slug - product detail (public)
-router.get("/products/:slug", (req, res) => {
-  const product = getProductBySlug(req.params.slug);
-  if (!product) {
-    res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
-    return;
+router.get("/products/:slug", async (req, res, next) => {
+  try {
+    const product = await getProductBySlug(req.params.slug);
+    if (!product) {
+      res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
+      return;
+    }
+    res.json(success(product));
+  } catch (err) {
+    next(err);
   }
-  res.json(success(product));
 });
 
 // GET /api/v1/store/categories - list categories (public)
-router.get("/categories", (req, res, next) => {
+router.get("/categories", async (req, res, next) => {
   try {
-    const cats = getCategories();
-    const result = cats.map((c) => ({
-      ...c,
-      productCount: getProductsByCategory(c.slug).length,
-    }));
+    const cats = await getCategories();
+    const result = await Promise.all(
+      cats.map(async (c) => ({
+        ...c,
+        productCount: (await getProductsByCategory(c.slug)).length,
+      })),
+    );
     res.json(success(result));
   } catch (err) {
     next(err);
@@ -277,17 +287,262 @@ router.get("/categories", (req, res, next) => {
 });
 
 // GET /api/v1/store/categories/:slug - category detail with products (public)
-router.get("/categories/:slug", (req, res, next) => {
+router.get("/categories/:slug", async (req, res, next) => {
   try {
-    const category = getCategoryBySlug(req.params.slug);
+    const category = await getCategoryBySlug(req.params.slug);
     if (!category) {
       res.status(404).json(failure("NOT_FOUND", "Category not found", 404));
       return;
     }
-    const products = getProductsByCategory(category.slug);
+    const products = await getProductsByCategory(category.slug);
     res.json(success({ ...category, products }));
   } catch (err) {
     next(err);
+  }
+});
+
+// ===== Admin CRUD for store catalog (P2-22/23) =====
+// The catalog is now DB-backed (store_products / store_categories). These
+// endpoints let admins manage it. Guarded by requireAdmin.
+const productUpsertSchema = z.object({
+  id: z.string().min(1).optional(),
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  categoryId: z.string().nullable().optional(),
+  category: z.string().optional(),
+  type: z.string().optional(),
+  display: z.boolean().optional(),
+  status: z.string().optional(),
+  priceRange: z.string().optional(),
+  pricingModel: z.string().optional(),
+  purchaseMode: z.string().optional(),
+  summary: z.string().optional(),
+  marketingHeadline: z.string().optional(),
+  marketingCopy: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  attributes: z.record(z.string(), z.unknown()).optional(),
+});
+
+const categoryUpsertSchema = z.object({
+  id: z.string().min(1).optional(),
+  name: z.string().min(1),
+  slug: z.string().min(1),
+  description: z.string().optional(),
+  productIds: z.array(z.string()).optional(),
+  count: z.number().int().optional(),
+});
+
+// POST /api/v1/store/products - create product (admin)
+router.post("/products", requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = productUpsertSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const row = {
+      id: parsed.id ?? parsed.slug,
+      slug: parsed.slug,
+      name: parsed.name,
+      category_id: parsed.categoryId ?? null,
+      category: parsed.category ?? "",
+      type: parsed.type ?? "service",
+      display: parsed.display ?? true,
+      status: parsed.status ?? "draft",
+      price_range: parsed.priceRange ?? "",
+      pricing_model: parsed.pricingModel ?? "",
+      purchase_mode: parsed.purchaseMode ?? "",
+      summary: parsed.summary ?? "",
+      marketing_headline: parsed.marketingHeadline ?? "",
+      marketing_copy: parsed.marketingCopy ?? "",
+      tags: parsed.tags ?? [],
+      attributes: parsed.attributes ?? {},
+    };
+    const { data, error } = await supabase
+      .from("store_products")
+      .upsert(row, { onConflict: "id" })
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    await logAuditEvent({
+      actorUserId: req.authUser?.userId,
+      action: "store_product.create",
+      entityType: "store_product",
+      entityId: data.id,
+      metadata: { slug: parsed.slug },
+    });
+    res.status(201).json(success(data));
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).json(failure("VALIDATION", error.message, 400));
+      return;
+    }
+    next(error);
+  }
+});
+
+// PATCH /api/v1/store/products/:id - update product (admin)
+router.patch("/products/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = productUpsertSchema.partial().parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const existing = await supabase
+      .from("store_products")
+      .select("id")
+      .eq("id", req.params.id)
+      .maybeSingle();
+    if (!existing.data) {
+      res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
+      return;
+    }
+    const row: Record<string, unknown> = {};
+    if (parsed.slug !== undefined) row.slug = parsed.slug;
+    if (parsed.name !== undefined) row.name = parsed.name;
+    if (parsed.categoryId !== undefined) row.category_id = parsed.categoryId;
+    if (parsed.category !== undefined) row.category = parsed.category;
+    if (parsed.type !== undefined) row.type = parsed.type;
+    if (parsed.display !== undefined) row.display = parsed.display;
+    if (parsed.status !== undefined) row.status = parsed.status;
+    if (parsed.priceRange !== undefined) row.price_range = parsed.priceRange;
+    if (parsed.pricingModel !== undefined) row.pricing_model = parsed.pricingModel;
+    if (parsed.purchaseMode !== undefined) row.purchase_mode = parsed.purchaseMode;
+    if (parsed.summary !== undefined) row.summary = parsed.summary;
+    if (parsed.marketingHeadline !== undefined) row.marketing_headline = parsed.marketingHeadline;
+    if (parsed.marketingCopy !== undefined) row.marketing_copy = parsed.marketingCopy;
+    if (parsed.tags !== undefined) row.tags = parsed.tags;
+    if (parsed.attributes !== undefined) row.attributes = parsed.attributes;
+    const { data, error } = await supabase
+      .from("store_products")
+      .update(row)
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    await logAuditEvent({
+      actorUserId: req.authUser?.userId,
+      action: "store_product.update",
+      entityType: "store_product",
+      entityId: String(req.params.id),
+    });
+    res.json(success(data));
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).json(failure("VALIDATION", error.message, 400));
+      return;
+    }
+    next(error);
+  }
+});
+
+// DELETE /api/v1/store/products/:id - delete product (admin)
+router.delete("/products/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase.from("store_products").delete().eq("id", req.params.id);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    await logAuditEvent({
+      actorUserId: req.authUser?.userId,
+      action: "store_product.delete",
+      entityType: "store_product",
+      entityId: String(req.params.id),
+    });
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/store/categories - create category (admin)
+router.post("/categories", requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = categoryUpsertSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const row = {
+      id: parsed.id ?? parsed.slug,
+      name: parsed.name,
+      slug: parsed.slug,
+      description: parsed.description ?? "",
+      product_ids: parsed.productIds ?? [],
+      count: parsed.count ?? (parsed.productIds ? parsed.productIds.length : 0),
+    };
+    const { data, error } = await supabase
+      .from("store_categories")
+      .upsert(row, { onConflict: "id" })
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    await logAuditEvent({
+      actorUserId: req.authUser?.userId,
+      action: "store_category.create",
+      entityType: "store_category",
+      entityId: data.id,
+      metadata: { slug: parsed.slug },
+    });
+    res.status(201).json(success(data));
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).json(failure("VALIDATION", error.message, 400));
+      return;
+    }
+    next(error);
+  }
+});
+
+// PATCH /api/v1/store/categories/:id - update category (admin)
+router.patch("/categories/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = categoryUpsertSchema.partial().parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const existing = await supabase
+      .from("store_categories")
+      .select("id")
+      .eq("id", req.params.id)
+      .maybeSingle();
+    if (!existing.data) {
+      res.status(404).json(failure("NOT_FOUND", "Category not found", 404));
+      return;
+    }
+    const row: Record<string, unknown> = {};
+    if (parsed.name !== undefined) row.name = parsed.name;
+    if (parsed.slug !== undefined) row.slug = parsed.slug;
+    if (parsed.description !== undefined) row.description = parsed.description;
+    if (parsed.productIds !== undefined) row.product_ids = parsed.productIds;
+    if (parsed.count !== undefined) row.count = parsed.count;
+    const { data, error } = await supabase
+      .from("store_categories")
+      .update(row)
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    await logAuditEvent({
+      actorUserId: req.authUser?.userId,
+      action: "store_category.update",
+      entityType: "store_category",
+      entityId: String(req.params.id),
+    });
+    res.json(success(data));
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res.status(400).json(failure("VALIDATION", error.message, 400));
+      return;
+    }
+    next(error);
+  }
+});
+
+// DELETE /api/v1/store/categories/:id - delete category (admin)
+router.delete("/categories/:id", requireAdmin, async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase.from("store_categories").delete().eq("id", req.params.id);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    await logAuditEvent({
+      actorUserId: req.authUser?.userId,
+      action: "store_category.delete",
+      entityType: "store_category",
+      entityId: String(req.params.id),
+    });
+    res.status(204).send();
+  } catch (error) {
+    next(error);
   }
 });
 

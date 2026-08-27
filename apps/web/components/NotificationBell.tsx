@@ -84,7 +84,11 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     es.addEventListener("notification", (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (Array.isArray(data) && data.length > 0) {
+        // Server emits a single notification object; tolerate arrays too.
+        const hasItems =
+          (Array.isArray(data) && data.length > 0) ||
+          (data && !Array.isArray(data) && typeof data === "object");
+        if (hasItems) {
           // Fetch fresh count from server instead of adding to local state
           fetchUnread();
           fetchRecent();

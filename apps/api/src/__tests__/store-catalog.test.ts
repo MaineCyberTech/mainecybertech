@@ -35,13 +35,15 @@ jest.mock("@sentry/node", () => ({
 }));
 
 describe("store catalog lib", () => {
-  it("getCategories returns categories", () => {
-    const cats = getCategories();
+  it("getCategories returns categories", async () => {
+    const cats = await getCategories();
     expect(cats.length).toBeGreaterThan(0);
-    const result = cats.map((c) => ({
-      ...c,
-      productCount: getProductsByCategory(c.slug).length,
-    }));
+    const result = await Promise.all(
+      cats.map(async (c) => ({
+        ...c,
+        productCount: (await getProductsByCategory(c.slug)).length,
+      })),
+    );
     expect(result[0].productCount).toBeDefined();
   });
 });
