@@ -1,0 +1,15 @@
+name: test-ssh-no-envs
+on:
+  push:
+    branches: [develop]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
+        with:
+          host: example.com
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          command_timeout: 45m
+        script: echo hello
