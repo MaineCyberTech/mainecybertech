@@ -35,13 +35,23 @@ export interface StoreProduct {
   id: string;
   slug: string;
   name: string;
-  categoryId: string;
+  categoryId: string | null;
   category: string;
   type: string;
   display: boolean;
   status: string;
   priceRange: string;
   summary: string;
+  pricingModel?: string;
+  purchaseMode?: string;
+  marketingHeadline?: string;
+  marketingCopy?: string;
+  tags?: string[];
+  attributes?: Record<string, unknown>;
+  createdAt?: string;
+  created_at?: string;
+  updatedAt?: string;
+  updated_at?: string;
 }
 
 export interface StoreCategory {
@@ -53,6 +63,38 @@ export interface StoreCategory {
   count: number;
   productCount?: number;
 }
+
+export type CreateStoreProductInput = {
+  id?: string;
+  slug: string;
+  name: string;
+  categoryId?: string | null;
+  category?: string;
+  type?: string;
+  display?: boolean;
+  status?: string;
+  priceRange?: string;
+  pricingModel?: string;
+  purchaseMode?: string;
+  summary?: string;
+  marketingHeadline?: string;
+  marketingCopy?: string;
+  tags?: string[];
+  attributes?: Record<string, unknown>;
+};
+
+export type UpdateStoreProductInput = Partial<CreateStoreProductInput>;
+
+export type CreateStoreCategoryInput = {
+  id?: string;
+  name: string;
+  slug: string;
+  description?: string;
+  productIds?: string[];
+  count?: number;
+};
+
+export type UpdateStoreCategoryInput = Partial<CreateStoreCategoryInput>;
 
 export interface StoreCategoryDetail extends StoreCategory {
   products: StoreProduct[];
@@ -103,6 +145,38 @@ export class StoreApi {
 
   getCategory(slug: string): Promise<StoreCategoryDetail> {
     return this.client.get<StoreCategoryDetail>(`/api/v1/store/categories/${slug}`);
+  }
+
+  // --- Products (public read / admin write) ---
+
+  getProductById(id: string): Promise<StoreProduct> {
+    return this.client.get<StoreProduct>(`/api/v1/store/products/by-id/${id}`);
+  }
+
+  createProduct(data: CreateStoreProductInput): Promise<StoreProduct> {
+    return this.client.post<StoreProduct>("/api/v1/store/products", data);
+  }
+
+  updateProduct(id: string, data: UpdateStoreProductInput): Promise<StoreProduct> {
+    return this.client.patch<StoreProduct>(`/api/v1/store/products/${id}`, data);
+  }
+
+  deleteProduct(id: string): Promise<void> {
+    return this.client.delete(`/api/v1/store/products/${id}`);
+  }
+
+  // --- Categories (public read / admin write) ---
+
+  createCategory(data: CreateStoreCategoryInput): Promise<StoreCategory> {
+    return this.client.post<StoreCategory>("/api/v1/store/categories", data);
+  }
+
+  updateCategory(id: string, data: UpdateStoreCategoryInput): Promise<StoreCategory> {
+    return this.client.patch<StoreCategory>(`/api/v1/store/categories/${id}`, data);
+  }
+
+  deleteCategory(id: string): Promise<void> {
+    return this.client.delete(`/api/v1/store/categories/${id}`);
   }
 
   // --- Promotions (public read / admin write) ---

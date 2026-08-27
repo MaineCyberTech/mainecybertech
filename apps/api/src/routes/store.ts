@@ -256,6 +256,21 @@ router.get("/products", async (req, res, next) => {
   }
 });
 
+// GET /api/v1/store/products/by-id/:id - product by id (admin)
+router.get("/products/by-id/:id", requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const allProducts = await getProducts();
+    const product = allProducts.find((p) => p.id === req.params.id);
+    if (!product) {
+      res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
+      return;
+    }
+    res.json(success(product));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/v1/store/products/:slug - product detail (public)
 router.get("/products/:slug", async (req, res, next) => {
   try {
@@ -333,7 +348,7 @@ const categoryUpsertSchema = z.object({
 });
 
 // POST /api/v1/store/products - create product (admin)
-router.post("/products", requireAdmin, async (req, res, next) => {
+router.post("/products", requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const parsed = productUpsertSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -379,7 +394,7 @@ router.post("/products", requireAdmin, async (req, res, next) => {
 });
 
 // PATCH /api/v1/store/products/:id - update product (admin)
-router.patch("/products/:id", requireAdmin, async (req, res, next) => {
+router.patch("/products/:id", requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const parsed = productUpsertSchema.partial().parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -432,7 +447,7 @@ router.patch("/products/:id", requireAdmin, async (req, res, next) => {
 });
 
 // DELETE /api/v1/store/products/:id - delete product (admin)
-router.delete("/products/:id", requireAdmin, async (req, res, next) => {
+router.delete("/products/:id", requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("store_products").delete().eq("id", req.params.id);
@@ -450,7 +465,7 @@ router.delete("/products/:id", requireAdmin, async (req, res, next) => {
 });
 
 // POST /api/v1/store/categories - create category (admin)
-router.post("/categories", requireAdmin, async (req, res, next) => {
+router.post("/categories", requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const parsed = categoryUpsertSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -486,7 +501,7 @@ router.post("/categories", requireAdmin, async (req, res, next) => {
 });
 
 // PATCH /api/v1/store/categories/:id - update category (admin)
-router.patch("/categories/:id", requireAdmin, async (req, res, next) => {
+router.patch("/categories/:id", requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const parsed = categoryUpsertSchema.partial().parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -529,7 +544,7 @@ router.patch("/categories/:id", requireAdmin, async (req, res, next) => {
 });
 
 // DELETE /api/v1/store/categories/:id - delete category (admin)
-router.delete("/categories/:id", requireAdmin, async (req, res, next) => {
+router.delete("/categories/:id", requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("store_categories").delete().eq("id", req.params.id);

@@ -2,13 +2,35 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import { getCategories, getProductById } from "@/lib/catalog/loader";
+import { getApiClient } from "@/lib/api";
+import { toCategoryView } from "@/lib/catalog/store-view";
+import CategoryForm from "./CategoryForm";
+import DeleteButton from "./DeleteButton";
+
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Store Categories - Admin" };
 
+async function fetchCategories() {
+  try {
+    const categories = await getApiClient().store.listCategories();
+    return categories.map(toCategoryView);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchProducts() {
+  try {
+    return await getApiClient().store.listProducts();
+  } catch {
+    return [];
+  }
+}
+
 export default async function StoreCategoriesPage() {
   await requireAdminAccess();
-  const categories = getCategories();
+  const [categories, products] = await Promise.all([fetchCategories(), fetchProducts()]);
+  const productMap = new Map(products.map((p) => [p.id, p.name]));
 
   return (
     <AdminPageShell
@@ -24,11 +46,22 @@ export default async function StoreCategoriesPage() {
       subnav={<AdminSubnav current="store-categories" />}
       title="Category Manager"
       description="Manage store categories and their product assignments."
-      actions={<div className="cyber-pill">{categories.length} categories</div>}
+      actions={
+        <div className="flex items-center gap-3">
+          <div className="cyber-pill">{categories.length} categories</div>
+          <CategoryForm mode="create" products={products}>
+            <button type="button" className="cyber-button">
+              Create Category
+            </button>
+          </CategoryForm>
+        </div>
+      }
     >
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {categories.map((cat) => {
-          const catProducts = cat.productIds.map((id) => getProductById(id)).filter(Boolean);
+          const catProducts = cat.productIds
+            .map((id) => (productMap.has(id) ? { id, name: productMap.get(id)! } : null))
+            .filter(Boolean) as { id: string; name: string }[];
           return (
             <div
               key={cat.id}
@@ -50,16 +83,27 @@ export default async function StoreCategoriesPage() {
                 <div className="flex flex-wrap gap-1">
                   {catProducts.map((p) => (
                     <span
-                      key={p!.id}
+                      key={p.id}
                       className="inline-block rounded bg-white/5 px-2 py-0.5 text-[11px] text-slate-500"
                     >
-                      {p!.name}
+                      {p.name}
                     </span>
                   ))}
                 </div>
               ) : (
                 <p className="text-xs italic text-slate-600">No products assigned</p>
               )}
+              <div className="mt-4 flex items-center gap-3">
+                <CategoryForm mode="edit" category={cat} products={products}>
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-emerald-400 transition hover:text-emerald-300"
+                  >
+                    Edit
+                  </button>
+                </CategoryForm>
+                <DeleteButton id={cat.id} name={cat.name} />
+              </div>
             </div>
           );
         })}

@@ -3,7 +3,10 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import { getAllProducts, getCategories } from "@/lib/catalog/loader";
+import { getApiClient } from "@/lib/api";
+import { toProductView, toCategoryView } from "@/lib/catalog/store-view";
+import ProductForm from "./ProductForm";
+import DeleteButton from "./DeleteButton";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Products - Store - Admin - Maine CyberTech" };
@@ -29,15 +32,32 @@ function statusPill(status: string) {
   return "border-white/10 bg-white/5 text-slate-400";
 }
 
+async function fetchProducts() {
+  try {
+    const products = await getApiClient().store.listProducts();
+    return products.map(toProductView);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchCategories() {
+  try {
+    const categories = await getApiClient().store.listCategories();
+    return categories.map(toCategoryView);
+  } catch {
+    return [];
+  }
+}
+
 export default async function AdminStoreProductsPage(props: {
   searchParams: Promise<{ q?: string; category?: string; status?: string }>;
 }) {
   await requireAdminAccess();
   const { q, category, status } = await props.searchParams;
 
-  const allProducts = getAllProducts();
-  const categories = getCategories();
-  const categoryMap = new Map(categories.map((c) => [c.id, c]));
+  const [allProducts, categories] = await Promise.all([fetchProducts(), fetchCategories()]);
+  const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
   let filtered = allProducts;
   const query = (q ?? "").trim().toLowerCase();
@@ -71,6 +91,13 @@ export default async function AdminStoreProductsPage(props: {
       subnav={<AdminSubnav current="store-products" />}
       title="Products"
       description={`${filtered.length} product${filtered.length === 1 ? "" : "s"} in the catalog`}
+      actions={
+        <ProductForm mode="create" categories={categories}>
+          <button type="button" className="cyber-button">
+            Create Product
+          </button>
+        </ProductForm>
+      }
     >
       <form
         method="GET"
@@ -162,7 +189,7 @@ export default async function AdminStoreProductsPage(props: {
                   </div>
                 </td>
                 <td className="px-4 py-3 text-slate-300">
-                  {categoryMap.get(p.categoryId)?.name ?? p.categoryId}
+                  {categoryMap.get(p.categoryId) ?? p.categoryId}
                 </td>
                 <td className="px-4 py-3 text-emerald-400">{p.priceRange}</td>
                 <td className="px-4 py-3">
@@ -180,12 +207,23 @@ export default async function AdminStoreProductsPage(props: {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <Link
-                    href={`/admin/store/products/${p.id}`}
-                    className="text-xs font-semibold text-emerald-400 transition hover:text-emerald-300"
-                  >
-                    View →
-                  </Link>
+                  <div className="flex items-center justify-end gap-2">
+                    <ProductForm mode="edit" product={p} categories={categories}>
+                      <button
+                        type="button"
+                        className="text-xs font-semibold text-emerald-400 transition hover:text-emerald-300"
+                      >
+                        Edit
+                      </button>
+                    </ProductForm>
+                    <DeleteButton id={p.id} name={p.name} />
+                    <Link
+                      href={`/admin/store/products/${p.id}`}
+                      className="text-xs font-semibold text-slate-400 transition hover:text-emerald-300"
+                    >
+                      View →
+                    </Link>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -216,7 +254,7 @@ export default async function AdminStoreProductsPage(props: {
             </div>
             <p className="mt-1 text-xs text-slate-500">{p.slug}</p>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-              <span>{categoryMap.get(p.categoryId)?.name ?? p.categoryId}</span>
+              <span>{categoryMap.get(p.categoryId) ?? p.categoryId}</span>
               <span className="text-slate-600">|</span>
               <span className="text-emerald-400">{p.priceRange}</span>
               <span

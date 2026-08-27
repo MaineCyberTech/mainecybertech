@@ -2,11 +2,31 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import { getProductById, getCategories } from "@/lib/catalog/loader";
+import { getApiClient } from "@/lib/api";
+import { toProductView, toCategoryView } from "@/lib/catalog/store-view";
 import { getRecommendationsForProduct } from "@/lib/catalog/bundles";
+import ProductForm from "../ProductForm";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Product Detail - Store - Admin - Maine CyberTech" };
+
+async function fetchProduct(id: string) {
+  try {
+    const product = await getApiClient().store.getProductById(id);
+    return toProductView(product);
+  } catch {
+    return null;
+  }
+}
+
+async function fetchCategories() {
+  try {
+    const categories = await getApiClient().store.listCategories();
+    return categories.map(toCategoryView);
+  } catch {
+    return [];
+  }
+}
 
 export default async function AdminStoreProductDetailPage(props: {
   params: Promise<{ id: string }>;
@@ -14,8 +34,7 @@ export default async function AdminStoreProductDetailPage(props: {
   const { id } = await props.params;
   await requireAdminAccess();
 
-  const product = getProductById(id);
-  const categories = getCategories();
+  const [product, categories] = await Promise.all([fetchProduct(id), fetchCategories()]);
   const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
   if (!product) {
@@ -57,6 +76,13 @@ export default async function AdminStoreProductDetailPage(props: {
       }
       subnav={<AdminSubnav current="store-products" />}
       title={product.name}
+      actions={
+        <ProductForm mode="edit" product={product} categories={categories}>
+          <button type="button" className="cyber-button">
+            Edit Product
+          </button>
+        </ProductForm>
+      }
     >
       <div className="space-y-8">
         {/* Basic Info */}
@@ -126,9 +152,9 @@ export default async function AdminStoreProductDetailPage(props: {
                       <td className="px-3 py-2 text-slate-200">{f.label}</td>
                       <td className="px-3 py-2 text-slate-300">{f.type}</td>
                       <td className="px-3 py-2 text-slate-300">{f.required ? "Yes" : "No"}</td>
-                      <td className="px-3 py-2 text-xs text-slate-400">{f.help || "â€”"}</td>
+                      <td className="px-3 py-2 text-xs text-slate-400">{f.help || "—"}</td>
                       <td className="px-3 py-2 text-xs text-slate-400">
-                        {f.options ? f.options.join(", ") : "â€”"}
+                        {f.options ? f.options.join(", ") : "—"}
                       </td>
                     </tr>
                   ))}
