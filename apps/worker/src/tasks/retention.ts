@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { wsTransport } from "../services/supabase";
 import { env } from "../env";
 import { logger } from "../logger";
 import type { TaskHandler, TaskResult } from "../task-registry";
@@ -27,7 +28,7 @@ export const retentionTask: TaskHandler = async (
     throw new Error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required");
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(supabaseUrl, supabaseKey, { realtime: { transport: wsTransport } });
 
   const auditCutoff = new Date();
   auditCutoff.setDate(auditCutoff.getDate() - config.auditLogRetentionDays);

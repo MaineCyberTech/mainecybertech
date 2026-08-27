@@ -1,4 +1,5 @@
 import { env } from "../env";
+import { wsTransport } from "../services/supabase";
 import { logger } from "../logger";
 import { sendEmail } from "../email";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -38,6 +39,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
     const supabase = createClient(
       env.SUPABASE_URL ?? "",
       env.SUPABASE_SERVICE_ROLE_KEY ?? env.SUPABASE_ANON_KEY ?? "",
+      { realtime: { transport: wsTransport } },
     );
 
     switch (p.type) {

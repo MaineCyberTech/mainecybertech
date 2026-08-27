@@ -335,6 +335,9 @@ importers:
       '@sentry/node':
         specifier: ^10.56.0
         version: 10.57.0
+      '@supabase/realtime-js':
+        specifier: 2.106.2
+        version: 2.106.2
       '@supabase/supabase-js':
         specifier: ^2.49.1
         version: 2.106.2

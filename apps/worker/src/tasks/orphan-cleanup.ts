@@ -1,4 +1,5 @@
 import { logger } from "../logger";
+import { wsTransport } from "../services/supabase";
 import type { TaskResult } from "../task-registry";
 
 export async function orphanCleanup(
@@ -8,7 +9,9 @@ export async function orphanCleanup(
     const { createClient } = await import("@supabase/supabase-js");
     const { env } = await import("../env");
 
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+      realtime: { transport: wsTransport },
+    });
     const buckets = ["documents", "avatars"];
 
     let totalRemoved = 0;

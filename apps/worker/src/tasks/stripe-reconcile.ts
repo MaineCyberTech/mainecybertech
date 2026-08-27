@@ -1,4 +1,5 @@
 import { env } from "../env";
+import { wsTransport } from "../services/supabase";
 import { logger } from "../logger";
 import type { TaskHandler, TaskResult } from "../task-registry";
 
@@ -65,6 +66,7 @@ export const stripeReconcile: TaskHandler = async (payload): Promise<TaskResult>
     const supabase = createClient(
       env.SUPABASE_URL ?? "",
       env.SUPABASE_SERVICE_ROLE_KEY ?? env.SUPABASE_ANON_KEY ?? "",
+      { realtime: { transport: wsTransport } },
     );
 
     let query = supabase

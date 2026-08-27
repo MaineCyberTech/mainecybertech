@@ -189,7 +189,7 @@ jobs:
     uses: ./.github/workflows/validate.yml
 
   # e2e + migrations: required for prod (main) deploys only; skipped on dev to keep deploys fast.
-  # Skipped jobs do NOT block deploy â€” deploy uses always() && !failure() && !cancelled().
+  # Skipped jobs do NOT block deploy -- deploy uses always() && !failure() && !cancelled().
   e2e-gate:
     needs: [setup]
     if: ${{ needs.setup.outputs.name == 'prod' && (github.event_name == 'push' || github.event.inputs.rollback_sha == '') }}
@@ -219,7 +219,6 @@ jobs:
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           command_timeout: 45m
-          envs: REDIS_PASSWORD
           script: |
             set -e
             timeout 60 cloud-init status --wait 2>/dev/null || true
@@ -269,7 +268,7 @@ jobs:
               "APP_DOMAIN=${{ needs.setup.outputs.app_domain }}" \
               "API_DOMAIN=${{ needs.setup.outputs.api_domain }}" \
               "CORS_ORIGIN=${{ needs.setup.outputs.cors_origin }}" \
-              "REDIS_PASSWORD=${REDIS_PASSWORD:-dev-redis-placeholder}"; do
+              "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}"; do
               printf '%s\n' "$pair" >> /opt/mct-portal/.env
             done
             chmod 600 /opt/mct-portal/.env
