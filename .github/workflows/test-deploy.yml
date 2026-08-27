@@ -1,0 +1,9 @@
+name: test-deploy
+on:
+  push:
+    branches: [develop]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo hello
