@@ -1,0 +1,15 @@
+name: test-ssh-copy
+on:
+  push:
+    branches: [develop]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: example.com
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          command_timeout: 45m
+        script: echo hello
