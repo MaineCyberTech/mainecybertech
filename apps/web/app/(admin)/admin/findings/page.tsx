@@ -17,14 +17,14 @@ export const metadata = { title: "Findings - Admin - Maine CyberTech" };
 const DEFAULT_LIMIT = 25;
 
 type FindingsPageProps = {
-  searchParams?: Promise<{ page?: string; limit?: string }>;
+  searchParams: Promise<{ page?: string; limit?: string }>;
 };
 
-export default async function FindingsPage({ searchParams }: FindingsPageProps = {}) {
+export default async function FindingsPage({ searchParams }: FindingsPageProps) {
   await requireAdminAccess();
   const api = getApiClient();
 
-  const sp = (await searchParams) ?? {};
+  const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
   const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
 
