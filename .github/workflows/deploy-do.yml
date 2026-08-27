@@ -50,7 +50,6 @@ jobs:
       cors_origin: ${{ steps.env.outputs.cors_origin }}
       ghcr_prefix: ${{ steps.env.outputs.ghcr_prefix }}
       droplet_name: ${{ steps.env.outputs.droplet_name }}
-      redis_password: ${{ steps.env.outputs.redis_password }}
       test_accounts_enabled: ${{ steps.env.outputs.test_accounts_enabled }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -76,15 +75,6 @@ jobs:
           else
             TEST_ACCOUNTS_ENABLED=false
           fi
-          # Redis password: prod requires the secret; dev gets a per-deploy generated value
-          if [ -n "${{ secrets.REDIS_PASSWORD }}" ]; then
-            RP="${{ secrets.REDIS_PASSWORD }}"
-          elif [ "$ENV_NAME" = "dev" ]; then
-            RP="dev-redis-$(openssl rand -hex 16)"
-          else
-            echo "::error::REDIS_PASSWORD secret is required for prod deploys"
-            exit 1
-          fi
           echo "name=$ENV_NAME" >> $GITHUB_OUTPUT
           echo "app_domain=$APP_DOMAIN" >> $GITHUB_OUTPUT
           echo "api_domain=$API_DOMAIN" >> $GITHUB_OUTPUT
@@ -93,7 +83,6 @@ jobs:
           echo "cors_origin=https://$APP_DOMAIN,https://$WWW_DOMAIN" >> $GITHUB_OUTPUT
           echo "ghcr_prefix=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
           echo "droplet_name=$DROPLET_NAME" >> $GITHUB_OUTPUT
-          echo "redis_password=$RP" >> $GITHUB_OUTPUT
           echo "test_accounts_enabled=$TEST_ACCOUNTS_ENABLED" >> $GITHUB_OUTPUT
 
   resolve-ip:
@@ -230,6 +219,7 @@ jobs:
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           command_timeout: 45m
+          envs: REDIS_PASSWORD
           script: |
             set -e
             timeout 60 cloud-init status --wait 2>/dev/null || true
@@ -279,7 +269,7 @@ jobs:
               "APP_DOMAIN=${{ needs.setup.outputs.app_domain }}" \
               "API_DOMAIN=${{ needs.setup.outputs.api_domain }}" \
               "CORS_ORIGIN=${{ needs.setup.outputs.cors_origin }}" \
-              "REDIS_PASSWORD=${{ needs.setup.outputs.redis_password }}"; do
+              "REDIS_PASSWORD=${REDIS_PASSWORD:-dev-redis-placeholder}"; do
               printf '%s\n' "$pair" >> /opt/mct-portal/.env
             done
             chmod 600 /opt/mct-portal/.env
