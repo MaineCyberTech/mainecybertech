@@ -1,0 +1,14 @@
+name: test-ssh-other
+on:
+  push:
+    branches: [develop]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: shimataro/ssh-action@v1
+        with:
+          host: example.com
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          command: echo hello
