@@ -5,6 +5,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
+import { ApprovalRequest, AuditLog } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Business OS - Admin - Maine CyberTech" };
@@ -54,8 +55,8 @@ export default async function BusinessOsPage() {
     approvals: { pending: 0 },
     users: { total: 0 },
   };
-  let overdue = { items: [] as unknown[], total: 0 };
-  let activity = [] as unknown[];
+  let overdue = { items: [] as ApprovalRequest[], total: 0 };
+  let activity = [] as AuditLog[];
   let health = [] as Array<{
     id: string;
     name: string;
@@ -72,8 +73,8 @@ export default async function BusinessOsPage() {
     ]);
     if (results[0].status === "fulfilled") summary = results[0].value;
     if (results[1].status === "fulfilled")
-      overdue = results[1].value as { items: unknown[]; total: number };
-    if (results[2].status === "fulfilled") activity = results[2].value as unknown[];
+      overdue = results[1].value as { items: ApprovalRequest[]; total: number };
+    if (results[2].status === "fulfilled") activity = results[2].value as AuditLog[];
     if (results[3].status === "fulfilled")
       health = results[3].value as Array<{
         id: string;
@@ -138,7 +139,7 @@ export default async function BusinessOsPage() {
           </div>
           <div className="mt-6 space-y-3">
             {overdue.items.length > 0 ? (
-              overdue.items.map((item: any) => (
+              overdue.items.map((item: ApprovalRequest) => (
                 <div
                   key={item.id}
                   className="rounded-lg border border-amber-500/20 bg-cyber-base/60 p-4"
@@ -175,7 +176,7 @@ export default async function BusinessOsPage() {
           </div>
           <div className="mt-6 space-y-2">
             {activity.length > 0 ? (
-              activity.slice(0, 10).map((log: any) => (
+              activity.slice(0, 10).map((log: AuditLog) => (
                 <div
                   key={log.id}
                   className="flex items-start gap-3 rounded-lg border border-white/5 bg-cyber-base/60 px-4 py-3"

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
+import { Membership } from "@mct/sdk";
 
 export async function updateUserProfileBasics(formData: FormData) {
   const api = getApiClient();
@@ -46,7 +47,7 @@ export async function updateMembership(formData: FormData) {
   revalidatePath("/admin/audit");
 
   try {
-    const memberships = await api.memberships.list({}) as any[];
+    const memberships = await api.memberships.list({}) as Membership[];
     const membership = memberships.find((m) => m.id === membershipId);
     if (membership?.organization_id) {
       revalidatePath(`/admin/organizations/${membership.organization_id}`);

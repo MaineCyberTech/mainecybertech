@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import FormFillForm from "./FormFillForm";
+import { DynamicFormRecord } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Fill Form - Portal - Maine CyberTech" };
@@ -11,7 +12,7 @@ export default async function FillFormPage(props: { params: Promise<{ id: string
   const { id } = await props.params;
   const api = getApiClient();
 
-  let form: any = null;
+  let form: DynamicFormRecord | null = null;
   try {
     form = await api.dynamicForms.get(id);
   } catch {

@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import ProjectTimelineView from "@/components/portal/ProjectTimelineView";
 import ProjectCalendarView from "@/components/portal/ProjectCalendarView";
+import { Project, ProjectTask } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export default async function PortalTimelinePage() {
     );
   }
 
-  let projects: any[] = [];
+  let projects: Project[] = [];
   try {
     projects =
       (await api.projects.list({ organizationId: membership.organization_id })).items ?? [];
@@ -37,8 +38,8 @@ export default async function PortalTimelinePage() {
   }
 
   const allTasks = (
-    await Promise.all(projects.map((p: any) => api.projects.listTasks(p.id).catch(() => [])))
-  ).flatMap((tasks, i) => (tasks as any[]).map((t: any) => ({ ...t, project_id: projects[i].id })));
+    await Promise.all(projects.map((p: Project) => api.projects.listTasks(p.id).catch(() => [])))
+  ).flatMap((tasks, i) => (tasks as ProjectTask[]).map((t: ProjectTask) => ({ ...t, project_id: projects[i].id })));
 
   return (
     <div className="space-y-6">
@@ -72,7 +73,7 @@ export default async function PortalTimelinePage() {
         </div>
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-emerald-400">
-            {allTasks.filter((t: any) => !t.due_at || new Date(t.due_at) >= new Date()).length}
+            {allTasks.filter((t: ProjectTask) => !t.due_at || new Date(t.due_at) >= new Date()).length}
           </p>
           <p className="text-xs text-slate-400">Upcoming</p>
         </div>

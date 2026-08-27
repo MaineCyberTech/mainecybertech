@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import TriageAnalyzeClient from "@/components/admin/TriageAnalyzeClient";
+import { Organization } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "AI Triage - Admin - Maine CyberTech" };
@@ -15,7 +16,7 @@ export default async function TriagePage() {
   let orgs: { id: string; name: string }[] = [];
   try {
     const list = await api.organizations.list({});
-    orgs = list.map((o: any) => ({ id: o.id, name: o.name }));
+    orgs = list.map((o: Organization) => ({ id: o.id, name: o.name }));
   } catch {
     /* graceful */
   }

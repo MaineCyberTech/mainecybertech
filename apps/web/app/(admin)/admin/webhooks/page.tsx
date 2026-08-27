@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { requirePermission } from "@/lib/auth/permissions";
 import AdminListPage from "@/components/admin/AdminListPage";
+import { WebhookEndpoint } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Webhooks - Admin - Maine CyberTech" };
@@ -22,8 +23,8 @@ export default async function AdminWebhooksPage() {
       newHref="/admin/webhooks/new"
       newLabel="+ New Webhook"
       emptyMessage="No webhook endpoints configured."
-      getId={(wh: any) => wh.id}
-      renderRow={(wh: any) => (
+      getId={(wh: WebhookEndpoint) => wh.id}
+      renderRow={(wh: WebhookEndpoint) => (
         <Link
           href={`/admin/webhooks/${wh.id}`}
           className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-600/20 hover:bg-cyber-base/80"

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Organization } from "@mct/sdk";
 
-type Org = Record<string, any> & { id: string; name?: string };
 type ApiKey = {
   id: string;
   name: string;
@@ -18,7 +18,7 @@ export default function AdminApiKeysClient({
   organizations,
   initialKeys,
 }: {
-  organizations: Org[];
+  organizations: Organization[];
   initialKeys: ApiKey[];
 }) {
   const [keys, setKeys] = useState<ApiKey[]>(initialKeys);

@@ -23,7 +23,7 @@ type DocumentRecord = {
   mime_type?: string | null;
   visibility?: string | null;
   current_version?: number | null;
-  metadata?: Record<string, any> | null;
+  metadata?: Record<string, unknown> | null;
   file_name?: string | null;
   file_size?: number | null;
   created_at?: string | null;

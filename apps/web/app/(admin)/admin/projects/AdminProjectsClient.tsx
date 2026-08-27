@@ -3,16 +3,8 @@
 import { useCallback, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
+import { Project } from "@mct/sdk";
 
-type Project = {
-  id: string;
-  name: string;
-  description?: string | null;
-  status: string;
-  priority: string;
-  organization_id: string;
-  external_jira_project_key?: string | null;
-};
 type Org = { id: string; name: string; slug: string };
 
 const PAGE_SIZE = 25;
@@ -251,7 +243,7 @@ export default function AdminProjectsClient({
         </div>
         <div className="mt-6 space-y-4">
           {paginated.length > 0 ? (
-            paginated.map((project: any) => {
+            paginated.map((project: Project) => {
               const org = orgMap[project.organization_id];
               return (
                 <Link

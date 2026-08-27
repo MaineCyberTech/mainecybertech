@@ -17,7 +17,7 @@ type SortKey = "updated" | "name" | "type";
 type Props = {
   documents: DocumentRecord[];
   organizationId: string;
-  uploadAction: (formData: FormData) => Promise<{ ok: boolean; error?: string; document?: any }>;
+  uploadAction: (formData: FormData) => Promise<{ ok: boolean; error?: string; document?: unknown }>;
   bulkFolderAction?: (formData: FormData) => Promise<BulkActionResult>;
   bulkMetadataAction?: (formData: FormData) => Promise<BulkActionResult>;
 };

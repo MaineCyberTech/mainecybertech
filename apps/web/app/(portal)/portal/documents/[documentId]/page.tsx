@@ -7,6 +7,7 @@ import PortalSubnav from "@/components/portal/PortalSubnav";
 import DocumentPreview from "@/components/DocumentPreview";
 import DocumentVersionsClient from "@/components/portal/DocumentVersionsClient";
 import DocumentShareClient from "@/components/portal/DocumentShareClient";
+import { DocumentShare } from "@mct/sdk";
 
 export const metadata = {
   title: "Document Details - Portal - Maine CyberTech",
@@ -68,7 +69,7 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
     isAdmin = false;
   }
 
-  let initialShares: any[] = [];
+  let initialShares: DocumentShare[] = [];
   try {
     initialShares = await api.documents.listShares(documentId);
   } catch {

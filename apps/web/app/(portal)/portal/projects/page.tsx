@@ -3,6 +3,12 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
+import {
+  Project,
+  ProjectTask,
+  ProjectTaskComment,
+  ProjectTaskReadState,
+} from "@mct/sdk";
 
 export const metadata = { title: "Projects - Portal - Maine CyberTech" };
 
@@ -95,13 +101,13 @@ export default async function PortalProjectsPage() {
   const tasks = compound.tasks ?? [];
   const comments = compound.comments ?? [];
 
-  const taskMap = new Map(tasks.map((task: any) => [task.id, task.project_id]));
+  const taskMap = new Map(tasks.map((task: ProjectTask) => [task.id, task.project_id]));
 
   const reads = compound.reads ?? [];
-  const readMap = new Map((reads ?? []).map((row: any) => [row.task_id, row.last_seen_at]));
+  const readMap = new Map((reads ?? []).map((row: ProjectTaskReadState) => [row.task_id, row.last_seen_at]));
   const unreadByProject = new Map<string, number>();
 
-  (comments ?? []).forEach((comment: any) => {
+  (comments ?? []).forEach((comment: ProjectTaskComment) => {
     const projectId = taskMap.get(comment.task_id);
     if (!projectId) return;
     const lastSeenAt = readMap.get(comment.task_id);
@@ -126,7 +132,7 @@ export default async function PortalProjectsPage() {
 
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           {(projects ?? []).length > 0 ? (
-            (projects ?? []).map((project: any) => {
+            (projects ?? []).map((project: Project) => {
               const unreadCount = unreadByProject.get(project.id) ?? 0;
               return (
                 <Link

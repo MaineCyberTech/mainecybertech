@@ -2,10 +2,9 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Organization } from "@mct/sdk";
 
 const PAGE_SIZE = 25;
-
-type Organization = Record<string, any> & { id: string; name: string };
 
 export default function AdminOrganizationsClient({
   organizations,

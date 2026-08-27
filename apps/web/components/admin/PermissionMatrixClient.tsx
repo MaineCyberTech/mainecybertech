@@ -2,9 +2,10 @@
 
 import { useCallback, useState } from "react";
 import { MODULE_LABELS, PERMISSION_GROUPS } from "@/lib/permissions";
+import { Role } from "@mct/sdk";
 
 type Props = {
-  roles: any[];
+  roles: Role[];
   rolePermissionSets: Array<{ roleId: string; ids: Set<string> }>;
   groupedModules: Array<{
     group: string;
@@ -41,7 +42,7 @@ export default function PermissionMatrixClient({
         <thead>
           <tr className="border-b border-white/10">
             <th className="px-4 py-3 text-xs uppercase tracking-[0.12em] text-slate-400">Module</th>
-            {roles.map((role: any) => (
+            {roles.map((role: Role) => (
               <th
                 key={role.id}
                 className="px-3 py-3 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
@@ -72,7 +73,7 @@ export default function PermissionMatrixClient({
                     <td className="px-4 py-2.5 text-slate-200">
                       {MODULE_LABELS[mod.module_key] ?? mod.module_key}
                     </td>
-                    {roles.map((role: any) => {
+                    {roles.map((role: Role) => {
                       const hasView = mod.action_view_id
                         ? rolePermissionSets
                             .find((rps) => rps.roleId === role.id)

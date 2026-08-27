@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { submitFormAction } from "../../actions";
+import { DynamicFormField } from "@mct/sdk";
 
-export default function FormFillForm({ formId, fields }: { formId: string; fields: any[] }) {
+export default function FormFillForm({ formId, fields }: { formId: string; fields: DynamicFormField[] }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);

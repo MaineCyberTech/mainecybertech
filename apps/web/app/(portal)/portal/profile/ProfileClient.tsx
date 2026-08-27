@@ -64,8 +64,8 @@ export default function ProfilePage({ initialData }: Props) {
         title: title || null,
       });
       setMessage("Profile updated successfully.");
-    } catch (err: any) {
-      setError(err?.message ?? "An unexpected error occurred.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
     }
     setSaving(false);
   }
@@ -90,8 +90,8 @@ export default function ProfilePage({ initialData }: Props) {
       setPwCurrent("");
       setPwNew("");
       setPwConfirm("");
-    } catch (err: any) {
-      setError(err?.message ?? "An unexpected error occurred.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
     }
     setSavingPw(false);
   }
@@ -107,8 +107,8 @@ export default function ProfilePage({ initialData }: Props) {
       const result = await getClientApi().profiles.uploadAvatar(userId!, file);
       setAvatarUrl(result.avatarUrl);
       setMessage("Avatar updated successfully.");
-    } catch (err: any) {
-      setError(err?.message ?? "An unexpected error occurred.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
     }
     setUploadingAvatar(false);
   }

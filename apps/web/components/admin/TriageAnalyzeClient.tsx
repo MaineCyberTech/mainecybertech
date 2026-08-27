@@ -48,8 +48,8 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
       const api = getClientApi();
       const r = await api.ai.triageAnalyze({ organizationId, rawDescription });
       setResult(r as unknown as AnalysisResult);
-    } catch (err: any) {
-      setError(err?.message ?? "Failed to analyze description.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to analyze description.");
     } finally {
       setAnalyzing(false);
     }
@@ -80,8 +80,8 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
       });
       alert("Ticket created successfully!");
       setResult(null);
-    } catch (err: any) {
-      setError(err?.message ?? "Failed to convert to ticket.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to convert to ticket.");
     } finally {
       setConverting(false);
     }

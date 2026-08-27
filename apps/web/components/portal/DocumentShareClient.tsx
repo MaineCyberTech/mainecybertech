@@ -47,8 +47,8 @@ export default function DocumentShareClient({
       setDialogOpen(false);
       setExpiresIn("24");
       setMaxAccess("");
-    } catch (e: any) {
-      setError(e?.message || "Failed to create share link");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to create share link");
     } finally {
       setCreating(false);
     }
@@ -60,8 +60,8 @@ export default function DocumentShareClient({
       await api.documents.removeShare(documentId, shareId);
       setShares((prev) => prev.filter((s) => s.id !== shareId));
       setRevokeDialogOpen(null);
-    } catch (e: any) {
-      setError(e?.message || "Failed to revoke share link");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to revoke share link");
     }
   };
 

@@ -3,6 +3,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Link from "next/link";
+import { DynamicFormRecord } from "@mct/sdk";
 
 export const metadata = { title: "Form Detail - Portal - Maine CyberTech" };
 export const dynamic = "force-dynamic";
@@ -53,28 +54,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
   const { id } = await params;
   const api = getApiClient();
 
-  let form: {
-    id: string;
-    title: string;
-    description: string | null;
-    form_type: string;
-    status: string;
-    fields: Array<{
-      key: string;
-      label: string;
-      type: string;
-      required: boolean;
-      placeholder: string | null;
-      options: string[];
-      helpText: string | null;
-      sortOrder: number;
-    }>;
-    settings: Record<string, unknown>;
-    published_at: string | null;
-    closes_at: string | null;
-    created_at: string;
-    updated_at: string;
-  } | null = null;
+  let form: DynamicFormRecord | null = null;
 
   let submissions: Array<{
     id: string;
@@ -86,7 +66,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
 
   try {
     const formResult = await api.dynamicForms.get(id);
-    form = formResult as any;
+    form = formResult as DynamicFormRecord;
   } catch {
     notFound();
   }
@@ -95,7 +75,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
 
   try {
     const subResult = await api.dynamicForms.listSubmissions(id, { limit: 50, page: 1 });
-    submissions = (subResult?.items as any) ?? [];
+    submissions = (subResult?.items as typeof submissions) ?? [];
   } catch {
     // Gracefully handle
   }

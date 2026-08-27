@@ -5,6 +5,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import { createProject } from "./actions";
 import AdminProjectsClient from "./AdminProjectsClient";
+import { Organization, Project } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Projects - Admin - Maine CyberTech" };
@@ -15,15 +16,15 @@ export default async function AdminProjectsPage() {
   const projectsResult = await api.projects.list({});
   const projects = projectsResult.items ?? [];
 
-  const orgIds = projects.map((p: any) => p.organization_id).filter(Boolean);
+  const orgIds = projects.map((p: Project) => p.organization_id).filter(Boolean);
   const [organizations, allOrganizations] = await Promise.all([
-    orgIds.length ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as any[]),
+    orgIds.length ? api.organizations.list({ ids: orgIds }) : Promise.resolve([] as Organization[]),
     api.organizations.list(),
   ]);
-  const orgMap = new Map(organizations.map((o: any) => [o.id, o]));
+  const orgMap = new Map(organizations.map((o: Organization) => [o.id, o]));
 
-  const activeCount = projects.filter((p: any) => p.status === "active").length;
-  const completedCount = projects.filter((p: any) => p.status === "completed").length;
+  const activeCount = projects.filter((p: Project) => p.status === "active").length;
+  const completedCount = projects.filter((p: Project) => p.status === "completed").length;
 
   return (
     <AdminPageShell
@@ -52,7 +53,7 @@ export default async function AdminProjectsPage() {
       <AdminProjectsClient
         projects={projects}
         orgMap={Object.fromEntries(orgMap)}
-        allOrganizations={allOrganizations.map((o: any) => ({
+        allOrganizations={allOrganizations.map((o: Organization) => ({
           id: o.id,
           name: o.name,
           slug: o.slug,

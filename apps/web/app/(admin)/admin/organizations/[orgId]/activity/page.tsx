@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { AuditLog, Profile } from "@mct/sdk";
 
 export const metadata = { title: "Organization Activity - Admin - Maine CyberTech" };
 
@@ -21,11 +22,11 @@ export default async function OrganizationActivityPage({ params }: OrgActivityPa
   ]);
   const logs = logsResult.items ?? [];
 
-  const userIds = [...new Set(logs.map((l: any) => l.actor_user_id).filter(Boolean))] as string[];
+  const userIds = [...new Set(logs.map((l: AuditLog) => l.actor_user_id).filter(Boolean))] as string[];
 
   const profiles = userIds.length > 0 ? await api.profiles.list({ ids: userIds }) : [];
 
-  const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
+  const profileMap = new Map(profiles.map((p: Profile) => [p.id, p]));
 
   return (
     <div className="space-y-8">

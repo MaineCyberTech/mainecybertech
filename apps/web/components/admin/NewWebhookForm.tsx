@@ -21,7 +21,9 @@ export default function NewWebhookForm({ organizations }: Props) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const events = Array.from(e.currentTarget.querySelectorAll('input[name="events"]:checked')).map((cb: any) => cb.value);
+    const events = Array.from(
+      e.currentTarget.querySelectorAll<HTMLInputElement>('input[name="events"]:checked'),
+    ).map((cb) => cb.value);
     if (!events.length) { alert("Select at least one event"); return; }
     const data = {
       organizationId: fd.get("organizationId") as string,

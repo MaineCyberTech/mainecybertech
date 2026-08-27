@@ -20,8 +20,8 @@ export async function bulkFolderAction(formData: FormData): Promise<BulkActionRe
     await api.documents.bulkFolder({ documentIds, folderPath });
     revalidatePath("/portal/documents");
     return { ok: true, updated: documentIds.length };
-  } catch (err: any) {
-    return { ok: false, error: err?.message ?? "Bulk folder update failed" };
+  } catch (err: unknown) {
+    return { ok: false, error: err instanceof Error ? err.message : "Bulk folder update failed" };
   }
 }
 
@@ -37,7 +37,7 @@ export async function bulkMetadataAction(formData: FormData): Promise<BulkAction
     await api.documents.bulkMetadata({ documentIds, description: description || undefined, folderPath: folderPath || undefined });
     revalidatePath("/portal/documents");
     return { ok: true, updated: documentIds.length };
-  } catch (err: any) {
-    return { ok: false, error: err?.message ?? "Bulk metadata update failed" };
+  } catch (err: unknown) {
+    return { ok: false, error: err instanceof Error ? err.message : "Bulk metadata update failed" };
   }
 }

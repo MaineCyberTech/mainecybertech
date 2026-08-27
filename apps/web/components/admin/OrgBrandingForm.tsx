@@ -52,8 +52,8 @@ export default function OrgBrandingForm({
     try {
       const result = await getClientApi().organizations.uploadLogo(organizationId, file);
       setLogoUrl(result.logoUrl);
-    } catch (err: any) {
-      setUploadError(err?.message ?? "Network error uploading logo");
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : "Network error uploading logo");
     }
     setUploading(false);
   }

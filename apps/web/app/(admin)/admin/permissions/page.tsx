@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/auth/permissions";
 import { getApiClient } from "@/lib/api";
 import { PERMISSION_GROUPS } from "@/lib/permissions";
 import PermissionMatrixClient from "@/components/admin/PermissionMatrixClient";
+import { PermissionInfo, Role } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function PermissionMatrixPage() {
 
   const api = getApiClient();
 
-  let roles: any[] = [];
+  let roles: Role[] = [];
   let rolePermissionSets: Array<{ roleId: string; ids: Set<string> }> = [];
   let modules: Array<{ module_key: string; group_key: string; action_view_id?: string }> = [];
 
@@ -26,21 +27,21 @@ export default async function PermissionMatrixPage() {
     roles = await api.roles.list();
 
     const permissionResponses = await Promise.all(
-      roles.map((role: any) => api.roles.getPermissions(role.id).catch(() => null)),
+      roles.map((role: Role) => api.roles.getPermissions(role.id).catch(() => null)),
     );
 
     const first = permissionResponses.find((r) => r && r.permissions?.length);
     if (first) {
       modules = first.permissions
-        .filter((p: any) => p.action_key === "view")
-        .map((p: any) => ({
+        .filter((p: PermissionInfo) => p.action_key === "view")
+        .map((p: PermissionInfo) => ({
           module_key: p.module_key,
           group_key: p.group_key ?? "other",
           action_view_id: p.id,
         }));
     }
 
-    rolePermissionSets = roles.map((role: any, i: number) => ({
+    rolePermissionSets = roles.map((role: Role, i: number) => ({
       roleId: role.id,
       ids: new Set(permissionResponses[i]?.rolePermissionIds ?? []),
     }));

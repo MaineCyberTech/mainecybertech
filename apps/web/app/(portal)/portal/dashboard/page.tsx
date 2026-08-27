@@ -5,8 +5,11 @@ import { logger } from "@/lib/logger";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
+import { AuditLog, Document, Organization, Project, Ticket } from "@mct/sdk";
 
 export const metadata = { title: "Dashboard - Portal - Maine CyberTech" };
+
+type DashboardTicket = Ticket & { subject?: string; name?: string };
 
 function formatDateTime(value?: string | null) {
   if (!value) return "—";
@@ -28,8 +31,8 @@ function formatRelativeTime(value?: string | null) {
   return formatDateTime(value);
 }
 
-function ticketSubject(ticket: any) {
-  return ticket?.subject ?? ticket?.title ?? ticket?.name ?? `Ticket ${ticket?.id}`;
+function ticketSubject(ticket: DashboardTicket) {
+  return ticket.subject ?? ticket.title ?? ticket.name ?? `Ticket ${ticket.id}`;
 }
 
 function auditActionLabel(action: string) {
@@ -74,11 +77,11 @@ export default async function PortalDashboardPage() {
     );
   }
 
-  let organization: any = null;
-  let projects: any[] = [];
-  let tickets: any[] = [];
-  let documents: any[] = [];
-  let recentActivity: any[] = [];
+  let organization: Organization | null = null;
+  let projects: Project[] = [];
+  let tickets: DashboardTicket[] = [];
+  let documents: Document[] = [];
+  let recentActivity: AuditLog[] = [];
 
   try {
     const [orgResult, projectsResult, ticketsResult, documentsResult, auditResult] =
@@ -161,7 +164,7 @@ export default async function PortalDashboardPage() {
           </div>
           <div className="mt-4 space-y-3">
             {projects.length > 0 ? (
-              projects.map((project: any) => (
+              projects.map((project: Project) => (
                 <Link
                   key={project.id}
                   href={`/portal/projects/${project.id}`}
@@ -195,7 +198,7 @@ export default async function PortalDashboardPage() {
           </div>
           <div className="mt-4 space-y-3">
             {tickets.length > 0 ? (
-              tickets.map((ticket: any) => (
+              tickets.map((ticket: DashboardTicket) => (
                 <Link
                   key={ticket.id}
                   href={`/portal/support/${ticket.id}`}
@@ -230,7 +233,7 @@ export default async function PortalDashboardPage() {
         </div>
         <div className="mt-4 space-y-3">
           {documents.length > 0 ? (
-            documents.map((doc: any) => (
+            documents.map((doc: Document) => (
               <Link
                 key={doc.id}
                 href={`/portal/documents/${doc.id}`}
@@ -264,7 +267,7 @@ export default async function PortalDashboardPage() {
         </div>
         <div className="mt-4 space-y-3">
           {recentActivity.length > 0 ? (
-            recentActivity.map((event: any) => (
+            recentActivity.map((event: AuditLog) => (
               <div
                 key={event.id}
                 className="flex items-start gap-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4"

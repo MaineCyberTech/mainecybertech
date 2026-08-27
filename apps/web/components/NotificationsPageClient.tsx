@@ -114,7 +114,7 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
         <select
           value={filterRead}
           onChange={(e) => {
-            setFilterRead(e.target.value as any);
+            setFilterRead(e.target.value as "all" | "unread" | "read");
             setPage(1);
           }}
           className="cyber-input w-auto text-xs"

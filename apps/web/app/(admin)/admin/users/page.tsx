@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminUsersClient from "@/components/admin/AdminUsersClient";
+import { Organization, Role, UserCompound } from "@mct/sdk";
 import InviteUserForm from "@/components/admin/InviteUserForm";
 
 export const dynamic = "force-dynamic";
@@ -15,15 +16,15 @@ export default async function UsersPage() {
   await requirePermission("users", "view");
   const api = getApiClient();
 
-  const compound = await api.users.getCompound().catch(() => [] as any[]);
+  const compound = await api.users.getCompound().catch(() => [] as UserCompound[]);
 
-  const memberships = compound.flatMap((c: any) => c.memberships ?? []);
-  const profileMap = Object.fromEntries(compound.map((c: any) => [c.user.id, c.user]));
+  const memberships = compound.flatMap((c: UserCompound) => c.memberships ?? []);
+  const profileMap = Object.fromEntries(compound.map((c: UserCompound) => [c.user.id, c.user]));
   const orgMap = Object.fromEntries([
-    ...new Map(compound.flatMap((c: any) => c.organizations ?? []).map((o: any) => [o.id, o])),
+    ...new Map(compound.flatMap((c: UserCompound) => c.organizations ?? []).map((o: Organization) => [o.id, o])),
   ]);
   const roleMap = Object.fromEntries([
-    ...new Map(compound.flatMap((c: any) => c.roles ?? []).map((r: any) => [r.id, r])),
+    ...new Map(compound.flatMap((c: UserCompound) => c.roles ?? []).map((r: Role) => [r.id, r])),
   ]);
 
   return (

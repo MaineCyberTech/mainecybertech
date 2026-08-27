@@ -14,14 +14,17 @@ export default function EmailTestClient() {
     setResult(null);
     try {
       const clientApi = getClientApi();
-      await (clientApi as any).client.post("/api/v1/admin/test-email", {
-        to: email,
-      });
+      await (clientApi as unknown as { client: { post: (url: string, data: unknown) => Promise<unknown> } }).client.post(
+        "/api/v1/admin/test-email",
+        {
+          to: email,
+        },
+      );
       setResult({ ok: true, message: "Test email sent successfully!" });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setResult({
         ok: false,
-        message: err?.message || "Failed to send test email",
+        message: err instanceof Error ? err.message : "Failed to send test email",
       });
     } finally {
       setSending(false);

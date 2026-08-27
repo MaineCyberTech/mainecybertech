@@ -2,15 +2,10 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
+import { Membership } from "@mct/sdk";
 
 const PAGE_SIZE = 25;
 
-type Membership = Record<string, any> & {
-  id: string;
-  user_id: string;
-  organization_id: string;
-  role_id: string;
-};
 type Profile = {
   id: string;
   full_name?: string | null;
@@ -185,7 +180,7 @@ export default function AdminUsersClient({ memberships, profileMap, orgMap, role
         <select
           value={statusFilter}
           onChange={(e) => {
-            setStatusFilter(e.target.value as any);
+            setStatusFilter(e.target.value as "all" | "active" | "inactive");
             setPage(1);
           }}
           className="cyber-input max-w-[140px]"

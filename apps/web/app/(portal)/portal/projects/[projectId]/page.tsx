@@ -8,6 +8,7 @@ import PortalSubnav from "@/components/portal/PortalSubnav";
 import CommentBody from "@/components/CommentBody";
 import ProjectTasksWithViews from "@/components/portal/ProjectTasksWithViews";
 import { addPortalProjectUpdate, approvePortalProjectTask, addPortalTaskComment } from "./actions";
+import { Profile, ProjectTask, ProjectTaskComment, ProjectTaskReadState } from "@mct/sdk";
 
 export const metadata = { title: "Project Details - Portal - Maine CyberTech" };
 
@@ -112,9 +113,9 @@ export default async function PortalProjectDetailPage({ params }: Props) {
 
   const rawTasks = project.tasks ?? [];
   const taskComments = project.comments ?? [];
-  const profileMap = new Map<string, any>((project.profiles ?? []).map((p: any) => [p.id, p]));
+  const profileMap = new Map<string, Profile>((project.profiles ?? []).map((p: Profile) => [p.id, p]));
   const readStates = project.readStates ?? [];
-  const readMap = new Map(readStates.map((r: any) => [r.task_id, r.last_seen_at]));
+  const readMap = new Map(readStates.map((r: ProjectTaskReadState) => [r.task_id, r.last_seen_at]));
 
   let isAdmin = false;
   try {
@@ -129,7 +130,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
     // hiccup on a brand-new read row) must never crash the page.
     try {
       await Promise.all(
-        rawTasks.map((t: any) =>
+        rawTasks.map((t: ProjectTask) =>
           api.projects.markTaskRead(projectId, t.id, {
             organizationId: membership.organization_id,
           }),
@@ -140,8 +141,8 @@ export default async function PortalProjectDetailPage({ params }: Props) {
     }
   }
 
-  const commentsByTask = new Map<string, any[]>();
-  taskComments.forEach((comment: any) => {
+  const commentsByTask = new Map<string, ProjectTaskComment[]>();
+  taskComments.forEach((comment: ProjectTaskComment) => {
     const list = commentsByTask.get(comment.task_id) ?? [];
     list.push(comment);
     commentsByTask.set(comment.task_id, list);
@@ -150,12 +151,12 @@ export default async function PortalProjectDetailPage({ params }: Props) {
   const taskListHtml = (
     <div className="space-y-4">
       {rawTasks.length > 0 ? (
-        rawTasks.map((task: any) => {
+        rawTasks.map((task: ProjectTask) => {
           const comments = commentsByTask.get(task.id) ?? [];
           const owner = task.owner_id ? profileMap.get(task.owner_id) : null;
           const lastSeenAt = readMap.get(task.id);
           const unreadCount = comments.filter(
-            (c: any) =>
+            (c: ProjectTaskComment) =>
               !lastSeenAt ||
               new Date(c.created_at).getTime() > new Date(lastSeenAt as string).getTime(),
           ).length;
@@ -228,7 +229,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                   </p>
                   <div className="mt-4 space-y-3">
                     {comments.length > 0 ? (
-                      comments.map((comment: any) => {
+                      comments.map((comment: ProjectTaskComment) => {
                         const author = profileMap.get(comment.author_id);
                         return (
                           <div

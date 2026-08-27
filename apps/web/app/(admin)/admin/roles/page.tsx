@@ -4,6 +4,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import { requirePermission } from "@/lib/auth/permissions";
 import AdminListPage from "@/components/admin/AdminListPage";
 import CreateRoleForm from "@/components/admin/CreateRoleForm";
+import { RoleWithPermissions } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Roles - Admin - Maine CyberTech" };
@@ -14,7 +15,7 @@ export default async function AdminRolesPage() {
   const api = getApiClient();
   const roles = await api.roles.listWithPermissions();
 
-  const totalPerms = roles.reduce((a: number, r: any) => a + r.permissionCount, 0);
+  const totalPerms = roles.reduce((a: number, r: RoleWithPermissions) => a + r.permissionCount, 0);
 
   return (
     <AdminListPage
@@ -23,7 +24,7 @@ export default async function AdminRolesPage() {
       subnavCurrent="roles"
       items={roles}
       emptyMessage="No roles found."
-      getId={(role: any) => role.id}
+      getId={(role: RoleWithPermissions) => role.id}
       headerContent={
         <>
           <div className="mb-6 grid gap-4 sm:grid-cols-3">
@@ -37,7 +38,7 @@ export default async function AdminRolesPage() {
             </div>
             <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
               <p className="text-2xl font-bold text-slate-50">
-                {roles.filter((r: any) => r.is_system).length}
+                {roles.filter((r: RoleWithPermissions) => r.is_system).length}
               </p>
               <p className="text-xs text-slate-400">System Roles</p>
             </div>
@@ -54,7 +55,7 @@ export default async function AdminRolesPage() {
           </div>
         </>
       }
-      renderRow={(role: any) => {
+      renderRow={(role: RoleWithPermissions) => {
         const count = role.permissionCount ?? 0;
         return (
           <Link

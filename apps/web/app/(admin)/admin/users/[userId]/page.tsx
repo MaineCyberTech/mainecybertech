@@ -7,6 +7,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import UserPermissionOverridesClient from "@/components/admin/UserPermissionOverridesClient";
+import { Membership, Organization, Role, UserDetail } from "@mct/sdk";
 
 export const metadata = { title: "User Details - Admin - Maine CyberTech" };
 
@@ -22,7 +23,7 @@ export default async function UserDetailPage({ params }: UserPageProps) {
   const { userId } = await params;
   const api = getApiClient();
 
-  let detail: any;
+  let detail: UserDetail;
   try {
     detail = await api.users.getDetail(userId);
   } catch {
@@ -33,14 +34,14 @@ export default async function UserDetailPage({ params }: UserPageProps) {
     );
   }
 
-  const profile = detail.profile;
+  const profile = detail.profile!;
   const memberships = detail.memberships ?? [];
   const organizations = detail.organizations ?? [];
   const roles = detail.roles ?? [];
   const allRoles = detail.allRoles ?? [];
 
-  const orgMap = new Map<string, any>(organizations.map((o: any) => [o.id, o]));
-  const roleMap = new Map<string, any>(roles.map((r: any) => [r.id, r]));
+  const orgMap = new Map<string, Organization>(organizations.map((o: Organization) => [o.id, o]));
+  const roleMap = new Map<string, Role>(roles.map((r: Role) => [r.id, r]));
 
   return (
     <AdminPageShell
@@ -145,7 +146,7 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
         <div className="mt-6 space-y-4">
           {memberships && memberships.length > 0 ? (
-            memberships.map((membership: any) => {
+            memberships.map((membership: Membership) => {
               const org = orgMap.get(membership.organization_id);
               const role = roleMap.get(membership.role_id);
 
@@ -163,7 +164,7 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
                   <form action={updateMembership}>
                     <input type="hidden" name="membershipId" value={membership.id} />
-                    <input type="hidden" name="userId" value={profile.id} />
+                     <input type="hidden" name="userId" value={profile?.id ?? ""} />
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
@@ -173,7 +174,7 @@ export default async function UserDetailPage({ params }: UserPageProps) {
                           defaultValue={membership.role_id}
                           className="cyber-input"
                         >
-                          {allRoles.map((r: any) => (
+                          {allRoles.map((r: Role) => (
                             <option key={r.id} value={r.id}>
                               {r.name} ({r.key})
                             </option>
@@ -242,7 +243,7 @@ export default async function UserDetailPage({ params }: UserPageProps) {
         <UserPermissionOverridesClient
           userId={userId}
           memberships={(memberships ?? []).filter(
-            (m: any) => m.status === "approved" || m.status === "pending",
+            (m: Membership) => m.status === "approved" || m.status === "pending",
           )}
         />
       </section>

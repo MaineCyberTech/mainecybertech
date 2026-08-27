@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import NewWebhookForm from "@/components/admin/NewWebhookForm";
+import { Organization } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "New Webhook - Admin - Maine CyberTech" };
@@ -27,7 +28,7 @@ export default async function NewWebhookPage() {
       subnav={<AdminSubnav current="webhooks" />}
       title="New Webhook Endpoint"
     >
-      <NewWebhookForm organizations={organizations.map((o: any) => ({ id: o.id, name: o.name }))} />
+      <NewWebhookForm organizations={organizations.map((o: Organization) => ({ id: o.id, name: o.name }))} />
     </AdminPageShell>
   );
 }

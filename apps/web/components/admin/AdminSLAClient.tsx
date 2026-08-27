@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Organization } from "@mct/sdk";
 
-type Org = Record<string, any> & { id: string; name?: string };
 type SLAMetrics = {
   summary: { total: number; breached: number; breachedRate: number; resolved: number };
   byMetric: Record<string, { total: number; breached: number; avgMinutes: number }>;
@@ -20,7 +20,7 @@ export default function AdminSLAClient({
   organizations,
   initialMetrics,
 }: {
-  organizations: Org[];
+  organizations: Organization[];
   initialMetrics: SLAMetrics | null;
 }) {
   const [orgFilter, setOrgFilter] = useState("");

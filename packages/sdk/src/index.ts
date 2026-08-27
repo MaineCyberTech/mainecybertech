@@ -10,7 +10,7 @@ import { DashboardApi } from "./dashboard";
 import { UsersApi, type UserPermissionsResponse, type PermissionOverride } from "./users";
 import { ProfilesApi } from "./profiles";
 import { AuditApi } from "./audit";
-import { RolesApi, type RolePermissions } from "./roles";
+import { RolesApi, type RolePermissions, type RoleWithPermissions } from "./roles";
 import {
   PermissionsApi,
   type MyPermissionsResponse,
@@ -161,6 +161,7 @@ export type {
   UserPermissionsResponse,
   PermissionOverride,
   RolePermissions,
+  RoleWithPermissions,
   MyPermissionsResponse,
   PermissionInfo,
   MembershipBrief,

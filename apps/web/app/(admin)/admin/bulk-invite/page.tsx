@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import BulkInviteForm from "@/components/admin/BulkInviteForm";
+import { Organization, Role } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Bulk Invite - Admin - Maine CyberTech" };
@@ -23,8 +24,8 @@ export default async function BulkInvitePage() {
       description="Import multiple users via CSV and invite them to an organization."
     >
       <BulkInviteForm
-        organizations={organizations.map((o: any) => ({ id: o.id, name: o.name }))}
-        roles={roles.map((r: any) => ({ id: r.id, name: r.name, key: r.key }))}
+        organizations={organizations.map((o: Organization) => ({ id: o.id, name: o.name }))}
+        roles={roles.map((r: Role) => ({ id: r.id, name: r.name, key: r.key }))}
       />
     </AdminPageShell>
   );
