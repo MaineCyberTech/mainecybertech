@@ -6,14 +6,26 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
+import AdminPagination from "@/components/admin/AdminPagination";
 import { createVendorContact } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendor Contacts - Admin - Maine CyberTech" };
 
-export default async function VendorContactsPage() {
+const DEFAULT_LIMIT = 25;
+
+type VendorContactsPageProps = {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+};
+
+export default async function VendorContactsPage({ searchParams }: VendorContactsPageProps = {}) {
   await requireAdminAccess();
   const api = getApiClient();
+
+  const sp = (await searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+
   let contacts: Array<{
     id: string;
     vendor_name: string;
@@ -23,12 +35,16 @@ export default async function VendorContactsPage() {
     phone: string | null;
     is_primary: boolean;
   }> = [];
+  let total = 0;
   try {
-    const r = await api.vendors.contacts.list({});
+    const r = await api.vendors.contacts.list({ page, limit });
     contacts = r.items as typeof contacts;
+    total = r.total ?? 0;
   } catch {
     /* graceful */
   }
+
+  const totalPages = Math.ceil(total / limit);
 
   return (
     <AdminPageShell
@@ -81,6 +97,14 @@ export default async function VendorContactsPage() {
           )}
         </div>
       </section>
+
+      <AdminPagination
+        currentPage={page}
+        totalPages={totalPages}
+        buildHref={(p) => `/admin/vendor-contacts?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
+      />
     </AdminPageShell>
   );
 }

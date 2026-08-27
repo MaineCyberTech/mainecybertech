@@ -6,10 +6,13 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
+import AdminPagination from "@/components/admin/AdminPagination";
 import { createAsset } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Assets - Admin - Maine CyberTech" };
+
+const DEFAULT_LIMIT = 25;
 
 const statusPill = (s: string) => {
   const c =
@@ -29,9 +32,17 @@ const statusPill = (s: string) => {
   );
 };
 
-export default async function AssetsPage() {
+type AssetsPageProps = {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+};
+
+export default async function AssetsPage({ searchParams }: AssetsPageProps = {}) {
   await requireAdminAccess();
   const api = getApiClient();
+
+  const sp = (await searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
 
   let assets: Array<{
     id: string;
@@ -44,14 +55,24 @@ export default async function AssetsPage() {
     created_at: string;
   }> = [];
   let stats = { byType: {} as Record<string, number>, total: 0, expiringWarranty: 0 };
+  let total = 0;
 
   try {
-    const [r, s] = await Promise.allSettled([api.assets.list({}), api.assets.stats({})]);
-    if (r.status === "fulfilled") assets = r.value.items as typeof assets;
+    const [r, s] = await Promise.allSettled([
+      api.assets.list({ page, limit }),
+      api.assets.stats({}),
+    ]);
+    if (r.status === "fulfilled") {
+      assets = r.value.items as typeof assets;
+      total = r.value.total ?? 0;
+    }
     if (s.status === "fulfilled") stats = s.value;
   } catch {
     /* graceful */
   }
+
+  const totalPages = Math.ceil(total / limit);
+  const buildHref = (p: number) => `/admin/assets?page=${p}&limit=${limit}`;
 
   return (
     <AdminPageShell
@@ -120,6 +141,14 @@ export default async function AssetsPage() {
           )}
         </div>
       </section>
+
+      <AdminPagination
+        currentPage={page}
+        totalPages={totalPages}
+        buildHref={buildHref}
+        total={total}
+        limit={limit}
+      />
     </AdminPageShell>
   );
 }

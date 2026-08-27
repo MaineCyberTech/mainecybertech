@@ -4,9 +4,16 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import AdminPagination from "@/components/admin/AdminPagination";
 import DmarcAnalyzeForm from "./DmarcAnalyzeForm";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DMARC Coach - Admin - Maine CyberTech" };
+
+const DEFAULT_LIMIT = 25;
+
+type DmarcCoachPageProps = {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+};
 
 function GradePill({ grade }: { grade: string }) {
   const colorMap: Record<string, string> = {
@@ -30,9 +37,13 @@ function GradePill({ grade }: { grade: string }) {
   );
 }
 
-export default async function DmarcCoachPage() {
+export default async function DmarcCoachPage({ searchParams }: DmarcCoachPageProps = {}) {
   await requireAdminAccess();
   const api = getApiClient();
+
+  const sp = (await searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
 
   let items = [] as Array<{
     id: string;
@@ -41,13 +52,17 @@ export default async function DmarcCoachPage() {
     dmarc_record: string | null;
     created_at: string;
   }>;
+  let total = 0;
 
   try {
-    const r = (await api.dmarcCoach.list({})) as any;
+    const r = (await api.dmarcCoach.list({ page, limit })) as any;
     items = r.items as typeof items;
+    total = r.total ?? 0;
   } catch (e) {
     console.error("DMARC Coach: failed to load data", e);
   }
+
+  const totalPages = Math.ceil(total / limit);
 
   return (
     <AdminPageShell
@@ -96,6 +111,14 @@ export default async function DmarcCoachPage() {
           )}
         </div>
       </section>
+
+      <AdminPagination
+        currentPage={page}
+        totalPages={totalPages}
+        buildHref={(p) => `/admin/dmarc-coach?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
+      />
     </AdminPageShell>
   );
 }

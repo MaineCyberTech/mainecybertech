@@ -8,14 +8,25 @@ import { StatusPill } from "@/components/admin/StatusPill";
 import { SeverityPill } from "@/components/admin/SeverityPill";
 import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
+import AdminPagination from "@/components/admin/AdminPagination";
 import { createFinding } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Findings - Admin - Maine CyberTech" };
 
-export default async function FindingsPage() {
+const DEFAULT_LIMIT = 25;
+
+type FindingsPageProps = {
+  searchParams?: Promise<{ page?: string; limit?: string }>;
+};
+
+export default async function FindingsPage({ searchParams }: FindingsPageProps = {}) {
   await requireAdminAccess();
   const api = getApiClient();
+
+  const sp = (await searchParams) ?? {};
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
 
   let findings: Array<{
     id: string;
@@ -31,13 +42,17 @@ export default async function FindingsPage() {
     byStatus: {} as Record<string, number>,
     total: 0,
   };
+  let total = 0;
 
   try {
     const [result, statsResult] = await Promise.allSettled([
-      api.findings.list({}),
+      api.findings.list({ page, limit }),
       api.findings.stats({}),
     ]);
-    if (result.status === "fulfilled") findings = result.value.items as typeof findings;
+    if (result.status === "fulfilled") {
+      findings = result.value.items as typeof findings;
+      total = result.value.total ?? 0;
+    }
     if (statsResult.status === "fulfilled") stats = statsResult.value;
   } catch {
     // Gracefully degrade
@@ -115,6 +130,14 @@ export default async function FindingsPage() {
           )}
         </div>
       </section>
+
+      <AdminPagination
+        currentPage={page}
+        totalPages={Math.ceil(total / limit)}
+        buildHref={(p) => `/admin/findings?page=${p}&limit=${limit}`}
+        total={total}
+        limit={limit}
+      />
     </AdminPageShell>
   );
 }
