@@ -9,18 +9,22 @@
  * Encryption format is identical to apps/api/src/lib/field-encryption.ts so
  * the API can decrypt these rows at runtime: `v1:<ivB64>:<tagB64>:<encB64>`.
  *
- * Run inside the api container (which has @supabase/supabase-js):
- *   docker run --rm --env-file /opt/mct-portal/.env \
- *     -v /opt/mct-portal/repo/scripts:/scripts \
- *     ghcr.io/mainecybertech/mct-api:latest node /scripts/backfill-profile-pii.mjs
+ * This script intentionally uses ONLY Node built-ins (global fetch + crypto)
+ * so it can run inside the api container or any Node 18+ image without
+ * installing @supabase/supabase-js. It talks to the Supabase REST API directly
+ * using the service-role key (which bypasses RLS).
+ *
+ * Run (pipes the script into the api container, reading creds from /opt/mct-portal/.env):
+ *   Get-Content scripts/backfill-profile-pii.mjs | ssh root@droplet \
+ *     "docker run --rm --entrypoint node --env-file /opt/mct-portal/.env -i \
+ *      ghcr.io/mainecybertech/mainecybertech/mct-api:<tag> --input-type=module -"
  *
  * Refuses to run (exit 1) if FIELD_ENCRYPTION_KEY is missing/not 32 bytes, so
  * it never writes the dev `plain:` fallback into production data.
  */
-import { createClient } from "@supabase/supabase-js";
 import { createCipheriv, randomBytes } from "crypto";
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_URL = (process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const FIELD_ENCRYPTION_KEY = process.env.FIELD_ENCRYPTION_KEY;
 
@@ -69,61 +73,81 @@ function encryptProfilePii(row) {
   return out;
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+const headers = {
+  apikey: SUPABASE_SERVICE_ROLE_KEY,
+  Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+  Accept: "application/json",
+};
 
-const BATCH = 200;
+async function fetchPage(offset) {
+  // No encrypted_pii filter here: we fetch all rows and decide in-process so we
+  // correctly handle both NULL and already-empty '{}' rows (the column may have
+  // been created with a default), while skipping rows already backfilled.
+  const url = `${SUPABASE_URL}/rest/v1/profiles?select=id,full_name,email,phone,title,encrypted_pii&order=id&limit=200&offset=${offset}`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`GET profiles failed ${res.status}: ${body}`);
+  }
+  return res.json();
+}
+
+async function updateRow(id, payload) {
+  const url = `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify({ encrypted_pii: payload }),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`PATCH profile ${id} failed ${res.status}: ${body}`);
+  }
+}
+
+async function main() {
+let offset = 0;
 let processed = 0;
 let encrypted = 0;
 let skipped = 0;
-let cursor = null;
-let page = 0;
+let already = 0;
+let iterations = 0;
 
-async function main() {
   for (;;) {
-    page += 1;
-    let query = supabase
-      .from("profiles")
-      .select("id, full_name, email, phone, title, encrypted_pii")
-      .is("encrypted_pii", null)
-      .order("id")
-      .limit(BATCH);
-
-    if (cursor !== null) query = query.gt("id", cursor);
-
-    const { data, error } = await query;
-    if (error) {
-      console.error("Select failed:", error.message);
+    iterations += 1;
+    if (iterations > 100000) {
+      console.error("Safety: exceeded page limit");
       process.exit(1);
     }
-    if (!data || data.length === 0) break;
+    const rows = await fetchPage(offset);
+    if (!Array.isArray(rows) || rows.length === 0) break;
 
-    for (const row of data) {
-      const payload = encryptProfilePii(row);
-      const { error: updErr } = await supabase
-        .from("profiles")
-        .update({ encrypted_pii: payload })
-        .eq("id", row.id);
-      if (updErr) {
-        console.error(`Update failed for id=${row.id}:`, updErr.message);
-        process.exit(1);
+    for (const row of rows) {
+      const existing = row.encrypted_pii;
+      const alreadyDone =
+        existing && typeof existing === "object" && Object.keys(existing).length > 0;
+      if (alreadyDone) {
+        processed += 1;
+        already += 1;
+        continue;
       }
+      const payload = encryptProfilePii(row);
+      await updateRow(row.id, payload);
       processed += 1;
       if (Object.keys(payload).length > 0) encrypted += 1;
       else skipped += 1;
     }
 
-    cursor = data[data.length - 1].id;
-    if (data.length < BATCH) break;
-    if (page > 100000) {
-      console.error("Safety: exceeded page limit");
-      process.exit(1);
-    }
+    if (rows.length < 200) break;
+    offset += 200;
   }
 
   console.log(
-    `Backfill complete. processed=${processed} encrypted=${encrypted} empty-skipped=${skipped}`,
+    `Backfill complete. processed=${processed} encrypted=${encrypted} empty-skipped=${skipped} already-done=${already}`,
   );
 }
 
