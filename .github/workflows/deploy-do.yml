@@ -268,7 +268,8 @@ jobs:
               "APP_DOMAIN=${{ needs.setup.outputs.app_domain }}" \
               "API_DOMAIN=${{ needs.setup.outputs.api_domain }}" \
               "CORS_ORIGIN=${{ needs.setup.outputs.cors_origin }}" \
-              "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}"; do
+              "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" \
+              "FIELD_ENCRYPTION_KEY=${{ secrets.FIELD_ENCRYPTION_KEY }}"; do
               printf '%s\n' "$pair" >> /opt/mct-portal/.env
             done
             chmod 600 /opt/mct-portal/.env

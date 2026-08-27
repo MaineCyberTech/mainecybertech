@@ -16,6 +16,7 @@
     "test:coverage": "turbo run test:coverage",
     "e2e": "pnpm --filter=web e2e",
     "format": "prettier --write .",
+    "backfill:profile-pii": "node scripts/backfill-profile-pii.mjs",
     "prepare": "husky",
     "ci": "pnpm install --frozen-lockfile && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "supabase:env:sync": "powershell -ExecutionPolicy Bypass -File ./scripts/sync_supabase_env.auto.v2.ps1 -UseNpx -Framework nextjs -EnvFile .env.local",
