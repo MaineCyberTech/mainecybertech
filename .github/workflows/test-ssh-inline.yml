@@ -1,0 +1,12 @@
+name: test-ssh-inline
+on:
+  push:
+    branches: [develop]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH deploy
+        run: |
+          echo "Would SSH to droplet here"
+          echo "Using key from secret"
