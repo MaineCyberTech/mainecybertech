@@ -2,7 +2,8 @@ import { jest } from "@jest/globals";
 import { render, screen } from "@testing-library/react";
 import React from "react";
 
-const mockComplianceList = jest.fn();
+const mockListFrameworks = jest.fn();
+const mockListControls = jest.fn();
 const mockGetApprovedMembership = jest.fn().mockResolvedValue({ organization_id: "org-1" });
 
 jest.mock("next/link", () => ({
@@ -13,7 +14,10 @@ jest.mock("next/link", () => ({
 
 jest.mock("@/lib/api", () => ({
   getApiClient: jest.fn().mockReturnValue({
-    eduAutomation: { compliance: { list: mockComplianceList } },
+    compliance: {
+      listFrameworks: mockListFrameworks,
+      listControls: mockListControls,
+    },
   }),
 }));
 
@@ -40,11 +44,11 @@ describe("PortalComplianceReadinessPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
+    mockListFrameworks.mockResolvedValue([]);
+    mockListControls.mockResolvedValue([]);
   });
 
   it("renders heading", async () => {
-    mockComplianceList.mockResolvedValue({ items: [] });
-
     const { default: Page } = await import("@/app/(portal)/portal/compliance-readiness/page");
     const element = await Page();
     render(element);
@@ -53,8 +57,6 @@ describe("PortalComplianceReadinessPage", () => {
   });
 
   it("renders breadcrumbs", async () => {
-    mockComplianceList.mockResolvedValue({ items: [] });
-
     const { default: Page } = await import("@/app/(portal)/portal/compliance-readiness/page");
     const element = await Page();
     render(element);
@@ -62,58 +64,81 @@ describe("PortalComplianceReadinessPage", () => {
     expect(screen.getByRole("navigation", { "aria-label": "Breadcrumb" })).toBeInTheDocument();
   });
 
-  it("renders items when data exists", async () => {
-    mockComplianceList.mockResolvedValue({
-      items: [
-        {
-          id: "c1",
-          framework: "SOC 2",
-          status: "compliant",
-          score: 85,
-          last_assessment_date: new Date().toISOString(),
-        },
-        {
-          id: "c2",
-          framework: "HIPAA",
-          status: "in-progress",
-          score: 62,
-          last_assessment_date: new Date().toISOString(),
-        },
-      ],
-    });
+  it("renders frameworks and controls when data exists", async () => {
+    mockListFrameworks.mockResolvedValue([
+      { id: "f1", name: "SOC 2", description: "Security framework", created_at: "2026-01-01T00:00:00Z" },
+    ]);
+    mockListControls.mockResolvedValue([
+      {
+        id: "c1",
+        framework_id: "f1",
+        organization_id: "org-1",
+        title: "Access Control Policy",
+        status: "implemented",
+        owner: "Alice",
+        due_at: "2026-12-31T00:00:00Z",
+        notes: null,
+        created_at: "2026-01-01T00:00:00Z",
+      },
+      {
+        id: "c2",
+        framework_id: "f1",
+        organization_id: "org-1",
+        title: "Risk Assessment",
+        status: "not_started",
+        owner: null,
+        due_at: null,
+        notes: null,
+        created_at: "2026-01-01T00:00:00Z",
+      },
+    ]);
 
     const { default: Page } = await import("@/app/(portal)/portal/compliance-readiness/page");
     const element = await Page();
     render(element);
 
     expect(screen.getByText("SOC 2")).toBeInTheDocument();
-    expect(screen.getByText("HIPAA")).toBeInTheDocument();
-    expect(screen.getByText(/Score: 85%/)).toBeInTheDocument();
-    expect(screen.getByText(/Score: 62%/)).toBeInTheDocument();
+    expect(screen.getByText("Access Control Policy")).toBeInTheDocument();
+    expect(screen.getByText("Risk Assessment")).toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
   });
 
   it("shows empty state", async () => {
-    mockComplianceList.mockResolvedValue({ items: [] });
+    mockListFrameworks.mockResolvedValue([]);
 
     const { default: Page } = await import("@/app/(portal)/portal/compliance-readiness/page");
     const element = await Page();
     render(element);
 
-    expect(screen.getByText("No compliance assessments yet.")).toBeInTheDocument();
+    expect(screen.getByText("No compliance frameworks yet.")).toBeInTheDocument();
   });
 
   it("renders status pills", async () => {
-    mockComplianceList.mockResolvedValue({
-      items: [{ id: "c1", framework: "SOC 2", status: "compliant", score: 85 }],
-    });
+    mockListFrameworks.mockResolvedValue([
+      { id: "f1", name: "SOC 2", description: null, created_at: "2026-01-01T00:00:00Z" },
+    ]);
+    mockListControls.mockResolvedValue([
+      {
+        id: "c1",
+        framework_id: "f1",
+        organization_id: "org-1",
+        title: "Access Control Policy",
+        status: "implemented",
+        owner: "Alice",
+        due_at: null,
+        notes: null,
+        created_at: "2026-01-01T00:00:00Z",
+      },
+    ]);
 
     const { default: Page } = await import("@/app/(portal)/portal/compliance-readiness/page");
     const element = await Page();
     render(element);
 
     const pills = screen.getAllByTestId("status-pill");
-    expect(pills).toHaveLength(1);
-    expect(pills[0]).toHaveTextContent("compliant");
+    expect(pills.length).toBeGreaterThanOrEqual(1);
+    expect(pills.some((p) => p.textContent === "implemented")).toBe(true);
   });
 
   it("shows access restricted when no org", async () => {

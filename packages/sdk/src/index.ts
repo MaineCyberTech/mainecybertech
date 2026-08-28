@@ -158,6 +158,15 @@ import {
   type ClientPortalSubscription,
 } from "./client-portal";
 import { KnowledgeBaseApi, type KnowledgeBaseArticle } from "./knowledge-base";
+import {
+  ComplianceApi,
+  type ComplianceFramework,
+  type ComplianceControl,
+  type ComplianceControlStatus,
+  type CreateFrameworkInput,
+  type CreateControlInput,
+  type UpdateControlInput,
+} from "./compliance";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -248,6 +257,12 @@ export type {
   StoreQuoteItem,
   SubmitStoreQuoteInput,
   KnowledgeBaseArticle,
+  ComplianceFramework,
+  ComplianceControl,
+  ComplianceControlStatus,
+  CreateFrameworkInput,
+  CreateControlInput,
+  UpdateControlInput,
   OrganizationOnboardInput,
   OrganizationOnboardResult,
   ClientPortalBootstrap,
@@ -304,6 +319,7 @@ export class MCTClient {
   public store: StoreApi;
   public clientPortal: ClientPortalApi;
   public knowledgeBase: KnowledgeBaseApi;
+  public compliance: ComplianceApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -355,6 +371,7 @@ export class MCTClient {
     this.store = new StoreApi(client);
     this.clientPortal = new ClientPortalApi(client);
     this.knowledgeBase = new KnowledgeBaseApi(client);
+    this.compliance = new ComplianceApi(client);
   }
 
   static create(opts: ClientOptions) {
