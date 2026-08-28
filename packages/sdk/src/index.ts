@@ -167,6 +167,15 @@ import {
   type CreateControlInput,
   type UpdateControlInput,
 } from "./compliance";
+import {
+  CabApi,
+  type CabMeeting,
+  type CabMeetingDetail,
+  type CabMeetingListResult,
+  type CabAgendaItem,
+  type CabMeetingStatus,
+  type CabDecision,
+} from "./cab";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -263,6 +272,12 @@ export type {
   CreateFrameworkInput,
   CreateControlInput,
   UpdateControlInput,
+  CabMeeting,
+  CabMeetingDetail,
+  CabMeetingListResult,
+  CabAgendaItem,
+  CabMeetingStatus,
+  CabDecision,
   OrganizationOnboardInput,
   OrganizationOnboardResult,
   ClientPortalBootstrap,
@@ -320,6 +335,7 @@ export class MCTClient {
   public clientPortal: ClientPortalApi;
   public knowledgeBase: KnowledgeBaseApi;
   public compliance: ComplianceApi;
+  public cab: CabApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -372,6 +388,7 @@ export class MCTClient {
     this.clientPortal = new ClientPortalApi(client);
     this.knowledgeBase = new KnowledgeBaseApi(client);
     this.compliance = new ComplianceApi(client);
+    this.cab = new CabApi(client);
   }
 
   static create(opts: ClientOptions) {

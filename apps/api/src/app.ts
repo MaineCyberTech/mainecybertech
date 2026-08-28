@@ -68,6 +68,7 @@ import statusPageRouter from "./routes/status-page";
 import uptimeMonitorRouter from "./routes/uptime-monitor";
 import storeRouter from "./routes/store";
 import complianceRouter from "./routes/compliance";
+import cabRouter from "./routes/cab";
 import analyticsRouter from "./routes/analytics";
 import clientPortalRouter from "./routes/client-portal";
 import knowledgeBaseRouter from "./routes/knowledge-base";
@@ -194,6 +195,7 @@ export function createApp(): Express {
   app.use("/api/v1/uptime-monitor", uptimeMonitorRouter);
   app.use("/api/v1/store", storeRouter);
   app.use("/api/v1/compliance", complianceRouter);
+  app.use("/api/v1/cab", cabRouter);
   app.use("/api/v1/analytics", analyticsRouter);
   app.use("/api/v1/client-portal", clientPortalRouter);
   app.use("/api/v1/knowledge-base", knowledgeBaseRouter);

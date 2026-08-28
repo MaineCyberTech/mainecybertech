@@ -687,6 +687,70 @@ export type Database = {
         Relationships: [
           { foreignKeyName: "budget_roadmaps_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
+      };      cab_agenda_items: {
+        Row: {
+          change_request_id: string;
+          created_at: string;
+          decision: string;
+          id: string;
+          meeting_id: string;
+          notes: string | null;
+          organization_id: string;
+        };
+        Insert: {
+          change_request_id: string;
+          meeting_id: string;
+          organization_id: string;
+          created_at?: string | null;
+          decision?: string | null;
+          id?: string | null;
+          notes?: string | null;
+        };
+        Update: {
+          change_request_id?: string | null;
+          created_at?: string | null;
+          decision?: string | null;
+          id?: string | null;
+          meeting_id?: string | null;
+          notes?: string | null;
+          organization_id?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "cab_agenda_items_meeting_id_fkey", columns: ["meeting_id"], isOneToOne: false, referencedRelation: "cab_meetings", referencedColumns: ["id"] },
+          { foreignKeyName: "cab_agenda_items_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "cab_agenda_items_change_request_id_fkey", columns: ["change_request_id"], isOneToOne: false, referencedRelation: "change_requests", referencedColumns: ["id"] },
+        ];
+      };      cab_meetings: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          notes: string | null;
+          organization_id: string;
+          scheduled_at: string | null;
+          status: string;
+        };
+        Insert: {
+          organization_id: string;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string | null;
+          notes?: string | null;
+          scheduled_at?: string | null;
+          status?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string | null;
+          notes?: string | null;
+          organization_id?: string | null;
+          scheduled_at?: string | null;
+          status?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "cab_meetings_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
       };      camera_calculations: {
         Row: {
           avg_bitrate_mbps: number;
@@ -2067,6 +2131,46 @@ export type Database = {
         };
         Relationships: [
           { foreignKeyName: "identity_verifications_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
+      };      impersonation_log: {
+        Row: {
+          actor_role_key: string;
+          actor_user_id: string;
+          created_at: string;
+          id: string;
+          ip_address: string | null;
+          metadata: Json;
+          organization_id: string | null;
+          reason: string | null;
+          source: string;
+          user_agent: string | null;
+        };
+        Insert: {
+          actor_role_key: string;
+          actor_user_id: string;
+          created_at?: string | null;
+          id?: string | null;
+          ip_address?: string | null;
+          metadata?: Json | null;
+          organization_id?: string | null;
+          reason?: string | null;
+          source?: string | null;
+          user_agent?: string | null;
+        };
+        Update: {
+          actor_role_key?: string | null;
+          actor_user_id?: string | null;
+          created_at?: string | null;
+          id?: string | null;
+          ip_address?: string | null;
+          metadata?: Json | null;
+          organization_id?: string | null;
+          reason?: string | null;
+          source?: string | null;
+          user_agent?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "impersonation_log_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };      incident_responses: {
         Row: {
@@ -3537,6 +3641,7 @@ export type Database = {
           created_at: string;
           default_organization_id: string | null;
           email: string | null;
+          encrypted_pii: Json | null;
           full_name: string | null;
           id: string | null;
           is_super_admin: boolean;
@@ -3551,6 +3656,7 @@ export type Database = {
           created_at?: string | null;
           default_organization_id?: string | null;
           email?: string | null;
+          encrypted_pii?: Json | null;
           full_name?: string | null;
           id?: string | null;
           is_super_admin?: boolean | null;
@@ -3565,6 +3671,7 @@ export type Database = {
           created_at?: string | null;
           default_organization_id?: string | null;
           email?: string | null;
+          encrypted_pii?: Json | null;
           full_name?: string | null;
           id?: string | null;
           is_super_admin?: boolean | null;
@@ -5139,6 +5246,39 @@ export type Database = {
         };
         Relationships: [
         ];
+      };      store_categories: {
+        Row: {
+          count: number;
+          created_at: string;
+          description: string;
+          id: string | null;
+          name: string;
+          product_ids: string[];
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          name: string;
+          slug: string;
+          count?: number | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string | null;
+          product_ids?: string[] | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          count?: number | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string | null;
+          name?: string | null;
+          product_ids?: string[] | null;
+          slug?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+        ];
       };      store_leads: {
         Row: {
           assigned_owner: string | null;
@@ -5177,6 +5317,70 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
+        ];
+      };      store_products: {
+        Row: {
+          attributes: Json;
+          category: string;
+          category_id: string | null;
+          created_at: string;
+          display: boolean;
+          id: string | null;
+          marketing_copy: string;
+          marketing_headline: string;
+          name: string;
+          price_range: string;
+          pricing_model: string;
+          purchase_mode: string;
+          slug: string;
+          status: string;
+          summary: string;
+          tags: string[];
+          type: string;
+          updated_at: string;
+        };
+        Insert: {
+          name: string;
+          slug: string;
+          attributes?: Json | null;
+          category?: string | null;
+          category_id?: string | null;
+          created_at?: string | null;
+          display?: boolean | null;
+          id?: string | null;
+          marketing_copy?: string | null;
+          marketing_headline?: string | null;
+          price_range?: string | null;
+          pricing_model?: string | null;
+          purchase_mode?: string | null;
+          status?: string | null;
+          summary?: string | null;
+          tags?: string[] | null;
+          type?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          attributes?: Json | null;
+          category?: string | null;
+          category_id?: string | null;
+          created_at?: string | null;
+          display?: boolean | null;
+          id?: string | null;
+          marketing_copy?: string | null;
+          marketing_headline?: string | null;
+          name?: string | null;
+          price_range?: string | null;
+          pricing_model?: string | null;
+          purchase_mode?: string | null;
+          slug?: string | null;
+          status?: string | null;
+          summary?: string | null;
+          tags?: string[] | null;
+          type?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "store_products_category_id_fkey", columns: ["category_id"], isOneToOne: false, referencedRelation: "store_categories", referencedColumns: ["id"] },
         ];
       };      store_promotions: {
         Row: {
