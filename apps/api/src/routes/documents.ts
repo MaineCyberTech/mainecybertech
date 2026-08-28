@@ -18,6 +18,7 @@ import {
   bulkMetadataSchema,
 } from "../validators/document";
 import { z } from "zod";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const createShareSchema = z.object({
   expiresAt: z
@@ -577,6 +578,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
 router.delete("/:id", requirePermission("documents", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getSupabaseAdmin();
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string

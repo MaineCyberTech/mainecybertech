@@ -72,7 +72,7 @@ export class DocumentsApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/documents/${id}`);
+    return this.client.delete<void>(`/api/v1/documents/${id}`, undefined, { confirm: true });
   }
 
   upload(data: {

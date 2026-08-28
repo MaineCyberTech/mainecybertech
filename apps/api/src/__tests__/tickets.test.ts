@@ -405,7 +405,8 @@ describe("tickets routes", () => {
 
       const res = await request(app)
         .delete(`/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=${ORG}`)
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(204);
       expect(builder.eq).toHaveBeenCalledWith("organization_id", ORG);
@@ -419,9 +420,21 @@ describe("tickets routes", () => {
 
       const res = await request(app)
         .delete(`/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=${ORG}`)
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(404);
+    });
+
+    it("DELETE /:id requires confirmation", async () => {
+      const supabase = mockAuth();
+
+      const res = await request(app)
+        .delete(`/api/v1/tickets/00000000-0000-0000-0000-000000000010?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(400);
+      expect(supabase.from).not.toHaveBeenCalled();
     });
 
     it("POST /:id/comments verifies the ticket belongs to the caller's org", async () => {

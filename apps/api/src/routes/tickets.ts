@@ -11,6 +11,7 @@ import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-lock
 import { createNotification, notifyAndEmail } from "../lib/notify";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS } from "../lib/roles";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import {
   createTicketSchema,
   updateTicketSchema,
@@ -453,6 +454,7 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
 
 router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getSupabaseAdmin();
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string

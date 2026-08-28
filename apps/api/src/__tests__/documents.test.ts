@@ -235,7 +235,8 @@ describe("documents routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/documents/00000000-0000-0000-0000-000000000040")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(204);
       expect(supabase.storage.from).toHaveBeenCalledWith("documents");
@@ -255,9 +256,21 @@ describe("documents routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/documents/00000000-0000-0000-0000-000000000040")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(204);
+    });
+
+    it("returns 400 when confirmation is missing", async () => {
+      const { mock } = mockFrom({ data: null, error: null } as MockResult);
+
+      const res = await request(app)
+        .delete("/api/v1/documents/00000000-0000-0000-0000-000000000040")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(400);
+      expect(mock.from).not.toHaveBeenCalled();
     });
 
     it("returns 404 when document not found", async () => {
@@ -265,7 +278,8 @@ describe("documents routes", () => {
 
       const res = await request(app)
         .delete("/api/v1/documents/00000000-0000-0000-0000-000000000999")
-        .set("Authorization", "Bearer token-123");
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(404);
     });

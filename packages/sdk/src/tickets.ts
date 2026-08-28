@@ -74,6 +74,10 @@ export class TicketsApi {
     return this.client.getBlob(`/api/v1/tickets/export`, qp);
   }
 
+  remove(id: string) {
+    return this.client.delete<void>(`/api/v1/tickets/${id}`, undefined, { confirm: true });
+  }
+
   bulkUpdate(ids: string[], updates: { status?: string; priority?: string }) {
     return this.client.post<{
       results: Array<{ id: string; success: boolean; error?: string }>;

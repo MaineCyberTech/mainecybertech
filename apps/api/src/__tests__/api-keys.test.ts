@@ -140,7 +140,7 @@ describe("API Keys API", () => {
     supabase.from.mockReturnValue(
       createMockBuilder({ data: { id: "k-1", organization_id: testOrgId }, error: null }),
     );
-    const res = await request(app).delete("/api/v1/api-keys/k-1").set("Authorization", authToken);
+    const res = await request(app).delete("/api/v1/api-keys/k-1").set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(204);
   });
 
@@ -167,7 +167,12 @@ describe("API Keys API", () => {
         error: null,
       }),
     );
-    const res = await request(app).delete("/api/v1/api-keys/k-1").set("Authorization", authToken);
+    const res = await request(app).delete("/api/v1/api-keys/k-1").set("Authorization", authToken).send({ confirm: true });
     expect(res.status).toBe(404);
+  });
+
+  it("DELETE /:id requires confirmation", async () => {
+    const res = await request(app).delete("/api/v1/api-keys/k-1").set("Authorization", authToken);
+    expect(res.status).toBe(400);
   });
 });

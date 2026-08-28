@@ -178,8 +178,9 @@ export class ApiClient {
   delete<T>(
     path: string,
     params?: Record<string, string | number | undefined>,
+    body?: unknown,
   ): Promise<T> {
-    return this.request<T>("DELETE", path, undefined, params);
+    return this.request<T>("DELETE", path, body, params);
   }
 
   async getBlob(path: string, params?: Record<string, string | number | undefined>): Promise<Blob> {

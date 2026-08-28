@@ -10,6 +10,7 @@ import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-lock
 import { AppError, success } from "../types";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 import { loadOwned } from "../lib/tenant";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -174,6 +175,7 @@ router.patch("/:id", requirePermission("webhooks", "manage"), requireIfMatch, as
 
 router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getSupabaseAdmin();
     await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
     const { data, error } = await supabase

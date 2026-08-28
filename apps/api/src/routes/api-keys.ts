@@ -7,6 +7,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { AppError, success } from "../types";
 import { loadOwned } from "../lib/tenant";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { logAuditEvent } from "../services/audit";
 
 const router: ReturnType<typeof Router> = Router();
@@ -144,6 +145,7 @@ router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, n
 // DELETE /api/v1/api-keys/:id
 router.delete("/:id", requirePermission("api-keys", "manage"), async (req, res, next) => {
   try {
+    assertDeleteConfirmed(req.body);
     const supabase = getSupabaseAdmin();
     await loadOwned(req, supabase as any, "api_keys", String(req.params.id));
 

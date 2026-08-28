@@ -214,7 +214,8 @@ describe("webhook-management routes", () => {
       mockWebhook(OTHER);
       const res = await request(app)
         .delete("/api/v1/webhook-endpoints/wh1")
-        .set("Authorization", "Bearer token");
+        .set("Authorization", "Bearer token")
+        .send({ confirm: true });
       expect(res.status).toBe(404);
     });
 
@@ -239,8 +240,16 @@ describe("webhook-management routes", () => {
       mockWebhook(ORG);
       const res = await request(app)
         .delete("/api/v1/webhook-endpoints/wh1")
-        .set("Authorization", "Bearer token");
+        .set("Authorization", "Bearer token")
+        .send({ confirm: true });
       expect(res.status).toBe(204);
+    });
+
+    it("DELETE /:id requires confirmation", async () => {
+      const res = await request(app)
+        .delete("/api/v1/webhook-endpoints/wh1")
+        .set("Authorization", "Bearer token");
+      expect(res.status).toBe(400);
     });
   });
 });
