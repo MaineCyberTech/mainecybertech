@@ -34,14 +34,14 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 **Security model:** Auth User → Profile → Membership → Role → Permission/Override → RLS → Storage
 
-## Test Status (2026-08-27 Verified)
+## Test Status (2026-08-28 Verified)
 
-**2,672 tests, all passing. 312 suites.**
+**2,734 tests, all passing. 225 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 822           | 82     | Jest + supertest                  |
-| Web     | 1,512         | 220    | Jest + Testing Library            |
+| API     | 853           | 82     | Jest + supertest                  |
+| Web     | 1,543         | 220    | Jest + Testing Library            |
 | SDK     | 264           | 2      | Jest (mocked fetch)               |
 | Worker  | 74            | 8      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -474,7 +474,7 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 
 ### Testing
 
-- 2,674 unit tests across 312 suites (all green)
+- 2,734 unit tests across 225 suites (all green)
 - 90 Playwright E2E spec files
 - ESLint: 0 errors
 - TypeScript: clean
