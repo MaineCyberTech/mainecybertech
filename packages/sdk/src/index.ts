@@ -151,6 +151,12 @@ import {
   type StoreQuoteItem,
   type SubmitStoreQuoteInput,
 } from "./store";
+import {
+  ClientPortalApi,
+  type ClientPortalBootstrap,
+  type ClientPortalMembership,
+  type ClientPortalSubscription,
+} from "./client-portal";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -242,6 +248,9 @@ export type {
   SubmitStoreQuoteInput,
   OrganizationOnboardInput,
   OrganizationOnboardResult,
+  ClientPortalBootstrap,
+  ClientPortalMembership,
+  ClientPortalSubscription,
 };
 export class MCTClient {
   public auth: AuthApi;
@@ -291,6 +300,7 @@ export class MCTClient {
   public statusPage: StatusPageApi;
   public uptimeMonitor: UptimeMonitorApi;
   public store: StoreApi;
+  public clientPortal: ClientPortalApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -340,6 +350,7 @@ export class MCTClient {
     this.statusPage = new StatusPageApi(client);
     this.uptimeMonitor = new UptimeMonitorApi(client);
     this.store = new StoreApi(client);
+    this.clientPortal = new ClientPortalApi(client);
   }
 
   static create(opts: ClientOptions) {
