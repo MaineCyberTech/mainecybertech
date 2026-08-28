@@ -13,7 +13,7 @@ jest.mock("next/link", () => ({
 
 jest.mock("@/lib/api", () => ({
   getApiClient: jest.fn().mockReturnValue({
-    eduAutomation: { kb: { list: mockKbList } },
+    knowledgeBase: { list: mockKbList },
   }),
 }));
 
@@ -60,14 +60,14 @@ describe("PortalKnowledgeBasePage", () => {
           title: "Password Policy",
           category: "security",
           is_published: true,
-          content: "Use strong passwords with 12+ characters.",
+          body: "Use strong passwords with 12+ characters.",
         },
         {
           id: "k2",
           title: "VPN Setup Guide",
           category: "networking",
           is_published: true,
-          content: "How to configure VPN access.",
+          body: "How to configure VPN access.",
         },
       ],
     });
@@ -100,7 +100,7 @@ describe("PortalKnowledgeBasePage", () => {
           title: "Password Policy",
           category: "security",
           is_published: true,
-          content: "Use strong passwords.",
+          body: "Use strong passwords.",
         },
       ],
     });
