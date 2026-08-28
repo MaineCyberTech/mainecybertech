@@ -69,6 +69,7 @@ import uptimeMonitorRouter from "./routes/uptime-monitor";
 import storeRouter from "./routes/store";
 import analyticsRouter from "./routes/analytics";
 import clientPortalRouter from "./routes/client-portal";
+import knowledgeBaseRouter from "./routes/knowledge-base";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -193,6 +194,7 @@ export function createApp(): Express {
   app.use("/api/v1/store", storeRouter);
   app.use("/api/v1/analytics", analyticsRouter);
   app.use("/api/v1/client-portal", clientPortalRouter);
+  app.use("/api/v1/knowledge-base", knowledgeBaseRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

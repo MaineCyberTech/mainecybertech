@@ -157,6 +157,7 @@ import {
   type ClientPortalMembership,
   type ClientPortalSubscription,
 } from "./client-portal";
+import { KnowledgeBaseApi, type KnowledgeBaseArticle } from "./knowledge-base";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -246,6 +247,7 @@ export type {
   StoreQuote,
   StoreQuoteItem,
   SubmitStoreQuoteInput,
+  KnowledgeBaseArticle,
   OrganizationOnboardInput,
   OrganizationOnboardResult,
   ClientPortalBootstrap,
@@ -301,6 +303,7 @@ export class MCTClient {
   public uptimeMonitor: UptimeMonitorApi;
   public store: StoreApi;
   public clientPortal: ClientPortalApi;
+  public knowledgeBase: KnowledgeBaseApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -351,6 +354,7 @@ export class MCTClient {
     this.uptimeMonitor = new UptimeMonitorApi(client);
     this.store = new StoreApi(client);
     this.clientPortal = new ClientPortalApi(client);
+    this.knowledgeBase = new KnowledgeBaseApi(client);
   }
 
   static create(opts: ClientOptions) {

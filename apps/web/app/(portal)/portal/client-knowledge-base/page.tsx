@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { createArticle } from "./actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Knowledge Base - Portal - Maine CyberTech" };
@@ -13,7 +14,7 @@ export default async function PortalKnowledgeBasePage() {
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
   try {
-    const r = await api.eduAutomation.kb.list({ organizationId: orgId });
+    const r = await api.knowledgeBase.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
   } catch {}
 
@@ -26,19 +27,51 @@ export default async function PortalKnowledgeBasePage() {
       <p className="text-sm text-slate-400">
         {items.length} article{items.length !== 1 ? "s" : ""} available for your organization.
       </p>
+
+      <form
+        action={async (formData) => {
+          await createArticle(formData);
+        }}
+        className="space-y-3 rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+        aria-label="Create knowledge base article"
+      >
+        <h2 className="font-medium text-slate-50">Add an article</h2>
+        <input
+          name="title"
+          placeholder="Title"
+          className="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm text-slate-50"
+        />
+        <textarea
+          name="body"
+          placeholder="Body"
+          rows={4}
+          className="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm text-slate-50"
+        />
+        <input
+          name="category"
+          placeholder="Category (optional)"
+          className="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm text-slate-400"
+        />
+        <button
+          type="submit"
+          className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+        >
+          Create
+        </button>
+      </form>
+
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (
-          <div
-            key={String(a.id)}
-            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-          >
+          <div key={String(a.id)} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
             <p className="font-medium text-slate-50">{String(a.title || "Article")}</p>
             <p className="mt-1 text-xs text-slate-400">
               {(a.category as string) && <span>Category: {String(a.category)} &bull; </span>}
               Published: {a.is_published ? "Yes" : "No"}
             </p>
-            {(a.content as string) && (
-              <p className="mt-2 line-clamp-2 text-xs text-slate-400">{String(a.content)}</p>
+            {((a.body as string) || (a.content as string)) && (
+              <p className="mt-2 line-clamp-2 text-xs text-slate-400">
+                {String((a.body as string) || (a.content as string))}
+              </p>
             )}
           </div>
         ))}
