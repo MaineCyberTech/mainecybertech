@@ -30,7 +30,7 @@ router.get("/organizations", async (req, res, next) => {
       throw new AppError("FORBIDDEN", "Super admin access required", 403);
     }
 
-    let query = supabase
+    const query = supabase
       .from("organizations")
       .select("id, name, slug, status, primary_domain, support_plan, created_at", { count: "exact" })
       .order("name")

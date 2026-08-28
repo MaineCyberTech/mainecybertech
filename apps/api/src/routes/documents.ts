@@ -126,6 +126,80 @@ const upload = multer({
     cb(null, true);
   },
 });
+// Storage bucket is pinned server-side. A request must never be able to target
+// an arbitrary bucket — otherwise a member could write into a public bucket
+// (avatars/logos) or overwrite another org's objects. (FILE-P2-001)
+const DOCUMENTS_BUCKET = "documents";
+
+// --- Upload content sniffing (FILE-P1-001) -----------------------------------
+// The client-supplied Content-Type is not trusted: the bytes are inspected so
+// markup/script content can never be stored with an innocent mimetype (stored
+// XSS), and declared image/PDF types must match their magic bytes.
+
+function looksLikeMarkup(buffer: Buffer): boolean {
+  const head = buffer.subarray(0, 512).toString("utf8").toLowerCase();
+  return (
+    head.startsWith("<!doctype") ||
+    head.startsWith("<html") ||
+    head.includes("<script") ||
+    head.includes("<svg") ||
+    head.startsWith("<?xml")
+  );
+}
+
+function sniffImageType(buffer: Buffer): "jpeg" | "png" | "gif" | "webp" | null {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return "jpeg";
+  }
+  if (buffer.length >= 8 && buffer.toString("hex", 0, 8) === "89504e470d0a1a0a") return "png";
+  if (buffer.length >= 6 && (buffer.toString("ascii", 0, 6) === "gif87a" || buffer.toString("ascii", 0, 6) === "gif89a")) {
+    return "gif";
+  }
+  if (
+    buffer.length >= 12 &&
+    buffer.toString("ascii", 0, 4) === "riff" &&
+    buffer.toString("ascii", 8, 12) === "webp"
+  ) {
+    return "webp";
+  }
+  return null;
+}
+
+function validateUploadContent(buffer: Buffer, declaredMime: string): void {
+  // Markup/script content is rejected for every declared type — this is the
+  // primary stored-XSS vector (an .svg/.html/.xml upload served inline).
+  if (looksLikeMarkup(buffer)) {
+    throw new AppError("VALIDATION", "File content looks like HTML/SVG/script and is not allowed", 400);
+  }
+
+  if (declaredMime.startsWith("image/")) {
+    const sniffed = sniffImageType(buffer);
+    if (!sniffed) {
+      throw new AppError("VALIDATION", `File content does not match declared image type ${declaredMime}`, 400);
+    }
+    const expected: Record<string, string> = {
+      "image/jpeg": "jpeg",
+      "image/png": "png",
+      "image/gif": "gif",
+      "image/webp": "webp",
+    };
+    if (expected[declaredMime] !== sniffed) {
+      throw new AppError(
+        "VALIDATION",
+        `File content (${sniffed}) does not match declared type ${declaredMime}`,
+        400,
+      );
+    }
+    return;
+  }
+
+  if (declaredMime === "application/pdf") {
+    if (!(buffer.length >= 5 && buffer.toString("ascii", 0, 5) === "%pdf-")) {
+      throw new AppError("VALIDATION", "File content is not a valid PDF", 400);
+    }
+  }
+}
+
 const router: ReturnType<typeof Router> = Router();
 
 router.get("/shares/:token", async (req, res, next) => {
@@ -160,10 +234,22 @@ router.get("/shares/:token", async (req, res, next) => {
     if (urlError || !signedUrl)
       throw new AppError("STORAGE_ERROR", "Failed to generate download URL", 500);
 
-    await supabase
+    // Atomic, race-safe increment: only the row whose current access_count is
+    // still under the cap is updated. Concurrent requests that both passed the
+    // earlier check can no longer both increment past max_access. (FILE-P2-003)
+    let incrementQuery = supabase
       .from("document_shares")
       .update({ access_count: share.access_count + 1 })
       .eq("id", share.id);
+    if (share.max_access) {
+      incrementQuery = incrementQuery.lt("access_count", share.max_access);
+    }
+    const { data: incremented, error: incrementError } = await incrementQuery
+      .select("id")
+      .single();
+    if (incrementError || !incremented) {
+      throw new AppError("FORBIDDEN", "Share link has reached maximum access count", 403);
+    }
 
     res.json(
       success({
@@ -289,6 +375,9 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
       );
     }
 
+    // Sniff the bytes — the declared mimetype is not trusted. (FILE-P1-001)
+    validateUploadContent(file.buffer, file.mimetype);
+
     const organizationId = String(req.body.organizationId ?? "").trim();
     const name = String(req.body.name ?? "").trim();
     const description = String(req.body.description ?? "").trim() || null;
@@ -300,15 +389,17 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
     }
 
     const supabase = getSupabaseAdmin();
-    const bucket = String(req.body.bucket ?? "documents").trim() || "documents";
+    // Bucket is pinned server-side (FILE-P2-001) — never read from req.body.
+    const bucket = DOCUMENTS_BUCKET;
     const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
     const storagePath = `orgs/${organizationId}/${Date.now()}-${safeName}`;
-
+    // Each upload gets a unique path, so a non-atomic upsert is never needed
+    // and we fail closed on an unexpected collision instead of overwriting.
     const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(storagePath, file.buffer, {
         contentType: file.mimetype || undefined,
-        upsert: true,
+        upsert: false,
       });
 
     if (uploadError) {

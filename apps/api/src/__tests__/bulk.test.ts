@@ -139,7 +139,35 @@ describe("Bulk API", () => {
     expect(Array.isArray(res.body.data.results)).toBe(true);
   });
 
-  it("returns exists for existing users", async () => {
+  it("accepts the invites array payload (SDK/web form shape)", async () => {
+    const supabase = mockAuthAndAdmin();
+    // requireAdmin → memberships query
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
+    // profiles query → no existing user
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
+    // auth.admin.createUser → success
+    supabase.auth.admin.createUser.mockResolvedValue({
+      data: { user: { id: "new-user-2" } },
+      error: null,
+    });
+    // memberships query → no existing membership
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
+    // memberships insert → success
+    supabase.from.mockReturnValueOnce(createMockBuilder({ data: { id: "m-3" }, error: null }));
+
+    const res = await request(app)
+      .post("/api/v1/bulk/invite")
+      .set("Authorization", authToken)
+      .send({
+        invites: [{ email: "new2@example.com", fullName: "New Two" }],
+        organizationId: testOrgId,
+        roleId: "00000000-0000-0000-0000-000000000020",
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.data.results[0].status).toBe("invited");
+  });
+
+  it("invites an existing user that has no membership", async () => {
     const supabase = mockAuthAndAdmin();
     // requireAdmin â†’ memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
@@ -161,7 +189,7 @@ describe("Bulk API", () => {
         roleId: "00000000-0000-0000-0000-000000000020",
       });
     expect(res.status).toBe(200);
-    expect(res.body.data.results[0].status).toBe("exists");
+    expect(res.body.data.results[0].status).toBe("invited");
   });
 
   it("returns 401 without auth token", async () => {

@@ -53,16 +53,20 @@ router.get("/", requireAdmin, async (req, res, next) => {
         { count: "exact" }
       );
 
-    const filteredQuery = orgId
-      ? baseQuery.in("id", (() => {
-          const { data: userIds } = await supabase
-            .from("memberships")
-            .select("user_id")
-            .eq("organization_id", orgId)
-            .eq("status", "approved");
-          return (userIds ?? []).map((u) => u.user_id as string);
-        })())
-      : baseQuery;
+    let filteredQuery;
+    if (orgId) {
+      const { data: userIds } = await supabase
+        .from("memberships")
+        .select("user_id")
+        .eq("organization_id", orgId)
+        .eq("status", "approved");
+      const ids = (userIds ?? []).map((u) => u.user_id as string);
+      filteredQuery = ids.length
+        ? baseQuery.in("id", ids)
+        : baseQuery.in("id", ["__no_match__"]);
+    } else {
+      filteredQuery = baseQuery;
+    }
 
     if (orgId) {
       const { data: membership } = await supabase
@@ -400,12 +404,12 @@ router.patch("/:id/role", requirePermission("users", "manage"), async (req, res,
       }
     }
 
-    const query = supabase
+    let query = supabase
       .from("memberships")
       .update({ role_id: roleId })
       .eq("user_id", req.params.id);
     if (organizationId) {
-      query.eq("organization_id", organizationId);
+      query = query.eq("organization_id", organizationId);
     }
     const { error } = await query;
 
