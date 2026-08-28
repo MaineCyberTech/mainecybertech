@@ -15,6 +15,8 @@ jest.mock("../config/env", () => ({
     APP_BASE_URL: "http://localhost:3000",
     API_PORT: 4000,
     SMTP_HOST: "",
+    SMTP_USER: "",
+    SMTP_PASS: "",
     EMAIL_FROM: "noreply@test.local",
     SENTRY_DSN: "",
     STRIPE_SECRET_KEY: "",
@@ -33,7 +35,7 @@ jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn() }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 
 import { getSupabaseAdmin } from "../services/supabase";
-import domainMonitorsRouter from "../routes/domain-monitors";
+import stagingRouter from "../routes/staging";
 
 const authToken = "Bearer test-token";
 const testOrgId = "00000000-0000-0000-0000-000000000001";
@@ -52,11 +54,6 @@ function mockAuth() {
   return supabase;
 }
 
-/*
- * Route-level suite: auth/permission/subscription middleware is stubbed so
- * mocks serve route queries only. Enforcement itself is covered by the
- * dedicated middleware-*.test.ts suites.
- */
 jest.mock("../middleware/org-access", () =>
   createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
 );
@@ -67,122 +64,136 @@ jest.mock("../middleware/permissions", () => ({
       next(),
 }));
 const app = createTestApp();
-app.use("/api/v1/domain-monitors", domainMonitorsRouter);
+app.use("/api/v1/staging", stagingRouter);
 app.use(errorHandler);
 
-describe("Domain Monitors API", () => {
+describe("Hardware Staging API", () => {
   beforeEach(() => jest.clearAllMocks());
 
   it("returns empty list", async () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null, count: 0 }));
-    const res = await request(app).get("/api/v1/domain-monitors").set("Authorization", authToken);
+    const res = await request(app).get("/api/v1/staging").set("Authorization", authToken);
     expect(res.status).toBe(200);
     expect(res.body.data.items).toEqual([]);
-  });
-
-  it("returns stats", async () => {
-    const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
-    const res = await request(app)
-      .get("/api/v1/domain-monitors/stats")
-      .set("Authorization", authToken);
-    expect(res.status).toBe(200);
-    expect(res.body.data.total).toBe(0);
-    expect(res.body.data.sslInvalid).toBe(0);
+    expect(res.body.data.page).toBe(1);
   });
 
   it("validates required fields on create", async () => {
     mockAuth();
     const res = await request(app)
-      .post("/api/v1/domain-monitors")
+      .post("/api/v1/staging")
       .set("Authorization", authToken)
       .send({});
     expect(res.status).toBe(400);
   });
 
-  it("creates a domain monitor", async () => {
+  it("creates a staging check", async () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(
       createMockBuilder({
-        data: { id: "d-1", domain: "example.com", dns_provider: "cloudflare", status: "active" },
+        data: {
+          id: "sc-1",
+          organization_id: testOrgId,
+          device_name: "Surface Laptop 5",
+          status: "pending",
+          checklist: [],
+        },
         error: null,
       }),
     );
     const res = await request(app)
-      .post("/api/v1/domain-monitors")
+      .post("/api/v1/staging")
       .set("Authorization", authToken)
-      .send({ organizationId: testOrgId, domain: "example.com" });
+      .send({ organizationId: testOrgId, deviceName: "Surface Laptop 5" });
     expect(res.status).toBe(201);
-    expect(res.body.data.domain).toBe("example.com");
+    expect(res.body.data.device_name).toBe("Surface Laptop 5");
   });
 
-  it("returns 404 for non-existent monitor", async () => {
+  it("returns 404 for missing staging check", async () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
     const res = await request(app)
-      .get("/api/v1/domain-monitors/00000000-0000-0000-0000-000000000999")
+      .get("/api/v1/staging/00000000-0000-0000-0000-000000000999")
       .set("Authorization", authToken);
     expect(res.status).toBe(404);
   });
 
-  it("returns csv export", async () => {
-    const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
-    const res = await request(app)
-      .get("/api/v1/domain-monitors/export")
-      .set("Authorization", authToken);
-    expect(res.status).toBe(200);
-  });
-});
-
-describe("Domain Monitors tenant isolation", () => {
-  const ORG_A = "00000000-0000-0000-0000-000000000001";
-  const ORG_B = "00000000-0000-0000-0000-000000000002";
-  const MONITOR_ID = "00000000-0000-0000-0000-0000000000m1";
-
-  function mockMonitor(orgId: string) {
+  it("updates a staging check", async () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(
       createMockBuilder({
-        data: { id: MONITOR_ID, organization_id: orgId, domain: "example.com", version: 1, status: "active" },
+        data: { id: "sc-1", organization_id: testOrgId, device_name: "Renamed", status: "pending", checklist: [] },
+        error: null,
+      }),
+    );
+    const res = await request(app)
+      .patch("/api/v1/staging/sc-1")
+      .set("Authorization", authToken)
+      .send({ deviceName: "Renamed" });
+    expect(res.status).toBe(200);
+    expect(res.body.data.device_name).toBe("Renamed");
+  });
+
+  it("deletes a staging check", async () => {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(
+      createMockBuilder({ data: { id: "sc-1", organization_id: testOrgId }, error: null }),
+    );
+    const res = await request(app)
+      .delete("/api/v1/staging/sc-1")
+      .set("Authorization", authToken);
+    expect(res.status).toBe(204);
+  });
+});
+
+describe("Hardware Staging tenant isolation", () => {
+  const ORG_A = "00000000-0000-0000-0000-000000000001";
+  const ORG_B = "00000000-0000-0000-0000-000000000002";
+  const CHECK_ID = "00000000-0000-0000-0000-0000000000c1";
+
+  function mockCheck(orgId: string) {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(
+      createMockBuilder({
+        data: { id: CHECK_ID, organization_id: orgId, device_name: "Check", status: "pending", checklist: [] },
         error: null,
       }),
     );
     return supabase;
   }
 
-  it("PATCH /:id succeeds when the monitor belongs to the caller's org", async () => {
-    mockMonitor(ORG_A);
+  it("PATCH /:id succeeds when the check belongs to the caller's org", async () => {
+    mockCheck(ORG_A);
     const res = await request(app)
-      .patch(`/api/v1/domain-monitors/${MONITOR_ID}`)
+      .patch(`/api/v1/staging/${CHECK_ID}`)
       .set("Authorization", authToken)
-      .send({ displayName: "Renamed" });
+      .send({ deviceName: "Renamed" });
     expect(res.status).toBe(200);
     expect(res.body.data.organization_id).toBe(ORG_A);
   });
 
-  it("PATCH /:id returns 404 when the monitor is in another org", async () => {
-    mockMonitor(ORG_B);
+  it("PATCH /:id returns 404 when the check is in another org", async () => {
+    mockCheck(ORG_B);
     const res = await request(app)
-      .patch(`/api/v1/domain-monitors/${MONITOR_ID}`)
+      .patch(`/api/v1/staging/${CHECK_ID}`)
       .set("Authorization", authToken)
-      .send({ displayName: "Renamed" });
+      .send({ deviceName: "Renamed" });
     expect(res.status).toBe(404);
   });
 
-  it("DELETE /:id succeeds when the monitor belongs to the caller's org", async () => {
-    mockMonitor(ORG_A);
+  it("DELETE /:id succeeds when the check belongs to the caller's org", async () => {
+    mockCheck(ORG_A);
     const res = await request(app)
-      .delete(`/api/v1/domain-monitors/${MONITOR_ID}`)
+      .delete(`/api/v1/staging/${CHECK_ID}`)
       .set("Authorization", authToken);
     expect(res.status).toBe(204);
   });
 
-  it("DELETE /:id returns 404 when the monitor is in another org", async () => {
-    mockMonitor(ORG_B);
+  it("DELETE /:id returns 404 when the check is in another org", async () => {
+    mockCheck(ORG_B);
     const res = await request(app)
-      .delete(`/api/v1/domain-monitors/${MONITOR_ID}`)
+      .delete(`/api/v1/staging/${CHECK_ID}`)
       .set("Authorization", authToken);
     expect(res.status).toBe(404);
   });

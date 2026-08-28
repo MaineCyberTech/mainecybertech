@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { loadOwned } from "../lib/tenant";
 import { triageInputSchema, convertTriageSchema, copilotReplyDraftSchema } from "../validators/ai";
 
 const router: ReturnType<typeof Router> = Router();
@@ -284,40 +285,51 @@ router.get("/copilot/:ticketId/summarize", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
 
-    const { data: ticket, error: ticketError } = await supabase
-      .from("tickets")
-      .select("id, title, description, status, priority, category, created_at")
-      .eq("id", req.params.ticketId)
-      .single();
-    if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
+    const ticket = (await loadOwned(
+      req,
+      supabase as any,
+      "tickets",
+      String(req.params.ticketId),
+      "id, title, description, status, priority, category, created_at, organization_id",
+    )) as {
+      id: string;
+      title: string;
+      description: string;
+      status: string;
+      priority: string;
+      category: string;
+      created_at: string;
+      organization_id: string;
+    };
 
     const { data: comments } = await supabase
       .from("ticket_comments")
       .select("body, author_id, created_at")
       .eq("ticket_id", req.params.ticketId)
+      .eq("organization_id", ticket.organization_id)
       .order("created_at", { ascending: true });
     const commentList = comments ?? [];
 
     const summary = {
       ticketId: ticket.id,
-      subject: (ticket as { title: string }).title,
-      status: (ticket as { status: string }).status,
-      priority: (ticket as { priority: string }).priority,
-      category: (ticket as { category: string }).category,
-      created: (ticket as { created_at: string }).created_at,
+      subject: ticket.title,
+      status: ticket.status,
+      priority: ticket.priority,
+      category: ticket.category,
+      created: ticket.created_at,
       commentCount: commentList.length,
       lastActivity:
         commentList.length > 0
           ? (commentList[commentList.length - 1] as { created_at: string }).created_at
-          : (ticket as { created_at: string }).created_at,
+          : ticket.created_at,
       keyPoints: [
-        `Priority: ${(ticket as { priority: string }).priority}`,
-        `Status: ${(ticket as { status: string }).status}`,
-        `Category: ${(ticket as { category: string }).category}`,
+        `Priority: ${ticket.priority}`,
+        `Status: ${ticket.status}`,
+        `Category: ${ticket.category}`,
         `${commentList.length} comments in thread`,
       ],
       suggestedNextAction:
-        (ticket as { status: string }).status === "resolved"
+        ticket.status === "resolved"
           ? "Review resolution and close or reopen"
           : commentList.length === 0
             ? "No responses yet — craft initial reply"

@@ -1,6 +1,6 @@
 ﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
+import { createTestApp, createMockBuilder, createOrgAccessStub, tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -32,6 +32,9 @@ jest.mock("../config/env", () => ({
 }));
 jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn() }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 import { getSupabaseAdmin } from "../services/supabase";
 import router from "../routes/security-suite";
 
@@ -93,5 +96,56 @@ describe("Security Suite API", () => {
       .set("Authorization", auth)
       .send({ organizationId: org, incidentType: "phishing", title: "Phishing Attempt" });
     expect(r.status).toBe(201);
+  });
+
+  describe("by-id tenant scoping", () => {
+    const ORG = "00000000-0000-0000-0000-000000000001";
+    const OTHER = "00000000-0000-0000-0000-000000000002";
+
+    it("POST /identity-verification/:id/verify succeeds for the caller's org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(
+        createMockBuilder({ data: { id: "iv-1", organization_id: ORG }, error: null }),
+      );
+      const r = await request(app)
+        .post("/api/v1/security-suite/identity-verification/iv-1/verify")
+        .set("Authorization", auth)
+        .send({ verificationPass: true });
+      expect(r.status).toBe(200);
+    });
+
+    it("POST /identity-verification/:id/verify returns 404 for another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(
+        createMockBuilder({ data: { id: "iv-1", organization_id: OTHER }, error: null }),
+      );
+      const r = await request(app)
+        .post("/api/v1/security-suite/identity-verification/iv-1/verify")
+        .set("Authorization", auth)
+        .send({ verificationPass: true });
+      expect(r.status).toBe(404);
+    });
+
+    it("POST /m365-hardening/:id/scan succeeds for the caller's org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(
+        createMockBuilder({ data: { id: "mh-1", organization_id: ORG }, error: null }),
+      );
+      const r = await request(app)
+        .post("/api/v1/security-suite/m365-hardening/mh-1/scan")
+        .set("Authorization", auth);
+      expect(r.status).toBe(200);
+    });
+
+    it("POST /m365-hardening/:id/scan returns 404 for another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(
+        createMockBuilder({ data: { id: "mh-1", organization_id: OTHER }, error: null }),
+      );
+      const r = await request(app)
+        .post("/api/v1/security-suite/m365-hardening/mh-1/scan")
+        .set("Authorization", auth);
+      expect(r.status).toBe(404);
+    });
   });
 });

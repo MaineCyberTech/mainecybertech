@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
+import { createTestApp, createMockBuilder, createOrgAccessStub, type MockResult } from "./helpers";
 import membershipsRouter from "../routes/memberships";
-import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -49,10 +49,9 @@ const MEMBERSHIP = {
  * Supabase mock serves only route queries. Middleware enforcement itself is
  * covered by security-suite / edge-cases / dedicated middleware tests.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
     () =>
@@ -201,18 +200,51 @@ describe("memberships routes", () => {
 
       expect(res.status).toBe(200);
     });
+
+    it("returns 404 when the membership belongs to another org", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { ...MEMBERSHIP, organization_id: "00000000-0000-0000-0000-000000000002" },
+          error: null,
+        }),
+      );
+
+      const res = await request(app)
+        .patch("/api/v1/memberships/mem-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ roleId: "00000000-0000-0000-0000-000000000020", status: "approved" });
+
+      expect(res.status).toBe(404);
+    });
   });
 
   describe("DELETE /:id", () => {
     it("deletes a membership (admin only)", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: MEMBERSHIP, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/memberships/mem-1")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
+    });
+
+    it("returns 404 when the membership belongs to another org", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { ...MEMBERSHIP, organization_id: "00000000-0000-0000-0000-000000000002" },
+          error: null,
+        }),
+      );
+
+      const res = await request(app)
+        .delete("/api/v1/memberships/mem-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
     });
   });
 });

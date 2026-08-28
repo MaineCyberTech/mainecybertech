@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder  } from "./helpers";
+import { createTestApp, createMockBuilder, createOrgAccessStub } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -57,10 +57,9 @@ function mockAuth() {
  * mocks serve route queries only. Enforcement itself is covered by the
  * dedicated middleware-*.test.ts suites.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
     () =>
@@ -125,7 +124,7 @@ describe("API Keys API", () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(
       createMockBuilder({
-        data: { id: "k-1", name: "Updated Key", is_active: false },
+        data: { id: "k-1", name: "Updated Key", is_active: false, organization_id: testOrgId },
         error: null,
       }),
     );
@@ -138,8 +137,37 @@ describe("API Keys API", () => {
 
   it("deletes API key", async () => {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    supabase.from.mockReturnValue(
+      createMockBuilder({ data: { id: "k-1", organization_id: testOrgId }, error: null }),
+    );
     const res = await request(app).delete("/api/v1/api-keys/k-1").set("Authorization", authToken);
     expect(res.status).toBe(204);
+  });
+
+  it("PATCH /:id returns 404 when the API key belongs to another org", async () => {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(
+      createMockBuilder({
+        data: { id: "k-1", name: "Other", organization_id: "00000000-0000-0000-0000-000000000002" },
+        error: null,
+      }),
+    );
+    const res = await request(app)
+      .patch("/api/v1/api-keys/k-1")
+      .set("Authorization", authToken)
+      .send({ isActive: false });
+    expect(res.status).toBe(404);
+  });
+
+  it("DELETE /:id returns 404 when the API key belongs to another org", async () => {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(
+      createMockBuilder({
+        data: { id: "k-1", organization_id: "00000000-0000-0000-0000-000000000002" },
+        error: null,
+      }),
+    );
+    const res = await request(app).delete("/api/v1/api-keys/k-1").set("Authorization", authToken);
+    expect(res.status).toBe(404);
   });
 });

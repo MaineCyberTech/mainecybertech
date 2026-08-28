@@ -497,3 +497,78 @@ describe("requireOrgAccessByParam middleware", () => {
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 }));
   });
 });
+
+describe("req.orgScope population (QW-1)", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("requireOrgAccess sets an explicit scope when organization_id is supplied", async () => {
+    mockSupabase({
+      membershipRow: { id: "m1", roles: { id: "r1", key: "client_user" } },
+    });
+    const next = jest.fn();
+    const req = mockReq({ userId: "user-1", orgId: "00000000-0000-0000-0000-000000000001" });
+
+    await requireOrgAccess(req, mockRes(), next);
+
+    expect(next).toHaveBeenCalledWith();
+    expect(req.orgScope).toEqual({
+      orgId: "00000000-0000-0000-0000-000000000001",
+      explicit: true,
+      platformAdmin: false,
+      impersonation: false,
+    });
+    expect(req.orgId).toBe("00000000-0000-0000-0000-000000000001");
+  });
+
+  it("requireOrgAccess sets an auto-resolved, non-explicit scope for a regular member", async () => {
+    mockSupabase({
+      primaryMembership: { organization_id: "00000000-0000-0000-0000-000000000001" },
+    });
+    const next = jest.fn();
+    const req = mockReq({ userId: "user-1" });
+
+    await requireOrgAccess(req, mockRes(), next);
+
+    expect(next).toHaveBeenCalledWith();
+    expect(req.orgScope).toEqual({
+      orgId: "00000000-0000-0000-0000-000000000001",
+      explicit: false,
+      platformAdmin: false,
+      impersonation: false,
+    });
+  });
+
+  it("requireOrgAccess leaves orgId null + platformAdmin for an un-pinned platform admin", async () => {
+    mockSupabase({
+      primaryMembership: { organization_id: "x", roles: { key: "super_admin" } },
+    });
+    const next = jest.fn();
+    const req = mockReq({ userId: "user-1" });
+
+    await requireOrgAccess(req, mockRes(), next);
+
+    expect(next).toHaveBeenCalledWith();
+    expect(req.orgScope).toMatchObject({ orgId: null, explicit: false, platformAdmin: true });
+  });
+
+  it("requireOrgAccessByParam sets an explicit scope bound to the param", async () => {
+    mockSupabase({
+      membershipRow: { id: "m1", roles: { id: "r1", key: "client_user" } },
+    });
+    const next = jest.fn();
+    const req = mockReq({ userId: "user-1", paramsId: "00000000-0000-0000-0000-000000000001" });
+
+    await requireOrgAccessByParam(req, mockRes(), next);
+
+    expect(next).toHaveBeenCalledWith();
+    expect(req.orgScope).toEqual({
+      orgId: "00000000-0000-0000-0000-000000000001",
+      explicit: true,
+      platformAdmin: false,
+      impersonation: false,
+    });
+    expect(req.orgId).toBe("00000000-0000-0000-0000-000000000001");
+  });
+});

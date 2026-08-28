@@ -348,7 +348,12 @@ router.post("/", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requirePermission("organizations", "manage"), requireIfMatch, async (req, res, next) => {
+router.patch(
+  "/:id",
+  requireOrgAccessByParam,
+  requirePermission("organizations", "manage"),
+  requireIfMatch,
+  async (req, res, next) => {
   try {
     const parsed = updateOrganizationSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -405,7 +410,11 @@ router.patch("/:id", requirePermission("organizations", "manage"), requireIfMatc
   }
 });
 
-router.delete("/:id", requirePermission("organizations", "manage"), async (req, res, next) => {
+router.delete(
+  "/:id",
+  requireOrgAccessByParam,
+  requirePermission("organizations", "manage"),
+  async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("organizations").delete().eq("id", req.params.id);

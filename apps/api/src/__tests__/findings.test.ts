@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder  } from "./helpers";
+import { createTestApp, createMockBuilder, createOrgAccessStub, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -58,10 +58,9 @@ function mockAuth() {
  * mocks serve route queries only. Enforcement itself is covered by the
  * dedicated middleware-*.test.ts suites.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
     () =>
@@ -152,5 +151,84 @@ describe("Findings API", () => {
       const res = await request(app).get("/api/v1/findings/export").set("Authorization", authToken);
       expect(res.status).toBe(200);
     });
+  });
+});
+
+describe("Finding tenant isolation (QW-1)", () => {
+  const ORG_A = "00000000-0000-0000-0000-000000000001";
+  const ORG_B = "00000000-0000-0000-0000-000000000002";
+  const FINDING_ID = "00000000-0000-0000-0000-0000000000f1";
+
+  function mockFinding(orgId: string, extra: Record<string, unknown> = {}) {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(
+      createMockBuilder({
+        data: { id: FINDING_ID, organization_id: orgId, version: 1, ...extra },
+        error: null,
+      } as MockResult),
+    );
+    return supabase;
+  }
+
+  it("PATCH /:id succeeds when the finding belongs to the caller's org", async () => {
+    mockFinding(ORG_A);
+    const res = await request(app)
+      .patch(`/api/v1/findings/${FINDING_ID}`)
+      .set("Authorization", authToken)
+      .set("If-Match", "1")
+      .send({ title: "Renamed" });
+    expect(res.status).toBe(200);
+    expect(res.body.data.organization_id).toBe(ORG_A);
+  });
+
+  it("PATCH /:id returns 404 when the finding is in another org", async () => {
+    mockFinding(ORG_B);
+    const res = await request(app)
+      .patch(`/api/v1/findings/${FINDING_ID}`)
+      .set("Authorization", authToken)
+      .set("If-Match", "1")
+      .send({ title: "Renamed" });
+    expect(res.status).toBe(404);
+  });
+
+  it("DELETE /:id succeeds when the finding belongs to the caller's org", async () => {
+    mockFinding(ORG_A);
+    const res = await request(app)
+      .delete(`/api/v1/findings/${FINDING_ID}`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(204);
+  });
+
+  it("DELETE /:id returns 404 when the finding is in another org", async () => {
+    mockFinding(ORG_B);
+    const res = await request(app)
+      .delete(`/api/v1/findings/${FINDING_ID}`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /:id/comments returns 404 when the parent finding is in another org", async () => {
+    mockFinding(ORG_B);
+    const res = await request(app)
+      .get(`/api/v1/findings/${FINDING_ID}/comments`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
+  });
+
+  it("POST /:id/comments returns 404 when the parent finding is in another org", async () => {
+    mockFinding(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/findings/${FINDING_ID}/comments`)
+      .set("Authorization", authToken)
+      .send({ body: "hi" });
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /:id/timeline returns 404 when the parent finding is in another org", async () => {
+    mockFinding(ORG_B);
+    const res = await request(app)
+      .get(`/api/v1/findings/${FINDING_ID}/timeline`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
   });
 });

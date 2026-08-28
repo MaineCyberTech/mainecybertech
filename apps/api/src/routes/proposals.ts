@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { addTimelineEvent } from "../services/approvals";
 import { AppError, success, type PaginatedResult } from "../types";
+import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -87,7 +88,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    let query = supabase.from("proposals").select("*").eq("id", req.params.id);
+    let query = supabase.from("proposals").select("*").eq("id", req.params.id as string);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -98,26 +99,26 @@ router.get("/:id", async (req, res, next) => {
         supabase
           .from("proposal_phases")
           .select("*")
-          .eq("proposal_id", req.params.id)
+          .eq("proposal_id", req.params.id as string)
           .order("sort_order"),
         supabase
           .from("proposal_line_items")
           .select("*")
-          .eq("proposal_id", req.params.id)
+          .eq("proposal_id", req.params.id as string)
           .order("sort_order"),
         supabase
           .from("module_comments")
           .select("*")
           .eq("module_key", "proposals")
           .eq("entity_type", "proposal")
-          .eq("entity_id", req.params.id)
+          .eq("entity_id", req.params.id as string)
           .order("created_at", { ascending: true }),
         supabase
           .from("module_timeline_events")
           .select("*")
           .eq("module_key", "proposals")
           .eq("entity_type", "proposal")
-          .eq("entity_id", req.params.id)
+          .eq("entity_id", req.params.id as string)
           .order("created_at", { ascending: true }),
       ]);
 
@@ -264,14 +265,14 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     const parsed = updateProposalSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { data: current, error: fetchError } = await supabase
-      .from("proposals")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
-
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Proposal not found", 404);
-    checkVersionMatch(current.version, req.ifMatchVersion);
+    const current = await loadOwned(
+      req,
+      supabase as any,
+      "proposals",
+      req.params.id as string,
+      "id, version, organization_id",
+    );
+    checkVersionMatch(current.version as number, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -281,12 +282,12 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     if (parsed.ownerUserId !== undefined) updateData.owner_user_id = parsed.ownerUserId;
     if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
     if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
-    updateData.version = current.version + 1;
+    updateData.version = (current.version as number) + 1;
 
     const { data, error } = await supabase
       .from("proposals")
       .update(updateData)
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .eq("version", current.version)
       .select()
       .single();
@@ -311,14 +312,15 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("proposals").delete().eq("id", req.params.id);
+    await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
+    const { error } = await supabase.from("proposals").delete().eq("id", req.params.id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "proposal.deleted",
       entityType: "proposal",
-      entityId: String(req.params.id),
+      entityId: String(req.params.id as string),
     });
 
     res.status(204).send();
@@ -331,11 +333,12 @@ router.post("/:id/phases", async (req, res, next) => {
   try {
     const parsed = createPhaseSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
 
     const { data, error } = await supabase
       .from("proposal_phases")
       .insert({
-        proposal_id: req.params.id,
+        proposal_id: req.params.id as string,
         title: parsed.title,
         description: parsed.description ?? null,
         assumptions: parsed.assumptions ?? null,
@@ -352,7 +355,7 @@ router.post("/:id/phases", async (req, res, next) => {
       action: "proposal.phase.created",
       entityType: "proposal_phase",
       entityId: data.id,
-      metadata: { proposalId: req.params.id, title: parsed.title },
+      metadata: { proposalId: req.params.id as string, title: parsed.title },
     });
 
     res.status(201).json(success(data));
@@ -365,6 +368,7 @@ router.patch("/:id/phases/:phaseId", async (req, res, next) => {
   try {
     const parsed = updatePhaseSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
 
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -377,7 +381,7 @@ router.patch("/:id/phases/:phaseId", async (req, res, next) => {
       .from("proposal_phases")
       .update(updateData)
       .eq("id", req.params.phaseId)
-      .eq("proposal_id", req.params.id)
+      .eq("proposal_id", req.params.id as string)
       .select()
       .single();
 
@@ -389,7 +393,7 @@ router.patch("/:id/phases/:phaseId", async (req, res, next) => {
       action: "proposal.phase.updated",
       entityType: "proposal_phase",
       entityId: data.id,
-      metadata: { proposalId: req.params.id, ...parsed },
+      metadata: { proposalId: req.params.id as string, ...parsed },
     });
 
     res.json(success(data));
@@ -401,11 +405,12 @@ router.patch("/:id/phases/:phaseId", async (req, res, next) => {
 router.delete("/:id/phases/:phaseId", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
     const { error } = await supabase
       .from("proposal_phases")
       .delete()
       .eq("id", req.params.phaseId)
-      .eq("proposal_id", req.params.id);
+      .eq("proposal_id", req.params.id as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -414,7 +419,7 @@ router.delete("/:id/phases/:phaseId", async (req, res, next) => {
       action: "proposal.phase.deleted",
       entityType: "proposal_phase",
       entityId: String(req.params.phaseId),
-      metadata: { proposalId: req.params.id },
+      metadata: { proposalId: req.params.id as string },
     });
 
     res.status(204).send();
@@ -427,6 +432,7 @@ router.post("/:id/items", async (req, res, next) => {
   try {
     const parsed = createLineItemSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
 
     const itemTotal =
       parsed.totalPrice > 0 ? parsed.totalPrice : parsed.quantity * parsed.unitPrice;
@@ -434,7 +440,7 @@ router.post("/:id/items", async (req, res, next) => {
     const { data, error } = await supabase
       .from("proposal_line_items")
       .insert({
-        proposal_id: req.params.id,
+        proposal_id: req.params.id as string,
         phase_id: parsed.phaseId ?? null,
         item_type: parsed.itemType,
         name: parsed.name,
@@ -458,7 +464,7 @@ router.post("/:id/items", async (req, res, next) => {
       action: "proposal.item.created",
       entityType: "proposal_line_item",
       entityId: data.id,
-      metadata: { proposalId: req.params.id, name: parsed.name },
+      metadata: { proposalId: req.params.id as string, name: parsed.name },
     });
 
     res.status(201).json(success(data));
@@ -471,6 +477,7 @@ router.patch("/:id/items/:itemId", async (req, res, next) => {
   try {
     const parsed = updateLineItemSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
 
     const updateData: Record<string, unknown> = {};
     if (parsed.phaseId !== undefined) updateData.phase_id = parsed.phaseId;
@@ -491,7 +498,7 @@ router.patch("/:id/items/:itemId", async (req, res, next) => {
       .from("proposal_line_items")
       .update(updateData)
       .eq("id", req.params.itemId)
-      .eq("proposal_id", req.params.id)
+      .eq("proposal_id", req.params.id as string)
       .select()
       .single();
 
@@ -503,7 +510,7 @@ router.patch("/:id/items/:itemId", async (req, res, next) => {
       action: "proposal.item.updated",
       entityType: "proposal_line_item",
       entityId: data.id,
-      metadata: { proposalId: req.params.id, ...parsed },
+      metadata: { proposalId: req.params.id as string, ...parsed },
     });
 
     res.json(success(data));
@@ -515,11 +522,12 @@ router.patch("/:id/items/:itemId", async (req, res, next) => {
 router.delete("/:id/items/:itemId", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
     const { error } = await supabase
       .from("proposal_line_items")
       .delete()
       .eq("id", req.params.itemId)
-      .eq("proposal_id", req.params.id);
+      .eq("proposal_id", req.params.id as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -528,7 +536,7 @@ router.delete("/:id/items/:itemId", async (req, res, next) => {
       action: "proposal.item.deleted",
       entityType: "proposal_line_item",
       entityId: String(req.params.itemId),
-      metadata: { proposalId: req.params.id },
+      metadata: { proposalId: req.params.id as string },
     });
 
     res.status(204).send();
@@ -545,7 +553,7 @@ router.post("/:id/submit-approval", async (req, res, next) => {
     const { data: proposal, error: findError } = await supabase
       .from("proposals")
       .select("id, organization_id, title, description, status, grand_total, version")
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .single();
 
     if (findError || !proposal) throw new AppError("NOT_FOUND", "Proposal not found", 404);
@@ -583,7 +591,7 @@ router.post("/:id/submit-approval", async (req, res, next) => {
         approval_request_id: approval.id,
         version: proposal.version + 1,
       })
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .eq("version", proposal.version);
 
     await logAuditEvent({
@@ -591,7 +599,7 @@ router.post("/:id/submit-approval", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "proposal.submitted_for_approval",
       entityType: "proposal",
-      entityId: req.params.id,
+      entityId: req.params.id as string,
       metadata: { approvalRequestId: approval.id },
     });
 
@@ -599,7 +607,7 @@ router.post("/:id/submit-approval", async (req, res, next) => {
       parsed.organizationId,
       "proposals",
       "proposal",
-      req.params.id,
+      req.params.id as string,
       "submitted_for_approval",
       {},
       req.authUser!.userId,
@@ -619,7 +627,7 @@ router.post("/:id/publish", async (req, res, next) => {
     const { data: current, error: findError } = await supabase
       .from("proposals")
       .select("id, version, status")
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .single();
 
     if (findError || !current) throw new AppError("NOT_FOUND", "Proposal not found", 404);
@@ -641,7 +649,7 @@ router.post("/:id/publish", async (req, res, next) => {
         metadata: {},
         version: current.version + 1,
       })
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .eq("version", current.version)
       .select()
       .single();
@@ -654,14 +662,14 @@ router.post("/:id/publish", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "proposal.published",
       entityType: "proposal",
-      entityId: req.params.id,
+      entityId: req.params.id as string,
     });
 
     await addTimelineEvent(
       parsed.organizationId,
       "proposals",
       "proposal",
-      req.params.id,
+      req.params.id as string,
       "published",
       {},
       req.authUser!.userId,
@@ -676,12 +684,13 @@ router.post("/:id/publish", async (req, res, next) => {
 router.get("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
     const { data, error } = await supabase
       .from("module_comments")
       .select("*")
       .eq("module_key", "proposals")
       .eq("entity_type", "proposal")
-      .eq("entity_id", req.params.id)
+      .eq("entity_id", req.params.id as string)
       .order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -694,13 +703,13 @@ router.get("/:id/comments", async (req, res, next) => {
 router.post("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { data: proposal } = await supabase
-      .from("proposals")
-      .select("organization_id")
-      .eq("id", req.params.id)
-      .single();
-
-    if (!proposal) throw new AppError("NOT_FOUND", "Proposal not found", 404);
+    const proposal = await loadOwned(
+      req,
+      supabase as any,
+      "proposals",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const { body } = req.body as { body: string; isInternal?: boolean };
     if (!body || !body.trim()) throw new AppError("VALIDATION", "Comment body is required", 400);
@@ -708,10 +717,10 @@ router.post("/:id/comments", async (req, res, next) => {
     const { data, error } = await supabase
       .from("module_comments")
       .insert({
-        organization_id: proposal.organization_id,
+        organization_id: proposal.organization_id as string,
         module_key: "proposals",
         entity_type: "proposal",
-        entity_id: req.params.id,
+        entity_id: req.params.id as string,
         author_id: req.authUser!.userId,
         body: body.trim(),
         is_internal: (req.body as { isInternal?: boolean }).isInternal ?? false,
@@ -726,7 +735,7 @@ router.post("/:id/comments", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "proposal.comment.created",
       entityType: "proposal",
-      entityId: req.params.id,
+      entityId: req.params.id as string,
     });
 
     res.status(201).json(success(data));
@@ -738,12 +747,13 @@ router.post("/:id/comments", async (req, res, next) => {
 router.get("/:id/timeline", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
     const { data, error } = await supabase
       .from("module_timeline_events")
       .select("*")
       .eq("module_key", "proposals")
       .eq("entity_type", "proposal")
-      .eq("entity_id", req.params.id)
+      .eq("entity_id", req.params.id as string)
       .order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

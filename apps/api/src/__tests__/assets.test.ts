@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder  } from "./helpers";
+import { createTestApp, createMockBuilder, createOrgAccessStub } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -56,13 +56,14 @@ function mockAuth() {
 
 /*
  * Route-level suite: auth/permission/subscription middleware is stubbed so
- * mocks serve route queries only. Enforcement itself is covered by the
- * dedicated middleware-*.test.ts suites.
+ * mocks serve route queries only. The org-access stub (createOrgAccessStub)
+ * additionally populates req.orgScope so the tenant-isolation gate in
+ * lib/tenant.ts is genuinely exercised. Enforcement via real membership
+ * lookups is covered by middleware-org-access.test.ts.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
     () =>
@@ -129,5 +130,82 @@ describe("Assets API", () => {
     supabase.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
     const res = await request(app).get("/api/v1/assets/export").set("Authorization", authToken);
     expect(res.status).toBe(200);
+  });
+});
+
+describe("Asset tenant isolation (QW-1 / Phase 1)", () => {
+  const ORG_A = "00000000-0000-0000-0000-000000000001";
+  const ORG_B = "00000000-0000-0000-0000-000000000002";
+  const ASSET_ID = "00000000-0000-0000-0000-0000000000a1";
+
+  function mockAsset(orgId: string, extra: Record<string, unknown> = {}) {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(
+      createMockBuilder({
+        data: { id: ASSET_ID, organization_id: orgId, version: 1, name: "Asset", ...extra },
+        error: null,
+      }),
+    );
+    return supabase;
+  }
+
+  it("PATCH /:id succeeds when the asset belongs to the caller's org", async () => {
+    mockAsset(ORG_A);
+    const res = await request(app)
+      .patch(`/api/v1/assets/${ASSET_ID}`)
+      .set("Authorization", authToken)
+      .send({ name: "Renamed" });
+    expect(res.status).toBe(200);
+    expect(res.body.data.organization_id).toBe(ORG_A);
+  });
+
+  it("PATCH /:id returns 404 when the asset is in another org", async () => {
+    mockAsset(ORG_B);
+    const res = await request(app)
+      .patch(`/api/v1/assets/${ASSET_ID}`)
+      .set("Authorization", authToken)
+      .send({ name: "Renamed" });
+    expect(res.status).toBe(404);
+  });
+
+  it("DELETE /:id succeeds when the asset belongs to the caller's org", async () => {
+    mockAsset(ORG_A);
+    const res = await request(app)
+      .delete(`/api/v1/assets/${ASSET_ID}`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(204);
+  });
+
+  it("DELETE /:id returns 404 when the asset is in another org", async () => {
+    mockAsset(ORG_B);
+    const res = await request(app)
+      .delete(`/api/v1/assets/${ASSET_ID}`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /:id/comments returns 404 when the parent asset is in another org", async () => {
+    mockAsset(ORG_B);
+    const res = await request(app)
+      .get(`/api/v1/assets/${ASSET_ID}/comments`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
+  });
+
+  it("POST /:id/comments returns 404 when the parent asset is in another org", async () => {
+    mockAsset(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/assets/${ASSET_ID}/comments`)
+      .set("Authorization", authToken)
+      .send({ body: "hi" });
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /:id/timeline returns 404 when the parent asset is in another org", async () => {
+    mockAsset(ORG_B);
+    const res = await request(app)
+      .get(`/api/v1/assets/${ASSET_ID}/timeline`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
   });
 });

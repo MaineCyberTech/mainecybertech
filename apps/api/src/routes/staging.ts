@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { loadOwned } from "../lib/tenant";
 import { createStagingSchema, updateStagingSchema } from "../validators/staging";
 
 const router: ReturnType<typeof Router> = Router();
@@ -50,7 +51,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    let query = supabase.from("hardware_staging_checks").select("*").eq("id", req.params.id);
+    let query = supabase.from("hardware_staging_checks").select("*").eq("id", String(req.params.id as string));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Staging check not found", 404);
@@ -99,13 +100,7 @@ router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateStagingSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
-
-    const { data: current, error: fetchError } = await supabase
-      .from("hardware_staging_checks")
-      .select("id")
-      .eq("id", req.params.id)
-      .single();
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Staging check not found", 404);
+    await loadOwned(req, supabase as any, "hardware_staging_checks", String(req.params.id as string));
 
     const updateData: Record<string, unknown> = {};
     if (parsed.deviceName !== undefined) updateData.device_name = parsed.deviceName;
@@ -118,7 +113,7 @@ router.patch("/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("hardware_staging_checks")
       .update(updateData)
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id as string))
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -140,17 +135,18 @@ router.patch("/:id", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "hardware_staging_checks", String(req.params.id as string));
     const { error } = await supabase
       .from("hardware_staging_checks")
       .delete()
-      .eq("id", req.params.id);
+      .eq("id", String(req.params.id as string));
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "hardware_staging.deleted",
       entityType: "hardware_staging_check",
-      entityId: String(req.params.id),
+      entityId: String(String(req.params.id as string)),
     });
 
     res.status(204).send();

@@ -40,6 +40,45 @@ export function createMockBuilder(result: MockResult) {
   return builder;
 }
 
+/**
+ * QW-1 stub for `../middleware/org-access` used by route-level suites. It is a
+ * pass-through `next()` like the legacy stub, BUT it also populates the
+ * `req.orgScope` / `req.orgId` fields that the new ownership checks
+ * (`lib/tenant.ts`) read. Without this, a green route suite would not actually
+ * exercise the tenant-isolation gate. `requireOrgAccess` additionally injects
+ * `req.query.organization_id` to mirror production behaviour for handlers that
+ * still scope via that legacy field.
+ */
+export function createOrgAccessStub(
+  orgId: string,
+  opts: { platformAdmin?: boolean } = {},
+) {
+  const platformAdmin = opts.platformAdmin ?? false;
+  return {
+    requireOrgAccess: (_req: any, _res: unknown, next: () => void) => {
+      _req.orgScope = {
+        orgId,
+        explicit: true,
+        platformAdmin,
+        impersonation: false,
+      };
+      _req.orgId = orgId;
+      _req.query = { ..._req.query, organization_id: orgId };
+      next();
+    },
+    requireOrgAccessByParam: (req: any, _res: unknown, next: () => void) => {
+      req.orgScope = {
+        orgId: req.params?.id ?? null,
+        explicit: true,
+        platformAdmin,
+        impersonation: false,
+      };
+      req.orgId = req.params?.id ?? null;
+      next();
+    },
+  };
+}
+
 export function createTestApp() {
   const app = express();
   app.use(

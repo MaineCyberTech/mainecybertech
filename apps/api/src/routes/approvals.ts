@@ -8,6 +8,7 @@ import {
   addTimelineEvent,
 } from "../services/approvals";
 import { AppError, success, type PaginatedResult } from "../types";
+import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -145,7 +146,7 @@ router.get("/:id", async (req, res, next) => {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
 
-    let query = supabase.from("approval_requests").select("*").eq("id", req.params.id);
+    let query = supabase.from("approval_requests").select("*").eq("id", req.params.id as string);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -156,7 +157,7 @@ router.get("/:id", async (req, res, next) => {
       .select("*")
       .eq("module_key", "approvals")
       .eq("entity_type", "approval_request")
-      .eq("entity_id", req.params.id)
+      .eq("entity_id", req.params.id as string)
       .order("created_at", { ascending: true });
 
     const { data: timeline } = await supabase
@@ -164,7 +165,7 @@ router.get("/:id", async (req, res, next) => {
       .select("*")
       .eq("module_key", "approvals")
       .eq("entity_type", "approval_request")
-      .eq("entity_id", req.params.id)
+      .eq("entity_id", req.params.id as string)
       .order("created_at", { ascending: true });
 
     res.json(success({ ...data, comments: comments ?? [], timeline: timeline ?? [] }));
@@ -230,17 +231,14 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     const parsed = updateApprovalSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { data: current, error: fetchError } = await supabase
-      .from("approval_requests")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
-
-    if (fetchError || !current) {
-      throw new AppError("NOT_FOUND", "Approval request not found", 404);
-    }
-
-    checkVersionMatch(current.version, req.ifMatchVersion);
+    const current = await loadOwned(
+      req,
+      supabase as any,
+      "approval_requests",
+      req.params.id as string,
+      "id, version, organization_id",
+    );
+    checkVersionMatch(current.version as number, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.requestSubject !== undefined) updateData.request_subject = parsed.requestSubject;
@@ -251,12 +249,12 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
     if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
 
-    updateData.version = current.version + 1;
+    updateData.version = (current.version as number) + 1;
 
     const { data, error } = await supabase
       .from("approval_requests")
       .update(updateData)
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .eq("version", current.version)
       .select()
       .single();
@@ -281,7 +279,8 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("approval_requests").delete().eq("id", req.params.id);
+    await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
+    const { error } = await supabase.from("approval_requests").delete().eq("id", req.params.id as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -289,7 +288,7 @@ router.delete("/:id", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "approval.deleted",
       entityType: "approval_request",
-      entityId: String(req.params.id),
+      entityId: String(req.params.id as string),
     });
 
     res.status(204).send();
@@ -303,7 +302,7 @@ router.post("/:id/approve", async (req, res, next) => {
     const parsed = approveRequestSchema.parse(req.body);
 
     const result = await approveRequest(
-      req.params.id,
+      req.params.id as string,
       req.authUser!.userId,
       parsed.organizationId,
       parsed.notes,
@@ -313,7 +312,7 @@ router.post("/:id/approve", async (req, res, next) => {
       parsed.organizationId,
       "approvals",
       "approval_request",
-      req.params.id,
+      req.params.id as string,
       "approved",
       { notes: parsed.notes },
       req.authUser!.userId,
@@ -330,7 +329,7 @@ router.post("/:id/reject", async (req, res, next) => {
     const parsed = rejectRequestSchema.parse(req.body);
 
     const result = await rejectRequest(
-      req.params.id,
+      req.params.id as string,
       req.authUser!.userId,
       parsed.organizationId,
       parsed.reason,
@@ -340,7 +339,7 @@ router.post("/:id/reject", async (req, res, next) => {
       parsed.organizationId,
       "approvals",
       "approval_request",
-      req.params.id,
+      req.params.id as string,
       "rejected",
       { reason: parsed.reason },
       req.authUser!.userId,
@@ -357,7 +356,7 @@ router.post("/:id/cancel", async (req, res, next) => {
     const parsed = cancelRequestSchema.parse(req.body);
 
     const result = await cancelRequest(
-      req.params.id,
+      req.params.id as string,
       req.authUser!.userId,
       parsed.organizationId,
       parsed.reason,
@@ -367,7 +366,7 @@ router.post("/:id/cancel", async (req, res, next) => {
       parsed.organizationId,
       "approvals",
       "approval_request",
-      req.params.id,
+      req.params.id as string,
       "cancelled",
       { reason: parsed.reason },
       req.authUser!.userId,
@@ -382,13 +381,14 @@ router.post("/:id/cancel", async (req, res, next) => {
 router.get("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
 
     const { data, error } = await supabase
       .from("module_comments")
       .select("*")
       .eq("module_key", "approvals")
       .eq("entity_type", "approval_request")
-      .eq("entity_id", req.params.id)
+      .eq("entity_id", req.params.id as string)
       .order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -403,21 +403,21 @@ router.post("/:id/comments", async (req, res, next) => {
     const parsed = addApprovalCommentSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { data: approval } = await supabase
-      .from("approval_requests")
-      .select("organization_id")
-      .eq("id", req.params.id)
-      .single();
-
-    if (!approval) throw new AppError("NOT_FOUND", "Approval request not found", 404);
+    const approval = await loadOwned(
+      req,
+      supabase as any,
+      "approval_requests",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const { data, error } = await supabase
       .from("module_comments")
       .insert({
-        organization_id: approval.organization_id,
+        organization_id: approval.organization_id as string,
         module_key: "approvals",
         entity_type: "approval_request",
-        entity_id: req.params.id,
+        entity_id: req.params.id as string,
         author_id: req.authUser!.userId,
         body: parsed.body,
         is_internal: parsed.isInternal,
@@ -432,7 +432,7 @@ router.post("/:id/comments", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "approval.comment.created",
       entityType: "approval_request",
-      entityId: req.params.id,
+      entityId: req.params.id as string,
     });
 
     res.status(201).json(success(data));
@@ -444,13 +444,14 @@ router.post("/:id/comments", async (req, res, next) => {
 router.get("/:id/timeline", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
 
     const { data, error } = await supabase
       .from("module_timeline_events")
       .select("*")
       .eq("module_key", "approvals")
       .eq("entity_type", "approval_request")
-      .eq("entity_id", req.params.id)
+      .eq("entity_id", req.params.id as string)
       .order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

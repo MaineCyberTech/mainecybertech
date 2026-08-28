@@ -1,7 +1,7 @@
 ﻿import { jest } from "@jest/globals";
 import request from "supertest";
+import { createTestApp, createMockBuilder, createOrgAccessStub, type MockResult, tableAwareFrom } from "./helpers";
 import webhookManagementRouter from "../routes/webhook-management";
-import { createTestApp, createMockBuilder, type MockResult , tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -14,6 +14,16 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn() }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
+jest.mock("../middleware/permissions", () => ({
+  requirePermission:
+    () =>
+    (_req: unknown, _res: unknown, next: () => void) =>
+      next(),
+}));
 
 import { getSupabaseAdmin } from "../services/supabase";
 
@@ -40,7 +50,7 @@ describe("webhook-management routes", () => {
   });
 
   it("GET / masks secret in response", async () => {
-    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: { id: "wh1", name: "Test", secret: "my-super-secret-key-12345" }, error: null } as MockResult)));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: { id: "wh1", name: "Test", secret: "my-super-secret-key-12345", organization_id: "00000000-0000-0000-0000-000000000001" }, error: null } as MockResult)));
     const res = await request(app).get("/api/v1/webhook-endpoints/wh1").set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
     expect(res.body.data.secret).toBe("my-s****2345");
@@ -48,7 +58,7 @@ describe("webhook-management routes", () => {
   });
 
   it("GET /:id returns single endpoint", async () => {
-    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: { id: "wh1", name: "Test" }, error: null } as MockResult)));
+    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: { id: "wh1", name: "Test", organization_id: "00000000-0000-0000-0000-000000000001" }, error: null } as MockResult)));
     const res = await request(app).get("/api/v1/webhook-endpoints/wh1").set("Authorization", "Bearer token");
     expect(res.status).toBe(200);
   });
@@ -160,5 +170,77 @@ describe("webhook-management routes", () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error?.code).toBe("VALIDATION");
+  });
+
+  describe("by-id tenant scoping", () => {
+    const ORG = "00000000-0000-0000-0000-000000000001";
+    const OTHER = "00000000-0000-0000-0000-000000000002";
+
+    function mockWebhook(orgId: string) {
+      const s = mockAuth();
+      s.from.mockReturnValue(
+        createMockBuilder({
+          data: {
+            id: "wh1",
+            name: "Test",
+            organization_id: orgId,
+            version: 1,
+            url: "https://example.com/hook",
+          },
+          error: null,
+        } as MockResult),
+      );
+      return s;
+    }
+
+    it("GET /:id returns 404 when the webhook is in another org", async () => {
+      mockWebhook(OTHER);
+      const res = await request(app)
+        .get("/api/v1/webhook-endpoints/wh1")
+        .set("Authorization", "Bearer token");
+      expect(res.status).toBe(404);
+    });
+
+    it("PATCH /:id returns 404 when the webhook is in another org", async () => {
+      mockWebhook(OTHER);
+      const res = await request(app)
+        .patch("/api/v1/webhook-endpoints/wh1")
+        .set("Authorization", "Bearer token")
+        .send({ name: "renamed" });
+      expect(res.status).toBe(404);
+    });
+
+    it("DELETE /:id returns 404 when the webhook is in another org", async () => {
+      mockWebhook(OTHER);
+      const res = await request(app)
+        .delete("/api/v1/webhook-endpoints/wh1")
+        .set("Authorization", "Bearer token");
+      expect(res.status).toBe(404);
+    });
+
+    it("POST /:id/test returns 404 when the webhook is in another org", async () => {
+      mockWebhook(OTHER);
+      const res = await request(app)
+        .post("/api/v1/webhook-endpoints/wh1/test")
+        .set("Authorization", "Bearer token");
+      expect(res.status).toBe(404);
+    });
+
+    it("PATCH /:id succeeds when the webhook belongs to the caller's org", async () => {
+      mockWebhook(ORG);
+      const res = await request(app)
+        .patch("/api/v1/webhook-endpoints/wh1")
+        .set("Authorization", "Bearer token")
+        .send({ name: "renamed" });
+      expect(res.status).toBe(200);
+    });
+
+    it("DELETE /:id succeeds when the webhook belongs to the caller's org", async () => {
+      mockWebhook(ORG);
+      const res = await request(app)
+        .delete("/api/v1/webhook-endpoints/wh1")
+        .set("Authorization", "Bearer token");
+      expect(res.status).toBe(204);
+    });
   });
 });

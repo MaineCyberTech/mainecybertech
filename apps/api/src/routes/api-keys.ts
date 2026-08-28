@@ -6,6 +6,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
 import { AppError, success } from "../types";
+import { loadOwned } from "../lib/tenant";
 import { logAuditEvent } from "../services/audit";
 
 const router: ReturnType<typeof Router> = Router();
@@ -91,7 +92,16 @@ router.post("/", requirePermission("api-keys", "manage"), async (req, res, next)
 // PATCH /api/v1/api-keys/:id — update (revoke/toggle)
 router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, next) => {
   try {
+    const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "api_keys", String(req.params.id));
+
     const orgId = req.query.organization_id as string;
+    const platformAdmin =
+      (req as unknown as { orgScope?: { platformAdmin?: boolean; explicit?: boolean } }).orgScope
+        ?.platformAdmin === true;
+    const explicit =
+      (req as unknown as { orgScope?: { platformAdmin?: boolean; explicit?: boolean } }).orgScope
+        ?.explicit === true;
     const parsed = z
       .object({
         isActive: z.boolean().optional(),
@@ -99,7 +109,6 @@ router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, n
       })
       .parse(req.body);
 
-    const supabase = getSupabaseAdmin();
     const updateData: Record<string, unknown> = {};
     if (parsed.isActive !== undefined) updateData.is_active = parsed.isActive;
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -109,7 +118,8 @@ router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, n
       .from("api_keys")
       .update(updateData)
       .eq("id", req.params.id);
-    if (orgId) query = query.eq("organization_id", orgId);
+    // Org predicate is unconditional for non-platform-admins (fail-closed).
+    if (orgId && !(platformAdmin && !explicit)) query = query.eq("organization_id", orgId);
     const { data, error } = await query
       .select("id, name, key_prefix, is_active, created_at")
       .single();
@@ -134,10 +144,19 @@ router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, n
 // DELETE /api/v1/api-keys/:id
 router.delete("/:id", requirePermission("api-keys", "manage"), async (req, res, next) => {
   try {
-    const orgId = req.query.organization_id as string;
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "api_keys", String(req.params.id));
+
+    const orgId = req.query.organization_id as string;
+    const platformAdmin =
+      (req as unknown as { orgScope?: { platformAdmin?: boolean; explicit?: boolean } }).orgScope
+        ?.platformAdmin === true;
+    const explicit =
+      (req as unknown as { orgScope?: { platformAdmin?: boolean; explicit?: boolean } }).orgScope
+        ?.explicit === true;
     let query = supabase.from("api_keys").delete().eq("id", req.params.id);
-    if (orgId) query = query.eq("organization_id", orgId);
+    // Org predicate is unconditional for non-platform-admins (fail-closed).
+    if (orgId && !(platformAdmin && !explicit)) query = query.eq("organization_id", orgId);
     const { error } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

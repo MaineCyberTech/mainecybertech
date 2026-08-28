@@ -13,6 +13,20 @@ declare global {
         email: string;
       };
       userJwt?: string;
+      /**
+       * Resolved tenant scope, populated by `requireOrgAccess` /
+       * `requireOrgAccessByParam` (see middleware/org-access.ts). Handlers that
+       * load tenant-scoped rows should verify ownership with
+       * `assertResourceOrg` (lib/tenant.ts) rather than trusting the URL param.
+       */
+      orgScope?: {
+        orgId: string | null;
+        explicit: boolean;
+        platformAdmin: boolean;
+        impersonation: boolean;
+      };
+      /** Convenience alias for `orgScope.orgId` (may be null for platform admins without an explicit org). */
+      orgId?: string | null;
     }
   }
 }

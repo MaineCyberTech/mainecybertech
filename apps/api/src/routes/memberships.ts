@@ -6,6 +6,7 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
+import { loadOwned } from "../lib/tenant";
 import { updateMembershipSchema } from "../validators/membership";
 
 const router: ReturnType<typeof Router> = Router();
@@ -123,6 +124,7 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
   try {
     const parsed = updateMembershipSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "memberships", String(req.params.id));
 
     const { data, error } = await supabase
       .from("memberships")
@@ -156,6 +158,7 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
 router.delete("/:id", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "memberships", String(req.params.id));
     const { error } = await supabase.from("memberships").delete().eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

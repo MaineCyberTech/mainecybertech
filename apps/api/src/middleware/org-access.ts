@@ -10,11 +10,18 @@ function extractOrgId(req: Request): string | null {
   return null;
 }
 
+/** Result of a tenant-access check: whether access is granted, and if so under what capacity. */
+interface OrgAccessDecision {
+  hasAccess: boolean;
+  platformAdmin: boolean;
+  impersonation: boolean;
+}
+
 async function checkOrgAccess(
   userId: string,
   orgId: string,
   req?: Request,
-): Promise<boolean> {
+): Promise<OrgAccessDecision> {
   const supabase = getSupabaseAdmin();
 
   const { data: membership } = await supabase
@@ -25,7 +32,7 @@ async function checkOrgAccess(
     .eq("status", "approved")
     .maybeSingle();
 
-  if (membership) return true;
+  if (membership) return { hasAccess: true, platformAdmin: false, impersonation: false };
 
   const { data: allMemberships } = await supabase
     .from("memberships")
@@ -48,11 +55,11 @@ async function checkOrgAccess(
         reason: "platform_admin_cross_tenant_access",
         req: req ?? null,
       });
-      return true;
+      return { hasAccess: true, platformAdmin: true, impersonation: true };
     }
   }
 
-  return false;
+  return { hasAccess: false, platformAdmin: false, impersonation: false };
 }
 
 /**
@@ -175,14 +182,36 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
       }
       (req as Request & { orgAccessPlatformAdmin?: boolean }).orgAccessPlatformAdmin =
         platformAdmin;
+
+      // QW-1: expose the resolved scope on the request (additive; no behaviour change).
+      // `explicit` is false here because the org was auto-resolved from the user's
+      // membership list (or absent entirely for un-pinned platform admins).
+      req.orgScope = {
+        orgId: defaultOrgId,
+        explicit: activeOrgId != null,
+        platformAdmin,
+        impersonation,
+      };
+      req.orgId = defaultOrgId;
+
       next();
       return;
     }
 
-    const hasAccess = await checkOrgAccess(req.authUser.userId, orgId, req);
-    if (!hasAccess) {
+    const decision = await checkOrgAccess(req.authUser.userId, orgId, req);
+    if (!decision.hasAccess) {
       throw new AppError("FORBIDDEN", "You do not have access to this organization", 403);
     }
+
+    // QW-1: an org was explicitly supplied (query/body), so the request is
+    // explicitly scoped to that org.
+    req.orgScope = {
+      orgId,
+      explicit: true,
+      platformAdmin: decision.platformAdmin,
+      impersonation: decision.impersonation,
+    };
+    req.orgId = orgId;
 
     next();
   } catch (error) {
@@ -201,10 +230,21 @@ export async function requireOrgAccessByParam(req: Request, _res: Response, next
       throw new AppError("VALIDATION", "Organization ID is required", 400);
     }
 
-    const hasAccess = await checkOrgAccess(req.authUser.userId, orgId, req);
-    if (!hasAccess) {
+    const decision = await checkOrgAccess(req.authUser.userId, orgId, req);
+    if (!decision.hasAccess) {
       throw new AppError("FORBIDDEN", "You do not have access to this organization", 403);
     }
+
+    // QW-1: a resource-param route is, by construction, explicitly scoped to the
+    // named organization. The caller may be a platform admin acting cross-tenant
+    // (impersonation) — that is allowed by the gate above and audited already.
+    req.orgScope = {
+      orgId,
+      explicit: true,
+      platformAdmin: decision.platformAdmin,
+      impersonation: decision.impersonation,
+    };
+    req.orgId = orgId;
 
     next();
   } catch (error) {

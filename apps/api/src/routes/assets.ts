@@ -7,6 +7,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { assertResourceOrg } from "../lib/tenant";
 import { createAssetSchema, updateAssetSchema } from "../validators/assets";
 
 const router: ReturnType<typeof Router> = Router();
@@ -220,10 +221,11 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     const { data: current, error: fetchError } = await supabase
       .from("assets")
-      .select("version")
+      .select("version, organization_id")
       .eq("id", req.params.id)
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Asset not found", 404);
+    assertResourceOrg(req, (current as { organization_id?: string }).organization_id);
     checkVersionMatch(current.version, req.ifMatchVersion);
 
     const fieldMap: Record<string, string> = {
@@ -287,6 +289,15 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const { data: asset, error: fetchError } = await supabase
+      .from("assets")
+      .select("organization_id")
+      .eq("id", req.params.id)
+      .maybeSingle();
+    if (fetchError) throw new AppError("DB_ERROR", fetchError.message, 500);
+    if (!asset) throw new AppError("NOT_FOUND", "Asset not found", 404);
+    assertResourceOrg(req, (asset as { organization_id?: string }).organization_id);
+
     const { error } = await supabase.from("assets").delete().eq("id", req.params.id);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
@@ -304,6 +315,14 @@ router.delete("/:id", async (req, res, next) => {
 router.get("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const { data: asset, error: assetError } = await supabase
+      .from("assets")
+      .select("organization_id")
+      .eq("id", req.params.id)
+      .maybeSingle();
+    if (assetError) throw new AppError("DB_ERROR", assetError.message, 500);
+    assertResourceOrg(req, (asset as { organization_id?: string } | null)?.organization_id);
+
     const { data, error } = await supabase
       .from("module_comments")
       .select("*")
@@ -321,12 +340,14 @@ router.get("/:id/comments", async (req, res, next) => {
 router.post("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { data: asset } = await supabase
+    const { data: asset, error: assetError } = await supabase
       .from("assets")
       .select("organization_id")
       .eq("id", req.params.id)
-      .single();
+      .maybeSingle();
+    if (assetError) throw new AppError("DB_ERROR", assetError.message, 500);
     if (!asset) throw new AppError("NOT_FOUND", "Asset not found", 404);
+    assertResourceOrg(req, (asset as { organization_id?: string }).organization_id);
     const { body } = req.body as { body: string; isInternal?: boolean };
     if (!body?.trim()) throw new AppError("VALIDATION", "Comment body is required", 400);
     const { data, error } = await supabase
@@ -359,6 +380,14 @@ router.post("/:id/comments", async (req, res, next) => {
 router.get("/:id/timeline", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const { data: asset, error: assetError } = await supabase
+      .from("assets")
+      .select("organization_id")
+      .eq("id", req.params.id)
+      .maybeSingle();
+    if (assetError) throw new AppError("DB_ERROR", assetError.message, 500);
+    assertResourceOrg(req, (asset as { organization_id?: string } | null)?.organization_id);
+
     const { data, error } = await supabase
       .from("module_timeline_events")
       .select("*")

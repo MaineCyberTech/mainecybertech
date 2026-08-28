@@ -3,6 +3,7 @@ import request from "supertest";
 import organizationsRouter, { resolveImageUpload } from "../routes/organizations";
 import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
 import { errorHandler } from "../middleware/error";
+import { AppError } from "../types";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -70,10 +71,29 @@ const DOMAIN = {
  * Route-level suites: auth/permission middleware is stubbed so the shared
  * Supabase mock serves only route queries. Middleware enforcement itself is
  * covered by security-suite / edge-cases / dedicated middleware tests.
+ *
+ * QW-2: the org-access stub still passes through `requireOrgAccess`, but it
+ * enforces `requireOrgAccessByParam` by rejecting any :id that is not one of the
+ * caller's organizations (mirroring production's 403 for cross-tenant access).
+ * This keeps existing param-route tests green while letting us assert that a
+ * caller cannot rename/delete another tenant's organization.
  */
+const mockAllowedOrgParams = new Set<string>([
+  "org-1",
+  "00000000-0000-0000-0000-000000000001",
+  "missing",
+  "nonexistent",
+]);
 jest.mock("../middleware/org-access", () => ({
   requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireOrgAccessByParam: (req: any, _res: unknown, next: (e?: unknown) => void) => {
+    if (!mockAllowedOrgParams.has(req.params?.id)) {
+      return next(
+        new AppError("FORBIDDEN", "You do not have access to this organization", 403),
+      );
+    }
+    next();
+  },
 }));
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
@@ -455,6 +475,33 @@ describe("organizations routes", () => {
         .attach("logo", Buffer.from("<svg></svg>"), "logo.svg");
 
       expect(res.status).toBe(400);
+    });
+  });
+
+  describe("PATCH /:id tenant isolation (QW-2)", () => {
+    it("returns 403 when the caller is not a member of the target organization", async () => {
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(createMockBuilder({ data: ORG, error: null }));
+
+      const res = await request(app)
+        .patch("/api/v1/organizations/org-other")
+        .set("Authorization", "Bearer token-123")
+        .send({ name: "Hijacked" });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe("DELETE /:id tenant isolation (QW-2)", () => {
+    it("returns 403 when the caller is not a member of the target organization", async () => {
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+
+      const res = await request(app)
+        .delete("/api/v1/organizations/org-other")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
     });
   });
 });

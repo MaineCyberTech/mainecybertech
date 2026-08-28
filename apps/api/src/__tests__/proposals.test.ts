@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder  } from "./helpers";
+import { createTestApp, createMockBuilder, createOrgAccessStub, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -65,10 +65,9 @@ function mockAuth() {
  * mocks serve route queries only. Enforcement itself is covered by the
  * dedicated middleware-*.test.ts suites.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
     () =>
@@ -178,5 +177,154 @@ describe("Proposals API", () => {
         .set("Authorization", authToken);
       expect(res.status).toBe(200);
     });
+  });
+});
+
+describe("Proposal tenant isolation (QW-1)", () => {
+  const ORG_A = "00000000-0000-0000-0000-000000000001";
+  const ORG_B = "00000000-0000-0000-0000-000000000002";
+  const PROPOSAL_ID = "00000000-0000-0000-0000-0000000000c1";
+
+  function mockProposal(orgId: string, extra: Record<string, unknown> = {}) {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(
+      createMockBuilder({
+        data: { id: PROPOSAL_ID, organization_id: orgId, version: 1, ...extra },
+        error: null,
+      } as MockResult),
+    );
+    return supabase;
+  }
+
+  it("PATCH /:id succeeds when the proposal belongs to the caller's org", async () => {
+    mockProposal(ORG_A);
+    const res = await request(app)
+      .patch(`/api/v1/proposals/${PROPOSAL_ID}`)
+      .set("Authorization", authToken)
+      .set("If-Match", "1")
+      .send({ title: "Renamed" });
+    expect(res.status).toBe(200);
+    expect(res.body.data.organization_id).toBe(ORG_A);
+  });
+
+  it("PATCH /:id returns 404 when the proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .patch(`/api/v1/proposals/${PROPOSAL_ID}`)
+      .set("Authorization", authToken)
+      .set("If-Match", "1")
+      .send({ title: "Renamed" });
+    expect(res.status).toBe(404);
+  });
+
+  it("DELETE /:id succeeds when the proposal belongs to the caller's org", async () => {
+    mockProposal(ORG_A);
+    const res = await request(app)
+      .delete(`/api/v1/proposals/${PROPOSAL_ID}`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(204);
+  });
+
+  it("DELETE /:id returns 404 when the proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .delete(`/api/v1/proposals/${PROPOSAL_ID}`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
+  });
+
+  it("POST /:id/phases succeeds when the proposal belongs to the caller's org", async () => {
+    mockProposal(ORG_A);
+    const res = await request(app)
+      .post(`/api/v1/proposals/${PROPOSAL_ID}/phases`)
+      .set("Authorization", authToken)
+      .send({ title: "Phase 1" });
+    expect(res.status).toBe(201);
+  });
+
+  it("POST /:id/phases returns 404 when the proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/proposals/${PROPOSAL_ID}/phases`)
+      .set("Authorization", authToken)
+      .send({ title: "Phase 1" });
+    expect(res.status).toBe(404);
+  });
+
+  it("PATCH /:id/phases/:phaseId returns 404 when the proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .patch(`/api/v1/proposals/${PROPOSAL_ID}/phases/00000000-0000-0000-0000-0000000000p1`)
+      .set("Authorization", authToken)
+      .send({ title: "Renamed" });
+    expect(res.status).toBe(404);
+  });
+
+  it("DELETE /:id/phases/:phaseId returns 404 when the proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .delete(`/api/v1/proposals/${PROPOSAL_ID}/phases/00000000-0000-0000-0000-0000000000p1`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
+  });
+
+  it("POST /:id/items succeeds when the proposal belongs to the caller's org", async () => {
+    mockProposal(ORG_A);
+    const res = await request(app)
+      .post(`/api/v1/proposals/${PROPOSAL_ID}/items`)
+      .set("Authorization", authToken)
+      .send({ name: "Item 1", itemType: "labor" });
+    expect(res.status).toBe(201);
+  });
+
+  it("POST /:id/items returns 404 when the proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/proposals/${PROPOSAL_ID}/items`)
+      .set("Authorization", authToken)
+      .send({ name: "Item 1", itemType: "labor" });
+    expect(res.status).toBe(404);
+  });
+
+  it("PATCH /:id/items/:itemId returns 404 when the proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .patch(`/api/v1/proposals/${PROPOSAL_ID}/items/00000000-0000-0000-0000-0000000000i1`)
+      .set("Authorization", authToken)
+      .send({ name: "Renamed" });
+    expect(res.status).toBe(404);
+  });
+
+  it("DELETE /:id/items/:itemId returns 404 when the proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .delete(`/api/v1/proposals/${PROPOSAL_ID}/items/00000000-0000-0000-0000-0000000000i1`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /:id/comments returns 404 when the parent proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .get(`/api/v1/proposals/${PROPOSAL_ID}/comments`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
+  });
+
+  it("POST /:id/comments returns 404 when the parent proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/proposals/${PROPOSAL_ID}/comments`)
+      .set("Authorization", authToken)
+      .send({ body: "hi" });
+    expect(res.status).toBe(404);
+  });
+
+  it("GET /:id/timeline returns 404 when the parent proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .get(`/api/v1/proposals/${PROPOSAL_ID}/timeline`)
+      .set("Authorization", authToken);
+    expect(res.status).toBe(404);
   });
 });

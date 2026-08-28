@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { loadOwned } from "../lib/tenant";
 import {
   createM365Schema,
   createIncidentSchema,
@@ -163,6 +164,7 @@ router.post("/identity-verification/:id/verify", async (req, res, next) => {
       .object({ verificationPass: z.boolean(), notes: z.string().optional() })
       .parse(req.body);
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "identity_verifications", String(req.params.id));
     const { data, error } = await supabase
       .from("identity_verifications")
       .update({
@@ -243,6 +245,7 @@ crudRoute(
 router.post("/m365-hardening/:id/scan", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "m365_hardening", String(req.params.id));
     const { data: current, error: fetchError } = await supabase
       .from("m365_hardening")
       .select("*")

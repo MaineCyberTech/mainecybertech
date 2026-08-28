@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { loadOwned } from "../lib/tenant";
 import {
   createDeviceProfileSchema,
   updateDeviceProfileSchema,
@@ -58,7 +59,7 @@ router.get("/:id", async (req, res, next) => {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
 
-    let query = supabase.from("device_profiles").select("*").eq("id", req.params.id);
+    let query = supabase.from("device_profiles").select("*").eq("id", String(req.params.id as string));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -109,16 +110,7 @@ router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateDeviceProfileSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
-
-    const { data: current, error: fetchError } = await supabase
-      .from("device_profiles")
-      .select("id")
-      .eq("id", req.params.id)
-      .single();
-
-    if (fetchError || !current) {
-      throw new AppError("NOT_FOUND", "Device profile not found", 404);
-    }
+    await loadOwned(req, supabase as any, "device_profiles", String(req.params.id as string));
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -131,7 +123,7 @@ router.patch("/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("device_profiles")
       .update(updateData)
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id as string))
       .select()
       .single();
 
@@ -154,7 +146,8 @@ router.patch("/:id", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("device_profiles").delete().eq("id", req.params.id);
+    await loadOwned(req, supabase as any, "device_profiles", String(req.params.id as string));
+    const { error } = await supabase.from("device_profiles").delete().eq("id", String(req.params.id as string));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -162,7 +155,7 @@ router.delete("/:id", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "device_profile.deleted",
       entityType: "device_profile",
-      entityId: String(req.params.id),
+      entityId: String(String(req.params.id as string)),
     });
 
     res.status(204).send();

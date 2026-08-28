@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { loadOwned } from "../lib/tenant";
 import {
   createNetworkDiagramSchema,
   updateNetworkDiagramSchema,
@@ -53,7 +54,7 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    let query = supabase.from("network_diagrams").select("*").eq("id", req.params.id);
+    let query = supabase.from("network_diagrams").select("*").eq("id", String(req.params.id as string));
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -105,6 +106,7 @@ router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateNetworkDiagramSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -115,7 +117,7 @@ router.patch("/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("network_diagrams")
       .update(updateData)
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id as string))
       .select()
       .single();
 
@@ -139,7 +141,8 @@ router.patch("/:id", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("network_diagrams").delete().eq("id", req.params.id);
+    await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));
+    const { error } = await supabase.from("network_diagrams").delete().eq("id", String(req.params.id as string));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -147,7 +150,7 @@ router.delete("/:id", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "network_diagram.deleted",
       entityType: "network_diagram",
-      entityId: String(req.params.id),
+      entityId: String(String(req.params.id as string)),
     });
 
     res.status(204).send();

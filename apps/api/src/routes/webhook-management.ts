@@ -9,6 +9,7 @@ import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
+import { loadOwned } from "../lib/tenant";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -67,6 +68,7 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
     const orgId = req.query.organization_id as string | undefined;
     let query = supabase.from("webhook_endpoints").select("*").eq("id", req.params.id);
     if (orgId) query = query.eq("organization_id", orgId);
@@ -118,6 +120,8 @@ router.patch("/:id", requirePermission("webhooks", "manage"), requireIfMatch, as
   try {
     const parsed = updateSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+
+    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
 
     if (parsed.url !== undefined) {
       await assertSafeWebhookUrl(parsed.url);
@@ -171,6 +175,7 @@ router.patch("/:id", requirePermission("webhooks", "manage"), requireIfMatch, as
 router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .delete()
@@ -227,6 +232,7 @@ router.get("/:id/deliveries", async (req, res, next) => {
 router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
     const { data: webhook, error: fetchError } = await supabase
       .from("webhook_endpoints")
       .select("*")

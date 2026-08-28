@@ -5,6 +5,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
+import { loadOwned } from "../lib/tenant";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import {
   createDomainMonitorSchema,
@@ -137,7 +138,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    let query = supabase.from("domain_monitors").select("*").eq("id", req.params.id);
+    let query = supabase.from("domain_monitors").select("*").eq("id", String(req.params.id as string));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Domain monitor not found", 404);
@@ -202,15 +203,10 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateDomainMonitorSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
+    const current = await loadOwned(req, supabase as any, "domain_monitors", String(req.params.id as string));
+    const currentVersion = current.version as number;
 
-    const { data: current, error: fetchError } = await supabase
-      .from("domain_monitors")
-      .select("version, status")
-      .eq("id", req.params.id)
-      .single();
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Domain monitor not found", 404);
-
-    checkVersionMatch(current.version, req.ifMatchVersion);
+    checkVersionMatch(currentVersion, req.ifMatchVersion);
 
     const fieldMap: Record<string, string> = {
       domain: "domain",
@@ -231,13 +227,13 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
         updateData[col] = (parsed as Record<string, unknown>)[k];
     }
 
-    updateData.version = current.version + 1;
+    updateData.version = currentVersion + 1;
 
     const { data, error } = await supabase
       .from("domain_monitors")
       .update(updateData)
-      .eq("version", current.version)
-      .eq("id", req.params.id)
+      .eq("version", currentVersion)
+      .eq("id", String(req.params.id as string))
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -260,13 +256,14 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("domain_monitors").delete().eq("id", req.params.id);
+    await loadOwned(req, supabase as any, "domain_monitors", String(req.params.id as string));
+    const { error } = await supabase.from("domain_monitors").delete().eq("id", String(req.params.id as string));
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "domain_monitor.deleted",
       entityType: "domain_monitor",
-      entityId: String(req.params.id),
+      entityId: String(String(req.params.id as string)),
     });
     res.status(204).send();
   } catch (error) {

@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder  } from "./helpers";
+import { createTestApp, createMockBuilder, createOrgAccessStub } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -60,10 +60,9 @@ function mockAuth() {
  * mocks serve route queries only. Enforcement itself is covered by the
  * dedicated middleware-*.test.ts suites.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
     () =>
@@ -133,6 +132,7 @@ describe("AI API", () => {
             priority: "normal",
             category: "hardware",
             created_at: new Date().toISOString(),
+            organization_id: testOrgId,
           },
           error: null,
         }),
@@ -142,6 +142,28 @@ describe("AI API", () => {
         .set("Authorization", authToken);
       expect(res.status).toBe(200);
       expect(res.body.data).toHaveProperty("suggestedNextAction");
+    });
+
+    it("returns 404 when summarizing a ticket from another org", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: {
+            id: "tk-1",
+            subject: "Test",
+            status: "open",
+            priority: "normal",
+            category: "hardware",
+            created_at: new Date().toISOString(),
+            organization_id: "00000000-0000-0000-0000-000000000002",
+          },
+          error: null,
+        }),
+      );
+      const res = await request(app)
+        .get("/api/v1/ai/copilot/tk-1/summarize")
+        .set("Authorization", authToken);
+      expect(res.status).toBe(404);
     });
 
     it("drafts a reply", async () => {

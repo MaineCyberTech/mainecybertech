@@ -5,6 +5,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
+import { loadOwned } from "../lib/tenant";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { responseCacheNoRenew } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -556,15 +557,19 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", requirePermission("projects", "delete"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { data: project, error: fetchError } = await supabase
+    const project = await loadOwned(
+      req,
+      supabase as any,
+      "projects",
+      String(req.params.id),
+      "id, organization_id",
+    );
+
+    const { error } = await supabase
       .from("projects")
-      .select("id, organization_id")
+      .delete()
       .eq("id", req.params.id)
-      .single();
-
-    if (fetchError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
-
-    const { error } = await supabase.from("projects").delete().eq("id", req.params.id);
+      .eq("organization_id", project.organization_id as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

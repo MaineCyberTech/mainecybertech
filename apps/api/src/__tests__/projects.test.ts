@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
+import { createTestApp, createMockBuilder, createOrgAccessStub, type MockResult } from "./helpers";
 import projectsRouter from "../routes/projects";
-import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
 import { invalidateCache } from "../middleware/cache";
 import { errorHandler } from "../middleware/error";
 
@@ -76,10 +76,9 @@ const READ_STATE = {
  * Supabase mock serves only route queries. Middleware enforcement itself is
  * covered by security-suite / edge-cases / dedicated middleware tests.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
     () =>
@@ -244,26 +243,34 @@ describe("projects routes", () => {
   describe("DELETE /:id", () => {
     it("deletes a project", async () => {
       const supabase = mockAuth();
-      supabase.from
-        .mockReturnValueOnce(
-          createMockBuilder({
-            data: [{ roles: { id: "role-1", key: "admin" } }],
-            error: null,
-          }),
-        )
-        .mockReturnValueOnce(
-          createMockBuilder({
-            data: { id: "proj-1", organization_id: "org-1" },
-            error: null,
-          }),
-        )
-        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { id: "proj-1", organization_id: "00000000-0000-0000-0000-000000000001" },
+          error: null,
+        }),
+      );
 
       const res = await request(app)
         .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
+    });
+
+    it("returns 404 when the project is in another org", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { id: "proj-1", organization_id: "00000000-0000-0000-0000-000000000002" },
+          error: null,
+        }),
+      );
+
+      const res = await request(app)
+        .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
     });
   });
 
@@ -342,7 +349,7 @@ describe("projects routes", () => {
     it("deletes a task", async () => {
       mockAuth();
       (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
-        createMockBuilder({ data: null, error: null }),
+        createMockBuilder({ data: PROJECT, error: null }),
       );
 
       const res = await request(app)
@@ -470,7 +477,7 @@ describe("projects routes", () => {
     it("deletes a project update", async () => {
       mockAuth();
       (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
-        createMockBuilder({ data: null, error: null }),
+        createMockBuilder({ data: PROJECT, error: null }),
       );
 
       const res = await request(app)
@@ -519,7 +526,7 @@ describe("projects routes", () => {
     it("deletes a task comment", async () => {
       mockAuth();
       (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
-        createMockBuilder({ data: null, error: null }),
+        createMockBuilder({ data: PROJECT, error: null }),
       );
 
       const res = await request(app)
@@ -550,7 +557,7 @@ describe("projects routes", () => {
   describe("POST /:id/tasks/reorder", () => {
     it("reorders tasks", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: PROJECT, error: null }));
 
       const res = await request(app)
         .post("/api/v1/projects/00000000-0000-0000-0000-000000000030/tasks/reorder")

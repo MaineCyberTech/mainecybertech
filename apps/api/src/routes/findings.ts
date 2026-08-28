@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { addTimelineEvent } from "../services/approvals";
 import { AppError, success, type PaginatedResult } from "../types";
+import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
@@ -114,7 +115,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    let query = supabase.from("findings").select("*").eq("id", req.params.id);
+    let query = supabase.from("findings").select("*").eq("id", req.params.id as string);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Finding not found", 404);
@@ -125,14 +126,14 @@ router.get("/:id", async (req, res, next) => {
         .select("*")
         .eq("module_key", "findings")
         .eq("entity_type", "finding")
-        .eq("entity_id", req.params.id)
+        .eq("entity_id", req.params.id as string)
         .order("created_at", { ascending: true }),
       supabase
         .from("module_timeline_events")
         .select("*")
         .eq("module_key", "findings")
         .eq("entity_type", "finding")
-        .eq("entity_id", req.params.id)
+        .eq("entity_id", req.params.id as string)
         .order("created_at", { ascending: true }),
     ]);
 
@@ -202,14 +203,14 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     const parsed = updateFindingSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { data: current, error: fetchError } = await supabase
-      .from("findings")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
-
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Finding not found", 404);
-    checkVersionMatch(current.version, req.ifMatchVersion);
+    const current = await loadOwned(
+      req,
+      supabase as any,
+      "findings",
+      req.params.id as string,
+      "id, version, organization_id",
+    );
+    checkVersionMatch(current.version as number, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -232,12 +233,12 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     if (parsed.assignedTo !== undefined) updateData.assigned_to = parsed.assignedTo;
     if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
     if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
-    updateData.version = current.version + 1;
+    updateData.version = (current.version as number) + 1;
 
     const { data, error } = await supabase
       .from("findings")
       .update(updateData)
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .eq("version", current.version)
       .select()
       .single();
@@ -262,14 +263,15 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("findings").delete().eq("id", req.params.id);
+    await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id");
+    const { error } = await supabase.from("findings").delete().eq("id", req.params.id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "finding.deleted",
       entityType: "finding",
-      entityId: String(req.params.id),
+      entityId: String(req.params.id as string),
     });
 
     res.status(204).send();
@@ -286,7 +288,7 @@ router.post("/:id/verify", async (req, res, next) => {
     const { data: current, error: findError } = await supabase
       .from("findings")
       .select("id, status, version")
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .single();
 
     if (findError || !current) throw new AppError("NOT_FOUND", "Finding not found", 404);
@@ -301,7 +303,7 @@ router.post("/:id/verify", async (req, res, next) => {
         verified_at: new Date().toISOString(),
         version: current.version + 1,
       })
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .eq("version", current.version)
       .select()
       .single();
@@ -314,14 +316,14 @@ router.post("/:id/verify", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "finding.verified",
       entityType: "finding",
-      entityId: req.params.id,
+      entityId: req.params.id as string,
     });
 
     await addTimelineEvent(
       parsed.organizationId,
       "findings",
       "finding",
-      req.params.id,
+      req.params.id as string,
       "verified",
       {},
       req.authUser!.userId,
@@ -341,7 +343,7 @@ router.post("/:id/resolve", async (req, res, next) => {
     const { data: current, error: findError } = await supabase
       .from("findings")
       .select("id, status, version")
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .single();
 
     if (findError || !current) throw new AppError("NOT_FOUND", "Finding not found", 404);
@@ -356,7 +358,7 @@ router.post("/:id/resolve", async (req, res, next) => {
         remediation_plan: parsed.resolutionNotes ?? undefined,
         version: current.version + 1,
       })
-      .eq("id", req.params.id)
+      .eq("id", req.params.id as string)
       .eq("version", current.version)
       .select()
       .single();
@@ -369,14 +371,14 @@ router.post("/:id/resolve", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "finding.resolved",
       entityType: "finding",
-      entityId: req.params.id,
+      entityId: req.params.id as string,
     });
 
     await addTimelineEvent(
       parsed.organizationId,
       "findings",
       "finding",
-      req.params.id,
+      req.params.id as string,
       "resolved",
       { notes: parsed.resolutionNotes },
       req.authUser!.userId,
@@ -391,12 +393,13 @@ router.post("/:id/resolve", async (req, res, next) => {
 router.get("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id");
     const { data, error } = await supabase
       .from("module_comments")
       .select("*")
       .eq("module_key", "findings")
       .eq("entity_type", "finding")
-      .eq("entity_id", req.params.id)
+      .eq("entity_id", req.params.id as string)
       .order("created_at", { ascending: true });
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
@@ -408,12 +411,13 @@ router.get("/:id/comments", async (req, res, next) => {
 router.post("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { data: finding } = await supabase
-      .from("findings")
-      .select("organization_id")
-      .eq("id", req.params.id)
-      .single();
-    if (!finding) throw new AppError("NOT_FOUND", "Finding not found", 404);
+    const finding = await loadOwned(
+      req,
+      supabase as any,
+      "findings",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const { body } = req.body as { body: string; isInternal?: boolean };
     if (!body?.trim()) throw new AppError("VALIDATION", "Comment body is required", 400);
@@ -421,10 +425,10 @@ router.post("/:id/comments", async (req, res, next) => {
     const { data, error } = await supabase
       .from("module_comments")
       .insert({
-        organization_id: finding.organization_id,
+        organization_id: finding.organization_id as string,
         module_key: "findings",
         entity_type: "finding",
-        entity_id: req.params.id,
+        entity_id: req.params.id as string,
         author_id: req.authUser!.userId,
         body: body.trim(),
         is_internal: (req.body as { isInternal?: boolean }).isInternal ?? false,
@@ -439,7 +443,7 @@ router.post("/:id/comments", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "finding.comment.created",
       entityType: "finding",
-      entityId: req.params.id,
+      entityId: req.params.id as string,
     });
 
     res.status(201).json(success(data));
@@ -451,12 +455,13 @@ router.post("/:id/comments", async (req, res, next) => {
 router.get("/:id/timeline", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id");
     const { data, error } = await supabase
       .from("module_timeline_events")
       .select("*")
       .eq("module_key", "findings")
       .eq("entity_type", "finding")
-      .eq("entity_id", req.params.id)
+      .eq("entity_id", req.params.id as string)
       .order("created_at", { ascending: true });
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
