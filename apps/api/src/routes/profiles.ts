@@ -53,7 +53,7 @@ router.use(requireAuth, requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseUser(req.userJwt!);
+    const supabase = getSupabaseUser(req, req.userJwt!);
     const ids = req.query.ids as string | undefined;
     const email = req.query.email as string | undefined;
     let query = supabase.from("profiles").select("*");
@@ -101,7 +101,7 @@ router.get("/:id", async (req, res, next) => {
         throw new AppError("FORBIDDEN", "You can only view your own profile", 403);
       }
     }
-    const supabase = getSupabaseUser(req.userJwt!);
+    const supabase = getSupabaseUser(req, req.userJwt!);
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -211,7 +211,7 @@ router.post("/:id/avatar", upload.single("avatar"), async (req, res, next) => {
     const { extension, mimetype } = resolveImageUpload(file, "Avatar");
     const userId = req.params.id as string;
     const storagePath = `${userId}/avatar.${extension}`;
-    const supabase = getSupabaseUser(req.userJwt!);
+    const supabase = getSupabaseUser(req, req.userJwt!);
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
