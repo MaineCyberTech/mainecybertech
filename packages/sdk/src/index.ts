@@ -181,6 +181,13 @@ import {
   type CabDecision,
 } from "./cab";
 import { StagingApi, type StagingCheck } from "./staging";
+import {
+  NetworkDiagramsApi,
+  type NetworkDiagram,
+  type NetworkDiagramDetail,
+  type NetworkDiagramNode,
+  type NetworkDiagramEdge,
+} from "./network-diagrams";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -290,6 +297,10 @@ export type {
   ClientPortalBootstrap,
   ClientPortalMembership,
   ClientPortalSubscription,
+  NetworkDiagram,
+  NetworkDiagramDetail,
+  NetworkDiagramNode,
+  NetworkDiagramEdge,
 };
 export class MCTClient {
   public auth: AuthApi;
@@ -345,6 +356,7 @@ export class MCTClient {
   public compliance: ComplianceApi;
   public cab: CabApi;
   public staging: StagingApi;
+  public networkDiagrams: NetworkDiagramsApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -400,6 +412,7 @@ export class MCTClient {
     this.compliance = new ComplianceApi(client);
     this.cab = new CabApi(client);
     this.staging = new StagingApi(client);
+    this.networkDiagrams = new NetworkDiagramsApi(client);
   }
 
   static create(opts: ClientOptions) {
@@ -409,3 +422,4 @@ export class MCTClient {
 }
 
 export type { Database } from "./database.types";
+

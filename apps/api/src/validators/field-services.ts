@@ -60,14 +60,3 @@ export const createStagingSchema = z.object({
   assetTag: z.string().max(200).optional().nullable(),
   notes: z.string().max(5000).optional().nullable(),
 });
-export const createNetworkDiagramSchema = z.object({
-  organizationId: z.string().uuid(),
-  siteName: z.string().min(1).max(500),
-  deviceCount: z.number().int().min(0).default(0),
-  vlanCount: z.number().int().min(0).default(0),
-  wanCount: z.number().int().min(0).default(0),
-  wirelessZones: z.number().int().min(0).default(0),
-  cameraZones: z.number().int().min(0).default(0),
-  notes: z.string().max(5000).optional().nullable(),
-  diagramData: z.record(z.unknown()).optional().default({}),
-});

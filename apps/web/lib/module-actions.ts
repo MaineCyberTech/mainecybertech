@@ -428,15 +428,16 @@ export async function createStaging(formData: FormData) {
 export async function createNetworkDiagram(formData: FormData) {
   const api = getApiClient();
   try {
-    await api.fieldServices.networkDiagrams.create({
+    const diagramRaw = String(formData.get("diagram") || "").trim();
+    let diagram: Record<string, unknown> | undefined;
+    if (diagramRaw) {
+      diagram = JSON.parse(diagramRaw) as Record<string, unknown>;
+    }
+    await api.networkDiagrams.create({
       organizationId: String(formData.get("organizationId") || ""),
-      siteName: String(formData.get("siteName") || ""),
-      deviceCount: Number(formData.get("deviceCount") || 0),
-      vlanCount: Number(formData.get("vlanCount") || 0),
-      wanCount: Number(formData.get("wanCount") || 0),
-      wirelessZones: Number(formData.get("wirelessZones") || 0),
-      cameraZones: Number(formData.get("cameraZones") || 0),
-      notes: String(formData.get("notes") || ""),
+      name: String(formData.get("name") || ""),
+      description: String(formData.get("description") || "") || null,
+      diagram,
     });
     revalidatePath("/admin/field-services/network-diagrams");
     return { ok: true };

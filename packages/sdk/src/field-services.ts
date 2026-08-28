@@ -55,14 +55,4 @@ export class FieldServicesApi {
       this.c.patch(`/api/v1/field-services/staging/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/field-services/staging/${id}`),
   };
-  networkDiagrams = {
-    list: (p?: Record<string, string | number | undefined>) =>
-      this.c.get<PaginatedResult<unknown>>("/api/v1/field-services/network-diagrams", qp(p)),
-    get: (id: string) => this.c.get<unknown>(`/api/v1/field-services/network-diagrams/${id}`),
-    create: (d: Record<string, unknown>) =>
-      this.c.post("/api/v1/field-services/network-diagrams", d),
-    update: (id: string, d: Record<string, unknown>) =>
-      this.c.patch(`/api/v1/field-services/network-diagrams/${id}`, d),
-    remove: (id: string) => this.c.delete(`/api/v1/field-services/network-diagrams/${id}`),
-  };
 }

@@ -56,7 +56,7 @@ app.use(errorHandler);
 describe("Field Services API", () => {
   beforeEach(() => jest.clearAllMocks());
 
-  const paths = ["isp", "unifi", "port-maps", "camera-calc", "staging", "network-diagrams"];
+  const paths = ["isp", "unifi", "port-maps", "camera-calc", "staging"];
 
   for (const p of paths) {
     it(`lists ${p}`, async () => {

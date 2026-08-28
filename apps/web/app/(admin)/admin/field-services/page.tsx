@@ -18,7 +18,7 @@ export default async function FieldServicesPage() {
       api.fieldServices.portMaps.list({}),
       api.fieldServices.camera.list({}),
       api.fieldServices.staging.list({}),
-      api.fieldServices.networkDiagrams.list({}),
+      api.networkDiagrams.list({}),
     ]);
     for (const [k, v] of Object.entries({ isp, unifi, ports, cameras, staging, diagrams })) {
       counts[k] = v.status === "fulfilled" ? ((v.value as { total?: number }).total ?? 0) : 0;
