@@ -46,7 +46,7 @@ router.get("/", requireAdmin, async (req, res, next) => {
       }
     }
 
-    let query = supabase
+    const query = supabase
       .from("profiles")
       .select(
         "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
