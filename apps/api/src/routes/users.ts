@@ -46,13 +46,23 @@ router.get("/", requireAdmin, async (req, res, next) => {
       }
     }
 
-    // eslint-disable-next-line prefer-const
-    let query = supabase
+    const baseQuery = supabase
       .from("profiles")
       .select(
         "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
         { count: "exact" }
       );
+
+    const filteredQuery = orgId
+      ? baseQuery.in("id", (() => {
+          const { data: userIds } = await supabase
+            .from("memberships")
+            .select("user_id")
+            .eq("organization_id", orgId)
+            .eq("status", "approved");
+          return (userIds ?? []).map((u) => u.user_id as string);
+        })())
+      : baseQuery;
 
     if (orgId) {
       const { data: membership } = await supabase
@@ -73,25 +83,13 @@ router.get("/", requireAdmin, async (req, res, next) => {
           403,
         );
       }
-
-      const { data: userIds } = await supabase
-        .from("memberships")
-        .select("user_id")
-        .eq("organization_id", orgId)
-        .eq("status", "approved");
-
-      const ids = (userIds ?? []).map((u) => u.user_id as string);
-      if (ids.length > 0) {
-        query = query.in("id", ids);
-      } else {
-        res.json(success({ items: [], total: 0, page, limit }));
-        return;
-      }
     }
 
-    query = query.order("email").range(offset, offset + limit - 1);
+    const finalQuery = filteredQuery
+      .order("email")
+      .range(offset, offset + limit - 1);
 
-    const { data, error, count } = await query;
+    const { data, error, count } = await finalQuery;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
   } catch (error) {
