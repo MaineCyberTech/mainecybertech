@@ -49,7 +49,7 @@ router.get("/with-permissions", requireAdmin, async (req, res, next) => {
       countMap.set(rp.role_id, (countMap.get(rp.role_id) ?? 0) + 1);
     }
 
-    const result = roles.map((r: any) => ({
+    const result = roles.map((r: { id: string }) => ({
       ...r,
       permissionCount: countMap.get(r.id) ?? 0,
     }));
@@ -235,7 +235,7 @@ router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
       success({
         role,
         permissions: allPermissions ?? [],
-        rolePermissionIds: (rolePermissionIds ?? []).map((rp: any) => rp.permission_id),
+        rolePermissionIds: (rolePermissionIds ?? []).map((rp: { permission_id: string }) => rp.permission_id),
       }),
     );
   } catch (error) {

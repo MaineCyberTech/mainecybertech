@@ -46,6 +46,8 @@ const COVERAGE_AREAS = [
   "compliance",
 ];
 
+type EvidenceSummaryRow = { coverage_area: string | null; status?: string | null };
+
 // ── Coverage Report (before :id) ────────────────────────────────────
 
 router.get("/coverage-report", async (req, res, next) => {
@@ -70,11 +72,11 @@ router.get("/coverage-report", async (req, res, next) => {
 
     const byCoverageArea: Record<string, { total: number; pending: number; verified: number }> = {};
     for (const area of COVERAGE_AREAS) {
-      const areaItems = items.filter((r: any) => (r as any).coverage_area === area);
+      const areaItems = items.filter((r: EvidenceSummaryRow) => r.coverage_area === area);
       byCoverageArea[area] = {
         total: areaItems.length,
-        pending: areaItems.filter((r: any) => (r as any).status === "pending").length,
-        verified: areaItems.filter((r: any) => (r as any).status === "verified").length,
+        pending: areaItems.filter((r: EvidenceSummaryRow) => r.status === "pending").length,
+        verified: areaItems.filter((r: EvidenceSummaryRow) => r.status === "verified").length,
       };
     }
 

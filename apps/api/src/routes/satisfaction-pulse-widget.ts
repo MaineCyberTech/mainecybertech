@@ -81,7 +81,7 @@ router.get("/export", async (req: Request, res: Response, next: NextFunction) =>
     const result = await exportSatisfactionPulses(orgId, parsed);
 
     if (parsed.format === "csv") {
-      const items = (result as any).data ?? [];
+      const items = result.data ?? [];
       if (items.length === 0) {
         res.setHeader("Content-Type", "text/csv");
         return res.send(
@@ -89,7 +89,7 @@ router.get("/export", async (req: Request, res: Response, next: NextFunction) =>
         );
       }
       const headers = Object.keys(items[0]).join(",");
-      const rows = items.map((item: any) =>
+      const rows = items.map((item: Record<string, unknown>) =>
         Object.values(item)
           .map((v) => (v === null || v === undefined ? "" : String(v).replace(/"/g, '""')))
           .map((v) => (v.includes(",") || v.includes("\n") ? `"${v}"` : v))

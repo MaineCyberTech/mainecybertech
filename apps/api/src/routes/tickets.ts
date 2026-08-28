@@ -164,7 +164,7 @@ router.post("/", requirePermission("tickets", "create"), async (req, res, next) 
 
     if (adminMembers?.length) {
       const adminIds = adminMembers
-        .map((m: any) => m.user_id)
+        .map((m: { user_id: string }) => m.user_id)
         .filter((id: string) => id !== req.authUser!.userId);
       if (adminIds.length) {
         const { data: admins } = await supabase
@@ -512,8 +512,8 @@ router.post("/bulk", requireAdmin, async (req, res, next) => {
       throw new AppError("DB_ERROR", error.message, 500);
     }
 
-    const successful = results.filter((r: any) => r.success).length;
-    const failed = results.filter((r: any) => !r.success);
+    const successful = results.filter((r: { success: boolean }) => r.success).length;
+    const failed = results.filter((r: { success: boolean }) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

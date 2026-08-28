@@ -78,7 +78,9 @@ router.get("/export.csv", async (req: Request, res: Response, next: NextFunction
     });
 
     if (parsed.format === "csv") {
-      const items = (result as any).data?.items || (result as any).data || [];
+      const items = ((result.data as { items?: unknown[] }).items ??
+        (result.data as unknown[]) ??
+        []) as Record<string, unknown>[];
       if (items.length === 0) {
         res.setHeader("Content-Type", "text/csv");
         return res.send(
@@ -86,7 +88,7 @@ router.get("/export.csv", async (req: Request, res: Response, next: NextFunction
         );
       }
       const headers = Object.keys(items[0]).join(",");
-      const rows = items.map((item: any) =>
+      const rows = items.map((item: Record<string, unknown>) =>
         Object.values(item)
           .map((v) => (v === null || v === undefined ? "" : String(v).replace(/"/g, '""')))
           .map((v) => (v.includes(",") || v.includes("\n") ? `"${v}"` : v))

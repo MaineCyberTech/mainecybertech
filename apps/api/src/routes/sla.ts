@@ -28,8 +28,8 @@ router.get("/metrics", responseCacheNoRenew(60), async (req, res, next) => {
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     const total = logs?.length ?? 0;
-    const breached = logs?.filter((l: any) => l.breached).length ?? 0;
-    const resolved = logs?.filter((l: any) => l.resolved_at).length ?? 0;
+    const breached = logs?.filter((l: { breached: boolean | null }) => l.breached).length ?? 0;
+    const resolved = logs?.filter((l: { resolved_at: string | null }) => l.resolved_at).length ?? 0;
 
     // Per-metric breakdown
     const byMetric: Record<string, { total: number; breached: number; avgMinutes: number }> = {};

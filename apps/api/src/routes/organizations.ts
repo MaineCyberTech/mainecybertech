@@ -157,7 +157,7 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
         .eq("user_id", req.authUser!.userId)
         .eq("status", "approved");
 
-      const orgIds = (memberships ?? []).map((m: any) => m.organization_id).filter(Boolean);
+      const orgIds = (memberships ?? []).map((m: { organization_id: string }) => m.organization_id).filter(Boolean);
 
       if (orgIds.length > 0) {
         query = query.in("id", orgIds);

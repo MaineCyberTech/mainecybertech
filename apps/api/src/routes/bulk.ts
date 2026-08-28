@@ -139,11 +139,12 @@ router.post("/invite", async (req, res, next) => {
           status: "invited",
           message: "Invited to organization",
         });
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Unknown error";
         results.push({
           email,
           status: "error",
-          message: err?.message || "Unknown error",
+          message,
         });
       }
     }

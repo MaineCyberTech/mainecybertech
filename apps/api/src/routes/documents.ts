@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
@@ -556,7 +557,7 @@ router.post("/:id/signed-url", async (req, res, next) => {
  * so the bulk-update RPC never touches another tenant's rows.
  */
 async function resolveOwnedDocumentIds(
-  supabase: any,
+  supabase: SupabaseClient,
   documentIds: string[],
   orgId: string | undefined,
 ): Promise<string[]> {
@@ -596,8 +597,8 @@ router.post("/bulk/folder", async (req, res, next) => {
       throw new AppError("DB_ERROR", error.message, 500);
     }
 
-    const successful = results.filter((r: any) => r.success).length;
-    const failed = results.filter((r: any) => !r.success);
+    const successful = results.filter((r: { success: boolean }) => r.success).length;
+    const failed = results.filter((r: { success: boolean }) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -653,8 +654,8 @@ router.post("/bulk/metadata", async (req, res, next) => {
       throw new AppError("DB_ERROR", error.message, 500);
     }
 
-    const successful = results.filter((r: any) => r.success).length;
-    const failed = results.filter((r: any) => !r.success);
+    const successful = results.filter((r: { success: boolean }) => r.success).length;
+    const failed = results.filter((r: { success: boolean }) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

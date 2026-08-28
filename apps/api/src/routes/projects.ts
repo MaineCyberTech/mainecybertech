@@ -129,7 +129,7 @@ router.get("/compound", async (req, res, next) => {
     });
     if (projectError) throw new AppError("DB_ERROR", projectError.message, 500);
 
-    const projectIds = (projects ?? []).map((p: any) => p.id);
+    const projectIds = (projects ?? []).map((p: { id: string }) => p.id);
     let taskQuery = supabase
       .from("project_tasks")
       .select("*")
@@ -138,7 +138,7 @@ router.get("/compound", async (req, res, next) => {
     const { data: tasks, error: taskError } = await taskQuery;
     if (taskError) throw new AppError("DB_ERROR", taskError.message, 500);
 
-    const taskIds = (tasks ?? []).map((t: any) => t.id);
+    const taskIds = (tasks ?? []).map((t: { id: string }) => t.id);
     let commentQuery = supabase
       .from("project_task_comments")
       .select("*")
@@ -330,9 +330,9 @@ function projectSubRoute(
   });
 }
 
-projectSubRoute("phases", "project_phases", createPhaseSchema as any);
-projectSubRoute("milestones", "project_milestones", createMilestoneSchema as any);
-projectSubRoute("dependencies", "project_dependencies", createDependencySchema as any);
+projectSubRoute("phases", "project_phases", createPhaseSchema);
+projectSubRoute("milestones", "project_milestones", createMilestoneSchema);
+projectSubRoute("dependencies", "project_dependencies", createDependencySchema);
 
 router.get("/:id", async (req, res, next) => {
   try {

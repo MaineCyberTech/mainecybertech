@@ -10,6 +10,35 @@ import { getEnv } from "../config/env";
 import { httpClients } from "../lib/http-client";
 import { logger } from "../lib/logger";
 
+type StripePrice = {
+  nickname?: string | null;
+  product?: string | null;
+  unit_amount?: number | null;
+  currency?: string | null;
+};
+
+type StripeInvoice = {
+  id: string;
+  number: string | null;
+  status: string;
+  subtotal: number;
+  tax: number | null;
+  total: number;
+  currency: string;
+  hosted_invoice_url: string | null;
+  invoice_pdf: string | null;
+  due_date: number | null;
+  status_transitions?: { paid_at?: number | null } | null;
+};
+
+type StripeSubscription = {
+  id: string;
+  status: string;
+  current_period_start: number | null;
+  current_period_end: number | null;
+  items: { data: Array<{ price: StripePrice }> };
+};
+
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
@@ -203,10 +232,10 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
       ]);
 
       if (invoicesRes.ok) {
-        const invoicesData = (await invoicesRes.json()) as { data: any[] };
+        const invoicesData = (await invoicesRes.json()) as { data: StripeInvoice[] };
         for (const inv of invoicesData.data ?? []) {
           const status =
-            inv.status === "open" && new Date(inv.due_date * 1000) < new Date()
+            inv.status === "open" && new Date((inv.due_date ?? 0) * 1000) < new Date()
               ? "overdue"
               : inv.status;
           await supabase.from("invoices").upsert(
@@ -222,10 +251,10 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
               currency: inv.currency,
               hosted_invoice_url: inv.hosted_invoice_url,
               invoice_pdf_url: inv.invoice_pdf,
-              due_at: inv.due_date ? new Date(inv.due_date * 1000).toISOString() : null,
+              due_at: inv.due_date ? new Date((inv.due_date ?? 0) * 1000).toISOString() : null,
               paid_at:
                 inv.status === "paid"
-                  ? new Date(inv.status_transitions?.paid_at * 1000).toISOString()
+                  ? new Date((inv.status_transitions?.paid_at ?? 0) * 1000).toISOString()
                   : null,
             },
             { onConflict: "stripe_invoice_id" },
@@ -234,7 +263,7 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
       }
 
       if (subsRes.ok) {
-        const subsData = (await subsRes.json()) as { data: any[] };
+        const subsData = (await subsRes.json()) as { data: StripeSubscription[] };
         for (const sub of subsData.data ?? []) {
           const price = sub.items?.data?.[0]?.price;
           await supabase.from("subscriptions").upsert(

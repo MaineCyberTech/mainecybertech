@@ -63,7 +63,7 @@ router.get("/", async (req, res, next) => {
     const search = req.query.search as string | undefined;
     if (search) q = q.ilike("domain", `%${search}%`);
     const sslBefore = req.query.ssl_expiring_before as string | undefined;
-    if (sslBefore) q = q.lte("ssl_expires", sslBefore).neq("ssl_expires", null as any);
+    if (sslBefore)       q = q.lte("ssl_expires", sslBefore).neq("ssl_expires", null);
 
     const { data, error, count } = await q
       .order("domain", { ascending: true })

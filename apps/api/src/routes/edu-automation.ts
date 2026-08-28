@@ -142,6 +142,13 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
   });
 }
 
+type ScorecardRow = {
+  category: string | null;
+  score: number | null;
+  max_score: number | null;
+  badge: string | null;
+};
+
 type SchemaMap = Record<string, { schema: z.ZodTypeAny; table: string }>;
 const schemas: SchemaMap = {
   sop: { schema: sop, table: "sop_library" },
@@ -659,10 +666,10 @@ router.get("/scorecards/overview", async (req, res, next) => {
     const items = data ?? [];
     const overallScore =
       items.length > 0
-        ? Math.round(items.reduce((s: number, c: any) => s + (c.score || 0), 0) / items.length)
+        ? Math.round(items.reduce((s: number, c: ScorecardRow) => s + (c.score || 0), 0) / items.length)
         : 0;
-    const badges = [...new Set(items.map((c: any) => c.badge).filter(Boolean))];
-    const categories = items.map((c: any) => ({
+    const badges = [...new Set(items.map((c: ScorecardRow) => c.badge).filter(Boolean))];
+    const categories = items.map((c: ScorecardRow) => ({
       category: c.category,
       score: c.score,
       maxScore: c.max_score,

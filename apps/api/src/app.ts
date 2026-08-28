@@ -90,7 +90,7 @@ export function createApp(): Express {
   app.use(
     express.json({
       limit: "10mb",
-      verify: (req: any, _res, buf) => {
+      verify: (req: express.Request & { rawBody?: string }, _res, buf) => {
         req.rawBody = buf.toString();
       },
     }),

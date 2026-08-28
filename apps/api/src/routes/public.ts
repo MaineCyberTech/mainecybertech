@@ -51,7 +51,12 @@ router.get("/init", async (req, res, next) => {
     try {
       const cleanIp = ipAddress.replace("::ffff:", "");
       const geoRes = await httpClients.geo.get(`http://ip-api.com/json/${cleanIp}`);
-      const geoData: any = await geoRes.json();
+      const geoData: {
+        status: string;
+        city?: string | null;
+        regionName?: string | null;
+        country?: string | null;
+      } = await geoRes.json();
       if (geoData.status === "success") {
         location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
       }

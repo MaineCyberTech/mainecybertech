@@ -20,6 +20,7 @@ import {
   submitDynamicForm,
   listFormSubmissions,
   exportDynamicForms,
+  type DynamicForm,
 } from "../services/dynamic-client-forms-builder";
 
 const router: Router = Router();
@@ -95,7 +96,7 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
       title: parsed.title,
       description: parsed.description,
       formType: parsed.formType,
-      fields: parsed.fields as any,
+      fields: parsed.fields as unknown as DynamicForm["fields"],
       settings: parsed.settings,
       closesAt: parsed.closesAt,
     });
@@ -116,7 +117,7 @@ router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => 
       description: parsed.description,
       formType: parsed.formType,
       status: parsed.status,
-      fields: parsed.fields as any,
+      fields: parsed.fields as unknown as DynamicForm["fields"],
       settings: parsed.settings,
       closesAt: parsed.closesAt,
     });

@@ -26,7 +26,7 @@ router.get("/", async (req, res, next) => {
       .eq("status", "approved");
 
     if (mErr) throw new AppError("DB_ERROR", mErr.message, 500);
-    const orgIds = (memberships ?? []).map((m: any) => m.organization_id);
+    const orgIds = (memberships ?? []).map((m: { organization_id: string }) => m.organization_id);
     if (orgIds.length === 0) {
       res.json(success({ tickets: [], projects: [] }));
       return;

@@ -17,6 +17,12 @@ import {
   updateSopSchema,
 } from "../validators/governance";
 
+type SopFrameworkRow = {
+  compliance_framework: string | null;
+  framework_control_ids: string[] | null;
+  status: string | null;
+};
+
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
@@ -391,9 +397,9 @@ router.get("/sop-library/framework-gaps", async (req, res, next) => {
       "SOC 2",
     ];
     const coverage = frameworks.map((fw) => {
-      const sops = (data ?? []).filter((s: any) => s.compliance_framework === fw);
-      const active = sops.filter((s: any) => s.status === "active").length;
-      const controlIds = [...new Set(sops.flatMap((s: any) => s.framework_control_ids ?? []))];
+      const sops = (data ?? []).filter((s: SopFrameworkRow) => s.compliance_framework === fw);
+      const active = sops.filter((s: SopFrameworkRow) => s.status === "active").length;
+      const controlIds = [...new Set(sops.flatMap((s: SopFrameworkRow) => s.framework_control_ids ?? []))];
       return {
         framework: fw,
         totalSops: sops.length,
@@ -405,7 +411,7 @@ router.get("/sop-library/framework-gaps", async (req, res, next) => {
       success({
         frameworks: coverage,
         overallCompliance: Math.round(
-          coverage.reduce((s: number, f: any) => s + f.coveragePercent, 0) / coverage.length,
+          coverage.reduce((s: number, f: { coveragePercent: number }) => s + f.coveragePercent, 0) / coverage.length,
         ),
       }),
     );

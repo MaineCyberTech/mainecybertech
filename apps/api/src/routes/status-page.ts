@@ -87,8 +87,8 @@ function snakeCase(str: string): string {
 function crudTable(
   resource: string,
   table: string,
-  createSchema: z.ZodObject<any>,
-  updateSchema: z.ZodObject<any>,
+  createSchema: z.ZodType,
+  updateSchema: z.ZodType,
 ) {
   router.get(`/${resource}`, async (req, res, next) => {
     try {
@@ -191,12 +191,12 @@ function crudTable(
 }
 
 crudTable("components", "status_components", compCreateSchema, compUpdateSchema);
-crudTable("incidents", "status_incidents", incCreateSchema, incCreateSchema.partial() as any);
+crudTable("incidents", "status_incidents", incCreateSchema, incCreateSchema.partial());
 crudTable(
   "maintenance",
   "maintenance_notices",
   maintCreateSchema,
-  maintCreateSchema.partial() as any,
+  maintCreateSchema.partial(),
 );
 
 export default router;

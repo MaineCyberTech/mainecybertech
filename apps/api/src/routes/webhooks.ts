@@ -83,7 +83,11 @@ router.post("/stripe", async (req, res, next) => {
     });
     let event: any;
     try {
-      event = stripe.webhooks.constructEvent((req as any).rawBody, signature, stripeSecret);
+      event = stripe.webhooks.constructEvent(
+        (req as { rawBody?: Buffer }).rawBody as Buffer,
+        signature,
+        stripeSecret,
+      );
     } catch (err) {
       logger.error({ err }, "Stripe webhook signature verification failed");
       res
@@ -237,7 +241,7 @@ router.post("/jira", async (req, res, next) => {
       res.status(401).json(failure("UNAUTHORIZED", "Missing webhook signature", 401));
       return;
     }
-    const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
+    const rawBody = Buffer.from((req as { rawBody?: Buffer }).rawBody || JSON.stringify(req.body));
     if (!verifyWebhookSignature(rawBody, sig, jiraSecret)) {
       logger.warn("Jira webhook signature verification failed");
       res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));
@@ -326,7 +330,7 @@ router.post("/jsm", async (req, res, next) => {
       res.status(401).json(failure("UNAUTHORIZED", "Missing webhook signature", 401));
       return;
     }
-    const rawBody = Buffer.from((req as any).rawBody || JSON.stringify(req.body));
+    const rawBody = Buffer.from((req as { rawBody?: Buffer }).rawBody || JSON.stringify(req.body));
     if (!verifyWebhookSignature(rawBody, sig, jsmSecret)) {
       logger.warn("JSM webhook signature verification failed");
       res.status(401).json(failure("UNAUTHORIZED", "Invalid webhook signature", 401));

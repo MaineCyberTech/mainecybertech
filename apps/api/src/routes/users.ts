@@ -455,18 +455,20 @@ router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
           .select("permission_id")
           .in(
             "role_id",
-            memberships.map((m: any) => m.role_id),
-          )
-      : { data: [] as any[], error: null };
+             memberships.map((m: { role_id: string }) => m.role_id),
+           )
+       : { data: [] as Array<{ permission_id: string }>, error: null };
 
-    if (rolePermissions.error)
-      throw new AppError("DB_ERROR", (rolePermissions.error as any).message, 500);
+     if (rolePermissions.error)
+       throw new AppError("DB_ERROR", rolePermissions.error.message, 500);
 
     res.json(
       success({
         memberships: memberships ?? [],
         permissions: allPermissions ?? [],
-        rolePermissionIds: (rolePermissions.data ?? []).map((rp: any) => rp.permission_id),
+        rolePermissionIds: (rolePermissions.data ?? []).map(
+          (rp: { permission_id: string }) => rp.permission_id,
+        ),
         overrides: overrides ?? [],
       }),
     );

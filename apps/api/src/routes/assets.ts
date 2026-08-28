@@ -68,7 +68,7 @@ router.get("/", async (req, res, next) => {
     if (search) query = query.ilike("name", `%${search}%`);
     const warrantyBefore = req.query.warranty_expiring_before as string | undefined;
     if (warrantyBefore)
-      query = query.lte("warranty_expires", warrantyBefore).neq("warranty_expires", null as any);
+      query = query.lte("warranty_expires", warrantyBefore).neq("warranty_expires", null);
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })

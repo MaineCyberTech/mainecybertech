@@ -6,6 +6,7 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
+import type { Tables } from "@mct/sdk/database.types";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -44,7 +45,7 @@ router.get("/dashboard", async (req, res, next) => {
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     const results = await Promise.all(
-      (checks ?? []).map(async (check: any) => {
+      (checks ?? []).map(async (check: Tables<"uptime_checks">) => {
         const { data: lastResult } = await supabase
           .from("uptime_results")
           .select("*")

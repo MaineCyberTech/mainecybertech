@@ -25,7 +25,7 @@ process.stdout.write(`OpenAPI spec: ${pathCount} paths, ${spec.openapi} version\
 const missingSummaries: string[] = [];
 for (const [path, methods] of Object.entries(spec.paths)) {
   for (const method of ["get", "post", "put", "patch", "delete"] as const) {
-    const op = (methods as any)[method];
+    const op = (methods as Record<string, { summary?: string } | undefined>)[method];
     if (op && !op.summary) {
       missingSummaries.push(`${method.toUpperCase()} ${path}`);
     }

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import type { Tables } from "@mct/sdk/database.types";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
@@ -9,6 +10,8 @@ import { requireOrgAccess } from "../middleware/org-access";
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+
+type LicenseAllocationRow = Tables<"license_allocations">;
 
 const createSchema = z.object({
   organizationId: z.string().min(1),
@@ -57,9 +60,9 @@ router.get("/reclaimable/license-list", async (req, res, next) => {
       .eq("organization_id", req.query.organization_id as string)
       .eq("status", "active");
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    const reclaimable = (data ?? []).filter((l: any) => l.used_seats < l.total_seats * 0.7);
+    const reclaimable = (data ?? []).filter((l: LicenseAllocationRow) => l.used_seats < l.total_seats * 0.7);
     const totalSavings = reclaimable.reduce(
-      (sum: number, l: any) => sum + (l.total_seats - l.used_seats) * (l.cost_per_seat || 0),
+      (sum: number, l: LicenseAllocationRow) => sum + (l.total_seats - l.used_seats) * (l.cost_per_seat || 0),
       0,
     );
     res.json(success({ reclaimable, potentialSavings: Math.round(totalSavings * 100) / 100 }));
@@ -80,21 +83,21 @@ router.get("/summary/data", async (req, res, next) => {
     const items = data ?? [];
     const totalLicenses = items.length;
     const totalCost = items.reduce(
-      (sum: number, l: any) => sum + l.total_seats * (l.cost_per_seat || 0),
+      (sum: number, l: LicenseAllocationRow) => sum + l.total_seats * (l.cost_per_seat || 0),
       0,
     );
     const avgUtilization =
       items.length > 0
         ? Math.round(
             items.reduce(
-              (sum: number, l: any) =>
+              (sum: number, l: LicenseAllocationRow) =>
                 sum + (l.total_seats > 0 ? (l.used_seats / l.total_seats) * 100 : 0),
               0,
             ) / items.length,
           )
         : 0;
     const potentialSavings = items.reduce(
-      (sum: number, l: any) =>
+      (sum: number, l: LicenseAllocationRow) =>
         sum +
         (l.used_seats < l.total_seats * 0.7
           ? (l.total_seats - l.used_seats) * (l.cost_per_seat || 0)
