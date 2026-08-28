@@ -163,16 +163,23 @@ export class ApiClient {
     return this.request<T>("POST", path, body);
   }
 
-  patch<T>(path: string, body?: unknown): Promise<T> {
-    return this.request<T>("PATCH", path, body);
+  patch<T>(
+    path: string,
+    body?: unknown,
+    params?: Record<string, string | number | undefined>,
+  ): Promise<T> {
+    return this.request<T>("PATCH", path, body, params);
   }
 
   put<T>(path: string, body?: unknown): Promise<T> {
     return this.request<T>("PUT", path, body);
   }
 
-  delete<T>(path: string): Promise<T> {
-    return this.request<T>("DELETE", path);
+  delete<T>(
+    path: string,
+    params?: Record<string, string | number | undefined>,
+  ): Promise<T> {
+    return this.request<T>("DELETE", path, undefined, params);
   }
 
   async getBlob(path: string, params?: Record<string, string | number | undefined>): Promise<Blob> {

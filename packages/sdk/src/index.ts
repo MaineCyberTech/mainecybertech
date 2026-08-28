@@ -151,6 +151,15 @@ import {
   type StoreQuoteItem,
   type SubmitStoreQuoteInput,
 } from "./store";
+import {
+  ComplianceApi,
+  type ComplianceFramework,
+  type ComplianceControl,
+  type ComplianceControlStatus,
+  type CreateFrameworkInput,
+  type CreateControlInput,
+  type UpdateControlInput,
+} from "./compliance";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -240,6 +249,12 @@ export type {
   StoreQuote,
   StoreQuoteItem,
   SubmitStoreQuoteInput,
+  ComplianceFramework,
+  ComplianceControl,
+  ComplianceControlStatus,
+  CreateFrameworkInput,
+  CreateControlInput,
+  UpdateControlInput,
   OrganizationOnboardInput,
   OrganizationOnboardResult,
 };
@@ -291,6 +306,7 @@ export class MCTClient {
   public statusPage: StatusPageApi;
   public uptimeMonitor: UptimeMonitorApi;
   public store: StoreApi;
+  public compliance: ComplianceApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -340,6 +356,7 @@ export class MCTClient {
     this.statusPage = new StatusPageApi(client);
     this.uptimeMonitor = new UptimeMonitorApi(client);
     this.store = new StoreApi(client);
+    this.compliance = new ComplianceApi(client);
   }
 
   static create(opts: ClientOptions) {
