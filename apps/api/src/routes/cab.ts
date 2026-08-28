@@ -35,7 +35,7 @@ router.get("/meetings", async (req, res, next) => {
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     const meetingIds = (data ?? []).map((m: { id: string }) => m.id);
-    let agendaByMeeting: Record<string, unknown[]> = {};
+    const agendaByMeeting: Record<string, unknown[]> = {};
     if (meetingIds.length > 0) {
       const { data: agenda, error: agendaError } = await supabase
         .from("cab_agenda_items")

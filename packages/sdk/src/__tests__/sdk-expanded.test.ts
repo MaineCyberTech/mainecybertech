@@ -323,12 +323,12 @@ describe("SDK modules — expanded coverage", () => {
     });
     it("lists network diagrams", async () => {
       mockFetch.mockResolvedValue(mockResponse(paginated([{ id: "1" }])));
-      const result = await client.fieldServices.networkDiagrams.list({ organization_id: "org-1" });
+      const result = await client.networkDiagrams.list({ organization_id: "org-1" });
       expect(result.items).toHaveLength(1);
     });
     it("gets a network diagram", async () => {
       mockFetch.mockResolvedValue(mockResponse({ id: "1" }));
-      const result = await client.fieldServices.networkDiagrams.get("1");
+      const result = await client.networkDiagrams.get("1");
       expect(result.id).toBe("1");
     });
     it("deletes an ISP assessment", async () => {
@@ -477,7 +477,7 @@ describe("SDK modules — expanded coverage", () => {
     });
     it("lists device profiles", async () => {
       mockFetch.mockResolvedValue(mockResponse(paginated([{ id: "1" }])));
-      const result = await client.final.deviceProfiles.list({ organization_id: "org-1" });
+      const result = await client.deviceProfiles.list({ organization_id: "org-1" });
       expect(result.items).toHaveLength(1);
     });
     it("lists SaaS audit records", async () => {
