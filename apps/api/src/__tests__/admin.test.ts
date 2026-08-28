@@ -96,6 +96,7 @@ describe("admin routes", () => {
             { id: "o2", name: "Beta LLC", slug: "beta", status: "active" },
           ],
           error: null,
+          count: 2,
         }),
       );
 
@@ -104,8 +105,11 @@ describe("admin routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
-      expect(res.body.data).toHaveLength(2);
-      expect(res.body.data[0].name).toBe("Acme Corp");
+      expect(res.body.data.items).toHaveLength(2);
+      expect(res.body.data.items[0].name).toBe("Acme Corp");
+      expect(res.body.data.total).toBe(2);
+      expect(res.body.data.page).toBe(1);
+      expect(res.body.data.limit).toBe(25);
     });
 
     it("returns 403 for admins that are not super admins", async () => {

@@ -80,13 +80,16 @@ describe("users routes", () => {
   describe("GET /", () => {
     it("returns a list of users (admin only)", async () => {
       const supabase = mockAdmin();
-      const result: MockResult = { data: [USER], error: null };
+      const result: MockResult = { data: [USER], error: null, count: 1 };
       supabase.from.mockReturnValue(createMockBuilder(result));
 
       const res = await request(app).get("/api/v1/users").set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
-      expect(res.body.data).toHaveLength(1);
+      expect(res.body.data.items).toHaveLength(1);
+      expect(res.body.data.total).toBe(1);
+      expect(res.body.data.page).toBe(1);
+      expect(res.body.data.limit).toBe(25);
     });
 
     it("returns 403 when not an admin", async () => {

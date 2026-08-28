@@ -479,16 +479,18 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 - ESLint: 0 errors
 - TypeScript: clean
 
-### Completed Work (2026-08-27 — final integration)
+### Completed Work (2026-08-28 — GAP modules + E2E + cleanup)
 
-- **Dependency vulnerabilities:** root `package.json` `pnpm.overrides` already neutralized the remediable Dependabot CVEs (postcss, multer, form-data, sharp, body-parser, esbuild, js-yaml, etc.). `pnpm audit` on develop shows only 3 remaining (image-size + elliptic, both pulled in via `@storybook/*`), which have **no upstream patch** and are dev-only — correctly left.
-- **`any` type reduction (P2-6):** two passes cut production `any` from ~281 → ~25 (web/worker/components) via SDK types (`Ticket`, `AuditLog`, `Organization`, `Profile`, `Membership`, `ProjectTask`, `RoleWithPermissions`, etc.); final state 822/1512/264/74 tests green (`579bd54`). API route handlers (~70) intentionally remain untyped (tracked in `docs/database-types-api-adoption.md`).
-- **Migration-drift audit:** 100 migrations present; `5302135` confirmed fixed/idempotent; all app-referenced tables (`impersonation_log`, `store_products`/`store_categories`, `profiles.encrypted_pii`) have migrations; no missing tables. Residual note: ~40 bare `CREATE POLICY` / 17 `CREATE TRIGGER` lack drop-if-exists guards (robustness only, no immediate drift risk).
-- **Migration guards branch `agent/mig-guards` REMOVED (2026-08-28):** the held branch carried migration `5302201` (blanket DROP POLICY IF EXISTS + CREATE POLICY for all 349 policies / 15 triggers, plus deletion of the 6 GAP migrations `5302402`–`5302407`). It was never applied to prod (not referenced on develop). It was deleted (local + remote) because re-asserting captured policy definitions would **revert live security fixes** — `5302132` widened `store_*` RLS and `5302135` added `profiles.encrypted_pii` RLS — causing a real regression. The residual bare-`CREATE POLICY`/`CREATE TRIGGER` items remain accepted as robustness-only (no drift + no guard risk) rather than reintroducing the clobber risk. If guards are ever wanted, do a per-policy diff against live state, not a blanket drop/recreate.
-- **Integration:** merged `agent/any-types` + `agent/audit-docs` into `develop`; deploy `33108230365` passed (green) — store UI, `any`-types, and docs now live. Worktrees/branches cleaned up.
-- **P2-21 server-side pagination (final pass):** `organizations` gained real API+SDK pagination (`GET /api/v1/organizations` returns `{ items, total, page, limit }`; SDK `list` returns `PaginatedResult`; all 15 callers updated) and `organizations` + `approval-requests` admin pages use `AdminPagination` (`579bd54`, deploy `33126068635` green). `tickets`/`projects` left as client-side load-more over server-capped 25 (acceptable).
-- **`any` types second pass (P2-6):** `agent/any-types-2` cut web/worker/component `any` ~134 → 25 (`bc4cde8`, deploy `33123374236` green).
-- **P1-10 SSH:** user explicitly accepted keeping SSH open (`0.0.0.0/0`, key-only auth) 2026-08-27 — no infra change.
+- **7 GAP modules deployed** (`agent/gap-1` through `agent/gap-7`): client-portal, knowledge-base, compliance, CAB, hardware staging, device profiles, network diagrams — all migrations, API routes, SDK modules, portal/admin UI, and E2E tests merged and deployed (deploys `33134749548` → `83bbb25` → `aa07d2c` → `bc6a835` → `08f3402`).
+- **E2E auth fix for GAP modules** — all GAP portal specs now use `setActiveOrg()` + global admin auth; portal pages render graceful "No Organization Access" fallback instead of `return null`; all 7 portal E2E specs pass.
+- **GAP E2E green** — `knowledge-base`, `device-profiles`, `network-diagrams`, `compliance-readiness`, `hardware-staging`, `client-onboarding-command-center` all pass.
+- **Deploy pipeline green** — E2E + `deploy-do` passed for GAP modules (`33140806937` E2E success, `33141861485` deploy success).
+- **Seed schema fixes** — `network_diagrams` and `device_profiles` seeds rewritten to match GAP migrations (`5302407`, `5302406`); `device_profiles` legacy seeds removed (migration `5302406` self-seeds correctly).
+- **Webstore core complete** — `service_catalog` DB-backed (migration `5302067`), API CRUD (`service-catalog.ts`), SDK module (`serviceCatalog`), 33 admin pages + 12 unit tests; `service_catalog` table with RLS.
+- **`agent/mig-guards` branch DELETED** — `5302201` (blanket `DROP POLICY` + `CREATE POLICY` for 349 policies / 15 triggers + delete GAP migrations `5302402`–`5302407`) was **never applied to prod**; deleted (local + remote) because it would clobber `5302132` (`store_*` RLS widening) and `5302135` (`profiles.encrypted_pii` RLS) security fixes. Residual bare `CREATE POLICY`/`CREATE TRIGGER` items accepted as robustness-only.
+- **Cleanup** — 7 GAP worktrees (`C:\temp\mct-agent-gap-1`...`7`) + 7 `agent/gap-*` branches deleted (local + remote); `agent/mig-guards` branch deleted (local + remote).
+- **Test counts updated** — 2,734 tests (API 853, Web 1,543, SDK 264, Worker 74) across 225 suites; E2E 90 specs.
+- **AGENTS.md updated** — test counts, GAP module status, mig-guards decision documented.
 
 ## Audit Reports
 

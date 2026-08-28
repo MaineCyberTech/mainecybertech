@@ -16,6 +16,9 @@ router.use(requireAdmin);
 router.get("/organizations", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const offset = (page - 1) * limit;
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -27,13 +30,16 @@ router.get("/organizations", async (req, res, next) => {
       throw new AppError("FORBIDDEN", "Super admin access required", 403);
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("organizations")
-      .select("id, name, slug, status, primary_domain, support_plan, created_at")
-      .order("name");
+      .select("id, name, slug, status, primary_domain, support_plan, created_at", { count: "exact" })
+      .order("name")
+      .range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data ?? []));
+    res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
   } catch (error) {
     next(error);
   }

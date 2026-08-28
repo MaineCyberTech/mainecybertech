@@ -15,6 +15,10 @@ router.use(requireAuth, requireOrgAccess);
 router.get("/", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const offset = (page - 1) * limit;
+
     let orgId = req.query.organization_id as string | undefined;
 
     let allOrgs = false;
@@ -46,6 +50,7 @@ router.get("/", requireAdmin, async (req, res, next) => {
       .from("profiles")
       .select(
         "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
+        { count: "exact" }
       );
 
     if (orgId) {
@@ -78,14 +83,16 @@ router.get("/", requireAdmin, async (req, res, next) => {
       if (ids.length > 0) {
         query = query.in("id", ids);
       } else {
-        res.json(success([]));
+        res.json(success({ items: [], total: 0, page, limit }));
         return;
       }
     }
 
-    const { data, error } = await query.order("email");
+    query = query.order("email").range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data));
+    res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
   } catch (error) {
     next(error);
   }
