@@ -55,6 +55,7 @@ import securityOpsRouter from "./routes/security-ops";
 import securitySuiteRouter from "./routes/security-suite";
 import governanceRouter from "./routes/governance";
 import fieldServicesRouter from "./routes/field-services";
+import networkDiagramsRouter from "./routes/network-diagrams";
 import eduAutomationRouter from "./routes/edu-automation";
 import finalRouter from "./routes/final";
 import clientOnboardingRouter from "./routes/client-onboarding-command-center";
@@ -178,6 +179,7 @@ export function createApp(): Express {
   app.use("/api/v1/security-suite", securitySuiteRouter);
   app.use("/api/v1/governance", governanceRouter);
   app.use("/api/v1/field-services", fieldServicesRouter);
+app.use("/api/v1/network-diagrams", networkDiagramsRouter);
   app.use("/api/v1/edu-automation", eduAutomationRouter);
   app.use("/api/v1/final", finalRouter);
   app.use("/api/v1/client-onboarding", clientOnboardingRouter);

@@ -151,6 +151,13 @@ import {
   type StoreQuoteItem,
   type SubmitStoreQuoteInput,
 } from "./store";
+import {
+  NetworkDiagramsApi,
+  type NetworkDiagram,
+  type NetworkDiagramDetail,
+  type NetworkDiagramNode,
+  type NetworkDiagramEdge,
+} from "./network-diagrams";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -242,6 +249,10 @@ export type {
   SubmitStoreQuoteInput,
   OrganizationOnboardInput,
   OrganizationOnboardResult,
+  NetworkDiagram,
+  NetworkDiagramDetail,
+  NetworkDiagramNode,
+  NetworkDiagramEdge,
 };
 export class MCTClient {
   public auth: AuthApi;
@@ -291,6 +302,7 @@ export class MCTClient {
   public statusPage: StatusPageApi;
   public uptimeMonitor: UptimeMonitorApi;
   public store: StoreApi;
+  public networkDiagrams: NetworkDiagramsApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -340,6 +352,7 @@ export class MCTClient {
     this.statusPage = new StatusPageApi(client);
     this.uptimeMonitor = new UptimeMonitorApi(client);
     this.store = new StoreApi(client);
+    this.networkDiagrams = new NetworkDiagramsApi(client);
   }
 
   static create(opts: ClientOptions) {

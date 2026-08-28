@@ -228,18 +228,10 @@ export const MODULE_CONFIGS: Record<string, ModuleConfig> = {
     key: "fs-diagrams",
     label: "Network Diagrams",
     listPath: "/admin/field-services/network-diagrams",
-    sdk: (api) => api.fieldServices.networkDiagrams,
+    sdk: (api) => api.networkDiagrams,
     fields: [
-      { key: "siteName", label: "Site" },
-      { key: "deviceCount", label: "Devices", type: "number" },
-      { key: "vlanCount", label: "VLANs", type: "number" },
-      { key: "notes", label: "Notes", type: "textarea" },
-      {
-        key: "status",
-        label: "Status",
-        type: "select",
-        options: ["draft", "published", "archived"],
-      },
+      { key: "name", label: "Name" },
+      { key: "description", label: "Description", type: "textarea" },
     ],
   },
 

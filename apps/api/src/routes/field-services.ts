@@ -11,7 +11,6 @@ import {
   createPortMapSchema,
   createCameraSchema,
   createStagingSchema,
-  createNetworkDiagramSchema,
 } from "../validators/field-services";
 
 const router: ReturnType<typeof Router> = Router();
@@ -279,27 +278,6 @@ router.post("/staging/:id/checklist", async (req, res, next) => {
     next(err);
   }
 });
-crudRoute(
-  "network-diagrams",
-  "network_diagrams",
-  createNetworkDiagramSchema as unknown as Record<string, unknown>,
-);
-router.get("/network-diagrams/:id/export", async (req, res, next) => {
-  try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("network_diagrams")
-      .select("*")
-      .eq("id", req.params.id)
-      .eq("organization_id", req.query.organization_id as string)
-      .single();
-    if (error || !data) throw new AppError("NOT_FOUND", "Not found", 404);
-    res.setHeader("Content-Type", "application/json");
-    res.setHeader("Content-Disposition", "attachment; filename=network-diagram.json");
-    res.json(JSON.stringify(data, null, 2));
-  } catch (err) {
-    next(err);
-  }
-});
+crudRoute("staging", "staging_checklists", createStagingSchema as unknown as Record<string, unknown>);
 
 export default router;
