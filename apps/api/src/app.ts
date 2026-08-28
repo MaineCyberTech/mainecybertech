@@ -67,6 +67,7 @@ import insuranceBinderRouter from "./routes/insurance-binder";
 import statusPageRouter from "./routes/status-page";
 import uptimeMonitorRouter from "./routes/uptime-monitor";
 import storeRouter from "./routes/store";
+import stagingRouter from "./routes/staging";
 import analyticsRouter from "./routes/analytics";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
@@ -190,6 +191,7 @@ export function createApp(): Express {
   app.use("/api/v1/status-page", statusPageRouter);
   app.use("/api/v1/uptime-monitor", uptimeMonitorRouter);
   app.use("/api/v1/store", storeRouter);
+  app.use("/api/v1/staging", stagingRouter);
   app.use("/api/v1/analytics", analyticsRouter);
 
   app.use(notFoundHandler);

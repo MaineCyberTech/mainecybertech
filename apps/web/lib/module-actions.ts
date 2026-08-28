@@ -411,15 +411,14 @@ export async function createCameraCalc(formData: FormData) {
 export async function createStaging(formData: FormData) {
   const api = getApiClient();
   try {
-    await api.fieldServices.staging.create({
+    await api.staging.create({
       organizationId: String(formData.get("organizationId") || ""),
-      deviceType: String(formData.get("deviceType") || ""),
       deviceName: String(formData.get("deviceName") || ""),
-      serialNumber: String(formData.get("serialNumber") || ""),
-      assetTag: String(formData.get("assetTag") || ""),
-      notes: String(formData.get("notes") || ""),
+      assetTag: String(formData.get("assetTag") || "") || null,
+      status: String(formData.get("status") || "pending"),
     });
     revalidatePath("/admin/field-services/staging");
+    revalidatePath("/portal/hardware-staging");
     return { ok: true };
   } catch (e: unknown) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };
