@@ -176,6 +176,7 @@ import {
   type CabMeetingStatus,
   type CabDecision,
 } from "./cab";
+import { StagingApi, type StagingCheck } from "./staging";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -278,6 +279,7 @@ export type {
   CabAgendaItem,
   CabMeetingStatus,
   CabDecision,
+  StagingCheck,
   OrganizationOnboardInput,
   OrganizationOnboardResult,
   ClientPortalBootstrap,
@@ -336,6 +338,7 @@ export class MCTClient {
   public knowledgeBase: KnowledgeBaseApi;
   public compliance: ComplianceApi;
   public cab: CabApi;
+  public staging: StagingApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -389,6 +392,7 @@ export class MCTClient {
     this.knowledgeBase = new KnowledgeBaseApi(client);
     this.compliance = new ComplianceApi(client);
     this.cab = new CabApi(client);
+    this.staging = new StagingApi(client);
   }
 
   static create(opts: ClientOptions) {
