@@ -3,19 +3,27 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { createArticle } from "./actions";
+import { logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Knowledge Base - Portal - Maine CyberTech" };
 
 export default async function PortalKnowledgeBasePage() {
-  const membership = await getApprovedMembership();
-  if (!membership) return null;
+  let membership;
+  try {
+    membership = await getApprovedMembership();
+  } catch (err) {
+    logger.error({ err }, "Failed to get membership");
+  }
+
   const api = getApiClient();
-  const orgId = membership.organization_id as string;
+  const orgId = membership?.organization_id as string | undefined;
   let items: Array<Record<string, unknown>> = [];
   try {
-    const r = await api.knowledgeBase.list({ organizationId: orgId });
-    items = r.items as unknown as typeof items;
+    if (orgId) {
+      const r = await api.knowledgeBase.list({ organizationId: orgId });
+      items = r.items as unknown as typeof items;
+    }
   } catch {}
 
   return (
