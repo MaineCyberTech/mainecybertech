@@ -436,10 +436,10 @@ insert into public.hardware_staging (id, organization_id, device_type, device_na
   ('81740000-0000-0000-0000-000000000004'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Laptop', 'FIN-LAP-1001', 'SN-LAP-01001', 'AT-LAP-1001', false, false, false, false, false, null, null, 'Awaiting imaging template.', 'pending', 'f1000000-0000-4000-8000-000000000004'::uuid)
 on conflict (id) do nothing;
 
-insert into public.network_diagrams (id, organization_id, site_name, diagram_data, device_count, vlan_count, wan_count, wireless_zones, camera_zones, notes, status, created_by) values
-  ('81750000-0000-0000-0000-000000000001'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'Store 42', jsonb_build_object('nodes', jsonb_build_array(jsonb_build_object('id', 'core', 'type', 'switch'), jsonb_build_object('id', 'ap1', 'type', 'ap')), 'edges', jsonb_build_array(jsonb_build_object('from', 'core', 'to', 'ap1'))), 12, 4, 1, 2, 1, 'Current store topology.', 'published', 'd4000000-0000-4000-8000-000000000001'::uuid),
-  ('81750000-0000-0000-0000-000000000002'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Harborview Radiology', jsonb_build_object('nodes', jsonb_build_array(jsonb_build_object('id', 'core-rad', 'type', 'switch')), 'edges', jsonb_build_array()), 22, 5, 1, 3, 2, 'Draft segmentation plan.', 'draft', 'f1000000-0000-4000-8000-000000000001'::uuid),
-  ('81750000-0000-0000-0000-000000000003'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Northwind HQ', jsonb_build_object('nodes', jsonb_build_array(), 'edges', jsonb_build_array()), 8, 3, 1, 1, 1, 'Reviewed with client.', 'published', 'd4000000-0000-4000-8000-000000000001'::uuid)
+insert into public.network_diagrams (id, organization_id, name, description, diagram, created_by) values
+  ('81750000-0000-0000-0000-000000000001'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'Store 42', 'Current store topology.', jsonb_build_object('nodes', jsonb_build_array(jsonb_build_object('id', 'core', 'type', 'switch'), jsonb_build_object('id', 'ap1', 'type', 'ap')), 'edges', jsonb_build_array(jsonb_build_object('from', 'core', 'to', 'ap1'))), 'd4000000-0000-4000-8000-000000000001'::uuid),
+  ('81750000-0000-0000-0000-000000000002'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Harborview Radiology', 'Draft segmentation plan.', jsonb_build_object('nodes', jsonb_build_array(jsonb_build_object('id', 'core-rad', 'type', 'switch')), 'edges', jsonb_build_array()), 'f1000000-0000-4000-8000-000000000001'::uuid),
+  ('81750000-0000-0000-0000-000000000003'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Northwind HQ', 'Reviewed with client.', jsonb_build_object('nodes', jsonb_build_array(), 'edges', jsonb_build_array()), 'd4000000-0000-4000-8000-000000000001'::uuid)
 on conflict (id) do nothing;
 
 -- =========================================================
@@ -532,11 +532,7 @@ insert into public.sharepoint_plans (id, organization_id, site_name, team_name, 
   ('82000000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Advisor Resources', 'Advisor Success', 'team_site', 'Elena Volkov', 'Internal', 'disabled', 'Central resource library for advisors.', 'completed', 'd4000000-0000-4000-8000-000000000004'::uuid)
 on conflict (id) do nothing;
 
-insert into public.device_profiles (id, organization_id, profile_name, device_type, os, settings, description, status, created_by) values
-  ('82010000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Clinical Workstation Standard', 'workstation', 'Windows 11', jsonb_build_object('bitlocker', true, 'edr', true, 'local_admin', false), 'Standard build for clinical PCs.', 'active', 'd4000000-0000-4000-8000-000000000002'::uuid),
-  ('82010000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'POS Terminal Standard', 'pos_terminal', 'Windows 11 IoT', jsonb_build_object('pos_lockdown', true, 'edr', true), 'Locked-down POS build.', 'active', 'd4000000-0000-4000-8000-000000000001'::uuid),
-  ('82010000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Advisor Laptop Standard', 'laptop', 'Windows 11', jsonb_build_object('bitlocker', true, 'edr', true, 'mdm', true), 'Advisor laptop build with VPN preinstalled.', 'active', 'd4000000-0000-4000-8000-000000000002'::uuid)
-on conflict (id) do nothing;
+-- Legacy device_profiles seed removed: migration 5302406 self-seeds device_profiles (name, type, manufacturer, model, specs).
 
 insert into public.saas_audits (id, organization_id, vendor_name, service_name, monthly_cost, annual_cost, payment_method, classification, usage_frequency, cancellation_risk, has_data_access, renewal_date, notes, created_by) values
   ('82020000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Zoom', 'Zoom Business', 299.00, 3588.00, 'credit_card', 'collaboration', 'daily', 'low', true, '2026-11-30', 'Usage at 60% of seats.', 'd4000000-0000-4000-8000-000000000004'::uuid),

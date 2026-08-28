@@ -547,9 +547,9 @@ insert into public.hardware_staging (id, organization_id, device_type, device_na
   ('81440000-0000-0000-0000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Workstation', 'ARCH-PC-01', 'SN-ARCH-001', 'AT-ARCH-001', true, false, false, true, false, null, null, 'Needs labeling.', 'staged', 'f1000000-0000-4000-8000-000000000005'::uuid)
 on conflict (id) do nothing;
 
-insert into public.network_diagrams (id, organization_id, site_name, diagram_data, device_count, vlan_count, wan_count, wireless_zones, camera_zones, notes, status, created_by) values
-  ('81450000-0000-0000-0000-000000000001'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Acme Main Plant', jsonb_build_object('nodes', jsonb_build_array(jsonb_build_object('id', 'core-plant', 'type', 'switch')), 'edges', jsonb_build_array()), 18, 4, 1, 3, 2, 'Plant network diagram.', 'published', 'f1000000-0000-4000-8000-000000000004'::uuid),
-  ('81450000-0000-0000-0000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Northwind Offices', jsonb_build_object('nodes', jsonb_build_array(), 'edges', jsonb_build_array()), 10, 3, 1, 1, 1, 'Office diagram.', 'draft', 'f1000000-0000-4000-8000-000000000005'::uuid)
+insert into public.network_diagrams (id, organization_id, name, description, diagram, created_by) values
+  ('81450000-0000-0000-0000-000000000001'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Acme Main Plant', 'Plant network diagram.', jsonb_build_object('nodes', jsonb_build_array(jsonb_build_object('id', 'core-plant', 'type', 'switch')), 'edges', jsonb_build_array()), 'f1000000-0000-4000-8000-000000000004'::uuid),
+  ('81450000-0000-0000-0000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Northwind Offices', 'Office diagram.', jsonb_build_object('nodes', jsonb_build_array(), 'edges', jsonb_build_array()), 'f1000000-0000-4000-8000-000000000005'::uuid)
 on conflict (id) do nothing;
 
 -- ---------------------------------------------------------
@@ -629,10 +629,7 @@ insert into public.sharepoint_plans (id, organization_id, site_name, team_name, 
   ('81570000-0000-0000-0000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Case Management', 'Case Team', 'team_site', 'Managing Partner', 'Confidential', 'disabled', 'Case team site planned.', 'planned', 'f1000000-0000-4000-8000-000000000005'::uuid)
 on conflict (id) do nothing;
 
-insert into public.device_profiles (id, organization_id, profile_name, device_type, os, settings, description, status, created_by) values
-  ('81580000-0000-0000-0000-000000000001'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Warehouse Standard', 'workstation', 'Windows 11', jsonb_build_object('screen_lock_minutes', 5), 'Standard warehouse PC profile.', 'active', 'f1000000-0000-4000-8000-000000000004'::uuid),
-  ('81580000-0000-0000-0000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Archive Standard', 'workstation', 'Windows 11', jsonb_build_object('usb_write_blocked', true), 'Archive PC profile with USB write blocking.', 'active', 'f1000000-0000-4000-8000-000000000005'::uuid)
-on conflict (id) do nothing;
+-- Legacy device_profiles seed removed: migration 5302406 self-seeds device_profiles (name, type, manufacturer, model, specs).
 
 insert into public.saas_audits (id, organization_id, vendor_name, service_name, monthly_cost, annual_cost, payment_method, classification, usage_frequency, cancellation_risk, has_data_access, renewal_date, notes, created_by) values
   ('81590000-0000-0000-0000-000000000001'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'WMS Software', 'WMS Platform', 3200.00, 38400.00, 'credit_card', 'critical', 'daily', 'high', true, '2026-12-31', 'Critical production system.', 'f1000000-0000-4000-8000-000000000004'::uuid),
@@ -858,11 +855,7 @@ insert into public.sharepoint_plans (id, organization_id, site_name, team_name, 
   ('82040000-0000-0000-0000-000000000004'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'Store Ops', 'Store Team', 'team_site', 'VP of IT', 'General', 'disabled', 'Store site planned.', 'planned', 'd4000000-0000-4000-8000-000000000004'::uuid)
 on conflict (id) do nothing;
 
-insert into public.device_profiles (id, organization_id, profile_name, device_type, os, settings, description, status, created_by) values
-  ('82050000-0000-0000-0000-000000000003'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Clinical Standard', 'workstation', 'Windows 11', jsonb_build_object('screen_lock_minutes', 2), 'Clinical PC profile with strict lock.', 'active', 'd4000000-0000-4000-8000-000000000004'::uuid),
-  ('82050000-0000-0000-0000-000000000004'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'POS Standard', 'pos', 'Windows 10 IoT', jsonb_build_object('allow_list_only', true), 'POS profile with app allow-listing.', 'active', 'd4000000-0000-4000-8000-000000000004'::uuid),
-  ('82050000-0000-0000-0000-000000000005'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Advisor Standard', 'laptop', 'Windows 11', jsonb_build_object('bitlocker_required', true), 'Advisor laptop profile.', 'active', 'd4000000-0000-4000-8000-000000000004'::uuid)
-on conflict (id) do nothing;
+-- Legacy device_profiles seed removed: migration 5302406 self-seeds device_profiles (name, type, manufacturer, model, specs).
 
 insert into public.saas_audits (id, organization_id, vendor_name, service_name, monthly_cost, annual_cost, payment_method, classification, usage_frequency, cancellation_risk, has_data_access, renewal_date, notes, created_by) values
   ('82060000-0000-0000-0000-000000000003'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'EHR Cloud', 'EHR Platform', 8900.00, 106800.00, 'invoice', 'critical', 'daily', 'high', true, '2026-12-31', 'Critical clinical system.', 'd4000000-0000-4000-8000-000000000004'::uuid),
