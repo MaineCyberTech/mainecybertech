@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder, createOrgAccessStub } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -65,10 +65,9 @@ function mockAuth() {
  * mocks serve route queries only. Enforcement itself is covered by the
  * dedicated middleware-*.test.ts suites.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
     () =>
@@ -85,14 +84,6 @@ describe("Compliance API", () => {
   });
 
   describe("GET /api/v1/compliance/frameworks", () => {
-    it("requires organization_id", async () => {
-      mockAuth();
-      const res = await request(app)
-        .get("/api/v1/compliance/frameworks")
-        .set("Authorization", authToken);
-      expect(res.status).toBe(400);
-    });
-
     it("returns frameworks list", async () => {
       const supabase = mockAuth();
       supabase.from.mockReturnValue(
@@ -237,13 +228,61 @@ describe("Compliance API", () => {
   describe("DELETE /api/v1/compliance/controls/:id", () => {
     it("deletes a control", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { id: "c1", organization_id: testOrgId },
+          error: null,
+        }),
+      );
 
       const res = await request(app)
         .delete("/api/v1/compliance/controls/c1?organization_id=" + testOrgId)
         .set("Authorization", authToken);
 
       expect(res.status).toBe(204);
+    });
+  });
+
+  describe("Tenant isolation (QW-1)", () => {
+    const ORG_A = "00000000-0000-0000-0000-000000000001";
+    const ORG_B = "00000000-0000-0000-0000-000000000002";
+    const CONTROL_ID = "00000000-0000-0000-0000-0000000000c2";
+
+    function mockControl(orgId: string, extra: Record<string, unknown> = {}) {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { id: CONTROL_ID, framework_id: "f1", organization_id: orgId, title: "Access Control", status: "implemented", owner: "Bob", due_at: null, notes: null, ...extra },
+          error: null,
+        }),
+      );
+      return supabase;
+    }
+
+    it("PATCH /controls/:id returns 404 when the control is in another org", async () => {
+      mockControl(ORG_B);
+      const res = await request(app)
+        .patch(`/api/v1/compliance/controls/${CONTROL_ID}?organization_id=${ORG_A}`)
+        .set("Authorization", authToken)
+        .send({ status: "implemented", owner: "Bob" });
+      expect(res.status).toBe(404);
+    });
+
+    it("DELETE /controls/:id returns 404 when the control is in another org", async () => {
+      mockControl(ORG_B);
+      const res = await request(app)
+        .delete(`/api/v1/compliance/controls/${CONTROL_ID}?organization_id=${ORG_A}`)
+        .set("Authorization", authToken);
+      expect(res.status).toBe(404);
+    });
+
+    it("PATCH /controls/:id succeeds when the control belongs to the caller's org", async () => {
+      mockControl(ORG_A);
+      const res = await request(app)
+        .patch(`/api/v1/compliance/controls/${CONTROL_ID}?organization_id=${ORG_A}`)
+        .set("Authorization", authToken)
+        .send({ status: "implemented", owner: "Bob" });
+      expect(res.status).toBe(200);
     });
   });
 });

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
+import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import {
@@ -135,17 +136,8 @@ router.patch("/controls/:id", async (req, res, next) => {
   try {
     const parsed = updateControlSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
-    const orgId = req.query.organization_id as string | undefined;
-    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
 
-    const { data: current, error: fetchError } = await supabase
-      .from("compliance_controls")
-      .select("id")
-      .eq("id", req.params.id)
-      .eq("organization_id", orgId)
-      .single();
-    if (fetchError || !current)
-      throw new AppError("NOT_FOUND", "Control not found", 404);
+    const control = await loadOwned(req, supabase as any, "compliance_controls", req.params.id as string, "id, organization_id");
 
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -158,14 +150,14 @@ router.patch("/controls/:id", async (req, res, next) => {
       .from("compliance_controls")
       .update(updateData)
       .eq("id", req.params.id)
-      .eq("organization_id", orgId)
+      .eq("organization_id", control.organization_id as string)
       .select()
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
-      organizationId: orgId,
+      organizationId: control.organization_id as string,
       actorUserId: req.authUser!.userId,
       action: "compliance.control.updated",
       entityType: "compliance_control",
@@ -182,19 +174,17 @@ router.patch("/controls/:id", async (req, res, next) => {
 router.delete("/controls/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const orgId = req.query.organization_id as string | undefined;
-    if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
-
+    const control = await loadOwned(req, supabase as any, "compliance_controls", req.params.id as string, "id, organization_id");
     const { error } = await supabase
       .from("compliance_controls")
       .delete()
       .eq("id", req.params.id)
-      .eq("organization_id", orgId);
+      .eq("organization_id", control.organization_id as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
-      organizationId: orgId,
+      organizationId: control.organization_id as string,
       actorUserId: req.authUser!.userId,
       action: "compliance.control.deleted",
       entityType: "compliance_control",

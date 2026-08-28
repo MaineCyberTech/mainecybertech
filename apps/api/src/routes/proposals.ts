@@ -547,17 +547,18 @@ router.delete("/:id/items/:itemId", async (req, res, next) => {
 
 router.post("/:id/submit-approval", async (req, res, next) => {
   try {
-    const parsed = submitForApprovalSchema.parse(req.body);
+    submitForApprovalSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { data: proposal, error: findError } = await supabase
-      .from("proposals")
-      .select("id, organization_id, title, description, status, grand_total, version")
-      .eq("id", req.params.id as string)
-      .single();
+    const proposal = await loadOwned(
+      req,
+      supabase as any,
+      "proposals",
+      req.params.id as string,
+      "id, organization_id, title, description, status, grand_total, version",
+    );
 
-    if (findError || !proposal) throw new AppError("NOT_FOUND", "Proposal not found", 404);
-    if (proposal.status !== "draft")
+    if ((proposal.status as string) !== "draft")
       throw new AppError(
         "INVALID_STATE",
         "Only draft proposals can be submitted for approval",
@@ -567,10 +568,10 @@ router.post("/:id/submit-approval", async (req, res, next) => {
     const { data: approval, error: approvalError } = await supabase
       .from("approval_requests")
       .insert({
-        organization_id: parsed.organizationId,
+        organization_id: proposal.organization_id as string,
         request_type: "proposal_approval",
-        request_subject: `Proposal: ${proposal.title}`,
-        request_body: proposal.description ?? null,
+        request_subject: `Proposal: ${proposal.title as string}`,
+        request_body: (proposal.description as string) ?? null,
         request_metadata: { proposalId: proposal.id, grandTotal: proposal.grand_total },
         source_module: "proposals",
         source_entity_type: "proposal",
@@ -589,13 +590,13 @@ router.post("/:id/submit-approval", async (req, res, next) => {
         status: "sent",
         sent_at: new Date().toISOString(),
         approval_request_id: approval.id,
-        version: proposal.version + 1,
+        version: (proposal.version as number) + 1,
       })
       .eq("id", req.params.id as string)
-      .eq("version", proposal.version);
+      .eq("version", proposal.version as number);
 
     await logAuditEvent({
-      organizationId: parsed.organizationId,
+      organizationId: proposal.organization_id as string,
       actorUserId: req.authUser!.userId,
       action: "proposal.submitted_for_approval",
       entityType: "proposal",
@@ -604,7 +605,7 @@ router.post("/:id/submit-approval", async (req, res, next) => {
     });
 
     await addTimelineEvent(
-      parsed.organizationId,
+      proposal.organization_id as string,
       "proposals",
       "proposal",
       req.params.id as string,
@@ -624,14 +625,15 @@ router.post("/:id/publish", async (req, res, next) => {
     const parsed = publishProposalSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { data: current, error: findError } = await supabase
-      .from("proposals")
-      .select("id, version, status")
-      .eq("id", req.params.id as string)
-      .single();
+    const current = await loadOwned(
+      req,
+      supabase as any,
+      "proposals",
+      req.params.id as string,
+      "id, organization_id, version, status",
+    );
 
-    if (findError || !current) throw new AppError("NOT_FOUND", "Proposal not found", 404);
-    if (current.status !== "approved")
+    if ((current.status as string) !== "approved")
       throw new AppError(
         "INVALID_STATE",
         "Only approved proposals can be published to clients",
@@ -647,10 +649,10 @@ router.post("/:id/publish", async (req, res, next) => {
         visibility: "client_visible",
         valid_until: validUntil.toISOString(),
         metadata: {},
-        version: current.version + 1,
+        version: (current.version as number) + 1,
       })
       .eq("id", req.params.id as string)
-      .eq("version", current.version)
+      .eq("version", current.version as number)
       .select()
       .single();
 
@@ -658,7 +660,7 @@ router.post("/:id/publish", async (req, res, next) => {
     if (!data) throw new AppError("VERSION_CONFLICT", "Proposal was modified by another user", 409);
 
     await logAuditEvent({
-      organizationId: parsed.organizationId,
+      organizationId: current.organization_id as string,
       actorUserId: req.authUser!.userId,
       action: "proposal.published",
       entityType: "proposal",
@@ -666,7 +668,7 @@ router.post("/:id/publish", async (req, res, next) => {
     });
 
     await addTimelineEvent(
-      parsed.organizationId,
+      current.organization_id as string,
       "proposals",
       "proposal",
       req.params.id as string,

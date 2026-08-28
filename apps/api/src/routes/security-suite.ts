@@ -53,13 +53,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.get(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getSupabaseAdmin();
-      const { data, error } = await sb
-        .from(table)
-        .select("*")
-        .eq("id", req.params.id)
-        .eq("organization_id", req.query.organization_id as string)
-        .single();
-      if (error || !data) throw new AppError("NOT_FOUND", "Not found", 404);
+      const data = await loadOwned(req, sb as any, table, req.params.id);
       res.json(success(data));
     } catch (e) {
       next(e);
@@ -95,6 +89,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.patch(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getSupabaseAdmin();
+      const current = await loadOwned(req, sb as any, table, req.params.id, "id, organization_id");
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
         if (k === "organizationId") continue;
@@ -104,12 +99,13 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
         .from(table)
         .update(fields)
         .eq("id", req.params.id)
-        .eq("organization_id", req.query.organization_id as string)
+        .eq("organization_id", current.organization_id as string)
         .select()
         .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
       await logAuditEvent({
+        organizationId: current.organization_id as string,
         actorUserId: req.authUser!.userId,
         action: `${path}.updated`,
         entityType: path,
@@ -124,13 +120,15 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.delete(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getSupabaseAdmin();
+      const current = await loadOwned(req, sb as any, table, req.params.id, "id, organization_id");
       const { error } = await sb
         .from(table)
         .delete()
         .eq("id", req.params.id)
-        .eq("organization_id", req.query.organization_id as string);
+        .eq("organization_id", current.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
+        organizationId: current.organization_id as string,
         actorUserId: req.authUser!.userId,
         action: `${path}.deleted`,
         entityType: path,

@@ -231,4 +231,22 @@ describe("Finding tenant isolation (QW-1)", () => {
       .set("Authorization", authToken);
     expect(res.status).toBe(404);
   });
+
+  it("POST /:id/verify returns 404 when the finding is in another org", async () => {
+    mockFinding(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/findings/${FINDING_ID}/verify`)
+      .set("Authorization", authToken)
+      .send({ organizationId: ORG_A });
+    expect(res.status).toBe(404);
+  });
+
+  it("POST /:id/resolve returns 404 when the finding is in another org", async () => {
+    mockFinding(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/findings/${FINDING_ID}/resolve`)
+      .set("Authorization", authToken)
+      .send({ organizationId: ORG_A, resolutionNotes: "fixed" });
+    expect(res.status).toBe(404);
+  });
 });

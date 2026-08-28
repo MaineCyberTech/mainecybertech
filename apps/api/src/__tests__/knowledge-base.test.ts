@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder } from "./helpers";
+import { createTestApp, createMockBuilder, createOrgAccessStub } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -65,10 +65,9 @@ function mockAuth() {
  * mocks serve route queries only. Enforcement itself is covered by the
  * dedicated middleware-*.test.ts suites.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
     () =>
@@ -165,7 +164,7 @@ describe("Knowledge Base API", () => {
   describe("GET /api/v1/knowledge-base/:id", () => {
     it("returns 404 for non-existent article", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: { code: "PGRST116" } }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .get("/api/v1/knowledge-base/00000000-0000-0000-0000-000000000099")
@@ -205,13 +204,69 @@ describe("Knowledge Base API", () => {
   describe("DELETE /api/v1/knowledge-base/:id", () => {
     it("deletes an article", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { id: "00000000-0000-0000-0000-000000000010", organization_id: testOrgId },
+          error: null,
+        }),
+      );
 
       const res = await request(app)
         .delete("/api/v1/knowledge-base/00000000-0000-0000-0000-000000000010")
         .set("Authorization", authToken);
 
       expect(res.status).toBe(204);
+    });
+  });
+
+  describe("Tenant isolation (QW-1)", () => {
+    const ORG_A = "00000000-0000-0000-0000-000000000001";
+    const ORG_B = "00000000-0000-0000-0000-000000000002";
+    const ARTICLE_ID = "00000000-0000-0000-0000-0000000000kb";
+
+    function mockArticle(orgId: string) {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { id: ARTICLE_ID, organization_id: orgId, title: "Article", body: "b", category: "security", tags: [], is_published: true },
+          error: null,
+        }),
+      );
+      return supabase;
+    }
+
+    it("GET /:id returns 404 when the article is in another org", async () => {
+      mockArticle(ORG_B);
+      const res = await request(app)
+        .get(`/api/v1/knowledge-base/${ARTICLE_ID}`)
+        .set("Authorization", authToken);
+      expect(res.status).toBe(404);
+    });
+
+    it("PATCH /:id returns 404 when the article is in another org", async () => {
+      mockArticle(ORG_B);
+      const res = await request(app)
+        .patch(`/api/v1/knowledge-base/${ARTICLE_ID}`)
+        .set("Authorization", authToken)
+        .send({ title: "Renamed" });
+      expect(res.status).toBe(404);
+    });
+
+    it("DELETE /:id returns 404 when the article is in another org", async () => {
+      mockArticle(ORG_B);
+      const res = await request(app)
+        .delete(`/api/v1/knowledge-base/${ARTICLE_ID}`)
+        .set("Authorization", authToken);
+      expect(res.status).toBe(404);
+    });
+
+    it("PATCH /:id succeeds when the article belongs to the caller's org", async () => {
+      mockArticle(ORG_A);
+      const res = await request(app)
+        .patch(`/api/v1/knowledge-base/${ARTICLE_ID}`)
+        .set("Authorization", authToken)
+        .send({ title: "Renamed" });
+      expect(res.status).toBe(200);
     });
   });
 });

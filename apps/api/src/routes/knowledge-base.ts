@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
+import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import {
@@ -45,13 +46,9 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const orgId = req.query.organization_id as string | undefined;
-    let query = supabase.from("knowledge_base_articles").select("*").eq("id", req.params.id);
-    if (orgId) query = query.eq("organization_id", orgId);
-    const { data, error } = await query.single();
-    if (error || !data) throw new AppError("NOT_FOUND", "Article not found", 404);
+    const article = await loadOwned(req, supabase as any, "knowledge_base_articles", req.params.id as string);
 
-    res.json(success(data));
+    res.json(success(article));
   } catch (error) {
     next(error);
   }
@@ -96,7 +93,7 @@ router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateKnowledgeBaseSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
-    const orgId = req.query.organization_id as string | undefined;
+    const article = await loadOwned(req, supabase as any, "knowledge_base_articles", req.params.id as string, "id, organization_id");
 
     const fieldMap: Record<string, string> = {
       title: "title",
@@ -112,9 +109,13 @@ router.patch("/:id", async (req, res, next) => {
         updateData[col] = (parsed as Record<string, unknown>)[key];
     }
 
-    let query = supabase.from("knowledge_base_articles").update(updateData).eq("id", req.params.id);
-    if (orgId) query = query.eq("organization_id", orgId);
-    const { data, error } = await query.select().single();
+    const { data, error } = await supabase
+      .from("knowledge_base_articles")
+      .update(updateData)
+      .eq("id", req.params.id)
+      .eq("organization_id", article.organization_id as string)
+      .select()
+      .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     if (!data) throw new AppError("NOT_FOUND", "Article not found", 404);
 
@@ -135,10 +136,12 @@ router.patch("/:id", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const orgId = req.query.organization_id as string | undefined;
-    let query = supabase.from("knowledge_base_articles").delete().eq("id", req.params.id);
-    if (orgId) query = query.eq("organization_id", orgId);
-    const { error } = await query;
+    const article = await loadOwned(req, supabase as any, "knowledge_base_articles", req.params.id as string, "id, organization_id");
+    const { error } = await supabase
+      .from("knowledge_base_articles")
+      .delete()
+      .eq("id", req.params.id)
+      .eq("organization_id", article.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({

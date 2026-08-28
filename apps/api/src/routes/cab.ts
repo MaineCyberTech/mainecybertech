@@ -2,6 +2,7 @@ import { Router } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
+import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import {
@@ -98,12 +99,8 @@ router.post("/meetings", async (req, res, next) => {
 
 router.get("/meetings/:id", async (req, res, next) => {
   try {
-    const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
-    let query = supabase.from("cab_meetings").select("*").eq("id", req.params.id);
-    if (orgId) query = query.eq("organization_id", orgId);
-    const { data, error } = await query.single();
-    if (error || !data) throw new AppError("NOT_FOUND", "CAB meeting not found", 404);
+    const meeting = await loadOwned(req, supabase as any, "cab_meetings", req.params.id as string);
 
     const { data: agenda, error: agendaError } = await supabase
       .from("cab_agenda_items")
@@ -111,7 +108,7 @@ router.get("/meetings/:id", async (req, res, next) => {
       .eq("meeting_id", req.params.id);
     if (agendaError) throw new AppError("DB_ERROR", agendaError.message, 500);
 
-    res.json(success({ ...data, agenda: agenda ?? [] }));
+    res.json(success({ ...meeting, agenda: agenda ?? [] }));
   } catch (error) {
     next(error);
   }
@@ -120,23 +117,14 @@ router.get("/meetings/:id", async (req, res, next) => {
 router.post("/meetings/:id/agenda", async (req, res, next) => {
   try {
     const parsed = addCabAgendaItemSchema.parse(req.body);
-    const orgId = (req.query.organization_id as string | undefined) ?? parsed.organizationId;
-    if (!orgId) throw new AppError("VALIDATION", "organizationId is required", 400);
     const supabase = getSupabaseAdmin();
-
-    const { data: meeting, error: meetingError } = await supabase
-      .from("cab_meetings")
-      .select("organization_id")
-      .eq("id", req.params.id)
-      .single();
-    if (meetingError || !meeting)
-      throw new AppError("NOT_FOUND", "CAB meeting not found", 404);
+    const meeting = await loadOwned(req, supabase as any, "cab_meetings", req.params.id as string, "id, organization_id");
 
     const { data, error } = await supabase
       .from("cab_agenda_items")
       .insert({
         meeting_id: req.params.id,
-        organization_id: orgId,
+        organization_id: meeting.organization_id as string,
         change_request_id: parsed.changeRequestId,
         decision: parsed.decision,
         notes: parsed.notes ?? null,
@@ -146,7 +134,7 @@ router.post("/meetings/:id/agenda", async (req, res, next) => {
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
-      organizationId: orgId,
+      organizationId: meeting.organization_id as string,
       actorUserId: req.authUser!.userId,
       action: "cab_agenda_item.created",
       entityType: "cab_agenda_item",
@@ -162,18 +150,9 @@ router.post("/meetings/:id/agenda", async (req, res, next) => {
 router.patch("/agenda/:id", async (req, res, next) => {
   try {
     const parsed = updateCabAgendaItemSchema.parse(req.body);
-    const orgId = req.query.organization_id as string | undefined;
     const supabase = getSupabaseAdmin();
 
-    const { data: current, error: fetchError } = await supabase
-      .from("cab_agenda_items")
-      .select("organization_id")
-      .eq("id", req.params.id)
-      .single();
-    if (fetchError || !current)
-      throw new AppError("NOT_FOUND", "CAB agenda item not found", 404);
-    if (orgId && current.organization_id !== orgId)
-      throw new AppError("FORBIDDEN", "Not authorized for this organization", 403);
+    const item = await loadOwned(req, supabase as any, "cab_agenda_items", req.params.id as string, "id, organization_id");
 
     const updateData: Record<string, unknown> = {};
     if (parsed.decision !== undefined) updateData.decision = parsed.decision;
@@ -188,7 +167,7 @@ router.patch("/agenda/:id", async (req, res, next) => {
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
-      organizationId: (current as { organization_id: string }).organization_id,
+      organizationId: item.organization_id as string,
       actorUserId: req.authUser!.userId,
       action: "cab_agenda_item.updated",
       entityType: "cab_agenda_item",

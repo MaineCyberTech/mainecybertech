@@ -343,4 +343,31 @@ describe("Approval tenant isolation (QW-1)", () => {
       .set("Authorization", authToken);
     expect(res.status).toBe(404);
   });
+
+  it("POST /:id/approve returns 404 when the approval is in another org", async () => {
+    mockApproval(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/approvals/${APPROVAL_ID}/approve`)
+      .set("Authorization", authToken)
+      .send({ organizationId: ORG_A, notes: "ok" });
+    expect(res.status).toBe(404);
+  });
+
+  it("POST /:id/reject returns 404 when the approval is in another org", async () => {
+    mockApproval(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/approvals/${APPROVAL_ID}/reject`)
+      .set("Authorization", authToken)
+      .send({ organizationId: ORG_A, reason: "no" });
+    expect(res.status).toBe(404);
+  });
+
+  it("POST /:id/cancel returns 404 when the approval is in another org", async () => {
+    mockApproval(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/approvals/${APPROVAL_ID}/cancel`)
+      .set("Authorization", authToken)
+      .send({ organizationId: ORG_A, reason: "no" });
+    expect(res.status).toBe(404);
+  });
 });

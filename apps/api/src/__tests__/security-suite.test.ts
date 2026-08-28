@@ -147,5 +147,61 @@ describe("Security Suite API", () => {
         .set("Authorization", auth);
       expect(r.status).toBe(404);
     });
+
+    it("GET /:id returns 404 when the record is in another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(
+        createMockBuilder({ data: { id: "mh-1", organization_id: OTHER }, error: null }),
+      );
+      const r = await request(app)
+        .get("/api/v1/security-suite/m365-hardening/mh-1")
+        .set("Authorization", auth);
+      expect(r.status).toBe(404);
+    });
+
+    it("GET /:id succeeds when the record belongs to the caller's org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(
+        createMockBuilder({ data: { id: "mh-1", organization_id: ORG }, error: null }),
+      );
+      const r = await request(app)
+        .get("/api/v1/security-suite/m365-hardening/mh-1")
+        .set("Authorization", auth);
+      expect(r.status).toBe(200);
+    });
+
+    it("PATCH /:id returns 404 when the record is in another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(
+        createMockBuilder({ data: { id: "mh-1", organization_id: OTHER }, error: null }),
+      );
+      const r = await request(app)
+        .patch("/api/v1/security-suite/m365-hardening/mh-1")
+        .set("Authorization", auth)
+        .send({ title: "Renamed" });
+      expect(r.status).toBe(404);
+    });
+
+    it("DELETE /:id returns 404 when the record is in another org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(
+        createMockBuilder({ data: { id: "mh-1", organization_id: OTHER }, error: null }),
+      );
+      const r = await request(app)
+        .delete("/api/v1/security-suite/m365-hardening/mh-1")
+        .set("Authorization", auth);
+      expect(r.status).toBe(404);
+    });
+
+    it("DELETE /:id succeeds when the record belongs to the caller's org", async () => {
+      const s = ma();
+      s.from.mockReturnValue(
+        createMockBuilder({ data: { id: "mh-1", organization_id: ORG }, error: null }),
+      );
+      const r = await request(app)
+        .delete("/api/v1/security-suite/m365-hardening/mh-1")
+        .set("Authorization", auth);
+      expect(r.status).toBe(204);
+    });
   });
 });

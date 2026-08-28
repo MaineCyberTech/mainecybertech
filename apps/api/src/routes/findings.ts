@@ -282,17 +282,12 @@ router.delete("/:id", async (req, res, next) => {
 
 router.post("/:id/verify", async (req, res, next) => {
   try {
-    const parsed = verifyFindingSchema.parse(req.body);
+    verifyFindingSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { data: current, error: findError } = await supabase
-      .from("findings")
-      .select("id, status, version")
-      .eq("id", req.params.id as string)
-      .single();
+    const current = await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id, status, version");
 
-    if (findError || !current) throw new AppError("NOT_FOUND", "Finding not found", 404);
-    if (current.status !== "resolved")
+    if ((current.status as string) !== "resolved")
       throw new AppError("INVALID_STATE", "Only resolved findings can be verified", 400);
 
     const { data, error } = await supabase
@@ -301,10 +296,10 @@ router.post("/:id/verify", async (req, res, next) => {
         status: "verified",
         verified_by: req.authUser!.userId,
         verified_at: new Date().toISOString(),
-        version: current.version + 1,
+        version: (current.version as number) + 1,
       })
       .eq("id", req.params.id as string)
-      .eq("version", current.version)
+      .eq("version", current.version as number)
       .select()
       .single();
 
@@ -312,7 +307,7 @@ router.post("/:id/verify", async (req, res, next) => {
     if (!data) throw new AppError("VERSION_CONFLICT", "Finding was modified by another user", 409);
 
     await logAuditEvent({
-      organizationId: parsed.organizationId,
+      organizationId: current.organization_id as string,
       actorUserId: req.authUser!.userId,
       action: "finding.verified",
       entityType: "finding",
@@ -320,7 +315,7 @@ router.post("/:id/verify", async (req, res, next) => {
     });
 
     await addTimelineEvent(
-      parsed.organizationId,
+      current.organization_id as string,
       "findings",
       "finding",
       req.params.id as string,
@@ -340,14 +335,9 @@ router.post("/:id/resolve", async (req, res, next) => {
     const parsed = resolveFindingSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const { data: current, error: findError } = await supabase
-      .from("findings")
-      .select("id, status, version")
-      .eq("id", req.params.id as string)
-      .single();
+    const current = await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id, status, version");
 
-    if (findError || !current) throw new AppError("NOT_FOUND", "Finding not found", 404);
-    if (!["open", "in_progress"].includes(current.status))
+    if (!["open", "in_progress"].includes(current.status as string))
       throw new AppError("INVALID_STATE", "Only open or in-progress findings can be resolved", 400);
 
     const { data, error } = await supabase
@@ -356,10 +346,10 @@ router.post("/:id/resolve", async (req, res, next) => {
         status: "resolved",
         resolved_at: new Date().toISOString(),
         remediation_plan: parsed.resolutionNotes ?? undefined,
-        version: current.version + 1,
+        version: (current.version as number) + 1,
       })
       .eq("id", req.params.id as string)
-      .eq("version", current.version)
+      .eq("version", current.version as number)
       .select()
       .single();
 
@@ -367,7 +357,7 @@ router.post("/:id/resolve", async (req, res, next) => {
     if (!data) throw new AppError("VERSION_CONFLICT", "Finding was modified by another user", 409);
 
     await logAuditEvent({
-      organizationId: parsed.organizationId,
+      organizationId: current.organization_id as string,
       actorUserId: req.authUser!.userId,
       action: "finding.resolved",
       entityType: "finding",
@@ -375,7 +365,7 @@ router.post("/:id/resolve", async (req, res, next) => {
     });
 
     await addTimelineEvent(
-      parsed.organizationId,
+      current.organization_id as string,
       "findings",
       "finding",
       req.params.id as string,

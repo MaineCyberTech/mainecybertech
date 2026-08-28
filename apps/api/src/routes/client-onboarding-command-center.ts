@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
-import { AppError } from "../types";
+import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { responseCacheNoRenew } from "../middleware/cache";
@@ -110,8 +110,15 @@ router.get(
   responseCacheNoRenew(30),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const orgId = getOrgId(req);
-      const result = await getOnboardingRecord(orgId, getParam(req, "id"));
+      const supabase = getSupabaseAdmin();
+      const record = await loadOwned(
+        req,
+        supabase as any,
+        "client_onboarding_command_center_records",
+        getParam(req, "id"),
+        "id, organization_id",
+      );
+      const result = await getOnboardingRecord(record.organization_id as string, getParam(req, "id"));
       res.json(result);
     } catch (error) {
       next(error);
@@ -134,11 +141,18 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 
 router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const orgId = getOrgId(req);
+    const supabase = getSupabaseAdmin();
+    const record = await loadOwned(
+      req,
+      supabase as any,
+      "client_onboarding_command_center_records",
+      getParam(req, "id"),
+      "id, organization_id",
+    );
     const userId = getUserId(req);
     const parsed = updateOnboardingSchema.parse(req.body);
 
-    const result = await updateOnboardingRecord(orgId, userId, getParam(req, "id"), parsed);
+    const result = await updateOnboardingRecord(record.organization_id as string, userId, getParam(req, "id"), parsed);
     res.json(result);
   } catch (error) {
     next(error);
@@ -147,9 +161,16 @@ router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => 
 
 router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const orgId = getOrgId(req);
+    const supabase = getSupabaseAdmin();
+    const record = await loadOwned(
+      req,
+      supabase as any,
+      "client_onboarding_command_center_records",
+      getParam(req, "id"),
+      "id, organization_id",
+    );
     const userId = getUserId(req);
-    const result = await deleteOnboardingRecord(orgId, userId, getParam(req, "id"));
+    const result = await deleteOnboardingRecord(record.organization_id as string, userId, getParam(req, "id"));
     res.json(result);
   } catch (error) {
     next(error);
@@ -158,28 +179,24 @@ router.delete("/:id", async (req: Request, res: Response, next: NextFunction) =>
 
 router.post("/:id/complete-phase", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const orgId = getOrgId(req);
     const userId = getUserId(req);
-    const parsed = completePhaseSchema.parse({ ...req.body, organizationId: orgId });
+    const parsed = completePhaseSchema.parse({ ...req.body, organizationId: getOrgId(req) });
 
-    // Get current record to determine current phase
+    // Load + verify ownership of the record before acting on it (fail-closed).
     const supabase = getSupabaseAdmin();
-    const { data: current, error: currentError } = await supabase
-      .from("client_onboarding_command_center_records")
-      .select("phase")
-      .eq("organization_id", orgId)
-      .eq("id", getParam(req, "id"))
-      .single();
-
-    if (currentError || !current) {
-      throw new AppError("NOT_FOUND", "Onboarding record not found", 404);
-    }
+    const record = await loadOwned(
+      req,
+      supabase as any,
+      "client_onboarding_command_center_records",
+      getParam(req, "id"),
+      "id, organization_id, phase",
+    );
 
     const result = await completePhase(
-      orgId,
+      record.organization_id as string,
       userId,
       getParam(req, "id"),
-      current.phase,
+      record.phase as string,
       parsed.completedBy,
       parsed.notes,
     );
@@ -205,11 +222,18 @@ router.get(
 
 router.patch("/:id/checklist/:itemId", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const orgId = getOrgId(req);
+    const supabase = getSupabaseAdmin();
+    const item = await loadOwned(
+      req,
+      supabase as any,
+      "client_onboarding_checklist_items",
+      getParam(req, "itemId"),
+      "id, organization_id",
+    );
     const userId = getUserId(req);
     const parsed = updateChecklistItemSchema.parse(req.body);
 
-    const result = await updateChecklistItem(orgId, userId, getParam(req, "itemId"), parsed);
+    const result = await updateChecklistItem(item.organization_id as string, userId, getParam(req, "itemId"), parsed);
     res.json(result);
   } catch (error) {
     next(error);

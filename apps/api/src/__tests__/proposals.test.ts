@@ -327,4 +327,22 @@ describe("Proposal tenant isolation (QW-1)", () => {
       .set("Authorization", authToken);
     expect(res.status).toBe(404);
   });
+
+  it("POST /:id/submit-approval returns 404 when the proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/proposals/${PROPOSAL_ID}/submit-approval`)
+      .set("Authorization", authToken)
+      .send({ organizationId: ORG_A });
+    expect(res.status).toBe(404);
+  });
+
+  it("POST /:id/publish returns 404 when the proposal is in another org", async () => {
+    mockProposal(ORG_B);
+    const res = await request(app)
+      .post(`/api/v1/proposals/${PROPOSAL_ID}/publish`)
+      .set("Authorization", authToken)
+      .send({ organizationId: ORG_A, validityDays: 30 });
+    expect(res.status).toBe(404);
+  });
 });

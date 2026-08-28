@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
+import { createTestApp, createMockBuilder, createOrgAccessStub, type MockResult } from "./helpers";
 import clientOnboardingRouter from "../routes/client-onboarding-command-center";
-import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
 import { invalidateCache } from "../middleware/cache";
 import { errorHandler } from "../middleware/error";
 
@@ -33,10 +33,9 @@ import { logAuditEvent } from "../services/audit";
  * Supabase mock serves only route queries. Middleware enforcement itself is
  * covered by security-suite / edge-cases / dedicated middleware tests.
  */
-jest.mock("../middleware/org-access", () => ({
-  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
-  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
 jest.mock("../middleware/permissions", () => ({
   requirePermission:
     () =>
@@ -215,7 +214,7 @@ describe("client-onboarding-command-center routes", () => {
     });
 
     it("returns 404 when record not found", async () => {
-      const result: MockResult = { data: null, error: { code: "PGRST116" } };
+      const result: MockResult = { data: null, error: null };
       mockFrom(result);
 
       const res = await request(app)
@@ -270,6 +269,7 @@ describe("client-onboarding-command-center routes", () => {
       const mock = mockSupabase();
       mock.from
         .mockReturnValueOnce(createMockBuilder({ data: currentRecord, error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: currentRecord, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: updatedRecord, error: null }));
 
       const res = await request(app)
@@ -292,6 +292,7 @@ describe("client-onboarding-command-center routes", () => {
       const mock = mockSupabase();
       mock.from
         .mockReturnValueOnce(createMockBuilder({ data: currentRecord, error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: currentRecord, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
@@ -313,7 +314,7 @@ describe("client-onboarding-command-center routes", () => {
 
       const mock = mockSupabase();
       mock.from
-        .mockReturnValueOnce(createMockBuilder({ data: { phase: "discovery" }, error: null })) // route's phase check
+        .mockReturnValueOnce(createMockBuilder({ data: currentRecord, error: null })) // loadOwned (id, org, phase)
         .mockReturnValueOnce(createMockBuilder({ data: currentRecord, error: null })) // service's get current
         .mockReturnValueOnce(createMockBuilder({ data: updatedRecord, error: null })) // service's update
         .mockReturnValueOnce(createMockBuilder({ data: null, error: null })); // service's checklist update
@@ -361,6 +362,7 @@ describe("client-onboarding-command-center routes", () => {
       const mock = mockSupabase();
       mock.from
         .mockReturnValueOnce(createMockBuilder({ data: currentItem, error: null }))
+        .mockReturnValueOnce(createMockBuilder({ data: currentItem, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: updatedItem, error: null }));
 
       const res = await request(app)
@@ -401,6 +403,66 @@ describe("client-onboarding-command-center routes", () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveLength(1);
+    });
+  });
+
+  describe("Tenant isolation (QW-1)", () => {
+    const ORG_A = "00000000-0000-0000-0000-000000000001";
+    const ORG_B = "00000000-0000-0000-0000-000000000002";
+    const RECORD_ID = "00000000-0000-0000-0000-000000000120";
+
+    function mockRecord(orgId: string) {
+      const result: MockResult = {
+        data: { ...ONBOARDING_RECORD, organization_id: orgId },
+        error: null,
+      };
+      mockFrom(result);
+    }
+
+    it("GET /:id returns 404 when the record is in another org", async () => {
+      mockRecord(ORG_B);
+      const res = await request(app)
+        .get(`/api/v1/client-onboarding/${RECORD_ID}`)
+        .set("Authorization", "Bearer token-123");
+      expect(res.status).toBe(404);
+    });
+
+    it("PATCH /:id returns 404 when the record is in another org", async () => {
+      mockRecord(ORG_B);
+      const res = await request(app)
+        .patch(`/api/v1/client-onboarding/${RECORD_ID}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ clientName: "Updated" });
+      expect(res.status).toBe(404);
+    });
+
+    it("DELETE /:id returns 404 when the record is in another org", async () => {
+      mockRecord(ORG_B);
+      const res = await request(app)
+        .delete(`/api/v1/client-onboarding/${RECORD_ID}`)
+        .set("Authorization", "Bearer token-123");
+      expect(res.status).toBe(404);
+    });
+
+    it("POST /:id/complete-phase returns 404 when the record is in another org", async () => {
+      mockRecord(ORG_B);
+      const res = await request(app)
+        .post(`/api/v1/client-onboarding/${RECORD_ID}/complete-phase`)
+        .set("Authorization", "Bearer token-123")
+        .send({ completedBy: "00000000-0000-0000-0000-000000000777" });
+      expect(res.status).toBe(404);
+    });
+
+    it("PATCH /:id/checklist/:itemId returns 404 when the item is in another org", async () => {
+      const item = { ...CHECKLIST_ITEM, organization_id: ORG_B };
+      mockFrom({ data: item, error: null } as MockResult);
+      const res = await request(app)
+        .patch(
+          `/api/v1/client-onboarding/${RECORD_ID}/checklist/00000000-0000-0000-0000-000000000121`,
+        )
+        .set("Authorization", "Bearer token-123")
+        .send({ isCompleted: true, completedBy: "user-1" });
+      expect(res.status).toBe(404);
     });
   });
 });

@@ -300,16 +300,18 @@ router.delete("/:id", async (req, res, next) => {
 router.post("/:id/approve", async (req, res, next) => {
   try {
     const parsed = approveRequestSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const approval = await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
 
     const result = await approveRequest(
       req.params.id as string,
       req.authUser!.userId,
-      parsed.organizationId,
+      approval.organization_id as string,
       parsed.notes,
     );
 
     await addTimelineEvent(
-      parsed.organizationId,
+      approval.organization_id as string,
       "approvals",
       "approval_request",
       req.params.id as string,
@@ -327,16 +329,18 @@ router.post("/:id/approve", async (req, res, next) => {
 router.post("/:id/reject", async (req, res, next) => {
   try {
     const parsed = rejectRequestSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const approval = await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
 
     const result = await rejectRequest(
       req.params.id as string,
       req.authUser!.userId,
-      parsed.organizationId,
+      approval.organization_id as string,
       parsed.reason,
     );
 
     await addTimelineEvent(
-      parsed.organizationId,
+      approval.organization_id as string,
       "approvals",
       "approval_request",
       req.params.id as string,
@@ -354,16 +358,18 @@ router.post("/:id/reject", async (req, res, next) => {
 router.post("/:id/cancel", async (req, res, next) => {
   try {
     const parsed = cancelRequestSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const approval = await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
 
     const result = await cancelRequest(
       req.params.id as string,
       req.authUser!.userId,
-      parsed.organizationId,
+      approval.organization_id as string,
       parsed.reason,
     );
 
     await addTimelineEvent(
-      parsed.organizationId,
+      approval.organization_id as string,
       "approvals",
       "approval_request",
       req.params.id as string,
