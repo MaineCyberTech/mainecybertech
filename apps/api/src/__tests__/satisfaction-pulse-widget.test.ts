@@ -1,4 +1,4 @@
-﻿import { jest } from "@jest/globals";
+import { jest } from "@jest/globals";
 import request from "supertest";
 import satisfactionPulseRouter from "../routes/satisfaction-pulse-widget";
 import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
@@ -43,10 +43,6 @@ jest.mock("../middleware/permissions", () => ({
     (_req: unknown, _res: unknown, next: () => void) =>
       next(),
 }));
-jest.mock("../middleware/require-active-subscription", () => ({
-  requireActiveSubscription: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
-
 const app = createTestApp();
 app.use("/api/v1/satisfaction-pulse", satisfactionPulseRouter);
 app.use(errorHandler);

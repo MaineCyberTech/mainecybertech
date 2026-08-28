@@ -1,4 +1,4 @@
-﻿import { jest } from "@jest/globals";
+import { jest } from "@jest/globals";
 import request from "supertest";
 import { createTestApp, createMockBuilder  } from "./helpers";
 import { errorHandler } from "../middleware/error";
@@ -70,10 +70,6 @@ jest.mock("../middleware/permissions", () => ({
     (_req: unknown, _res: unknown, next: () => void) =>
       next(),
 }));
-jest.mock("../middleware/require-active-subscription", () => ({
-  requireActiveSubscription: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
-
 const app = createTestApp();
 app.use("/api/v1/bulk", bulkRouter);
 app.use(errorHandler);
@@ -93,9 +89,9 @@ describe("Bulk API", () => {
 
   it("returns error for invalid email in CSV", async () => {
     const supabase = mockAuthAndAdmin();
-    // requireAdmin â†’ memberships query
+    // requireAdmin → memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
-    // Route handler â†’ profiles query for existing user
+    // Route handler → profiles query for existing user
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
 
     const res = await request(app)
@@ -112,18 +108,18 @@ describe("Bulk API", () => {
 
   it("returns results for valid CSV with new user", async () => {
     const supabase = mockAuthAndAdmin();
-    // requireAdmin â†’ memberships query
+    // requireAdmin → memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
-    // profiles query â†’ no existing user
+    // profiles query → no existing user
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
-    // auth.admin.createUser â†’ success
+    // auth.admin.createUser → success
     supabase.auth.admin.createUser.mockResolvedValue({
       data: { user: { id: "new-user-1" } },
       error: null,
     });
-    // memberships query â†’ no existing membership
+    // memberships query → no existing membership
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
-    // memberships insert â†’ success
+    // memberships insert → success
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: { id: "m-1" }, error: null }));
 
     const res = await request(app)
@@ -141,18 +137,18 @@ describe("Bulk API", () => {
 
   it("accepts the invites array payload (SDK/web form shape)", async () => {
     const supabase = mockAuthAndAdmin();
-    // requireAdmin → memberships query
+    // requireAdmin ? memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
-    // profiles query → no existing user
+    // profiles query ? no existing user
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
-    // auth.admin.createUser → success
+    // auth.admin.createUser ? success
     supabase.auth.admin.createUser.mockResolvedValue({
       data: { user: { id: "new-user-2" } },
       error: null,
     });
-    // memberships query → no existing membership
+    // memberships query ? no existing membership
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
-    // memberships insert → success
+    // memberships insert ? success
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: { id: "m-3" }, error: null }));
 
     const res = await request(app)
@@ -169,15 +165,15 @@ describe("Bulk API", () => {
 
   it("invites an existing user that has no membership", async () => {
     const supabase = mockAuthAndAdmin();
-    // requireAdmin â†’ memberships query
+    // requireAdmin → memberships query
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: [ADMIN_MEMBER], error: null }));
-    // profiles query â†’ existing user found
+    // profiles query → existing user found
     supabase.from.mockReturnValueOnce(
       createMockBuilder({ data: { id: "existing-user" }, error: null }),
     );
-    // memberships query â†’ no existing membership
+    // memberships query → no existing membership
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
-    // memberships insert â†’ success
+    // memberships insert → success
     supabase.from.mockReturnValueOnce(createMockBuilder({ data: { id: "m-2" }, error: null }));
 
     const res = await request(app)

@@ -64,10 +64,6 @@ jest.mock("../middleware/permissions", () => ({
     (_req: unknown, _res: unknown, next: () => void) =>
       next(),
 }));
-jest.mock("../middleware/require-active-subscription", () => ({
-  requireActiveSubscription: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
-
 const app = createTestApp();
 app.use("/api/v1/cab", cabRouter);
 app.use(errorHandler);

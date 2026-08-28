@@ -23,6 +23,33 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
+// --- Public-bucket image upload hardening (FILE-P2-002 / FILE-P1-001) --------
+// Logos land in the PUBLIC `logos` bucket and are served inline from a trusted
+// origin. Previously this endpoint performed NO mimetype check and built the
+// storage key from the uploaded filename's extension, so `x.svg` / `x.html` /
+// `x.js` could be persisted and served from our own domain (stored XSS /
+// phishing). The declared mimetype is now allowlisted and the extension that is
+// actually written is DERIVED FROM THE VALIDATED MIMETYPE -- the user-supplied
+// filename (and its extension) is never echoed into the public storage key.
+const IMAGE_MIME_TO_EXTENSION: Record<string, string | undefined> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+export function resolveImageUpload(
+  file: { originalname: string; mimetype: string },
+  label: string,
+): { extension: string; mimetype: string } {
+  const mimetype = (file.mimetype || "").split(";")[0]!.trim().toLowerCase();
+  const extension = IMAGE_MIME_TO_EXTENSION[mimetype];
+  if (!extension) {
+    throw new AppError("VALIDATION", `${label} must be a JPEG, PNG, WebP, or GIF image`, 400);
+  }
+  return { extension, mimetype };
+}
+
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
@@ -515,13 +542,15 @@ router.post(
       if (!file) throw new AppError("VALIDATION", "Logo file is required", 400);
 
       const supabase = getSupabaseAdmin();
-      const ext = file.originalname.split(".").pop() ?? "png";
-      const storagePath = `${req.authUser!.userId}/org-${req.params.id}-logo.${ext}`;
+      // Mimetype + filename extension are allowlisted, and the stored extension
+      // comes from the validated mimetype (never from originalname).
+      const { extension, mimetype } = resolveImageUpload(file, "Logo");
+      const storagePath = `${req.authUser!.userId}/org-${req.params.id}-logo.${extension}`;
 
       const { error: uploadError } = await supabase.storage
         .from("logos")
         .upload(storagePath, file.buffer, {
-          contentType: file.mimetype || undefined,
+          contentType: mimetype,
           upsert: true,
         });
 

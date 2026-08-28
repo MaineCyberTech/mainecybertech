@@ -1,6 +1,6 @@
-﻿import { jest } from "@jest/globals";
+import { jest } from "@jest/globals";
 import request from "supertest";
-import organizationsRouter from "../routes/organizations";
+import organizationsRouter, { resolveImageUpload } from "../routes/organizations";
 import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
@@ -27,13 +27,20 @@ jest.mock("../services/audit", () => ({
 import { getSupabaseAdmin } from "../services/supabase";
 
 function mockAuth() {
-  const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn() };
+  const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn(), storage: { from: jest.fn() } };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
   supabase.auth.getUser.mockResolvedValue({
     data: { user: { id: "user-1", email: "test@example.com" } },
     error: null,
   });
   return supabase;
+}
+
+function mockStorage(supabase: ReturnType<typeof mockAuth>) {
+  supabase.storage.from.mockReturnValue({
+    upload: jest.fn().mockResolvedValue({ data: { path: "x" }, error: null }),
+    getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: "https://cdn/logo" } }),
+  });
 }
 
 function mockAdmin() {
@@ -74,10 +81,6 @@ jest.mock("../middleware/permissions", () => ({
     (_req: unknown, _res: unknown, next: () => void) =>
       next(),
 }));
-jest.mock("../middleware/require-active-subscription", () => ({
-  requireActiveSubscription: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
-
 const app = createTestApp();
 app.use("/api/v1/organizations", organizationsRouter);
 app.use(errorHandler);
@@ -380,6 +383,78 @@ describe("organizations routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe("POST /:id/logo", () => {
+    const ORG_ID = "00000000-0000-0000-0000-000000000001";
+
+    it("stores the logo with the extension derived from the validated mimetype (FILE-P2-002)", async () => {
+      const supabase = mockAuth();
+      mockStorage(supabase);
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: ORG, error: null }),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/organizations/${ORG_ID}/logo`)
+        .set("Authorization", "Bearer token-123")
+        // logo.webp -> image/webp -> stored as .webp
+        .attach("logo", Buffer.from("binary-image"), "logo.webp");
+
+      expect(res.status).toBe(200);
+      expect(supabase.storage.from).toHaveBeenCalledWith("logos");
+      const uploadCall = supabase.storage.from("logos").upload.mock.calls[0];
+      expect(uploadCall[0]).toMatch(new RegExp(`^user-1/org-${ORG_ID}-logo\\.webp$`));
+    });
+
+    it("stores a .png logo as .png", async () => {
+      const supabase = mockAuth();
+      mockStorage(supabase);
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: ORG, error: null }),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/organizations/${ORG_ID}/logo`)
+        .set("Authorization", "Bearer token-123")
+        .attach("logo", Buffer.from("binary-image"), "logo.png");
+
+      expect(res.status).toBe(200);
+      const uploadCall = supabase.storage.from("logos").upload.mock.calls[0];
+      expect(uploadCall[0]).toMatch(new RegExp(`^user-1/org-${ORG_ID}-logo\\.png$`));
+    });
+
+    // Direct unit test of the hardening helper: the stored extension must come
+    // from the VALIDATED mimetype, never from the attacker-controlled filename.
+    describe("resolveImageUpload (FILE-P2-002)", () => {
+      it("derives the stored extension from the mimetype, ignoring a .svg filename", () => {
+        const { extension, mimetype } = resolveImageUpload(
+          { originalname: "evil.svg", mimetype: "image/png" },
+          "Logo",
+        );
+        expect(mimetype).toBe("image/png");
+        expect(extension).toBe("png");
+      });
+
+      it("maps image/webp -> webp", () => {
+        expect(resolveImageUpload({ originalname: "x.webp", mimetype: "image/webp" }, "Logo").extension).toBe("webp");
+      });
+
+      it("rejects image/svg+xml via the mimetype allowlist", () => {
+        expect(() => resolveImageUpload({ originalname: "evil.svg", mimetype: "image/svg+xml" }, "Logo")).toThrow();
+      });
+    });
+
+    it("rejects a real image/svg+xml upload (FILE-P1-001)", async () => {
+      mockAuth();
+
+      const res = await request(app)
+        .post(`/api/v1/organizations/${ORG_ID}/logo`)
+        .set("Authorization", "Bearer token-123")
+        .attach("logo", Buffer.from("<svg></svg>"), "logo.svg");
+
+      expect(res.status).toBe(400);
     });
   });
 });

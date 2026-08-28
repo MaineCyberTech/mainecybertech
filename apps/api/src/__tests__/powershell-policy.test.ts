@@ -1,4 +1,4 @@
-﻿import { jest } from "@jest/globals";
+import { jest } from "@jest/globals";
 import request from "supertest";
 import { createTestApp, createMockBuilder  } from "./helpers";
 import { errorHandler } from "../middleware/error";
@@ -65,10 +65,6 @@ jest.mock("../middleware/permissions", () => ({
     (_req: unknown, _res: unknown, next: () => void) =>
       next(),
 }));
-jest.mock("../middleware/require-active-subscription", () => ({
-  requireActiveSubscription: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
-
 const app = createTestApp();
 app.use("/api/v1/edu-automation", router);
 app.use(errorHandler);

@@ -5,6 +5,98 @@ import { logger } from "./logger";
 import { checkIdempotencyKey, storeIdempotencyKey } from "./idempotency";
 import { assertSafeWebhookUrl } from "./ssrf-guard";
 
+const MAX_ATTEMPTS = 3;
+const RETRY_BASE_MS = 200;
+const RETRY_FACTOR = 2;
+
+type DeliveryResult = {
+  status: number;
+  body: string;
+  error: string | null;
+};
+
+async function deliverWithRetry(
+  url: string,
+  headers: Record<string, string>,
+  body: string,
+): Promise<DeliveryResult> {
+  let lastStatus = 0;
+  let lastBody = "";
+  let lastError: string | null = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res: Response | null = null;
+    try {
+      await assertSafeWebhookUrl(url);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      res = await fetch(url, {
+        method: "POST",
+        headers,
+        body,
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      // 5xx responses are transient server errors and should be retried.
+      if (res.status >= 500) {
+        lastStatus = res.status;
+        lastBody = await res.text().catch(() => "");
+        lastError = `HTTP ${res.status}`;
+      } else {
+        // 2xx/3xx/4xx are terminal for this attempt (4xx won't succeed on retry).
+        return {
+          status: res.status,
+          body: await res.text().catch(() => ""),
+          error: null,
+        };
+      }
+    } catch (e) {
+      // Network errors / timeouts are transient and should be retried.
+      lastError = e instanceof Error ? e.message : String(e);
+      lastStatus = 0;
+      lastBody = "";
+    }
+
+    if (attempt < MAX_ATTEMPTS) {
+      const delay = RETRY_BASE_MS * Math.pow(RETRY_FACTOR, attempt - 1);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  return { status: lastStatus, body: lastBody, error: lastError ?? "unknown delivery error" };
+}
+
+async function enqueueDeadLetter(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  endpointId: string,
+  event: string,
+  lastError: string,
+  attemptCount: number,
+): Promise<void> {
+  try {
+    const { error: dlqError } = await supabase.from("webhook_dead_letters").insert({
+      webhook_id: endpointId,
+      event,
+      request_body: { event, receivedAt: new Date().toISOString() },
+      last_error: lastError,
+      attempt_count: attemptCount,
+      last_attempt_at: new Date().toISOString(),
+    });
+    if (dlqError) {
+      logger.warn(
+        { err: dlqError.message, endpointId, event },
+        "Failed to enqueue webhook dead letter",
+      );
+    }
+  } catch (err) {
+    logger.warn(
+      { err: err instanceof Error ? err.message : String(err), endpointId, event },
+      "Failed to enqueue webhook dead letter",
+    );
+  }
+}
+
 export async function dispatchWebhook(
   event: string,
   organizationId: string,
@@ -57,29 +149,16 @@ export async function dispatchWebhook(
       }
 
       const start = Date.now();
-      let responseStatus = 0;
-      let responseBody = "";
-      let error: string | null = null;
+      const receivedAt = new Date().toISOString();
 
-      try {
-        await assertSafeWebhookUrl(endpoint.url);
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 10000);
-        const res = await fetch(endpoint.url, {
-          method: "POST",
-          headers,
-          body,
-          signal: controller.signal,
-        });
-        clearTimeout(timeout);
-        responseStatus = res.status;
-        responseBody = await res.text().catch(() => "");
-      } catch (e) {
-        error = e instanceof Error ? e.message : String(e);
-      }
+      const result = await deliverWithRetry(endpoint.url, headers, body);
+      const responseStatus = result.status;
+      const error = result.error;
 
       const duration = Date.now() - start;
 
+      // Persist only a truncated, PII-safe summary — never the raw outbound
+      // payload or the inbound response body.
       await supabase.from("webhook_deliveries").insert({
         webhook_id: endpoint.id,
         event,
@@ -88,13 +167,25 @@ export async function dispatchWebhook(
           : responseStatus >= 200 && responseStatus < 300
             ? "success"
             : "failed",
-        request_body: { event, data },
+        request_body: { event, receivedAt },
         response_status: responseStatus || null,
-        response_body: responseBody || null,
+        response_body: null,
         error,
         duration_ms: duration,
+        retry_count: MAX_ATTEMPTS,
         idempotency_key: idempotencyKey,
       });
+
+      const failed = Boolean(error) || responseStatus >= 400;
+      if (failed) {
+        await enqueueDeadLetter(
+          supabase,
+          endpoint.id,
+          event,
+          error || `HTTP ${responseStatus}`,
+          MAX_ATTEMPTS,
+        );
+      }
 
       if (responseStatus >= 200 && responseStatus < 300) {
         await storeIdempotencyKey(idempotencyKey, "done");

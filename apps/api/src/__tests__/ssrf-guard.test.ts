@@ -1,5 +1,11 @@
 import { jest } from "@jest/globals";
-import { isPrivateIpAddress, isBlockedHostname, assertSafeWebhookUrlSync } from "../lib/ssrf-guard";
+import dns from "node:dns";
+import {
+  isPrivateIpAddress,
+  isBlockedHostname,
+  assertSafeWebhookUrlSync,
+  assertSafeWebhookUrl,
+} from "../lib/ssrf-guard";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -104,5 +110,36 @@ describe("assertSafeWebhookUrlSync", () => {
       assertSafeWebhookUrlSync("https://hooks.slack.com/services/T000/B000/XXXX"),
     ).not.toThrow();
     expect(() => assertSafeWebhookUrlSync("http://webhook.site/abc-123")).not.toThrow();
+  });
+});
+
+describe("assertSafeWebhookUrl (async DNS resolution)", () => {
+  afterEach(() => jest.restoreAllMocks());
+
+  it("rejects hostnames that resolve to private addresses", async () => {
+    jest
+      .spyOn(dns.promises, "lookup")
+      .mockResolvedValue([{ address: "10.0.0.1", family: 4 }]);
+    await expect(assertSafeWebhookUrl("http://webhook.internal.example.com/hook")).rejects.toThrow(
+      /private or loopback/i,
+    );
+  });
+
+  it("rejects unresolved hostnames", async () => {
+    jest
+      .spyOn(dns.promises, "lookup")
+      .mockRejectedValue(Object.assign(new Error("ENOTFOUND"), { code: "ENOTFOUND" }));
+    await expect(assertSafeWebhookUrl("http://does-not-exist.example.com/hook")).rejects.toThrow(
+      /could not be resolved/i,
+    );
+  });
+
+  it("allows hostnames that resolve to public addresses", async () => {
+    jest
+      .spyOn(dns.promises, "lookup")
+      .mockResolvedValue([{ address: "93.184.216.34", family: 4 }]);
+    await expect(
+      assertSafeWebhookUrl("https://webhook.internal.example.com/hook"),
+    ).resolves.toBeUndefined();
   });
 });

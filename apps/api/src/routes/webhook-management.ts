@@ -255,8 +255,9 @@ router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, re
     let responseBody = "";
     let error: string | null = null;
 
+    await assertSafeWebhookUrl(webhook.url);
+
     try {
-      await assertSafeWebhookUrl(webhook.url);
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 10000);
       const res = await fetch(webhook.url, {

@@ -14,17 +14,20 @@ const router: ReturnType<typeof Router> = Router();
 
 async function logWebhookDelivery(
   event: string,
-  reqBody: unknown,
+  _reqBody: unknown,
   idempotencyKey: string,
 ): Promise<void> {
   const supabase = getSupabaseAdmin();
   try {
+    // Persist only a truncated, PII-safe summary. The raw inbound payload
+    // (which can contain Stripe/JSM/M365 PII) is intentionally NOT stored.
     await supabase.from("webhook_deliveries").insert({
       webhook_id: null,
       event,
       status: "success",
-      request_body: reqBody,
+      request_body: { event, receivedAt: new Date().toISOString() },
       response_status: 200,
+      response_body: null,
       idempotency_key: idempotencyKey,
     });
     await storeIdempotencyKey(idempotencyKey, "done");

@@ -110,4 +110,55 @@ describe("webhook-management routes", () => {
 
     expect(res.status).toBe(400);
   });
+
+  it("POST /:id/test rejects internal webhook URLs with 400 (SSRF guard) instead of fetching", async () => {
+    const adminSupabase = mockAuth();
+    adminSupabase.from.mockImplementation((table: string) => {
+      if (table === "webhook_endpoints") {
+        return createMockBuilder({
+          data: {
+            id: "wh1",
+            organization_id: "00000000-0000-0000-0000-000000000001",
+            url: "http://169.254.169.254/latest/meta-data",
+            secret: null,
+          },
+          error: null,
+        } as MockResult);
+      }
+      if (table === "profiles") {
+        return createMockBuilder({ data: [{ is_super_admin: true }], error: null });
+      }
+      if (table === "memberships") {
+        return createMockBuilder({
+          data: [{ id: "m1", roles: { id: "r1", key: "super_admin" } }],
+          error: null,
+        } as MockResult);
+      }
+      if (table === "subscriptions") {
+        return createMockBuilder({
+          data: [
+            {
+              id: "s1",
+              organization_id: "00000000-0000-0000-0000-000000000001",
+              status: "active",
+              plan: "pro",
+              current_period_end: "2027-12-31T23:59:59Z",
+            },
+          ],
+          error: null,
+        } as MockResult);
+      }
+      if (table === "permissions") {
+        return createMockBuilder({ data: [], error: null });
+      }
+      return createMockBuilder({ data: [], error: null });
+    });
+
+    const res = await request(app)
+      .post("/api/v1/webhook-endpoints/wh1/test")
+      .set("Authorization", "Bearer token");
+
+    expect(res.status).toBe(400);
+    expect(res.body.error?.code).toBe("VALIDATION");
+  });
 });

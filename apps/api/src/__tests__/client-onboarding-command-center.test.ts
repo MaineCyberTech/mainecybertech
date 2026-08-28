@@ -1,4 +1,4 @@
-﻿import { jest } from "@jest/globals";
+import { jest } from "@jest/globals";
 import request from "supertest";
 import clientOnboardingRouter from "../routes/client-onboarding-command-center";
 import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
@@ -43,10 +43,6 @@ jest.mock("../middleware/permissions", () => ({
     (_req: unknown, _res: unknown, next: () => void) =>
       next(),
 }));
-jest.mock("../middleware/require-active-subscription", () => ({
-  requireActiveSubscription: (_req: unknown, _res: unknown, next: () => void) => next(),
-}));
-
 const app = createTestApp();
 app.use("/api/v1/client-onboarding", clientOnboardingRouter);
 app.use(errorHandler);

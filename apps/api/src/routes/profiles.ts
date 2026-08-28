@@ -14,6 +14,33 @@ const upload = multer({
   limits: { fileSize: 2 * 1024 * 1024 },
 });
 
+// --- Public-bucket image upload hardening (FILE-P2-002) ----------------------
+// Avatars land in the PUBLIC `avatars` bucket and are served inline from a
+// trusted origin, so the stored object name must never inherit an
+// attacker-controlled extension: `x.svg` / `x.html` / `x.js` uploaded with a
+// spoofed mimetype would become stored XSS / phishing hosted on our own domain.
+// The declared mimetype is allowlisted and the extension that is actually
+// written is DERIVED FROM THE VALIDATED MIMETYPE -- the user-supplied filename
+// (and its extension) is never echoed into the public storage key.
+const IMAGE_MIME_TO_EXTENSION: Record<string, string | undefined> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+export function resolveImageUpload(
+  file: { originalname: string; mimetype: string },
+  label: string,
+): { extension: string; mimetype: string } {
+  const mimetype = (file.mimetype || "").split(";")[0]!.trim().toLowerCase();
+  const extension = IMAGE_MIME_TO_EXTENSION[mimetype];
+  if (!extension) {
+    throw new AppError("VALIDATION", `${label} must be a JPEG, PNG, WebP, or GIF image`, 400);
+  }
+  return { extension, mimetype };
+}
+
 const updateProfileSchema = z.object({
   fullName: z.string().max(255).optional().nullable(),
   phone: z.string().max(50).optional().nullable(),
@@ -179,20 +206,17 @@ router.post("/:id/avatar", upload.single("avatar"), async (req, res, next) => {
     const file = req.file;
     if (!file) throw new AppError("VALIDATION", "Avatar file is required", 400);
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.mimetype)) {
-      throw new AppError("VALIDATION", "Avatar must be a JPEG, PNG, WebP, or GIF image", 400);
-    }
-
-    const ext = file.originalname.split(".").pop() ?? "png";
+    // Mimetype + filename extension are allowlisted, and the stored extension
+    // comes from the validated mimetype (never from originalname). FILE-P2-002
+    const { extension, mimetype } = resolveImageUpload(file, "Avatar");
     const userId = req.params.id as string;
-    const storagePath = `${userId}/avatar.${ext}`;
+    const storagePath = `${userId}/avatar.${extension}`;
     const supabase = getSupabaseUser(req.userJwt!);
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(storagePath, file.buffer, {
-        contentType: file.mimetype,
+        contentType: mimetype,
         upsert: true,
       });
 
