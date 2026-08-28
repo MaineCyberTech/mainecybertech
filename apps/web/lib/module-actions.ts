@@ -653,12 +653,12 @@ export async function createSharePoint(formData: FormData) {
 export async function createDeviceProfile(formData: FormData) {
   const api = getApiClient();
   try {
-    await api.final.deviceProfiles.create({
+    await api.deviceProfiles.create({
       organizationId: String(formData.get("organizationId") || ""),
-      profileName: String(formData.get("profileName") || ""),
-      deviceType: String(formData.get("deviceType") || ""),
-      os: String(formData.get("os") || ""),
-      description: String(formData.get("description") || ""),
+      name: String(formData.get("name") || ""),
+      type: String(formData.get("type") || "") || null,
+      manufacturer: String(formData.get("manufacturer") || "") || null,
+      model: String(formData.get("model") || "") || null,
     });
     revalidatePath("/admin/final/device-profiles");
     return { ok: true };

@@ -633,11 +633,6 @@ insert into public.sharepoint_plans (id, organization_id, site_name, team_name, 
   ('81570000-0000-0000-0000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Case Management', 'Case Team', 'team_site', 'Managing Partner', 'Confidential', 'disabled', 'Case team site planned.', 'planned', 'f1000000-0000-4000-8000-000000000005'::uuid)
 on conflict (id) do nothing;
 
-insert into public.device_profiles (id, organization_id, profile_name, device_type, os, settings, description, status, created_by) values
-  ('81580000-0000-0000-0000-000000000001'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'Warehouse Standard', 'workstation', 'Windows 11', jsonb_build_object('screen_lock_minutes', 5), 'Standard warehouse PC profile.', 'active', 'f1000000-0000-4000-8000-000000000004'::uuid),
-  ('81580000-0000-0000-0000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'Archive Standard', 'workstation', 'Windows 11', jsonb_build_object('usb_write_blocked', true), 'Archive PC profile with USB write blocking.', 'active', 'f1000000-0000-4000-8000-000000000005'::uuid)
-on conflict (id) do nothing;
-
 insert into public.saas_audits (id, organization_id, vendor_name, service_name, monthly_cost, annual_cost, payment_method, classification, usage_frequency, cancellation_risk, has_data_access, renewal_date, notes, created_by) values
   ('81590000-0000-0000-0000-000000000001'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, 'WMS Software', 'WMS Platform', 3200.00, 38400.00, 'credit_card', 'critical', 'daily', 'high', true, '2026-12-31', 'Critical production system.', 'f1000000-0000-4000-8000-000000000004'::uuid),
   ('81590000-0000-0000-0000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'LexSearch', 'Legal research tool', 450.00, 5400.00, 'invoice', 'core', 'daily', 'medium', false, '2026-10-01', 'Renewal approaching.', 'f1000000-0000-4000-8000-000000000005'::uuid)

@@ -44,6 +44,7 @@ import businessOsRouter from "./routes/business-os";
 import proposalsRouter from "./routes/proposals";
 import findingsRouter from "./routes/findings";
 import assetsRouter from "./routes/assets";
+import deviceProfilesRouter from "./routes/device-profiles";
 import domainMonitorsRouter from "./routes/domain-monitors";
 import qbrRouter from "./routes/qbr";
 import fileRequestsRouter from "./routes/file-requests";
@@ -167,6 +168,7 @@ export function createApp(): Express {
   app.use("/api/v1/proposals", proposalsRouter);
   app.use("/api/v1/findings", findingsRouter);
   app.use("/api/v1/assets", assetsRouter);
+  app.use("/api/v1/device-profiles", deviceProfilesRouter);
   app.use("/api/v1/domain-monitors", domainMonitorsRouter);
   app.use("/api/v1/qbr", qbrRouter);
   app.use("/api/v1/file-requests", fileRequestsRouter);

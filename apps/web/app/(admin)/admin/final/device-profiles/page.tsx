@@ -1,26 +1,51 @@
-import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
+import AdminPagination from "@/components/admin/AdminPagination";
 import { createDeviceProfile } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Device Profile - More Tools - Admin" };
+export const metadata = { title: "Device Profiles - Admin - Maine CyberTech" };
 
-export default async function DeviceProfilePage() {
+const DEFAULT_LIMIT = 25;
+
+type DeviceProfilesPageProps = {
+  searchParams: Promise<{ page?: string; limit?: string }>;
+};
+
+export default async function DeviceProfilesPage({ searchParams }: DeviceProfilesPageProps) {
   await requireAdminAccess();
   const api = getApiClient();
-  let items: Array<{ id: string; profile_name?: string }> = [];
+
+  const sp = await searchParams;
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+
+  let profiles: Array<{
+    id: string;
+    name: string;
+    type: string | null;
+    manufacturer: string | null;
+    model: string | null;
+    created_at: string;
+  }> = [];
+  let total = 0;
+
   try {
-    const r = await api.final.deviceProfiles.list({});
-    items = (r as { items: typeof items }).items as typeof items;
+    const r = await api.deviceProfiles.list({ page, limit });
+    profiles = r.items as typeof profiles;
+    total = r.total ?? 0;
   } catch {
     /* graceful */
   }
+
+  const totalPages = Math.ceil(total / limit);
+  const buildHref = (p: number) => `/admin/final/device-profiles?page=${p}&limit=${limit}`;
 
   return (
     <AdminPageShell
@@ -29,39 +54,51 @@ export default async function DeviceProfilePage() {
           items={[
             { label: "Admin", href: "/admin" },
             { label: "More Tools", href: "/admin/final" },
-            { label: "Device Profile" },
+            { label: "Device Profiles" },
           ]}
         />
       }
       subnav={<AdminSubnav current="final" />}
-      title="Device Profile"
-      description="Standard device profiles with type, OS, and descriptions."
+      title="Device Profiles"
+      description="Standard device profiles with type, manufacturer, model, and specs."
+      actions={
+        <div className="cyber-pill">{total} Total</div>
+      }
     >
       <CrudForm
         fields={[
-          { key: "organizationId", label: "Org ID", required: true },
-          { key: "profileName", label: "Profile Name", required: true },
-          { key: "deviceType", label: "Device Type" },
-          { key: "os", label: "OS" },
-          { key: "description", label: "Description", type: "textarea" },
+          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+          { key: "name", label: "Name", required: true },
+          { key: "type", label: "Type" },
+          { key: "manufacturer", label: "Manufacturer" },
+          { key: "model", label: "Model" },
         ]}
         title="New Device Profile"
         action={createDeviceProfile}
       />
-      <section className="cyber-panel mt-6">
-        <div className="space-y-3">
-          {items.length > 0 ? (
-            items.map((item) => (
-              <div key={item.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <Link
-                  className="transition hover:text-emerald-400"
-                  href={`/admin/final/device-profiles/${item.id}`}
-                >
-                  <p className="font-medium text-slate-50">
-                    {item.profile_name ?? String(item.id)}
-                  </p>
-                </Link>
-              </div>
+      <section className="cyber-panel">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="cyber-heading text-lg">Device Profiles</h2>
+        </div>
+        <div className="mt-6 space-y-3">
+          {profiles.length > 0 ? (
+            profiles.map((p) => (
+              <Link
+                key={p.id}
+                href={`/admin/final/device-profiles/${p.id}`}
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-slate-50">{p.name}</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {p.manufacturer}
+                      {p.model ? ` ${p.model}` : ""}
+                      {p.type ? ` &bull; ${p.type}` : ""}
+                    </p>
+                  </div>
+                </div>
+              </Link>
             ))
           ) : (
             <EmptyState
@@ -72,6 +109,14 @@ export default async function DeviceProfilePage() {
           )}
         </div>
       </section>
+
+      <AdminPagination
+        currentPage={page}
+        totalPages={totalPages}
+        buildHref={buildHref}
+        total={total}
+        limit={limit}
+      />
     </AdminPageShell>
   );
 }

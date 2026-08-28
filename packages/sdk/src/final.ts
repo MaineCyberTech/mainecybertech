@@ -18,15 +18,6 @@ export class FinalApi {
     structureSummary: (p?: Record<string, string | number | undefined>) =>
       this.c.get<Record<string, unknown>>("/api/v1/final/sharepoint/structure-summary", qp(p)),
   };
-  deviceProfiles = {
-    list: (p?: Record<string, string | number | undefined>) =>
-      this.c.get<PaginatedResult<unknown>>("/api/v1/final/device-profiles", qp(p)),
-    get: (id: string) => this.c.get<unknown>(`/api/v1/final/device-profiles/${id}`),
-    create: (d: Record<string, unknown>) => this.c.post("/api/v1/final/device-profiles", d),
-    update: (id: string, d: Record<string, unknown>) =>
-      this.c.patch(`/api/v1/final/device-profiles/${id}`, d),
-    remove: (id: string) => this.c.delete(`/api/v1/final/device-profiles/${id}`),
-  };
   saasAudit = {
     list: (p?: Record<string, string | number | undefined>) =>
       this.c.get<PaginatedResult<unknown>>("/api/v1/final/saas-audit", qp(p)),
