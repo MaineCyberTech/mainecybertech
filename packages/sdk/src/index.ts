@@ -151,6 +151,15 @@ import {
   type StoreQuoteItem,
   type SubmitStoreQuoteInput,
 } from "./store";
+import {
+  CabApi,
+  type CabMeeting,
+  type CabMeetingDetail,
+  type CabMeetingListResult,
+  type CabAgendaItem,
+  type CabMeetingStatus,
+  type CabDecision,
+} from "./cab";
 
 export { ApiError } from "./client";
 export type { ClientOptions, RetryOptions } from "./client";
@@ -240,6 +249,12 @@ export type {
   StoreQuote,
   StoreQuoteItem,
   SubmitStoreQuoteInput,
+  CabMeeting,
+  CabMeetingDetail,
+  CabMeetingListResult,
+  CabAgendaItem,
+  CabMeetingStatus,
+  CabDecision,
   OrganizationOnboardInput,
   OrganizationOnboardResult,
 };
@@ -291,6 +306,7 @@ export class MCTClient {
   public statusPage: StatusPageApi;
   public uptimeMonitor: UptimeMonitorApi;
   public store: StoreApi;
+  public cab: CabApi;
 
   constructor(private client: ApiClient) {
     this.auth = new AuthApi(client);
@@ -340,6 +356,7 @@ export class MCTClient {
     this.statusPage = new StatusPageApi(client);
     this.uptimeMonitor = new UptimeMonitorApi(client);
     this.store = new StoreApi(client);
+    this.cab = new CabApi(client);
   }
 
   static create(opts: ClientOptions) {
