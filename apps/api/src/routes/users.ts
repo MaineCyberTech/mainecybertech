@@ -46,7 +46,8 @@ router.get("/", requireAdmin, async (req, res, next) => {
       }
     }
 
-    const query = supabase
+    // eslint-disable-next-line prefer-const
+    let query = supabase
       .from("profiles")
       .select(
         "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
