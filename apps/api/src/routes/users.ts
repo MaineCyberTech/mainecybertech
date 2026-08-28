@@ -401,14 +401,13 @@ router.patch("/:id/role", requirePermission("users", "manage"), async (req, res,
       }
     }
 
-    let query = supabase
+    const query = supabase
       .from("memberships")
       .update({ role_id: roleId })
       .eq("user_id", req.params.id);
     if (organizationId) {
-      query = query.eq("organization_id", organizationId);
+      query.eq("organization_id", organizationId);
     }
-
     const { error } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
