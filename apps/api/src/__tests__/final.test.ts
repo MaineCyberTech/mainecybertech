@@ -77,7 +77,6 @@ describe("Final API", () => {
 
   const paths = [
     "sharepoint",
-    "device-profiles",
     "saas-audit",
     "procurement",
     "dns-changes",

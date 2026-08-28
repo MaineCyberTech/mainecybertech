@@ -50,6 +50,10 @@ import {
 import { FindingsApi, type Finding, type FindingDetail, type FindingStats } from "./findings";
 import { AssetsApi, type Asset, type AssetDetail, type AssetStats } from "./assets";
 import {
+  DeviceProfilesApi,
+  type DeviceProfile,
+} from "./device-profiles";
+import {
   DomainMonitorsApi,
   type DomainMonitor,
   type DomainMonitorDetail,
@@ -216,6 +220,7 @@ export type {
   Asset,
   AssetDetail,
   AssetStats,
+  DeviceProfile,
   DomainMonitor,
   DomainMonitorDetail,
   DomainStats,
@@ -310,6 +315,7 @@ export class MCTClient {
   public proposals: ProposalsApi;
   public findings: FindingsApi;
   public assets: AssetsApi;
+  public deviceProfiles: DeviceProfilesApi;
   public domainMonitors: DomainMonitorsApi;
   public qbr: QbrApi;
   public fileRequests: FileRequestsApi;
@@ -364,6 +370,7 @@ export class MCTClient {
     this.proposals = new ProposalsApi(client);
     this.findings = new FindingsApi(client);
     this.assets = new AssetsApi(client);
+    this.deviceProfiles = new DeviceProfilesApi(client);
     this.domainMonitors = new DomainMonitorsApi(client);
     this.qbr = new QbrApi(client);
     this.fileRequests = new FileRequestsApi(client);

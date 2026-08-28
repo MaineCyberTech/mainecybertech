@@ -551,12 +551,6 @@ insert into public.sharepoint_plans (id, organization_id, site_name, team_name, 
   ('82000000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Advisor Resources', 'Advisor Success', 'team_site', 'Elena Volkov', 'Internal', 'disabled', 'Central resource library for advisors.', 'completed', 'd4000000-0000-4000-8000-000000000004'::uuid)
 on conflict (id) do nothing;
 
-insert into public.device_profiles (id, organization_id, profile_name, device_type, os, settings, description, status, created_by) values
-  ('82010000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Clinical Workstation Standard', 'workstation', 'Windows 11', jsonb_build_object('bitlocker', true, 'edr', true, 'local_admin', false), 'Standard build for clinical PCs.', 'active', 'd4000000-0000-4000-8000-000000000002'::uuid),
-  ('82010000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'POS Terminal Standard', 'pos_terminal', 'Windows 11 IoT', jsonb_build_object('pos_lockdown', true, 'edr', true), 'Locked-down POS build.', 'active', 'd4000000-0000-4000-8000-000000000001'::uuid),
-  ('82010000-0000-0000-0000-000000000003'::uuid, '55555555-5555-4555-8555-555555555555'::uuid, 'Advisor Laptop Standard', 'laptop', 'Windows 11', jsonb_build_object('bitlocker', true, 'edr', true, 'mdm', true), 'Advisor laptop build with VPN preinstalled.', 'active', 'd4000000-0000-4000-8000-000000000002'::uuid)
-on conflict (id) do nothing;
-
 insert into public.saas_audits (id, organization_id, vendor_name, service_name, monthly_cost, annual_cost, payment_method, classification, usage_frequency, cancellation_risk, has_data_access, renewal_date, notes, created_by) values
   ('82020000-0000-0000-0000-000000000001'::uuid, '33333333-3333-4333-8333-333333333333'::uuid, 'Zoom', 'Zoom Business', 299.00, 3588.00, 'credit_card', 'collaboration', 'daily', 'low', true, '2026-11-30', 'Usage at 60% of seats.', 'd4000000-0000-4000-8000-000000000004'::uuid),
   ('82020000-0000-0000-0000-000000000002'::uuid, '44444444-4444-4444-8444-444444444444'::uuid, 'Slack', 'Slack Pro', 180.00, 2160.00, 'credit_card', 'collaboration', 'daily', 'low', true, '2026-12-15', 'Consider consolidating with Teams.', 'd4000000-0000-4000-8000-000000000001'::uuid),

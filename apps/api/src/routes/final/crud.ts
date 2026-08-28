@@ -5,7 +5,6 @@ import { logAuditEvent } from "../../services/audit";
 import { AppError, success, type PaginatedResult } from "../../types";
 import {
   sp,
-  dp,
   saas,
   quote,
   dns,
@@ -152,7 +151,6 @@ export function registerCrud(
 
 const schemas: Record<string, { schema: z.ZodTypeAny; table: string }> = {
   sharepoint: { schema: sp, table: "sharepoint_plans" },
-  "device-profiles": { schema: dp, table: "device_profiles" },
   "saas-audit": { schema: saas, table: "saas_audits" },
   procurement: { schema: quote, table: "procurement_quotes" },
   "dns-changes": { schema: dns, table: "dns_change_requests" },

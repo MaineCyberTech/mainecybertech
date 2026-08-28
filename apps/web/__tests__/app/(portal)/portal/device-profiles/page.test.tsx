@@ -13,7 +13,7 @@ jest.mock("next/link", () => ({
 
 jest.mock("@/lib/api", () => ({
   getApiClient: jest.fn().mockReturnValue({
-    final: { deviceProfiles: { list: mockDeviceProfilesList } },
+    deviceProfiles: { list: mockDeviceProfilesList },
   }),
 }));
 
@@ -31,6 +31,11 @@ jest.mock("@/components/portal/PortalSubnav", () => ({
   default: () => React.createElement("nav", null),
 }));
 
+jest.mock("@/components/admin/AdminPagination", () => ({
+  __esModule: true,
+  default: () => React.createElement("nav", { "aria-label": "Pagination" }),
+}));
+
 describe("DeviceProfilesPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -38,35 +43,32 @@ describe("DeviceProfilesPage", () => {
   });
 
   it("renders heading", async () => {
-    mockDeviceProfilesList.mockResolvedValue({ items: [] });
+    mockDeviceProfilesList.mockResolvedValue({ items: [], total: 0 });
     const { default: Page } = await import("@/app/(portal)/portal/device-profiles/page");
-    const element = await Page();
-    render(element);
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(
       screen.getByRole("heading", { name: /device configuration profiles/i }),
     ).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {
-    mockDeviceProfilesList.mockResolvedValue({ items: [] });
+    mockDeviceProfilesList.mockResolvedValue({ items: [], total: 0 });
     const { default: Page } = await import("@/app/(portal)/portal/device-profiles/page");
-    const element = await Page();
-    render(element);
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getAllByRole("navigation").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows empty state", async () => {
-    mockDeviceProfilesList.mockResolvedValue({ items: [] });
+    mockDeviceProfilesList.mockResolvedValue({ items: [], total: 0 });
     const { default: Page } = await import("@/app/(portal)/portal/device-profiles/page");
-    const element = await Page();
-    render(element);
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText(/no device profiles found/i)).toBeInTheDocument();
   });
 
   it("shows access restricted when no org", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
     const { default: Page } = await import("@/app/(portal)/portal/device-profiles/page");
-    const element = await Page();
+    const element = await Page({ searchParams: Promise.resolve({}) });
     expect(element).toBeNull();
   });
 
@@ -76,15 +78,25 @@ describe("DeviceProfilesPage", () => {
         {
           id: "1",
           name: "Test Profile",
-          platform: "Windows",
-          status: "active",
+          manufacturer: "Dell",
+          model: "OptiPlex",
+          type: "workstation",
+          specs: { bitlocker: true },
           created_at: "2026-01-01T00:00:00Z",
         },
       ],
+      total: 1,
     });
     const { default: Page } = await import("@/app/(portal)/portal/device-profiles/page");
-    const element = await Page();
-    render(element);
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Test Profile")).toBeInTheDocument();
+    expect(screen.getByText(/Manufacturer: Dell/)).toBeInTheDocument();
+  });
+
+  it("handles API error gracefully", async () => {
+    mockDeviceProfilesList.mockRejectedValue(new Error("API down"));
+    const { default: Page } = await import("@/app/(portal)/portal/device-profiles/page");
+    render(await Page({ searchParams: Promise.resolve({}) }));
+    expect(screen.getByText(/no device profiles found/i)).toBeInTheDocument();
   });
 });
