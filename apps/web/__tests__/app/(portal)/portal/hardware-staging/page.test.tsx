@@ -83,8 +83,8 @@ describe("PortalHardwareStagingPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: Page } = await import("@/app/(portal)/portal/hardware-staging/page");
-    const element = await Page({ searchParams: Promise.resolve({}) });
+    render(await Page({ searchParams: Promise.resolve({}) }));
 
-    expect(element).toBeNull();
+    expect(screen.getByText(/no organization access/i)).toBeInTheDocument();
   });
 });

@@ -16,9 +16,8 @@ type DeviceProfilesPageProps = {
 
 export default async function DeviceProfilesPage({ searchParams }: DeviceProfilesPageProps) {
   const membership = await getApprovedMembership();
-  if (!membership) return null;
   const api = getApiClient();
-  const orgId = membership.organization_id as string;
+  const orgId = membership?.organization_id as string | undefined;
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
@@ -36,9 +35,11 @@ export default async function DeviceProfilesPage({ searchParams }: DeviceProfile
   let total = 0;
 
   try {
-    const r = await api.deviceProfiles.list({ organizationId: orgId, page, limit });
-    items = r.items as unknown as typeof items;
-    total = r.total ?? 0;
+    if (orgId) {
+      const r = await api.deviceProfiles.list({ organizationId: orgId, page, limit });
+      items = r.items as unknown as typeof items;
+      total = r.total ?? 0;
+    }
   } catch {}
 
   const totalPages = Math.ceil(total / limit);
@@ -51,51 +52,63 @@ export default async function DeviceProfilesPage({ searchParams }: DeviceProfile
       />
       <PortalSubnav current="device-profiles" />
       <h1 className="text-2xl font-semibold text-slate-50">Device Configuration Profiles</h1>
-      <p className="text-sm text-slate-400">
-        {total} profile{total !== 1 ? "s" : ""} for your organization.
-      </p>
-      <div className="space-y-3">
-        {items.map((item) => (
-          <div
-            key={String(item.id)}
-            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-          >
-            <p className="font-medium text-slate-50">
-              {String(item.name ?? "Untitled")}
-            </p>
-            <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-400">
-              {item.manufacturer != null && <span>Manufacturer: {String(item.manufacturer)}</span>}
-              {item.model != null && <span>Model: {String(item.model)}</span>}
-              {item.type != null && <span>Type: {String(item.type)}</span>}
-            </div>
-            {item.specs != null && Object.keys(item.specs).length > 0 && (
-              <p className="mt-2 text-xs text-slate-400">
-                {Object.entries(item.specs)
-                  .map(([k, v]) => `${k}: ${String(v)}`)
-                  .join(", ")}
-              </p>
-            )}
-            {item.created_at != null && (
-              <span className="mt-2 block text-xs text-slate-400">
-                Created: {new Date(String(item.created_at)).toISOString().slice(0, 10)}
-              </span>
-            )}
+      {!orgId ? (
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
+          <h3 className="font-semibold">No Organization Access</h3>
+          <p className="mt-2 text-sm">
+            You are not currently a member of any organization. Please contact your administrator to
+            request access.
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-slate-400">
+            {total} profile{total !== 1 ? "s" : ""} for your organization.
+          </p>
+          <div className="space-y-3">
+            {items.map((item) => (
+              <div
+                key={String(item.id)}
+                className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+              >
+                <p className="font-medium text-slate-50">
+                  {String(item.name ?? "Untitled")}
+                </p>
+                <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-400">
+                  {item.manufacturer != null && <span>Manufacturer: {String(item.manufacturer)}</span>}
+                  {item.model != null && <span>Model: {String(item.model)}</span>}
+                  {item.type != null && <span>Type: {String(item.type)}</span>}
+                </div>
+                {item.specs != null && Object.keys(item.specs).length > 0 && (
+                  <p className="mt-2 text-xs text-slate-400">
+                    {Object.entries(item.specs)
+                      .map(([k, v]) => `${k}: ${String(v)}`)
+                      .join(", ")}
+                  </p>
+                )}
+                {item.created_at != null && (
+                  <span className="mt-2 block text-xs text-slate-400">
+                    Created: {new Date(String(item.created_at)).toISOString().slice(0, 10)}
+                  </span>
+                )}
+              </div>
+            ))}
+            {items.length === 0 && <p className="text-sm text-slate-400">No device profiles found.</p>}
           </div>
-        ))}
-        {items.length === 0 && <p className="text-sm text-slate-400">No device profiles found.</p>}
-      </div>
 
-      <AdminPagination
-        currentPage={page}
-        totalPages={totalPages}
-        buildHref={buildHref}
-        total={total}
-        limit={limit}
-      />
+          <AdminPagination
+            currentPage={page}
+            totalPages={totalPages}
+            buildHref={buildHref}
+            total={total}
+            limit={limit}
+          />
 
-      <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
-        &larr; Dashboard
-      </Link>
+          <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
+            &larr; Dashboard
+          </Link>
+        </>
+      )}
     </div>
   );
 }

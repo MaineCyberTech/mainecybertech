@@ -37,9 +37,8 @@ function edgesOf(d: NetworkDiagram): NetworkDiagramEdge[] {
 
 export default async function PortalNetworkDiagramsPage({ searchParams }: NetworkDiagramsPageProps) {
   const membership = await getApprovedMembership();
-  if (!membership) return null;
   const api = getApiClient();
-  const orgId = membership.organization_id as string;
+  const orgId = membership?.organization_id as string | undefined;
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
@@ -49,9 +48,11 @@ export default async function PortalNetworkDiagramsPage({ searchParams }: Networ
   let total = 0;
 
   try {
-    const r = await api.networkDiagrams.list({ organizationId: orgId, page, limit });
-    diagrams = (r.items as unknown as NetworkDiagram[]) ?? [];
-    total = r.total ?? 0;
+    if (orgId) {
+      const r = await api.networkDiagrams.list({ organizationId: orgId, page, limit });
+      diagrams = (r.items as unknown as NetworkDiagram[]) ?? [];
+      total = r.total ?? 0;
+    }
   } catch {
     /* graceful */
   }
@@ -65,61 +66,73 @@ export default async function PortalNetworkDiagramsPage({ searchParams }: Networ
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Network Diagrams" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">Network Diagrams</h1>
-      <p className="text-sm text-slate-400">
-        {diagrams.length} network diagram{diagrams.length !== 1 ? "s" : ""} for your organization.
-      </p>
-      <div className="grid gap-4 md:grid-cols-2">
-        {diagrams.map((d) => {
-          const nodes = nodesOf(d);
-          const edges = edgesOf(d);
-          return (
-            <div
-              key={d.id}
-              className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-            >
-              <Link
-                href={`/portal/network-diagrams/${d.id}`}
-                className="font-medium text-slate-50 transition hover:text-emerald-400"
-              >
-                {d.name}
-              </Link>
-              {d.description ? (
-                <p className="mt-1 text-xs text-slate-400">{d.description}</p>
-              ) : null}
-              <p className="mt-1 text-xs text-slate-400">
-                Nodes: {nodes.length} &bull; Edges: {edges.length}
-              </p>
-              {nodes.length > 0 ? (
-                <ul className="mt-2 list-disc pl-5 text-xs text-slate-400">
-                  {nodes.map((n, i) => (
-                    <li key={n?.id ?? i}>{String(n?.label ?? n?.id ?? `node-${i}`)}</li>
-                  ))}
-                </ul>
-              ) : null}
-              {d.created_at ? (
-                <p className="mt-1 text-xs text-slate-400">
-                  Updated: {new Date(d.created_at).toISOString().slice(0, 10)}
-                </p>
-              ) : null}
-            </div>
-          );
-        })}
-        {diagrams.length === 0 && (
-          <p className="col-span-2 text-sm text-slate-400">No network diagrams available.</p>
-        )}
-      </div>
+      {!orgId ? (
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
+          <h3 className="font-semibold">No Organization Access</h3>
+          <p className="mt-2 text-sm">
+            You are not currently a member of any organization. Please contact your administrator to
+            request access.
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="text-sm text-slate-400">
+            {diagrams.length} network diagram{diagrams.length !== 1 ? "s" : ""} for your organization.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {diagrams.map((d) => {
+              const nodes = nodesOf(d);
+              const edges = edgesOf(d);
+              return (
+                <div
+                  key={d.id}
+                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+                >
+                  <Link
+                    href={`/portal/network-diagrams/${d.id}`}
+                    className="font-medium text-slate-50 transition hover:text-emerald-400"
+                  >
+                    {d.name}
+                  </Link>
+                  {d.description ? (
+                    <p className="mt-1 text-xs text-slate-400">{d.description}</p>
+                  ) : null}
+                  <p className="mt-1 text-xs text-slate-400">
+                    Nodes: {nodes.length} &bull; Edges: {edges.length}
+                  </p>
+                  {nodes.length > 0 ? (
+                    <ul className="mt-2 list-disc pl-5 text-xs text-slate-400">
+                      {nodes.map((n, i) => (
+                        <li key={n?.id ?? i}>{String(n?.label ?? n?.id ?? `node-${i}`)}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {d.created_at ? (
+                    <p className="mt-1 text-xs text-slate-400">
+                      Updated: {new Date(d.created_at).toISOString().slice(0, 10)}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
+            {diagrams.length === 0 && (
+              <p className="col-span-2 text-sm text-slate-400">No network diagrams available.</p>
+            )}
+          </div>
 
-      <AdminPagination
-        currentPage={page}
-        totalPages={totalPages}
-        buildHref={buildHref}
-        total={total}
-        limit={limit}
-      />
+          <AdminPagination
+            currentPage={page}
+            totalPages={totalPages}
+            buildHref={buildHref}
+            total={total}
+            limit={limit}
+          />
 
-      <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
-        &larr; Dashboard
-      </Link>
+          <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
+            &larr; Dashboard
+          </Link>
+        </>
+      )}
     </div>
   );
 }

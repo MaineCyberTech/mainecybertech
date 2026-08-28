@@ -68,8 +68,8 @@ describe("DeviceProfilesPage", () => {
   it("shows access restricted when no org", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
     const { default: Page } = await import("@/app/(portal)/portal/device-profiles/page");
-    const element = await Page({ searchParams: Promise.resolve({}) });
-    expect(element).toBeNull();
+    render(await Page({ searchParams: Promise.resolve({}) }));
+    expect(screen.getByText(/no organization access/i)).toBeInTheDocument();
   });
 
   it("renders items when data exists", async () => {

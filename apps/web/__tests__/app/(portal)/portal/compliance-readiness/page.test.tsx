@@ -145,8 +145,8 @@ describe("PortalComplianceReadinessPage", () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
     const { default: Page } = await import("@/app/(portal)/portal/compliance-readiness/page");
-    const element = await Page();
+    render(await Page());
 
-    expect(element).toBeNull();
+    expect(screen.getByText(/no organization access/i)).toBeInTheDocument();
   });
 });
