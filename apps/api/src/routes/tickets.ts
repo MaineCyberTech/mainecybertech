@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -44,7 +44,7 @@ const ticketExportColumns: CsvColumn[] = [
 
 router.get("/export", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "read");
 
     let query = supabase.from("tickets").select("*");
 
@@ -66,7 +66,7 @@ router.get("/export", async (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -103,7 +103,7 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "read");
     let query = supabase.from("tickets").select("*, ticket_comments(*)").eq("id", req.params.id);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
@@ -118,7 +118,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", requirePermission("tickets", "create"), async (req, res, next) => {
   try {
     const parsed = createTicketSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "write");
 
     const { data, error } = await supabase
       .from("tickets")
@@ -196,7 +196,7 @@ router.post("/", requirePermission("tickets", "create"), async (req, res, next) 
 router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateTicketSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "write");
     const orgId = req.query.organization_id as string | undefined;
 
     let currentQuery = supabase.from("tickets").select("version").eq("id", req.params.id);
@@ -271,7 +271,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
 router.get("/:id/comments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "read");
     const orgId = req.query.organization_id as string | undefined;
 
     // Verify the ticket exists and (when scoped) belongs to the caller's org
@@ -297,7 +297,7 @@ router.get("/:id/comments", async (req, res, next) => {
 router.post("/:id/comments", async (req, res, next) => {
   try {
     const parsed = addTicketCommentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -370,7 +370,7 @@ router.post("/:id/comments", async (req, res, next) => {
 router.patch("/:id/comments/:commentId", async (req, res, next) => {
   try {
     const parsed = updateTicketCommentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "write");
 
     const { data: existing, error: fetchError } = await supabase
       .from("ticket_comments")
@@ -455,7 +455,7 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
 router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, next) => {
   try {
     assertDeleteConfirmed(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;

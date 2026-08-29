@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 
@@ -16,7 +16,7 @@ router.get("/", async (req, res, next) => {
     }
 
     const user = req.authUser!;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "search-portal", "read");
     const searchTerm = `%${q}%`;
 
     const { data: memberships, error: mErr } = await supabase

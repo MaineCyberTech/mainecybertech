@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -12,7 +12,7 @@ router.use(requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "qbr", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -36,7 +36,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "qbr", "read");
     const { data, error } = await supabase
       .from("qbr_reports")
       .select("*")
@@ -53,7 +53,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/generate", async (req, res, next) => {
   try {
     const parsed = createQbrReportSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "qbr", "write");
 
     const orgId = parsed.organizationId;
 
@@ -197,7 +197,7 @@ router.post("/generate", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateQbrReportSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "qbr", "write");
 
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -232,7 +232,7 @@ router.patch("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "qbr", "write");
     const { error } = await supabase
       .from("qbr_reports")
       .delete()

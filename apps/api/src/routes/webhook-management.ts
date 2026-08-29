@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import crypto from "crypto";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
@@ -49,7 +49,7 @@ const updateSchema = z.object({
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "webhook-management", "read");
     const orgId = req.query.organization_id as string | undefined;
 
     let query = supabase.from("webhook_endpoints").select("*");
@@ -68,7 +68,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "webhook-management", "read");
     await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
     const orgId = req.query.organization_id as string | undefined;
     let query = supabase.from("webhook_endpoints").select("*").eq("id", req.params.id);
@@ -85,7 +85,7 @@ router.post("/", requirePermission("webhooks", "manage"), async (req, res, next)
   try {
     const parsed = createSchema.parse(req.body);
     await assertSafeWebhookUrl(parsed.url);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "webhook-management", "write");
 
     const { data, error } = await supabase
       .from("webhook_endpoints")
@@ -120,7 +120,7 @@ router.post("/", requirePermission("webhooks", "manage"), async (req, res, next)
 router.patch("/:id", requirePermission("webhooks", "manage"), requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "webhook-management", "write");
 
     await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
 
@@ -176,7 +176,7 @@ router.patch("/:id", requirePermission("webhooks", "manage"), requireIfMatch, as
 router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
     assertDeleteConfirmed(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "webhook-management", "write");
     await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
     const { data, error } = await supabase
       .from("webhook_endpoints")
@@ -202,7 +202,7 @@ router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, 
 
 router.get("/:id/deliveries", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "webhook-management", "read");
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) {
       const { data: webhook } = await supabase
@@ -233,7 +233,7 @@ router.get("/:id/deliveries", async (req, res, next) => {
 
 router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "webhook-management", "write");
     await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
     const { data: webhook, error: fetchError } = await supabase
       .from("webhook_endpoints")

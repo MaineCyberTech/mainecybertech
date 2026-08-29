@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -39,7 +39,7 @@ function crudRoute(
 ) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "governance", "read");
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
       const q = sb
@@ -59,7 +59,7 @@ function crudRoute(
   });
   router.get(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "governance", "read");
       const { data, error } = await sb
         .from(table)
         .select("*")
@@ -77,7 +77,7 @@ function crudRoute(
       const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
         req.body,
       );
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "governance", "write");
       const fields: Record<string, unknown> = { created_by: req.authUser!.userId };
       for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
         if (k !== "organizationId") fields[snake(k)] = v;
@@ -99,7 +99,7 @@ function crudRoute(
   });
   router.patch(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "governance", "write");
       let body: Record<string, unknown> = req.body as Record<string, unknown>;
       if (updateSchema) {
         body = (updateSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
@@ -134,7 +134,7 @@ function crudRoute(
 
   router.delete(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "governance", "write");
       const { error } = await sb
         .from(table)
         .delete()
@@ -163,7 +163,7 @@ crudRoute(
 
 router.post("/change-requests/:id/submit", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "governance", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -189,7 +189,7 @@ router.post("/change-requests/:id/submit", async (req, res, next) => {
 });
 router.post("/change-requests/:id/approve", requirePermission("change-requests", "manage"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "governance", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -220,7 +220,7 @@ router.post("/change-requests/:id/approve", requirePermission("change-requests",
 });
 router.post("/change-requests/:id/reject", requirePermission("change-requests", "manage"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "governance", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -247,7 +247,7 @@ router.post("/change-requests/:id/reject", requirePermission("change-requests", 
 });
 router.post("/change-requests/:id/implement", requirePermission("change-requests", "manage"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "governance", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -274,7 +274,7 @@ router.post("/change-requests/:id/implement", requirePermission("change-requests
 });
 router.post("/change-requests/:id/verify", requirePermission("change-requests", "manage"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "governance", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -316,7 +316,7 @@ router.post("/risks/:id/assess", requirePermission("risk-register", "manage"), a
         acceptingControls: z.string().optional(),
       })
       .parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "governance", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -357,7 +357,7 @@ crudRoute(
 
 router.get("/sop-library/compliance-map", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "governance", "read");
     const { data, error } = await supabase
       .from("sop_library")
       .select("compliance_framework, framework_control_ids, status")
@@ -381,7 +381,7 @@ router.get("/sop-library/compliance-map", async (req, res, next) => {
 
 router.get("/sop-library/framework-gaps", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "governance", "read");
     const { data, error } = await supabase
       .from("sop_library")
       .select("compliance_framework, framework_control_ids, status")

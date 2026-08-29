@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -31,7 +31,7 @@ function snake(s: string) {
 function crudRoute(path: string, table: string, createSchema: Record<string, unknown>) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "security-suite", "read");
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
       const q = sb
@@ -52,7 +52,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
 
   router.get(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "security-suite", "read");
       const data = await loadOwned(req, sb as any, table, req.params.id);
       res.json(success(data));
     } catch (e) {
@@ -65,7 +65,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
         req.body,
       );
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "security-suite", "write");
       const fields: Record<string, unknown> = { created_by: req.authUser!.userId };
       for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
         if (k !== "organizationId") fields[snake(k)] = v;
@@ -88,7 +88,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
 
   router.patch(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "security-suite", "write");
       const current = await loadOwned(req, sb as any, table, req.params.id, "id, organization_id");
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
@@ -119,7 +119,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
 
   router.delete(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "security-suite", "write");
       const current = await loadOwned(req, sb as any, table, req.params.id, "id, organization_id");
       const { error } = await sb
         .from(table)
@@ -161,7 +161,7 @@ router.post("/identity-verification/:id/verify", async (req, res, next) => {
     const parsed = z
       .object({ verificationPass: z.boolean(), notes: z.string().optional() })
       .parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "security-suite", "write");
     await loadOwned(req, supabase as any, "identity_verifications", String(req.params.id));
     const { data, error } = await supabase
       .from("identity_verifications")
@@ -182,7 +182,7 @@ router.post("/identity-verification/:id/verify", async (req, res, next) => {
 });
 router.get("/endpoint-security/coverage", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "security-suite", "read");
     const { data, error } = await supabase
       .from("endpoint_security")
       .select("*")
@@ -242,7 +242,7 @@ crudRoute(
 
 router.post("/m365-hardening/:id/scan", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "security-suite", "write");
     await loadOwned(req, supabase as any, "m365_hardening", String(req.params.id));
     const { data: current, error: fetchError } = await supabase
       .from("m365_hardening")

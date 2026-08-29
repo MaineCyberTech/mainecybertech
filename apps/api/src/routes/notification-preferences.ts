@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { AppError, success } from "../types";
@@ -21,7 +21,7 @@ const CHANNELS = ["email", "sms", "in_app"] as const;
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notification-preferences", "read");
     const orgId = req.query.organization_id as string | undefined;
 
     let query = supabase
@@ -63,7 +63,7 @@ router.put("/", async (req, res, next) => {
       })
       .parse(req.body);
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notification-preferences", "write");
 
     const results = [];
     for (const pref of preferences) {

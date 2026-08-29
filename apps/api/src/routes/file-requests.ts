@@ -1,7 +1,7 @@
 import { Router } from "express";
 import crypto from "crypto";
 import multer from "multer";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -192,7 +192,7 @@ function generateToken(): string {
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "file-requests", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -218,7 +218,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "file-requests", "read");
     const { data, error } = await supabase
       .from("file_requests")
       .select("*")
@@ -235,7 +235,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createFileRequestSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "file-requests", "write");
     const token = generateToken();
     const expiresAt = new Date(Date.now() + parsed.expiresInDays * 86400000).toISOString();
     const storagePath = `uploads/requests/${token}`;
@@ -279,7 +279,7 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateFileRequestSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "file-requests", "write");
 
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -313,7 +313,7 @@ router.patch("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "file-requests", "write");
     const { error } = await supabase
       .from("file_requests")
       .delete()

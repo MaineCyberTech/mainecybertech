@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -170,7 +170,7 @@ function analyzeDescription(text: string) {
 router.post("/triage/analyze", async (req, res, next) => {
   try {
     const parsed = triageInputSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "ai", "write");
     const analysis = analyzeDescription(parsed.rawDescription);
 
     const { data, error } = await supabase
@@ -208,7 +208,7 @@ router.post("/triage/analyze", async (req, res, next) => {
 router.post("/triage/convert", async (req, res, next) => {
   try {
     const parsed = convertTriageSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "ai", "write");
 
     const { data: draft, error: draftError } = await supabase
       .from("ticket_triage_drafts")
@@ -260,7 +260,7 @@ router.post("/triage/convert", async (req, res, next) => {
 
 router.get("/triage", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "ai", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -283,7 +283,7 @@ router.get("/triage", async (req, res, next) => {
 
 router.get("/copilot/:ticketId/summarize", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "ai", "read");
 
     const ticket = (await loadOwned(
       req,
@@ -352,7 +352,7 @@ router.get("/copilot/:ticketId/summarize", async (req, res, next) => {
 router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
   try {
     const parsed = copilotReplyDraftSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "ai", "write");
 
     const { data: ticket, error: ticketError } = await supabase
       .from("tickets")

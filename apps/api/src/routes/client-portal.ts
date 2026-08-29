@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -39,7 +39,7 @@ function deriveEnabledModules(subscriptionActive: boolean): string[] {
 
 router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "client-portal", "read");
     const userId = req.authUser!.userId;
 
     const { data: profile, error: profileError } = await supabase

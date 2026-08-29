@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { addTimelineEvent } from "../services/approvals";
 import { AppError, success, type PaginatedResult } from "../types";
@@ -34,7 +34,7 @@ const exportColumns: CsvColumn[] = [
 
 router.get("/export", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "assets", "read");
     let query = supabase.from("assets").select("*");
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -53,7 +53,7 @@ router.get("/export", async (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "assets", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -85,7 +85,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/stats", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "assets", "read");
     let query = supabase.from("assets").select("status, warranty_expires, asset_type");
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -120,7 +120,7 @@ router.get("/stats", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "assets", "read");
     let query = supabase.from("assets").select("*").eq("id", req.params.id);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
@@ -152,7 +152,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createAssetSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "assets", "write");
 
     const { data, error } = await supabase
       .from("assets")
@@ -217,7 +217,7 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateAssetSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "assets", "write");
 
     const { data: current, error: fetchError } = await supabase
       .from("assets")
@@ -288,7 +288,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "assets", "write");
     const { data: asset, error: fetchError } = await supabase
       .from("assets")
       .select("organization_id")
@@ -314,7 +314,7 @@ router.delete("/:id", async (req, res, next) => {
 
 router.get("/:id/comments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "assets", "read");
     const { data: asset, error: assetError } = await supabase
       .from("assets")
       .select("organization_id")
@@ -339,7 +339,7 @@ router.get("/:id/comments", async (req, res, next) => {
 
 router.post("/:id/comments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "assets", "write");
     const { data: asset, error: assetError } = await supabase
       .from("assets")
       .select("organization_id")
@@ -379,7 +379,7 @@ router.post("/:id/comments", async (req, res, next) => {
 
 router.get("/:id/timeline", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "assets", "read");
     const { data: asset, error: assetError } = await supabase
       .from("assets")
       .select("organization_id")

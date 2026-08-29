@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -54,7 +54,7 @@ const progressSchema = z.object({
 
 router.get("/my-courses", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "read");
     const userId = req.authUser!.userId;
     const { data, error } = await supabase
       .from("training_enrollments")
@@ -72,7 +72,7 @@ router.get("/my-courses", async (req, res, next) => {
 
 router.get("/courses", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -97,7 +97,7 @@ router.get("/courses", async (req, res, next) => {
 router.post("/courses", async (req, res, next) => {
   try {
     const parsed = createCourseSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "write");
     const { data, error } = await supabase
       .from("training_courses")
       .insert({
@@ -130,7 +130,7 @@ router.post("/courses", async (req, res, next) => {
 
 router.get("/courses/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "read");
     const { data, error } = await supabase
       .from("training_courses")
       .select("*")
@@ -147,7 +147,7 @@ router.get("/courses/:id", async (req, res, next) => {
 router.patch("/courses/:id", async (req, res, next) => {
   try {
     const parsed = updateCourseSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "write");
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
     if (parsed.description !== undefined) updateData.description = parsed.description;
@@ -182,7 +182,7 @@ router.patch("/courses/:id", async (req, res, next) => {
 
 router.delete("/courses/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "write");
     const { error } = await supabase
       .from("training_courses")
       .delete()
@@ -205,7 +205,7 @@ router.delete("/courses/:id", async (req, res, next) => {
 
 router.post("/courses/:id/enroll", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "write");
     const userId = req.authUser!.userId;
     const { data: course, error: courseError } = await supabase
       .from("training_courses")
@@ -241,7 +241,7 @@ router.post("/courses/:id/enroll", async (req, res, next) => {
 router.post("/courses/:id/progress", async (req, res, next) => {
   try {
     const parsed = progressSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "write");
     const userId = req.authUser!.userId;
     const progress = parsed.progress;
     const { data, error } = await supabase
@@ -267,7 +267,7 @@ router.post("/courses/:id/progress", async (req, res, next) => {
 
 router.get("/lessons", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "read");
     const { data: course, error: courseError } = await supabase
       .from("training_courses")
       .select("id")
@@ -290,7 +290,7 @@ router.get("/lessons", async (req, res, next) => {
 router.post("/lessons", async (req, res, next) => {
   try {
     const parsed = createLessonSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "write");
     const { data: course, error: courseError } = await supabase
       .from("training_courses")
       .select("id")
@@ -325,7 +325,7 @@ router.post("/lessons", async (req, res, next) => {
 
 router.get("/lessons/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "read");
     const { data, error } = await supabase
       .from("training_lessons")
       .select("*, training_courses!inner(organization_id)")
@@ -342,7 +342,7 @@ router.get("/lessons/:id", async (req, res, next) => {
 router.patch("/lessons/:id", async (req, res, next) => {
   try {
     const parsed = updateLessonSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "write");
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
     if (parsed.content !== undefined) updateData.content = parsed.content;
@@ -380,7 +380,7 @@ router.patch("/lessons/:id", async (req, res, next) => {
 
 router.delete("/lessons/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "training-hub", "write");
     const { data: scoped, error: scopeError } = await supabase
       .from("training_lessons")
       .select("id")

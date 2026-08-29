@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { loadOwned } from "../lib/tenant";
@@ -19,7 +19,7 @@ router.use(requireOrgAccess);
 router.get("/", async (req, res, next) => {
   try {
     const { search, category } = listKnowledgeBaseQuerySchema.parse(req.query);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "knowledge-base", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -45,7 +45,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "knowledge-base", "read");
     const article = await loadOwned(req, supabase as any, "knowledge_base_articles", req.params.id as string);
 
     res.json(success(article));
@@ -57,7 +57,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createKnowledgeBaseSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "knowledge-base", "write");
 
     const { data, error } = await supabase
       .from("knowledge_base_articles")
@@ -92,7 +92,7 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateKnowledgeBaseSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "knowledge-base", "write");
     const article = await loadOwned(req, supabase as any, "knowledge_base_articles", req.params.id as string, "id, organization_id");
 
     const fieldMap: Record<string, string> = {
@@ -135,7 +135,7 @@ router.patch("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "knowledge-base", "write");
     const article = await loadOwned(req, supabase as any, "knowledge_base_articles", req.params.id as string, "id, organization_id");
     const { error } = await supabase
       .from("knowledge_base_articles")

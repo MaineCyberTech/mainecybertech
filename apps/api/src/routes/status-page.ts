@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -92,7 +92,7 @@ function crudTable(
 ) {
   router.get(`/${resource}`, async (req, res, next) => {
     try {
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "status-page", "read");
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
       const offset = (page - 1) * limit;
@@ -111,7 +111,7 @@ function crudTable(
 
   router.get(`/${resource}/:id`, async (req, res, next) => {
     try {
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "status-page", "read");
       const { data, error } = await supabase
         .from(table)
         .select("*")
@@ -128,7 +128,7 @@ function crudTable(
   router.post(`/${resource}`, async (req, res, next) => {
     try {
       const parsed = createSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "status-page", "write");
       const fields: Record<string, unknown> = {
         organization_id: parsed.organizationId,
         created_by: req.authUser!.userId,
@@ -155,7 +155,7 @@ function crudTable(
   router.patch(`/${resource}/:id`, async (req, res, next) => {
     try {
       const parsed = updateSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "status-page", "write");
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(parsed)) {
         if (v !== undefined) fields[snakeCase(k)] = v;
@@ -176,7 +176,7 @@ function crudTable(
 
   router.delete(`/${resource}/:id`, async (req, res, next) => {
     try {
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "status-page", "write");
       const { error } = await supabase
         .from(table)
         .delete()

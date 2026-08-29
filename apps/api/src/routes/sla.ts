@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { responseCacheNoRenew } from "../middleware/cache";
@@ -12,7 +12,7 @@ router.use(requireOrgAccess);
 // GET /api/v1/sla/metrics — SLA dashboard data
 router.get("/metrics", responseCacheNoRenew(60), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "sla", "read");
     const orgId = req.query.organization_id as string | undefined;
     const days = Math.min(90, Math.max(1, parseInt(req.query.days as string) || 30));
     const since = new Date(Date.now() - days * 86400000).toISOString();

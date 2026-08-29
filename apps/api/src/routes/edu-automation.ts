@@ -1,6 +1,6 @@
 import { z } from "zod";
 import express, { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -30,7 +30,7 @@ function snake(s: string) {
 function crud(path: string, table: string, schema: z.ZodTypeAny) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "edu-automation", "read");
       const pg = Math.max(1, parseInt(req.query.page as string) || 1);
       const lm = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
       const q = sb
@@ -55,7 +55,7 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
   });
   router.get(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "edu-automation", "read");
       const { data, error } = await sb
         .from(table)
         .select("*")
@@ -71,7 +71,7 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
   router.post(`/${path}`, async (req, res, next) => {
     try {
       const p = schema.parse(req.body) as Record<string, unknown>;
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "edu-automation", "write");
       const f: Record<string, unknown> = { created_by: req.authUser!.userId };
       for (const [k, v] of Object.entries(p)) {
         if (k !== "organizationId") f[snake(k)] = v;
@@ -93,7 +93,7 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
   });
   router.patch(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "edu-automation", "write");
       const f: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
         if (k === "organizationId") continue;
@@ -122,7 +122,7 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
 
   router.delete(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "edu-automation", "write");
       const { error } = await sb
         .from(table)
         .delete()
@@ -166,7 +166,7 @@ const schemas: SchemaMap = {
 
 router.post("/automation/:id/execute", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "edu-automation", "write");
     const { data: current, error: fetchError } = await supabase
       .from("automation_workflows")
       .select("*")
@@ -190,7 +190,7 @@ router.post("/automation/:id/execute", async (req, res, next) => {
 router.post("/automation/:id/complete", async (req, res, next) => {
   try {
     const parsed = z.object({ result: z.string(), success: z.boolean() }).parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "edu-automation", "write");
     const { data, error } = await supabase
       .from("automation_workflows")
       .update({
@@ -210,7 +210,7 @@ router.post("/automation/:id/complete", async (req, res, next) => {
 });
 router.post("/kb-generator/:id/generate", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "edu-automation", "write");
     const { data: current, error: fetchError } = await supabase
       .from("kb_article_generations")
       .select("*")
@@ -240,7 +240,7 @@ router.get("/kb/search", async (req, res, next) => {
   try {
     const q = req.query.q as string;
     if (!q) throw new AppError("VALIDATION", "Search query required", 400);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "edu-automation", "read");
     const { data, error } = await supabase
       .from("knowledge_articles")
       .select("*")
@@ -257,7 +257,7 @@ router.get("/kb/search", async (req, res, next) => {
 router.post("/kb/:id/rate", async (req, res, next) => {
   try {
     const parsed = z.object({ helpful: z.boolean() }).parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "edu-automation", "write");
     const { data: article, error: articleErr } = await supabase
       .from("knowledge_articles")
       .select("id")
@@ -281,7 +281,7 @@ router.post("/compliance/score", async (req, res, next) => {
         responses: z.array(z.object({ questionId: z.string(), passed: z.boolean() })).min(1),
       })
       .parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "edu-automation", "write");
     const totalQuestions = parsed.responses.length;
     const passed = parsed.responses.filter((r) => r.passed).length;
     const score = Math.round((passed / totalQuestions) * 100);
@@ -307,7 +307,7 @@ router.post("/compliance/score", async (req, res, next) => {
 
 router.post("/phishing/:id/launch", requirePermission("phishing-simulations", "edit"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "edu-automation", "write");
     const { data, error } = await supabase
       .from("phishing_campaigns")
       .update({ status: "active", launched_at: new Date().toISOString() })
@@ -333,7 +333,7 @@ router.post("/phishing/:id/launch", requirePermission("phishing-simulations", "e
 });
 router.get("/phishing/:id/results", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "edu-automation", "read");
     const { data, error } = await supabase
       .from("phishing_campaigns")
       .select("*")
@@ -415,7 +415,7 @@ function psRoute(
 
 psRoute("submit", async (req, res, next) => {
   try {
-    const sb = getSupabaseAdmin();
+    const sb = getScopedClient(req, "edu-automation", "write");
     const { data: existing, error: fetchErr } = await sb
       .from("powershell_scripts")
       .select("id, status")
@@ -456,7 +456,7 @@ psRoute("submit", async (req, res, next) => {
 
 psRoute("check", async (req, res, next) => {
   try {
-    const sb = getSupabaseAdmin();
+    const sb = getScopedClient(req, "edu-automation", "write");
     const { data: script, error: fetchErr } = await sb
       .from("powershell_scripts")
       .select("id, script_content")
@@ -494,7 +494,7 @@ psRoute("check", async (req, res, next) => {
 
 psRoute("approve", async (req, res, next) => {
   try {
-    const sb = getSupabaseAdmin();
+    const sb = getScopedClient(req, "edu-automation", "write");
     const { data: existing, error: fetchErr } = await sb
       .from("powershell_scripts")
       .select("id, status")
@@ -536,7 +536,7 @@ psRoute("approve", async (req, res, next) => {
 
 psRoute("reject", async (req, res, next) => {
   try {
-    const sb = getSupabaseAdmin();
+    const sb = getScopedClient(req, "edu-automation", "write");
     const { data: existing, error: fetchErr } = await sb
       .from("powershell_scripts")
       .select("id, status")
@@ -576,7 +576,7 @@ psRoute("reject", async (req, res, next) => {
 
 router.get("/scorecards/summary", async (req, res, next) => {
   try {
-    const sb = getSupabaseAdmin();
+    const sb = getScopedClient(req, "edu-automation", "read");
     const orgId = req.query.organization_id as string | undefined;
 
     let query = sb.from("cyber_scorecards").select("category, score, badge");
@@ -657,7 +657,7 @@ router.get("/scorecards/summary", async (req, res, next) => {
 
 router.get("/scorecards/overview", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "edu-automation", "read");
     const { data, error } = await supabase
       .from("cyber_scorecards")
       .select("*")
@@ -729,7 +729,7 @@ router.get("/scorecards/leaderboard", requireAdmin, async (_req, res, next) => {
 
 router.post("/scorecards/evaluate", async (req, res, next) => {
   try {
-    const sb = getSupabaseAdmin();
+    const sb = getScopedClient(req, "edu-automation", "write");
     const body = req.body as Record<string, unknown>;
     const orgId = (body.organizationId ?? body.organization_id ?? req.query.organization_id) as
       | string

@@ -142,6 +142,43 @@ export function getSupabaseUser(reqOrJwt: Request | string, jwt?: string): Supab
   return client;
 }
 
+/**
+ * Reversible, allow-list-gated client selector for the MT-P0-001 Phase 2/3
+ * RLS client swap.
+ *
+ * Returns a *user-scoped* Supabase client (which enforces RLS) for
+ * `moduleKey` when that module has been explicitly opted in via the
+ * `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` comma-separated allow-lists.
+ * Otherwise it returns the service-role admin client — the current behavior
+ * (RLS bypassed).
+ *
+ * The allow-lists are empty by default, so every caller falls back to the
+ * admin client until a module is explicitly enabled. This makes the migration
+ * incremental and zero-risk: flip one module at a time (in staging first),
+ * watch behavior, then roll forward.
+ *
+ * `kind` selects which allow-list gates the call:
+ *  - "read"  → RLS_READS_ENABLED
+ *  - "write" → RLS_WRITES_ENABLED
+ */
+export function getScopedClient(
+  req: Request,
+  moduleKey: string,
+  kind: "read" | "write" = "read",
+): SupabaseClient {
+  const flag =
+    kind === "write"
+      ? process.env.RLS_WRITES_ENABLED
+      : process.env.RLS_READS_ENABLED;
+  const enabled = new Set(
+    (flag ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+  );
+  if (enabled.has(moduleKey) && req.userJwt) {
+    return getSupabaseUser(req, req.userJwt);
+  }
+  return getSupabaseAdmin();
+}
+
 export function getSupabaseCircuitBreaker(): CircuitBreaker {
   return circuitBreaker;
 }

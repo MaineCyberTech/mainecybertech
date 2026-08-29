@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -32,7 +32,7 @@ const exportColumns: CsvColumn[] = [
 
 router.get("/export", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "domain-monitors", "read");
     let q = supabase.from("domain_monitors").select("*");
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) q = q.eq("organization_id", orgId);
@@ -51,7 +51,7 @@ router.get("/export", async (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "domain-monitors", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -80,7 +80,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/stats", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "domain-monitors", "read");
     let q = supabase
       .from("domain_monitors")
       .select(
@@ -137,7 +137,7 @@ router.get("/stats", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "domain-monitors", "read");
     let query = supabase.from("domain_monitors").select("*").eq("id", String(req.params.id as string));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
@@ -162,7 +162,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createDomainMonitorSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "domain-monitors", "write");
 
     const { data, error } = await supabase
       .from("domain_monitors")
@@ -202,7 +202,7 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateDomainMonitorSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "domain-monitors", "write");
     const current = await loadOwned(req, supabase as any, "domain_monitors", String(req.params.id as string));
     const currentVersion = current.version as number;
 
@@ -255,7 +255,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "domain-monitors", "write");
     await loadOwned(req, supabase as any, "domain_monitors", String(req.params.id as string));
     const { error } = await supabase.from("domain_monitors").delete().eq("id", String(req.params.id as string));
     if (error) throw new AppError("DB_ERROR", error.message, 500);

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { loadOwned } from "../lib/tenant";
@@ -18,7 +18,7 @@ router.use(requireOrgAccess);
 
 router.get("/frameworks", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "compliance", "read");
     const orgId = req.query.organization_id as string | undefined;
     if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
 
@@ -38,7 +38,7 @@ router.get("/frameworks", async (req, res, next) => {
 router.post("/frameworks", async (req, res, next) => {
   try {
     const parsed = createFrameworkSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "compliance", "write");
 
     const { data, error } = await supabase
       .from("compliance_frameworks")
@@ -69,7 +69,7 @@ router.post("/frameworks", async (req, res, next) => {
 
 router.get("/frameworks/:id/controls", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "compliance", "read");
     const orgId = req.query.organization_id as string | undefined;
     if (!orgId) throw new AppError("VALIDATION", "organization_id is required", 400);
 
@@ -90,7 +90,7 @@ router.get("/frameworks/:id/controls", async (req, res, next) => {
 router.post("/frameworks/:id/controls", async (req, res, next) => {
   try {
     const parsed = createControlSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "compliance", "write");
 
     const { data: framework, error: fwError } = await supabase
       .from("compliance_frameworks")
@@ -135,7 +135,7 @@ router.post("/frameworks/:id/controls", async (req, res, next) => {
 router.patch("/controls/:id", async (req, res, next) => {
   try {
     const parsed = updateControlSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "compliance", "write");
 
     const control = await loadOwned(req, supabase as any, "compliance_controls", req.params.id as string, "id, organization_id");
 
@@ -173,7 +173,7 @@ router.patch("/controls/:id", async (req, res, next) => {
 
 router.delete("/controls/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "compliance", "write");
     const control = await loadOwned(req, supabase as any, "compliance_controls", req.params.id as string, "id, organization_id");
     const { error } = await supabase
       .from("compliance_controls")

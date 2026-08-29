@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import jwt from "jsonwebtoken";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
@@ -35,7 +35,7 @@ router.get("/stream", async (req, res, next) => {
       "X-Accel-Buffering": "no",
     });
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "read");
     const userId = req.authUser!.userId;
 
     // Send initial heartbeat
@@ -165,7 +165,7 @@ const createNotificationSchema = z.object({
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
@@ -191,7 +191,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/unread-count", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "read");
     const { count, error } = await supabase
       .from("notifications")
       .select("*", { count: "exact", head: true })
@@ -207,7 +207,7 @@ router.get("/unread-count", async (req, res, next) => {
 
 router.post("/:id/read", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "write");
     const { data, error } = await supabase
       .from("notifications")
       .update({ read: true, read_at: new Date().toISOString() })
@@ -233,7 +233,7 @@ router.post("/:id/read", async (req, res, next) => {
 
 router.post("/mark-all-read", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "write");
     const orgId = req.query.organization_id as string | undefined;
     let query = supabase
       .from("notifications")
@@ -317,7 +317,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "write");
     const { error } = await supabase
       .from("notifications")
       .delete()

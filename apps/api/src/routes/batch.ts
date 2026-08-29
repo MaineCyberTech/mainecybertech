@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -38,7 +38,7 @@ function snake(s: string) {
 function crudRoute(path: string, table: string, createSchema: Record<string, unknown>) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "batch", "read");
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
       const q = sb
@@ -62,7 +62,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
         req.body,
       );
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "batch", "write");
       const fields: Record<string, unknown> = { created_by: req.authUser!.userId };
       for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
         if (k !== "organizationId") fields[snake(k)] = v;
@@ -85,7 +85,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
 
   router.get(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "batch", "read");
       const { data, error } = await sb
         .from(table)
         .select("*")
@@ -108,7 +108,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
         parse: (b: unknown) => Record<string, unknown>;
       };
       const parsed = (schema.partial ? schema.partial() : schema).parse(req.body);
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "batch", "write");
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(parsed)) {
         if (k !== "organizationId") fields[snake(k)] = v;
@@ -136,7 +136,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
 
   router.delete(`/${path}/:id`, async (req, res, next) => {
     try {
-      const sb = getSupabaseAdmin();
+      const sb = getScopedClient(req, "batch", "write");
       const { error } = await sb
         .from(table)
         .delete()
@@ -159,7 +159,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
 
 router.get("/licenses/savings", async (req, res, next) => {
   try {
-    const sb = getSupabaseAdmin();
+    const sb = getScopedClient(req, "batch", "read");
     const q = sb
       .from("license_tracking")
       .select("*")

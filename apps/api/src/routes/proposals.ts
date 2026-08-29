@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { addTimelineEvent } from "../services/approvals";
 import { AppError, success, type PaginatedResult } from "../types";
@@ -36,7 +36,7 @@ const exportColumns: CsvColumn[] = [
 
 router.get("/export", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "read");
     let query = supabase.from("proposals").select("*");
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -57,7 +57,7 @@ router.get("/export", async (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -87,7 +87,7 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "read");
     let query = supabase.from("proposals").select("*").eq("id", req.params.id as string);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
@@ -139,7 +139,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createProposalSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
 
     let grandTotal = 0;
     let totalLabor = 0;
@@ -263,7 +263,7 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateProposalSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
 
     const current = await loadOwned(
       req,
@@ -311,7 +311,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
     const { error } = await supabase.from("proposals").delete().eq("id", req.params.id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -332,7 +332,7 @@ router.delete("/:id", async (req, res, next) => {
 router.post("/:id/phases", async (req, res, next) => {
   try {
     const parsed = createPhaseSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
 
     const { data, error } = await supabase
@@ -367,7 +367,7 @@ router.post("/:id/phases", async (req, res, next) => {
 router.patch("/:id/phases/:phaseId", async (req, res, next) => {
   try {
     const parsed = updatePhaseSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
 
     const updateData: Record<string, unknown> = {};
@@ -404,7 +404,7 @@ router.patch("/:id/phases/:phaseId", async (req, res, next) => {
 
 router.delete("/:id/phases/:phaseId", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
     const { error } = await supabase
       .from("proposal_phases")
@@ -431,7 +431,7 @@ router.delete("/:id/phases/:phaseId", async (req, res, next) => {
 router.post("/:id/items", async (req, res, next) => {
   try {
     const parsed = createLineItemSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
 
     const itemTotal =
@@ -476,7 +476,7 @@ router.post("/:id/items", async (req, res, next) => {
 router.patch("/:id/items/:itemId", async (req, res, next) => {
   try {
     const parsed = updateLineItemSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
 
     const updateData: Record<string, unknown> = {};
@@ -521,7 +521,7 @@ router.patch("/:id/items/:itemId", async (req, res, next) => {
 
 router.delete("/:id/items/:itemId", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
     const { error } = await supabase
       .from("proposal_line_items")
@@ -548,7 +548,7 @@ router.delete("/:id/items/:itemId", async (req, res, next) => {
 router.post("/:id/submit-approval", async (req, res, next) => {
   try {
     submitForApprovalSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
 
     const proposal = await loadOwned(
       req,
@@ -623,7 +623,7 @@ router.post("/:id/submit-approval", async (req, res, next) => {
 router.post("/:id/publish", async (req, res, next) => {
   try {
     const parsed = publishProposalSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
 
     const current = await loadOwned(
       req,
@@ -685,7 +685,7 @@ router.post("/:id/publish", async (req, res, next) => {
 
 router.get("/:id/comments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "read");
     await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
     const { data, error } = await supabase
       .from("module_comments")
@@ -704,7 +704,7 @@ router.get("/:id/comments", async (req, res, next) => {
 
 router.post("/:id/comments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "write");
     const proposal = await loadOwned(
       req,
       supabase as any,
@@ -748,7 +748,7 @@ router.post("/:id/comments", async (req, res, next) => {
 
 router.get("/:id/timeline", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "proposals", "read");
     await loadOwned(req, supabase as any, "proposals", req.params.id as string, "id, organization_id");
     const { data, error } = await supabase
       .from("module_timeline_events")

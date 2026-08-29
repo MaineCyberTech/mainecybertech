@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -34,7 +34,7 @@ const checkUpdateSchema = z.object({
 
 router.get("/dashboard", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "uptime-monitor", "read");
     const orgId = req.query.organization_id as string;
 
     const { data: checks, error } = await supabase
@@ -107,7 +107,7 @@ router.get("/dashboard", async (req, res, next) => {
 
 router.get("/checks", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "uptime-monitor", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -128,7 +128,7 @@ router.get("/checks", async (req, res, next) => {
 
 router.get("/checks/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "uptime-monitor", "read");
     const { data, error } = await supabase
       .from("uptime_checks")
       .select("*")
@@ -148,7 +148,7 @@ router.post("/checks", async (req, res, next) => {
     // SSRF guard — the worker fetches this URL; reject private / loopback /
     // link-local hosts before the check is ever stored.
     await assertSafeWebhookUrl(parsed.url);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "uptime-monitor", "write");
 
     const { data, error } = await supabase
       .from("uptime_checks")
@@ -184,7 +184,7 @@ router.post("/checks", async (req, res, next) => {
 router.patch("/checks/:id", async (req, res, next) => {
   try {
     const parsed = checkUpdateSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "uptime-monitor", "write");
 
     const fields: Record<string, unknown> = {};
     if (parsed.url !== undefined) {
@@ -217,7 +217,7 @@ router.patch("/checks/:id", async (req, res, next) => {
 
 router.delete("/checks/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "uptime-monitor", "write");
     const { error } = await supabase
       .from("uptime_checks")
       .delete()
@@ -232,7 +232,7 @@ router.delete("/checks/:id", async (req, res, next) => {
 
 router.get("/checks/:id/results", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "uptime-monitor", "read");
     const { data: check, error: checkError } = await supabase
       .from("uptime_checks")
       .select("id")
@@ -256,7 +256,7 @@ router.get("/checks/:id/results", async (req, res, next) => {
 
 router.get("/checks/:id/uptime", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "uptime-monitor", "read");
     const now = new Date();
 
     const periods: { key: string; days: number }[] = [

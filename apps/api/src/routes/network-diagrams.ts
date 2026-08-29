@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -17,7 +17,7 @@ router.use(requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "network-diagrams", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -53,7 +53,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "network-diagrams", "read");
     let query = supabase.from("network_diagrams").select("*").eq("id", String(req.params.id as string));
 
     const orgId = req.query.organization_id as string | undefined;
@@ -71,7 +71,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createNetworkDiagramSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "network-diagrams", "write");
 
     const { data, error } = await supabase
       .from("network_diagrams")
@@ -105,7 +105,7 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateNetworkDiagramSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "network-diagrams", "write");
     await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));
 
     const updateData: Record<string, unknown> = {};
@@ -140,7 +140,7 @@ router.patch("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "network-diagrams", "write");
     await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));
     const { error } = await supabase.from("network_diagrams").delete().eq("id", String(req.params.id as string));
 

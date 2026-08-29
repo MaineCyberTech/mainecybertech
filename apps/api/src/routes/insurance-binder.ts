@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -52,7 +52,7 @@ type EvidenceSummaryRow = { coverage_area: string | null; status?: string | null
 
 router.get("/coverage-report", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "insurance-binder", "read");
     const orgId = req.query.organization_id as string;
     const { data, error } = await supabase
       .from("insurance_evidence")
@@ -97,7 +97,7 @@ router.get("/coverage-report", async (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "insurance-binder", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -126,7 +126,7 @@ router.get("/", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createEvidenceSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "insurance-binder", "write");
     const { data, error } = await supabase
       .from("insurance_evidence")
       .insert({
@@ -161,7 +161,7 @@ router.post("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "insurance-binder", "read");
     const { data, error } = await supabase
       .from("insurance_evidence")
       .select("*")
@@ -178,7 +178,7 @@ router.get("/:id", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateEvidenceSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "insurance-binder", "write");
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
     if (parsed.description !== undefined) updateData.description = parsed.description;
@@ -219,7 +219,7 @@ router.patch("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "insurance-binder", "write");
     const { error } = await supabase
       .from("insurance_evidence")
       .delete()

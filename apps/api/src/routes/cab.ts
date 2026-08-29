@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { loadOwned } from "../lib/tenant";
@@ -19,7 +19,7 @@ router.use(requireOrgAccess);
 
 router.get("/meetings", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "cab", "read");
     const orgId = req.query.organization_id as string | undefined;
     const { status } = listCabMeetingsQuerySchema.parse(req.query);
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
@@ -68,7 +68,7 @@ router.post("/meetings", async (req, res, next) => {
     const parsed = createCabMeetingSchema.parse(req.body);
     const orgId = (req.query.organization_id as string | undefined) ?? parsed.organizationId;
     if (!orgId) throw new AppError("VALIDATION", "organizationId is required", 400);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "cab", "write");
 
     const { data, error } = await supabase
       .from("cab_meetings")
@@ -99,7 +99,7 @@ router.post("/meetings", async (req, res, next) => {
 
 router.get("/meetings/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "cab", "read");
     const meeting = await loadOwned(req, supabase as any, "cab_meetings", req.params.id as string);
 
     const { data: agenda, error: agendaError } = await supabase
@@ -117,7 +117,7 @@ router.get("/meetings/:id", async (req, res, next) => {
 router.post("/meetings/:id/agenda", async (req, res, next) => {
   try {
     const parsed = addCabAgendaItemSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "cab", "write");
     const meeting = await loadOwned(req, supabase as any, "cab_meetings", req.params.id as string, "id, organization_id");
 
     const { data, error } = await supabase
@@ -150,7 +150,7 @@ router.post("/meetings/:id/agenda", async (req, res, next) => {
 router.patch("/agenda/:id", async (req, res, next) => {
   try {
     const parsed = updateCabAgendaItemSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "cab", "write");
 
     const item = await loadOwned(req, supabase as any, "cab_agenda_items", req.params.id as string, "id, organization_id");
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -16,7 +16,7 @@ router.use(requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "memberships", "read");
 
     const orgId = req.query.organization_id as string | undefined;
     const statusFilter = req.query.status as string | undefined;
@@ -44,7 +44,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/mine", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "memberships", "read");
     const query = supabase
       .from("memberships")
       .select("*, organizations(*), roles(*)")
@@ -69,7 +69,7 @@ router.post("/invite", requirePermission("users", "manage"), async (req, res, ne
       })
       .parse(req.body);
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "memberships", "write");
 
     const { data: userByEmail } = await supabase
       .from("profiles")
@@ -123,7 +123,7 @@ router.post("/invite", requirePermission("users", "manage"), async (req, res, ne
 router.patch("/:id", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const parsed = updateMembershipSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "memberships", "write");
     await loadOwned(req, supabase as any, "memberships", String(req.params.id));
 
     const { data, error } = await supabase
@@ -157,7 +157,7 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
 
 router.delete("/:id", requirePermission("users", "manage"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "memberships", "write");
     await loadOwned(req, supabase as any, "memberships", String(req.params.id));
     const { error } = await supabase.from("memberships").delete().eq("id", req.params.id);
 

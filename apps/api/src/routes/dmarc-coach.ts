@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -32,7 +32,7 @@ function snakeCase(str: string): string {
 // List
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "dmarc-coach", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -52,7 +52,7 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "dmarc-coach", "read");
     let query = supabase.from("dmarc_analyses").select("*").eq("id", req.params.id);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
@@ -66,7 +66,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "dmarc-coach", "write");
     const fields: Record<string, unknown> = {
       organization_id: parsed.organizationId,
       created_by: req.authUser!.userId,
@@ -93,7 +93,7 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "dmarc-coach", "write");
     const fields: Record<string, unknown> = {};
     for (const [k, v] of Object.entries(parsed)) {
       if (v !== undefined) fields[snakeCase(k)] = v;
@@ -122,7 +122,7 @@ router.patch("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "dmarc-coach", "write");
     const { data, error } = await supabase
       .from("dmarc_analyses")
       .delete()
@@ -192,7 +192,7 @@ router.post("/analyze", async (req, res, next) => {
     if (dmarc && spf && dkim && dmarc.includes("p=reject") && dmarc.includes("pct=100"))
       overallGrade = "A";
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "dmarc-coach", "write");
     const { data, error } = await supabase
       .from("dmarc_analyses")
       .insert({

@@ -2,7 +2,7 @@ import { Router } from "express";
 import multer from "multer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -270,7 +270,7 @@ router.use(requireOrgAccess);
 
 router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -307,7 +307,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "read");
     let query = supabase.from("documents").select("*").eq("id", req.params.id);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
@@ -322,7 +322,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createDocumentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
 
     const { data, error } = await supabase
       .from("documents")
@@ -389,7 +389,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
       throw new AppError("VALIDATION", "Organization ID and name are required", 400);
     }
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
     // Bucket is pinned server-side (FILE-P2-001) — never read from req.body.
     const bucket = DOCUMENTS_BUCKET;
     const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
@@ -523,7 +523,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
 router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateDocumentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
     const orgId = req.query.organization_id as string | undefined;
 
     let currentQuery = supabase.from("documents").select("version").eq("id", req.params.id);
@@ -579,7 +579,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", requirePermission("documents", "delete"), async (req, res, next) => {
   try {
     assertDeleteConfirmed(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -619,7 +619,7 @@ router.delete("/:id", requirePermission("documents", "delete"), async (req, res,
 router.post("/:id/signed-url", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
     let query = supabase
       .from("documents")
       .select("storage_bucket, storage_path")
@@ -667,7 +667,7 @@ async function resolveOwnedDocumentIds(
 router.post("/bulk/folder", async (req, res, next) => {
   try {
     const parsed = bulkFolderSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -714,7 +714,7 @@ router.post("/bulk/folder", async (req, res, next) => {
 router.post("/bulk/metadata", async (req, res, next) => {
   try {
     const parsed = bulkMetadataSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
 
     const updateData: Record<string, unknown> = {};
     if (parsed.description !== undefined) updateData.description = parsed.description;
@@ -770,7 +770,7 @@ router.post("/bulk/metadata", async (req, res, next) => {
 
 router.get("/:id/versions", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "read");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -802,7 +802,7 @@ router.get("/:id/versions", async (req, res, next) => {
 
 router.get("/:id/versions/:versionId", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "read");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -829,7 +829,7 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
 router.post("/:id/shares", async (req, res, next) => {
   try {
     const parsed = createShareSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
 
     const { data: doc, error: docError } = await supabase
       .from("documents")
@@ -885,7 +885,7 @@ router.post("/:id/shares", async (req, res, next) => {
 
 router.get("/:id/shares", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "read");
 
     const { data: doc, error: docError } = await supabase
       .from("documents")
@@ -923,7 +923,7 @@ router.get("/:id/shares", async (req, res, next) => {
 router.patch("/:id/shares/:shareId", async (req, res, next) => {
   try {
     const parsed = updateShareSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
 
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
@@ -979,7 +979,7 @@ router.patch("/:id/shares/:shareId", async (req, res, next) => {
 
 router.delete("/:id/shares/:shareId", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
 
     const { data: share, error: shareError } = await supabase
       .from("document_shares")

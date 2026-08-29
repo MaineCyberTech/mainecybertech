@@ -30,7 +30,15 @@ jest.mock("../config/env", () => ({
   }),
 }));
 
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn() }));
+jest.mock("../services/supabase", () => {
+  const getSupabaseAdmin = jest.fn();
+  return {
+    getSupabaseAdmin,
+    getScopedClient: jest.fn((_req: unknown, _moduleKey: string, _kind?: string) =>
+      getSupabaseAdmin(),
+    ),
+  };
+});
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 
 import { getSupabaseAdmin } from "../services/supabase";

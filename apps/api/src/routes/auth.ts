@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import zxcvbn from "zxcvbn";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { getEnv } from "../config/env";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -28,7 +28,7 @@ function validatePasswordStrength(password: string): {
 
 router.get("/me", requireAuth, async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "auth", "read");
     const { data: profile, error } = await supabase
       .from("profiles")
       .select(
@@ -249,7 +249,7 @@ router.post("/callback", rateLimitAuth, async (req, res, next) => {
 
 router.post("/sign-out", requireAuth, async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "auth", "write");
     const token = req.headers.authorization?.slice(7);
     if (token) {
       await supabase.auth.admin.signOut(token);
@@ -318,7 +318,7 @@ router.post("/reset-password", requireAuth, rateLimitAuth, rateLimitEmail, async
       throw new AppError("WEAK_PASSWORD", pwdCheck.message || "Password is too weak", 400);
     }
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "auth", "write");
     const { error } = await supabase.auth.admin.updateUserById(req.authUser!.userId, {
       password,
     });

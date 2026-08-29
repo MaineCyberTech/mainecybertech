@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
@@ -45,7 +45,7 @@ router.use(requireOrgAccess);
 
 router.get("/summary", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "read");
     const orgId = req.query.organization_id as string | undefined;
 
     const baseQuery = orgId ? (qb: any) => qb.eq("organization_id", orgId) : (qb: any) => qb;
@@ -99,7 +99,7 @@ router.get("/summary", async (req, res, next) => {
 
 router.get("/invoices", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
@@ -123,7 +123,7 @@ router.get("/invoices", async (req, res, next) => {
 
 router.get("/invoices/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "read");
     const orgId = req.query.organization_id as string | undefined;
     let query = supabase.from("invoices").select("*").eq("id", req.params.id);
     if (orgId) query = query.eq("organization_id", orgId);
@@ -137,7 +137,7 @@ router.get("/invoices/:id", async (req, res, next) => {
 
 router.get("/subscriptions", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "read");
     const orgId = req.query.organization_id as string | undefined;
 
     let query = supabase.from("subscriptions").select("*");
@@ -155,7 +155,7 @@ router.get("/subscriptions", async (req, res, next) => {
 
 router.get("/payments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
@@ -178,7 +178,7 @@ router.get("/payments", async (req, res, next) => {
 
 router.get("/billing-customer", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "read");
     const orgId = req.query.organization_id as string | undefined;
 
     let query = supabase.from("billing_customers").select("*");
@@ -196,7 +196,7 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
     const { organizationId } = z
       .object({ organizationId: z.string().uuid().optional() })
       .parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "write");
 
     const env = getEnv();
     const stripeKey = env.STRIPE_SECRET_KEY;
@@ -308,7 +308,7 @@ router.post("/create-portal-session", async (req, res, next) => {
     const stripeKey = env.STRIPE_SECRET_KEY;
     if (!stripeKey) throw new AppError("CONFIG", "STRIPE_SECRET_KEY not configured", 500);
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "billing", "write");
     const activeOrgHeader =
       typeof req.headers?.["x-active-org"] === "string" ? (req.headers["x-active-org"] as string) : undefined;
     const orgId =

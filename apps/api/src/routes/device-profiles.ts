@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -19,7 +19,7 @@ router.use(requireOrgAccess);
 router.get("/", async (req, res, next) => {
   try {
     const parsed = listDeviceProfilesQuerySchema.parse(req.query);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "device-profiles", "read");
     const page = parsed.page;
     const limit = parsed.limit;
     const offset = (page - 1) * limit;
@@ -57,7 +57,7 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "device-profiles", "read");
 
     let query = supabase.from("device_profiles").select("*").eq("id", String(req.params.id as string));
     if (orgId) query = query.eq("organization_id", orgId);
@@ -74,7 +74,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createDeviceProfileSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "device-profiles", "write");
 
     const { data, error } = await supabase
       .from("device_profiles")
@@ -109,7 +109,7 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateDeviceProfileSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "device-profiles", "write");
     await loadOwned(req, supabase as any, "device_profiles", String(req.params.id as string));
 
     const updateData: Record<string, unknown> = {};
@@ -145,7 +145,7 @@ router.patch("/:id", async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "device-profiles", "write");
     await loadOwned(req, supabase as any, "device_profiles", String(req.params.id as string));
     const { error } = await supabase.from("device_profiles").delete().eq("id", String(req.params.id as string));
 

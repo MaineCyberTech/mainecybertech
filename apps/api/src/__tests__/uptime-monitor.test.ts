@@ -29,7 +29,8 @@ jest.mock("../config/env", () => ({
   }),
 }));
 
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn() }));
+jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
+    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 
 // Deterministic DNS for the SSRF guard (public hostnames resolve to a

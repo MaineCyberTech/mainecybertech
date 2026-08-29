@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { addTimelineEvent } from "../services/approvals";
 import { AppError, success, type PaginatedResult } from "../types";
@@ -34,7 +34,7 @@ const exportColumns: CsvColumn[] = [
 
 router.get("/export", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "read");
     let query = supabase.from("findings").select("*");
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -55,7 +55,7 @@ router.get("/export", async (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -87,7 +87,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/stats", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "read");
     let query = supabase.from("findings").select("severity, status");
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -114,7 +114,7 @@ router.get("/stats", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "read");
     let query = supabase.from("findings").select("*").eq("id", req.params.id as string);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
@@ -146,7 +146,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createFindingSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "write");
 
     const { data, error } = await supabase
       .from("findings")
@@ -201,7 +201,7 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateFindingSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "write");
 
     const current = await loadOwned(
       req,
@@ -262,7 +262,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "write");
     await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id");
     const { error } = await supabase.from("findings").delete().eq("id", req.params.id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -283,7 +283,7 @@ router.delete("/:id", async (req, res, next) => {
 router.post("/:id/verify", async (req, res, next) => {
   try {
     verifyFindingSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "write");
 
     const current = await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id, status, version");
 
@@ -333,7 +333,7 @@ router.post("/:id/verify", async (req, res, next) => {
 router.post("/:id/resolve", async (req, res, next) => {
   try {
     const parsed = resolveFindingSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "write");
 
     const current = await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id, status, version");
 
@@ -382,7 +382,7 @@ router.post("/:id/resolve", async (req, res, next) => {
 
 router.get("/:id/comments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "read");
     await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id");
     const { data, error } = await supabase
       .from("module_comments")
@@ -400,7 +400,7 @@ router.get("/:id/comments", async (req, res, next) => {
 
 router.post("/:id/comments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "write");
     const finding = await loadOwned(
       req,
       supabase as any,
@@ -444,7 +444,7 @@ router.post("/:id/comments", async (req, res, next) => {
 
 router.get("/:id/timeline", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "findings", "read");
     await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id");
     const { data, error } = await supabase
       .from("module_timeline_events")

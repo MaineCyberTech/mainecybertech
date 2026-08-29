@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import crypto from "crypto";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
@@ -33,7 +33,7 @@ function generateApiKey(): { fullKey: string; prefix: string; hash: string } {
 // GET /api/v1/api-keys — list keys for an org
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "api-keys", "read");
     const orgId = req.query.organization_id as string;
 
     let query = supabase
@@ -58,7 +58,7 @@ router.post("/", requirePermission("api-keys", "manage"), async (req, res, next)
     const parsed = createSchema.parse(req.body);
     const { fullKey, prefix, hash } = generateApiKey();
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "api-keys", "write");
     const { data, error } = await supabase
       .from("api_keys")
       .insert({
@@ -93,7 +93,7 @@ router.post("/", requirePermission("api-keys", "manage"), async (req, res, next)
 // PATCH /api/v1/api-keys/:id — update (revoke/toggle)
 router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "api-keys", "write");
     await loadOwned(req, supabase as any, "api_keys", String(req.params.id));
 
     const orgId = req.query.organization_id as string;
@@ -146,7 +146,7 @@ router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, n
 router.delete("/:id", requirePermission("api-keys", "manage"), async (req, res, next) => {
   try {
     assertDeleteConfirmed(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "api-keys", "write");
     await loadOwned(req, supabase as any, "api_keys", String(req.params.id));
 
     const orgId = req.query.organization_id as string;

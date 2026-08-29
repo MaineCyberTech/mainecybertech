@@ -30,7 +30,8 @@ jest.mock("../config/env", () => ({
       JSM_REQUEST_TYPE_ID: "",
     }),
 }));
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn() }));
+jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
+    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 import { getSupabaseAdmin } from "../services/supabase";
 import router from "../routes/service-catalog";

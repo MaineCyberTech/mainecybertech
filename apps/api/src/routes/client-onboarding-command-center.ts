@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
@@ -141,7 +141,7 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 
 router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
       req,
       supabase as any,
@@ -161,7 +161,7 @@ router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => 
 
 router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
       req,
       supabase as any,
@@ -183,7 +183,7 @@ router.post("/:id/complete-phase", async (req: Request, res: Response, next: Nex
     const parsed = completePhaseSchema.parse({ ...req.body, organizationId: getOrgId(req) });
 
     // Load + verify ownership of the record before acting on it (fail-closed).
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
       req,
       supabase as any,
@@ -222,7 +222,7 @@ router.get(
 
 router.patch("/:id/checklist/:itemId", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const item = await loadOwned(
       req,
       supabase as any,

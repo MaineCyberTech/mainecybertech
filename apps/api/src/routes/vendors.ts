@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -23,7 +23,7 @@ function crudEndpoints(
 ) {
   router.get(`/${resource}`, async (req, res, next) => {
     try {
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "vendors", "read");
       const page = Math.max(1, parseInt(req.query.page as string) || 1);
       const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
       const offset = (page - 1) * limit;
@@ -52,7 +52,7 @@ function crudEndpoints(
 
   router.get(`/${resource}/:id`, async (req, res, next) => {
     try {
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "vendors", "read");
       const { data, error } = await supabase
         .from(table)
         .select("*")
@@ -69,7 +69,7 @@ function crudEndpoints(
   router.post(`/${resource}`, async (req, res, next) => {
     try {
       const parsed = createSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "vendors", "write");
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
         if (k === "organizationId") continue;
@@ -97,7 +97,7 @@ function crudEndpoints(
   router.patch(`/${resource}/:id`, async (req, res, next) => {
     try {
       const parsed = updateSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "vendors", "write");
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
         if (k === "organizationId") continue;
@@ -129,7 +129,7 @@ function crudEndpoints(
 
   router.delete(`/${resource}/:id`, async (req, res, next) => {
     try {
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "vendors", "write");
       const { error } = await supabase
         .from(table)
         .delete()
@@ -158,7 +158,7 @@ function snakeCase(str: string): string {
 // shadowed by `/vendor-contracts/:id` with id="renewals").
 router.get("/vendor-contracts/renewals", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "vendors", "read");
     const ninetyDays = new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10);
     let q = supabase
       .from("vendor_contracts")

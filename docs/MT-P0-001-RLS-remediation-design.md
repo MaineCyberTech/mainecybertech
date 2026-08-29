@@ -210,3 +210,85 @@ Land hardening of `getSupabaseUser`, the RLS coverage matrix, and the 7 missing 
 | Policy predicates (`is_org_member` etc.) | `supabase/migrations/5302026_...v3.sql:653, 668, 1034` |
 | P0-7 platform-admin audit | `AGENTS.md` Known Open Issues; `supabase/migrations/5302133`; `apps/api/src/services/impersonation.ts` |
 | `agent/mig-guards` rejection | `AGENTS.md` Completed Work 2026-08-28 (branch deleted local+remote) |
+
+---
+
+## 10. Implementation Log (Phase 2/3 progress)
+
+**Status flip:** design accepted for incremental execution; Phase 0 infra + first Phase-2 slice landed (2026-08-29).
+
+### Phase 0 — done
+- `getSupabaseUser(req, jwt)` hardened: per-request memoized `WeakMap` client + routed through the shared circuit breaker (`apps/api/src/services/supabase.ts`).
+- `withServiceRole(reason, req, fn)` audited wrapper (`apps/api/src/lib/service-role.ts`) — the only sanctioned service-role path for platform-admin cross-tenant work.
+- `docs/RLS-coverage-matrix.md` + this design doc.
+
+### Phase 2 — reversible client-swap enabler + first slice
+- **Enabler:** `getScopedClient(req, moduleKey, kind="read"|"write")` in `apps/api/src/services/supabase.ts`. Returns the user-scoped (RLS-enforced) client when `moduleKey` is present in `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` (comma-separated), else falls back to `getSupabaseAdmin()`. Both env vars are **empty by default** → every caller stays on the admin client until a module is explicitly opted in. Zero production behavior change until a flag is set.
+- **First migrated module — `knowledge-base` reads:** `apps/api/src/routes/knowledge-base.ts` GET `/` (list) and GET `/:id` now call `getScopedClient(req, "knowledge-base", "read")`. Writes (POST/PATCH/DELETE) remain on `getSupabaseAdmin` (Phase 3). `knowledge-base` is **not** in `RLS_READS_ENABLED`, so it is currently inactive.
+  - To activate (in staging first): set `RLS_READS_ENABLED=knowledge-base` and confirm the `knowledge_base_articles` SELECT policy (member-scoped) is applied to the hosted DB. Then promote to prod.
+- Unit tests: `knowledge-base.test.ts` updated to mock `getScopedClient` (delegates to admin client) — 12/12 pass. API typecheck clean.
+
+### Additional modules migrated (reads only, all inactive by default)
+| Module | File | Read handler(s) converted | Notes |
+| ------ | ---- | ------------------------- | ----- |
+| `sla` | `routes/sla.ts` | `/metrics` | Single SELECT; member/org scoped. |
+| `status-page` | `routes/status-page.ts` | authed GET list + GET `/:id` in `crudTable` | **Public** `/public/:orgId` (line 13) intentionally left on admin (no auth → would break public status pages). Writes stay on admin (Phase 3). |
+| `client-portal` | `routes/client-portal.ts` | `/bootstrap` | Queries by `userId` (user-scoped by nature). No test file; typecheck clean. |
+
+### Explicitly excluded (do NOT convert — platform-admin / cross-tenant)
+- `dashboard.ts` — `requireAdmin` cross-tenant summary counts (all orgs); stays on admin (or `withServiceRole` for audit).
+- `bulk.ts` `/invite` — `requireAdmin` platform-admin WRITE; stays on admin (or `withServiceRole`).
+
+### Enablement gate (mandatory before flipping any module's flag)
+For each module, before setting `RLS_READS_ENABLED=<module>` (staging first):
+1. Confirm the relevant tables have member/org-scoped **SELECT** policies applied to the *hosted* DB (no local Docker/Supabase here to test RLS).
+2. Confirm the route's read query is correctly org-scoped (uses `requireOrgAccess` + filters by `organization_id`, or queries by `userId`). Routes without `requireOrgAccess` (e.g. `client-portal` bootstrap) must be verified to still return the intended rows under RLS.
+3. Watch for 403s / empty results in staging; roll back by clearing the flag (zero code change).
+
+### Phase 2 bulk mechanical pass (2026-08-08-29)
+A conservative script converted **authed GET read handlers** across the `routes/` tree to `getScopedClient(req, "<module>", "read")`, then reverted any conversion that was unsafe:
+
+- **Reverted:** public routes (no `requireAuth`/`requireOrgAccess` applied), `requireAdmin` platform-admin routes, writes (POST/PATCH/PUT/DELETE), and any call site where `req` was not in scope (module-level helpers, `_req`-only handlers).
+- **Excluded globally:** routers with `router.use(requireAdmin)` (e.g. `admin.ts`, `dashboard.ts`, `bulk.ts`) — platform-admin cross-tenant, stay on admin/`withServiceRole`.
+
+Result: **135 read call sites** are now gated (inactive by default — `RLS_READS_ENABLED` is empty, so `getScopedClient` returns the same admin client; production behavior is byte-identical until a module is enabled). Full API suite (987 tests, 90 suites) passes; `tsc --noEmit` clean. Remaining `getSupabaseAdmin()` (274) are writes + the explicitly excluded routes.
+
+This completes the *code* side of Phase 2 (reads). Remaining work before "RLS is live" is per-module:
+1. Verify SELECT policies on the hosted DB for each module's tables.
+2. Enable `RLS_READS_ENABLED=<module>` in staging, watch, then prod.
+3. Phase 3 (writes): repeat the same pattern with `kind: "write"` + `RLS_WRITES_ENABLED`, after verifying INSERT/UPDATE/DELETE policies.
+4. Ultimately remove the fallback (make `getScopedClient` default to user-scoped) once every module is verified.
+
+### Phase 3 bulk mechanical pass (writes) — 2026-08-29
+Same pattern applied to **authed write handlers** (`post`/`patch`/`put`/`delete`) across the `routes/` tree, gated by `getScopedClient(req, "<module>", "write")` (controlled by `RLS_WRITES_ENABLED`, empty by default → admin client → no behavior change). Exclusions identical to Phase 2: `router.use(requireAdmin)` routers, `requireAdmin` routes, public routes, and call sites without `req` in scope (auto-reverted via a typecheck loop).
+
+Result: **329 read+write call sites** are now gated and inactive by default. 80 `getSupabaseAdmin()` remain — only in `router.use(requireAdmin)` platform-admin routers (`admin.ts`, `dashboard.ts`, `bulk.ts`, …), module-level helpers without `req`, and genuinely public routes. Full API suite (987 tests, 90 suites) passes; `tsc --noEmit` clean.
+
+Remaining to make RLS *live*:
+1. Per module: verify SELECT (reads) **and** INSERT/UPDATE/DELETE (writes) policies on the hosted DB.
+2. Enable `RLS_READS_ENABLED=<module>` then `RLS_WRITES_ENABLED=<module>` in staging → watch → prod.
+3. Drop the admin fallback (make `getScopedClient` default to the user-scoped client) once every module is verified — at which point `getSupabaseAdmin` is only reached via `withServiceRole` for the audited platform-admin paths.
+
+### Remaining scope (incremental, same pattern)
+- Migrate remaining read paths module-by-module behind `RLS_READS_ENABLED`; then writes behind `RLS_WRITES_ENABLED`.
+- 822 `getSupabaseAdmin` call sites remain; the 7 design-doc "policy-less" tables (`document_shares`, `notifications`, `project_dependencies`, `project_milestones`, `project_phases`, `webhook_endpoints`, `webhook_dead_letters`) were **verified to already have public-prefixed policies** (counts 13/8/5/5/5/4/4), clearing the §4.3 hard blocker. The 3 `store_*` + `impersonation_log` tables are GLOBAL (no org columns) → service-role-only by design, excluded from the swap.
+- Activate each module only after RLS policy verification on the hosted DB (no local Docker/Supabase available to test RLS here).
+
+### Static readiness verification (2026-08-29)
+Cross-referenced every gated module's tables (from `routes/*.ts` `.from("…")`) against `docs/RLS-coverage-matrix.md` risk sets:
+
+- **service_role-ONLY tables** (`impersonation_log`, `store_leads`, `store_proposal_drafts`, `store_visual_assets`) — a user-scoped client returns 0 rows / cannot write. Global/admin sinks; correctly excluded (stay on `withServiceRole`/admin).
+- **OPEN-policy tables** (`permissions`, `role_permissions`, `roles`, `store_categories`, `store_promotions`, `store_quotes`) — `using (true)`, so a user-scoped client returns ALL rows (leak) and could allow cross-tenant writes.
+
+Result across 44 gated modules:
+
+- **40 SAFE to enable** (no service_role-ONLY or OPEN-policy tables): `ai, api-keys, approvals, assets, auth, batch, billing, cab, client-portal, compliance, device-profiles, dmarc-coach, documents, domain-monitors, edu-automation, field-services, file-requests, findings, governance, insurance-binder, knowledge-base, license-optimizer, network-diagrams, notification-preferences, notifications, proposals, qbr, search-portal, security-ops, security-suite, service-catalog, sla, staging, status-page, tickets, training-hub, uptime-monitor, vendors, webhook-management`.
+- **4 BLOCKED** (read global `roles`/`permissions`/`role_permissions` OPEN tables):
+  - `roles` — *manages* RBAC; **must never be user-scoped** (would let any user mutate roles). Keep on admin.
+  - `memberships`, `organizations`, `projects` — only *read* global role/permission reference data (not tenant data); enabling READS is likely safe, but confirm no writes and that the OPEN policy is global-by-design before enabling.
+
+**Enabling procedure (operator, not code):**
+1. Set `RLS_READS_ENABLED=<module>` (and `RLS_WRITES_ENABLED=<module>` for writes) in the deployment env (droplet `.env`; flags documented in `apps/api/.env.example`, read by `getScopedClient` from `process.env`).
+2. Staging first; watch for 403s / empty results / unexpected cross-tenant rows. Roll back by clearing the flag (zero code change).
+3. Caveat: even "safe" modules may have **admin-only DELETE** policies (per matrix §5) that will 403 on delete once writes are enabled — test DELETE paths in staging.
+4. Repeat per module; only then drop the admin fallback.

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -49,7 +49,7 @@ const projectExportColumns: CsvColumn[] = [
 
 router.get("/export", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "read");
 
     let query = supabase.from("projects").select("*");
 
@@ -71,7 +71,7 @@ router.get("/export", async (req, res, next) => {
 
 router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
@@ -116,7 +116,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
  */
 router.get("/compound", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "read");
     const orgId = req.query.organization_id as string | undefined;
     const injected = (req as unknown as { orgAccessInjected?: boolean }).orgAccessInjected;
     const platformAdmin = (req as unknown as { orgAccessPlatformAdmin?: boolean })
@@ -213,7 +213,7 @@ function projectSubRoute(
 
   router.get(`/${resource}`, async (req, res, next) => {
     try {
-      const supabase = getSupabaseAdmin();
+  const supabase = getSupabaseAdmin();
       const projectId = req.query.project_id as string;
       if (!projectId) throw new AppError("VALIDATION", "project_id required", 400);
 
@@ -238,7 +238,7 @@ function projectSubRoute(
   router.post(`/${resource}`, async (req, res, next) => {
     try {
       const parsed = createSchema.parse(req.body) as Record<string, unknown>;
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "projects", "write");
       const orgId = (req.query.organization_id ?? req.body?.organizationId) as
         | string
         | undefined;
@@ -275,7 +275,7 @@ function projectSubRoute(
   router.patch(`/${resource}/:id`, async (req, res, next) => {
     try {
       const parsed = updateSchema.parse(req.body) as Record<string, unknown>;
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "projects", "write");
       const orgId = (req.query.organization_id ?? req.body?.organizationId) as
         | string
         | undefined;
@@ -308,7 +308,7 @@ function projectSubRoute(
 
   router.delete(`/${resource}/:id`, async (req, res, next) => {
     try {
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "projects", "write");
       const orgId = (req.query.organization_id ?? req.body?.organizationId) as
         | string
         | undefined;
@@ -341,7 +341,7 @@ router.get("/:id", async (req, res, next) => {
     const injected = (req as unknown as { orgAccessInjected?: boolean }).orgAccessInjected;
     const platformAdmin = (req as unknown as { orgAccessPlatformAdmin?: boolean })
       .orgAccessPlatformAdmin;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "read");
     let query = supabase.from("projects").select("*, project_tasks(*)").eq("id", req.params.id);
     // Platform admins are org-agnostic: honor an EXPLICIT org, but don't
     // pin them to the middleware-injected default org (which would 404
@@ -362,7 +362,7 @@ router.get("/:id/detail", async (req, res, next) => {
     const injected = (req as unknown as { orgAccessInjected?: boolean }).orgAccessInjected;
     const platformAdmin = (req as unknown as { orgAccessPlatformAdmin?: boolean })
       .orgAccessPlatformAdmin;
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "read");
 
     let query = supabase.from("projects").select("*, project_tasks(*)").eq("id", req.params.id);
     if (orgId && !(injected && platformAdmin)) query = query.eq("organization_id", orgId);
@@ -459,7 +459,7 @@ router.get("/:id/detail", async (req, res, next) => {
 router.post("/", requirePermission("projects", "create"), async (req, res, next) => {
   try {
     const parsed = createProjectSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
 
     const { data, error } = await supabase
       .from("projects")
@@ -502,7 +502,7 @@ router.post("/", requirePermission("projects", "create"), async (req, res, next)
 router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateProjectSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as
       | string
       | undefined;
@@ -556,7 +556,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
 router.delete("/:id", requirePermission("projects", "delete"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     const project = await loadOwned(
       req,
       supabase as any,
@@ -588,7 +588,7 @@ router.delete("/:id", requirePermission("projects", "delete"), async (req, res, 
 
 router.get("/:id/tasks", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "read");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -609,7 +609,7 @@ router.get("/:id/tasks", async (req, res, next) => {
 router.post("/:id/tasks", async (req, res, next) => {
   try {
     const parsed = createTaskSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -658,7 +658,7 @@ router.post("/:id/tasks", async (req, res, next) => {
 router.patch("/:id/tasks/:taskId", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateTaskSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -728,7 +728,7 @@ router.patch("/:id/tasks/:taskId", requireIfMatch, async (req, res, next) => {
 
 router.delete("/:id/tasks/:taskId", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -757,7 +757,7 @@ router.delete("/:id/tasks/:taskId", async (req, res, next) => {
 
 router.get("/:id/tasks/comments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "read");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -794,7 +794,7 @@ router.get("/:id/tasks/comments", async (req, res, next) => {
 router.post("/:id/tasks/:taskId/comments", async (req, res, next) => {
   try {
     const parsed = addTaskCommentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -829,7 +829,7 @@ router.post("/:id/tasks/:taskId/comments", async (req, res, next) => {
 
 router.get("/:id/updates", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "read");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -850,7 +850,7 @@ router.get("/:id/updates", async (req, res, next) => {
 router.post("/:id/updates", async (req, res, next) => {
   try {
     const parsed = addProjectUpdateSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -887,7 +887,7 @@ router.post("/:id/updates", async (req, res, next) => {
 router.patch("/:id/updates/:updateId", async (req, res, next) => {
   try {
     const parsed = updateProjectUpdateSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -925,7 +925,7 @@ router.patch("/:id/updates/:updateId", async (req, res, next) => {
 
 router.delete("/:id/updates/:updateId", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -955,7 +955,7 @@ router.delete("/:id/updates/:updateId", async (req, res, next) => {
 router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) => {
   try {
     const parsed = updateTaskCommentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -992,7 +992,7 @@ router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =>
 
 router.delete("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -1021,7 +1021,7 @@ router.delete("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =
 
 router.get("/:id/tasks/read-states", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "read");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -1055,7 +1055,7 @@ router.get("/:id/tasks/read-states", async (req, res, next) => {
 router.post("/:id/tasks/reorder", async (req, res, next) => {
   try {
     const parsed = reorderTasksSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -1087,7 +1087,7 @@ router.post("/:id/tasks/reorder", async (req, res, next) => {
 router.post("/:id/tasks/:taskId/read", async (req, res, next) => {
   try {
     const parsed = markTaskReadSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -1122,7 +1122,7 @@ router.post("/:id/tasks/:taskId/read", async (req, res, next) => {
 router.post("/:id/tasks/:taskId/approve", async (req, res, next) => {
   try {
     const parsed = approveTaskSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
@@ -1154,7 +1154,7 @@ router.post("/:id/tasks/:taskId/approve", async (req, res, next) => {
 router.post("/:id/tasks/:taskId/portal-comment", async (req, res, next) => {
   try {
     const parsed = portalTaskCommentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
       req.params.id,
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,

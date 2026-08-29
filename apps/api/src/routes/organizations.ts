@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -152,7 +152,7 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
 
 router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "organizations", "read");
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -236,7 +236,7 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
 
 router.get("/:id", requireOrgAccessByParam, async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "organizations", "read");
     const { data, error } = await supabase
       .from("organizations")
       .select("*")
@@ -252,7 +252,7 @@ router.get("/:id", requireOrgAccessByParam, async (req, res, next) => {
 
 router.get("/:id/detail", requireOrgAccessByParam, async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "organizations", "read");
 
     const { data: org, error: orgError } = await supabase
       .from("organizations")
@@ -356,7 +356,7 @@ router.patch(
   async (req, res, next) => {
   try {
     const parsed = updateOrganizationSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "organizations", "write");
 
     const { data: current, error: fetchError } = await supabase
       .from("organizations")
@@ -416,7 +416,7 @@ router.delete(
   requirePermission("organizations", "manage"),
   async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "organizations", "write");
     const { error } = await supabase.from("organizations").delete().eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -436,7 +436,7 @@ router.delete(
 
 router.get("/:id/domains", requireOrgAccessByParam, async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "organizations", "read");
     const { data, error } = await supabase
       .from("organization_domains")
       .select("*")
@@ -550,7 +550,7 @@ router.post(
       const file = req.file;
       if (!file) throw new AppError("VALIDATION", "Logo file is required", 400);
 
-      const supabase = getSupabaseAdmin();
+      const supabase = getScopedClient(req, "organizations", "write");
       // Mimetype + filename extension are allowlisted, and the stored extension
       // comes from the validated mimetype (never from originalname).
       const { extension, mimetype } = resolveImageUpload(file, "Logo");
