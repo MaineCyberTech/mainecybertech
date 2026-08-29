@@ -22,7 +22,9 @@ export default async function PortalKnowledgeBasePage() {
   try {
     if (orgId) {
       const r = await api.knowledgeBase.list({ organizationId: orgId });
-      items = r.items as unknown as typeof items;
+      items = Array.isArray(r?.items)
+        ? (r.items as unknown as Array<Record<string, unknown>>)
+        : [];
     }
   } catch {}
 
@@ -47,9 +49,7 @@ export default async function PortalKnowledgeBasePage() {
           </p>
 
           <form
-            action={async (formData) => {
-              await createArticle(formData);
-            }}
+            action={createArticle}
             className="space-y-3 rounded-lg border border-white/10 bg-cyber-base/60 p-4"
             aria-label="Create knowledge base article"
           >
