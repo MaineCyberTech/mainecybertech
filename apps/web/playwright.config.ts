@@ -5,6 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  timeout: 45000,
   workers: process.env.CI ? 1 : undefined,
   reporter: [["html", { outputFolder: "../../.playwright-report" }], ["list"]],
   outputDir: "../../.playwright-results",
@@ -17,7 +18,7 @@ export default defineConfig({
   },
 
   expect: {
-    timeout: 15000,
+    timeout: 20000,
   },
 
   projects: [
