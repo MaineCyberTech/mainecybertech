@@ -277,18 +277,21 @@ Remaining to make RLS *live*:
 ### Static readiness verification (2026-08-29)
 Cross-referenced every gated module's tables (from `routes/*.ts` `.from("…")`) against `docs/RLS-coverage-matrix.md` risk sets:
 
-- **service_role-ONLY tables** (`impersonation_log`, `store_leads`, `store_proposal_drafts`, `store_visual_assets`) — a user-scoped client returns 0 rows / cannot write. Global/admin sinks; correctly excluded (stay on `withServiceRole`/admin).
-- **OPEN-policy tables** (`permissions`, `role_permissions`, `roles`, `store_categories`, `store_promotions`, `store_quotes`) — `using (true)`, so a user-scoped client returns ALL rows (leak) and could allow cross-tenant writes.
+- **service_role-ONLY tables** (`impersonation_log`, `store_leads`, `store_proposal_drafts`, `store_visual_assets`) — a user-scoped client returns 0 rows / cannot write. Global/admin sinks; correctly excluded (stay on `withServiceRole`/admin). None are touched by any gated module.
+- **"OPEN"-policy tables** (`permissions`, `role_permissions`, `roles`, `store_categories`, `store_promotions`, `store_quotes`) — all SIX are **global reference/catalog tables with no `organization_id`**. Their `using (true)` / `to anon, authenticated` policies are intentional (global RBAC definitions + public storefront catalog) and hold **no tenant data to leak**. `is_org_member` does NOT apply (no org column) — do NOT add it. `store_quotes`' anon *write* was already removed in `5302132` (now `anon_insert` + `service_role_all`).
 
 Result across 44 gated modules:
 
-- **40 SAFE to enable** (no service_role-ONLY or OPEN-policy tables): `ai, api-keys, approvals, assets, auth, batch, billing, cab, client-portal, compliance, device-profiles, dmarc-coach, documents, domain-monitors, edu-automation, field-services, file-requests, findings, governance, insurance-binder, knowledge-base, license-optimizer, network-diagrams, notification-preferences, notifications, proposals, qbr, search-portal, security-ops, security-suite, service-catalog, sla, staging, status-page, tickets, training-hub, uptime-monitor, vendors, webhook-management`.
-- **4 BLOCKED** (read global `roles`/`permissions`/`role_permissions` OPEN tables):
-  - `roles` — *manages* RBAC; **must never be user-scoped** (would let any user mutate roles). Keep on admin.
-  - `memberships`, `organizations`, `projects` — only *read* global role/permission reference data (not tenant data); enabling READS is likely safe, but confirm no writes and that the OPEN policy is global-by-design before enabling.
+- **All 44 SAFE to enable for READS.** The 4 previously-flagged modules are false positives:
+  - `roles` — *manages* RBAC and is **already pinned to the admin client** (never gated); correct.
+  - `memberships`, `organizations`, `projects` — only *read* the global `roles`/`permissions`/`role_permissions` reference data; safe for reads.
+  - `store` tables are global catalog (no org); reads are safe. (`store.ts` itself is currently fully on the admin client — its public storefront handlers use `_req` — so it is not in the gated set; gating its admin CRUD reads is optional and safe whenever desired.)
+- **Writes caveat:** enabling `RLS_WRITES_ENABLED` per module requires the module's writes to be user-performed *and* the table to have a member-scoped write policy. Tables whose writes are `service_role`-only (e.g. `store_products`/`store_categories` admin CRUD, most `admin-only DELETE` tables per matrix §5) must stay on the admin client — leave `RLS_WRITES_ENABLED` unset for those modules.
 
 **Enabling procedure (operator, not code):**
 1. Set `RLS_READS_ENABLED=<module>` (and `RLS_WRITES_ENABLED=<module>` for writes) in the deployment env (droplet `.env`; flags documented in `apps/api/.env.example`, read by `getScopedClient` from `process.env`).
 2. Staging first; watch for 403s / empty results / unexpected cross-tenant rows. Roll back by clearing the flag (zero code change).
 3. Caveat: even "safe" modules may have **admin-only DELETE** policies (per matrix §5) that will 403 on delete once writes are enabled — test DELETE paths in staging.
 4. Repeat per module; only then drop the admin fallback.
+
+> If per-org (tenant-scoped) store catalog data is ever desired, that is a **schema change** (add `organization_id` + backfill + per-org policies on `store_*`), not an `is_org_member` tweak — track separately.
