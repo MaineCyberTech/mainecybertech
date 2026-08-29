@@ -109,7 +109,8 @@ jobs:
           JWT_SECRET: ${{ secrets.E2E_JWT_SECRET || 'e2e-test-secret-32-characters-long' }}
 
       - name: Build web app
-        run: echo "dev mode: skipping production build (next dev compiles on demand)"
+        run: |
+          echo "dev mode: skipping production build (next dev compiles on demand)"
 
       - name: Start web app (dev mode)
         run: |
