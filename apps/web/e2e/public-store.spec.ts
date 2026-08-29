@@ -1,5 +1,25 @@
 import { test, expect } from "./fixtures";
 
+test.beforeEach(async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (err) => errors.push(`pageerror: ${err.message}`));
+  page.on("console", (msg) => {
+    if (msg.type() === "error") errors.push(`console.error: ${msg.text()}`);
+  });
+  page.on("response", (resp) => {
+    if (resp.status() >= 500) errors.push(`HTTP ${resp.status()} ${resp.url()}`);
+  });
+  (page as unknown as { __diag?: string[] }).__diag = errors;
+});
+
+test.afterEach(async ({ page }) => {
+  const errors = (page as unknown as { __diag?: string[] }).__diag ?? [];
+  if (errors.length) {
+    // eslint-disable-next-line no-console
+    console.warn(`[public-store] captured diagnostics: ${errors.join(" | ")}`);
+  }
+});
+
 test.describe("public store homepage", () => {
   test("renders hero section with heading", async ({ page }) => {
     await page.goto("/store");

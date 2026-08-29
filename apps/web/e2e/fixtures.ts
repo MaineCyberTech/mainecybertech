@@ -42,7 +42,9 @@ export class AdminPage {
  * should pin the org explicitly.
  */
 export async function setActiveOrg(page: Page, organizationId: string) {
-  await page.goto("/login");
+  // Set the active-org cookie directly on the context. Navigating to /login
+  // first is unnecessary (and the middleware would just redirect an
+  // authenticated session to /portal/dashboard), so we avoid that dance.
   await page.context().addCookies([
     {
       name: "mct_active_org",
