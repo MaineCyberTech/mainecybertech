@@ -86,11 +86,24 @@ export function createApp(): Express {
   app.set("trust proxy", 1);
 
   app.use(helmet());
-  const allowedOrigins =
-    env.CORS_ORIGIN === "*" ? "*" : env.CORS_ORIGIN.split(",").map((s) => s.trim());
+  const allowedOriginsList = env.CORS_ORIGIN
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   app.use(
     cors({
-      origin: allowedOrigins,
+      // For credentialed requests the browser forbids the wildcard "*", so we
+      // reflect the request's Origin instead of echoing "*". When CORS_ORIGIN
+      // is "*" we reflect any origin (intended allow-all semantics, now
+      // functional with credentials); otherwise only the configured origins
+      // are reflected. Requests without an Origin (server-to-server,
+      // same-origin) are allowed as-is.
+      origin: (origin, cb) => {
+        if (!origin) return cb(null, true);
+        if (env.CORS_ORIGIN === "*") return cb(null, true);
+        if (allowedOriginsList.includes(origin)) return cb(null, true);
+        return cb(null, false);
+      },
       credentials: true,
     }),
   );
