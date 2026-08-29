@@ -31,10 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
-      fail-fast: false
       matrix:
         node-version: [20.x]
-        shard: [1, 2, 3]
 
     steps:
       - name: Checkout
@@ -109,23 +107,22 @@ jobs:
           JWT_SECRET: ${{ secrets.E2E_JWT_SECRET || 'e2e-test-secret-32-characters-long' }}
 
       - name: Build web app
-        run: |
-          echo "dev mode: skipping production build (next dev compiles on demand)"
+        run: pnpm --filter=web build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:4000
+          NEXT_TELEMETRY_DISABLED: 1
 
-      - name: Start web app (dev mode)
+      - name: Start web app
         run: |
-          pnpm --filter=web dev > web.log 2>&1 &
-          # Give the dev server time to boot and precompile the root route.
-          sleep 20
-          curl --retry 15 --retry-delay 5 --retry-connrefused --max-time 90 http://localhost:3000 || echo "web readiness check timed out; tests will retry"
-          echo "--- web.log (tail) ---"; tail -n 40 web.log
+          pnpm --filter=web start &
+          sleep 5
+          curl --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000
         env:
           NEXT_PUBLIC_API_URL: http://localhost:4000
           PORT: 3000
-          NEXT_TELEMETRY_DISABLED: 1
 
-      - name: Run Playwright tests (shard ${{ matrix.shard }}/3)
-        run: pnpm --filter=web e2e -- --shard=${{ matrix.shard }}/3
+      - name: Run Playwright tests
+        run: pnpm --filter=web e2e
         env:
           E2E_BASE_URL: http://localhost:3000
           E2E_ADMIN_EMAIL: superadmin.real@mainecybertech.local
@@ -135,6 +132,6 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: playwright-report-shard-${{ matrix.shard }}
+          name: playwright-report
           path: apps/web/playwright-report/
           retention-days: 7
