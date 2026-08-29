@@ -7,6 +7,10 @@ jest.mock("../services/impersonation", () => ({
   logImpersonation: jest.fn().mockResolvedValue(undefined),
 }));
 
+jest.mock("../lib/logger", () => ({
+  logger: { error: jest.fn(), info: jest.fn(), warn: jest.fn() },
+}));
+
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(() => ({ __admin: true })),
 }));
