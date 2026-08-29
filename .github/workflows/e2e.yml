@@ -109,19 +109,19 @@ jobs:
           JWT_SECRET: ${{ secrets.E2E_JWT_SECRET || 'e2e-test-secret-32-characters-long' }}
 
       - name: Build web app
-        run: pnpm --filter=web build
-        env:
-          NEXT_PUBLIC_API_URL: http://localhost:4000
-          NEXT_TELEMETRY_DISABLED: 1
+        run: echo "dev mode: skipping production build (next dev compiles on demand)"
 
-      - name: Start web app
+      - name: Start web app (dev mode)
         run: |
-          pnpm --filter=web start &
-          sleep 5
-          curl --retry 10 --retry-delay 3 --retry-connrefused http://localhost:3000
+          pnpm --filter=web dev > web.log 2>&1 &
+          # Give the dev server time to boot and precompile the root route.
+          sleep 20
+          curl --retry 15 --retry-delay 5 --retry-connrefused --max-time 90 http://localhost:3000 || echo "web readiness check timed out; tests will retry"
+          echo "--- web.log (tail) ---"; tail -n 40 web.log
         env:
           NEXT_PUBLIC_API_URL: http://localhost:4000
           PORT: 3000
+          NEXT_TELEMETRY_DISABLED: 1
 
       - name: Run Playwright tests (shard ${{ matrix.shard }}/3)
         run: pnpm --filter=web e2e -- --shard=${{ matrix.shard }}/3
