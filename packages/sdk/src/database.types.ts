@@ -1093,6 +1093,69 @@ export type Database = {
         Relationships: [
           { foreignKeyName: "client_runbooks_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
+      };      compliance_controls: {
+        Row: {
+          created_at: string;
+          due_at: string | null;
+          framework_id: string;
+          id: string;
+          notes: string | null;
+          organization_id: string;
+          owner: string | null;
+          status: string;
+          title: string;
+        };
+        Insert: {
+          framework_id: string;
+          organization_id: string;
+          title: string;
+          created_at?: string | null;
+          due_at?: string | null;
+          id?: string | null;
+          notes?: string | null;
+          owner?: string | null;
+          status?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          due_at?: string | null;
+          framework_id?: string | null;
+          id?: string | null;
+          notes?: string | null;
+          organization_id?: string | null;
+          owner?: string | null;
+          status?: string | null;
+          title?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "compliance_controls_framework_id_fkey", columns: ["framework_id"], isOneToOne: false, referencedRelation: "compliance_frameworks", referencedColumns: ["id"] },
+          { foreignKeyName: "compliance_controls_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
+      };      compliance_frameworks: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          name: string;
+          organization_id: string;
+        };
+        Insert: {
+          name: string;
+          organization_id: string;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string | null;
+          name?: string | null;
+          organization_id?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "compliance_frameworks_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
       };      compliance_readiness: {
         Row: {
           assessed_at: string | null;
@@ -1231,41 +1294,35 @@ export type Database = {
       };      device_profiles: {
         Row: {
           created_at: string;
-          created_by: string | null;
-          description: string | null;
-          device_type: string | null;
           id: string;
+          manufacturer: string | null;
+          model: string | null;
+          name: string;
           organization_id: string;
-          os: string | null;
-          profile_name: string;
-          settings: Json;
-          status: string;
+          specs: Json;
+          type: string | null;
           updated_at: string;
         };
         Insert: {
+          name: string;
           organization_id: string;
-          profile_name: string;
           created_at?: string | null;
-          created_by?: string | null;
-          description?: string | null;
-          device_type?: string | null;
           id?: string | null;
-          os?: string | null;
-          settings?: Json | null;
-          status?: string | null;
+          manufacturer?: string | null;
+          model?: string | null;
+          specs?: Json | null;
+          type?: string | null;
           updated_at?: string | null;
         };
         Update: {
           created_at?: string | null;
-          created_by?: string | null;
-          description?: string | null;
-          device_type?: string | null;
           id?: string | null;
+          manufacturer?: string | null;
+          model?: string | null;
+          name?: string | null;
           organization_id?: string | null;
-          os?: string | null;
-          profile_name?: string | null;
-          settings?: Json | null;
-          status?: string | null;
+          specs?: Json | null;
+          type?: string | null;
           updated_at?: string | null;
         };
         Relationships: [
@@ -2074,6 +2131,43 @@ export type Database = {
         Relationships: [
           { foreignKeyName: "hardware_staging_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
+      };      hardware_staging_checks: {
+        Row: {
+          asset_tag: string | null;
+          assigned_to: string | null;
+          checklist: Json;
+          created_at: string;
+          device_name: string;
+          id: string;
+          organization_id: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          device_name: string;
+          organization_id: string;
+          asset_tag?: string | null;
+          assigned_to?: string | null;
+          checklist?: Json | null;
+          created_at?: string | null;
+          id?: string | null;
+          status?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          asset_tag?: string | null;
+          assigned_to?: string | null;
+          checklist?: Json | null;
+          created_at?: string | null;
+          device_name?: string | null;
+          id?: string | null;
+          organization_id?: string | null;
+          status?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "hardware_staging_checks_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
       };      identity_verifications: {
         Row: {
           action_authorized: string | null;
@@ -2548,6 +2642,46 @@ export type Database = {
         Relationships: [
           { foreignKeyName: "knowledge_articles_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
+      };      knowledge_base_articles: {
+        Row: {
+          body: string;
+          category: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          is_published: boolean;
+          organization_id: string;
+          tags: string[] | null;
+          title: string;
+          updated_at: string;
+        };
+        Insert: {
+          body: string;
+          organization_id: string;
+          title: string;
+          category?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string | null;
+          is_published?: boolean | null;
+          tags?: string[] | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          body?: string | null;
+          category?: string | null;
+          created_at?: string | null;
+          created_by?: string | null;
+          id?: string | null;
+          is_published?: boolean | null;
+          organization_id?: string | null;
+          tags?: string[] | null;
+          title?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "knowledge_base_articles_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
       };      license_allocations: {
         Row: {
           billing_cycle: string;
@@ -2915,52 +3049,34 @@ export type Database = {
         ];
       };      network_diagrams: {
         Row: {
-          camera_zones: number;
           created_at: string;
           created_by: string | null;
-          device_count: number;
-          diagram_data: Json;
+          description: string | null;
+          diagram: Json;
           id: string;
-          notes: string | null;
+          name: string;
           organization_id: string;
-          site_name: string;
-          status: string;
           updated_at: string;
-          vlan_count: number;
-          wan_count: number;
-          wireless_zones: number;
         };
         Insert: {
+          name: string;
           organization_id: string;
-          site_name: string;
-          camera_zones?: number | null;
           created_at?: string | null;
           created_by?: string | null;
-          device_count?: number | null;
-          diagram_data?: Json | null;
+          description?: string | null;
+          diagram?: Json | null;
           id?: string | null;
-          notes?: string | null;
-          status?: string | null;
           updated_at?: string | null;
-          vlan_count?: number | null;
-          wan_count?: number | null;
-          wireless_zones?: number | null;
         };
         Update: {
-          camera_zones?: number | null;
           created_at?: string | null;
           created_by?: string | null;
-          device_count?: number | null;
-          diagram_data?: Json | null;
+          description?: string | null;
+          diagram?: Json | null;
           id?: string | null;
-          notes?: string | null;
+          name?: string | null;
           organization_id?: string | null;
-          site_name?: string | null;
-          status?: string | null;
           updated_at?: string | null;
-          vlan_count?: number | null;
-          wan_count?: number | null;
-          wireless_zones?: number | null;
         };
         Relationships: [
           { foreignKeyName: "network_diagrams_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
@@ -5253,6 +5369,7 @@ export type Database = {
           description: string;
           id: string | null;
           name: string;
+          organization_id: string | null;
           product_ids: string[];
           slug: string;
           updated_at: string;
@@ -5264,6 +5381,7 @@ export type Database = {
           created_at?: string | null;
           description?: string | null;
           id?: string | null;
+          organization_id?: string | null;
           product_ids?: string[] | null;
           updated_at?: string | null;
         };
@@ -5273,11 +5391,13 @@ export type Database = {
           description?: string | null;
           id?: string | null;
           name?: string | null;
+          organization_id?: string | null;
           product_ids?: string[] | null;
           slug?: string | null;
           updated_at?: string | null;
         };
         Relationships: [
+          { foreignKeyName: "store_categories_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };      store_leads: {
         Row: {
@@ -5329,6 +5449,7 @@ export type Database = {
           marketing_copy: string;
           marketing_headline: string;
           name: string;
+          organization_id: string | null;
           price_range: string;
           pricing_model: string;
           purchase_mode: string;
@@ -5350,6 +5471,7 @@ export type Database = {
           id?: string | null;
           marketing_copy?: string | null;
           marketing_headline?: string | null;
+          organization_id?: string | null;
           price_range?: string | null;
           pricing_model?: string | null;
           purchase_mode?: string | null;
@@ -5369,6 +5491,7 @@ export type Database = {
           marketing_copy?: string | null;
           marketing_headline?: string | null;
           name?: string | null;
+          organization_id?: string | null;
           price_range?: string | null;
           pricing_model?: string | null;
           purchase_mode?: string | null;
@@ -5381,6 +5504,7 @@ export type Database = {
         };
         Relationships: [
           { foreignKeyName: "store_products_category_id_fkey", columns: ["category_id"], isOneToOne: false, referencedRelation: "store_categories", referencedColumns: ["id"] },
+          { foreignKeyName: "store_products_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };      store_promotions: {
         Row: {
@@ -5391,6 +5515,7 @@ export type Database = {
           end_date: string | null;
           id: string;
           name: string;
+          organization_id: string | null;
           promo_type: string;
           start_date: string | null;
           status: string;
@@ -5405,6 +5530,7 @@ export type Database = {
           eligibility_targets?: string[] | null;
           end_date?: string | null;
           id?: string | null;
+          organization_id?: string | null;
           promo_type?: string | null;
           start_date?: string | null;
           status?: string | null;
@@ -5419,6 +5545,7 @@ export type Database = {
           end_date?: string | null;
           id?: string | null;
           name?: string | null;
+          organization_id?: string | null;
           promo_type?: string | null;
           start_date?: string | null;
           status?: string | null;
@@ -5426,6 +5553,7 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
+          { foreignKeyName: "store_promotions_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };      store_proposal_drafts: {
         Row: {
@@ -5504,6 +5632,7 @@ export type Database = {
           items: Json;
           name: string;
           notes: string;
+          organization_id: string | null;
           phone: string | null;
           status: string;
           updated_at: string;
@@ -5515,6 +5644,7 @@ export type Database = {
           id?: string | null;
           items?: Json | null;
           notes?: string | null;
+          organization_id?: string | null;
           phone?: string | null;
           status?: string | null;
           updated_at?: string | null;
@@ -5526,11 +5656,13 @@ export type Database = {
           items?: Json | null;
           name?: string | null;
           notes?: string | null;
+          organization_id?: string | null;
           phone?: string | null;
           status?: string | null;
           updated_at?: string | null;
         };
         Relationships: [
+          { foreignKeyName: "store_quotes_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };      store_visual_assets: {
         Row: {
