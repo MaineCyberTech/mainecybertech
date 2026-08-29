@@ -46,6 +46,11 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 | Worker  | 74            | 8      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
 
+### Known Debt (2026-08-29)
+
+- **`portal-knowledge-base` E2E failure — FIXED & validated:** the 3 KB E2E tests now pass in prod mode. Root cause was the inline server-action wrapper `<form action={async (fd) => await createArticle(fd)}>` breaking under Next's production build; fixed via `action={createArticle}` + `void` return + `items` guard (commit `688f9fa`).
+- **E2E has known run-to-run flakiness:** data-dependent tests (notification bell, project/user/document detail, admin-documents modal) fail intermittently due to CI API/Supabase contention — identical seeds, yet the same test passes in one shard and fails in another. This is **not** a product regression and **not** caused by the CORS `*`→`http://localhost:3000` change. The E2E gate is **prod-only** (`deploy-do.yml` `if: name == 'prod'`), so prod deploy is currently blocked by this flakiness while dev (`develop`) deploy is unaffected. Hardening Playwright timeouts / `waitForLoadState('networkidle')` is the likely fix when unblocking prod.
+
 ### Test patterns
 
 - **Mock builder:** `createMockBuilder` — plain object with chain methods + `then()` for `await`; includes `filter`, `maybeSingle`, `rpc`, `upsert`
