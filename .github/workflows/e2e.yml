@@ -1,4 +1,4 @@
-name: E2E
+﻿name: E2E
 
 on:
   workflow_dispatch:
@@ -72,11 +72,11 @@ jobs:
         run: |
           API_ENV="apps/api/.env.local"
           # supabase status --output json returns UPPERCASE keys (API_URL,
-          # ANON_KEY, SERVICE_ROLE_KEY) — lowercase jq selectors yield null.
+          # ANON_KEY, SERVICE_ROLE_KEY) â€” lowercase jq selectors yield null.
           echo "SUPABASE_URL=$(supabase status --output json | jq -r '.API_URL')" > $API_ENV
           echo "SUPABASE_ANON_KEY=$(supabase status --output json | jq -r '.ANON_KEY')" >> $API_ENV
           echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status --output json | jq -r '.SERVICE_ROLE_KEY')" >> $API_ENV
-          echo "CORS_ORIGIN=*" >> $API_ENV
+          echo "CORS_ORIGIN=http://localhost:3000" >> $API_ENV
           echo "LOG_LEVEL=silent" >> $API_ENV
           echo "JWT_SECRET=e2e-test-secret-32-characters-long" >> $API_ENV
           # Also write root .env.local for dotenv.config({ path: ".env.local" }) in main.ts
@@ -102,7 +102,7 @@ jobs:
           curl --retry 10 --retry-delay 2 --retry-connrefused http://localhost:4000/health
         env:
           NODE_ENV: production
-          CORS_ORIGIN: "*"
+          CORS_ORIGIN: "http://localhost:3000"
           LOG_LEVEL: silent
           JWT_SECRET: ${{ secrets.E2E_JWT_SECRET || 'e2e-test-secret-32-characters-long' }}
 
