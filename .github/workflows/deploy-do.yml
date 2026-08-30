@@ -106,10 +106,13 @@ jobs:
         id: tf
         env:
           DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
-          DO_SSH_FINGERPRINT: ${{ secrets.DO_SSH_FINGERPRINT }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          CLOUDFLARE_ZONE_ID_US: ${{ secrets.CLOUDFLARE_ZONE_ID_US }}
+          TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
+          TF_VAR_ssh_fingerprint: ${{ secrets.DO_SSH_FINGERPRINT }}
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_cloudflare_zone_id_us: ${{ secrets.CLOUDFLARE_ZONE_ID_US }}
+          TF_VAR_droplet_size: "s-1vcpu-512mb-10gb"
+          TF_VAR_environment: ${{ needs.setup.outputs.name }}
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         working-directory: infra/terraform/digitalocean
@@ -118,20 +121,7 @@ jobs:
           IP=""
           if [ -n "$AWS_ACCESS_KEY_ID" ]; then
             echo "Refreshing Terraform state for $ENV (corrects droplet_ip to the live droplet)..."
-            cat > "$ENV.tfvars" <<EOF
-            do_token              = "${DO_API_TOKEN}"
-            ssh_fingerprint       = "${DO_SSH_FINGERPRINT}"
-            cloudflare_api_token  = "${CLOUDFLARE_API_TOKEN}"
-            cloudflare_zone_id    = "${CLOUDFLARE_ZONE_ID}"
-            cloudflare_zone_id_us = "${CLOUDFLARE_ZONE_ID_US}"
-            droplet_size          = "s-1vcpu-512mb-10gb"
-            environment           = "$ENV"
-            EOF
             terraform init -input=false -backend-config=env/backend.$ENV.hcl
-            # apply -refresh-only syncs state to the live resources WITHOUT making
-            # any changes: if the droplet exists its IP is corrected; if it was
-            # recreated (state ID no longer matches) this errors and we fall
-            # back to the DO API below.
             terraform apply -refresh-only -input=false -auto-approve 2>&1 | tail -5 || echo "terraform refresh failed; falling back to DO API"
             IP=$(terraform output -raw droplet_ip 2>/dev/null || true)
           fi
