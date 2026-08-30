@@ -93,6 +93,7 @@ jobs:
     needs: setup
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: ${{ needs.setup.outputs.name }}
     outputs:
       droplet_ip: ${{ steps.tf.outputs.droplet_ip }}
     steps:
