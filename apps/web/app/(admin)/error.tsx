@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
+import { logoutAction } from "@/lib/auth/auth-actions";
 import { clientLogger } from "@/lib/client-logger";
 
 export default function AdminError({
@@ -40,12 +42,35 @@ export default function AdminError({
       <p className="mt-2 text-sm text-slate-400">
         An unexpected error occurred in the admin panel. Please try again.
       </p>
-      <button
-        onClick={reset}
-        className="mt-6 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500"
-      >
-        Try again
-      </button>
+      <div className="mt-6 flex justify-center gap-3">
+        <button
+          onClick={reset}
+          className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500"
+        >
+          Try again
+        </button>
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="rounded-lg border border-white/15 bg-slate-800 px-5 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
+          >
+            Log out
+          </button>
+        </form>
+        <Link
+          href="/login"
+          className="rounded-lg border border-white/15 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+        >
+          Back to login
+        </Link>
+      </div>
+      <details className="mx-auto mt-8 max-w-xl text-left text-sm text-slate-400">
+        <summary className="cursor-pointer">Error details</summary>
+        <pre className="mt-3 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-900/60 p-3">
+          {error.message}
+          {error.digest && `\nDigest: ${error.digest}`}
+        </pre>
+      </details>
     </div>
   );
 }
