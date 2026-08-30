@@ -86,29 +86,37 @@ jobs:
           echo "test_accounts_enabled=$TEST_ACCOUNTS_ENABLED" >> $GITHUB_OUTPUT
 
   resolve-ip:
+    # Resolve the droplet IP from Terraform state (single source of truth),
+    # instead of querying the DigitalOcean API directly. The per-environment
+    # backend config (env/backend.<env>.hcl) isolates dev/prod state in
+    # separate Spaces buckets/keys so a prod apply can never clobber dev.
     needs: setup
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     outputs:
-      droplet_ip: ${{ steps.ip.outputs.droplet_ip }}
+      droplet_ip: ${{ steps.tf.outputs.droplet_ip }}
     steps:
-      - name: Resolve droplet IP
-        id: ip
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: 1.9
+      - name: Resolve droplet IP from Terraform state
+        id: tf
         env:
-          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+        working-directory: infra/terraform/digitalocean
         run: |
           set -e
-          DROPLET_NAME="${{ needs.setup.outputs.droplet_name }}"
-          ALL_DROPLETS=$(curl -sf -H "Authorization: Bearer $DO_API_TOKEN" \
-            "https://api.digitalocean.com/v2/droplets?page=1&per_page=200")
-          IP=$(echo "$ALL_DROPLETS" | jq -r --arg name "$DROPLET_NAME" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
+          terraform init -input=false -backend-config=env/backend.${{ needs.setup.outputs.name }}.hcl
+          IP=$(terraform output -raw droplet_ip)
           if [ -z "$IP" ]; then
-            echo "ERROR: No $DROPLET_NAME droplet found"
-            echo "$ALL_DROPLETS" | jq '[.droplets[] | {name, ip: .networks.v4[0].ip_address, created: .created_at}]'
+            echo "ERROR: terraform output droplet_ip is empty for ${{ needs.setup.outputs.name }}"
             exit 1
           fi
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
-          echo "Using droplet IP: $IP"
+          echo "Using droplet IP from Terraform state (${{ needs.setup.outputs.name }}): $IP"
 
   build-api:
     needs: [setup]
