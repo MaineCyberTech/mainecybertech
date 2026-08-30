@@ -1,0 +1,47 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "recommendationTypes": [
+    "frequently_paired",
+    "good_next_step",
+    "upgrade_path",
+    "monthly_care_match",
+    "best_bundle_for_this",
+    "seasonal_campaign_match",
+    "sensitive_work_consult_required",
+    "dependency_required",
+    "dependency_recommended"
+  ],
+  "examples": [
+    {
+      "sourceProduct": "business_email_safety_check",
+      "recommend": [
+        "mfa_setup_session",
+        "m365_secure_bundle",
+        "cyber_insurance_readiness_pack",
+        "mct_secure_care"
+      ]
+    },
+    {
+      "sourceProduct": "wifi_coverage_check",
+      "recommend": [
+        "business_wifi_setup",
+        "guest_wifi_setup",
+        "business_network_foundation",
+        "unifi_monthly_management"
+      ]
+    },
+    {
+      "sourceProduct": "backup_restore_test",
+      "recommend": [
+        "backup_readiness_check",
+        "backup_monitoring_plan",
+        "small_business_resilience_pack"
+      ]
+    }
+  ],
+  "adminRules": [
+    "Every recommendation target must resolve",
+    "Sensitive work recommendations should show consult-required badge",
+    "Dependencies can block quote submission or show warning based on severity"
+  ]
+}

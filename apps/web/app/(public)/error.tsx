@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
+import { logoutAction } from "@/lib/auth/auth-actions";
 import { clientLogger } from "@/lib/client-logger";
 
 export default function PublicError({
@@ -11,14 +13,11 @@ export default function PublicError({
   reset: () => void;
 }) {
   useEffect(() => {
-    clientLogger.errorWithContext(
-      { area: "public", digest: error.digest },
-      error,
-    );
+    clientLogger.errorWithContext({ area: "public", digest: error.digest }, error);
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center bg-[#0A1118] px-4">
+    <div className="flex min-h-[60vh] items-center justify-center bg-cyber-base px-4">
       <div className="max-w-md text-center">
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
           <svg
@@ -35,18 +34,39 @@ export default function PublicError({
             />
           </svg>
         </div>
-        <h2 className="text-xl font-semibold text-slate-100">
-          Something went wrong
-        </h2>
-        <p className="mt-2 text-sm text-slate-400">
-          We encountered an unexpected error. Please try again.
-        </p>
+        <h2 className="text-xl font-semibold text-slate-100">Something went wrong</h2>
+      <p className="mt-2 text-sm text-slate-400">
+        We encountered an unexpected error. Please try again.
+      </p>
+      <div className="mt-6 flex justify-center gap-3">
         <button
           onClick={reset}
-          className="mt-6 rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500"
+          className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500"
         >
           Try again
         </button>
+        <form action={logoutAction}>
+          <button
+            type="submit"
+            className="rounded-lg border border-white/15 bg-slate-800 px-5 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
+          >
+            Log out
+          </button>
+        </form>
+        <Link
+          href="/login"
+          className="rounded-lg border border-white/15 px-5 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800"
+        >
+          Back to login
+        </Link>
+      </div>
+      <details className="mx-auto mt-8 max-w-xl text-left text-sm text-slate-400">
+        <summary className="cursor-pointer">Error details</summary>
+        <pre className="mt-3 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-slate-900/60 p-3">
+          {error.message}
+          {error.digest && `\nDigest: ${error.digest}`}
+        </pre>
+      </details>
       </div>
     </div>
   );

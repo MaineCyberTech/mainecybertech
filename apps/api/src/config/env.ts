@@ -1,19 +1,15 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "production", "test"])
-    .default("development"),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   API_PORT: z.coerce.number().default(4000),
   SUPABASE_URL: z.string().url(),
   SUPABASE_ANON_KEY: z.string().min(1),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
   APP_BASE_URL: z.string().url().default("http://localhost:3000"),
-  LOG_LEVEL: z
-    .enum(["debug", "info", "warn", "error", "silent"])
-    .default("info"),
-  JWT_SECRET: z.string().min(1),
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().optional(),
   SMTP_USER: z.string().optional(),
@@ -30,9 +26,34 @@ const envSchema = z.object({
   JSM_SERVICEDESK_ID: z.string().optional(),
   JSM_REQUEST_TYPE_ID: z.string().optional(),
   REDIS_URL: z.string().url().optional(),
+  TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),
+  REDIS_PASSWORD: z.string().optional(),
+  JIRA_WEBHOOK_SECRET: z.string().optional(),
+  JSM_WEBHOOK_SECRET: z.string().optional(),
+  M365_WEBHOOK_SECRET: z.string().optional(),
+  M365_CLIENT_STATE: z.string().optional(),
+  TURNSTILE_SECRET_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
+
+/**
+ * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
+ * does not already carry credentials. Used by ioredis / node-redis clients.
+ */
+export function resolveRedisUrl(url: string, password?: string): string {
+  if (!password) return url;
+  try {
+    const parsed = new URL(url);
+    if (!parsed.username && !parsed.password) {
+      parsed.password = password;
+      return parsed.toString();
+    }
+  } catch {
+    // Malformed URL — leave as-is, the client will surface the error.
+  }
+  return url;
+}
 
 let _env: Env | null = null;
 
@@ -40,11 +61,9 @@ export function getEnv(): Env {
   if (!_env) {
     const result = envSchema.safeParse(process.env);
     if (!result.success) {
-      console.error(
-        "Invalid environment variables:",
-        result.error.flatten().fieldErrors,
+      throw new Error(
+        `Invalid environment variables: ${JSON.stringify(result.error.flatten().fieldErrors)}`,
       );
-      process.exit(1);
     }
     _env = result.data;
   }

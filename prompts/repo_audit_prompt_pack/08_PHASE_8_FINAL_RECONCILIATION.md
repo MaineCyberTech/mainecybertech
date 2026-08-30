@@ -52,3 +52,11 @@ Tone:
 - conservative about regressions
 
 This must read like a production-grade comparative audit written for an engineering owner who values precision, safety, and implementation realism.
+
+### Self-Review
+
+Before concluding Phase 8, review your output and flag:
+
+- Any finding carried forward from an earlier phase that you haven't re-validated
+- Any recommendation where the tradeoff analysis is one-sided (benefits listed but risks minimized)
+- Any section where the evidence is thin but the recommendation is strong

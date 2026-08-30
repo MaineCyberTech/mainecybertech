@@ -60,7 +60,7 @@ export class WebhooksApi {
   }
 
   remove(id: string) {
-    return this.client.delete<void>(`/api/v1/webhook-endpoints/${id}`);
+    return this.client.delete<void>(`/api/v1/webhook-endpoints/${id}`, undefined, { confirm: true });
   }
 
   listDeliveries(webhookId: string, params?: { page?: number; limit?: number }) {

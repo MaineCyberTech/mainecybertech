@@ -1,0 +1,21 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "fields": [
+    "id",
+    "quote",
+    "clientDisplayName",
+    "clientType",
+    "relatedProductIds",
+    "relatedCategoryIds",
+    "permissionStatus",
+    "source",
+    "approvedBy",
+    "approvedAt"
+  ],
+  "permissionStatuses": ["draft", "permission_requested", "approved", "rejected", "expired"],
+  "guardrails": [
+    "Do not publish client names without approval",
+    "Track source/provenance",
+    "Allow anonymous/client-type display"
+  ]
+}

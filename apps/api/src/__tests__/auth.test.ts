@@ -18,6 +18,7 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
+    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
 }));
 
 jest.mock("../services/audit", () => ({
@@ -78,9 +79,7 @@ describe("POST /sign-in", () => {
   it("returns 400 when email missing", async () => {
     mockSupabase();
 
-    const res = await request(app)
-      .post("/api/v1/auth/sign-in")
-      .send({ password: "secret" });
+    const res = await request(app).post("/api/v1/auth/sign-in").send({ password: "secret" });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBeDefined();
@@ -90,9 +89,7 @@ describe("POST /sign-in", () => {
   it("returns 400 when password missing", async () => {
     mockSupabase();
 
-    const res = await request(app)
-      .post("/api/v1/auth/sign-in")
-      .send({ email: "a@b.com" });
+    const res = await request(app).post("/api/v1/auth/sign-in").send({ email: "a@b.com" });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBeDefined();
@@ -122,13 +119,11 @@ describe("POST /sign-up", () => {
   it("returns 200 on successful sign up", async () => {
     const supabase = mockSupabase();
 
-    const res = await request(app)
-      .post("/api/v1/auth/sign-up")
-      .send({
-        email: "new@b.com",
-        password: "SecurePass123!",
-        fullName: "New User",
-      });
+    const res = await request(app).post("/api/v1/auth/sign-up").send({
+      email: "new@b.com",
+      password: "SecurePass123!",
+      fullName: "New User",
+    });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -170,6 +165,113 @@ describe("POST /sign-up", () => {
   });
 });
 
+describe("forgot-password", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("sends reset email", async () => {
+    const supabase = mockSupabase();
+    supabase.auth.resetPasswordForEmail = jest.fn().mockResolvedValue({
+      data: {},
+      error: null,
+    });
+
+    const res = await request(app)
+      .post("/api/v1/auth/forgot-password")
+      .send({ email: "test@example.com" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(supabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
+      "test@example.com",
+      expect.any(Object),
+    );
+  });
+
+  it("returns 400 for missing email", async () => {
+    mockSupabase();
+
+    const res = await request(app).post("/api/v1/auth/forgot-password").send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+    expect(res.body.error.code).toBe("VALIDATION");
+  });
+});
+
+describe("reset-password", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("resets password when authenticated with matching email", async () => {
+    const supabase = mockSupabase();
+    supabase.auth.admin = {
+      updateUserById: jest.fn().mockResolvedValue({ data: {}, error: null }),
+    };
+
+    const res = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .set("Authorization", "Bearer token-123")
+      .send({ email: "test@example.com", password: "StrongP@ss1" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(supabase.auth.admin.updateUserById).toHaveBeenCalledWith("user-1", {
+      password: "StrongP@ss1",
+    });
+  });
+
+  it("returns 403 when email does not match authenticated user", async () => {
+    mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .set("Authorization", "Bearer token-123")
+      .send({ email: "other@example.com", password: "StrongP@ss1" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBeDefined();
+  });
+
+  it("returns 401 without auth", async () => {
+    mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .send({ email: "test@example.com", password: "StrongP@ss1" });
+
+    expect(res.status).toBe(401);
+  });
+
+  it("returns 400 for weak password", async () => {
+    mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .set("Authorization", "Bearer token-123")
+      .send({ email: "test@example.com", password: "weak" });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+    expect(res.body.error.code).toBe("VALIDATION");
+  });
+
+  it("returns 400 for missing fields", async () => {
+    mockSupabase();
+
+    const res = await request(app)
+      .post("/api/v1/auth/reset-password")
+      .set("Authorization", "Bearer token-123")
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+    expect(res.body.error.code).toBe("VALIDATION");
+  });
+});
+
 describe("GET /me", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -203,9 +305,7 @@ describe("GET /me", () => {
       }),
     });
 
-    const res = await request(app)
-      .get("/api/v1/auth/me")
-      .set("Authorization", "Bearer token-123");
+    const res = await request(app).get("/api/v1/auth/me").set("Authorization", "Bearer token-123");
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);

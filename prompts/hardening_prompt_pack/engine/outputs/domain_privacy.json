@@ -1,0 +1,22 @@
+{
+  "domain": "privacy",
+  "findings": [
+    {
+      "severity": "P1",
+      "domain": "privacy",
+      "file": "apps/api/src/lib/auth.ts",
+      "issue": "Session cookie missing Secure/HttpOnly flags",
+      "impact": "Session token exposed to network sniffing or XSS",
+      "fix": "Set cookie with httpOnly=true, secure=true, sameSite='lax'"
+    },
+    {
+      "severity": "P3",
+      "domain": "privacy",
+      "file": "apps/api/src/routes/*.ts",
+      "issue": "Possible PII logged via logger calls",
+      "impact": "Sensitive data may appear in log output",
+      "fix": "Add log sanitization wrapper to redact emails/tokens"
+    }
+  ],
+  "count": 2
+}

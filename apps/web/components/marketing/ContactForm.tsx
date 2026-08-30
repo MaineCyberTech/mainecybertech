@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { submitLead } from "../../app/(public)/contact/actions";
+import { getClientEnv } from "../../lib/env";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const API_BASE = getClientEnv().NEXT_PUBLIC_API_URL;
+const TURNSTILE_SITE_KEY = getClientEnv().NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 interface FormData {
   company: string;
@@ -17,8 +19,14 @@ interface FormData {
 }
 
 const initialForm: FormData = {
-  company: "", name: "", email: "", phone: "",
-  services: "", employees: "", urgency: "", message: "",
+  company: "",
+  name: "",
+  email: "",
+  phone: "",
+  services: "",
+  employees: "",
+  urgency: "",
+  message: "",
 };
 
 export default function ContactForm() {
@@ -28,12 +36,30 @@ export default function ContactForm() {
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [form, setForm] = useState<FormData>(initialForm);
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [consent, setConsent] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/v1/public/init`)
       .then((r) => r.json())
-      .then((d) => { setTrackingId(d.data.trackingId); setLoading(false); })
+      .then((d) => {
+        setTrackingId(d.data.trackingId);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!TURNSTILE_SITE_KEY || !turnstileRef.current) return;
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+    return () => {
+      document.head.removeChild(script);
+    };
   }, []);
 
   function validate(): boolean {
@@ -58,9 +84,12 @@ export default function ContactForm() {
     setStatus(null);
 
     try {
-      const res = await submitLead({ ...form, trackingId });
+      const res = await submitLead({ ...form, trackingId, consent, captchaToken });
       if (res.success) {
-        setStatus({ type: "success", message: "Thank you. A ticket has been created and our team will be in touch shortly." });
+        setStatus({
+          type: "success",
+          message: "Thank you. A ticket has been created and our team will be in touch shortly.",
+        });
         setForm(initialForm);
       } else {
         setStatus({ type: "error", message: res.error || "Submission failed. Please try again." });
@@ -78,41 +107,82 @@ export default function ContactForm() {
   }
 
   const inputCls = (field: keyof FormData) =>
-    `w-full rounded border border-white/10 bg-[#0A1118]/60 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-[#0A1118]/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] ${errors[field] ? "border-red-500" : ""}`;
+    `w-full rounded border border-white/10 bg-cyber-base/60 px-4 py-3 text-sm text-slate-50 outline-none transition focus:border-emerald-600 focus:bg-cyber-base/90 focus:shadow-[0_0_10px_rgba(5,150,105,0.2)] ${errors[field] ? "border-red-500" : ""}`;
 
   const labelCls = "mb-2 block text-xs font-semibold uppercase tracking-widest text-slate-300";
 
   return (
     <form onSubmit={handleSubmit} className="intake-widget space-y-5">
       <div>
-        <label className={labelCls}>Company Name</label>
-        <input type="text" value={form.company} onChange={(e) => update("company", e.target.value)} className={inputCls("company")} />
+        <label htmlFor="contact-company" className={labelCls}>
+          Company Name
+        </label>
+        <input
+          id="contact-company"
+          type="text"
+          value={form.company}
+          onChange={(e) => update("company", e.target.value)}
+          className={inputCls("company")}
+        />
         {errors.company && <p className="mt-1 text-xs text-red-400">{errors.company}</p>}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label className={labelCls}>Contact Name</label>
-          <input type="text" value={form.name} onChange={(e) => update("name", e.target.value)} className={inputCls("name")} />
+          <label htmlFor="contact-name" className={labelCls}>
+            Contact Name
+          </label>
+          <input
+            id="contact-name"
+            type="text"
+            value={form.name}
+            onChange={(e) => update("name", e.target.value)}
+            className={inputCls("name")}
+          />
           {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
         </div>
         <div>
-          <label className={labelCls}>Work Email</label>
-          <input type="email" value={form.email} onChange={(e) => update("email", e.target.value)} className={inputCls("email")} />
+          <label htmlFor="contact-email" className={labelCls}>
+            Work Email
+          </label>
+          <input
+            id="contact-email"
+            type="email"
+            value={form.email}
+            onChange={(e) => update("email", e.target.value)}
+            className={inputCls("email")}
+          />
           {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
         </div>
         <div>
-          <label className={labelCls}>Phone Number</label>
-          <input type="tel" value={form.phone} onChange={(e) => update("phone", e.target.value)} className={inputCls("phone")} />
+          <label htmlFor="contact-phone" className={labelCls}>
+            Phone Number
+          </label>
+          <input
+            id="contact-phone"
+            type="tel"
+            value={form.phone}
+            onChange={(e) => update("phone", e.target.value)}
+            className={inputCls("phone")}
+          />
           {errors.phone && <p className="mt-1 text-xs text-red-400">{errors.phone}</p>}
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label className={labelCls}>Services of Interest</label>
-          <select value={form.services} onChange={(e) => update("services", e.target.value)} className={inputCls("services")}>
-            <option value="" disabled>Select primary service...</option>
+          <label htmlFor="contact-services" className={labelCls}>
+            Services of Interest
+          </label>
+          <select
+            id="contact-services"
+            value={form.services}
+            onChange={(e) => update("services", e.target.value)}
+            className={inputCls("services")}
+          >
+            <option value="" disabled>
+              Select primary service...
+            </option>
             <option value="Managed IT Support">Managed IT Support</option>
             <option value="Cybersecurity & Compliance">Cybersecurity & Compliance</option>
             <option value="Cloud Migration & Hosting">Cloud Migration & Hosting</option>
@@ -124,9 +194,18 @@ export default function ContactForm() {
           {errors.services && <p className="mt-1 text-xs text-red-400">{errors.services}</p>}
         </div>
         <div>
-          <label className={labelCls}>Employees</label>
-          <select value={form.employees} onChange={(e) => update("employees", e.target.value)} className={inputCls("employees")}>
-            <option value="" disabled>Select size...</option>
+          <label htmlFor="contact-employees" className={labelCls}>
+            Employees
+          </label>
+          <select
+            id="contact-employees"
+            value={form.employees}
+            onChange={(e) => update("employees", e.target.value)}
+            className={inputCls("employees")}
+          >
+            <option value="" disabled>
+              Select size...
+            </option>
             <option value="1-10">1 - 10</option>
             <option value="11-50">11 - 50</option>
             <option value="51-200">51 - 200</option>
@@ -135,9 +214,18 @@ export default function ContactForm() {
           {errors.employees && <p className="mt-1 text-xs text-red-400">{errors.employees}</p>}
         </div>
         <div>
-          <label className={labelCls}>Urgency</label>
-          <select value={form.urgency} onChange={(e) => update("urgency", e.target.value)} className={inputCls("urgency")}>
-            <option value="" disabled>Select urgency...</option>
+          <label htmlFor="contact-urgency" className={labelCls}>
+            Urgency
+          </label>
+          <select
+            id="contact-urgency"
+            value={form.urgency}
+            onChange={(e) => update("urgency", e.target.value)}
+            className={inputCls("urgency")}
+          >
+            <option value="" disabled>
+              Select urgency...
+            </option>
             <option value="Low - Just Exploring">Low - Just Exploring options</option>
             <option value="Medium - Planning Phase">Medium - Planning an upcoming project</option>
             <option value="High - Active Issue">High - Need immediate assistance</option>
@@ -147,17 +235,61 @@ export default function ContactForm() {
       </div>
 
       <div>
-        <label className={labelCls}>How can we assist your business?</label>
-        <textarea rows={4} value={form.message} onChange={(e) => update("message", e.target.value)} placeholder="Briefly describe your current IT setup or the challenge you are facing..." className={inputCls("message")} />
+        <label htmlFor="contact-message" className={labelCls}>
+          How can we assist your business?
+        </label>
+        <textarea
+          id="contact-message"
+          rows={4}
+          value={form.message}
+          onChange={(e) => update("message", e.target.value)}
+          placeholder="Briefly describe your current IT setup or the challenge you are facing..."
+          className={inputCls("message")}
+        />
         {errors.message && <p className="mt-1 text-xs text-red-400">{errors.message}</p>}
+      </div>
+
+      {TURNSTILE_SITE_KEY && (
+        <div className="flex items-start gap-3">
+          <div
+            ref={turnstileRef}
+            className="cf-turnstile"
+            data-sitekey={TURNSTILE_SITE_KEY}
+            data-callback={(token: string) => setCaptchaToken(token)}
+          />
+        </div>
+      )}
+
+      <div className="flex items-start gap-3">
+        <input
+          id="consent"
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          className="mt-1 h-4 w-4 shrink-0 rounded border border-white/10 bg-cyber-base/60 text-emerald-600 focus:ring-emerald-600"
+        />
+        <label htmlFor="consent" className="text-xs leading-relaxed text-slate-400">
+          I agree to the{" "}
+          <a
+            href="/privacy"
+            className="text-emerald-400 underline transition hover:text-emerald-300"
+          >
+            Privacy Policy
+          </a>{" "}
+          and consent to my data being processed.
+        </label>
       </div>
 
       <button
         type="submit"
-        disabled={loading || submitting}
-        className="w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-4 font-orbitron text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-500 disabled:shadow-none"
+        disabled={loading || submitting || !consent || (!!TURNSTILE_SITE_KEY && !captchaToken)}
+        className="font-orbitron w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
       >
-        {loading ? "Establishing Secure Connection..." : submitting ? "Processing Request..." : "Submit Service Request"}
+        {loading
+          ? "Establishing Secure Connection..."
+          : submitting
+            ? "Processing Request..."
+            : "Submit Service Request"}
       </button>
 
       {status && (

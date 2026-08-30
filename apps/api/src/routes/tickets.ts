@@ -1,15 +1,17 @@
 import { Router } from "express";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
-import {
-  requireIfMatch,
-  checkVersionMatch,
-} from "../middleware/optimistic-locking";
+import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { createNotification, notifyAndEmail } from "../lib/notify";
+import { dispatchWebhook } from "../lib/webhook-dispatcher";
+import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS } from "../lib/roles";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import {
   createTicketSchema,
   updateTicketSchema,
@@ -42,7 +44,7 @@ const ticketExportColumns: CsvColumn[] = [
 
 router.get("/export", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "read");
 
     let query = supabase.from("tickets").select("*");
 
@@ -52,9 +54,7 @@ router.get("/export", async (req, res, next) => {
     const statusFilter = req.query.status as string | undefined;
     if (statusFilter) query = query.eq("status", statusFilter);
 
-    const { data, error } = await query
-      .order("created_at", { ascending: false })
-      .limit(10000);
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -66,12 +66,9 @@ router.get("/export", async (req, res, next) => {
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(req.query.limit as string) || 25),
-    );
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("tickets").select("*", { count: "exact" });
@@ -86,9 +83,7 @@ router.get("/", async (req, res, next) => {
       data: tickets,
       error,
       count,
-    } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    } = await query.order("created_at", { ascending: false }).range(offset, offset + limit - 1);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -107,25 +102,23 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("tickets")
-      .select("*, ticket_comments(*)")
-      .eq("id", req.params.id)
-      .single();
+    const orgId = req.query.organization_id as string | undefined;
+    const supabase = getScopedClient(req, "tickets", "read");
+    let query = supabase.from("tickets").select("*, ticket_comments(*)").eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Ticket not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Ticket not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("tickets", "create"), async (req, res, next) => {
   try {
     const parsed = createTicketSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "write");
 
     const { data, error } = await supabase
       .from("tickets")
@@ -156,15 +149,23 @@ router.post("/", async (req, res, next) => {
       metadata: { title: parsed.title },
     });
 
+    dispatchWebhook("ticket.created", parsed.organizationId, {
+      ticketId: data.id,
+      title: parsed.title,
+      priority: parsed.priority,
+      status: "new",
+    });
+
     const { data: adminMembers } = await supabase
       .from("memberships")
-      .select("user_id")
+      .select("user_id, roles!inner(key)")
       .eq("organization_id", parsed.organizationId)
-      .eq("role", "admin");
+      .eq("status", "approved")
+      .in("roles.key", PLATFORM_ADMIN_KEYS);
 
     if (adminMembers?.length) {
       const adminIds = adminMembers
-        .map((m: any) => m.user_id)
+        .map((m: { user_id: string }) => m.user_id)
         .filter((id: string) => id !== req.authUser!.userId);
       if (adminIds.length) {
         const { data: admins } = await supabase
@@ -195,13 +196,12 @@ router.post("/", async (req, res, next) => {
 router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateTicketSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "write");
+    const orgId = req.query.organization_id as string | undefined;
 
-    const { data: current, error: fetchError } = await supabase
-      .from("tickets")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
+    let currentQuery = supabase.from("tickets").select("version").eq("id", req.params.id);
+    if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+    const { data: current, error: fetchError } = await currentQuery.single();
 
     if (fetchError || !current) {
       throw new AppError("NOT_FOUND", "Ticket not found", 404);
@@ -211,36 +211,28 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
-    if (parsed.description !== undefined)
-      updateData.description = parsed.description;
+    if (parsed.description !== undefined) updateData.description = parsed.description;
     if (parsed.status !== undefined) updateData.status = parsed.status;
     if (parsed.priority !== undefined) updateData.priority = parsed.priority;
     if (parsed.category !== undefined) updateData.category = parsed.category;
-    if (parsed.assignedTo !== undefined)
-      updateData.assigned_to = parsed.assignedTo;
+    if (parsed.assignedTo !== undefined) updateData.assigned_to = parsed.assignedTo;
     if (parsed.externalJsmIssueKey !== undefined)
       updateData.external_jsm_issue_key = parsed.externalJsmIssueKey;
     if (parsed.labels !== undefined) updateData.labels = parsed.labels;
-    if (parsed.resolution !== undefined)
-      updateData.resolution = parsed.resolution;
+    if (parsed.resolution !== undefined) updateData.resolution = parsed.resolution;
 
     updateData.version = current.version + 1;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("tickets")
       .update(updateData)
       .eq("id", req.params.id)
-      .eq("version", current.version)
-      .select()
-      .single();
+      .eq("version", current.version);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.select().single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data)
-      throw new AppError(
-        "VERSION_CONFLICT",
-        "Ticket was modified by another user",
-        409,
-      );
+    if (!data) throw new AppError("VERSION_CONFLICT", "Ticket was modified by another user", 409);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -279,7 +271,16 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
 router.get("/:id/comments", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "read");
+    const orgId = req.query.organization_id as string | undefined;
+
+    // Verify the ticket exists and (when scoped) belongs to the caller's org
+    // before exposing its comments.
+    let ticketQuery = supabase.from("tickets").select("id").eq("id", req.params.id);
+    if (orgId) ticketQuery = ticketQuery.eq("organization_id", orgId);
+    const { data: ticket, error: ticketError } = await ticketQuery.single();
+    if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
+
     const { data, error } = await supabase
       .from("ticket_comments")
       .select("*")
@@ -296,13 +297,27 @@ router.get("/:id/comments", async (req, res, next) => {
 router.post("/:id/comments", async (req, res, next) => {
   try {
     const parsed = addTicketCommentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "write");
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+
+    // Verify the ticket exists AND belongs to the caller's org before
+    // commenting — prevents cross-tenant comment injection and notification
+    // spam into the victim org.
+    let ticketQuery = supabase
+      .from("tickets")
+      .select("id, organization_id, title, created_by, assigned_to")
+      .eq("id", req.params.id);
+    if (orgId) ticketQuery = ticketQuery.eq("organization_id", orgId);
+    const { data: ticket, error: ticketError } = await ticketQuery.single();
+    if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
     const { data, error } = await supabase
       .from("ticket_comments")
       .insert({
         ticket_id: req.params.id,
-        organization_id: parsed.organizationId,
+        organization_id: ticket.organization_id,
         author_id: req.authUser!.userId,
         body: parsed.body,
         is_internal: parsed.isInternal,
@@ -313,21 +328,15 @@ router.post("/:id/comments", async (req, res, next) => {
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
-      organizationId: parsed.organizationId,
+      organizationId: ticket.organization_id,
       actorUserId: req.authUser!.userId,
       action: "ticket.comment.add",
       entityType: "ticket_comment",
       entityId: data.id,
     });
 
-    const { data: ticket } = await supabase
-      .from("tickets")
-      .select("title, submitted_by, assigned_to")
-      .eq("id", req.params.id)
-      .single();
-
     if (ticket) {
-      const notifyIds = [ticket.submitted_by, ticket.assigned_to]
+      const notifyIds = [ticket.created_by, ticket.assigned_to]
         .filter(Boolean)
         .filter((id: string) => id !== req.authUser!.userId);
       const uniqueIds = [...new Set(notifyIds)];
@@ -340,7 +349,7 @@ router.post("/:id/comments", async (req, res, next) => {
         for (const profile of profiles ?? []) {
           await notifyAndEmail({
             userId: profile.id,
-            organizationId: parsed.organizationId,
+            organizationId: ticket.organization_id,
             title: "New Comment on Ticket",
             body: `${req.authUser!.email} commented on "${ticket.title}": "${parsed.body.slice(0, 100)}${parsed.body.length > 100 ? "..." : ""}"`,
             module: "tickets",
@@ -361,39 +370,68 @@ router.post("/:id/comments", async (req, res, next) => {
 router.patch("/:id/comments/:commentId", async (req, res, next) => {
   try {
     const parsed = updateTicketCommentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "tickets", "write");
 
     const { data: existing, error: fetchError } = await supabase
       .from("ticket_comments")
-      .select("id, author_id, organization_id, body")
+      .select("id, author_id, organization_id, body, created_at")
       .eq("id", req.params.commentId)
       .eq("ticket_id", req.params.id)
       .single();
 
-    if (fetchError || !existing)
+    if (fetchError || !existing) throw new AppError("NOT_FOUND", "Comment not found", 404);
+
+    // Tenant check: the comment's ticket must belong to the comment's org,
+    // and (when the caller is scoped to an org) that org must match.
+    const orgId = req.query.organization_id as string | undefined;
+    if (orgId && orgId !== existing.organization_id) {
+      throw new AppError("FORBIDDEN", "Not authorized for this comment", 403);
+    }
+
+    const { data: ticket } = await supabase
+      .from("tickets")
+      .select("id, organization_id")
+      .eq("id", req.params.id)
+      .single();
+    if (!ticket || ticket.organization_id !== existing.organization_id) {
       throw new AppError("NOT_FOUND", "Comment not found", 404);
+    }
+
+    // Author check: only the comment author (or an admin of the comment's org)
+    // may edit it.
+    const isAuthor = existing.author_id === req.authUser!.userId;
+    if (!isAuthor) {
+      const { data: memberships } = await supabase
+        .from("memberships")
+        .select("roles!inner(id, key)")
+        .eq("user_id", req.authUser!.userId)
+        .eq("organization_id", existing.organization_id)
+        .eq("status", "approved");
+
+      const isOrgAdmin =
+        memberships?.some((row) =>
+          isPlatformAdminKey((row.roles as unknown as { key: string }).key),
+        ) ?? false;
+
+      if (!isOrgAdmin) {
+        throw new AppError("FORBIDDEN", "Only the comment author can edit this comment", 403);
+      }
+    }
 
     // 5-minute edit window check
-    const { data: comment } = await supabase
-      .from("ticket_comments")
-      .select("created_at")
-      .eq("id", req.params.commentId)
-      .single();
-
-    if (comment) {
-      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
-      if (new Date(comment.created_at) < fiveMinAgo)
-        throw new AppError(
-          "FORBIDDEN",
-          "Comment can only be edited within 5 minutes of posting",
-          403,
-        );
-    }
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+    if (new Date(existing.created_at) < fiveMinAgo)
+      throw new AppError(
+        "FORBIDDEN",
+        "Comment can only be edited within 5 minutes of posting",
+        403,
+      );
 
     const { data, error } = await supabase
       .from("ticket_comments")
       .update({ body: parsed.body, edited_at: new Date().toISOString() })
       .eq("id", req.params.commentId)
+      .eq("organization_id", existing.organization_id)
       .select()
       .single();
 
@@ -414,7 +452,44 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
   }
 });
 
-router.post("/bulk", requireOrgAccess, async (req, res, next) => {
+router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, next) => {
+  try {
+    assertDeleteConfirmed(req.body);
+    const supabase = getScopedClient(req, "tickets", "write");
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+
+    let fetchQuery = supabase
+      .from("tickets")
+      .select("id, organization_id")
+      .eq("id", req.params.id);
+    if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
+    const { data: ticket, error: fetchError } = await fetchQuery.single();
+
+    if (fetchError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
+
+    let deleteQuery = supabase.from("tickets").delete().eq("id", req.params.id);
+    if (orgId) deleteQuery = deleteQuery.eq("organization_id", orgId);
+    const { error } = await deleteQuery;
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await logAuditEvent({
+      organizationId: ticket.organization_id,
+      actorUserId: req.authUser!.userId,
+      action: "ticket.delete",
+      entityType: "ticket",
+      entityId: String(req.params.id),
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/bulk", requireAdmin, async (req, res, next) => {
   try {
     const { ids, status, priority } = bulkTicketUpdateSchema.parse(req.body);
 
@@ -427,13 +502,10 @@ router.post("/bulk", requireOrgAccess, async (req, res, next) => {
       return { id, data };
     });
 
-    const { data: results, error } = await supabase.rpc(
-      "bulk_update_with_version",
-      {
-        table_name: "tickets",
-        updates,
-      },
-    );
+    const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
+      table_name: "tickets",
+      updates,
+    });
 
     if (error) {
       if (error.message.includes("Version conflict")) {
@@ -442,8 +514,8 @@ router.post("/bulk", requireOrgAccess, async (req, res, next) => {
       throw new AppError("DB_ERROR", error.message, 500);
     }
 
-    const successful = results.filter((r: any) => r.success).length;
-    const failed = results.filter((r: any) => !r.success);
+    const successful = results.filter((r: { success: boolean }) => r.success).length;
+    const failed = results.filter((r: { success: boolean }) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

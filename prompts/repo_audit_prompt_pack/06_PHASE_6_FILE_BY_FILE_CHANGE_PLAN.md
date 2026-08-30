@@ -45,3 +45,11 @@ Your task is to provide concrete engineering guidance, such as:
 Each item should be concrete and implementation-oriented.
 If exact filenames are visible, use them.
 If not, reference the most specific path/module area you can verify.
+
+### Self-Review
+
+Before concluding Phase 6, review your output and flag:
+
+- Any file reference you haven't directly verified exists in the repo
+- Any change recommendation where the diff between source and target isn't clear
+- Any area where you recommend structural changes without sufficient test coverage

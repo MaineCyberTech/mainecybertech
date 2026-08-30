@@ -5,30 +5,136 @@ import AdminHeaderActions from "@/components/admin/AdminHeaderActions";
 import AdminGlobalSearch from "@/components/admin/AdminGlobalSearch";
 import NotificationBell from "@/components/NotificationBell";
 import { getUnreadCount } from "@/lib/notifications-actions";
+import AdminSidebarLayout from "@/components/admin/AdminSidebarLayout";
+import RouteGuard from "@/components/RouteGuard";
+import SuperAdminOrgSwitcher from "@/components/admin/SuperAdminOrgSwitcher";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminLayout({
-  children
-}: {
-  children: ReactNode;
-}) {
+const ADMIN_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string }> = {
+  "/admin/organizations": { module: "organizations" },
+  "/admin/users": { module: "users" },
+  "/admin/roles": { module: "roles" },
+  "/admin/tickets": { module: "tickets" },
+  "/admin/documents": { module: "documents" },
+  "/admin/projects": { module: "projects" },
+  "/admin/approvals": { module: "approvals" },
+  "/admin/governance": { module: "governance" },
+  "/admin/incidents": { module: "incidents" },
+  "/admin/break-glass": { module: "break-glass" },
+  "/admin/id-verify": { module: "id-verify" },
+  "/admin/dmarc-coach": { module: "dmarc-coach" },
+  "/admin/patch-compliance": { module: "patch-compliance" },
+  "/admin/endpoint-security": { module: "endpoint-security" },
+  "/admin/m365-hardening": { module: "m365-hardening" },
+  "/admin/assets": { module: "assets" },
+  "/admin/domain-monitors": { module: "domain-monitors" },
+  "/admin/website-monitors": { module: "website-monitors" },
+  "/admin/dmarc": { module: "dmarc" },
+  "/admin/license-optimizer": { module: "license-optimizer" },
+  "/admin/licenses": { module: "licenses" },
+  "/admin/uptime-monitor": { module: "uptime-monitor" },
+  "/admin/field-services": { module: "field-services" },
+  "/admin/offboarding": { module: "offboarding" },
+  "/admin/onboarding": { module: "onboarding" },
+  "/admin/file-requests": { module: "file-requests" },
+  "/admin/vendor-contracts": { module: "vendor-contracts" },
+  "/admin/vendor-contacts": { module: "vendor-contacts" },
+  "/admin/training-hub": { module: "training-hub" },
+  "/admin/insurance-binder": { module: "insurance-binder" },
+  "/admin/store": { module: "store" },
+  "/admin/store/products": { module: "store" },
+  "/admin/store/promotions": { module: "store" },
+  "/admin/store/quotes": { module: "store" },
+  "/admin/store/analytics": { module: "store" },
+  "/admin/store/bundles": { module: "store" },
+  "/admin/store/campaigns": { module: "store" },
+  "/admin/store/categories": { module: "store" },
+  "/admin/store/fulfillment": { module: "store" },
+  "/admin/store/lifecycle": { module: "store" },
+  "/admin/store/operations": { module: "store" },
+  "/admin/store/visuals": { module: "store" },
+  "/admin/store/lead-magnets": { module: "store" },
+  "/admin/store/trust-badges": { module: "store" },
+  "/admin/store/ladders": { module: "store" },
+  "/admin/store/testimonials": { module: "store" },
+  "/admin/store/seo-pages": { module: "store" },
+  "/admin/store/import-export": { module: "store" },
+  "/admin/store/recommendations": { module: "store" },
+  "/admin/store/faqs": { module: "store" },
+  "/admin/store/quiz": { module: "store" },
+  "/admin/store/dependencies": { module: "store" },
+  "/admin/store/proposals": { module: "store" },
+  "/admin/store/content-audit": { module: "store" },
+  "/admin/store/comparisons": { module: "store" },
+  "/admin/store/profitability": { module: "store" },
+  "/admin/store/bundle-calculator": { module: "store" },
+  "/admin/store/portal-services": { module: "store" },
+  "/admin/store/audit": { module: "store" },
+  "/admin/store/nurture": { module: "store" },
+  "/admin/store/leads": { module: "store" },
+  "/admin/api-keys": { module: "api-keys" },
+  "/admin/webhooks": { module: "webhooks" },
+  "/admin/ai": { module: "ai" },
+  "/admin/edu-automation": { module: "edu-automation" },
+  "/admin/final": { module: "final" },
+  "/admin/health": { module: "health" },
+  "/admin/audit": { module: "audit" },
+  "/admin/bulk-invite": { module: "bulk-invite" },
+  "/admin/notifications": { module: "notifications" },
+  "/admin/sla": { module: "sla" },
+  "/admin/proposals": { module: "proposals" },
+  "/admin/qbr": { module: "qbr" },
+  "/admin/service-catalog": { module: "service-catalog" },
+  "/admin/business-os": { module: "business-os" },
+  "/admin/findings": { module: "findings" },
+  "/admin/security-suite": { module: "security-suite" },
+  "/admin/security-ops": { module: "security-ops" },
+  "/admin/status": { module: "status" },
+  "/admin/status-pages": { module: "status-pages" },
+  "/admin/vendors": { module: "vendors" },
+  "/admin/permissions": { module: "roles" },
+  "/admin/approval-requests": { module: "approvals" },
+  "/admin/dynamic-forms": { module: "dynamic-forms" },
+  "/admin/satisfaction-pulse": { module: "satisfaction-pulse" },
+};
+
+export default async function AdminLayout({ children }: { children: ReactNode }) {
   let user;
   try {
     user = await getApiClient().users.me();
-  } catch {
-    redirect("/login");
+  } catch (err) {
+    // 401/403 = not signed in -> login. Other failures (429/5xx) must not
+    // redirect: the middleware would bounce an authenticated user back to
+    // /portal/dashboard (or /admin), producing an infinite redirect loop.
+    const status = (err as { status?: number })?.status;
+    if (status === 401 || status === 403) {
+      redirect("/login");
+    }
+    throw new Error("Unable to load your profile. Please try again.");
   }
 
   if (!user?.userId) {
     redirect("/login");
   }
 
-  const unreadCount = await getUnreadCount();
+  let unreadCount = 0;
+  try {
+    unreadCount = await getUnreadCount();
+  } catch {
+    unreadCount = 0;
+  }
+
+  let permissionsResult = null;
+  try {
+    permissionsResult = await getApiClient().permissions.getMyPermissions();
+  } catch {
+    permissionsResult = null;
+  }
 
   return (
-    <div className="min-h-screen bg-[#0A1118] text-slate-50">
-      <header className="sticky top-0 z-40 border-b border-emerald-600/20 bg-[#0A1118]/85 backdrop-blur-md">
+    <div className="min-h-screen bg-cyber-base text-slate-50">
+      <header className="sticky top-0 z-40 border-b border-emerald-600/20 bg-cyber-base/85 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-start justify-between gap-3 sm:gap-4">
             <div className="cyber-header-title">
@@ -36,21 +142,36 @@ export default async function AdminLayout({
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
-              <div className="hidden sm:block"><AdminGlobalSearch /></div>
+              <div className="hidden sm:block">
+                <AdminGlobalSearch />
+              </div>
+              <SuperAdminOrgSwitcher />
               <NotificationBell basePath="/admin" initialUnread={unreadCount} />
               <AdminHeaderActions />
             </div>
           </div>
 
-          <div className="mt-2 sm:hidden"><AdminGlobalSearch /></div>
+          <div className="mt-2 sm:hidden">
+            <AdminGlobalSearch />
+          </div>
 
-          <p className="mt-1 text-xs text-slate-400 sm:text-sm">
-            Admin operations workspace
-          </p>
+          <p className="mt-1 text-xs text-slate-400 sm:text-sm">Admin operations workspace</p>
         </div>
       </header>
 
-      <main className="cyber-main">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+        <AdminSidebarLayout
+          permissions={
+            permissionsResult
+              ? { isSuperAdmin: permissionsResult.isSuperAdmin, keys: permissionsResult.keys }
+              : null
+          }
+        >
+          <RouteGuard rules={ADMIN_ROUTE_PERMISSIONS} homeHref="/admin">
+            {children}
+          </RouteGuard>
+        </AdminSidebarLayout>
+      </main>
     </div>
   );
 }

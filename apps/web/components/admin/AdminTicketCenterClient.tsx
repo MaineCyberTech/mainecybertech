@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useTransition,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 
@@ -31,12 +24,12 @@ const PRIORITY_OPTIONS = ["low", "normal", "high", "urgent"] as const;
 type Props = {
   tickets: TicketRecord[];
   organizations: OrganizationRecord[];
-  createTicketAction: (formData: FormData) => Promise<void>;
+  createTicketAction: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
   updateTicketStatusAction?: (
     ticketId: string,
     status: string,
-  ) => Promise<void>;
-  bulkUpdateTicketsAction?: (formData: FormData) => Promise<void>;
+  ) => Promise<{ ok: boolean; error?: string }>;
+  bulkUpdateTicketsAction?: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
 };
 
 function formatDateTime(value?: string | null) {
@@ -48,10 +41,7 @@ function formatDateTime(value?: string | null) {
 
 function formatRelativeTime(value?: string | null) {
   if (!value) return "—";
-  const seconds = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(value).getTime()) / 1000),
-  );
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -67,25 +57,15 @@ function ticketSubject(ticket: TicketRecord) {
 }
 
 function ticketDescription(ticket: TicketRecord) {
-  return (
-    ticket.description ??
-    ticket.details ??
-    ticket.body ??
-    ticket.message ??
-    null
-  );
+  return ticket.description ?? ticket.details ?? ticket.body ?? ticket.message ?? null;
 }
 
 function ticketCategory(ticket: TicketRecord) {
-  return (
-    ticket.category ?? ticket.type ?? ticket.classification ?? "Uncategorized"
-  );
+  return ticket.category ?? ticket.type ?? ticket.classification ?? "Uncategorized";
 }
 
 function ticketStatus(ticket: TicketRecord) {
-  return String(
-    ticket.status ?? ticket.state ?? ticket.ticket_status ?? "new",
-  ).toLowerCase();
+  return String(ticket.status ?? ticket.state ?? ticket.ticket_status ?? "new").toLowerCase();
 }
 
 function ticketPriority(ticket: TicketRecord) {
@@ -105,12 +85,8 @@ function assigneeLabel(ticket: TicketRecord) {
 function isDeletedTicket(ticket: TicketRecord) {
   const title = String(ticket.title ?? ticket.subject ?? "");
   return (
-    Boolean(
-      ticket.is_deleted ??
-      ticket.deleted ??
-      ticket.deleted_at ??
-      ticket.archived_at,
-    ) || title.startsWith("[Deleted] ")
+    Boolean(ticket.is_deleted ?? ticket.deleted ?? ticket.deleted_at ?? ticket.archived_at) ||
+    title.startsWith("[Deleted] ")
   );
 }
 
@@ -141,11 +117,9 @@ function priorityPillClass(priority: string) {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+    <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
       <div className="flex items-center justify-between gap-3 whitespace-nowrap">
-        <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
-          {label}
-        </p>
+        <p className="text-xs uppercase tracking-[0.12em] text-slate-400">{label}</p>
         <p className="text-base font-semibold text-slate-50">{value}</p>
       </div>
     </div>
@@ -174,7 +148,7 @@ function StatusDropdown({
   return (
     <div
       ref={ref}
-      className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-white/10 bg-[#0A1118] shadow-2xl py-1"
+      className="absolute right-0 top-full z-50 mt-1 w-44 rounded-lg border border-white/10 bg-cyber-base py-1 shadow-2xl"
     >
       {STATUS_OPTIONS.map((s) => (
         <button
@@ -184,7 +158,7 @@ function StatusDropdown({
             e.stopPropagation();
             onSelect(ticketId, s);
           }}
-          className={`block w-full px-3 py-1.5 text-left text-xs transition ${s === currentStatus ? "text-emerald-300 bg-emerald-500/10" : "text-slate-300 hover:bg-white/5"}`}
+          className={`block w-full px-3 py-1.5 text-left text-xs transition ${s === currentStatus ? "bg-emerald-500/10 text-emerald-300" : "text-slate-300 hover:bg-white/5"}`}
         >
           {s}
         </button>
@@ -202,7 +176,10 @@ function TicketCard({
 }: {
   ticket: TicketRecord;
   orgMap: Map<string, string>;
-  onStatusChange?: (ticketId: string, status: string) => void;
+  onStatusChange?: (
+    ticketId: string,
+    status: string,
+  ) => Promise<{ ok: boolean; error?: string }> | void;
   selected?: boolean;
   onSelect?: (ticketId: string, selected: boolean) => void;
 }) {
@@ -217,9 +194,9 @@ function TicketCard({
     setDropdownOpen((v) => !v);
   };
 
-  const handleStatusSelect = (ticketId: string, newStatus: string) => {
+  const handleStatusSelect = async (ticketId: string, newStatus: string) => {
     setDropdownOpen(false);
-    onStatusChange?.(ticketId, newStatus);
+    await onStatusChange?.(ticketId, newStatus);
   };
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -231,28 +208,26 @@ function TicketCard({
     <div className="relative">
       <Link
         href={`/admin/tickets/${ticket.id}`}
-        className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-5 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+        className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 type="checkbox"
                 checked={selected}
                 onChange={handleCheckboxChange}
-                className="h-4 w-4 rounded border-white/20 bg-[#0A1118] text-emerald-500 focus:ring-emerald-500 accent-emerald-500"
+                className="h-4 w-4 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
                 aria-label="Select ticket"
               />
-              <p className="font-medium text-slate-50">
-                {ticketSubject(ticket)}
-              </p>
+              <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
               {ticket.external_jsm_issue_key ? (
-                <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 text-[10px] font-mono text-blue-300">
+                <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[10px] text-blue-300">
                   {ticket.external_jsm_issue_key}
                 </span>
               ) : null}
             </div>
-            <p className="mt-2 text-sm text-slate-400 line-clamp-2">
+            <p className="mt-2 line-clamp-2 text-sm text-slate-400">
               {ticketDescription(ticket) ?? "No description provided."}
             </p>
           </div>
@@ -262,8 +237,7 @@ function TicketCard({
                 type="button"
                 onClick={handleStatusClick}
                 className={
-                  statusPillClass(status) +
-                  " cursor-pointer hover:ring-1 hover:ring-emerald-500/40"
+                  statusPillClass(status) + " cursor-pointer hover:ring-1 hover:ring-emerald-500/40"
                 }
               >
                 {status}
@@ -274,10 +248,8 @@ function TicketCard({
             <span className={priorityPillClass(priority)}>{priority}</span>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-500">
-          <span>
-            Org: {orgMap.get(ticket.organization_id) ?? ticket.organization_id}
-          </span>
+        <div className="mt-4 flex flex-wrap gap-4 text-xs text-slate-400">
+          <span>Org: {orgMap.get(ticket.organization_id) ?? ticket.organization_id}</span>
           <span>Category: {ticketCategory(ticket)}</span>
           <span>Assignee: {assigneeLabel(ticket)}</span>
           <span title={formatDateTime(ticket.updated_at ?? ticket.created_at)}>
@@ -297,13 +269,7 @@ function TicketCard({
   );
 }
 
-function Chip({
-  children,
-  onRemove,
-}: {
-  children: React.ReactNode;
-  onRemove: () => void;
-}) {
+function Chip({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
       {children}
@@ -330,19 +296,13 @@ export default function AdminTicketCenterClient({
 
   const [search, setSearch] = useState("");
   const [orgFilter, setOrgFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">(
-    "all",
-  );
-  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "updated">(
-    "updated",
-  );
+  const [statusFilter, setStatusFilter] = useState<"all" | "open" | "closed">("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "updated">("updated");
   const [page, setPage] = useState(1);
 
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [bulkAction, setBulkAction] = useState<"status" | "priority" | null>(
-    null,
-  );
+  const [bulkAction, setBulkAction] = useState<"status" | "priority" | null>(null);
   const [bulkStatus, setBulkStatus] = useState("");
   const [bulkPriority, setBulkPriority] = useState("");
   const [bulkProcessing, setBulkProcessing] = useState(false);
@@ -406,15 +366,11 @@ export default function AdminTicketCenterClient({
     items = [...items];
     if (sortBy === "newest") {
       items.sort(
-        (a, b) =>
-          new Date(b.created_at ?? 0).getTime() -
-          new Date(a.created_at ?? 0).getTime(),
+        (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
       );
     } else if (sortBy === "oldest") {
       items.sort(
-        (a, b) =>
-          new Date(a.created_at ?? 0).getTime() -
-          new Date(b.created_at ?? 0).getTime(),
+        (a, b) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime(),
       );
     } else {
       items.sort(
@@ -461,34 +417,22 @@ export default function AdminTicketCenterClient({
       },
     });
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearch(e.target.value);
-      setPage(1);
-    },
-    [],
-  );
-  const handleOrgChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setOrgFilter(e.target.value);
-      setPage(1);
-    },
-    [],
-  );
-  const handleStatusChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setStatusFilter(e.target.value as any);
-      setPage(1);
-    },
-    [],
-  );
-  const handleSortChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setSortBy(e.target.value as any);
-      setPage(1);
-    },
-    [],
-  );
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+    setPage(1);
+  }, []);
+  const handleOrgChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setOrgFilter(e.target.value);
+    setPage(1);
+  }, []);
+  const handleStatusChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value as "all" | "open" | "closed");
+    setPage(1);
+  }, []);
+  const handleSortChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSortBy(e.target.value as "newest" | "oldest" | "updated");
+    setPage(1);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -501,11 +445,7 @@ export default function AdminTicketCenterClient({
             Create and manage support tickets across client organizations.
           </p>
         </div>
-        <button
-          type="button"
-          className="cyber-button-secondary"
-          onClick={() => setOpenModal(true)}
-        >
+        <button type="button" className="cyber-button-secondary" onClick={() => setOpenModal(true)}>
           Create Ticket
         </button>
       </div>
@@ -513,31 +453,27 @@ export default function AdminTicketCenterClient({
       <div className="grid gap-3 md:grid-cols-3">
         <StatCard
           label="Open Tickets"
-          value={
-            visibleTickets.filter((t) => !isClosedStatus(ticketStatus(t)))
-              .length
-          }
+          value={visibleTickets.filter((t) => !isClosedStatus(ticketStatus(t))).length}
         />
         <StatCard
           label="Closed Tickets"
-          value={
-            visibleTickets.filter((t) => isClosedStatus(ticketStatus(t))).length
-          }
+          value={visibleTickets.filter((t) => isClosedStatus(ticketStatus(t))).length}
         />
         <StatCard label="All Tickets" value={visibleTickets.length} />
       </div>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
-        <div className="relative flex-1 min-w-[200px]">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="relative min-w-[200px] flex-1">
           <input
             type="text"
             value={search}
             onChange={handleSearchChange}
             placeholder="Search tickets..."
+            aria-label="Search tickets"
             className="cyber-input w-full pl-9"
           />
           <svg
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500"
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -554,6 +490,7 @@ export default function AdminTicketCenterClient({
           value={orgFilter}
           onChange={handleOrgChange}
           className="cyber-input max-w-[200px]"
+          aria-label="Filter by organization"
         >
           <option value="">All orgs</option>
           {organizations.map((org) => (
@@ -566,6 +503,7 @@ export default function AdminTicketCenterClient({
           value={statusFilter}
           onChange={handleStatusChange}
           className="cyber-input max-w-[140px]"
+          aria-label="Filter by status"
         >
           <option value="all">All status</option>
           <option value="open">Open</option>
@@ -575,6 +513,7 @@ export default function AdminTicketCenterClient({
           value={sortBy}
           onChange={handleSortChange}
           className="cyber-input max-w-[160px]"
+          aria-label="Sort tickets"
         >
           <option value="updated">Recently updated</option>
           <option value="newest">Newest first</option>
@@ -582,16 +521,10 @@ export default function AdminTicketCenterClient({
         </select>
       </div>
       <div className="flex gap-2">
-        <a
-          href={`/api/v1/tickets/export?format=csv`}
-          className="cyber-button-secondary text-xs"
-        >
+        <a href={`/api/v1/tickets/export?format=csv`} className="cyber-button-secondary text-xs">
           Download CSV
         </a>
-        <a
-          href={`/api/v1/tickets/export?format=json`}
-          className="cyber-button-secondary text-xs"
-        >
+        <a href={`/api/v1/tickets/export?format=json`} className="cyber-button-secondary text-xs">
           Download JSON
         </a>
       </div>
@@ -605,7 +538,7 @@ export default function AdminTicketCenterClient({
           ))}
           <button
             type="button"
-            className="text-xs text-slate-500 hover:text-slate-300 underline"
+            className="text-xs text-slate-400 underline hover:text-slate-300"
             onClick={() => {
               setSearch("");
               setOrgFilter("");
@@ -622,26 +555,18 @@ export default function AdminTicketCenterClient({
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
           <h2 className="cyber-heading text-lg">
-            {search || orgFilter || statusFilter !== "all"
-              ? "Search Results"
-              : "Tickets"}
+            {search || orgFilter || statusFilter !== "all" ? "Search Results" : "Tickets"}
           </h2>
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-sm text-slate-300">
               <input
                 ref={selectAllRef}
                 type="checkbox"
-                checked={
-                  paginated.length > 0 &&
-                  paginated.every((t) => selectedIds.has(t.id))
-                }
+                checked={paginated.length > 0 && paginated.every((t) => selectedIds.has(t.id))}
                 onChange={(e) => {
                   if (e.target.checked) {
-                    paginated.forEach((t) =>
-                      setSelectedIds((prev) => new Set(prev).add(t.id)),
-                    );
-                    if (selectAllRef.current)
-                      selectAllRef.current.indeterminate = false;
+                    paginated.forEach((t) => setSelectedIds((prev) => new Set(prev).add(t.id)));
+                    if (selectAllRef.current) selectAllRef.current.indeterminate = false;
                   } else {
                     paginated.forEach((t) =>
                       setSelectedIds((prev) => {
@@ -650,11 +575,10 @@ export default function AdminTicketCenterClient({
                         return next;
                       }),
                     );
-                    if (selectAllRef.current)
-                      selectAllRef.current.indeterminate = false;
+                    if (selectAllRef.current) selectAllRef.current.indeterminate = false;
                   }
                 }}
-                className="h-4 w-4 rounded border-white/20 bg-[#0A1118] text-emerald-500 focus:ring-emerald-500 accent-emerald-500"
+                className="h-4 w-4 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
               />
               Select all on page
             </label>
@@ -665,28 +589,24 @@ export default function AdminTicketCenterClient({
         </div>
         <div className="mt-6 space-y-4">
           {selectedIds.size > 0 && bulkUpdateTicketsAction && (
-            <div className="mb-4 p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3 flex-wrap">
+            <div className="mb-4 flex flex-col gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-3">
                 <span className="text-sm font-medium text-emerald-300">
-                  {selectedIds.size} ticket{selectedIds.size !== 1 ? "s" : ""}{" "}
-                  selected
+                  {selectedIds.size} ticket{selectedIds.size !== 1 ? "s" : ""} selected
                 </span>
                 <select
                   value={bulkAction ?? ""}
                   onChange={(e) => {
                     const val = e.target.value;
                     setBulkAction(
-                      val === "status"
-                        ? "status"
-                        : val === "priority"
-                          ? "priority"
-                          : null,
+                      val === "status" ? "status" : val === "priority" ? "priority" : null,
                     );
                     setBulkStatus("");
                     setBulkPriority("");
                   }}
                   className="cyber-input w-auto"
                   style={{ minWidth: "140px" }}
+                  aria-label="Bulk action"
                 >
                   <option value="">Select bulk action</option>
                   <option value="status">Change Status</option>
@@ -699,6 +619,7 @@ export default function AdminTicketCenterClient({
                     className="cyber-input w-auto"
                     style={{ minWidth: "160px" }}
                     disabled={bulkProcessing}
+                    aria-label="Bulk status"
                   >
                     <option value="">Select status</option>
                     {STATUS_OPTIONS.map((s) => (
@@ -715,6 +636,7 @@ export default function AdminTicketCenterClient({
                     className="cyber-input w-auto"
                     style={{ minWidth: "140px" }}
                     disabled={bulkProcessing}
+                    aria-label="Bulk priority"
                   >
                     <option value="">Select priority</option>
                     {PRIORITY_OPTIONS.map((p) => (
@@ -726,17 +648,16 @@ export default function AdminTicketCenterClient({
                 )}
               </div>
               <div className="flex items-center gap-2">
-                {bulkAction &&
-                  (bulkAction === "status" ? bulkStatus : bulkPriority) && (
-                    <button
-                      type="button"
-                      className="cyber-button"
-                      disabled={bulkProcessing}
-                      onClick={() => handleBulkApply()}
-                    >
-                      {bulkProcessing ? "Applying..." : "Apply"}
-                    </button>
-                  )}
+                {bulkAction && (bulkAction === "status" ? bulkStatus : bulkPriority) && (
+                  <button
+                    type="button"
+                    className="cyber-button"
+                    disabled={bulkProcessing}
+                    onClick={() => handleBulkApply()}
+                  >
+                    {bulkProcessing ? "Applying..." : "Apply"}
+                  </button>
+                )}
                 <button
                   type="button"
                   className="cyber-button-secondary"
@@ -767,13 +688,20 @@ export default function AdminTicketCenterClient({
               />
             ))
           ) : (
-            <EmptyState
-              icon="🎫"
-              title="No tickets found"
-              description="There are no support tickets matching your current filters."
-              actionLabel="Create Ticket"
-              actionHref="/admin/tickets/new"
-            />
+            <div className="space-y-4">
+              <EmptyState
+                icon="ticket"
+                title="No tickets found"
+                description="There are no support tickets matching your current filters."
+              />
+              <button
+                type="button"
+                onClick={() => setOpenModal(true)}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500"
+              >
+                Create Ticket
+              </button>
+            </div>
           )}
         </div>
         {hasMore ? (
@@ -791,7 +719,7 @@ export default function AdminTicketCenterClient({
 
       {openModal ? (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:items-center">
-          <div className="w-full max-w-2xl rounded-xl border border-white/10 bg-[#071018] shadow-2xl my-8">
+          <div className="my-8 w-full max-w-2xl rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
                 <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">
@@ -812,15 +740,18 @@ export default function AdminTicketCenterClient({
             <form
               action={(formData) => {
                 startTransition(async () => {
-                  await createTicketAction(formData);
-                  setOpenModal(false);
+                  const result = await createTicketAction(formData);
+                  if (result.ok) setOpenModal(false);
                 });
               }}
               className="space-y-4 px-6 py-6"
             >
               <div>
-                <label className="cyber-label">Organization</label>
+                <label htmlFor="ticket-organization" className="cyber-label">
+                  Organization
+                </label>
                 <select
+                  id="ticket-organization"
                   name="organizationId"
                   className="cyber-input"
                   required
@@ -835,8 +766,11 @@ export default function AdminTicketCenterClient({
                 </select>
               </div>
               <div>
-                <label className="cyber-label">Title</label>
+                <label htmlFor="ticket-subject" className="cyber-label">
+                  Title
+                </label>
                 <input
+                  id="ticket-subject"
                   name="subject"
                   className="cyber-input"
                   placeholder="Ticket title"
@@ -845,8 +779,11 @@ export default function AdminTicketCenterClient({
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="cyber-label">Priority</label>
+                  <label htmlFor="ticket-priority" className="cyber-label">
+                    Priority
+                  </label>
                   <select
+                    id="ticket-priority"
                     name="priority"
                     defaultValue="normal"
                     className="cyber-input"
@@ -858,8 +795,11 @@ export default function AdminTicketCenterClient({
                   </select>
                 </div>
                 <div>
-                  <label className="cyber-label">Category</label>
+                  <label htmlFor="ticket-category" className="cyber-label">
+                    Category
+                  </label>
                   <input
+                    id="ticket-category"
                     name="category"
                     className="cyber-input"
                     placeholder="Endpoint, Billing, Networking..."
@@ -867,8 +807,11 @@ export default function AdminTicketCenterClient({
                 </div>
               </div>
               <div>
-                <label className="cyber-label">Description</label>
+                <label htmlFor="ticket-description" className="cyber-label">
+                  Description
+                </label>
                 <textarea
+                  id="ticket-description"
                   name="description"
                   rows={6}
                   className="cyber-input"
@@ -884,11 +827,7 @@ export default function AdminTicketCenterClient({
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="cyber-button"
-                  disabled={isPending}
-                >
+                <button type="submit" className="cyber-button" disabled={isPending}>
                   {isPending ? "Creating..." : "Create Ticket"}
                 </button>
               </div>

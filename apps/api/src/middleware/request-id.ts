@@ -1,17 +1,20 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { randomUUID } from "crypto";
-import { logger } from "../lib/logger";
+import { logger as rootLogger } from "../lib/logger";
+import { httpRequestsTotal, httpRequestDuration } from "../lib/metrics";
 
 declare global {
   namespace Express {
     interface Request {
       id: string;
+      log: typeof rootLogger;
     }
   }
 }
 
 export function requestId(req: Request, _res: Response, next: NextFunction) {
   req.id = (req.headers["x-request-id"] as string) || randomUUID();
+  req.log = rootLogger.child({ requestId: req.id });
   _res.setHeader("X-Request-ID", req.id);
   next();
 }
@@ -23,9 +26,8 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
     const duration = Date.now() - start;
     const level = res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info";
 
-    logger[level](
+    req.log[level](
       {
-        requestId: req.id,
         method: req.method,
         path: req.path,
         status: res.statusCode,
@@ -34,6 +36,16 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
         ip: req.ip,
       },
       "Request completed",
+    );
+
+    httpRequestsTotal.inc({
+      method: req.method,
+      route: req.path,
+      status_code: String(res.statusCode),
+    });
+    httpRequestDuration.observe(
+      { method: req.method, route: req.path, status_code: String(res.statusCode) },
+      duration / 1000,
     );
   });
 

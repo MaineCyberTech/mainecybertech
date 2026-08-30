@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import projectsRouter from "../routes/projects";
-import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -18,6 +18,7 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
+    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
   getSupabaseAnon: jest.fn(),
 }));
 
@@ -31,14 +32,34 @@ function mockAuth() {
   const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn() };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
   supabase.auth.getUser.mockResolvedValue({
-    data: { user: { id: "user-1", email: "test@example.com" } },
+    data: { user: { id: "00000000-0000-0000-0000-000000000777", email: "test@example.com" } },
     error: null,
   });
   return supabase;
 }
 
-const PROJECT = { id: "proj-1", name: "Test Project", status: "active", organization_id: "org-1" };
+const PROJECT = {
+  id: "00000000-0000-0000-0000-000000000030",
+  name: "Test Project",
+  status: "active",
+  organization_id: "00000000-0000-0000-0000-000000000001",
+};
 
+/*
+ * Route-level suite: auth/permission/subscription middleware is stubbed so
+ * mocks serve route queries only. Enforcement itself is covered by the
+ * dedicated middleware-*.test.ts suites.
+ */
+jest.mock("../middleware/org-access", () => ({
+  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission:
+    () =>
+    (_req: unknown, _res: unknown, next: () => void) =>
+      next(),
+}));
 const app = createTestApp();
 app.use("/api/v1/projects", projectsRouter);
 app.use(errorHandler);
@@ -51,7 +72,11 @@ describe("API edge cases", () => {
   describe("database failure scenarios", () => {
     it("returns 500 when DB query fails", async () => {
       const supabase = mockAuth();
-      const builder = createMockBuilder({ data: null, error: { message: "Connection refused" }, count: 0 });
+      const builder = createMockBuilder({
+        data: null,
+        error: { message: "Connection refused" },
+        count: 0,
+      });
       supabase.from.mockReturnValue(builder);
 
       const res = await request(app)
@@ -66,12 +91,14 @@ describe("API edge cases", () => {
       const supabase = mockAuth();
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ data: null, error: { message: "relation does not exist" } }),
+          eq: jest
+            .fn()
+            .mockResolvedValue({ data: null, error: { message: "relation does not exist" } }),
         }),
       });
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(500);
@@ -88,7 +115,7 @@ describe("API edge cases", () => {
       });
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(500);
@@ -101,13 +128,16 @@ describe("API edge cases", () => {
       supabase.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({ data: null, error: { message: "new row violates row-level security policy" } }),
+            single: jest.fn().mockResolvedValue({
+              data: null,
+              error: { message: "new row violates row-level security policy" },
+            }),
           }),
         }),
       });
 
       const res = await request(app)
-        .get("/api/v1/projects/proj-1")
+        .get("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
@@ -115,11 +145,16 @@ describe("API edge cases", () => {
 
     it("returns 403 when user is not authorized for mutation", async () => {
       const supabase = mockAuth();
-      supabase.from
-        .mockReturnValueOnce({ select: jest.fn().mockReturnValue({ eq: jest.fn().mockReturnValue({ eq: jest.fn().mockResolvedValue({ data: [], error: null }) }) }) });
+      supabase.from.mockReturnValueOnce({
+        select: jest.fn().mockReturnValue({
+          eq: jest
+            .fn()
+            .mockReturnValue({ eq: jest.fn().mockResolvedValue({ data: [], error: null }) }),
+        }),
+      });
 
       const res = await request(app)
-        .delete("/api/v1/projects/proj-1")
+        .delete("/api/v1/projects/00000000-0000-0000-0000-000000000030")
         .set("Authorization", "Bearer token-123");
 
       expect([403, 500]).toContain(res.status);
@@ -127,20 +162,27 @@ describe("API edge cases", () => {
   });
 
   describe("malformed input scenarios", () => {
-    it("returns 400 for invalid UUID format in params", async () => {
+    it("returns 404 for invalid UUID format in params", async () => {
       mockAuth();
       (getSupabaseAdmin as jest.Mock)().from.mockReturnValue({
         select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockResolvedValue({ data: null, error: { message: "invalid input syntax for type uuid" } }),
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({
+              data: null,
+              error: { message: "invalid input syntax for type uuid" },
+            }),
+          }),
         }),
-        insert: jest.fn(), update: jest.fn(), delete: jest.fn(),
+        insert: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
       });
 
       const res = await request(app)
         .get("/api/v1/projects/not-a-uuid")
         .set("Authorization", "Bearer token-123");
 
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(404);
     });
   });
 });

@@ -1,15 +1,16 @@
 import { Router } from "express";
 import multer from "multer";
-import { getSupabaseAdmin } from "../services/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import crypto from "node:crypto";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
-import {
-  requireIfMatch,
-  checkVersionMatch,
-} from "../middleware/optimistic-locking";
+import { requirePermission } from "../middleware/permissions";
+import { getEnv } from "../config/env";
+import { responseCacheNoRenew } from "../middleware/cache";
+import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import {
   createDocumentSchema,
   updateDocumentSchema,
@@ -17,35 +18,261 @@ import {
   bulkMetadataSchema,
 } from "../validators/document";
 import { z } from "zod";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const createShareSchema = z.object({
-  expiresAt: z.string().datetime(),
+  expiresAt: z
+    .string()
+    .datetime()
+    .refine(
+      (val) => {
+        const date = new Date(val);
+        const now = new Date();
+        const max = new Date();
+        max.setFullYear(max.getFullYear() + 1);
+        return date > now && date <= max;
+      },
+      { message: "expiresAt must be in the future and within 1 year" },
+    ),
   maxAccess: z.number().int().positive().optional(),
 });
 
 const updateShareSchema = z.object({
-  expiresAt: z.string().datetime().optional(),
+  expiresAt: z
+    .string()
+    .datetime()
+    .refine(
+      (val) => {
+        const date = new Date(val);
+        const now = new Date();
+        const max = new Date();
+        max.setFullYear(max.getFullYear() + 1);
+        return date > now && date <= max;
+      },
+      { message: "expiresAt must be in the future and within 1 year" },
+    )
+    .optional(),
   maxAccess: z.number().int().positive().optional().nullable(),
   revoked: z.boolean().optional(),
 });
 
+const BLOCKED_EXTENSIONS = new Set([
+  ".exe",
+  ".msi",
+  ".bat",
+  ".cmd",
+  ".com",
+  ".scr",
+  ".pif",
+  ".vbs",
+  ".vbe",
+  ".js",
+  ".jse",
+  ".wsf",
+  ".wsh",
+  ".ps1",
+  ".psm1",
+  ".psd1",
+  ".ps2",
+  ".psc1",
+  ".sh",
+  ".bash",
+  ".dll",
+  ".ocx",
+  ".sys",
+  ".app",
+  ".gadget",
+  ".msu",
+  ".msp",
+  ".jar",
+  ".htm",
+  ".html",
+  ".svg",
+]);
+
+const ALLOWED_MIME_TYPES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/plain",
+  "text/csv",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/gzip",
+  "application/json",
+  "application/rtf",
+];
+
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = "." + file.originalname.split(".").pop()?.toLowerCase();
+    if (BLOCKED_EXTENSIONS.has(ext)) {
+      cb(new AppError("VALIDATION", `File type ${ext} is not allowed`, 400));
+      return;
+    }
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      cb(new AppError("VALIDATION", `File type ${file.mimetype} is not allowed`, 400));
+      return;
+    }
+    cb(null, true);
+  },
 });
+// Storage bucket is pinned server-side. A request must never be able to target
+// an arbitrary bucket — otherwise a member could write into a public bucket
+// (avatars/logos) or overwrite another org's objects. (FILE-P2-001)
+const DOCUMENTS_BUCKET = "documents";
+
+// --- Upload content sniffing (FILE-P1-001) -----------------------------------
+// The client-supplied Content-Type is not trusted: the bytes are inspected so
+// markup/script content can never be stored with an innocent mimetype (stored
+// XSS), and declared image/PDF types must match their magic bytes.
+
+function looksLikeMarkup(buffer: Buffer): boolean {
+  const head = buffer.subarray(0, 512).toString("utf8").toLowerCase();
+  return (
+    head.startsWith("<!doctype") ||
+    head.startsWith("<html") ||
+    head.includes("<script") ||
+    head.includes("<svg") ||
+    head.startsWith("<?xml")
+  );
+}
+
+function sniffImageType(buffer: Buffer): "jpeg" | "png" | "gif" | "webp" | null {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return "jpeg";
+  }
+  if (buffer.length >= 8 && buffer.toString("hex", 0, 8) === "89504e470d0a1a0a") return "png";
+  if (buffer.length >= 6 && (buffer.toString("ascii", 0, 6) === "gif87a" || buffer.toString("ascii", 0, 6) === "gif89a")) {
+    return "gif";
+  }
+  if (
+    buffer.length >= 12 &&
+    buffer.toString("ascii", 0, 4) === "riff" &&
+    buffer.toString("ascii", 8, 12) === "webp"
+  ) {
+    return "webp";
+  }
+  return null;
+}
+
+function validateUploadContent(buffer: Buffer, declaredMime: string): void {
+  // Markup/script content is rejected for every declared type — this is the
+  // primary stored-XSS vector (an .svg/.html/.xml upload served inline).
+  if (looksLikeMarkup(buffer)) {
+    throw new AppError("VALIDATION", "File content looks like HTML/SVG/script and is not allowed", 400);
+  }
+
+  if (declaredMime.startsWith("image/")) {
+    const sniffed = sniffImageType(buffer);
+    if (!sniffed) {
+      throw new AppError("VALIDATION", `File content does not match declared image type ${declaredMime}`, 400);
+    }
+    const expected: Record<string, string> = {
+      "image/jpeg": "jpeg",
+      "image/png": "png",
+      "image/gif": "gif",
+      "image/webp": "webp",
+    };
+    if (expected[declaredMime] !== sniffed) {
+      throw new AppError(
+        "VALIDATION",
+        `File content (${sniffed}) does not match declared type ${declaredMime}`,
+        400,
+      );
+    }
+    return;
+  }
+
+  if (declaredMime === "application/pdf") {
+    if (!(buffer.length >= 5 && buffer.toString("ascii", 0, 5) === "%pdf-")) {
+      throw new AppError("VALIDATION", "File content is not a valid PDF", 400);
+    }
+  }
+}
+
 const router: ReturnType<typeof Router> = Router();
+
+router.get("/shares/:token", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { token } = req.params;
+
+    const { data: share, error: shareError } = await supabase
+      .from("document_shares")
+      .select("*, documents!inner(id, name, storage_bucket, storage_path, mime_type)")
+      .eq("token", token)
+      .single();
+
+    if (shareError || !share) throw new AppError("NOT_FOUND", "Share link not found", 404);
+
+    if (share.revoked_at) throw new AppError("FORBIDDEN", "Share link has been revoked", 403);
+
+    if (new Date(share.expires_at) < new Date())
+      throw new AppError("FORBIDDEN", "Share link has expired", 403);
+
+    if (share.max_access && share.access_count >= share.max_access)
+      throw new AppError("FORBIDDEN", "Share link has reached maximum access count", 403);
+
+    const doc = share.documents;
+    if (!doc.storage_bucket || !doc.storage_path)
+      throw new AppError("STORAGE_ERROR", "Document has no storage reference", 500);
+
+    const { data: signedUrl, error: urlError } = await supabase.storage
+      .from(doc.storage_bucket)
+      .createSignedUrl(doc.storage_path, 3600);
+
+    if (urlError || !signedUrl)
+      throw new AppError("STORAGE_ERROR", "Failed to generate download URL", 500);
+
+    // Atomic, race-safe increment: only the row whose current access_count is
+    // still under the cap is updated. Concurrent requests that both passed the
+    // earlier check can no longer both increment past max_access. (FILE-P2-003)
+    let incrementQuery = supabase
+      .from("document_shares")
+      .update({ access_count: share.access_count + 1 })
+      .eq("id", share.id);
+    if (share.max_access) {
+      incrementQuery = incrementQuery.lt("access_count", share.max_access);
+    }
+    const { data: incremented, error: incrementError } = await incrementQuery
+      .select("id")
+      .single();
+    if (incrementError || !incremented) {
+      throw new AppError("FORBIDDEN", "Share link has reached maximum access count", 403);
+    }
+
+    res.json(
+      success({
+        documentName: doc.name,
+        mimeType: doc.mime_type,
+        downloadUrl: signedUrl.signedUrl,
+        expiresIn: 3600,
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
 router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(req.query.limit as string) || 25),
-    );
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("documents").select("*", { count: "exact" });
@@ -60,9 +287,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
       data: documents,
       error,
       count,
-    } = await query
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+    } = await query.order("created_at", { ascending: false }).range(offset, offset + limit - 1);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -81,15 +306,13 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("documents")
-      .select("*")
-      .eq("id", req.params.id)
-      .single();
+    const orgId = req.query.organization_id as string | undefined;
+    const supabase = getScopedClient(req, "documents", "read");
+    let query = supabase.from("documents").select("*").eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Document not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -99,7 +322,7 @@ router.get("/:id", async (req, res, next) => {
 router.post("/", async (req, res, next) => {
   try {
     const parsed = createDocumentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
 
     const { data, error } = await supabase
       .from("documents")
@@ -145,6 +368,17 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
       throw new AppError("VALIDATION", "File is required", 400);
     }
 
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new AppError(
+        "VALIDATION",
+        `File type ${file.mimetype} is not allowed. Allowed types: PDF, Word, Excel, PowerPoint, text, CSV, images (JPEG/PNG/WebP/GIF), archives, JSON, RTF`,
+        400,
+      );
+    }
+
+    // Sniff the bytes — the declared mimetype is not trusted. (FILE-P1-001)
+    validateUploadContent(file.buffer, file.mimetype);
+
     const organizationId = String(req.body.organizationId ?? "").trim();
     const name = String(req.body.name ?? "").trim();
     const description = String(req.body.description ?? "").trim() || null;
@@ -152,42 +386,43 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
     const folderPath = String(req.body.folderPath ?? "").trim() || null;
 
     if (!organizationId || !name) {
-      throw new AppError(
-        "VALIDATION",
-        "Organization ID and name are required",
-        400,
-      );
+      throw new AppError("VALIDATION", "Organization ID and name are required", 400);
     }
 
-    const supabase = getSupabaseAdmin();
-    const bucket = String(req.body.bucket ?? "documents").trim() || "documents";
+    const supabase = getScopedClient(req, "documents", "write");
+    // Bucket is pinned server-side (FILE-P2-001) — never read from req.body.
+    const bucket = DOCUMENTS_BUCKET;
     const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
     const storagePath = `orgs/${organizationId}/${Date.now()}-${safeName}`;
-
+    // Each upload gets a unique path, so a non-atomic upsert is never needed
+    // and we fail closed on an unexpected collision instead of overwriting.
     const { error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(storagePath, file.buffer, {
         contentType: file.mimetype || undefined,
-        upsert: true,
+        upsert: false,
       });
 
     if (uploadError) {
-      throw new AppError(
-        "STORAGE_ERROR",
-        `Upload failed: ${uploadError.message}`,
-        500,
-      );
+      throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);
     }
 
     const documentId = String(req.body.documentId ?? "").trim() || null;
 
     if (documentId) {
       const currentVersion = Number(req.body.currentVersion ?? 1);
-      const { data: current, error: fetchError } = await supabase
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+        | string
+        | undefined;
+      let currentQuery = supabase
         .from("documents")
         .select("storage_bucket, storage_path, current_version")
-        .eq("id", documentId)
-        .single();
+        .eq("id", documentId);
+      // Version replacement must be scoped to the caller's org — otherwise a
+      // caller in org A could replace (and delete the storage object of) a
+      // document belonging to org B.
+      if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+      const { data: current, error: fetchError } = await currentQuery.single();
 
       if (fetchError) {
         await supabase.storage.from(bucket).remove([storagePath]);
@@ -195,14 +430,12 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
       }
 
       if (current.storage_bucket && current.storage_path) {
-        await supabase.storage
-          .from(current.storage_bucket)
-          .remove([current.storage_path]);
+        await supabase.storage.from(current.storage_bucket).remove([current.storage_path]);
       }
 
       const nextVersion = currentVersion + 1;
 
-      const { data, error: updateError } = await supabase
+      let updateQuery = supabase
         .from("documents")
         .update({
           storage_bucket: bucket,
@@ -212,9 +445,9 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
           file_size: file.size,
           current_version: nextVersion,
         })
-        .eq("id", documentId)
-        .select()
-        .single();
+        .eq("id", documentId);
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error: updateError } = await updateQuery.select().single();
 
       if (updateError) {
         await supabase.storage.from(bucket).remove([storagePath]);
@@ -290,13 +523,12 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
 router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateDocumentSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
+    const orgId = req.query.organization_id as string | undefined;
 
-    const { data: current, error: fetchError } = await supabase
-      .from("documents")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
+    let currentQuery = supabase.from("documents").select("version").eq("id", req.params.id);
+    if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+    const { data: current, error: fetchError } = await currentQuery.single();
 
     if (fetchError || !current) {
       throw new AppError("NOT_FOUND", "Document not found", 404);
@@ -306,40 +538,29 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
-    if (parsed.description !== undefined)
-      updateData.description = parsed.description;
-    if (parsed.visibility !== undefined)
-      updateData.visibility = parsed.visibility;
-    if (parsed.folderPath !== undefined)
-      updateData.folder_path = parsed.folderPath;
-    if (parsed.storageBucket !== undefined)
-      updateData.storage_bucket = parsed.storageBucket;
-    if (parsed.storagePath !== undefined)
-      updateData.storage_path = parsed.storagePath;
+    if (parsed.description !== undefined) updateData.description = parsed.description;
+    if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
+    if (parsed.folderPath !== undefined) updateData.folder_path = parsed.folderPath;
+    if (parsed.storageBucket !== undefined) updateData.storage_bucket = parsed.storageBucket;
+    if (parsed.storagePath !== undefined) updateData.storage_path = parsed.storagePath;
     if (parsed.mimeType !== undefined) updateData.mime_type = parsed.mimeType;
     if (parsed.fileName !== undefined) updateData.file_name = parsed.fileName;
     if (parsed.fileSize !== undefined) updateData.file_size = parsed.fileSize;
-    if (parsed.currentVersion !== undefined)
-      updateData.current_version = parsed.currentVersion;
+    if (parsed.currentVersion !== undefined) updateData.current_version = parsed.currentVersion;
     if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
 
     updateData.version = current.version + 1;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("documents")
       .update(updateData)
       .eq("id", req.params.id)
-      .eq("version", current.version)
-      .select()
-      .single();
+      .eq("version", current.version);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.select().single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data)
-      throw new AppError(
-        "VERSION_CONFLICT",
-        "Document was modified by another user",
-        409,
-      );
+    if (!data) throw new AppError("VERSION_CONFLICT", "Document was modified by another user", 409);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -355,27 +576,29 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("documents", "delete"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
-    const { data: doc, error: fetchError } = await supabase
+    assertDeleteConfirmed(req.body);
+    const supabase = getScopedClient(req, "documents", "write");
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+    let fetchQuery = supabase
       .from("documents")
-      .select("storage_bucket, storage_path")
-      .eq("id", req.params.id)
-      .single();
+      .select("id, organization_id, storage_bucket, storage_path")
+      .eq("id", req.params.id);
+    if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
+    const { data: doc, error: fetchError } = await fetchQuery.single();
 
-    if (fetchError) throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (fetchError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
 
     if (doc.storage_bucket && doc.storage_path) {
-      await supabase.storage
-        .from(doc.storage_bucket)
-        .remove([doc.storage_path]);
+      await supabase.storage.from(doc.storage_bucket).remove([doc.storage_path]);
     }
 
-    const { error } = await supabase
-      .from("documents")
-      .delete()
-      .eq("id", req.params.id);
+    let deleteQuery = supabase.from("documents").delete().eq("id", req.params.id);
+    if (orgId) deleteQuery = deleteQuery.eq("organization_id", orgId);
+    const { error } = await deleteQuery;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -395,21 +618,18 @@ router.delete("/:id", async (req, res, next) => {
 
 router.post("/:id/signed-url", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
-    const { data: doc, error: docError } = await supabase
+    const orgId = req.query.organization_id as string | undefined;
+    const supabase = getScopedClient(req, "documents", "write");
+    let query = supabase
       .from("documents")
       .select("storage_bucket, storage_path")
-      .eq("id", req.params.id)
-      .single();
+      .eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data: doc, error: docError } = await query.single();
 
-    if (docError || !doc)
-      throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
     if (!doc.storage_bucket || !doc.storage_path)
-      throw new AppError(
-        "BAD_REQUEST",
-        "Document has no storage reference",
-        400,
-      );
+      throw new AppError("BAD_REQUEST", "Document has no storage reference", 400);
 
     const { data: signedUrl, error: urlError } = await supabase.storage
       .from(doc.storage_bucket)
@@ -424,30 +644,54 @@ router.post("/:id/signed-url", async (req, res, next) => {
   }
 });
 
+/**
+ * Resolve which of the given document ids belong to the caller's org.
+ * When orgId is set (client-scoped caller) ids outside the org are dropped
+ * so the bulk-update RPC never touches another tenant's rows.
+ */
+async function resolveOwnedDocumentIds(
+  supabase: SupabaseClient,
+  documentIds: string[],
+  orgId: string | undefined,
+): Promise<string[]> {
+  if (!orgId) return documentIds;
+  const { data, error } = await supabase
+    .from("documents")
+    .select("id")
+    .in("id", documentIds)
+    .eq("organization_id", orgId);
+  if (error) throw new AppError("DB_ERROR", error.message, 500);
+  return (data ?? []).map((d: { id: string }) => d.id);
+}
+
 router.post("/bulk/folder", async (req, res, next) => {
   try {
     const parsed = bulkFolderSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
 
-    const updates = parsed.documentIds.map((id) => ({
+    // The bulk RPC skips its per-row check for service-role calls, so the
+    // document ids MUST be pre-filtered to the caller's org.
+    const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
+
+    const updates = ownedIds.map((id) => ({
       id,
       data: { folder_path: parsed.folderPath },
     }));
 
-    const { data: results, error } = await supabase.rpc(
-      "bulk_update_with_version",
-      {
-        table_name: "documents",
-        updates,
-      },
-    );
+    const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
+      table_name: "documents",
+      updates,
+    });
 
     if (error) {
       throw new AppError("DB_ERROR", error.message, 500);
     }
 
-    const successful = results.filter((r: any) => r.success).length;
-    const failed = results.filter((r: any) => !r.success);
+    const successful = results.filter((r: { success: boolean }) => r.success).length;
+    const failed = results.filter((r: { success: boolean }) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -470,39 +714,41 @@ router.post("/bulk/folder", async (req, res, next) => {
 router.post("/bulk/metadata", async (req, res, next) => {
   try {
     const parsed = bulkMetadataSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
 
     const updateData: Record<string, unknown> = {};
-    if (parsed.description !== undefined)
-      updateData.description = parsed.description;
-    if (parsed.folderPath !== undefined)
-      updateData.folder_path = parsed.folderPath;
-    if (parsed.visibility !== undefined)
-      updateData.visibility = parsed.visibility;
+    if (parsed.description !== undefined) updateData.description = parsed.description;
+    if (parsed.folderPath !== undefined) updateData.folder_path = parsed.folderPath;
+    if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
 
     if (Object.keys(updateData).length === 0) {
       throw new AppError("VALIDATION", "No fields to update", 400);
     }
 
-    const updates = parsed.documentIds.map((id) => ({
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+
+    // The bulk RPC skips its per-row check for service-role calls, so the
+    // document ids MUST be pre-filtered to the caller's org.
+    const ownedIds = await resolveOwnedDocumentIds(supabase, parsed.documentIds, orgId);
+
+    const updates = ownedIds.map((id) => ({
       id,
       data: updateData,
     }));
 
-    const { data: results, error } = await supabase.rpc(
-      "bulk_update_with_version",
-      {
-        table_name: "documents",
-        updates,
-      },
-    );
+    const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
+      table_name: "documents",
+      updates,
+    });
 
     if (error) {
       throw new AppError("DB_ERROR", error.message, 500);
     }
 
-    const successful = results.filter((r: any) => r.success).length;
-    const failed = results.filter((r: any) => !r.success);
+    const successful = results.filter((r: { success: boolean }) => r.success).length;
+    const failed = results.filter((r: { success: boolean }) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -524,12 +770,20 @@ router.post("/bulk/metadata", async (req, res, next) => {
 
 router.get("/:id/versions", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "read");
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+
+    // Version rows carry no org column — verify the parent document belongs
+    // to the caller's org before exposing version metadata (storage paths).
+    let docQuery = supabase.from("documents").select("id").eq("id", req.params.id);
+    if (orgId) docQuery = docQuery.eq("organization_id", orgId);
+    const { data: doc, error: docError } = await docQuery.single();
+    if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(req.query.limit as string) || 20),
-    );
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
 
     const { data, error, count } = await supabase
@@ -548,7 +802,16 @@ router.get("/:id/versions", async (req, res, next) => {
 
 router.get("/:id/versions/:versionId", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "read");
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
+      | string
+      | undefined;
+
+    let docQuery = supabase.from("documents").select("id").eq("id", req.params.id);
+    if (orgId) docQuery = docQuery.eq("organization_id", orgId);
+    const { data: doc, error: docError } = await docQuery.single();
+    if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
     const { data, error } = await supabase
       .from("document_versions")
       .select("*")
@@ -556,8 +819,7 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
       .eq("document_id", req.params.id)
       .single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Version not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Version not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
@@ -567,7 +829,7 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
 router.post("/:id/shares", async (req, res, next) => {
   try {
     const parsed = createShareSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
 
     const { data: doc, error: docError } = await supabase
       .from("documents")
@@ -575,8 +837,7 @@ router.post("/:id/shares", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
 
-    if (docError || !doc)
-      throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
 
     const hasAccess = await supabase
       .from("memberships")
@@ -587,10 +848,9 @@ router.post("/:id/shares", async (req, res, next) => {
       .maybeSingle()
       .then(({ data }) => !!data);
 
-    if (!hasAccess)
-      throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
+    if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
 
-    const token = crypto.randomUUID();
+    const token = crypto.randomBytes(32).toString("hex") as string;
     const { data: share, error } = await supabase
       .from("document_shares")
       .insert({
@@ -614,7 +874,7 @@ router.post("/:id/shares", async (req, res, next) => {
       metadata: { shareId: share.id, expiresAt: parsed.expiresAt },
     });
 
-    const baseUrl = process.env.APP_BASE_URL ?? "";
+    const baseUrl = getEnv().APP_BASE_URL;
     const shareUrl = `${baseUrl}/api/v1/documents/shares/${token}`;
 
     res.json(success({ ...share, shareUrl }));
@@ -625,7 +885,7 @@ router.post("/:id/shares", async (req, res, next) => {
 
 router.get("/:id/shares", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "read");
 
     const { data: doc, error: docError } = await supabase
       .from("documents")
@@ -633,8 +893,7 @@ router.get("/:id/shares", async (req, res, next) => {
       .eq("id", req.params.id)
       .single();
 
-    if (docError || !doc)
-      throw new AppError("NOT_FOUND", "Document not found", 404);
+    if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
 
     const hasAccess = await supabase
       .from("memberships")
@@ -645,8 +904,7 @@ router.get("/:id/shares", async (req, res, next) => {
       .maybeSingle()
       .then(({ data }) => !!data);
 
-    if (!hasAccess)
-      throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
+    if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized for this document", 403);
 
     const { data, error } = await supabase
       .from("document_shares")
@@ -665,7 +923,7 @@ router.get("/:id/shares", async (req, res, next) => {
 router.patch("/:id/shares/:shareId", async (req, res, next) => {
   try {
     const parsed = updateShareSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
 
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
@@ -673,8 +931,7 @@ router.patch("/:id/shares/:shareId", async (req, res, next) => {
       .eq("id", req.params.shareId)
       .single();
 
-    if (shareError || !share)
-      throw new AppError("NOT_FOUND", "Share not found", 404);
+    if (shareError || !share) throw new AppError("NOT_FOUND", "Share not found", 404);
 
     const hasAccess = await supabase
       .from("memberships")
@@ -688,10 +945,8 @@ router.patch("/:id/shares/:shareId", async (req, res, next) => {
     if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
 
     const updateData: Record<string, unknown> = {};
-    if (parsed.expiresAt !== undefined)
-      updateData.expires_at = parsed.expiresAt;
-    if (parsed.maxAccess !== undefined)
-      updateData.max_access = parsed.maxAccess;
+    if (parsed.expiresAt !== undefined) updateData.expires_at = parsed.expiresAt;
+    if (parsed.maxAccess !== undefined) updateData.max_access = parsed.maxAccess;
     if (parsed.revoked) updateData.revoked_at = new Date().toISOString();
 
     if (Object.keys(updateData).length === 0) {
@@ -724,7 +979,7 @@ router.patch("/:id/shares/:shareId", async (req, res, next) => {
 
 router.delete("/:id/shares/:shareId", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "documents", "write");
 
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
@@ -732,8 +987,7 @@ router.delete("/:id/shares/:shareId", async (req, res, next) => {
       .eq("id", req.params.shareId)
       .single();
 
-    if (shareError || !share)
-      throw new AppError("NOT_FOUND", "Share not found", 404);
+    if (shareError || !share) throw new AppError("NOT_FOUND", "Share not found", 404);
 
     const hasAccess = await supabase
       .from("memberships")
@@ -746,10 +1000,7 @@ router.delete("/:id/shares/:shareId", async (req, res, next) => {
 
     if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
 
-    const { error } = await supabase
-      .from("document_shares")
-      .delete()
-      .eq("id", req.params.shareId);
+    const { error } = await supabase.from("document_shares").delete().eq("id", req.params.shareId);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -770,68 +1021,3 @@ router.delete("/:id/shares/:shareId", async (req, res, next) => {
 export default router;
 
 // Public share access endpoint (no auth required)
-router.get("/shares/:token", async (req, res, next) => {
-  try {
-    const supabase = getSupabaseAdmin();
-    const { token } = req.params;
-
-    const { data: share, error: shareError } = await supabase
-      .from("document_shares")
-      .select(
-        "*, documents!inner(id, name, storage_bucket, storage_path, mime_type)",
-      )
-      .eq("token", token)
-      .single();
-
-    if (shareError || !share)
-      throw new AppError("NOT_FOUND", "Share link not found", 404);
-
-    if (share.revoked_at)
-      throw new AppError("FORBIDDEN", "Share link has been revoked", 403);
-
-    if (new Date(share.expires_at) < new Date())
-      throw new AppError("FORBIDDEN", "Share link has expired", 403);
-
-    if (share.max_access && share.access_count >= share.max_access)
-      throw new AppError(
-        "FORBIDDEN",
-        "Share link has reached maximum access count",
-        403,
-      );
-
-    const doc = share.documents;
-    if (!doc.storage_bucket || !doc.storage_path)
-      throw new AppError(
-        "STORAGE_ERROR",
-        "Document has no storage reference",
-        500,
-      );
-
-    const { data: signedUrl, error: urlError } = await supabase.storage
-      .from(doc.storage_bucket)
-      .createSignedUrl(doc.storage_path, 3600);
-
-    if (urlError || !signedUrl)
-      throw new AppError(
-        "STORAGE_ERROR",
-        "Failed to generate download URL",
-        500,
-      );
-
-    await supabase
-      .from("document_shares")
-      .update({ access_count: share.access_count + 1 })
-      .eq("id", share.id);
-
-    res.json(
-      success({
-        documentName: doc.name,
-        mimeType: doc.mime_type,
-        downloadUrl: signedUrl.signedUrl,
-        expiresIn: 3600,
-      }),
-    );
-  } catch (error) {
-    next(error);
-  }
-});

@@ -1,8 +1,9 @@
 import { ApiClient } from "./client";
 
 export interface BulkInviteResult {
-  ok: boolean;
-  error?: string;
+  email: string;
+  status: "created" | "invited" | "exists" | "skipped" | "error";
+  message: string;
 }
 
 export class BulkApi {

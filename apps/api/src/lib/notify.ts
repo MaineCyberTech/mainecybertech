@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "../services/supabase";
 import { sendEmail } from "./email";
+import { enqueueTask } from "./task-producer";
 import { logger } from "./logger";
 import { getEnv } from "../config/env";
 
@@ -49,12 +50,19 @@ export async function notifyAndEmail(
           ? `/portal/documents/${opts.moduleId}`
           : "";
 
-  await sendEmail({
+  const emailPayload = {
     to: opts.email,
     subject: `[Maine CyberTech] ${opts.title}`,
     text: `${opts.body}\n\nView: ${baseUrl}${modulePath}`,
     html:
       opts.emailHtml ??
       `<p>${opts.body.replace(/\n/g, "<br/>")}</p>${modulePath ? `<p><a href="${baseUrl}${modulePath}">View details</a></p>` : ""}`,
-  });
+  };
+
+  // Route email through the worker queue when available (retries + backoff);
+  // fall back to sending inline so the notification is never lost.
+  const enqueued = await enqueueTask("notification-email", emailPayload);
+  if (!enqueued) {
+    await sendEmail(emailPayload);
+  }
 }

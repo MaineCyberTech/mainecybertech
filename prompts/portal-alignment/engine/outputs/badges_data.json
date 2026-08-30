@@ -1,0 +1,9 @@
+{
+  "p0": 0,
+  "p1": 0,
+  "p2": 3,
+  "p3": 3,
+  "readiness_score": 91,
+  "decision": "APPROVED_FOR_PROD_DEPLOY",
+  "total": 6
+}

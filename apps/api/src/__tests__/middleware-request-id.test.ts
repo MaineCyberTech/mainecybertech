@@ -14,8 +14,15 @@ jest.mock("../config/env", () => ({
 }));
 
 const mockLog = jest.fn();
+const mockChildLogger = { info: mockLog, warn: mockLog, error: mockLog, debug: mockLog };
 jest.mock("../lib/logger", () => ({
-  logger: { info: mockLog, warn: mockLog, error: mockLog, debug: mockLog },
+  logger: {
+    info: mockLog,
+    warn: mockLog,
+    error: mockLog,
+    debug: mockLog,
+    child: () => mockChildLogger,
+  },
 }));
 
 import { requestId, requestLogger } from "../middleware/request-id";
@@ -28,9 +35,7 @@ describe("requestId middleware", () => {
 
     requestId(req, res, next);
 
-    expect(req.id).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
-    );
+    expect(req.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
     expect(res.setHeader).toHaveBeenCalledWith("X-Request-ID", req.id);
     expect(next).toHaveBeenCalled();
   });
@@ -55,6 +60,7 @@ describe("requestLogger middleware", () => {
     const listeners: Record<string, () => void> = {};
     const req = {
       id: "test-req-id",
+      log: { info: mockLog, warn: mockLog, error: mockLog, debug: mockLog },
       method: "GET",
       path: "/api/v1/roles",
       headers: { "user-agent": "test" },
@@ -86,7 +92,6 @@ describe("requestLogger middleware", () => {
 
     expect(mockLog).toHaveBeenCalledWith(
       expect.objectContaining({
-        requestId: "test-req-id",
         method: "GET",
         path: "/api/v1/roles",
         status: 200,
@@ -102,6 +107,7 @@ describe("requestLogger middleware", () => {
     const listeners: Record<string, () => void> = {};
     const req = {
       id: "err-req-id",
+      log: { info: mockLog, warn: mockLog, error: mockLog, debug: mockLog },
       method: "POST",
       path: "/api/v1/auth/sign-in",
       headers: {},
@@ -129,7 +135,6 @@ describe("requestLogger middleware", () => {
 
     expect(mockLog).toHaveBeenCalledWith(
       expect.objectContaining({
-        requestId: "err-req-id",
         status: 500,
         duration: 100,
       }),

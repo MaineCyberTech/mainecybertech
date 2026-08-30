@@ -1,0 +1,26 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "templates": [
+    {
+      "type": "location",
+      "slugPattern": "/locations/{town}-it-support",
+      "dataNeeded": ["town", "serviceCategory", "recommendedProducts", "faqs", "trustBadges"]
+    },
+    {
+      "type": "vertical",
+      "slugPattern": "/services/{vertical}-{service}-maine",
+      "dataNeeded": ["vertical", "service", "campaign", "products", "caseStudies", "faqs"]
+    },
+    {
+      "type": "service",
+      "slugPattern": "/services/{service}-maine",
+      "dataNeeded": ["service", "category", "products", "bundles", "faq"]
+    }
+  ],
+  "examples": [
+    "/locations/limington-it-support",
+    "/services/marina-wifi-installation-maine",
+    "/services/church-cybersecurity-maine",
+    "/services/microsoft-365-support-maine"
+  ]
+}

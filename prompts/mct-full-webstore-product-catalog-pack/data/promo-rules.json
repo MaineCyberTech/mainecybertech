@@ -1,0 +1,95 @@
+{
+  "version": "2026-07-29.v3-marketing",
+  "principles": [
+    "Truthful discounts only",
+    "No fake scarcity",
+    "No hidden fees",
+    "Show discount near price",
+    "Show eligibility and expiration when real",
+    "Use consult-required language for scoped services",
+    "Do not pressure emergency/security buyers with manipulative countdowns"
+  ],
+  "promotionTypes": [
+    {
+      "id": "bundle_savings",
+      "label": "Bundle savings",
+      "description": "Show savings when a bundle includes multiple eligible products. Use real calculated comparison only."
+    },
+    {
+      "id": "starter_credit",
+      "label": "Quick-win starter credit",
+      "description": "Credit part of a quick-win purchase toward an eligible larger bundle or monthly plan."
+    },
+    {
+      "id": "seasonal_offer",
+      "label": "Seasonal readiness offer",
+      "description": "Use only for real seasonal service windows such as pre-season marina readiness or end-of-year security reviews."
+    },
+    {
+      "id": "new_client_foundation",
+      "label": "New client foundation offer",
+      "description": "Introductory bundle incentive for first-time managed service prospects."
+    },
+    {
+      "id": "limited_capacity",
+      "label": "Limited capacity notice",
+      "description": "Use only when scheduling capacity is genuinely limited. Avoid fake scarcity."
+    },
+    {
+      "id": "free_addon",
+      "label": "Included add-on",
+      "description": "Add a clearly scoped bonus such as uptime monitor setup with website care or DNS documentation with Cloudflare setup."
+    }
+  ],
+  "displayPatterns": [
+    {
+      "id": "price_adjacent_badge",
+      "label": "Price-adjacent badge",
+      "where": "Product cards and product detail hero",
+      "copyExamples": [
+        "Bundle savings available",
+        "Starter credit eligible",
+        "Includes setup checklist"
+      ]
+    },
+    {
+      "id": "bundle_compare_panel",
+      "label": "Bundle compare panel",
+      "where": "Bundle product pages",
+      "copyExamples": ["Buy together and simplify setup", "Includes the most common next steps"]
+    },
+    {
+      "id": "ethical_fomo_panel",
+      "label": "Ethical FOMO panel",
+      "where": "Seasonal/limited-capacity pages only",
+      "copyExamples": [
+        "Pre-season scheduling recommended",
+        "Limited onsite slots this month if capacity is true"
+      ]
+    },
+    {
+      "id": "quick_win_ladder",
+      "label": "Quick-win ladder",
+      "where": "Store landing and product detail pages",
+      "copyExamples": ["Start small, apply what you learn, upgrade when ready"]
+    }
+  ],
+  "guardrails": {
+    "disallowed": [
+      "Fake countdown timers",
+      "Fake low-stock claims for services",
+      "Misleading crossed-out prices",
+      "Hidden discount conditions",
+      "Aggressive fear copy for cyber incidents",
+      "Any copy that implies guaranteed compliance or immunity from breaches"
+    ],
+    "required": [
+      "Discount source or rule",
+      "Eligibility conditions",
+      "End date when there is a real end date",
+      "Human-readable terms",
+      "Admin-editable promo state",
+      "Audit trail for changes"
+    ]
+  }
+}

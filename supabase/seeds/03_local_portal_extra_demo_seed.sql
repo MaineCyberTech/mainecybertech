@@ -76,34 +76,6 @@ set invoice_id = excluded.invoice_id,
     status = excluded.status,
     paid_at = excluded.paid_at;
 
-insert into public.comments (
-  id, organization_id, author_id, target_type, target_id, body
-)
-values
-  ('59400000-0000-0000-0000-000000000001'::uuid, '11111111-1111-1111-1111-111111111111'::uuid, '817016dc-cc3b-49d1-8ee6-637f880fa0a4'::uuid, 'project', '53000000-0000-0000-0000-000000000001'::uuid, 'Adding generic comment coverage for local demo data.'),
-  ('59400000-0000-0000-0000-000000000002'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'ebc615c1-6c95-46a6-9bf1-68a4af87b1d8'::uuid, 'contract', '55000000-0000-0000-0000-000000000001'::uuid, 'Please prepare a countersigned copy once complete.')
-on conflict (id) do nothing;
-
-insert into public.appointments (
-  id, organization_id, created_by, owner_id, title, description, starts_at, ends_at, location, meeting_url, type
-)
-values
-  ('59500000-0000-0000-0000-000000000001'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'ebc615c1-6c95-46a6-9bf1-68a4af87b1d8'::uuid, '817016dc-cc3b-49d1-8ee6-637f880fa0a4'::uuid, 'Quarterly Service Review', 'Review open items, billing, and roadmap priorities.', now() + interval '5 days', now() + interval '5 days 1 hour', 'Teams', 'https://example.invalid/meet/service-review', 'meeting')
-on conflict (id) do nothing;
-
-insert into public.chat_threads (
-  id, organization_id, created_by, title, status
-)
-values
-  ('59600000-0000-0000-0000-000000000001'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, 'ebc615c1-6c95-46a6-9bf1-68a4af87b1d8'::uuid, 'Billing questions', 'open')
-on conflict (id) do nothing;
-
-insert into public.chat_messages (
-  id, thread_id, organization_id, author_id, body, is_bot
-)
-values
-  ('59700000-0000-0000-0000-000000000001'::uuid, '59600000-0000-0000-0000-000000000001'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, '6adfefa6-27c2-480e-9881-6514f4e9b708'::uuid, 'Can we get a copy of the current invoice and payment receipt?', false),
-  ('59700000-0000-0000-0000-000000000002'::uuid, '59600000-0000-0000-0000-000000000001'::uuid, '22222222-2222-2222-2222-222222222222'::uuid, '817016dc-cc3b-49d1-8ee6-637f880fa0a4'::uuid, 'Yes — the billing mirror data and invoice PDF links are now populated in local demo data.', false)
-on conflict (id) do nothing;
+-- Comments/appointments/chat tables removed in migration 5302055
 
 commit;

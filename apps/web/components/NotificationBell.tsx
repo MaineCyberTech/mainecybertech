@@ -3,14 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { getClientApi } from "@/lib/client-api";
+import { getClientEnv } from "@/lib/env";
 
-const MODULES = [
-  "tickets",
-  "projects",
-  "documents",
-  "billing",
-  "system",
-] as const;
+const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
 
 type NotificationItem = {
   id: string;
@@ -21,20 +16,20 @@ type NotificationItem = {
   created_at: string;
 };
 
+type NotificationPreference = { module_key?: string; channel?: string; enabled?: boolean };
+
 type Props = {
   basePath: string;
   initialUnread?: number;
 };
 
-export default function NotificationBell({
-  basePath,
-  initialUnread = 0,
-}: Props) {
+export default function NotificationBell({ basePath, initialUnread = 0 }: Props) {
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(initialUnread);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [prefs, setPrefs] = useState<Record<string, boolean>>({});
   const [loadingPrefs, setLoadingPrefs] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -42,8 +37,10 @@ export default function NotificationBell({
     try {
       const result = await getClientApi().notifications.unreadCount();
       setUnread(result.count);
+      setConnectionError(false);
     } catch {
-      /* ignore */
+      // Silently handle — notification count is non-critical UI
+      setConnectionError(true);
     }
   }, []);
 
@@ -55,15 +52,14 @@ export default function NotificationBell({
       });
       setNotifications(result.items as NotificationItem[]);
     } catch {
-      /* ignore */
+      // Silently handle — recent notifications are non-critical
     }
   }, []);
 
   const playNotificationChime = useCallback(() => {
     try {
-      const ctx = new (
-        window.AudioContext || (window as any).webkitAudioContext
-      )();
+      const ctx = new (window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -75,7 +71,7 @@ export default function NotificationBell({
       osc.start(ctx.currentTime);
       osc.stop(ctx.currentTime + 0.3);
     } catch {
-      /* ignore */
+      // Audio chime unavailable — non-critical
     }
   }, []);
 
@@ -83,7 +79,7 @@ export default function NotificationBell({
     fetchUnread();
 
     // Connect to SSE stream
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    const baseUrl = getClientEnv().NEXT_PUBLIC_API_URL;
     const url = `${baseUrl}/api/v1/notifications/stream`;
     const es = new EventSource(url, { withCredentials: true });
     eventSourceRef.current = es;
@@ -91,14 +87,18 @@ export default function NotificationBell({
     es.addEventListener("notification", (event) => {
       try {
         const data = JSON.parse(event.data);
-        if (Array.isArray(data) && data.length > 0) {
+        // Server emits a single notification object; tolerate arrays too.
+        const hasItems =
+          (Array.isArray(data) && data.length > 0) ||
+          (data && !Array.isArray(data) && typeof data === "object");
+        if (hasItems) {
           // Fetch fresh count from server instead of adding to local state
           fetchUnread();
           fetchRecent();
           playNotificationChime();
         }
       } catch {
-        /* ignore */
+        // SSE data parse error — non-critical
       }
     });
 
@@ -119,19 +119,17 @@ export default function NotificationBell({
     setLoadingPrefs(true);
     try {
       const result = await getClientApi().notifications.listPreferences();
-      const rows: any[] = Array.isArray(result)
+      const rows: NotificationPreference[] = Array.isArray(result)
         ? result
-        : ((result as any)?.preferences ?? []);
+        : ((result as { preferences?: NotificationPreference[] }).preferences ?? []);
       const map: Record<string, boolean> = {};
       for (const m of MODULES) {
-        const row = rows.find(
-          (r: any) => r.module_key === m && r.channel === "email",
-        );
-        map[m] = row ? row.enabled : true;
+        const row = rows.find((r) => r.module_key === m && r.channel === "email");
+        map[m] = row ? (row.enabled ?? true) : true;
       }
       setPrefs(map);
     } catch {
-      /* ignore */
+      // Preferences load failed — non-critical
     }
     setLoadingPrefs(false);
   }, []);
@@ -145,11 +143,7 @@ export default function NotificationBell({
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      )
-        setOpen(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -159,7 +153,7 @@ export default function NotificationBell({
     try {
       await getClientApi().notifications.markAllRead();
     } catch {
-      /* ignore */
+      // Mark all read failed — non-critical
     }
     await fetchUnread();
     await fetchRecent();
@@ -169,7 +163,7 @@ export default function NotificationBell({
     try {
       await getClientApi().notifications.markRead(id);
     } catch {
-      /* ignore */
+      // Mark read failed — non-critical
     }
     await fetchUnread();
     await fetchRecent();
@@ -182,17 +176,15 @@ export default function NotificationBell({
         preferences: [{ moduleKey, channel: "email", enabled }],
       });
     } catch {
-      /* ignore */
+      // Preference update failed — revert optimistic update
+      setPrefs((prev) => ({ ...prev, [moduleKey]: !enabled }));
     }
   }
 
   const moduleHref = (n: NotificationItem) => {
-    if (n.module === "tickets" && n.module_id)
-      return `${basePath}/tickets/${n.module_id}`;
-    if (n.module === "projects" && n.module_id)
-      return `${basePath}/projects/${n.module_id}`;
-    if (n.module === "documents" && n.module_id)
-      return `${basePath}/documents/${n.module_id}`;
+    if (n.module === "tickets" && n.module_id) return `${basePath}/tickets/${n.module_id}`;
+    if (n.module === "projects" && n.module_id) return `${basePath}/projects/${n.module_id}`;
+    if (n.module === "documents" && n.module_id) return `${basePath}/documents/${n.module_id}`;
     return "#";
   };
 
@@ -224,11 +216,9 @@ export default function NotificationBell({
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-full mt-2 w-80 rounded-lg border border-white/10 bg-[#0A1118] shadow-2xl z-50">
+        <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-lg border border-white/10 bg-cyber-base shadow-2xl">
           <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-            <span className="text-sm font-semibold text-slate-200">
-              Notifications
-            </span>
+            <span className="text-sm font-semibold text-slate-200">Notifications</span>
             {notifications.length > 0 ? (
               <button
                 onClick={handleMarkAllRead}
@@ -240,8 +230,12 @@ export default function NotificationBell({
           </div>
 
           <div className="max-h-80 overflow-y-auto">
-            {notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-slate-500">
+            {connectionError ? (
+              <div className="px-4 py-8 text-center text-sm text-amber-400">
+                Unable to load notifications
+              </div>
+            ) : notifications.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-slate-400">
                 No new notifications
               </div>
             ) : (
@@ -256,12 +250,8 @@ export default function NotificationBell({
                       onClick={() => handleMarkRead(n.id)}
                       className="min-w-0 flex-1"
                     >
-                      <p className="text-sm font-medium text-slate-200">
-                        {n.title}
-                      </p>
-                      <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
-                        {n.body}
-                      </p>
+                      <p className="text-sm font-medium text-slate-200">{n.title}</p>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-slate-400">{n.body}</p>
                       <p className="mt-1 text-[10px] text-slate-600">
                         {new Date(n.created_at).toLocaleString()}
                       </p>
@@ -308,7 +298,7 @@ export default function NotificationBell({
 
           <div className="border-t border-white/10 px-4 py-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
                 Email Preferences
               </span>
               <Link
@@ -320,7 +310,7 @@ export default function NotificationBell({
               </Link>
             </div>
             {loadingPrefs ? (
-              <p className="mt-2 text-xs text-slate-500">Loading...</p>
+              <p className="mt-2 text-xs text-slate-400">Loading...</p>
             ) : (
               <div className="mt-2 space-y-1">
                 {MODULES.map((m) => (

@@ -10,24 +10,50 @@ Use environment-scoped values wherever possible.
 
 ## Secrets required by Terraform workflows
 
-| Secret                             | Dev | Prod | Purpose                                                               |
-| ---------------------------------- | --- | ---- | --------------------------------------------------------------------- |
-| `AWS_TERRAFORM_ROLE_ARN`           | yes | yes  | AWS OIDC role used by Terraform plan/apply                            |
-| `CLOUDFLARE_API_TOKEN`             | yes | yes  | Cloudflare provider authentication                                    |
-| `TF_VAR_DB_PASSWORD`               | yes | yes  | Terraform variable injection for database password                    |
-| `TF_VAR_SUPABASE_ANON_KEY`         | yes | yes  | Supabase anon key for Terraform SSM injection                         |
-| `TF_VAR_SUPABASE_SERVICE_ROLE_KEY` | yes | yes  | Supabase service role key for Terraform SSM injection                 |
-| `TF_VAR_JWT_SECRET`                | yes | yes  | JWT secret for Terraform SSM injection                                |
-| `TF_VARS_FILE_CONTENT`             | yes | yes  | Raw content of the `.tfvars` file (written to disk during plan/apply) |
-| `VERCEL_API_TOKEN`                 | yes | yes  | Vercel provider authentication for Terraform                          |
-| `SUPABASE_ACCESS_TOKEN`            | yes | yes  | Supabase provider authentication                                      |
+| Secret                        | Dev | Prod | Purpose                                        |
+| ----------------------------- | --- | ---- | ---------------------------------------------- |
+| `DO_API_TOKEN`                | yes | yes  | DigitalOcean API token for Terraform provider  |
+| `DO_SSH_FINGERPRINT`          | yes | yes  | SSH key fingerprint for DigitalOcean droplet   |
+| `DO_SPACES_ACCESS_KEY_ID`     | yes | yes  | DO Spaces access key (Terraform backend state) |
+| `DO_SPACES_SECRET_ACCESS_KEY` | yes | yes  | DO Spaces secret key (Terraform backend state) |
+| `CLOUDFLARE_API_TOKEN`        | yes | yes  | Cloudflare provider authentication             |
+| `CLOUDFLARE_ZONE_ID`          | yes | yes  | Cloudflare zone ID for .com domain             |
+| `CLOUDFLARE_ZONE_ID_US`       | yes | yes  | Cloudflare zone ID for .us domain              |
 
-## Secrets required by deployment workflows
+## Secrets required by deployment workflows (`deploy-do.yml`)
 
-| Secret                | Dev | Prod | Purpose                                               |
-| --------------------- | --- | ---- | ----------------------------------------------------- |
-| `AWS_DEPLOY_ROLE_ARN` | yes | yes  | AWS OIDC role used by API/worker deployment workflows |
-| `VERCEL_TOKEN`        | yes | yes  | Vercel CLI token used by deploy workflows             |
+| Secret                       | Dev | Prod | Purpose                                              |
+| ---------------------------- | --- | ---- | ---------------------------------------------------- |
+| `CI_SSH_PRIVATE_KEY`         | yes | yes  | Private SSH key for droplet access (root@droplet-ip) |
+| `DO_API_TOKEN`               | yes | yes  | DigitalOcean API token (to resolve droplet IP)       |
+| `CF_ORIGIN_CERT`             | yes | yes  | Cloudflare Origin CA certificate (fullchain.pem)     |
+| `CF_ORIGIN_KEY`              | yes | yes  | Cloudflare Origin CA private key (privkey.pem)       |
+| `SUPABASE_URL`               | yes | yes  | Supabase project URL                                 |
+| `SUPABASE_ANON_KEY`          | yes | yes  | Supabase anon key                                    |
+| `SUPABASE_SERVICE_ROLE_KEY`  | yes | yes  | Supabase service role key                            |
+| `JWT_SECRET`                 | yes | yes  | JWT signing secret                                   |
+| `STRIPE_SECRET_KEY`          | yes | yes  | Stripe secret key for billing                        |
+| `STRIPE_WEBHOOK_SECRET`      | yes | yes  | Stripe webhook signing secret                        |
+| `SENTRY_DSN`                 | —   | yes  | Sentry DSN for error tracking                        |
+| `SMTP_HOST`                  | yes | yes  | SMTP host for email                                  |
+| `SMTP_PORT`                  | yes | yes  | SMTP port (default 587)                              |
+| `SMTP_USER`                  | yes | yes  | SMTP username                                        |
+| `SMTP_PASS`                  | yes | yes  | SMTP password                                        |
+| `EMAIL_FROM`                 | yes | yes  | From address for outgoing email                      |
+| `JIRA_BASE_URL`              | —   | yes  | Jira instance URL (worker sync)                      |
+| `JIRA_EMAIL`                 | —   | yes  | Jira user email (worker sync)                        |
+| `JIRA_API_TOKEN`             | —   | yes  | Jira API token (worker sync)                         |
+| `JSM_BASE_URL`               | —   | yes  | JSM instance URL (worker sync)                       |
+| `M365_TENANT_ID`             | —   | yes  | Microsoft 365 tenant ID (worker sync)                |
+| `M365_CLIENT_ID`             | —   | yes  | M365 app client ID (worker sync)                     |
+| `M365_CLIENT_SECRET`         | —   | yes  | M365 app client secret (worker sync)                 |
+| `PUBLIC_TRAFFIC_WEBHOOK_URL` | —   | yes  | Teams webhook for traffic leads                      |
+| `PUBLIC_LEAD_WEBHOOK_URL`    | —   | yes  | Teams webhook for contact form leads                 |
+| `JSM_DOMAIN`                 | —   | yes  | JSM domain (cloud.atlassian.net)                     |
+| `JSM_EMAIL`                  | —   | yes  | JSM user email                                       |
+| `JSM_API_TOKEN`              | —   | yes  | JSM API token                                        |
+| `JSM_SERVICEDESK_ID`         | —   | yes  | JSM service desk ID                                  |
+| `JSM_REQUEST_TYPE_ID`        | —   | yes  | JSM request type ID                                  |
 
 ## Secrets required by database backup workflow
 
@@ -37,103 +63,11 @@ Use environment-scoped values wherever possible.
 | `SUPABASE_DB_URL`   | —   | yes  | Direct database connection string for `pg_dump` |
 | `SLACK_WEBHOOK_URL` | —   | yes  | Slack webhook for backup failure notifications  |
 
-## Repository or environment variables required by API/worker workflows
+## Repository or environment variables required by deployment workflows
 
-| Variable                | Dev | Prod | Purpose                                   |
-| ----------------------- | --- | ---- | ----------------------------------------- |
-| `AWS_REGION`            | yes | yes  | AWS region                                |
-| `ECS_CLUSTER_NAME`      | yes | yes  | ECS cluster name                          |
-| `API_ECS_SERVICE`       | yes | yes  | API ECS service name                      |
-| `WORKER_ECS_SERVICE`    | yes | yes  | Worker ECS service name                   |
-| `API_ECR_REPOSITORY`    | yes | yes  | API ECR repository name                   |
-| `WORKER_ECR_REPOSITORY` | yes | yes  | Worker ECR repository name                |
-| `SUPABASE_PROJECT_REF`  | yes | yes  | Supabase project reference for migrations |
-
-## Repository or environment variables required by database backup workflow
-
-| Variable                | Dev | Prod | Purpose                                                            |
-| ----------------------- | --- | ---- | ------------------------------------------------------------------ |
-| `S3_BACKUP_BUCKET`      | —   | yes  | S3 bucket for database backups (default: `mainecybertech-backups`) |
-| `BACKUP_RETENTION_DAYS` | —   | yes  | Days to retain backups in S3 (default: `30`)                       |
-
-## SSM Parameter Store Secrets (Terraform-managed)
-
-These secrets are stored in AWS SSM Parameter Store under `/mainecybertech/${environment}/` and injected into ECS task definitions. Set via Terraform variables (leave empty to skip optional integrations).
-
-### Core (always required)
-
-| SSM Path                     | TF Variable                 | Type         | Injected To | Purpose                      |
-| ---------------------------- | --------------------------- | ------------ | ----------- | ---------------------------- |
-| `/supabase/url`              | `supabase_url` (computed)   | String       | API, Worker | Supabase project URL         |
-| `/supabase/anon-key`         | `supabase_anon_key`         | SecureString | API, Worker | Supabase anon key            |
-| `/supabase/service-role-key` | `supabase_service_role_key` | SecureString | API         | Supabase service role key    |
-| `/api/jwt-secret`            | `jwt_secret`                | SecureString | API         | JWT signing secret           |
-| `/api/cors-origin`           | `cors_origin`               | String       | API         | CORS allowed origin          |
-| `/database/url`              | `db_password` (computed)    | SecureString | API, Worker | PostgreSQL connection string |
-| `/worker/sqs-queue-url`      | `sqs_queue_url` (computed)  | String       | Worker      | SQS queue URL                |
-
-### Integration Secrets (optional — set TF variables to skip)
-
-| SSM Path              | TF Variable          | Type         | Injected To | Purpose                              |
-| --------------------- | -------------------- | ------------ | ----------- | ------------------------------------ |
-| `/stripe/secret-key`  | `stripe_secret_key`  | SecureString | API, Worker | Stripe API key for billing sync      |
-| `/sentry/dsn`         | `sentry_dsn`         | SecureString | API, Worker | Sentry DSN for error tracking        |
-| `/smtp/host`          | `smtp_host`          | String       | API, Worker | SMTP host for email                  |
-| `/smtp/port`          | `smtp_port`          | String       | API, Worker | SMTP port (default 587)              |
-| `/smtp/user`          | `smtp_user`          | SecureString | API, Worker | SMTP username                        |
-| `/smtp/pass`          | `smtp_pass`          | SecureString | API, Worker | SMTP password                        |
-| `/smtp/from`          | `email_from`         | String       | API, Worker | From address for outgoing email      |
-| `/jira/base-url`      | `jira_base_url`      | String       | Worker      | Jira instance URL                    |
-| `/jira/email`         | `jira_email`         | String       | Worker      | Jira user email                      |
-| `/jira/api-token`     | `jira_api_token`     | SecureString | Worker      | Jira API token                       |
-| `/jsm/base-url`       | `jsm_base_url`       | String       | Worker      | JSM instance URL                     |
-| `/jsm/email`          | `jsm_email`          | String       | Worker      | JSM user email                       |
-| `/jsm/api-token`      | `jsm_api_token`      | SecureString | Worker      | JSM API token                        |
-| `/m365/tenant-id`     | `m365_tenant_id`     | String       | Worker      | Microsoft 365 tenant ID              |
-| `/m365/client-id`     | `m365_client_id`     | String       | Worker      | M365 app client ID                   |
-| `/m365/client-secret` | `m365_client_secret` | SecureString | Worker      | M365 app client secret               |
-| `/api/base-url`       | `api_base_url`       | String       | Worker      | Public API URL for webhook callbacks |
-
-All optional secrets use `count` in Terraform — when the variable is empty, the SSM parameter is not created and ECS injection is skipped.
-
-## Repository or environment variables required by Terraform workflows
-
-| Variable            | Dev | Prod | Purpose                                                                        |
-| ------------------- | --- | ---- | ------------------------------------------------------------------------------ |
-| `TF_BACKEND_CONFIG` | yes | yes  | Backend config file path, e.g. `env/backend.dev.hcl` or `env/backend.prod.hcl` |
-| `TF_VAR_FILE`       | yes | yes  | Var file path, e.g. `env/dev.tfvars` or `env/prod.tfvars`                      |
-
-## Vercel web app environment variables (set in `.tfvars`)
-
-These are Terraform variables that get injected into the Vercel project. Set them in your `.tfvars` file (stored as the `TF_VARS_FILE_CONTENT` secret):
-
-| Variable            | Dev | Prod     | Purpose                                                   |
-| ------------------- | --- | -------- | --------------------------------------------------------- |
-| `vercel_ga_id`      | yes | yes      | Google Analytics measurement ID (default: `G-1JYZ96P0D9`) |
-| `vercel_tawkto_id`  | yes | yes      | Tawk.to widget ID                                         |
-| `vercel_sentry_dsn` | —   | optional | Sentry DSN for web error tracking (skip if empty)         |
-
-## Recommended environment-specific values
-
-### Dev/testing
-
-- `TF_BACKEND_CONFIG=env/backend.dev.hcl`
-- `TF_VAR_FILE=env/dev.tfvars`
-- `ECS_CLUSTER_NAME` points to the testing cluster
-- `API_ECS_SERVICE` points to the testing API service
-- `WORKER_ECS_SERVICE` points to the testing worker service
-- `VERCEL_TOKEN` should be authorized for the testing/non-production project usage you want
-- `SUPABASE_PROJECT_REF` points to the dev Supabase project
-
-### Production
-
-- `TF_BACKEND_CONFIG=env/backend.prod.hcl`
-- `TF_VAR_FILE=env/prod.tfvars`
-- `ECS_CLUSTER_NAME` points to the production cluster
-- `API_ECS_SERVICE` points to the production API service
-- `WORKER_ECS_SERVICE` points to the production worker service
-- `VERCEL_TOKEN` should be authorized for production deployment
-- `SUPABASE_PROJECT_REF` points to the production Supabase project
+| Variable               | Dev | Prod | Purpose                                   |
+| ---------------------- | --- | ---- | ----------------------------------------- |
+| `SUPABASE_PROJECT_REF` | yes | yes  | Supabase project reference for migrations |
 
 ## GitHub Environment Configuration Steps
 
@@ -143,17 +77,17 @@ These are Terraform variables that get injected into the Vercel project. Set the
    - `prod-approval` — add Required reviewers (1+)
 
 2. **Add secrets** to the appropriate environment scopes (or repo-wide):
-   - `AWS_TERRAFORM_ROLE_ARN` — from Terraform OIDC setup
-   - `AWS_DEPLOY_ROLE_ARN` — from Terraform OIDC setup
+   - `DO_API_TOKEN` — from DigitalOcean dashboard
+   - `DO_SSH_FINGERPRINT` — from DigitalOcean SSH keys page
+   - `DO_SPACES_ACCESS_KEY_ID` / `DO_SPACES_SECRET_ACCESS_KEY` — from DO Spaces
    - `CLOUDFLARE_API_TOKEN` — from Cloudflare dashboard
-   - `VERCEL_API_TOKEN` — from Vercel dashboard
-   - `VERCEL_TOKEN` — from Vercel dashboard
-   - `SUPABASE_ACCESS_TOKEN` — from Supabase account settings
-   - `TF_VAR_DB_PASSWORD` — your Supabase database password
+   - `CLOUDFLARE_ZONE_ID` / `CLOUDFLARE_ZONE_ID_US` — from Cloudflare dashboard
+   - `CI_SSH_PRIVATE_KEY` — private key (e.g. `cat ~/.ssh/id_rsa`) for droplet SSH access
+   - `CF_ORIGIN_CERT` / `CF_ORIGIN_KEY` — from Cloudflare Origin CA
+   - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — from Supabase dashboard
+   - `JWT_SECRET` — generate a secure random string
+   - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard
+   - Integration secrets as needed (Jira, JSM, M365, SMTP, Sentry, Teams webhooks)
 
 3. **Add variables** to the appropriate environment scopes (or repo-wide):
-   - `AWS_REGION`
-   - `ECS_CLUSTER_NAME`, `API_ECS_SERVICE`, `WORKER_ECS_SERVICE`
-   - `API_ECR_REPOSITORY`, `WORKER_ECR_REPOSITORY`
-   - `TF_BACKEND_CONFIG`, `TF_VAR_FILE`
-   - `SUPABASE_PROJECT_REF`
+   - `SUPABASE_PROJECT_REF` — Supabase project reference for migrations

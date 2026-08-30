@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["leadId", "score", "band", "status"],
+  "properties": {
+    "leadId": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "score": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "band": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "status": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "scoreBreakdown": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    }
+  }
+}

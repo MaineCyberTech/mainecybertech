@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getCookieOptions } from "@/lib/cookie-domain";
+import { getClientEnv } from "@/lib/env";
 
 const SESSION_COOKIE = "mct_session";
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+const API_URL = getClientEnv().NEXT_PUBLIC_API_URL;
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);

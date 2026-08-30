@@ -15,7 +15,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -42,9 +42,7 @@ describe("AdminHealthPage", () => {
   it("renders page shell with title", async () => {
     const Page = (await import("@/app/(admin)/admin/health/page")).default;
     render(await Page());
-    expect(
-      screen.getByRole("heading", { name: "Service Health" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Service Health" })).toBeInTheDocument();
   });
 
   it("renders health dashboard client", async () => {

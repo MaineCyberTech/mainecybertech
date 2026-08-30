@@ -33,7 +33,12 @@ test.describe("portal project task views", () => {
     const projectLink = page.locator("a[href*='/portal/projects/']").first();
     if (await projectLink.isVisible()) {
       await projectLink.click();
-      await expect(page.getByRole("button", { name: /list|timeline|calendar/i }).first()).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: /list|timeline|calendar/i }).first(),
+      ).toBeVisible({ timeout: 10000 });
+    } else {
+      // No seeded projects — the list page itself must still render.
+      await expect(page.getByRole("heading", { name: /projects/i })).toBeVisible();
     }
   });
 
@@ -50,8 +55,10 @@ test.describe("portal project task views", () => {
     }
   });
 
-  test("timeline page link is in subnav", async ({ page }) => {
-    await page.goto("/portal/dashboard");
-    await expect(page.getByRole("link", { name: /timeline/i })).toBeVisible();
+  test("timeline page loads", async ({ page }) => {
+    await page.goto("/portal/timeline");
+    await expect(
+      page.getByRole("navigation", { name: "Breadcrumb" }).getByText("Timeline", { exact: true }),
+    ).toBeVisible();
   });
 });

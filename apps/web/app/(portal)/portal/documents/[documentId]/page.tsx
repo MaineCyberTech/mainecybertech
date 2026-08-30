@@ -2,11 +2,12 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import DocumentPreview from "@/components/DocumentPreview";
 import DocumentVersionsClient from "@/components/portal/DocumentVersionsClient";
 import DocumentShareClient from "@/components/portal/DocumentShareClient";
+import { DocumentShare } from "@mct/sdk";
 
 export const metadata = {
   title: "Document Details - Portal - Maine CyberTech",
@@ -30,9 +31,7 @@ type PortalDocumentPageProps = {
   }>;
 };
 
-export default async function PortalDocumentDetailPage({
-  params,
-}: PortalDocumentPageProps) {
+export default async function PortalDocumentDetailPage({ params }: PortalDocumentPageProps) {
   const { documentId } = await params;
   const api = getApiClient();
   const membership = await getApprovedMembership();
@@ -70,7 +69,7 @@ export default async function PortalDocumentDetailPage({
     isAdmin = false;
   }
 
-  let initialShares: any[] = [];
+  let initialShares: DocumentShare[] = [];
   try {
     initialShares = await api.documents.listShares(documentId);
   } catch {
@@ -79,7 +78,7 @@ export default async function PortalDocumentDetailPage({
 
   return (
     <div className="space-y-6">
-      <PortalBreadcrumbs
+      <Breadcrumbs
         items={[
           { label: "Portal", href: "/portal/dashboard" },
           { label: "Documents", href: "/portal/documents" },
@@ -99,9 +98,7 @@ export default async function PortalDocumentDetailPage({
 
         <div className="flex flex-wrap gap-2">
           <span className="cyber-pill">{formatBytes(document.file_size)}</span>
-          <span className="cyber-pill">
-            {document.mime_type ?? "Unknown type"}
-          </span>
+          <span className="cyber-pill">{document.mime_type ?? "Unknown type"}</span>
           {isAdmin ? (
             <Link href="/admin/documents" className="cyber-button-secondary">
               View in Admin
@@ -117,7 +114,7 @@ export default async function PortalDocumentDetailPage({
         <h2 className="cyber-heading text-lg">Document Summary</h2>
 
         <div className="mt-6 space-y-4">
-          <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
+          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
               {document.description ?? "No description provided."}
             </p>
@@ -125,9 +122,7 @@ export default async function PortalDocumentDetailPage({
 
           <div className="flex flex-wrap gap-3">
             <div className="cyber-pill">Created: {document.created_at}</div>
-            <div className="cyber-pill">
-              Updated: {document.updated_at ?? document.created_at}
-            </div>
+            <div className="cyber-pill">Updated: {document.updated_at ?? document.created_at}</div>
             <div className="cyber-pill">Visibility: {document.visibility}</div>
             <div className="cyber-pill">Bucket: {bucketName}</div>
           </div>
@@ -147,10 +142,7 @@ export default async function PortalDocumentDetailPage({
         </section>
       ) : null}
 
-      <DocumentShareClient
-        documentId={documentId}
-        initialShares={initialShares}
-      />
+      <DocumentShareClient documentId={documentId} initialShares={initialShares} />
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Download & Version Info</h2>
@@ -158,13 +150,9 @@ export default async function PortalDocumentDetailPage({
 
         <div className="mt-6 space-y-4">
           <div className="flex flex-wrap gap-3">
-            <div className="cyber-pill">
-              Version {document.current_version ?? 1}
-            </div>
+            <div className="cyber-pill">Version {document.current_version ?? 1}</div>
             <div className="cyber-pill">Created: {document.created_at}</div>
-            <div className="cyber-pill">
-              Updated: {document.updated_at ?? document.created_at}
-            </div>
+            <div className="cyber-pill">Updated: {document.updated_at ?? document.created_at}</div>
             <div className="cyber-pill">Visibility: {document.visibility}</div>
           </div>
 

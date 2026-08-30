@@ -13,7 +13,7 @@ test.describe("admin bulk invite page", () => {
 
   test("shows csv textarea", async ({ page }) => {
     await page.goto("/admin/bulk-invite");
-    await expect(page.locator("textarea")).toBeVisible();
+    await expect(page.locator("textarea#bulk-csv").first()).toBeVisible({ timeout: 10000 });
   });
 
   test("has import button", async ({ page }) => {

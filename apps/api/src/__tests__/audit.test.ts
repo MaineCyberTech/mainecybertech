@@ -18,11 +18,25 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
+    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
   
 }));
 
 jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
+}));
+
+jest.mock("../lib/logger", () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
+
+jest.mock("@sentry/node", () => ({
+  captureException: jest.fn(),
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";

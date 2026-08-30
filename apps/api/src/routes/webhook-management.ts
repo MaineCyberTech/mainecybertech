@@ -1,13 +1,35 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import crypto from "crypto";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
+import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
+import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
+import { loadOwned } from "../lib/tenant";
+import { assertDeleteConfirmed } from "../lib/delete-confirm";
 
 const router: ReturnType<typeof Router> = Router();
+
+router.use(requireAuth);
+router.use(requireOrgAccess);
+
+function maskSecret(secret: string | null | undefined): string | null {
+  if (!secret) return null;
+  if (secret.length <= 8) return "****";
+  return secret.slice(0, 4) + "****" + secret.slice(-4);
+}
+
+function maskWebhookData(data: Record<string, unknown> | null): Record<string, unknown> | null {
+  if (!data) return null;
+  if (data.secret) {
+    data.secret = maskSecret(data.secret as string);
+  }
+  return data;
+}
 
 const createSchema = z.object({
   organizationId: z.string().uuid(),
@@ -25,9 +47,9 @@ const updateSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-router.get("/", requireAuth, requireOrgAccess, async (req, res, next) => {
+router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "webhook-management", "read");
     const orgId = req.query.organization_id as string | undefined;
 
     let query = supabase.from("webhook_endpoints").select("*");
@@ -37,32 +59,33 @@ router.get("/", requireAuth, requireOrgAccess, async (req, res, next) => {
       ascending: false,
     });
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data ?? []));
+    const masked = (data ?? []).map(maskWebhookData);
+    res.json(success(masked));
   } catch (error) {
     next(error);
   }
 });
 
-router.get("/:id", requireAuth, requireOrgAccess, async (req, res, next) => {
+router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("webhook_endpoints")
-      .select("*")
-      .eq("id", req.params.id)
-      .single();
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Webhook not found", 404);
-    res.json(success(data));
+    const supabase = getScopedClient(req, "webhook-management", "read");
+    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+    const orgId = req.query.organization_id as string | undefined;
+    let query = supabase.from("webhook_endpoints").select("*").eq("id", req.params.id);
+    if (orgId) query = query.eq("organization_id", orgId);
+    const { data, error } = await query.single();
+    if (error || !data) throw new AppError("NOT_FOUND", "Webhook not found", 404);
+    res.json(success(maskWebhookData(data)));
   } catch (error) {
     next(error);
   }
 });
 
-router.post("/", requireAdmin, async (req, res, next) => {
+router.post("/", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
     const parsed = createSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    await assertSafeWebhookUrl(parsed.url);
+    const supabase = getScopedClient(req, "webhook-management", "write");
 
     const { data, error } = await supabase
       .from("webhook_endpoints")
@@ -94,10 +117,28 @@ router.post("/", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireAdmin, async (req, res, next) => {
+router.patch("/:id", requirePermission("webhooks", "manage"), requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "webhook-management", "write");
+
+    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+
+    if (parsed.url !== undefined) {
+      await assertSafeWebhookUrl(parsed.url);
+    }
+
+    const { data: current, error: fetchError } = await supabase
+      .from("webhook_endpoints")
+      .select("version")
+      .eq("id", req.params.id)
+      .single();
+
+    if (fetchError || !current) {
+      throw new AppError("NOT_FOUND", "Webhook not found", 404);
+    }
+
+    checkVersionMatch(current.version, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.name !== undefined) updateData.name = parsed.name;
@@ -106,9 +147,12 @@ router.patch("/:id", requireAdmin, async (req, res, next) => {
     if (parsed.events !== undefined) updateData.events = parsed.events;
     if (parsed.isActive !== undefined) updateData.is_active = parsed.isActive;
 
+    updateData.version = current.version + 1;
+
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .update(updateData)
+      .eq("version", current.version)
       .eq("id", req.params.id)
       .select()
       .single();
@@ -129,9 +173,11 @@ router.patch("/:id", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", requireAdmin, async (req, res, next) => {
+router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    assertDeleteConfirmed(req.body);
+    const supabase = getScopedClient(req, "webhook-management", "write");
+    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .delete()
@@ -154,45 +200,47 @@ router.delete("/:id", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get(
-  "/:id/deliveries",
-  requireAuth,
-  requireOrgAccess,
-  async (req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const page = Math.max(1, parseInt(req.query.page as string) || 1);
-      const limit = Math.min(
-        50,
-        Math.max(1, parseInt(req.query.limit as string) || 20),
-      );
-      const offset = (page - 1) * limit;
-
-      const { data, error, count } = await supabase
-        .from("webhook_deliveries")
-        .select("*", { count: "exact" })
-        .eq("webhook_id", req.params.id)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
-
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
-    } catch (error) {
-      next(error);
-    }
-  },
-);
-
-router.post("/:id/test", requireAdmin, async (req, res, next) => {
+router.get("/:id/deliveries", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "webhook-management", "read");
+    const orgId = req.query.organization_id as string | undefined;
+    if (orgId) {
+      const { data: webhook } = await supabase
+        .from("webhook_endpoints")
+        .select("id")
+        .eq("id", req.params.id)
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      if (!webhook) throw new AppError("NOT_FOUND", "Webhook not found", 404);
+    }
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const offset = (page - 1) * limit;
+
+    const { data, error, count } = await supabase
+      .from("webhook_deliveries")
+      .select("*", { count: "exact" })
+      .eq("webhook_id", req.params.id)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "webhook-management", "write");
+    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
     const { data: webhook, error: fetchError } = await supabase
       .from("webhook_endpoints")
       .select("*")
       .eq("id", req.params.id)
       .single();
-    if (fetchError || !webhook)
-      throw new AppError("NOT_FOUND", "Webhook not found", 404);
+    if (fetchError || !webhook) throw new AppError("NOT_FOUND", "Webhook not found", 404);
 
     const payload = {
       event: "ping",
@@ -202,19 +250,31 @@ router.post("/:id/test", requireAdmin, async (req, res, next) => {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (webhook.secret) headers["X-Webhook-Signature"] = webhook.secret;
+    if (webhook.secret) {
+      const hmac = crypto
+        .createHmac("sha256", webhook.secret)
+        .update(JSON.stringify(payload))
+        .digest("hex");
+      headers["X-Webhook-Signature"] = `sha256=${hmac}`;
+    }
 
     const start = Date.now();
     let responseStatus = 0;
     let responseBody = "";
     let error: string | null = null;
 
+    await assertSafeWebhookUrl(webhook.url);
+
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
       const res = await fetch(webhook.url, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
       responseStatus = res.status;
       responseBody = await res.text().catch(() => "");
     } catch (e) {
@@ -263,9 +323,7 @@ router.post("/:id/test", requireAdmin, async (req, res, next) => {
         .from("webhook_endpoints")
         .update({ last_success_at: new Date().toISOString(), last_error: null })
         .eq("id", webhook.id);
-      res.json(
-        success({ ok: true, status: responseStatus, duration_ms: duration }),
-      );
+      res.json(success({ ok: true, status: responseStatus, duration_ms: duration }));
     }
 
     await logAuditEvent({

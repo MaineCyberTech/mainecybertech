@@ -4,12 +4,42 @@ import multer from "multer";
 import { getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
+import { encryptProfilePii, type ProfilePiiMap } from "../lib/profile-pii";
 import { requireAuth } from "../middleware/auth";
+import { requireOrgAccess } from "../middleware/org-access";
+import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 },
 });
+
+// --- Public-bucket image upload hardening (FILE-P2-002) ----------------------
+// Avatars land in the PUBLIC `avatars` bucket and are served inline from a
+// trusted origin, so the stored object name must never inherit an
+// attacker-controlled extension: `x.svg` / `x.html` / `x.js` uploaded with a
+// spoofed mimetype would become stored XSS / phishing hosted on our own domain.
+// The declared mimetype is allowlisted and the extension that is actually
+// written is DERIVED FROM THE VALIDATED MIMETYPE -- the user-supplied filename
+// (and its extension) is never echoed into the public storage key.
+const IMAGE_MIME_TO_EXTENSION: Record<string, string | undefined> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
+
+export function resolveImageUpload(
+  file: { originalname: string; mimetype: string },
+  label: string,
+): { extension: string; mimetype: string } {
+  const mimetype = (file.mimetype || "").split(";")[0]!.trim().toLowerCase();
+  const extension = IMAGE_MIME_TO_EXTENSION[mimetype];
+  if (!extension) {
+    throw new AppError("VALIDATION", `${label} must be a JPEG, PNG, WebP, or GIF image`, 400);
+  }
+  return { extension, mimetype };
+}
 
 const updateProfileSchema = z.object({
   fullName: z.string().max(255).optional().nullable(),
@@ -19,11 +49,11 @@ const updateProfileSchema = z.object({
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth);
+router.use(requireAuth, requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseUser(req.userJwt!);
+    const supabase = getSupabaseUser(req, req.userJwt!);
     const ids = req.query.ids as string | undefined;
     const email = req.query.email as string | undefined;
     let query = supabase.from("profiles").select("*");
@@ -44,8 +74,7 @@ router.get("/", async (req, res, next) => {
         .select("*")
         .eq("email", email.toLowerCase())
         .maybeSingle();
-      if (profileError)
-        throw new AppError("DB_ERROR", profileError.message, 500);
+      if (profileError) throw new AppError("DB_ERROR", profileError.message, 500);
       res.json(success(profile ?? null));
       return;
     }
@@ -61,34 +90,92 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseUser(req.userJwt!);
+    if (req.authUser!.userId !== req.params.id) {
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("is_super_admin")
+        .eq("id", req.authUser!.userId)
+        .single();
+      if (!profile?.is_super_admin) {
+        throw new AppError("FORBIDDEN", "You can only view your own profile", 403);
+      }
+    }
+    const supabase = getSupabaseUser(req, req.userJwt!);
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", req.params.id)
       .single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Profile not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Profile not found", 404);
     res.json(success(data));
   } catch (error) {
     next(error);
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateProfileSchema.parse(req.body);
-    const supabase = getSupabaseUser(req.userJwt!);
+
+    // Only allow users to edit their own profile (unless admin role)
+    if (req.authUser!.userId !== req.params.id) {
+      const supabaseAdmin = getSupabaseAdmin();
+      const { data: membership } = await supabaseAdmin
+        .from("memberships")
+        .select("roles!inner(id, key)")
+        .eq("user_id", req.authUser!.userId)
+        .eq("status", "approved")
+        .limit(1)
+        .maybeSingle();
+
+      const roleKey = (membership?.roles as unknown as { key?: string } | null)?.key;
+      const isAdmin = !!roleKey && ["admin", "super_admin"].includes(roleKey);
+
+      if (!isAdmin) {
+        throw new AppError("FORBIDDEN", "You can only edit your own profile", 403);
+      }
+    }
+
+    const supabase = getSupabaseAdmin();
+
+    const { data: current, error: fetchError } = await supabase
+      .from("profiles")
+      .select("version, full_name, email, phone, title, encrypted_pii")
+      .eq("id", req.params.id)
+      .single();
+
+    if (fetchError || !current) {
+      throw new AppError("NOT_FOUND", "Profile not found", 404);
+    }
+
+    checkVersionMatch(current.version, req.ifMatchVersion);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.fullName !== undefined) updateData.full_name = parsed.fullName;
     if (parsed.phone !== undefined) updateData.phone = parsed.phone;
     if (parsed.title !== undefined) updateData.title = parsed.title;
 
+    const currentPii: ProfilePiiMap = {
+      full_name: current.full_name ?? null,
+      email: current.email ?? null,
+      phone: current.phone ?? null,
+      title: current.title ?? null,
+    };
+    const changesPii: ProfilePiiMap = {
+      full_name: (updateData.full_name as string | undefined) ?? undefined,
+      phone: (updateData.phone as string | undefined) ?? undefined,
+      title: (updateData.title as string | undefined) ?? undefined,
+    };
+    updateData.encrypted_pii = encryptProfilePii(currentPii, changesPii);
+
+    updateData.version = current.version + 1;
+
     const { data, error } = await supabase
       .from("profiles")
       .update(updateData)
+      .eq("version", current.version)
       .eq("id", req.params.id)
       .select()
       .single();
@@ -100,7 +187,7 @@ router.patch("/:id", async (req, res, next) => {
       actorUserId: req.authUser?.userId,
       action: "profile.update",
       entityType: "profile",
-      entityId: req.params.id,
+      entityId: req.params.id as string,
       metadata: updateData,
     });
 
@@ -112,36 +199,30 @@ router.patch("/:id", async (req, res, next) => {
 
 router.post("/:id/avatar", upload.single("avatar"), async (req, res, next) => {
   try {
+    if (req.authUser!.userId !== req.params.id) {
+      throw new AppError("FORBIDDEN", "You can only upload your own avatar", 403);
+    }
+
     const file = req.file;
     if (!file) throw new AppError("VALIDATION", "Avatar file is required", 400);
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.mimetype)) {
-      throw new AppError(
-        "VALIDATION",
-        "Avatar must be a JPEG, PNG, WebP, or GIF image",
-        400,
-      );
-    }
-
-    const ext = file.originalname.split(".").pop() ?? "png";
+    // Mimetype + filename extension are allowlisted, and the stored extension
+    // comes from the validated mimetype (never from originalname). FILE-P2-002
+    const { extension, mimetype } = resolveImageUpload(file, "Avatar");
     const userId = req.params.id as string;
-    const storagePath = `${userId}/avatar.${ext}`;
-    const supabase = getSupabaseUser(req.userJwt!);
+    const storagePath = `${userId}/avatar.${extension}`;
+    const supabase = getSupabaseUser(req, req.userJwt!);
 
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(storagePath, file.buffer, {
-        contentType: file.mimetype,
+        contentType: mimetype,
         upsert: true,
       });
 
-    if (uploadError)
-      throw new AppError("STORAGE_ERROR", uploadError.message, 500);
+    if (uploadError) throw new AppError("STORAGE_ERROR", uploadError.message, 500);
 
-    const { data: publicUrl } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(storagePath);
+    const { data: publicUrl } = supabase.storage.from("avatars").getPublicUrl(storagePath);
 
     const { error: updateError } = await supabase
       .from("profiles")

@@ -38,11 +38,7 @@ function formatArgs(args: unknown[]): unknown[] {
   });
 }
 
-function logWithLevel(
-  level: LogLevel,
-  message: string,
-  ...args: unknown[]
-): void {
+function logWithLevel(level: LogLevel, message: string, ...args: unknown[]): void {
   if (!shouldLog(level)) return;
 
   const timestamp = new Date().toISOString();
@@ -61,8 +57,8 @@ function logWithLevel(
       warn: "color: #f59e0b",
       error: "color: #ef4444",
     };
-    const consoleMethod =
-      level === "debug" ? "log" : level === "silent" ? "log" : level;
+    const consoleMethod = level === "debug" ? "log" : level === "silent" ? "log" : level;
+    // eslint-disable-next-line no-console
     console[consoleMethod](
       `%c${timestamp} [${level.toUpperCase()}]`,
       styles[level],
@@ -71,8 +67,9 @@ function logWithLevel(
     );
   }
 
-  if (typeof window !== "undefined" && (window as any).__LOG_ENDPOINT__) {
-    fetch((window as any).__LOG_ENDPOINT__, {
+  const logEndpoint = process.env.NEXT_PUBLIC_LOG_ENDPOINT;
+  if (logEndpoint) {
+    fetch(logEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(logEntry),
@@ -82,14 +79,10 @@ function logWithLevel(
 }
 
 export const clientLogger = {
-  debug: (message: string, ...args: unknown[]) =>
-    logWithLevel("debug", message, ...args),
-  info: (message: string, ...args: unknown[]) =>
-    logWithLevel("info", message, ...args),
-  warn: (message: string, ...args: unknown[]) =>
-    logWithLevel("warn", message, ...args),
-  error: (message: string, ...args: unknown[]) =>
-    logWithLevel("error", message, ...args),
+  debug: (message: string, ...args: unknown[]) => logWithLevel("debug", message, ...args),
+  info: (message: string, ...args: unknown[]) => logWithLevel("info", message, ...args),
+  warn: (message: string, ...args: unknown[]) => logWithLevel("warn", message, ...args),
+  error: (message: string, ...args: unknown[]) => logWithLevel("error", message, ...args),
 
   errorWithContext: (context: Record<string, unknown>, error: Error) => {
     logWithLevel("error", error.message, { ...context, stack: error.stack });

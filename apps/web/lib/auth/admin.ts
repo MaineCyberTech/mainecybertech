@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getApiClient } from "@/lib/api";
+import { isPlatformAdminKey } from "@/lib/roles";
 
 type AdminAccessResult = {
   userId: string;
@@ -31,9 +32,9 @@ export async function requireAdminAccess(): Promise<AdminAccessResult> {
     redirect("/portal/dashboard");
   }
 
-  const adminMembership = (memberships as any[]).find((m) => {
+  const adminMembership = memberships.find((m) => {
     const role = m.roles;
-    return role && ["admin", "super_admin"].includes(role.key);
+    return role && isPlatformAdminKey(role.key);
   });
 
   if (!adminMembership) {
@@ -42,6 +43,6 @@ export async function requireAdminAccess(): Promise<AdminAccessResult> {
 
   return {
     userId: user.userId,
-    roleKey: adminMembership.roles.key
+    roleKey: adminMembership.roles?.key ?? "",
   };
 }

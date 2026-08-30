@@ -1,40 +1,26 @@
-www.mainecybertech.com, app.mainecybertech.com {
-    reverse_proxy web:3000
-
-    header / {
-        X-Frame-Options "DENY"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-    }
-}
-
-api.mainecybertech.com {
-    # SSE endpoint needs no buffering
-    @sse path /api/v1/notifications/stream
-    reverse_proxy @sse api:4000 {
-        flush_interval -1
-    }
-    reverse_proxy api:4000
-
-    header / {
-        X-Frame-Options "DENY"
-        X-Content-Type-Options "nosniff"
-        Referrer-Policy "strict-origin-when-cross-origin"
-    }
-}
+# Dev Caddyfile — same security header set as prod, but:
+# - tls internal (self-signed, no cert files on dev droplet)
+# - HSTS WITHOUT preload (dev domain must never be preloaded)
 
 www.mainecybertech.us, app.mainecybertech.us {
+    tls internal
+
     reverse_proxy web:3000
 
     header / {
         X-Frame-Options "DENY"
         X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.mainecybertech.us wss:"
     }
 }
 
 api.mainecybertech.us {
-    # SSE endpoint needs no buffering
+    tls internal
+
     @sse path /api/v1/notifications/stream
     reverse_proxy @sse api:4000 {
         flush_interval -1
@@ -44,6 +30,10 @@ api.mainecybertech.us {
     header / {
         X-Frame-Options "DENY"
         X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains"
+        Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' wss:"
     }
 }

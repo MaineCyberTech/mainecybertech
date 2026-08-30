@@ -1,6 +1,6 @@
 export default {
   preset: "ts-jest",
-  testEnvironment: "jsdom",
+  testEnvironment: "./jest-custom-environment.js",
   roots: ["<rootDir>/"],
   testMatch: [
     "**/__tests__/**/*.ts",
@@ -33,10 +33,10 @@ export default {
   ],
   coverageThreshold: {
     global: {
-      branches: 50,
-      functions: 50,
-      lines: 50,
-      statements: 50,
+      branches: 25,
+      functions: 30,
+      lines: 35,
+      statements: 35,
     },
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],

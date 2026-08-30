@@ -1,6 +1,7 @@
 # Migration Naming Convention Guide
 
 ## Overview
+
 This document establishes the standard naming convention for database migrations in the MCT Client Portal. Consistent naming ensures easy tracking, rollback capability, and team collaboration.
 
 ## Naming Pattern
@@ -8,27 +9,31 @@ This document establishes the standard naming convention for database migrations
 **Format:** `YYYYMMDDHHMMSS_<descriptive_name>.sql`
 
 ### Components:
+
 - **Timestamp**: `YYYYMMDDHHMMSS` - UTC timestamp when migration was created
 - **Separator**: Single underscore `_`
 - **Description**: Lowercase, snake_case, action-oriented description
 
 ### Examples:
-| Migration | Description |
-|-----------|-------------|
-| `20260626120000_create_user_profiles.sql` | Creates user profiles table |
-| `20260626120001_add_user_email_index.sql` | Adds email index to users |
-| `20260626120002_update_user_status_enum.sql` | Updates user status enum values |
-| `20260626130000_create_tickets_table.sql` | Creates tickets table |
+
+| Migration                                    | Description                            |
+| -------------------------------------------- | -------------------------------------- |
+| `20260626120000_create_user_profiles.sql`    | Creates user profiles table            |
+| `20260626120001_add_user_email_index.sql`    | Adds email index to users              |
+| `20260626120002_update_user_status_enum.sql` | Updates user status enum values        |
+| `20260626130000_create_tickets_table.sql`    | Creates tickets table                  |
 | `20260626130001_add_ticket_status_check.sql` | Adds check constraint on ticket status |
 
 ## Guidelines
 
 ### 1. Timestamp Format
+
 - Use UTC timezone
 - Format: `YYYYMMDDHHMMSS` (14 digits)
 - Ensures chronological sorting and unique ordering
 
 ### 2. Description Guidelines
+
 - **Action-oriented**: start with verb (create, add, update, remove, rename, alter)
 - **Lowercase**: all letters lowercase
 - **Snake_case**: words separated by underscores
@@ -37,21 +42,22 @@ This document establishes the standard naming convention for database migrations
 
 ### 3. Migration Types & Prefixes
 
-| Action | Prefix | Example |
-|--------|--------|---------|
-| Create table | `create_` | `create_users_table` |
-| Add column | `add_` | `add_email_to_users` |
-| Add index | `add_` + `idx_` | `add_idx_email_to_users` |
+| Action         | Prefix                 | Example                       |
+| -------------- | ---------------------- | ----------------------------- |
+| Create table   | `create_`              | `create_users_table`          |
+| Add column     | `add_`                 | `add_email_to_users`          |
+| Add index      | `add_` + `idx_`        | `add_idx_email_to_users`      |
 | Add constraint | `add_` + `constraint_` | `add_constraint_email_unique` |
-| Remove column | `remove_` | `remove_deprecated_field` |
-| Remove index | `remove_` | `remove_old_index` |
-| Rename | `rename_` | `rename_old_column_to_new` |
-| Alter/Modify | `alter_` | `alter_column_type` |
-| Update data | `update_` | `update_user_statuses` |
-| Seed data | `seed_` | `seed_default_roles` |
-| Cleanup | `cleanup_` | `cleanup_unused_tables` |
+| Remove column  | `remove_`              | `remove_deprecated_field`     |
+| Remove index   | `remove_`              | `remove_old_index`            |
+| Rename         | `rename_`              | `rename_old_column_to_new`    |
+| Alter/Modify   | `alter_`               | `alter_column_type`           |
+| Update data    | `update_`              | `update_user_statuses`        |
+| Seed data      | `seed_`                | `seed_default_roles`          |
+| Cleanup        | `cleanup_`             | `cleanup_unused_tables`       |
 
 ### 4. Special Cases
+
 - **Data migrations**: Use `update_` or `seed_` prefix
 - **Schema-only changes**: Use structural prefixes (`create_`, `add_`, `alter_`, `remove_`)
 - **Rollback scripts**: Include rollback instructions in comments
@@ -66,8 +72,8 @@ Before creating a new migration:
 4. [ ] Verify no duplicate timestamps exist
 5. [ ] Ensure migration is idempotent where possible
 6. [ ] Add rollback comments in SQL file
-6. [ ] Test migration on staging first
-7. [ ] Update any related documentation
+7. [ ] Test migration on staging first
+8. [ ] Update any related documentation
 
 ## File Structure
 
@@ -84,15 +90,19 @@ supabase/
 └── config.toml
 ```
 
+## Legacy Format (Existing Migrations)
+
+Current migrations in this repository use a sequential numeric format (`5302xxx`) rather than the ISO-date format preferred for new migrations. This legacy format is preserved for existing migrations — do not rename them. **All new migrations should use the ISO-date format** documented above.
+
 ## Anti-Patterns to Avoid
 
-| ❌ Avoid | ✅ Use Instead |
-|----------|----------------|
-| `migration_001.sql` | `20240115120000_create_users.sql` |
-| `fix_bug.sql` | `20240115120000_fix_user_email_validation.sql` |
-| `V2__create_table.sql` | `20240115120000_create_users_table.sql` |
-| `migration_v2.sql` | `20240115120000_add_user_email_index.sql` |
-| `changes.sql` | `20240115120000_update_user_status_enum.sql` |
+| ❌ Avoid               | ✅ Use Instead                                 |
+| ---------------------- | ---------------------------------------------- |
+| `migration_001.sql`    | `20240115120000_create_users.sql`              |
+| `fix_bug.sql`          | `20240115120000_fix_user_email_validation.sql` |
+| `V2__create_table.sql` | `20240115120000_create_users_table.sql`        |
+| `migration_v2.sql`     | `20240115120000_add_user_email_index.sql`      |
+| `changes.sql`          | `20240115120000_update_user_status_enum.sql`   |
 
 ## Migration Template
 
@@ -168,5 +178,5 @@ supabase db reset
 
 ---
 
-*Last updated: 2026-06-26*
-*MCT Portal Engineering Team*
+_Last updated: 2026-06-26_
+_MCT Portal Engineering Team_

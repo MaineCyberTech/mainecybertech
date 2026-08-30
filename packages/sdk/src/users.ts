@@ -1,5 +1,5 @@
 import { ApiClient } from "./client";
-import type { User, AuthUser, UserDetail, UserCompound } from "./types";
+import type { User, AuthUser, UserDetail, UserCompound, Membership } from "./types";
 
 export interface PermissionOverride {
   id: string;
@@ -9,7 +9,7 @@ export interface PermissionOverride {
 }
 
 export interface UserPermissionsResponse {
-  memberships: any[];
+  memberships: Membership[];
   permissions: Array<{
     id: string;
     module_key: string;
@@ -50,9 +50,7 @@ export class UsersApi {
   }
 
   getPermissions(userId: string) {
-    return this.client.get<UserPermissionsResponse>(
-      `/api/v1/users/${userId}/permissions`,
-    );
+    return this.client.get<UserPermissionsResponse>(`/api/v1/users/${userId}/permissions`);
   }
 
   updatePermissions(
@@ -60,12 +58,9 @@ export class UsersApi {
     data: {
       permissionId: string;
       organizationId: string;
-      isAllowed: boolean;
+      isAllowed: boolean | null;
     },
   ) {
-    return this.client.put<{ updated: boolean }>(
-      `/api/v1/users/${userId}/permissions`,
-      data,
-    );
+    return this.client.put<{ updated: boolean }>(`/api/v1/users/${userId}/permissions`, data);
   }
 }

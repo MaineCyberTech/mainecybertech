@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mainecybertech.com/schemas/service-product.schema.json",
+  "type": "object",
+  "required": [
+    "id",
+    "slug",
+    "name",
+    "categoryId",
+    "category",
+    "priceRange",
+    "summary",
+    "intakeFields",
+    "fulfillmentWorkflow"
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "categoryId": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "display": {
+      "type": "boolean"
+    },
+    "priceRange": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "marketingCopy": {
+      "type": "string"
+    },
+    "intakeFields": {
+      "type": "array"
+    },
+    "fulfillmentWorkflow": {
+      "type": "array"
+    },
+    "internalProcedure": {
+      "type": "object"
+    }
+  }
+}

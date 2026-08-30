@@ -26,7 +26,8 @@ export default function OrgSwitcher({ orgs, activeOrgId, setActiveOrgAction }: P
     <select
       value={activeOrgId}
       onChange={handleChange}
-      className="max-w-[160px] truncate rounded-lg border border-white/10 bg-[#0A1118]/80 px-2 py-1.5 text-[11px] text-slate-200 outline-none transition focus:border-emerald-600 sm:max-w-[200px] sm:px-3 sm:py-2 sm:text-xs"
+      aria-label="Switch organization"
+      className="max-w-[160px] truncate rounded-lg border border-white/10 bg-cyber-base/80 px-2 py-1.5 text-[11px] text-slate-200 outline-none transition focus:border-emerald-600 sm:max-w-[200px] sm:px-3 sm:py-2 sm:text-xs"
     >
       {orgs.map((org) => (
         <option key={org.id} value={org.id}>

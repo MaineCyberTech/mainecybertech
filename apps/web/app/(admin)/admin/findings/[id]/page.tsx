@@ -1,0 +1,94 @@
+﻿import { getApiClient } from "@/lib/api";
+import { requireAdminAccess } from "@/lib/auth/admin";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import AdminSubnav from "@/components/admin/AdminSubnav";
+import AdminPageShell from "@/components/admin/AdminPageShell";
+import RecordDetail from "@/components/admin/RecordDetail";
+import WorkflowActionButtons from "@/components/admin/WorkflowActionButtons";
+import { updateFinding, deleteFinding } from "@/lib/module-actions";
+import { revalidatePath } from "next/cache";
+
+export const dynamic = "force-dynamic";
+export const metadata = { title: "Finding Detail - Admin - Maine CyberTech" };
+
+export default async function DetailPage(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params;
+  await requireAdminAccess();
+  const api = getApiClient();
+  let record: Record<string, unknown> | null = null;
+  try {
+    record = (await api.findings.get(id)) as unknown as Record<string, unknown>;
+  } catch {}
+
+  return (
+    <AdminPageShell
+      breadcrumbs={
+        <Breadcrumbs
+          items={[
+            { label: "Admin", href: "/admin" },
+            { label: "Findings", href: "/admin/findings" },
+            { label: "Detail" },
+          ]}
+        />
+      }
+      subnav={<AdminSubnav current="findings" />}
+      title={String(record?.title ?? "Record Detail")}
+    >
+      {record && (
+        <WorkflowActionButtons
+          id={id}
+          context={record}
+          actions={[
+            {
+              label: "Resolve",
+              endpoint: (fid, api, ctx) =>
+                api.findings.resolve(fid, {
+                  organizationId: String(ctx.organization_id),
+                  resolutionNotes: String(ctx.remediation_plan ?? "") || null,
+                }),
+              confirm: "Mark this finding as resolved?",
+            },
+            {
+              label: "Verify",
+              endpoint: (fid, api, ctx) =>
+                api.findings.verify(fid, { organizationId: String(ctx.organization_id) }),
+              confirm: "Verify this resolved finding?",
+            },
+          ]}
+        />
+      )}
+      <RecordDetail
+        id={id}
+        record={record}
+        fields={[
+          { key: "title", label: "Title" },
+          { key: "description", label: "Description", type: "textarea" },
+          { key: "severity", label: "Severity", type: "select", options: ["p0", "p1", "p2", "p3"] },
+          {
+            key: "status",
+            label: "Status",
+            type: "select",
+            options: ["open", "in_progress", "resolved", "verified", "closed", "wont_fix"],
+          },
+          { key: "source", label: "Source" },
+          { key: "remediationPlan", label: "Remediation Plan", type: "textarea" },
+          { key: "remediationDeadline", label: "Deadline", type: "date" },
+          { key: "findingCategory", label: "Category" },
+          { key: "affectedSystems", label: "Affected Systems", type: "textarea" },
+        ]}
+        updateAction={updateFinding}
+        onUpdate={async () => {
+          "use server";
+          revalidatePath(`/admin/findings/${id}`);
+        }}
+        deleteAction={deleteFinding}
+        onDelete={async () => {
+          "use server";
+          revalidatePath("/admin/findings");
+        }}
+        parentHref="/admin/findings"
+        parentLabel="Findings"
+      />
+    </AdminPageShell>
+  );
+}

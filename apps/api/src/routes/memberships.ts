@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
-import { requireAdmin } from "../middleware/admin";
+import { requirePermission } from "../middleware/permissions";
+import { loadOwned } from "../lib/tenant";
 import { updateMembershipSchema } from "../validators/membership";
 
 const router: ReturnType<typeof Router> = Router();
@@ -15,17 +16,20 @@ router.use(requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "memberships", "read");
 
     const orgId = req.query.organization_id as string | undefined;
     const statusFilter = req.query.status as string | undefined;
     const userId = req.query.user_id as string | undefined;
 
-    let query = supabase
-      .from("memberships")
-      .select("*, organizations(*), roles(*)");
+    let query = supabase.from("memberships").select("*, organizations(*), roles(*)");
 
-    if (orgId) query = query.eq("organization_id", orgId);
+    // When the caller enumerates their OWN memberships (user_id = self),
+    // do not scope to the active org — they need the full list to resolve
+    // the active org and detect platform-admin access. Cross-user lookups
+    // keep the org filter (caller's active org) for tenant isolation.
+    const isSelfLookup = userId != null && userId === req.authUser?.userId;
+    if (orgId && !isSelfLookup) query = query.eq("organization_id", orgId);
     if (statusFilter) query = query.eq("status", statusFilter);
     if (userId) query = query.eq("user_id", userId);
 
@@ -40,7 +44,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/mine", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "memberships", "read");
     const query = supabase
       .from("memberships")
       .select("*, organizations(*), roles(*)")
@@ -55,7 +59,7 @@ router.get("/mine", async (req, res, next) => {
   }
 });
 
-router.post("/invite", requireAdmin, async (req, res, next) => {
+router.post("/invite", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const { organizationId, email, roleId } = z
       .object({
@@ -65,7 +69,7 @@ router.post("/invite", requireAdmin, async (req, res, next) => {
       })
       .parse(req.body);
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "memberships", "write");
 
     const { data: userByEmail } = await supabase
       .from("profiles")
@@ -85,11 +89,7 @@ router.post("/invite", requireAdmin, async (req, res, next) => {
       .maybeSingle();
 
     if (existing) {
-      throw new AppError(
-        "CONFLICT",
-        "User already has a membership in this organization",
-        409,
-      );
+      throw new AppError("CONFLICT", "User already has a membership in this organization", 409);
     }
 
     const { data, error } = await supabase
@@ -120,10 +120,11 @@ router.post("/invite", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireAdmin, async (req, res, next) => {
+router.patch("/:id", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const parsed = updateMembershipSchema.parse(req.body);
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "memberships", "write");
+    await loadOwned(req, supabase as any, "memberships", String(req.params.id));
 
     const { data, error } = await supabase
       .from("memberships")
@@ -154,13 +155,11 @@ router.patch("/:id", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.delete("/:id", requireAdmin, async (req, res, next) => {
+router.delete("/:id", requirePermission("users", "manage"), async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase
-      .from("memberships")
-      .delete()
-      .eq("id", req.params.id);
+    const supabase = getScopedClient(req, "memberships", "write");
+    await loadOwned(req, supabase as any, "memberships", String(req.params.id));
+    const { error } = await supabase.from("memberships").delete().eq("id", req.params.id);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

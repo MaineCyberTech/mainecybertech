@@ -4,6 +4,8 @@
 >
 > See `apps/api/.env.example`, `apps/web/.env.example`, `apps/worker/.env.example` for minimal starter configs.
 >
+> **Cross-reference:** See `docs/ENVIRONMENT_MATRIX.md` for a per-service matrix of which variables are required/optional in each deployment context (local, staging, production).
+>
 > All three apps load **`.env.local`** for local development (API/Worker via explicit `dotenv.config()`, Web via Next.js convention). Docker Compose also references `.env.local` via `env_file`. Run `pwsh scripts/sync_supabase_env.auto.v2.ps1` to populate local Supabase connection values.
 
 ## Web (`apps/web`)
@@ -30,8 +32,10 @@
 | `SUPABASE_URL`               | Yes      | —                            | Supabase project URL (e.g. `http://127.0.0.1:54321` for local)                        |
 | `SUPABASE_ANON_KEY`          | Yes      | —                            | Supabase publishable/anon key                                                         |
 | `SUPABASE_SERVICE_ROLE_KEY`  | Yes      | —                            | Supabase service role key (admin access)                                              |
-| `JWT_SECRET`                 | No       | —                            | JWT signing secret (optional; Supabase handles JWT by default)                        |
+| `JWT_SECRET`                 | Yes      | —                            | JWT signing secret (required; multi-secret rotation via comma-separated values)       |
 | `CORS_ORIGIN`                | No       | `http://localhost:3000`      | Allowed CORS origin; comma-separated for multiple (deploy includes `app.*` + `www.*`) |
+| `APP_DOMAIN`                 | No       | `app.mainecybertech.com`    | Public app domain (used by Caddy reverse proxy and APP_BASE_URL)                      |
+| `API_DOMAIN`                 | No       | `api.mainecybertech.com`    | Public API domain (used by Caddy reverse proxy and worker API_BASE_URL)               |
 | `LOG_LEVEL`                  | No       | `info`                       | Logging level (`debug`, `info`, `warn`, `error`)                                      |
 | `SMTP_HOST`                  | No       | —                            | SMTP host for email sending                                                           |
 | `SMTP_PORT`                  | No       | `587`                        | SMTP port                                                                             |
@@ -46,38 +50,44 @@
 | `JSM_API_TOKEN`              | No       | —                            | JSM API token                                                                         |
 | `JSM_SERVICEDESK_ID`         | No       | —                            | JSM service desk ID                                                                   |
 | `JSM_REQUEST_TYPE_ID`        | No       | —                            | JSM request type ID                                                                   |
+| `STRIPE_SECRET_KEY`          | No       | —                            | Stripe secret key for API calls and sync endpoint                                     |
 | `STRIPE_WEBHOOK_SECRET`      | No       | —                            | Stripe webhook signing secret for signature verification                              |
-| —                            | —        | —                            | —                                                                                     |
+| `REDIS_URL`                  | No       | —                            | Redis URL for caching, idempotency, and BullMQ (required in production)               |
+| `REDIS_PASSWORD`             | No       | —                            | Redis password (required in production; used by docker-compose and worker)            |
+| `QUEUE_BACKEND`              | No       | `sqs`                        | Queue backend (`sqs` or `bullmq`; set to `bullmq` in docker-compose)                  |
+| `JIRA_WEBHOOK_SECRET`        | No       | —                            | Jira webhook secret for HMAC signature verification                                   |
+| `JSM_WEBHOOK_SECRET`         | No       | —                            | JSM webhook secret for HMAC signature verification                                    |
+| `M365_WEBHOOK_SECRET`        | No       | —                            | M365 webhook secret for HMAC signature verification                                   |
 
 ## Worker (`apps/worker`)
 
-| Variable                    | Required | Default                      | Description                                    |
-| --------------------------- | -------- | ---------------------------- | ---------------------------------------------- |
-| `NODE_ENV`                  | No       | `development`                | Node environment                               |
-| `LOG_LEVEL`                 | No       | `info`                       | Logging level                                  |
-| `SUPABASE_URL`              | No       | —                            | Supabase project URL (optional for local dev)  |
-| `SUPABASE_ANON_KEY`         | No       | —                            | Supabase publishable/anon key                  |
-| `SUPABASE_SERVICE_ROLE_KEY` | No       | —                            | Supabase service role key (for task DB access) |
-| `WORKER_CONCURRENCY`        | No       | `10`                         | Max concurrent jobs                            |
-| `WORKER_TIMEOUT`            | No       | `30000`                      | Job timeout in ms                              |
-| `SQS_QUEUE_URL`             | No       | —                            | SQS queue URL for task processing              |
-| `STRIPE_SECRET_KEY`         | No       | —                            | Stripe API key for billing reconciliation      |
-| `JIRA_BASE_URL`             | No       | —                            | Jira instance base URL                         |
-| `JIRA_EMAIL`                | No       | —                            | Jira user email                                |
-| `JIRA_API_TOKEN`            | No       | —                            | Jira API token                                 |
-| `JSM_BASE_URL`              | No       | —                            | Jira Service Management base URL               |
-| `JSM_EMAIL`                 | No       | —                            | JSM user email                                 |
-| `JSM_API_TOKEN`             | No       | —                            | JSM API token                                  |
-| `M365_TENANT_ID`            | No       | —                            | Microsoft 365 tenant ID                        |
-| `M365_CLIENT_ID`            | No       | —                            | Microsoft 365 app client ID                    |
-| `M365_CLIENT_SECRET`        | No       | —                            | Microsoft 365 app client secret                |
-| `SMTP_HOST`                 | No       | —                            | SMTP host for email notifications              |
-| `SMTP_PORT`                 | No       | `587`                        | SMTP port                                      |
-| `SMTP_USER`                 | No       | —                            | SMTP username                                  |
-| `SMTP_PASS`                 | No       | —                            | SMTP password                                  |
-| `EMAIL_FROM`                | No       | `noreply@mainecybertech.com` | From address for outgoing emails               |
-| `API_BASE_URL`              | No       | —                            | Public API base URL for notification links     |
-| `HEALTH_PORT`               | No       | `3001`                       | Health check server port                       |
+| Variable                    | Required | Default                      | Description                                        |
+| --------------------------- | -------- | ---------------------------- | -------------------------------------------------- |
+| `NODE_ENV`                  | No       | `development`                | Node environment                                   |
+| `LOG_LEVEL`                 | No       | `info`                       | Logging level                                      |
+| `SUPABASE_URL`              | Yes      | —                            | Supabase project URL (required for task DB access) |
+| `SUPABASE_ANON_KEY`         | Yes      | —                            | Supabase publishable/anon key                      |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes      | —                            | Supabase service role key (for task DB access)     |
+| `WORKER_CONCURRENCY`        | No       | `10`                         | Max concurrent jobs                                |
+| `WORKER_TIMEOUT`            | No       | `30000`                      | Job timeout in ms                                  |
+| `SQS_QUEUE_URL`             | No       | —                            | SQS queue URL for task processing                  |
+| `STRIPE_SECRET_KEY`         | No       | —                            | Stripe API key for billing reconciliation          |
+| `JIRA_BASE_URL`             | No       | —                            | Jira instance base URL                             |
+| `JIRA_EMAIL`                | No       | —                            | Jira user email                                    |
+| `JIRA_API_TOKEN`            | No       | —                            | Jira API token                                     |
+| `JSM_BASE_URL`              | No       | —                            | Jira Service Management base URL                   |
+| `JSM_EMAIL`                 | No       | —                            | JSM user email                                     |
+| `JSM_API_TOKEN`             | No       | —                            | JSM API token                                      |
+| `M365_TENANT_ID`            | No       | —                            | Microsoft 365 tenant ID                            |
+| `M365_CLIENT_ID`            | No       | —                            | Microsoft 365 app client ID                        |
+| `M365_CLIENT_SECRET`        | No       | —                            | Microsoft 365 app client secret                    |
+| `SMTP_HOST`                 | No       | —                            | SMTP host for email notifications                  |
+| `SMTP_PORT`                 | No       | `587`                        | SMTP port                                          |
+| `SMTP_USER`                 | No       | —                            | SMTP username                                      |
+| `SMTP_PASS`                 | No       | —                            | SMTP password                                      |
+| `EMAIL_FROM`                | No       | `noreply@mainecybertech.com` | From address for outgoing emails                   |
+| `API_BASE_URL`              | No       | —                            | Public API base URL for notification links         |
+| `HEALTH_PORT`               | No       | `3001`                       | Health check server port                           |
 
 ## E2E Tests (`apps/web/e2e`)
 
@@ -87,18 +97,11 @@
 | `E2E_ADMIN_EMAIL`    | Yes      | —                       | Admin email for login         |
 | `E2E_ADMIN_PASSWORD` | Yes      | —                       | Admin password for login      |
 
-## CI / Vercel (managed via Terraform)
+## CI / Docker
 
-The web app env vars are set on the Vercel project by Terraform (`infra/terraform/vercel.tf`):
+The deploy workflow (`deploy-do.yml`) writes all env vars to `/opt/mct-portal/.env` on the DO droplet via SSH heredoc. The `docker-compose.yml` on the droplet loads env vars from this file with `env_file: ./.env`.
 
-| Variable                 | Set Via                 | Default (dev)                        |
-| ------------------------ | ----------------------- | ------------------------------------ |
-| `NEXT_PUBLIC_API_URL`    | `var.api_domain`        | — (required)                         |
-| `NEXT_PUBLIC_SENTRY_DSN` | `var.vercel_sentry_dsn` | `""` (optional, skip if empty)       |
-| `NEXT_PUBLIC_GA_ID`      | `var.vercel_ga_id`      | `G-1JYZ96P0D9`                       |
-| `NEXT_PUBLIC_TAWKTO_ID`  | `var.vercel_tawkto_id`  | `66898d27e1e4f70f24ee3260/1i24kuosn` |
-
-Set these in your `.tfvars` file (which is stored as the `TF_VARS_FILE_CONTENT` GitHub secret).
+Web `NEXT_PUBLIC_*` vars are passed as Docker build args for client-side inlining, and set as runtime env vars for server-side use.
 
 ## Docker Compose
 

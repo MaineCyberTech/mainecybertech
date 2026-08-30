@@ -36,6 +36,7 @@ describe("getApiClient", () => {
     expect(mockCreate).toHaveBeenCalledWith({
       baseUrl: "http://localhost:4000",
       getToken: expect.any(Function),
+      getActiveOrgId: expect.any(Function),
     });
   });
 
@@ -47,6 +48,7 @@ describe("getApiClient", () => {
     expect(mockCreate).toHaveBeenCalledWith({
       baseUrl: "https://api.example.com",
       getToken: expect.any(Function),
+      getActiveOrgId: expect.any(Function),
     });
   });
 
@@ -71,5 +73,28 @@ describe("getApiClient", () => {
     const token = await getToken();
 
     expect(token).toBeNull();
+  });
+
+  it("getActiveOrgId returns the active org cookie", async () => {
+    mockCookieGet.mockReturnValue({ value: "org-abc" });
+    const { getApiClient } = require("@/lib/api");
+    getApiClient();
+
+    const { getActiveOrgId } = mockCreate.mock.calls[0][0];
+    const orgId = await getActiveOrgId();
+
+    expect(orgId).toBe("org-abc");
+    expect(mockCookieGet).toHaveBeenCalledWith("mct_active_org");
+  });
+
+  it("getActiveOrgId returns null when no active org cookie", async () => {
+    mockCookieGet.mockReturnValue(undefined);
+    const { getApiClient } = require("@/lib/api");
+    getApiClient();
+
+    const { getActiveOrgId } = mockCreate.mock.calls[0][0];
+    const orgId = await getActiveOrgId();
+
+    expect(orgId).toBeNull();
   });
 });

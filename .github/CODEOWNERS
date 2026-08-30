@@ -1,0 +1,44 @@
+# Maine CyberTech Portal Code Owners
+
+# Repository root
+* @mainecybertech/leads
+
+# API backend
+/apps/api/ @mainecybertech/backend
+
+# Web frontend
+/apps/web/ @mainecybertech/frontend
+
+# Worker
+/apps/worker/ @mainecybertech/backend
+
+# Shared packages
+/packages/sdk/ @mainecybertech/backend
+/packages/ui/ @mainecybertech/frontend
+/packages/config/ @mainecybertech/platform
+
+# Infrastructure
+/infra/ @mainecybertech/infrastructure
+/infra/terraform/ @mainecybertech/infrastructure
+/infra/digitalocean/ @mainecybertech/infrastructure
+
+# CI/CD
+/.github/workflows/ @mainecybertech/infrastructure
+/.github/ @mainecybertech/infrastructure
+
+# Database
+/supabase/migrations/ @mainecybertech/backend
+/supabase/ @mainecybertech/backend
+
+# Docker
+/Dockerfile @mainecybertech/infrastructure
+/apps/api/Dockerfile @mainecybertech/infrastructure
+/apps/web/Dockerfile @mainecybertech/infrastructure
+/apps/worker/Dockerfile @mainecybertech/infrastructure
+
+# Documentation
+/docs/ @mainecybertech/leads
+
+# Configuration
+/package.json @mainecybertech/platform
+/turbo.json @mainecybertech/platform

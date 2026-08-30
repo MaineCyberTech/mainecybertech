@@ -9,6 +9,15 @@ on:
       - ".github/workflows/supabase-migrations.yml"
   workflow_call:
 
+permissions:
+  contents: read
+
+# Serialize migration runs per branch: concurrent `supabase db push` against the
+# same hosted project can interleave and corrupt the migrations table.
+concurrency:
+  group: supabase-migrations-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   migrate:
     runs-on: ubuntu-latest
@@ -16,10 +25,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
         with:
           node-version: 20
 
@@ -29,10 +38,17 @@ jobs:
           corepack prepare pnpm@10 --activate
 
       - name: Install Supabase CLI
-        run: npm install -g supabase
+        # Pinned to 2.107.0 to match the repo's pnpm-lock.yaml (supabase@2.107.0).
+        # Unpinned installs made migration behavior nondeterministic.
+        run: npm install -g supabase@2.107.0
 
       - name: Link project
         run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Diff migrations (dry-run)
+        run: supabase db diff --linked --schema public || true
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 

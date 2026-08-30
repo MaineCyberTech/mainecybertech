@@ -2,6 +2,8 @@ import { Router } from "express";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
+import { getSupabaseAdmin } from "../services/supabase";
+import { rateLimitEmail } from "../middleware/rate-limit";
 import { sendEmail } from "../lib/email";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
@@ -10,8 +12,41 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireAdmin);
 
+// GET /api/v1/admin/organizations — list every tenant. Super admins only.
+router.get("/organizations", async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const offset = (page - 1) * limit;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_super_admin")
+      .eq("id", req.authUser!.userId)
+      .maybeSingle();
+
+    if (!profile?.is_super_admin) {
+      throw new AppError("FORBIDDEN", "Super admin access required", 403);
+    }
+
+    const query = supabase
+      .from("organizations")
+      .select("id, name, slug, status, primary_domain, support_plan, created_at", { count: "exact" })
+      .order("name")
+      .range(offset, offset + limit - 1);
+
+    const { data, error, count } = await query;
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 // POST /api/v1/admin/test-email — send a test email to verify SMTP config
-router.post("/test-email", async (req, res, next) => {
+router.post("/test-email", rateLimitEmail, async (req, res, next) => {
   try {
     const { to } = z.object({ to: z.string().email() }).parse(req.body);
 
@@ -31,11 +66,7 @@ router.post("/test-email", async (req, res, next) => {
     });
 
     if (!sent) {
-      throw new AppError(
-        "SMTP_ERROR",
-        "SMTP is not configured or sending failed",
-        502,
-      );
+      throw new AppError("SMTP_ERROR", "SMTP is not configured or sending failed", 502);
     }
 
     await logAuditEvent({

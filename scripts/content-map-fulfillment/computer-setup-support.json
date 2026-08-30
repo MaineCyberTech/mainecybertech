@@ -1,0 +1,861 @@
+{
+  "new_computer_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the New Computer Setup for the device type and OS from intake, and schedule the setup with the device owner or IT contact.",
+      "Send prep instructions: the user should confirm the apps needed for their role, any logins required, and whether the computer will connect to office or home network.",
+      "Pre-work: prepare the software list, Windows/Mac update plan, and the security configuration checklist; confirm RMM and endpoint protection are available for install.",
+      "Set up the operating system: complete out-of-box setup, install all OS updates, and configure the user account and profile.",
+      "Install software and configure services: install the role's applications, configure email and Microsoft 365, and connect network, printers, and peripherals.",
+      "Apply security and test: enable disk encryption and protection, then test logins, printing, email, and the key apps end to end.",
+      "Deliver the handover: walk the user through their new computer, provide the setup summary, and confirm the device is production-ready."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the New Computer Setup scope and confirm the device type (Windows or Mac) and the role's app needs from intake.",
+        "Confirm whether the user is local or remote and which network they will connect to; arrange remote or on-site setup accordingly.",
+        "Gather baseline: model, OS version, the apps list, email account, and whether a company RMM/endpoint protection profile exists.",
+        "Create the ticket with product id new_computer_setup, expected deliverables (configured device, security applied, handover), and assign the setup technician.",
+        "Check prerequisites: the computer is present, account credentials available, and any company software installers/license keys are accessible."
+      ],
+      "delivery": [
+        "Complete out-of-box setup: choose the right edition, connect to the network, and finish OS setup with the business user account.",
+        "Install all OS updates until the device is fully patched; record the patch state.",
+        "Create/configure the user account and profile with the correct name, email, and local account policy.",
+        "Install the role's software and configure email, Microsoft 365 apps, and any line-of-business apps with test sign-ins.",
+        "Connect network resources, printers, and peripherals; install the RMM agent and endpoint protection if company-standard.",
+        "Enable disk encryption (BitLocker or FileVault) and apply screen lock and security policy.",
+        "Test end to end: sign-in, mail, printing, and key applications; confirm everything works before handover.",
+        "Technical verification: confirm patch state, encryption status, and that no role-critical app is missing."
+      ],
+      "documentation": [
+        "Produce the setup summary: device model, OS, installed apps, configured accounts, and security settings.",
+        "Document the device in the asset inventory with serial, model, and user.",
+        "Record login and admin credential locations in the secure password store; never in the documentation.",
+        "Include the user handover notes: how to access mail/teams/files and who to contact for support.",
+        "Security rule: no passwords or personal user data beyond the account name in documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: OS setup and updates, user/profile config, software install, email/M365 config, network/peripheral connectivity, security config, and functionality testing.",
+        "Confirm the user signed in successfully and the key apps were tested.",
+        "Confirm encryption is enabled and endpoint protection is active.",
+        "Confirm the device is recorded in the asset inventory.",
+        "Flag follow-ups: warranty registration, remaining app installs, and the replacement plan entry."
+      ],
+      "closeout": [
+        "Deliver the handover: walk the user through their new computer and the setup summary.",
+        "Recommend next steps: lifecycle tracking via managed_workstation plans, warranty tracking, or new_employee setup for the next hire.",
+        "Confirm the device is production-ready and the user knows the support path.",
+        "Record internal notes: device details, installed software, and any quirks for future reference.",
+        "Schedule a 7-day check-in to confirm the user is settled and no app is missing."
+      ]
+    }
+  },
+  "business_laptop_security_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Business Laptop Security Setup for the device and OS from intake, and schedule the security configuration session.",
+      "Send prep instructions: the user should confirm whether they use the laptop for work data, what they store locally, and their current login practices.",
+      "Pre-work: prepare the encryption enablement steps (BitLocker or FileVault), the update plan, and the endpoint protection checklist.",
+      "Apply the security baseline: install OS and application updates, enable disk encryption, and set account and login hygiene.",
+      "Configure practical protections: set screen lock, secure settings, and verify endpoint protection is active.",
+      "Test and verify: confirm encryption is on, updates are current, and the security settings do not harm productivity.",
+      "Deliver the closeout package: the security configuration summary, what-changed notes, and the user security checklist."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Business Laptop Security Setup scope and the device OS to select the right encryption path.",
+        "Confirm the user's data profile: business data on the laptop, use of cloud vs local storage, and any legacy apps.",
+        "Gather baseline: OS version, current update state, encryption status, and endpoint protection present or not.",
+        "Create the ticket with product id business_laptop_security_setup, expected deliverables (hardened device, summary), and assign the security technician.",
+        "Check prerequisites: admin rights on the device, data backed up before encryption, and a BitLocker/FileVault recovery key storage path."
+      ],
+      "delivery": [
+        "Run all OS and application updates until current; record the patch state before and after.",
+        "Enable disk encryption: BitLocker (TPM) or FileVault with the recovery key stored in the secure location, not on the device.",
+        "Set account hygiene: require a strong login password, remove or lock unused accounts, and disable auto-login.",
+        "Configure screen lock and security policy: screen timeout lock, no guest account, and controlled admin rights.",
+        "Verify or install endpoint protection and confirm definitions/signatures are current.",
+        "Apply practical settings that reduce risk without breaking productivity: disable unnecessary auto-run, verify firewall, and secure browser defaults.",
+        "Test the device: sign-in, unlock after lockout, and the user's core apps still working.",
+        "Technical verification: confirm encryption status (all volumes), update state, and protection active."
+      ],
+      "documentation": [
+        "Produce the security configuration summary: updates applied, encryption status, account settings, and protection state.",
+        "Record the BitLocker/FileVault recovery key location in the secure store with a reference only.",
+        "Provide the user security checklist: lock screen habit, no admin usage for email, and how to report a lost device.",
+        "Log the device in the asset inventory with its security state.",
+        "Security rule: the recovery key itself never appears in documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: updates, encryption enablement, account hygiene, screen lock/security policy, endpoint protection verification, and practical settings.",
+        "Confirm encryption is enabled on all system volumes and the recovery key is stored.",
+        "Confirm updates are current and endpoint protection is active.",
+        "Confirm no productivity-impacting change was made without the user's awareness.",
+        "Flag follow-ups: quarterly encryption/update recheck, managed patching plan, and lost-device process."
+      ],
+      "closeout": [
+        "Send the deliverables package: security configuration summary and the user checklist.",
+        "Recommend next steps: managed_workstation_protect for ongoing patching, or endpoint_protection_rollout if protection was missing.",
+        "Confirm the recovery key is safely stored and the user knows what to do if they forget the password.",
+        "Record internal notes: device security state and any exclusions.",
+        "Schedule a 90-day recheck of encryption and patch state."
+      ]
+    }
+  },
+  "patch_status_snapshot": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Patch Status Snapshot, review the device count from intake, and schedule the scan window.",
+      "Send prep instructions: the customer should confirm the devices in scope are reachable and that updates may be pending on them.",
+      "Pre-work: prepare the device list, the RMM or manual scan method, and the OS/application patch baselines.",
+      "Run the scan: review patch and update status across the in-scope devices for both OS and key applications.",
+      "Identify gaps: flag critical and overdue updates, and categorize the risk of each gap.",
+      "Build recommendations: prioritize the updates by risk and impact, and note which need reboot windows.",
+      "Deliver the closeout package: the patch status report with prioritized recommendations and the follow-on patching path."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Patch Status Snapshot scope and the device list; confirm it is a status review, not applying patches.",
+        "Confirm the devices are reachable (network/remote access) and that scans will not interrupt work.",
+        "Gather baseline: OS versions, key applications in scope, and any known maintenance windows.",
+        "Create the ticket with product id patch_status_snapshot, expected deliverables (report, recommendations), and assign a technician.",
+        "Check prerequisites: RMM access or remote tooling authorized, and the scan window agreed."
+      ],
+      "delivery": [
+        "Pull the patch state per device: OS update status, pending updates, and last successful update date.",
+        "Review key applications: browsers, Office, PDF reader, and line-of-business apps for update status.",
+        "Classify gaps: critical security updates, important updates, feature updates, and overdue reboots.",
+        "Note device health factors that affect patching: disk space, user offline time, and admin rights.",
+        "Build the prioritized recommendation list ordered by security risk and impact.",
+        "Identify which devices need a reboot window and which can update immediately.",
+        "Technical verification: confirm the data is current (scan date) and no device was changed during the review."
+      ],
+      "documentation": [
+        "Produce the patch status report: per-device OS and application update status with dates.",
+        "Document the prioritized recommendations: which updates to apply now, which need reboot windows, and which are low risk.",
+        "Include the devices that failed to scan and the reason.",
+        "Record the baseline for future comparisons.",
+        "Security rule: no personal data beyond device names and update state."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: patch status review, OS update assessment, key application assessment, critical gap identification, prioritized recommendations, and report.",
+        "Confirm all in-scope devices were scanned or the failures are documented.",
+        "Confirm the recommendations are actionable and ordered by risk.",
+        "Confirm the customer understands this is a snapshot, not patch application.",
+        "Flag follow-ups: managed_workstation_protect for automated patching, and the critical updates needing immediate scheduling."
+      ],
+      "closeout": [
+        "Send the deliverables package: the patch status report and prioritized recommendations.",
+        "Recommend next steps: schedule the critical updates, or adopt managed_workstation_protect for automated patching.",
+        "Confirm the customer knows which devices need a reboot window.",
+        "Record internal notes: scan date, patch state, and flagged devices.",
+        "Schedule a re-snapshot in 30 days if the customer is not adopting managed patching."
+      ]
+    }
+  },
+  "managed_workstation_essentials": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Managed Workstation Essentials plan, collect the device list, and establish the recurring maintenance cycle.",
+      "Send onboarding prep: the customer confirms the in-scope devices, the contact for device issues, and the reporting cadence.",
+      "Pre-work: enroll devices in the asset inventory and establish the monthly maintenance checklist.",
+      "Run monthly maintenance: verify device health, check update and patch status, and review the inventory.",
+      "Identify and prioritize issues: flag any device issues or gaps and prioritize them for the customer.",
+      "Report and follow up: deliver the monthly care summary and address any urgent items.",
+      "Deliver the monthly closeout: the care summary, open items, and recommended upgrades."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Essentials plan scope: basic recurring care (inventory + health review), not patching or support.",
+        "Collect the device inventory: make/model/serial/user for every in-scope device.",
+        "Establish the monthly checklist and reporting date.",
+        "Gather baseline: initial device health, update state, and any known issues.",
+        "Set expectations: what the plan covers and that it is entry-tier recurring care."
+      ],
+      "delivery": [
+        "Run the monthly inventory check: confirm devices are online, correctly named, and in the asset inventory.",
+        "Run the basic health review: check disk space, system uptime, and obvious hardware errors on each device.",
+        "Verify update and patch status: record pending updates and flag critical gaps.",
+        "Identify and prioritize issues: rank device problems by business impact for the customer.",
+        "Flag devices needing attention: low disk, failed backup agent, or repeated errors.",
+        "Log all findings in the ticket with per-device notes.",
+        "Technical verification: confirm every device was checked and the report is current."
+      ],
+      "documentation": [
+        "Produce the monthly care summary: per-device health, update state, and prioritized issues.",
+        "Maintain the asset inventory with any changes.",
+        "Track open issues and their status.",
+        "Record update gaps and device observations for the next cycle.",
+        "Security rule: no personal user data beyond device assignment."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: inventory management, basic health review, update verification, maintenance cadence, issue prioritization, and monthly summary.",
+        "Confirm every in-scope device was checked and the summary delivered.",
+        "Confirm the inventory is accurate and up to date.",
+        "Confirm critical issues were flagged to the customer promptly, not only in the report.",
+        "Flag follow-ups: devices needing repair, upgrade recommendations, and plan-tier recommendations."
+      ],
+      "closeout": [
+        "Send the monthly care summary with the prioritized issue list.",
+        "Recommend upgrades based on patterns: managed_workstation_protect when patching is needed, complete when lifecycle help is needed.",
+        "Confirm no urgent issue is left unaddressed.",
+        "Record internal notes for the next cycle: open items and device observations.",
+        "Schedule the next month's maintenance cycle."
+      ]
+    }
+  },
+  "managed_workstation_protect": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Managed Workstation Protect plan, collect the device list, and establish the recurring patching and health cycle.",
+      "Send onboarding prep: the customer confirms in-scope devices, reboot windows, and the maintenance schedule.",
+      "Pre-work: enroll devices in the RMM/management tool and establish the patching policy.",
+      "Run managed patching: apply OS and application updates on schedule, watching for issues.",
+      "Monitor protection and health: verify endpoint protection status and device health, and remediate issues.",
+      "Report and follow up: deliver the monthly health summary and escalate anything critical.",
+      "Deliver the monthly closeout: the health summary, remediations applied, and recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Protect plan scope: managed patching, endpoint protection monitoring, and health with remediation.",
+        "Collect the device list and the customer's reboot window preferences.",
+        "Establish the patching policy: which update classes apply automatically and which require approval.",
+        "Enroll devices in the RMM and confirm agent connectivity.",
+        "Gather baseline: current patch state, endpoint protection status, and device health."
+      ],
+      "delivery": [
+        "Run the monthly patch cycle: apply approved OS and application updates during the agreed window.",
+        "Verify patch success per device: reboot where needed, confirm updates installed, and flag failures.",
+        "Monitor endpoint protection: confirm definitions current, protection active, and no threat detections pending.",
+        "Monitor device health: disk, memory, CPU, and hardware errors.",
+        "Remediate issues: fix update failures, protection gaps, and health problems within the plan scope.",
+        "Escalate critical items immediately: malware detections, patch failures, and device failures.",
+        "Technical verification: confirm each device's patch and protection state at month end."
+      ],
+      "documentation": [
+        "Produce the monthly health summary: per-device patch state, protection status, and remediations.",
+        "Track update failures and their resolution.",
+        "Record endpoint protection events and any quarantines.",
+        "Maintain the device baseline for trend tracking.",
+        "Security rule: no credentials or personal data in the summary."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: managed patching, endpoint protection verification, health monitoring, remediation, monthly summary, and issue prioritization.",
+        "Confirm every device was patched or the failure is documented and tracked.",
+        "Confirm protection is active on all devices and no detection was left unaddressed.",
+        "Confirm the summary was delivered on schedule.",
+        "Flag follow-ups: recurring failures, devices needing replacement, and upgrade recommendations."
+      ],
+      "closeout": [
+        "Send the monthly health summary with remediations and open items.",
+        "Recommend upgrades based on patterns: managed_workstation_complete when lifecycle/replacement help is needed.",
+        "Confirm critical issues were escalated and resolved or scheduled.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next month's patch and monitoring cycle."
+      ]
+    }
+  },
+  "managed_workstation_complete": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Managed Workstation Complete plan, collect the device list, and establish the full lifecycle management cycle.",
+      "Send onboarding prep: the customer confirms devices, priorities, support expectations, and the quarterly review date.",
+      "Pre-work: enroll devices in management, establish device standards, and record warranties and lifecycle state.",
+      "Run ongoing management: provide priority support, perform proactive maintenance, and track lifecycle and warranties.",
+      "Standardize and review: enforce device standards, track replacements, and prepare the quarterly fleet review.",
+      "Report and plan: deliver the quarterly review with replacement planning and budget guidance.",
+      "Deliver the closeout: the quarterly review, priority support summary, and next-quarter plan."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Complete plan scope: priority support, lifecycle/warranty tracking, device standards, proactive maintenance, and quarterly review.",
+        "Collect the device list with owners and gather warranty and lifecycle data.",
+        "Establish the device standard: preferred models, OS version, security baseline, and software set.",
+        "Establish the support process: priority routing for these devices and the escalation path.",
+        "Schedule the quarterly fleet review with the customer."
+      ],
+      "delivery": [
+        "Provide priority support: route in-scope device issues to the front of the queue and resolve promptly.",
+        "Run proactive maintenance: scheduled patching, health checks, and cleanup on each device.",
+        "Track lifecycle and warranties: record purchase date, warranty expiration, and projected replacement date per device.",
+        "Enforce device standards: flag devices off-standard and work the customer toward the standard.",
+        "Perform the quarterly fleet review: assess fleet health, performance, and replacement readiness.",
+        "Develop replacement planning: stage replacements by age/condition with budget projections.",
+        "Technical verification: confirm device health, patch state, and warranty data are current at review time."
+      ],
+      "documentation": [
+        "Produce the quarterly fleet review: per-device health, lifecycle position, warranty status, and replacement recommendations.",
+        "Maintain the device standards document.",
+        "Track warranty expirations and replacement dates in a forward-looking list.",
+        "Record the support summary: tickets resolved for in-scope devices.",
+        "Security rule: no personal data beyond device assignment and ownership."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: priority support, lifecycle/warranty tracking, device standards, proactive maintenance, quarterly review, and replacement planning.",
+        "Confirm the fleet review was delivered and the customer understood the replacement plan.",
+        "Confirm devices are standardized or the off-standard list is tracked.",
+        "Confirm warranty data is accurate.",
+        "Flag follow-ups: replacements due soon, off-standard devices, and budget approvals."
+      ],
+      "closeout": [
+        "Send the quarterly fleet review with replacement plan and budget guidance.",
+        "Recommend next steps: workstation_refresh_pack for the first replacement batch, or procurement guidance.",
+        "Confirm priority support is working and the customer is satisfied.",
+        "Record internal notes for the next quarter: pending replacements and open issues.",
+        "Schedule the next quarterly review."
+      ]
+    }
+  },
+  "laptop_procurement": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope: confirm the Laptop Procurement, review the role and usage needs from intake, and determine the budget range.",
+      "Send prep instructions: the customer confirms the role, primary software, mobility needs, and any peripheral or docking requirements.",
+      "Pre-work: research current models and pricing at the right tier for the role.",
+      "Recommend models: produce specific model recommendations with specifications and pricing comparison.",
+      "Coordinate purchase: help the customer order the right configuration with fleet consistency in mind.",
+      "Verify the order and document: confirm the configuration ordered matches the recommendation.",
+      "Deliver the closeout package: the recommendation documentation and next-step setup guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Laptop Procurement scope: recommendation and purchase coordination, not the physical setup.",
+        "Identify the role and workload: software used, mobility, battery needs, and any special connections.",
+        "Determine the budget range and any fleet consistency requirements.",
+        "Gather baseline: current device model, user satisfaction, and existing fleet standards.",
+        "Create the ticket with product id laptop_procurement, expected deliverables (recommendations, purchase coordination), and assign a procurement-savvy technician."
+      ],
+      "delivery": [
+        "Assess the role's needs: processor, RAM, storage, screen size, build quality, and portability requirements.",
+        "Research current models at the right tier from reliable business vendors with warranty options.",
+        "Build a specification and pricing comparison across 2-3 recommended models.",
+        "Recommend a primary pick with reasons matched to the role and budget.",
+        "Coordinate the order: confirm the exact configuration (processor, RAM, storage, warranty) before purchase.",
+        "Advise on fleet consistency: match existing devices where sensible for supportability.",
+        "Verify the order: confirm the configuration ordered matches the recommendation before finalizing.",
+        "Technical verification: confirm the recommended specs meet the software's minimum and the warranty covers business use."
+      ],
+      "documentation": [
+        "Produce the procurement documentation: needs assessment, recommended models, pricing comparison, and the selected configuration.",
+        "Document the order details: model, configuration, vendor, price, and warranty.",
+        "Record the device in the asset inventory once purchased.",
+        "Include setup next steps: new_computer_setup recommendation and the warranty registration.",
+        "Security rule: no personal data beyond the user's role and device needs."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: needs assessment, model recommendations, spec/pricing comparison, purchase coordination, fleet consistency guidance, and documentation.",
+        "Confirm the ordered configuration matches the recommendation.",
+        "Confirm the model meets the role's software requirements.",
+        "Confirm fleet consistency was considered.",
+        "Flag follow-ups: setup scheduling, warranty registration, and lifecycle plan entry."
+      ],
+      "closeout": [
+        "Send the deliverables package: procurement documentation and order details.",
+        "Recommend next steps: new_computer_setup for the device, warranty tracking, or lifecycle replacement planning.",
+        "Confirm the order is placed with the right configuration.",
+        "Record internal notes: purchased model, vendor, and configuration.",
+        "Schedule setup when the device arrives."
+      ]
+    }
+  },
+  "desktop_procurement": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope: confirm the Desktop Procurement, review the role and workload from intake, and determine the budget range.",
+      "Send prep instructions: the customer confirms the workload, software, and any peripheral or multi-monitor needs.",
+      "Pre-work: research current desktop models and pricing at the right tier for the workload.",
+      "Recommend models: produce specific desktop recommendations with specifications and pricing comparison.",
+      "Coordinate purchase: help the customer order the right configuration, including peripherals compatibility.",
+      "Verify the order and document: confirm the configuration and compatibility before ordering.",
+      "Deliver the closeout package: the recommendation documentation and setup guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Desktop Procurement scope: recommendation and purchase coordination for a desktop.",
+        "Identify the workload: heavy apps (CAD, video, databases) vs standard office work, multi-monitor, and peripherals.",
+        "Determine the budget and any fleet consistency requirements.",
+        "Gather baseline: current desktop, user needs, and existing fleet standards.",
+        "Create the ticket with product id desktop_procurement, expected deliverables (recommendations, purchase coordination), and assign a procurement-savvy technician."
+      ],
+      "delivery": [
+        "Assess the workload: processor, RAM, storage, graphics, and expansion needs for the role.",
+        "Research current models at the right tier from business vendors with warranty options.",
+        "Build a specification and pricing comparison across recommended models.",
+        "Recommend a primary pick with reasons matched to the workload and budget.",
+        "Check peripheral compatibility: monitors, docking, printers, and USB requirements.",
+        "Coordinate the order with the exact configuration and warranty.",
+        "Verify the order configuration matches the recommendation before purchase.",
+        "Technical verification: confirm the specs meet the software requirements and peripherals are compatible."
+      ],
+      "documentation": [
+        "Produce the procurement documentation: workload assessment, recommendations, pricing comparison, and selected configuration.",
+        "Document the order details: model, configuration, vendor, price, warranty, and peripherals.",
+        "Record the device in the asset inventory once purchased.",
+        "Include setup next steps and warranty registration.",
+        "Security rule: no personal data beyond role and device needs."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: workload assessment, model recommendations, spec/pricing comparison, purchase coordination, peripheral compatibility, and documentation.",
+        "Confirm the ordered configuration matches the recommendation.",
+        "Confirm peripherals are compatible with the chosen model.",
+        "Confirm the specs meet the workload needs.",
+        "Flag follow-ups: setup scheduling, warranty registration, and lifecycle plan entry."
+      ],
+      "closeout": [
+        "Send the deliverables package: procurement documentation and order details.",
+        "Recommend next steps: new_computer_setup, warranty tracking, or lifecycle replacement planning.",
+        "Confirm the order is placed correctly.",
+        "Record internal notes: purchased model, vendor, and configuration.",
+        "Schedule setup when the device arrives."
+      ]
+    }
+  },
+  "printer_procurement_help": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope: confirm the Printer Procurement Help, review the office printing and scanning needs from intake, and determine the budget.",
+      "Send prep instructions: the customer confirms print volume, who scans, and any color or specialty printing needs.",
+      "Pre-work: research current printer models suitable for the office size and volume.",
+      "Analyze needs: assess print volume, workflow, and total cost of ownership including supplies.",
+      "Recommend models: produce specific recommendations with feature and compatibility guidance.",
+      "Coordinate purchase: help the customer order the right model and supplies.",
+      "Deliver the closeout package: the recommendation documentation and setup guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Printer Procurement Help scope: recommendation, not installation.",
+        "Identify the office needs: print volume, color vs B/W, scanning to email/folder, duplexing, and number of users.",
+        "Determine the budget and the replacement of an existing printer or a new deployment.",
+        "Gather baseline: current printer model, monthly page volume, and pain points.",
+        "Create the ticket with product id printer_procurement_help, expected deliverables (recommendations, TCO analysis), and assign a technician."
+      ],
+      "delivery": [
+        "Assess the office workflow: print volume per month, user count, scanning destinations, and specialty needs (labels, envelopes, large format).",
+        "Analyze total cost of ownership: printer price, toner/ink costs per page, drum life, and maintenance.",
+        "Research current models: recommend laser vs inkjet and network vs USB based on volume and office size.",
+        "Evaluate features: duplex, scanner, fax, mobile printing, and MFP vs single-function.",
+        "Check compatibility: driver availability, network integration, and the customer's print management.",
+        "Recommend a primary pick with the supplies and maintenance plan.",
+        "Coordinate the purchase: confirm the model, supplies, and warranty before ordering.",
+        "Technical verification: confirm the recommended model fits the volume and the supply costs are projected."
+      ],
+      "documentation": [
+        "Produce the purchase recommendations: needs assessment, model comparison, TCO analysis, and selected model.",
+        "Document the supply cost projections: toner/ink, drum, and paper cost per month.",
+        "Record the order details: model, supplies, vendor, and price.",
+        "Include setup next steps and supply replenishment guidance.",
+        "Security rule: no personal data beyond office needs."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: needs assessment, volume/workflow analysis, model recommendations, TCO comparison, feature guidance, and recommendations documentation.",
+        "Confirm the TCO math is accurate with current supply prices.",
+        "Confirm the recommended model fits the office volume.",
+        "Confirm compatibility with the office network and workflows.",
+        "Flag follow-ups: printer setup scheduling, supply auto-replenishment, and print policy."
+      ],
+      "closeout": [
+        "Send the deliverables package: recommendations and TCO analysis.",
+        "Recommend next steps: printer_scanner_setup for installation, or printer procurement coordination for the order.",
+        "Confirm the purchase is coordinated or the customer has the details to order.",
+        "Record internal notes: recommended model, TCO, and office needs.",
+        "Schedule setup when the printer arrives."
+      ]
+    }
+  },
+  "warranty_tracking": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Warranty Tracking, review the device list from intake, and schedule the inventory session.",
+      "Send prep instructions: the customer provides the device list (or MCT pulls from the inventory) and confirms purchase dates.",
+      "Pre-work: prepare the device inventory and the warranty lookup method per manufacturer.",
+      "Run warranty lookups: record warranties, status, and expiration dates for each device.",
+      "Analyze and plan: compute replacement dates and flag devices out of warranty.",
+      "Document and report: produce the warranty tracking documentation and the expiration reminders.",
+      "Deliver the closeout package: the warranty report, replacement plan, and reminder schedule."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Warranty Tracking scope and the device list in scope.",
+        "Confirm how the devices were purchased and whether warranty data is accessible.",
+        "Gather baseline: device inventory with serials, models, and purchase dates.",
+        "Create the ticket with product id warranty_tracking, expected deliverables (warranty report, reminders), and assign a technician.",
+        "Check prerequisites: serial numbers available and manufacturer warranty portals accessible."
+      ],
+      "delivery": [
+        "Build the device inventory with make, model, serial, and purchase date.",
+        "Look up warranty status per manufacturer (Dell, HP, Lenovo, Apple) using serial numbers.",
+        "Record warranty type, coverage dates, and expiration date per device.",
+        "Flag devices out of warranty and devices expiring within 12 months.",
+        "Compute the replacement date planning based on warranty end and device age.",
+        "Set up expiration reminders in the tracking system.",
+        "Technical verification: confirm each lookup returned a valid warranty record or is documented as unknown."
+      ],
+      "documentation": [
+        "Produce the warranty tracking documentation: per-device warranty, expiration date, and coverage type.",
+        "Document the replacement plan: devices to replace and the target timeline.",
+        "Record the reminder schedule for expiring warranties.",
+        "Include the purchase-date assumptions where warranty data was unknown.",
+        "Security rule: no personal data beyond device ownership."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: device inventory with warranty, warranty status lookup, expiration tracking, replacement planning, documentation, and reminders.",
+        "Confirm every device has a warranty record or an unknown-status flag.",
+        "Confirm the reminders are scheduled.",
+        "Confirm the replacement plan is realistic for the fleet.",
+        "Flag follow-ups: devices expiring soon, warranty extensions, and lifecycle replacement planning."
+      ],
+      "closeout": [
+        "Send the deliverables package: warranty report and replacement plan.",
+        "Recommend next steps: lifecycle_replacement_plan for staged replacements, or warranty extensions for aging devices.",
+        "Confirm the reminders are active.",
+        "Record internal notes: warranty data and replacement dates.",
+        "Schedule the quarterly warranty refresh."
+      ]
+    }
+  },
+  "lifecycle_replacement_plan": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Lifecycle Replacement Plan, review the fleet from intake, and schedule the assessment session.",
+      "Send prep instructions: the customer confirms the device list, budget constraints, and any devices causing problems.",
+      "Pre-work: pull the fleet inventory with age, condition, and warranty data.",
+      "Assess the fleet: evaluate each device's condition, age, and business fit.",
+      "Build the plan: create a staged multi-year replacement schedule with budget projections.",
+      "Review with the customer: present the priority list and the standardization guidance.",
+      "Deliver the closeout package: the replacement plan documentation and budget schedule."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Lifecycle Replacement Plan scope and the fleet in scope.",
+        "Identify budget constraints and the customer's replacement timeline expectations.",
+        "Gather baseline: device inventory with age, specs, warranty, and known issues.",
+        "Create the ticket with product id lifecycle_replacement_plan, expected deliverables (staged plan, budget), and assign a technician.",
+        "Check prerequisites: fleet data collected and the customer's hardware budget known."
+      ],
+      "delivery": [
+        "Inventory the fleet: make, model, age, specs, warranty, and user role per device.",
+        "Assess condition: hardware health, performance, failures, and remaining useful life.",
+        "Score replacement priority: devices past warranty, failing, or under-spec get highest priority.",
+        "Group replacements into phases: immediate, year 1, year 2, year 3 based on age and risk.",
+        "Project the budget per phase using current model pricing.",
+        "Develop standardization guidance: target models/specs per role to simplify support.",
+        "Technical verification: confirm the plan covers every device and the phasing is realistic."
+      ],
+      "documentation": [
+        "Produce the replacement plan: per-device priority, phase, and replacement timing.",
+        "Document the budget projections by phase with model-level costs.",
+        "Include the standardization guidance: target models per role.",
+        "Record the fleet condition assessment with any urgent items.",
+        "Security rule: no personal data beyond device assignment."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: fleet inventory and condition, replacement priority, staged schedule, budget projections, standardization guidance, and documentation.",
+        "Confirm every device is in the plan with a phase.",
+        "Confirm the budget math is realistic with current pricing.",
+        "Confirm the urgent items are flagged for immediate action.",
+        "Flag follow-ups: first-phase purchases, managed_workstation_complete for ongoing lifecycle, and refresh pack scheduling."
+      ],
+      "closeout": [
+        "Send the deliverables package: replacement plan and budget schedule.",
+        "Recommend next steps: workstation_refresh_pack for the first batch, warranty tracking, or managed_workstation_complete.",
+        "Confirm the customer understands the phasing and budget.",
+        "Record internal notes: fleet state and plan decisions.",
+        "Schedule a review when the first phase approaches."
+      ]
+    }
+  },
+  "workstation_refresh_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Workstation Refresh Pack, review the device being replaced from intake, and schedule the refresh project.",
+      "Send prep instructions: the customer confirms the new device order, the old device data, and the refresh date.",
+      "Pre-work: prepare the new computer setup plan, the data transfer plan, and the old-device wipe plan.",
+      "Set up the new workstation: install the OS, software, and security baseline on the new computer.",
+      "Transfer data: move user data and application settings from the old device to the new one.",
+      "Secure the old device: coordinate the standards-compliant wipe and reuse or recycle path.",
+      "Deliver the closeout package: the refresh documentation, data transfer verification, and wipe certificate."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Workstation Refresh Pack scope: procurement guidance, setup, data transfer, security baseline, and old-device wipe.",
+        "Confirm the new device order status and the old device's data owner.",
+        "Gather baseline: old device inventory, data locations, and the user's role/apps.",
+        "Create the ticket with product id workstation_refresh_pack, expected deliverables (setup, transfer, wipe, documentation), and assign the setup technician.",
+        "Check prerequisites: new device available, old device accessible, and the wipe/recycle path agreed."
+      ],
+      "delivery": [
+        "Provide procurement guidance for the new device if not yet ordered: recommend the right configuration.",
+        "Set up the new workstation: OS, updates, user account, software, email/M365, and security baseline.",
+        "Transfer user data: documents, mail, browser, and application settings from the old device.",
+        "Verify the transfer: confirm data completeness against the old device inventory.",
+        "Apply the security baseline on the new device: encryption, protection, and settings.",
+        "Coordinate the old device wipe: standards-compliant erasure with verification.",
+        "Handle the old device disposition: reuse, donation, or recycling per the customer's choice.",
+        "Technical verification: confirm the new device is production-ready and the old device is wiped with proof."
+      ],
+      "documentation": [
+        "Produce the refresh documentation: new device setup, data transfer verification, and the wipe certificate.",
+        "Document what data was transferred and where it now lives.",
+        "Record the old device disposition: wiped, reused, donated, or recycled.",
+        "Include the new device's asset inventory entry.",
+        "Security rule: the wipe certificate must confirm data erasure standards."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: procurement guidance, professional setup, data transfer, security baseline, secure wipe, and documentation.",
+        "Confirm the data transfer is complete and verified against the old device.",
+        "Confirm the old device wipe is certified.",
+        "Confirm the new device is production-ready and the user is satisfied.",
+        "Flag follow-ups: old-device recycling pickup, warranty registration, and lifecycle plan entry."
+      ],
+      "closeout": [
+        "Send the deliverables package: refresh documentation and wipe certificate.",
+        "Recommend next steps: lifecycle_replacement_plan for the fleet, or managed_workstation_complete.",
+        "Confirm the user is fully transitioned to the new device.",
+        "Record internal notes: new device details and transfer results.",
+        "Schedule a 7-day check-in with the user."
+      ]
+    }
+  },
+  "data_transfer_service": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Data Transfer Service, review the old and new devices from intake, and schedule the transfer.",
+      "Send prep instructions: the user confirms what data matters most (documents, mail, browser, apps) and where it lives.",
+      "Pre-work: inventory the old device's data locations and prepare the transfer method.",
+      "Transfer the data: move documents, email, browser data, and application settings to the new device.",
+      "Verify completeness: check the transferred data against the source inventory.",
+      "Handle the source: confirm the old device data is safe and advise on source handling.",
+      "Deliver the closeout package: the transfer documentation and verification evidence."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Data Transfer Service scope: user data only, not full system migration.",
+        "Identify the data owner and the categories in scope (documents, mail, browser, apps).",
+        "Gather baseline: old device model, new device model, and data locations.",
+        "Create the ticket with product id data_transfer_service, expected deliverables (transferred data, verification, documentation), and assign a technician.",
+        "Check prerequisites: both devices available, transfer media/method ready, and the user confirms what to move."
+      ],
+      "delivery": [
+        "Inventory the source: documents folders, mail stores, browser profiles, and application data on the old device.",
+        "Select the transfer method: direct network, external drive, or cloud based on data size and security.",
+        "Transfer the data in categories, preserving folder structure where possible.",
+        "Transfer application settings where applicable (browser bookmarks/passwords, email profile).",
+        "Verify completeness: compare file counts and sizes against the source inventory.",
+        "Confirm the user can open and use the transferred data on the new device.",
+        "Advise on source handling: keep the old device intact until the user confirms everything is present.",
+        "Technical verification: confirm no source data was modified or deleted during transfer."
+      ],
+      "documentation": [
+        "Produce the data transfer documentation: what was transferred, categories, and the verification evidence.",
+        "Document where data now lives on the new device.",
+        "Record any data intentionally not transferred with the reason.",
+        "Include source-handling guidance.",
+        "Security rule: no file contents or personal data referenced in documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: data identification, migration, application settings, post-transfer verification, source handling guidance, and documentation.",
+        "Confirm the transferred data is complete against the source inventory.",
+        "Confirm the user verified the key data is present and usable.",
+        "Confirm the source device data is unchanged.",
+        "Flag follow-ups: source device wipe coordination, and any missed data the user discovers later."
+      ],
+      "closeout": [
+        "Send the deliverables package: transfer documentation and verification evidence.",
+        "Recommend next steps: old_device_wipe_coordination when the user confirms the data is safe.",
+        "Confirm the user has everything they need from the old device.",
+        "Record internal notes: what was transferred and any gaps.",
+        "Offer a short follow-up if the user finds missing data."
+      ]
+    }
+  },
+  "old_device_wipe_coordination": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Old Device Wipe Coordination, review the devices from intake, and schedule the wipe.",
+      "Send prep instructions: the customer confirms which devices to wipe and the disposition (reuse, donate, or recycle).",
+      "Pre-work: identify each device's data-bearing storage and the wipe method per type.",
+      "Execute the wipe: perform standards-compliant secure erasure on each device.",
+      "Verify the wipe: confirm erasure with verification checks.",
+      "Handle disposition: coordinate reuse, donation, or recycling with proof where applicable.",
+      "Deliver the closeout package: the wipe verification and secure disposal documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Old Device Wipe Coordination scope and the devices in scope.",
+        "Confirm the disposition path per device: reuse, donation, or recycling.",
+        "Assess data-bearing risk: which devices held business data and at what sensitivity.",
+        "Create the ticket with product id old_device_wipe_coordination, expected deliverables (wipe, verification, disposition documentation), and assign a technician.",
+        "Check prerequisites: devices present, disposition path arranged, and any data preservation confirmed by the customer."
+      ],
+      "delivery": [
+        "Identify each device's storage: internal drive, removable media, and any embedded storage.",
+        "Select the wipe method per device: standards-compliant erasure (ATA secure erase, DBAN, factory reset with encryption) appropriate to the device type.",
+        "Preserve any data the customer confirmed must be kept before wiping.",
+        "Execute the wipe on each device and record the method and result.",
+        "Verify the wipe: confirm erasure with verification steps (boot state, data check).",
+        "Document each wiped device with serial, method, and verification result.",
+        "Coordinate disposition: hand the wiped device to reuse, donation, or recycling per the plan.",
+        "Technical verification: confirm every device is wiped and verified before disposition."
+      ],
+      "documentation": [
+        "Produce the wipe documentation: per-device serial, wipe method, verification result, and disposition.",
+        "Include the secure disposal certification where applicable.",
+        "Record any devices not wiped and the reason.",
+        "Document the disposition path per device.",
+        "Security rule: the documentation confirms erasure without exposing any data."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: secure erasure coordination, wipe verification and proof, disposition guidance, risk assessment, documentation, and certification.",
+        "Confirm every device was wiped and verified before disposition.",
+        "Confirm the disposition matches the customer's choice.",
+        "Confirm the wipe proof is retained.",
+        "Flag follow-ups: remaining devices, recycling pickup, and the policy for future device disposal."
+      ],
+      "closeout": [
+        "Send the deliverables package: wipe verification and disposal documentation.",
+        "Recommend next steps: a device disposal policy, and the asset inventory update removing wiped devices.",
+        "Confirm the customer knows where each device went.",
+        "Record internal notes: wiped devices and disposition.",
+        "Update the asset inventory."
+      ]
+    }
+  },
+  "conference_room_audio_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Conference Room Audio Setup, review the room and meeting platform from intake, and schedule an on-site or remote setup session.",
+      "Send prep instructions: the customer confirms the room layout, the meeting platform (Teams, Zoom, Meet), and any existing hardware.",
+      "Pre-work: prepare the hardware plan, the platform integration steps, and the test meeting.",
+      "Set up the hardware: install or configure the speaker, microphone, and camera.",
+      "Optimize and integrate: configure audio for the room acoustics, camera framing, and meeting platform integration.",
+      "Test the full workflow: run a test meeting with remote and local audio.",
+      "Deliver the closeout package: the meeting workflow guidance and the user instructions."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Conference Room Audio Setup scope: hardware setup, platform integration, audio optimization, camera framing, and workflow testing.",
+        "Identify the room: size, layout, acoustics, and the meeting platform in use.",
+        "Confirm existing hardware vs new hardware: what exists and what must be installed.",
+        "Create the ticket with product id conference_room_audio_setup, expected deliverables (configured room, testing, guidance), and assign a technician.",
+        "Check prerequisites: hardware available, platform admin for integration, and a test meeting scheduled."
+      ],
+      "delivery": [
+        "Set up the speaker, microphone, and camera hardware in the room per the plan.",
+        "Configure the meeting platform integration: Teams/Zoom/Meet device pairing and room account.",
+        "Optimize audio for the room: mic placement, speaker levels, echo cancellation, and noise handling.",
+        "Frame the camera: correct angle, zoom, and coverage of the table and whiteboard.",
+        "Test the full workflow: join a test meeting from the room and a remote participant, verifying both directions.",
+        "Adjust based on the test: levels, framing, and device settings.",
+        "Provide the user guidance: how to start, join, and control meetings in the room.",
+        "Technical verification: confirm the test meeting had clear audio and video in both directions."
+      ],
+      "documentation": [
+        "Produce the meeting workflow guidance: how to start and run meetings in the room.",
+        "Document the hardware installed: models, positions, and connections.",
+        "Record the platform integration details and the room account.",
+        "Include troubleshooting notes: mute, camera, and audio fallback.",
+        "Security rule: no credentials or personal data in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: hardware setup, platform integration, audio optimization, camera framing, workflow testing, and user guidance.",
+        "Confirm the test meeting had clear audio and video in both directions.",
+        "Confirm the user guidance was delivered and understood.",
+        "Confirm the hardware is reliable and positioned correctly.",
+        "Flag follow-ups: room scheduling policy, hardware replacement, and recurring audio checks."
+      ],
+      "closeout": [
+        "Send the deliverables package: meeting workflow guidance and troubleshooting notes.",
+        "Recommend next steps: a quick user training, or equipment upgrades for the room.",
+        "Confirm the room is meeting-ready.",
+        "Record internal notes: hardware, platform, and room specifics.",
+        "Schedule a short follow-up if the first real meeting shows issues."
+      ]
+    }
+  },
+  "microsoft_365_basics_training": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Microsoft 365 Basics Training, review the audience and needs from intake, and schedule the session.",
+      "Send prep instructions: the customer shares examples of real work tasks and any pain points with email, Teams, OneDrive, or SharePoint.",
+      "Pre-work: customize the training agenda using real business examples.",
+      "Deliver the training: cover Outlook email and calendar, Teams chat and meetings, and OneDrive/SharePoint file basics.",
+      "Practice and answer: run hands-on practice and answer audience questions.",
+      "Provide reference materials: deliver the everyday-use reference guides.",
+      "Deliver the closeout package: the reference materials and the session summary."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Microsoft 365 Basics Training scope and the audience (size, skill level, roles).",
+        "Collect real work examples and pain points to customize the agenda.",
+        "Confirm the delivery mode (in-person or remote) and session length.",
+        "Create the ticket with product id microsoft_365_basics_training, expected deliverables (session, reference materials), and assign a trainer.",
+        "Check prerequisites: audience confirmed, examples collected, and the delivery mode arranged."
+      ],
+      "delivery": [
+        "Customize the agenda: prioritize the apps and tasks the audience actually uses.",
+        "Deliver Outlook training: email management, calendar, and best practices.",
+        "Deliver Teams training: chat, meetings, and collaboration.",
+        "Deliver OneDrive and SharePoint basics: saving, finding, and sharing files.",
+        "Run hands-on practice with real examples and work through common mistakes.",
+        "Answer audience questions and note follow-on training needs.",
+        "Technical verification: confirm the session covered all agreed topics and materials were delivered."
+      ],
+      "documentation": [
+        "Produce the reference materials: quick guides for Outlook, Teams, OneDrive, and SharePoint.",
+        "Document the session summary: topics covered and common questions.",
+        "Record follow-on training needs observed.",
+        "Include the support contact for questions after training.",
+        "Security rule: no personal data beyond attendee names if recorded."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: customized basics training, Outlook, Teams, OneDrive/SharePoint, real examples, and reference materials.",
+        "Confirm all agreed topics were covered.",
+        "Confirm the reference materials were delivered.",
+        "Confirm the audience could practice and ask questions.",
+        "Flag follow-ups: advanced training, and the common issues to fix in the environment."
+      ],
+      "closeout": [
+        "Send the deliverables package: reference materials and session summary.",
+        "Recommend next steps: teams_and_sharepoint_training for deeper collaboration, or environment fixes for issues surfaced.",
+        "Confirm the audience has the reference materials.",
+        "Record internal notes: audience feedback and follow-on needs.",
+        "Offer a follow-up Q&A session if requested."
+      ]
+    }
+  },
+  "teams_and_sharepoint_training": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Teams and SharePoint Training, review the audience and collaboration needs from intake, and schedule the session.",
+      "Send prep instructions: the customer shares current pain points with files, channels, and sharing, and examples of their collaboration workflow.",
+      "Pre-work: review the customer's existing Teams/SharePoint structure and customize the training.",
+      "Deliver the training: cover team/channel organization, file storage and finding, sharing and permissions, and document collaboration.",
+      "Practice with real scenarios: run exercises using the customer's actual structure.",
+      "Provide best-practice guides: deliver the reference materials.",
+      "Deliver the closeout package: the reference materials and session summary."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Teams and SharePoint Training scope: collaboration-focused training on files, channels, sharing, and permissions.",
+        "Collect the customer's current structure and pain points to customize the session.",
+        "Confirm the audience and delivery mode.",
+        "Create the ticket with product id teams_and_sharepoint_training, expected deliverables (session, guides), and assign a trainer.",
+        "Check prerequisites: structure examples collected and delivery arranged."
+      ],
+      "delivery": [
+        "Review the customer's existing Teams and SharePoint structure to ground the training in reality.",
+        "Deliver team and channel organization best practices: naming, structure, and governance basics.",
+        "Deliver file storage and finding: where to save, OneDrive vs Teams vs SharePoint, and search.",
+        "Deliver sharing and permissions training: link types, guest sharing, and permission levels.",
+        "Deliver document collaboration: co-authoring, version history, and comments.",
+        "Run hands-on exercises using the customer's real teams and files.",
+        "Technical verification: confirm the training covered all agreed topics and the guides were delivered."
+      ],
+      "documentation": [
+        "Produce the reference materials: team/channel organization, file sharing, and permissions quick guides.",
+        "Document the session summary and common questions.",
+        "Record recommendations to improve the customer's structure based on the training.",
+        "Include the support contact for follow-up questions.",
+        "Security rule: no personal data beyond attendee names if recorded."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: Teams/SharePoint collaboration training, channel organization, file storage/finding, sharing/permissions, document collaboration, and reference materials.",
+        "Confirm all agreed topics were covered with real examples.",
+        "Confirm the reference materials were delivered.",
+        "Confirm the audience practiced with their own structure.",
+        "Flag follow-ups: structure cleanup recommendations, and advanced training if needed."
+      ],
+      "closeout": [
+        "Send the deliverables package: reference materials and session summary.",
+        "Recommend next steps: teams_cleanup_mini_project to improve their structure, or onedrive_and_sharepoint_permissions_review for sharing risk.",
+        "Confirm the audience has the guides.",
+        "Record internal notes: feedback and recommended structure changes.",
+        "Offer a follow-up session if requested."
+      ]
+    }
+  }
+}

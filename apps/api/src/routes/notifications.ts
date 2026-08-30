@@ -1,15 +1,29 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import jwt from "jsonwebtoken";
+import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireAdmin } from "../middleware/admin";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
+import { getEnv } from "../config/env";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+
+function sanitizeNotification(n: Record<string, unknown>): Record<string, unknown> {
+  return {
+    id: n.id,
+    title: n.title,
+    module: n.module,
+    module_id: n.module_id,
+    action: n.action,
+    read: n.read,
+    created_at: n.created_at,
+  };
+}
 
 // SSE stream for real-time notifications using Supabase realtime
 router.get("/stream", async (req, res, next) => {
@@ -21,11 +35,54 @@ router.get("/stream", async (req, res, next) => {
       "X-Accel-Buffering": "no",
     });
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "read");
     const userId = req.authUser!.userId;
 
     // Send initial heartbeat
     res.write(`data: ${JSON.stringify({ type: "connected", userId })}\n\n`);
+
+    // Send keepalive every 30 seconds to prevent proxy idle connection drops
+    const keepaliveInterval = setInterval(() => {
+      res.write(": keepalive\n\n");
+    }, 30_000);
+    keepaliveInterval.unref();
+
+    // Re-validate auth every 5 minutes to catch revoked sessions. The
+    // EventSource client authenticates via cookie (no Bearer header), so we
+    // re-check the signed JWT locally instead of calling Supabase with a
+    // missing token (which would kill the stream for valid cookie sessions).
+    const authValidationInterval = setInterval(
+      () => {
+        const token = req.userJwt;
+        if (!token) {
+          res.write(`event: auth_expired\ndata: ${JSON.stringify({ type: "auth_expired" })}\n\n`);
+          res.end();
+          return;
+        }
+        const env = getEnv();
+        const secrets = env.JWT_SECRET.split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        let expired = true;
+        for (const secret of secrets) {
+          try {
+            const decoded = jwt.verify(token, secret) as { exp?: number };
+            if (!decoded.exp || decoded.exp * 1000 >= Date.now()) {
+              expired = false;
+              break;
+            }
+          } catch {
+            // try next secret
+          }
+        }
+        if (expired) {
+          res.write(`event: auth_expired\ndata: ${JSON.stringify({ type: "auth_expired" })}\n\n`);
+          res.end();
+        }
+      },
+      5 * 60 * 1000,
+    );
+    authValidationInterval.unref();
 
     // Use Supabase realtime subscription for real-time notifications
     const channel = supabase
@@ -39,9 +96,8 @@ router.get("/stream", async (req, res, next) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          res.write(
-            `event: notification\ndata: ${JSON.stringify(payload.new)}\n\n`,
-          );
+          const safe = sanitizeNotification(payload.new as Record<string, unknown>);
+          res.write(`event: notification\ndata: ${JSON.stringify(safe)}\n\n`);
         },
       )
       .on(
@@ -53,9 +109,8 @@ router.get("/stream", async (req, res, next) => {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          res.write(
-            `event: notification_update\ndata: ${JSON.stringify(payload.new)}\n\n`,
-          );
+          const safe = sanitizeNotification(payload.new as Record<string, unknown>);
+          res.write(`event: notification_update\ndata: ${JSON.stringify(safe)}\n\n`);
         },
       )
       .subscribe((status) => {
@@ -74,11 +129,13 @@ router.get("/stream", async (req, res, next) => {
       .limit(5)
       .then(({ data, error }) => {
         if (!error && data && data.length > 0) {
-          res.write(`event: initial\ndata: ${JSON.stringify(data)}\n\n`);
+          const safe = data.map((n: Record<string, unknown>) => sanitizeNotification(n));
+          res.write(`event: initial\ndata: ${JSON.stringify(safe)}\n\n`);
         }
       });
 
     req.on("close", () => {
+      clearInterval(keepaliveInterval);
       supabase.removeChannel(channel);
       res.end();
     });
@@ -88,7 +145,7 @@ router.get("/stream", async (req, res, next) => {
 });
 
 const createNotificationSchema = z.object({
-  userId: z.string().uuid(),
+  userId: z.string().min(1),
   organizationId: z.string().uuid().optional(),
   title: z.string().min(1).max(200),
   body: z.string().min(1).max(2000),
@@ -108,12 +165,9 @@ const createNotificationSchema = z.object({
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "read");
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      50,
-      Math.max(1, parseInt(req.query.limit as string) || 20),
-    );
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
     const offset = (page - 1) * limit;
     const unreadOnly = req.query.unread === "true";
 
@@ -137,7 +191,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/unread-count", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "read");
     const { count, error } = await supabase
       .from("notifications")
       .select("*", { count: "exact", head: true })
@@ -153,7 +207,7 @@ router.get("/unread-count", async (req, res, next) => {
 
 router.post("/:id/read", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "write");
     const { data, error } = await supabase
       .from("notifications")
       .update({ read: true, read_at: new Date().toISOString() })
@@ -162,8 +216,7 @@ router.post("/:id/read", async (req, res, next) => {
       .select()
       .single();
 
-    if (error || !data)
-      throw new AppError("NOT_FOUND", "Notification not found", 404);
+    if (error || !data) throw new AppError("NOT_FOUND", "Notification not found", 404);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -180,7 +233,7 @@ router.post("/:id/read", async (req, res, next) => {
 
 router.post("/mark-all-read", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "write");
     const orgId = req.query.organization_id as string | undefined;
     let query = supabase
       .from("notifications")
@@ -213,6 +266,20 @@ router.post("/", requireAdmin, async (req, res, next) => {
     const parsed = createNotificationSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
+    const notificationKey = `${parsed.userId}-${parsed.module}-${parsed.moduleId || "none"}-${parsed.action}`;
+
+    // Dedup: check if identical notification already exists
+    const { data: existing } = await supabase
+      .from("notifications")
+      .select("id, title, body, read, created_at")
+      .eq("notification_key", notificationKey)
+      .maybeSingle();
+
+    if (existing) {
+      res.status(200).json(success(existing));
+      return;
+    }
+
     const { data, error } = await supabase
       .from("notifications")
       .insert({
@@ -223,6 +290,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
         module: parsed.module,
         module_id: parsed.moduleId,
         action: parsed.action,
+        notification_key: notificationKey,
       })
       .select()
       .single();
@@ -249,7 +317,7 @@ router.post("/", requireAdmin, async (req, res, next) => {
 
 router.delete("/:id", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notifications", "write");
     const { error } = await supabase
       .from("notifications")
       .delete()

@@ -1,5 +1,11 @@
 import { jest } from "@jest/globals";
 
+// Set required env vars before any module imports
+process.env.SUPABASE_URL = process.env.SUPABASE_URL || "http://localhost:54321";
+process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "test-anon-key";
+process.env.SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || "test-service-role-key";
+
 // Mock @sentry/node before any test imports trigger its module resolution
 // This prevents the opentelemetry "AlwaysOn" import error from bundled deps
 jest.mock("@sentry/node", () => ({
@@ -31,9 +37,7 @@ jest.mock("@supabase/supabase-js", () => {
       from: jest.fn(() => ({
         upload: jest.fn().mockResolvedValue({ error: null }),
         remove: jest.fn().mockResolvedValue({ error: null }),
-        createSignedUrl: jest
-          .fn()
-          .mockResolvedValue({ data: { signedUrl: "" }, error: null }),
+        createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: "" }, error: null }),
       })),
     },
   };

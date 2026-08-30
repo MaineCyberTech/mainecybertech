@@ -1,0 +1,665 @@
+{
+  "camera_site_survey": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Camera Site Survey, review the property and areas from intake, and schedule the onsite walkthrough.",
+      "Send prep instructions: the customer confirms the property map, the areas of concern, and who will walk the site with the technician.",
+      "Pre-work: review the property layout and any existing camera infrastructure; prepare the survey kit (measuring wheel, demo camera, photo documentation).",
+      "Walk the property: evaluate entry points, sight lines, lighting, and environmental conditions.",
+      "Assess coverage needs: identify the coverage areas and the camera types that fit each location.",
+      "Build the placement plan: produce specific camera type and placement recommendations.",
+      "Deliver the closeout package: the camera placement plan documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Camera Site Survey scope: placement recommendation, not installation.",
+        "Confirm the property areas in scope and the customer's security concerns.",
+        "Gather baseline: property maps, building layout, and existing camera infrastructure.",
+        "Create the ticket with product id camera_site_survey, expected deliverables (placement plan, recommendations), and assign a technician.",
+        "Check prerequisites: onsite access scheduled and the property walkthrough confirmed."
+      ],
+      "delivery": [
+        "Walk the property and map the areas to be covered onto the property plan.",
+        "Evaluate entry points and sight lines: doors, windows, parking, and perimeter.",
+        "Assess lighting and environmental conditions: night coverage, weather exposure, and obstructions.",
+        "Determine camera types per location: dome, bullet, PTZ, and resolution needs.",
+        "Identify the mounting and cabling feasibility per proposed location.",
+        "Produce specific placement recommendations with coverage rationale.",
+        "Note any regulatory or signage considerations.",
+        "Technical verification: confirm the recommendations match the real site conditions."
+      ],
+      "documentation": [
+        "Produce the camera placement plan: locations, camera types, and coverage rationale.",
+        "Document the site assessment: entry points, sight lines, lighting, and environment.",
+        "Include the recommended camera count and rough scope.",
+        "Record the signage and notice considerations.",
+        "Security rule: no camera credentials or sensitive details beyond placement."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: onsite walkthrough, coverage identification, entry point/sight line evaluation, lighting/environmental assessment, camera type/placement recommendations, and plan documentation.",
+        "Confirm the plan covers all agreed areas.",
+        "Confirm the camera recommendations match the site conditions.",
+        "Confirm the customer understands the recommended scope.",
+        "Flag follow-ups: small_camera_system_setup or camera_business_bundle to execute."
+      ],
+      "closeout": [
+        "Send the deliverables package: the camera placement plan.",
+        "Recommend next steps: the matching camera system setup for the recommended scope.",
+        "Confirm the customer knows the camera count and rough budget.",
+        "Record internal notes: site findings and recommendations.",
+        "Offer a quote for the recommended installation."
+      ]
+    }
+  },
+  "single_camera_add_on": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Single Camera Add-On, review the existing camera system and the new location from intake, and schedule the install.",
+      "Send prep instructions: the customer confirms the existing system type, the new camera location, and access to the system.",
+      "Pre-work: review the existing system compatibility and prepare the camera and cabling.",
+      "Install the camera: mount the camera and connect it to the network.",
+      "Integrate the camera: add the camera to the system and configure recording.",
+      "Verify viewing: confirm the camera records and is viewable from the app.",
+      "Deliver the closeout package: the camera addition documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Single Camera Add-On scope: one camera added to an appropriate existing system.",
+        "Confirm the existing system type (UniFi Protect, NVR brand) and compatibility with the new camera.",
+        "Gather baseline: existing system model, available PoE/switch capacity, and the camera location.",
+        "Create the ticket with product id single_camera_add_on, expected deliverables (installed camera, integration, documentation), and assign a technician.",
+        "Check prerequisites: camera compatibility confirmed, cabling path available, and system access."
+      ],
+      "delivery": [
+        "Select the camera: match the existing system family and the location's coverage need.",
+        "Install the camera: mount, connect PoE/cabling, and physically secure it.",
+        "Adopt/integrate the camera: add it to the existing system with a clear name.",
+        "Configure recording: set the recording schedule and retention for the new camera.",
+        "Verify viewing: confirm the camera streams and is viewable in the app.",
+        "Check coverage: confirm the camera covers the intended area.",
+        "Technical verification: confirm recording and viewing work and the system is healthy."
+      ],
+      "documentation": [
+        "Produce the camera addition documentation: camera model, location, and settings.",
+        "Document the recording and viewing configuration.",
+        "Update the camera inventory with the new camera.",
+        "Record the system details after the addition.",
+        "Security rule: no camera account credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: camera selection, installation/mounting, network integration, recording configuration, viewing verification, and documentation.",
+        "Confirm the camera records and is viewable.",
+        "Confirm the camera is compatible and integrated cleanly.",
+        "Confirm the system remains healthy.",
+        "Flag follow-ups: camera_health_check, or remote access setup if not present."
+      ],
+      "closeout": [
+        "Send the deliverables package: camera addition documentation.",
+        "Recommend next steps: camera_health_check for a full review, or a maintenance plan.",
+        "Confirm the new camera is recording and viewable.",
+        "Record internal notes: camera details and settings.",
+        "Offer a follow-up after a few days."
+      ]
+    }
+  },
+  "small_camera_system_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Small Camera System Setup (2-4 cameras), review the site from intake, and schedule the install.",
+      "Send prep instructions: the customer confirms the camera locations, the recording retention, and the remote viewing needs.",
+      "Pre-work: verify the equipment received, prepare the cabling plan, and confirm the NVR/recording setup.",
+      "Install the cameras: mount and cable the 2-4 cameras.",
+      "Configure recording: set up the recorder, storage, and retention.",
+      "Set up viewing: configure basic viewing and access (app/web).",
+      "Deliver the closeout package: the camera system documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Small Camera System Setup scope: 2-4 cameras with recording and basic viewing.",
+        "Confirm the camera locations, recording retention, and remote viewing needs.",
+        "Gather baseline: site conditions, PoE/cabling readiness, and the recorder location.",
+        "Create the ticket with product id small_camera_system_setup, expected deliverables (working system, documentation), and assign a technician.",
+        "Check prerequisites: equipment received and verified, cabling path planned, and the install window."
+      ],
+      "delivery": [
+        "Verify the equipment: models match the order and no shipping damage.",
+        "Plan the cabling: routes, mounting points, and the recorder location.",
+        "Install the cameras: mount, run/connect cable, and terminate.",
+        "Set up the recorder: connect, initialize storage, and configure the system.",
+        "Configure recording: schedule, resolution, and retention per the agreement.",
+        "Set up basic viewing: local monitor/app access and user accounts.",
+        "Test the system: recording, playback, and viewing.",
+        "Technical verification: confirm every camera records and is viewable."
+      ],
+      "documentation": [
+        "Produce the camera system documentation: camera inventory, locations, recorder settings, and retention.",
+        "Document the storage and retention configuration.",
+        "Record the viewing/access setup.",
+        "Include the user guide for basic viewing.",
+        "Security rule: no camera account credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: camera installation, recording configuration, storage setup, viewing/access, system testing, and documentation.",
+        "Confirm every camera records and playback works.",
+        "Confirm retention matches the agreement.",
+        "Confirm the customer can view the cameras.",
+        "Flag follow-ups: remote_camera_access_setup, camera_health_check, or a maintenance plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: camera system documentation and user guide.",
+        "Recommend next steps: remote access setup, signage, or a maintenance plan.",
+        "Confirm the system is recording and viewable.",
+        "Record internal notes: camera inventory and settings.",
+        "Offer a follow-up after use."
+      ]
+    }
+  },
+  "camera_health_check": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Camera Health Check, review the system from intake, and schedule the check.",
+      "Send prep instructions: the customer confirms the camera count and any cameras they suspect are failing.",
+      "Pre-work: prepare the health check checklist: recording, blind spots, storage, accounts, and condition.",
+      "Run the check: verify recording for all cameras, review coverage, storage, and accounts.",
+      "Assess camera condition: inspect lenses, mounts, and hardware health.",
+      "Compile the report: document the findings and recommendations.",
+      "Deliver the closeout package: the camera health report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Camera Health Check scope: review only, no changes.",
+        "Confirm the camera count and any suspected issues.",
+        "Gather baseline: system model, camera inventory, and the customer's concerns.",
+        "Create the ticket with product id camera_health_check, expected deliverables (health report, recommendations), and assign a technician.",
+        "Check prerequisites: system access and the camera list confirmed."
+      ],
+      "delivery": [
+        "Verify recording status for every camera: live stream and recorded history.",
+        "Review coverage and blind spots: confirm each camera covers its intended area.",
+        "Check storage capacity and retention: free space, retention achieved, and recording quality.",
+        "Review account and access: user list, permission level, and stale accounts.",
+        "Inspect camera condition: lenses, housings, mounts, and environmental damage.",
+        "Check firmware and network health: camera connectivity and firmware state.",
+        "Classify findings by severity and impact.",
+        "Technical verification: confirm the report reflects the live system."
+      ],
+      "documentation": [
+        "Produce the camera health report: per-camera status, findings, and severity.",
+        "Document storage and retention findings.",
+        "Record the account/access review.",
+        "Include the prioritized recommendations.",
+        "Security rule: no account credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: recording verification, blind spot review, storage check, account review, condition assessment, and report.",
+        "Confirm every camera was checked.",
+        "Confirm the findings are accurate.",
+        "Confirm the recommendations are prioritized.",
+        "Flag follow-ups: nvr_cleanup, camera maintenance plan, or camera replacements."
+      ],
+      "closeout": [
+        "Send the deliverables package: the camera health report.",
+        "Recommend next steps: fix the critical findings, or adopt a maintenance plan.",
+        "Confirm the customer understands the system state.",
+        "Record internal notes: system state and recommendations.",
+        "Offer a re-check after fixes."
+      ]
+    }
+  },
+  "nvr_cleanup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the NVR Cleanup, review the system from intake, and schedule the cleanup.",
+      "Send prep instructions: the customer confirms the recording needs and who should have access.",
+      "Pre-work: review the NVR state: schedules, channels, names, permissions, and storage.",
+      "Clean up the schedules: review and fix the recording schedules.",
+      "Standardize channels and names: rename cameras consistently.",
+      "Review permissions and storage: clean the access list and manage retention/storage.",
+      "Deliver the closeout package: the NVR configuration documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the NVR Cleanup scope: schedules, channels, naming, permissions, and storage.",
+        "Confirm the customer's recording needs and the access expectations.",
+        "Gather baseline: current schedules, camera names, permissions, and storage state.",
+        "Create the ticket with product id nvr_cleanup, expected deliverables (cleaned NVR, documentation), and assign a technician.",
+        "Check prerequisites: NVR access and the customer confirms the target state."
+      ],
+      "delivery": [
+        "Review the recording schedules: fix gaps, overlaps, and unnecessary 24/7 recording.",
+        "Standardize the channel naming: consistent scheme (location, camera type).",
+        "Review permissions: remove stale accounts and set the correct roles.",
+        "Manage storage settings: retention, quality, and free space.",
+        "Verify recording after cleanup: confirm the important areas still record.",
+        "Tune motion detection and alerts if applicable.",
+        "Technical verification: confirm the cleaned configuration matches the customer's needs."
+      ],
+      "documentation": [
+        "Produce the NVR configuration documentation: schedules, channels, names, permissions, and storage.",
+        "Document the cleanup changes made.",
+        "Record the retention and storage settings.",
+        "Include the access list with roles.",
+        "Security rule: no account credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: schedule review/cleanup, channel naming, permissions review, storage/retention management, recording verification, and documentation.",
+        "Confirm the important areas still record correctly.",
+        "Confirm the naming is consistent.",
+        "Confirm the access list is clean.",
+        "Flag follow-ups: camera_health_check, or a maintenance plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: NVR configuration documentation.",
+        "Recommend next steps: camera maintenance plan for ongoing care.",
+        "Confirm the cleaned NVR works.",
+        "Record internal notes: changes made.",
+        "Offer a follow-up check."
+      ]
+    }
+  },
+  "remote_camera_access_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Remote Camera Access Setup, review the viewing needs from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms who needs remote access and from which devices.",
+      "Pre-work: prepare the secure access approach: cloud/vendor access or VPN, and the user plan.",
+      "Configure secure remote access: set up the safe path for remote viewing.",
+      "Set up viewing: configure mobile and computer viewing for the owners/managers.",
+      "Configure users and verify: add user accounts with permissions and test access.",
+      "Deliver the closeout package: the remote access documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Remote Camera Access Setup scope: secure remote viewing for owners/managers.",
+        "Confirm who needs access and from which devices.",
+        "Gather baseline: system model, current access, and internet setup.",
+        "Create the ticket with product id remote_camera_access_setup, expected deliverables (secure remote access, documentation), and assign a technician.",
+        "Check prerequisites: the secure access method (vendor cloud or VPN) confirmed and the user list."
+      ],
+      "delivery": [
+        "Select the secure remote access path: vendor cloud portal or VPN; avoid open port forwarding.",
+        "Configure the access path: set up the secure tunnel/portal and the connection.",
+        "Set up mobile viewing: install/configure the app on the owners' devices.",
+        "Set up computer viewing: configure the web access.",
+        "Create user accounts with least-privilege permissions per role.",
+        "Enable MFA or strong authentication on the remote access accounts.",
+        "Test remote access from outside the network.",
+        "Technical verification: confirm remote viewing works and is secured."
+      ],
+      "documentation": [
+        "Produce the remote access documentation: access method, user list, and permissions.",
+        "Document the mobile and computer viewing setup.",
+        "Record the security controls applied.",
+        "Include troubleshooting notes.",
+        "Security rule: no account credentials or MFA seeds in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: secure remote access configuration, mobile/computer viewing, security verification, user access, remote viewing testing, and documentation.",
+        "Confirm remote viewing works from outside the network.",
+        "Confirm the access is secured (no open port exposure).",
+        "Confirm users have least-privilege permissions.",
+        "Flag follow-ups: periodic access review, and account offboarding."
+      ],
+      "closeout": [
+        "Send the deliverables package: remote access documentation.",
+        "Recommend next steps: periodic access review and account cleanup.",
+        "Confirm the owners can view cameras remotely.",
+        "Record internal notes: access setup and users.",
+        "Offer a follow-up if access breaks."
+      ]
+    }
+  },
+  "camera_signage_package": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Camera Signage Package, review the property from intake, and schedule the assessment.",
+      "Send prep instructions: the customer confirms the camera locations and the property entry points.",
+      "Pre-work: prepare the signage placement methodology and the wording templates.",
+      "Assess signage placement: identify where signs are needed at entries and camera areas.",
+      "Analyze deterrent effect: review camera visibility and the deterrence value of signage.",
+      "Produce the signage plan: recommend wording and placement.",
+      "Deliver the closeout package: the signage plan documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Camera Signage Package scope: signage recommendation, not sign production or install.",
+        "Confirm the camera locations and property entry points.",
+        "Gather baseline: property layout, camera coverage, and local notice requirements.",
+        "Create the ticket with product id camera_signage_package, expected deliverables (signage plan), and assign a technician.",
+        "Check prerequisites: the property walkthrough or plans available."
+      ],
+      "delivery": [
+        "Identify the signage points: entries, camera areas, and high-traffic zones.",
+        "Assess camera visibility and deterrent analysis: where cameras are visible and where signage adds deterrence.",
+        "Recommend signage wording: camera notice, privacy-friendly, and compliant.",
+        "Provide entry and camera-area placement guidance.",
+        "Consider notice and communication requirements: state and local recording notice rules.",
+        "Produce the signage plan with quantities and positions.",
+        "Technical verification: confirm the plan covers all entries and camera areas."
+      ],
+      "documentation": [
+        "Produce the signage plan: sign locations, wording, and quantities.",
+        "Document the placement guidance and rationale.",
+        "Record the notice/compliance considerations.",
+        "Include the recommended sign styles and sizes.",
+        "Security rule: no camera details beyond placement needed for signage."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: placement assessment, visibility/deterrent analysis, wording recommendations, entry/camera-area guidance, notice considerations, and plan documentation.",
+        "Confirm the plan covers the property entries.",
+        "Confirm the wording is appropriate for the business.",
+        "Confirm the compliance considerations are noted.",
+        "Flag follow-ups: sign production/installation, or the camera system install."
+      ],
+      "closeout": [
+        "Send the deliverables package: the signage plan.",
+        "Recommend next steps: produce and install the signs, or coordinate with the camera install.",
+        "Confirm the customer knows where signs go.",
+        "Record internal notes: signage plan and considerations.",
+        "Offer sign production coordination if requested."
+      ]
+    }
+  },
+  "camera_maintenance_plan": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Camera Maintenance Plan, collect the system access, and establish the recurring cycle.",
+      "Send onboarding prep: the customer confirms the camera count, the access users, and the maintenance schedule.",
+      "Pre-work: establish the system baseline and the recurring maintenance checklist.",
+      "Run the maintenance cycle: clean lenses, apply firmware/software updates, and verify recording/storage.",
+      "Review access and remote viewing: test remote access and review permissions.",
+      "Report and follow up: deliver the maintenance report each cycle.",
+      "Deliver the cycle closeout: the maintenance report, open items, and recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Camera Maintenance Plan scope: recurring lens, firmware, recording, storage, and access review.",
+        "Collect the system access and the camera inventory.",
+        "Establish the maintenance checklist and cycle schedule.",
+        "Gather baseline: system health, firmware versions, storage state, and access list.",
+        "Set expectations: what each cycle covers and the escalation path."
+      ],
+      "delivery": [
+        "Clean the camera lenses per the schedule.",
+        "Apply firmware and software updates in a maintenance window.",
+        "Verify recording and storage: every camera recording, retention met, and free space healthy.",
+        "Test remote access: confirm owners/managers can view cameras.",
+        "Review access and permissions: remove stale accounts and confirm roles.",
+        "Check camera condition: mounts, housings, and signs of damage.",
+        "Log all work and flag issues.",
+        "Technical verification: confirm the system is healthy at the end of each cycle."
+      ],
+      "documentation": [
+        "Produce the maintenance report: work performed, cameras checked, and findings.",
+        "Track firmware versions and storage state.",
+        "Record access review results.",
+        "Maintain the system baseline documentation.",
+        "Security rule: no account credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: lens cleaning, firmware updates, recording/storage verification, remote access testing, access review, and maintenance report.",
+        "Confirm every camera was checked.",
+        "Confirm recording and storage are healthy.",
+        "Confirm the report was delivered.",
+        "Flag follow-ups: camera replacements, firmware escalations, and plan upgrades."
+      ],
+      "closeout": [
+        "Send the maintenance report with open items.",
+        "Recommend upgrades when patterns show need.",
+        "Confirm the system is healthy.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next maintenance cycle."
+      ]
+    }
+  },
+  "camera_starter_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Camera Starter Bundle, review the two camera locations from intake, and schedule the install.",
+      "Send prep instructions: the customer confirms the two camera locations and the mobile viewing needs.",
+      "Pre-work: verify the equipment received, prepare the cabling plan, and confirm the recorder setup.",
+      "Install the cameras: mount and cable the two cameras.",
+      "Configure recording and storage: set up the recorder, storage, and retention.",
+      "Set up the mobile app: configure viewing on the customer's phone.",
+      "Deliver the closeout package: the starter system documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Camera Starter Bundle scope: two-camera starter with recording, mobile app, and documentation.",
+        "Confirm the two camera locations and the mobile viewing needs.",
+        "Gather baseline: site conditions, PoE/cabling, and the recorder location.",
+        "Create the ticket with product id camera_starter_bundle, expected deliverables (working starter system, documentation), and assign a technician.",
+        "Check prerequisites: equipment received and verified, and the install window."
+      ],
+      "delivery": [
+        "Verify the equipment: models match the order and no shipping damage.",
+        "Plan the cabling: routes, mounting, and recorder placement.",
+        "Install the two cameras: mount, cable, and terminate.",
+        "Configure the recorder: initialize storage and configure the system.",
+        "Set up recording: schedule, quality, and retention.",
+        "Set up the mobile app: install and configure viewing on the customer's phone.",
+        "Test the system: recording, playback, and mobile viewing.",
+        "Technical verification: confirm both cameras record and the app works."
+      ],
+      "documentation": [
+        "Produce the starter system documentation: camera inventory, locations, recorder settings, and retention.",
+        "Document the mobile app setup.",
+        "Record the storage configuration.",
+        "Include the user guide for basic viewing.",
+        "Security rule: no camera account credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: two-camera installation, recording configuration, mobile app setup, storage configuration, system testing, and documentation.",
+        "Confirm both cameras record and playback works.",
+        "Confirm the mobile app works.",
+        "Confirm retention matches the agreement.",
+        "Flag follow-ups: remote access for other users, signage, or a maintenance plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: starter system documentation and user guide.",
+        "Recommend next steps: single_camera_add_on for more cameras, or a maintenance plan.",
+        "Confirm the system is recording and viewable on mobile.",
+        "Record internal notes: camera inventory and settings.",
+        "Offer a follow-up after use."
+      ]
+    }
+  },
+  "camera_business_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Camera Business Bundle, review the site and camera plan from intake, and schedule the project.",
+      "Send prep instructions: the customer confirms the camera locations, the remote access needs, and the user list.",
+      "Pre-work: verify the equipment, prepare the cabling and NVR plan, and confirm the network readiness.",
+      "Install the cameras: install the four to eight cameras.",
+      "Configure the NVR: set up recording, storage, and retention.",
+      "Configure access: set up secure remote access and user permissions.",
+      "Validate and deliver: validate coverage and recording and deliver the documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Camera Business Bundle scope: 4-8 cameras, NVR, remote access, permissions, and validation.",
+        "Confirm the camera locations, remote access needs, and the user list.",
+        "Gather baseline: network readiness, PoE/cabling, and the NVR location.",
+        "Create the ticket with product id camera_business_bundle, expected deliverables (working system, documentation), and assign a technician.",
+        "Check prerequisites: equipment verified, network ready, and the install window."
+      ],
+      "delivery": [
+        "Verify the equipment: models match the order and no shipping damage.",
+        "Confirm network readiness: PoE capacity, switch ports, and cabling.",
+        "Install the cameras: mount, cable, and terminate all cameras.",
+        "Configure the NVR: storage, recording schedule, quality, and retention.",
+        "Set up secure remote access: vendor cloud or VPN with authentication.",
+        "Configure user permissions: roles and least-privilege access per user.",
+        "Validate coverage and recording: confirm each camera covers its area and records.",
+        "Technical verification: confirm recording, remote viewing, and permissions all work."
+      ],
+      "documentation": [
+        "Produce the business camera documentation: camera inventory, NVR settings, retention, and access.",
+        "Document the remote access setup and user permissions.",
+        "Record the coverage and recording validation.",
+        "Include the user guide.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: camera installation, NVR configuration, secure remote access, user permissions, coverage/recording validation, and documentation.",
+        "Confirm every camera records and covers its area.",
+        "Confirm remote viewing works securely.",
+        "Confirm permissions match the user list.",
+        "Flag follow-ups: camera_complete_bundle for scaling, or a maintenance plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: business camera documentation and user guide.",
+        "Recommend next steps: a maintenance plan, or expansion to the complete bundle.",
+        "Confirm the system is validated and working.",
+        "Record internal notes: system inventory and configuration.",
+        "Offer a follow-up after use."
+      ]
+    }
+  },
+  "camera_complete_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Camera Complete Bundle, review the site and camera plan from intake, and schedule the project.",
+      "Send prep instructions: the customer confirms the camera count, retention requirements, and any UPS/power needs.",
+      "Pre-work: verify the equipment, plan the segmentation (VLAN), UPS, and retention, and confirm network readiness.",
+      "Install the cameras: install the full camera deployment.",
+      "Configure the network and NVR: set up the camera VLAN, UPS, NVR, storage, and retention.",
+      "Establish maintenance: set up the maintenance plan and verify the system.",
+      "Deliver the closeout package: the complete camera system documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Camera Complete Bundle scope: larger deployment with segmentation, UPS, retention planning, and maintenance.",
+        "Confirm the camera count, retention, and power/UPS requirements.",
+        "Gather baseline: network readiness, switch/PoE capacity, cabling, and the NVR location.",
+        "Create the ticket with product id camera_complete_bundle, expected deliverables (complete system, documentation), and assign a senior technician.",
+        "Check prerequisites: equipment verified, network upgrade planned, and the project window."
+      ],
+      "delivery": [
+        "Verify the equipment: models match the order and no shipping damage.",
+        "Plan the deployment: cabling, mounting, and the NVR/UPS placement.",
+        "Configure the camera VLAN: segment the camera network from the business network.",
+        "Install the cameras: mount, cable, and terminate all cameras.",
+        "Configure the NVR: storage, recording, quality, and retention per the plan.",
+        "Consider UPS/power protection: add UPS for the NVR and switch so recording survives outages.",
+        "Set up secure remote access and user permissions.",
+        "Establish the maintenance plan: recurring cycle and monitoring.",
+        "Test and validate: recording, playback, remote viewing, and segmentation.",
+        "Technical verification: confirm the whole system is secure, segmented, and validated."
+      ],
+      "documentation": [
+        "Produce the complete camera documentation: camera inventory, VLAN, NVR, UPS, retention, and access.",
+        "Document the segmentation and power protection.",
+        "Record the retention plan and storage capacity.",
+        "Include the maintenance plan and user guide.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: comprehensive install, camera VLAN, UPS consideration, retention planning, maintenance plan, and documentation.",
+        "Confirm the cameras record and are segmented from the business network.",
+        "Confirm the UPS protects the recording.",
+        "Confirm retention matches the requirement.",
+        "Flag follow-ups: maintenance plan activation, and periodic reviews."
+      ],
+      "closeout": [
+        "Send the deliverables package: complete camera documentation and maintenance plan.",
+        "Recommend next steps: activate the maintenance plan, or extend the system.",
+        "Confirm the system is complete and validated.",
+        "Record internal notes: full system inventory and configuration.",
+        "Schedule the first maintenance cycle."
+      ]
+    }
+  },
+  "unifi_camera_install": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the UniFi Camera Install, review the camera plan from intake, and schedule the install.",
+      "Send prep instructions: the customer confirms the camera locations and the viewing needs.",
+      "Pre-work: verify the UniFi equipment, prepare the cabling plan, and confirm the Protect NVR setup.",
+      "Install the cameras: mount and cable the UniFi cameras.",
+      "Adopt and configure: adopt the cameras into UniFi Protect and configure the NVR.",
+      "Set up recording and access: configure the recording schedule and initial viewing/access.",
+      "Deliver the closeout package: the UniFi camera system documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the UniFi Camera Install scope: UniFi cameras, Protect NVR, recording, and access.",
+        "Confirm the camera locations and viewing needs.",
+        "Gather baseline: UniFi gear present, PoE/cabling readiness, and the Protect NVR availability.",
+        "Create the ticket with product id unifi_camera_install, expected deliverables (working UniFi camera system, documentation), and assign a UniFi technician.",
+        "Check prerequisites: equipment verified and the install window."
+      ],
+      "delivery": [
+        "Verify the UniFi equipment: cameras, NVR, and storage match the order.",
+        "Plan the cabling and camera placement.",
+        "Install the cameras: mount, cable, and terminate.",
+        "Set up the Protect NVR: storage and system initialization.",
+        "Adopt the cameras into UniFi Protect with clear names.",
+        "Configure the recording schedule, quality, and retention.",
+        "Configure initial viewing/access: app and web user access.",
+        "Test the system: recording, playback, and viewing.",
+        "Technical verification: confirm all cameras record and are viewable."
+      ],
+      "documentation": [
+        "Produce the UniFi camera documentation: camera inventory, Protect settings, recording, and access.",
+        "Document the storage and retention.",
+        "Record the viewing/access setup.",
+        "Include the user guide for the Protect app.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: camera installation/adoption, Protect NVR configuration, recording schedule, viewing/access, integration/testing, and documentation.",
+        "Confirm all cameras record and are viewable.",
+        "Confirm the recording schedule matches the needs.",
+        "Confirm the Protect system is healthy.",
+        "Flag follow-ups: remote access setup, camera maintenance plan, or expansion."
+      ],
+      "closeout": [
+        "Send the deliverables package: UniFi camera documentation and user guide.",
+        "Recommend next steps: remote access, signage, or a maintenance plan.",
+        "Confirm the system is recording and viewable.",
+        "Record internal notes: camera inventory and settings.",
+        "Offer a follow-up after use."
+      ]
+    }
+  },
+  "unifi_door_access_consultation": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the UniFi Door Access Consultation, review the site from intake, and schedule the evaluation.",
+      "Send prep instructions: the customer confirms the doors in scope and the access needs (who goes where, when).",
+      "Pre-work: prepare the evaluation checklist: doors, wiring, hardware fit, and access needs.",
+      "Evaluate the site: assess the doors and entry points for UniFi Access readiness.",
+      "Review hardware and wiring: evaluate what exists and what is needed.",
+      "Scope the project: estimate the project scope and effort for the access control.",
+      "Deliver the closeout package: the door access consultation report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the UniFi Door Access Consultation scope: readiness evaluation and project scoping, not installation.",
+        "Confirm the doors in scope and the access requirements.",
+        "Gather baseline: door types, existing hardware, and wiring state.",
+        "Create the ticket with product id unifi_door_access_consultation, expected deliverables (consultation report, scope estimate), and assign a technician.",
+        "Check prerequisites: site access and the door list confirmed."
+      ],
+      "delivery": [
+        "Assess the doors and entry points: type, existing locks, and power.",
+        "Evaluate UniFi Access hardware fit: which hardware suits each door.",
+        "Assess wiring and infrastructure: cabling, power, and network availability at each door.",
+        "Review access needs: who needs access, schedules, and permissions.",
+        "Determine feasibility per door: what can be done and what blocks it.",
+        "Estimate the project scope and effort: hardware, labor, and timeline.",
+        "Note any camera integration opportunities.",
+        "Technical verification: confirm the assessment reflects the real site."
+      ],
+      "documentation": [
+        "Produce the door access consultation report: door assessment, hardware fit, wiring, and feasibility.",
+        "Document the access requirements.",
+        "Record the project scope and effort estimate.",
+        "Include the hardware recommendation per door.",
+        "Security rule: no credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: door/entry assessment, hardware/wiring evaluation, access needs review, scope/effort estimation, feasibility assessment, and report.",
+        "Confirm the report covers every door in scope.",
+        "Confirm the feasibility findings are accurate.",
+        "Confirm the scope estimate is realistic.",
+        "Flag follow-ups: the door access project quote and scheduling."
+      ],
+      "closeout": [
+        "Send the deliverables package: the door access consultation report.",
+        "Recommend next steps: approve the scope and schedule the access control project.",
+        "Confirm the customer understands the effort and cost.",
+        "Record internal notes: site assessment and scope.",
+        "Offer a quote for the recommended project."
+      ]
+    }
+  }
+}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef } from "react";
 import { uploadOrgDocument } from "@/app/(admin)/admin/organizations/[orgId]/actions";
@@ -66,19 +66,21 @@ export default function AdminDocUpload({ organizationId }: Props) {
         />
       </div>
       {file ? (
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-slate-400">
           {file.name} ({(file.size / 1024 / 1024).toFixed(1)} MB)
         </p>
       ) : null}
       <button
         type="submit"
         disabled={uploading || !file || !title.trim()}
-        className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10 disabled:opacity-50"
+        className="font-orbitron rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10 disabled:opacity-50"
       >
         {uploading ? "Uploading..." : "Upload Document"}
       </button>
       {result ? (
-        <div className={`rounded-lg border px-4 py-3 text-sm ${result.ok ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-red-500/20 bg-red-500/10 text-red-300"}`}>
+        <div
+          className={`rounded-lg border px-4 py-3 text-sm ${result.ok ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-red-500/20 bg-red-500/10 text-red-300"}`}
+        >
           {result.ok ? "Document uploaded successfully." : result.error}
         </div>
       ) : null}

@@ -34,5 +34,25 @@ export class AdminPage {
   }
 }
 
+/**
+ * Switch the active tenant for the session. The API resolves the
+ * default org from the first approved membership when no cookie is
+ * present, which is non-deterministic once migrations seed extra
+ * memberships — so specs that depend on a specific tenant's data
+ * should pin the org explicitly.
+ */
+export async function setActiveOrg(page: Page, organizationId: string) {
+  // Set the active-org cookie directly on the context. Navigating to /login
+  // first is unnecessary (and the middleware would just redirect an
+  // authenticated session to /portal/dashboard), so we avoid that dance.
+  await page.context().addCookies([
+    {
+      name: "mct_active_org",
+      value: organizationId,
+      url: "http://localhost:3000",
+    },
+  ]);
+}
+
 export const test = base;
 export { expect };

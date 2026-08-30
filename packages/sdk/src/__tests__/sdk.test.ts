@@ -8,7 +8,11 @@ let mockFetch: jest.Mock<typeof fetch>;
 let client: MCTClient;
 
 function mockResponse<T>(data: T, ok = true): Promise<Response> {
-  const body: ApiResponse<T> = { success: ok, data: ok ? data : undefined, error: ok ? undefined : { code: "ERROR", message: "Test error", status: 400 } };
+  const body: ApiResponse<T> = {
+    success: ok,
+    data: ok ? data : undefined,
+    error: ok ? undefined : { code: "ERROR", message: "Test error", status: 400 },
+  };
   return Promise.resolve({
     ok,
     status: ok ? 200 : 400,
@@ -18,7 +22,31 @@ function mockResponse<T>(data: T, ok = true): Promise<Response> {
     statusText: ok ? "OK" : "Bad Request",
     type: "basic" as ResponseType,
     url: "",
-    clone: function () { return this; },
+    clone: function () {
+      return this;
+    },
+    body: null,
+    bodyUsed: false,
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    blob: () => Promise.resolve(new Blob()),
+    formData: () => Promise.resolve(new FormData()),
+    text: () => Promise.resolve(""),
+  } as Response);
+}
+
+function mockStatusResponse(status: number, body: ApiResponse<unknown>): Promise<Response> {
+  return Promise.resolve({
+    ok: status >= 200 && status < 300,
+    status,
+    json: () => Promise.resolve(body),
+    headers: new Headers(),
+    redirected: false,
+    statusText: status === 502 ? "Bad Gateway" : "OK",
+    type: "basic" as ResponseType,
+    url: "",
+    clone: function () {
+      return this;
+    },
     body: null,
     bodyUsed: false,
     arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
@@ -32,6 +60,7 @@ function createClient(opts?: Partial<ClientOptions>) {
   const options: ClientOptions = {
     baseUrl: BASE_URL,
     getToken: opts?.getToken,
+    getActiveOrgId: opts?.getActiveOrgId,
   };
   return MCTClient.create(options);
 }
@@ -56,6 +85,46 @@ describe("MCTClient", () => {
       expect(client.profiles).toBeDefined();
       expect(client.audit).toBeDefined();
       expect(client.roles).toBeDefined();
+      expect(client.permissions).toBeDefined();
+    });
+  });
+
+  describe("PermissionsApi", () => {
+    it("getMyPermissions fetches the effective permission set", async () => {
+      const payload = {
+        isSuperAdmin: false,
+        permissions: [{ id: "p1", module_key: "tickets", action_key: "view" }],
+        keys: ["tickets:view"],
+        roles: ["client_user"],
+        memberships: [{ organization_id: "o1", role_id: "r1", status: "approved" }],
+      };
+      mockFetch.mockResolvedValue(mockResponse(payload));
+
+      const result = await client.permissions.getMyPermissions();
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${BASE_URL}/api/v1/me/permissions`,
+        expect.objectContaining({ method: "GET" }),
+      );
+      expect(result.keys).toEqual(["tickets:view"]);
+      expect(result.isSuperAdmin).toBe(false);
+    });
+
+    it("surfaces super admin flags", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          isSuperAdmin: true,
+          permissions: [],
+          keys: [],
+          roles: ["super_admin"],
+          memberships: [],
+        }),
+      );
+
+      const result = await client.permissions.getMyPermissions();
+
+      expect(result.isSuperAdmin).toBe(true);
+      expect(result.roles).toEqual(["super_admin"]);
     });
   });
 
@@ -78,6 +147,29 @@ describe("MCTClient", () => {
       const headers = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
       expect(headers["Authorization"]).toBeUndefined();
     });
+
+    it("includes X-Active-Org header when getActiveOrgId returns an org", async () => {
+      client = createClient({
+        getToken: () => Promise.resolve("test-token"),
+        getActiveOrgId: () => Promise.resolve("org-123"),
+      });
+      mockFetch.mockResolvedValue(mockResponse({ ok: true }));
+
+      await client.roles.list();
+
+      const headers = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBe("Bearer test-token");
+      expect(headers["X-Active-Org"]).toBe("org-123");
+    });
+
+    it("omits X-Active-Org header when no active org", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ ok: true }));
+
+      await client.roles.list();
+
+      const headers = mockFetch.mock.calls[0][1]?.headers as Record<string, string>;
+      expect(headers["X-Active-Org"]).toBeUndefined();
+    });
   });
 
   describe("ApiError", () => {
@@ -93,23 +185,27 @@ describe("MCTClient", () => {
     });
 
     it("throws ApiError on HTTP error with no json body", async () => {
-      mockFetch.mockResolvedValue(Promise.resolve({
-        ok: false,
-        status: 500,
-        json: () => Promise.resolve({}),
-        headers: new Headers(),
-        redirected: false,
-        statusText: "Internal Server Error",
-        type: "basic" as ResponseType,
-        url: "",
-        clone: function () { return this; },
-        body: null,
-        bodyUsed: false,
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-        blob: () => Promise.resolve(new Blob()),
-        formData: () => Promise.resolve(new FormData()),
-        text: () => Promise.resolve(""),
-      } as Response));
+      mockFetch.mockResolvedValue(
+        Promise.resolve({
+          ok: false,
+          status: 500,
+          json: () => Promise.resolve({}),
+          headers: new Headers(),
+          redirected: false,
+          statusText: "Internal Server Error",
+          type: "basic" as ResponseType,
+          url: "",
+          clone: function () {
+            return this;
+          },
+          body: null,
+          bodyUsed: false,
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+          blob: () => Promise.resolve(new Blob()),
+          formData: () => Promise.resolve(new FormData()),
+          text: () => Promise.resolve(""),
+        } as Response),
+      );
 
       await expect(client.roles.list()).rejects.toMatchObject({
         code: "UNKNOWN",
@@ -121,7 +217,9 @@ describe("MCTClient", () => {
 
   describe("AuthApi", () => {
     it("signIn posts credentials", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ accessToken: "tok", user: { id: "1", email: "a@b.com" } }));
+      mockFetch.mockResolvedValue(
+        mockResponse({ accessToken: "tok", user: { id: "1", email: "a@b.com" } }),
+      );
 
       const result = await client.auth.signIn("a@b.com", "pwd");
 
@@ -177,25 +275,46 @@ describe("MCTClient", () => {
   });
 
   describe("OrganizationsApi", () => {
-    const org = { id: "1", name: "Test", slug: "test", status: "active", primary_domain: null, support_plan: null, created_at: "", updated_at: "" };
-    const domain = { id: "d1", organization_id: "1", domain: "ex.com", auto_approve: true, created_at: "" };
+    const org = {
+      id: "1",
+      name: "Test",
+      slug: "test",
+      status: "active",
+      primary_domain: null,
+      support_plan: null,
+      created_at: "",
+      updated_at: "",
+    };
+    const domain = {
+      id: "d1",
+      organization_id: "1",
+      domain: "ex.com",
+      auto_approve: true,
+      created_at: "",
+    };
 
     it("list fetches organizations", async () => {
-      mockFetch.mockResolvedValue(mockResponse([org]));
+      mockFetch.mockResolvedValue(
+        mockResponse({ items: [org], total: 1, page: 1, limit: 25 }),
+      );
 
       const result = await client.organizations.list();
 
-      expect(result).toHaveLength(1);
+      expect(result.items).toHaveLength(1);
     });
 
     it("list with status and ids", async () => {
-      mockFetch.mockResolvedValue(mockResponse([org]));
+      mockFetch.mockResolvedValue(
+        mockResponse({ items: [org], total: 1, page: 1, limit: 25 }),
+      );
 
       await client.organizations.list({ status: "active", ids: ["1"] });
 
       const url = mockFetch.mock.calls[0][0] as string;
       expect(url).toContain("status=active");
       expect(url).toContain("ids=1");
+      expect(url).toContain("page=1");
+      expect(url).toContain("limit=25");
     });
 
     it("get fetches by id", async () => {
@@ -281,7 +400,16 @@ describe("MCTClient", () => {
   });
 
   describe("MembershipsApi", () => {
-    const mem = { id: "1", organization_id: "1", user_id: "u1", role_id: "r1", status: "approved", is_billing_contact: false, is_security_contact: false, created_at: "" };
+    const mem = {
+      id: "1",
+      organization_id: "1",
+      user_id: "u1",
+      role_id: "r1",
+      status: "approved",
+      is_billing_contact: false,
+      is_security_contact: false,
+      created_at: "",
+    };
 
     it("list fetches memberships", async () => {
       mockFetch.mockResolvedValue(mockResponse([mem]));
@@ -314,7 +442,11 @@ describe("MCTClient", () => {
     it("invite posts invitation", async () => {
       mockFetch.mockResolvedValue(mockResponse(mem));
 
-      const result = await client.memberships.invite({ organizationId: "1", email: "a@b.com", roleId: "r1" });
+      const result = await client.memberships.invite({
+        organizationId: "1",
+        email: "a@b.com",
+        roleId: "r1",
+      });
 
       expect(result.id).toBe("1");
     });
@@ -337,7 +469,18 @@ describe("MCTClient", () => {
   });
 
   describe("TicketsApi", () => {
-    const ticket = { id: "1", organization_id: "1", title: "Test", description: null, status: "open", priority: "normal", category: null, source: "portal", created_at: "", updated_at: "" };
+    const ticket = {
+      id: "1",
+      organization_id: "1",
+      title: "Test",
+      description: null,
+      status: "open",
+      priority: "normal",
+      category: null,
+      source: "portal",
+      created_at: "",
+      updated_at: "",
+    };
 
     it("list fetches paginated tickets", async () => {
       mockFetch.mockResolvedValue(mockResponse({ items: [ticket], total: 1, page: 1, limit: 25 }));
@@ -382,7 +525,19 @@ describe("MCTClient", () => {
     });
 
     it("listComments fetches comments", async () => {
-      mockFetch.mockResolvedValue(mockResponse([{ id: "c1", ticket_id: "1", organization_id: "1", author_id: "u1", body: "Hi", is_internal: false, created_at: "" }]));
+      mockFetch.mockResolvedValue(
+        mockResponse([
+          {
+            id: "c1",
+            ticket_id: "1",
+            organization_id: "1",
+            author_id: "u1",
+            body: "Hi",
+            is_internal: false,
+            created_at: "",
+          },
+        ]),
+      );
 
       const result = await client.tickets.listComments("1");
 
@@ -390,7 +545,17 @@ describe("MCTClient", () => {
     });
 
     it("addComment posts a comment", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ id: "c1", ticket_id: "1", organization_id: "1", author_id: "u1", body: "Hi", is_internal: false, created_at: "" }));
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          id: "c1",
+          ticket_id: "1",
+          organization_id: "1",
+          author_id: "u1",
+          body: "Hi",
+          is_internal: false,
+          created_at: "",
+        }),
+      );
 
       await client.tickets.addComment("1", { organizationId: "1", body: "Hi" });
 
@@ -399,8 +564,30 @@ describe("MCTClient", () => {
   });
 
   describe("ProjectsApi", () => {
-    const project = { id: "1", organization_id: "1", name: "P1", description: null, status: "active", priority: "normal", starts_at: null, due_at: null, created_at: "", updated_at: "" };
-    const task = { id: "t1", project_id: "1", title: "Task", description: null, status: "todo", sort_order: 1, due_at: null, approval_required: false, owner_id: null, created_at: "" };
+    const project = {
+      id: "1",
+      organization_id: "1",
+      name: "P1",
+      description: null,
+      status: "active",
+      priority: "normal",
+      starts_at: null,
+      due_at: null,
+      created_at: "",
+      updated_at: "",
+    };
+    const task = {
+      id: "t1",
+      project_id: "1",
+      title: "Task",
+      description: null,
+      status: "todo",
+      sort_order: 1,
+      due_at: null,
+      approval_required: false,
+      owner_id: null,
+      created_at: "",
+    };
 
     it("list fetches paginated projects", async () => {
       mockFetch.mockResolvedValue(mockResponse({ items: [project], total: 1, page: 1, limit: 25 }));
@@ -436,6 +623,20 @@ describe("MCTClient", () => {
       expect(result.project).toBeDefined();
       expect(result.memberships).toBeDefined();
       expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/projects/1/detail");
+    });
+
+    it("getCompound fetches projects with tasks, comments, and reads", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ projects: [], tasks: [], comments: [], reads: [] }),
+      );
+
+      const result = await client.projects.getCompound("org-1");
+
+      expect(result.projects).toBeDefined();
+      expect(result.tasks).toBeDefined();
+      expect(result.comments).toBeDefined();
+      expect(result.reads).toBeDefined();
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/projects/compound");
     });
 
     it("create posts a project", async () => {
@@ -495,7 +696,16 @@ describe("MCTClient", () => {
     });
 
     it("addTaskComment posts a comment", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ id: "c1", task_id: "t1", author_id: "u1", body: "Hi", is_internal: false, created_at: "" }));
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          id: "c1",
+          task_id: "t1",
+          author_id: "u1",
+          body: "Hi",
+          is_internal: false,
+          created_at: "",
+        }),
+      );
 
       await client.projects.addTaskComment("1", "t1", { body: "Hi" });
 
@@ -503,7 +713,16 @@ describe("MCTClient", () => {
     });
 
     it("updateTaskComment patches a comment", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ id: "c1", task_id: "t1", author_id: "u1", body: "Hi", is_internal: false, created_at: "" }));
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          id: "c1",
+          task_id: "t1",
+          author_id: "u1",
+          body: "Hi",
+          is_internal: false,
+          created_at: "",
+        }),
+      );
 
       await client.projects.updateTaskComment("1", "t1", "c1", { body: "Updated" });
 
@@ -521,7 +740,11 @@ describe("MCTClient", () => {
     it("listTaskComments fetches task comments with filters", async () => {
       mockFetch.mockResolvedValue(mockResponse([]));
 
-      await client.projects.listTaskComments("1", { organizationId: "o1", isInternal: false, taskIds: ["t1"] });
+      await client.projects.listTaskComments("1", {
+        organizationId: "o1",
+        isInternal: false,
+        taskIds: ["t1"],
+      });
 
       const url = mockFetch.mock.calls[0][0] as string;
       expect(url).toContain("organization_id=o1");
@@ -563,13 +786,28 @@ describe("MCTClient", () => {
     it("addPortalTaskComment posts portal comment", async () => {
       mockFetch.mockResolvedValue(mockResponse({ added: true }));
 
-      const result = await client.projects.addPortalTaskComment("1", "t1", { organizationId: "o1", body: "Nice" });
+      const result = await client.projects.addPortalTaskComment("1", "t1", {
+        organizationId: "o1",
+        body: "Nice",
+      });
 
       expect(result.added).toBe(true);
     });
 
     it("listUpdates fetches updates", async () => {
-      mockFetch.mockResolvedValue(mockResponse([{ id: "u1", project_id: "1", author_id: "u1", body: "Update", is_internal: false, is_pinned: false, created_at: "" }]));
+      mockFetch.mockResolvedValue(
+        mockResponse([
+          {
+            id: "u1",
+            project_id: "1",
+            author_id: "u1",
+            body: "Update",
+            is_internal: false,
+            is_pinned: false,
+            created_at: "",
+          },
+        ]),
+      );
 
       const result = await client.projects.listUpdates("1");
 
@@ -577,7 +815,17 @@ describe("MCTClient", () => {
     });
 
     it("addUpdate posts an update", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ id: "u1", project_id: "1", author_id: "u1", body: "Update", is_internal: false, is_pinned: false, created_at: "" }));
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          id: "u1",
+          project_id: "1",
+          author_id: "u1",
+          body: "Update",
+          is_internal: false,
+          is_pinned: false,
+          created_at: "",
+        }),
+      );
 
       await client.projects.addUpdate("1", { body: "Update" });
 
@@ -585,7 +833,17 @@ describe("MCTClient", () => {
     });
 
     it("updateUpdate patches an update", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ id: "u1", project_id: "1", author_id: "u1", body: "Update", is_internal: false, is_pinned: false, created_at: "" }));
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          id: "u1",
+          project_id: "1",
+          author_id: "u1",
+          body: "Update",
+          is_internal: false,
+          is_pinned: false,
+          created_at: "",
+        }),
+      );
 
       await client.projects.updateUpdate("1", "u1", { body: "Updated" });
 
@@ -602,7 +860,24 @@ describe("MCTClient", () => {
   });
 
   describe("DocumentsApi", () => {
-    const doc = { id: "1", organization_id: "1", name: "Doc", description: null, visibility: "public", folder_path: null, storage_bucket: null, storage_path: null, mime_type: null, file_name: null, file_size: null, uploaded_by: null, current_version: null, metadata: null, created_at: "", updated_at: "" };
+    const doc = {
+      id: "1",
+      organization_id: "1",
+      name: "Doc",
+      description: null,
+      visibility: "public",
+      folder_path: null,
+      storage_bucket: null,
+      storage_path: null,
+      mime_type: null,
+      file_name: null,
+      file_size: null,
+      uploaded_by: null,
+      current_version: null,
+      metadata: null,
+      created_at: "",
+      updated_at: "",
+    };
 
     it("list fetches paginated documents", async () => {
       mockFetch.mockResolvedValue(mockResponse({ items: [doc], total: 1, page: 1, limit: 25 }));
@@ -666,7 +941,10 @@ describe("MCTClient", () => {
     it("bulkFolder posts to bulk/folder", async () => {
       mockFetch.mockResolvedValue(mockResponse({ updated: 2 }));
 
-      const result = await client.documents.bulkFolder({ documentIds: ["1", "2"], folderPath: "/docs" });
+      const result = await client.documents.bulkFolder({
+        documentIds: ["1", "2"],
+        folderPath: "/docs",
+      });
 
       expect(result.updated).toBe(2);
     });
@@ -680,7 +958,15 @@ describe("MCTClient", () => {
     });
 
     it("listVersions fetches document versions", async () => {
-      const version = { id: "v1", document_id: "1", version_number: 1, storage_path: "/path", uploaded_by: "u1", checksum: null, created_at: "" };
+      const version = {
+        id: "v1",
+        document_id: "1",
+        version_number: 1,
+        storage_path: "/path",
+        uploaded_by: "u1",
+        checksum: null,
+        created_at: "",
+      };
       mockFetch.mockResolvedValue(mockResponse({ items: [version], total: 1, page: 1, limit: 20 }));
 
       const result = await client.documents.listVersions("1");
@@ -689,7 +975,15 @@ describe("MCTClient", () => {
     });
 
     it("getVersion fetches a specific version", async () => {
-      const version = { id: "v1", document_id: "1", version_number: 2, storage_path: "/path", uploaded_by: "u1", checksum: null, created_at: "" };
+      const version = {
+        id: "v1",
+        document_id: "1",
+        version_number: 2,
+        storage_path: "/path",
+        uploaded_by: "u1",
+        checksum: null,
+        created_at: "",
+      };
       mockFetch.mockResolvedValue(mockResponse(version));
 
       const result = await client.documents.getVersion("1", "v1");
@@ -700,7 +994,15 @@ describe("MCTClient", () => {
 
   describe("DashboardApi", () => {
     it("summary fetches dashboard counts", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ managedServices: 5, openTickets: 3, activeProjects: 2, totalDocuments: 10, pendingMemberships: 1 }));
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          managedServices: 5,
+          openTickets: 3,
+          activeProjects: 2,
+          totalDocuments: 10,
+          pendingMemberships: 1,
+        }),
+      );
 
       const result = await client.dashboard.summary();
 
@@ -711,7 +1013,11 @@ describe("MCTClient", () => {
 
   describe("UsersApi", () => {
     it("list fetches all users", async () => {
-      mockFetch.mockResolvedValue(mockResponse([{ id: "1", email: "a@b.com", full_name: "Alice", role_id: null, created_at: "" }]));
+      mockFetch.mockResolvedValue(
+        mockResponse([
+          { id: "1", email: "a@b.com", full_name: "Alice", role_id: null, created_at: "" },
+        ]),
+      );
 
       const result = await client.users.list();
 
@@ -719,7 +1025,15 @@ describe("MCTClient", () => {
     });
 
     it("get fetches a user", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ id: "1", email: "a@b.com", full_name: "Alice", role_id: null, created_at: "" }));
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          id: "1",
+          email: "a@b.com",
+          full_name: "Alice",
+          role_id: null,
+          created_at: "",
+        }),
+      );
 
       const result = await client.users.get("1");
 
@@ -763,7 +1077,16 @@ describe("MCTClient", () => {
   });
 
   describe("ProfilesApi", () => {
-    const profile = { id: "1", full_name: "Alice", email: "a@b.com", phone: null, title: null, is_super_admin: false, default_organization_id: null, created_at: "" };
+    const profile = {
+      id: "1",
+      full_name: "Alice",
+      email: "a@b.com",
+      phone: null,
+      title: null,
+      is_super_admin: false,
+      default_organization_id: null,
+      created_at: "",
+    };
 
     it("list fetches all profiles", async () => {
       mockFetch.mockResolvedValue(mockResponse([profile]));
@@ -799,7 +1122,17 @@ describe("MCTClient", () => {
   });
 
   describe("AuditApi", () => {
-    const log = { id: "1", organization_id: null, actor_user_id: null, actor_type: "user", action: "test", entity_type: "test", entity_id: null, metadata: null, created_at: "" };
+    const log = {
+      id: "1",
+      organization_id: null,
+      actor_user_id: null,
+      actor_type: "user",
+      action: "test",
+      entity_type: "test",
+      entity_id: null,
+      metadata: null,
+      created_at: "",
+    };
 
     it("list fetches paginated audit logs", async () => {
       mockFetch.mockResolvedValue(mockResponse({ items: [log], total: 1, page: 1, limit: 25 }));
@@ -812,7 +1145,14 @@ describe("MCTClient", () => {
     it("list with all filters adds query params", async () => {
       mockFetch.mockResolvedValue(mockResponse({ items: [], total: 0, page: 1, limit: 25 }));
 
-      await client.audit.list({ page: 2, limit: 10, actorUserId: "u1", organizationId: "o1", action: "create", entityType: "ticket" });
+      await client.audit.list({
+        page: 2,
+        limit: 10,
+        actorUserId: "u1",
+        organizationId: "o1",
+        action: "create",
+        entityType: "ticket",
+      });
 
       const url = mockFetch.mock.calls[0][0] as string;
       expect(url).toContain("page=2");
@@ -847,11 +1187,28 @@ describe("MCTClient", () => {
     it("retries on retryable status codes and succeeds on second attempt", async () => {
       const retryClient = MCTClient.create({
         baseUrl: BASE_URL,
-        retries: { maxRetries: 2, initialDelayMs: 1, backoffFactor: 1, maxDelayMs: 10, retryableStatuses: [503] },
+        retries: {
+          maxRetries: 2,
+          initialDelayMs: 1,
+          backoffFactor: 1,
+          maxDelayMs: 10,
+          retryableStatuses: [503],
+        },
       });
 
       mockFetch
-        .mockResolvedValueOnce(mockResponse(null, false).then(r => ({ ...r, ok: false, status: 503, json: () => Promise.resolve({ success: false, error: { code: "SERVICE_UNAVAILABLE", message: "Unavailable", status: 503 } }) })))
+        .mockResolvedValueOnce(
+          mockResponse(null, false).then((r) => ({
+            ...r,
+            ok: false,
+            status: 503,
+            json: () =>
+              Promise.resolve({
+                success: false,
+                error: { code: "SERVICE_UNAVAILABLE", message: "Unavailable", status: 503 },
+              }),
+          })),
+        )
         .mockResolvedValueOnce(mockResponse([{ id: "1", key: "admin", name: "Admin" }]));
 
       const result = await retryClient.roles.list();
@@ -863,11 +1220,39 @@ describe("MCTClient", () => {
     it("throws after exhausting retries on retryable status", async () => {
       const retryClient = MCTClient.create({
         baseUrl: BASE_URL,
-        retries: { maxRetries: 1, initialDelayMs: 1, backoffFactor: 1, maxDelayMs: 10, retryableStatuses: [503] },
+        retries: {
+          maxRetries: 1,
+          initialDelayMs: 1,
+          backoffFactor: 1,
+          maxDelayMs: 10,
+          retryableStatuses: [503],
+        },
       });
 
       mockFetch.mockResolvedValue(
-        Promise.resolve({ ok: false, status: 503, json: () => Promise.resolve({ success: false, error: { code: "SERVICE_UNAVAILABLE", message: "Unavailable", status: 503 } }), headers: new Headers(), redirected: false, statusText: "Service Unavailable", type: "basic" as ResponseType, url: "", clone: function() { return this; }, body: null, bodyUsed: false, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)), blob: () => Promise.resolve(new Blob()), formData: () => Promise.resolve(new FormData()), text: () => Promise.resolve("") } as Response)
+        Promise.resolve({
+          ok: false,
+          status: 503,
+          json: () =>
+            Promise.resolve({
+              success: false,
+              error: { code: "SERVICE_UNAVAILABLE", message: "Unavailable", status: 503 },
+            }),
+          headers: new Headers(),
+          redirected: false,
+          statusText: "Service Unavailable",
+          type: "basic" as ResponseType,
+          url: "",
+          clone: function () {
+            return this;
+          },
+          body: null,
+          bodyUsed: false,
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+          blob: () => Promise.resolve(new Blob()),
+          formData: () => Promise.resolve(new FormData()),
+          text: () => Promise.resolve(""),
+        } as Response),
       );
 
       await expect(retryClient.roles.list()).rejects.toMatchObject({
@@ -887,11 +1272,39 @@ describe("MCTClient", () => {
     it("does not retry on 4xx errors except 429", async () => {
       const retryClient = MCTClient.create({
         baseUrl: BASE_URL,
-        retries: { maxRetries: 2, initialDelayMs: 1, backoffFactor: 1, maxDelayMs: 10, retryableStatuses: [429, 502, 503, 504] },
+        retries: {
+          maxRetries: 2,
+          initialDelayMs: 1,
+          backoffFactor: 1,
+          maxDelayMs: 10,
+          retryableStatuses: [429, 502, 503, 504],
+        },
       });
 
       mockFetch.mockResolvedValue(
-        Promise.resolve({ ok: false, status: 400, json: () => Promise.resolve({ success: false, error: { code: "BAD_REQUEST", message: "Bad request", status: 400 } }), headers: new Headers(), redirected: false, statusText: "Bad Request", type: "basic" as ResponseType, url: "", clone: function() { return this; }, body: null, bodyUsed: false, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)), blob: () => Promise.resolve(new Blob()), formData: () => Promise.resolve(new FormData()), text: () => Promise.resolve("") } as Response)
+        Promise.resolve({
+          ok: false,
+          status: 400,
+          json: () =>
+            Promise.resolve({
+              success: false,
+              error: { code: "BAD_REQUEST", message: "Bad request", status: 400 },
+            }),
+          headers: new Headers(),
+          redirected: false,
+          statusText: "Bad Request",
+          type: "basic" as ResponseType,
+          url: "",
+          clone: function () {
+            return this;
+          },
+          body: null,
+          bodyUsed: false,
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+          blob: () => Promise.resolve(new Blob()),
+          formData: () => Promise.resolve(new FormData()),
+          text: () => Promise.resolve(""),
+        } as Response),
       );
 
       await expect(retryClient.roles.list()).rejects.toMatchObject({ status: 400 });
@@ -901,7 +1314,13 @@ describe("MCTClient", () => {
     it("retries on network errors", async () => {
       const retryClient = MCTClient.create({
         baseUrl: BASE_URL,
-        retries: { maxRetries: 1, initialDelayMs: 1, backoffFactor: 1, maxDelayMs: 10, retryableStatuses: [] },
+        retries: {
+          maxRetries: 1,
+          initialDelayMs: 1,
+          backoffFactor: 1,
+          maxDelayMs: 10,
+          retryableStatuses: [],
+        },
       });
 
       mockFetch
@@ -917,7 +1336,13 @@ describe("MCTClient", () => {
     it("throws after exhausting retries on network errors", async () => {
       const retryClient = MCTClient.create({
         baseUrl: BASE_URL,
-        retries: { maxRetries: 1, initialDelayMs: 1, backoffFactor: 1, maxDelayMs: 10, retryableStatuses: [] },
+        retries: {
+          maxRetries: 1,
+          initialDelayMs: 1,
+          backoffFactor: 1,
+          maxDelayMs: 10,
+          retryableStatuses: [],
+        },
       });
 
       mockFetch.mockRejectedValue(new TypeError("fetch failed"));
@@ -929,7 +1354,13 @@ describe("MCTClient", () => {
     it("retries on AbortError (timeout) and succeeds on second attempt", async () => {
       const retryClient = MCTClient.create({
         baseUrl: BASE_URL,
-        retries: { maxRetries: 1, initialDelayMs: 1, backoffFactor: 1, maxDelayMs: 10, retryableStatuses: [] },
+        retries: {
+          maxRetries: 1,
+          initialDelayMs: 1,
+          backoffFactor: 1,
+          maxDelayMs: 10,
+          retryableStatuses: [],
+        },
       });
 
       mockFetch
@@ -944,7 +1375,16 @@ describe("MCTClient", () => {
   });
 
   describe("NotificationsApi", () => {
-    const notif = { id: "n1", user_id: "u1", title: "Test", body: "Body", module: "tickets", action: "created", read: false, created_at: "" };
+    const notif = {
+      id: "n1",
+      user_id: "u1",
+      title: "Test",
+      body: "Body",
+      module: "tickets",
+      action: "created",
+      read: false,
+      created_at: "",
+    };
 
     it("list fetches notifications", async () => {
       mockFetch.mockResolvedValue(mockResponse({ items: [notif], total: 1, page: 1, limit: 20 }));
@@ -981,7 +1421,13 @@ describe("MCTClient", () => {
     it("create posts a notification", async () => {
       mockFetch.mockResolvedValue(mockResponse(notif));
 
-      await client.notifications.create({ userId: "u1", title: "Test", body: "Body", module: "tickets", action: "created" });
+      await client.notifications.create({
+        userId: "u1",
+        title: "Test",
+        body: "Body",
+        module: "tickets",
+        action: "created",
+      });
 
       expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
     });
@@ -996,11 +1442,37 @@ describe("MCTClient", () => {
   });
 
   describe("BillingApi", () => {
-    const invoice = { id: "inv1", organization_id: "o1", invoice_number: "INV-001", status: "paid", subtotal_cents: 10000, tax_cents: 0, total_cents: 10000, currency: "usd", created_at: "" };
-    const subscription = { id: "sub1", organization_id: "o1", plan_name: "Premium", status: "active", amount_cents: 249900, currency: "usd", created_at: "" };
+    const invoice = {
+      id: "inv1",
+      organization_id: "o1",
+      invoice_number: "INV-001",
+      status: "paid",
+      subtotal_cents: 10000,
+      tax_cents: 0,
+      total_cents: 10000,
+      currency: "usd",
+      created_at: "",
+    };
+    const subscription = {
+      id: "sub1",
+      organization_id: "o1",
+      plan_name: "Premium",
+      status: "active",
+      amount_cents: 249900,
+      currency: "usd",
+      created_at: "",
+    };
 
     it("summary fetches billing summary", async () => {
-      mockFetch.mockResolvedValue(mockResponse({ activeSubscriptions: 1, overdueInvoices: 0, paidInvoices: 5, totalInvoices: 10, recentInvoices: [] }));
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          activeSubscriptions: 1,
+          overdueInvoices: 0,
+          paidInvoices: 5,
+          totalInvoices: 10,
+          recentInvoices: [],
+        }),
+      );
       const result = await client.billing.summary();
       expect(result.activeSubscriptions).toBe(1);
     });
@@ -1031,7 +1503,15 @@ describe("MCTClient", () => {
   });
 
   describe("WebhooksApi", () => {
-    const webhook = { id: "wh1", organization_id: "o1", name: "Test", url: "https://example.com", events: ["ticket.created"], is_active: true, created_at: "" };
+    const webhook = {
+      id: "wh1",
+      organization_id: "o1",
+      name: "Test",
+      url: "https://example.com",
+      events: ["ticket.created"],
+      is_active: true,
+      created_at: "",
+    };
 
     it("list fetches webhook endpoints", async () => {
       mockFetch.mockResolvedValue(mockResponse([webhook]));
@@ -1047,7 +1527,12 @@ describe("MCTClient", () => {
 
     it("create posts a webhook endpoint", async () => {
       mockFetch.mockResolvedValue(mockResponse(webhook));
-      await client.webhooks.create({ organizationId: "o1", name: "Test", url: "https://example.com", events: ["ticket.created"] });
+      await client.webhooks.create({
+        organizationId: "o1",
+        name: "Test",
+        url: "https://example.com",
+        events: ["ticket.created"],
+      });
       expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
     });
 
@@ -1075,11 +1560,103 @@ describe("MCTClient", () => {
       const configuredClient = MCTClient.create({
         baseUrl: BASE_URL,
         timeoutMs: 5000,
-        retries: { maxRetries: 5, initialDelayMs: 100, backoffFactor: 3, maxDelayMs: 10000, retryableStatuses: [429, 503] },
+        retries: {
+          maxRetries: 5,
+          initialDelayMs: 100,
+          backoffFactor: 3,
+          maxDelayMs: 10000,
+          retryableStatuses: [429, 503],
+        },
       });
 
       expect(configuredClient).toBeDefined();
       expect(configuredClient.webhooks).toBeDefined();
     });
+  });
+
+  describe("error handling", () => {
+    beforeEach(() => {
+      jest.useRealTimers();
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+    }, 10000);
+
+    it("throws ApiError on non-OK response", async () => {
+      mockFetch.mockResolvedValue(mockResponse(null, false));
+      await expect(client.auth.signIn("test@test.com", "pass")).rejects.toThrow(ApiError);
+    }, 10000);
+
+    it("retries on 502 status", async () => {
+      const retryClient = MCTClient.create({
+        baseUrl: BASE_URL,
+        retries: {
+          maxRetries: 1,
+          initialDelayMs: 1,
+          backoffFactor: 1,
+          maxDelayMs: 10,
+          retryableStatuses: [502],
+        },
+      });
+      mockFetch
+        .mockResolvedValueOnce(
+          mockResponse(null, false).then((r) => {
+            const o = Object.assign({}, r, { ok: false, status: 502 });
+            o.json = () =>
+              Promise.resolve({
+                success: false,
+                error: { code: "BAD_GATEWAY", message: "Bad Gateway", status: 502 },
+              });
+            return o;
+          }),
+        )
+        .mockResolvedValueOnce(
+          mockResponse({ accessToken: "tok", user: { id: "1", email: "test@test.com" } }),
+        );
+      const result = await retryClient.auth.signIn("test@test.com", "pass");
+      expect(result.accessToken).toBe("tok");
+    }, 10000);
+
+    it("throws ApiError after max retries", async () => {
+      const retryClient = MCTClient.create({
+        baseUrl: BASE_URL,
+        retries: {
+          maxRetries: 1,
+          initialDelayMs: 1,
+          backoffFactor: 1,
+          maxDelayMs: 10,
+          retryableStatuses: [502],
+        },
+      });
+      mockFetch.mockResolvedValue(
+        mockResponse(null, false).then((r) => {
+          const o = Object.assign({}, r, { ok: false, status: 502 });
+          o.json = () =>
+            Promise.resolve({
+              success: false,
+              error: { code: "BAD_GATEWAY", message: "Bad Gateway", status: 502 },
+            });
+          return o;
+        }),
+      );
+      await expect(retryClient.auth.signIn("test@test.com", "pass")).rejects.toThrow(ApiError);
+    }, 10000);
+
+    it("handles malformed JSON response", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse(null).then((r) => {
+          r.json = () => Promise.reject(new SyntaxError("Unexpected token"));
+          return r;
+        }),
+      );
+      await expect(client.auth.signIn("test@test.com", "pass")).rejects.toThrow();
+    }, 10000);
+
+    it("handles network failure", async () => {
+      const retryClient = MCTClient.create({
+        baseUrl: BASE_URL,
+        retries: { maxRetries: 0, initialDelayMs: 1 },
+      });
+      mockFetch.mockRejectedValue(new TypeError("fetch failed"));
+      await expect(retryClient.auth.signIn("test@test.com", "pass")).rejects.toThrow();
+    }, 10000);
   });
 });

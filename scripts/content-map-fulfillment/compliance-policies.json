@@ -1,0 +1,971 @@
+{
+  "cyber_insurance_questionnaire_help": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Cyber Insurance Questionnaire Help, review the questionnaire from intake, and schedule the support session.",
+      "Send prep instructions: the customer sends the questionnaire and confirms the current controls.",
+      "Pre-work: review the questionnaire and prepare the interpretation notes.",
+      "Interpret the questions: explain the technical questions in plain English.",
+      "Gather the evidence: identify and collect the evidence for the required controls.",
+      "Guide the answers: develop answer guidance and identify the gaps.",
+      "Deliver the closeout package: the insurance application support documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cyber Insurance Questionnaire Help scope: interpretation and evidence, not insurance advice.",
+        "Confirm the questionnaire received and the current controls.",
+        "Gather baseline: current security posture and existing documentation.",
+        "Create the ticket with product id cyber_insurance_questionnaire_help, expected deliverables (answer guidance, evidence, documentation), and assign a consultant.",
+        "Check prerequisites: the questionnaire and the control details provided."
+      ],
+      "delivery": [
+        "Review the full questionnaire and identify the technical questions.",
+        "Interpret each technical question in plain English.",
+        "Map each question to the current controls and evidence.",
+        "Collect the evidence: MFA, backup, endpoint, and access documentation.",
+        "Develop the accurate answer guidance for each question.",
+        "Identify the gaps against the insurer requirements.",
+        "Document the evidence and the evidence locations.",
+        "Technical verification: confirm the answers are accurate and supported."
+      ],
+      "documentation": [
+        "Produce the insurance application support documentation: question map, guidance, and evidence.",
+        "Document the evidence locations.",
+        "Record the identified gaps.",
+        "Include the submission guidance.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: question interpretation, answer guidance, evidence collection, gap identification, application guidance, and documentation.",
+        "Confirm every question is covered.",
+        "Confirm the answers are supported by evidence.",
+        "Confirm the gaps are documented.",
+        "Flag follow-ups: closing the gaps before submission."
+      ],
+      "closeout": [
+        "Send the deliverables package: the insurance application support documentation.",
+        "Recommend next steps: close the gaps and submit the application.",
+        "Confirm the customer can complete the application accurately.",
+        "Record internal notes: questionnaire support.",
+        "Offer a gap-closing quote."
+      ]
+    }
+  },
+  "acceptable_use_policy_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Acceptable Use Policy Starter, review the business from intake, and schedule the drafting.",
+      "Send prep instructions: the customer confirms the business context and the policy expectations.",
+      "Pre-work: prepare the policy template and the business context.",
+      "Draft the policy: create the technology usage rules.",
+      "Customize the policy: fit the wording to the business.",
+      "Add acknowledgment: include the employee acknowledgment language.",
+      "Deliver the closeout package: the policy and adoption guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Acceptable Use Policy Starter scope: a practical employee usage policy document.",
+        "Confirm the business context and the policy expectations.",
+        "Gather baseline: current practices and any existing policies.",
+        "Create the ticket with product id acceptable_use_policy_starter, expected deliverables (policy draft, adoption guidance), and assign a consultant.",
+        "Check prerequisites: the business context provided."
+      ],
+      "delivery": [
+        "Define the technology usage rules: internet, email, and device use.",
+        "Set the password and data handling expectations.",
+        "Address the acceptable and unacceptable uses clearly.",
+        "Customize the wording to the business.",
+        "Add the employee acknowledgment language.",
+        "Include the enforcement and consequence expectations.",
+        "Write the policy adoption guidance.",
+        "Technical verification: confirm the policy is practical and complete."
+      ],
+      "documentation": [
+        "Produce the acceptable use policy draft.",
+        "Document the acknowledgment language.",
+        "Record the adoption guidance.",
+        "Include the review schedule.",
+        "Security rule: no credentials in the policy."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: usage policy draft, internet/email/device rules, password and data expectations, customization, acknowledgment language, and adoption guidance.",
+        "Confirm the policy is practical for the business.",
+        "Confirm the acknowledgment is included.",
+        "Confirm the adoption guidance is clear.",
+        "Flag follow-ups: password_policy_starter or security_awareness_policy_starter."
+      ],
+      "closeout": [
+        "Send the deliverables package: the acceptable use policy and adoption guidance.",
+        "Recommend next steps: have employees sign and adopt the policy.",
+        "Confirm the customer understands the policy.",
+        "Record internal notes: policy drafted.",
+        "Offer a policy review after adoption."
+      ]
+    }
+  },
+  "password_policy_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Password Policy Starter, review the password practices from intake, and schedule the drafting.",
+      "Send prep instructions: the customer confirms the current password practices.",
+      "Pre-work: review the current practices and prepare the policy template.",
+      "Draft the policy: create the password and MFA requirements.",
+      "Add the guidance: include the password manager and shared credential rules.",
+      "Customize the policy: fit the wording to the business.",
+      "Deliver the closeout package: the policy and adoption guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Password Policy Starter scope: password and MFA policy document.",
+        "Confirm the current password practices and the expectations.",
+        "Gather baseline: shared accounts, password spreadsheets, and reuse.",
+        "Create the ticket with product id password_policy_starter, expected deliverables (policy draft, guidance), and assign a consultant.",
+        "Check prerequisites: the current practice details provided."
+      ],
+      "delivery": [
+        "Review the current password practices: shared accounts, spreadsheets, and reuse.",
+        "Define the password requirements: length, complexity, and uniqueness.",
+        "Document the MFA expectations: where MFA is required.",
+        "Add the password manager guidance: adoption and usage.",
+        "Set the shared credential handling rules: when and how shared.",
+        "Customize the wording to the business.",
+        "Write the adoption guidance.",
+        "Technical verification: confirm the policy is practical and enforceable."
+      ],
+      "documentation": [
+        "Produce the password policy draft.",
+        "Document the MFA expectations.",
+        "Record the password manager guidance.",
+        "Include the adoption guidance.",
+        "Security rule: no real credentials in the policy."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: password/MFA policy draft, requirement standards, MFA documentation, password manager guidance, shared credential rules, and adoption guidance.",
+        "Confirm the requirements are practical.",
+        "Confirm the MFA expectations are clear.",
+        "Confirm the shared credential rules are defined.",
+        "Flag follow-ups: MFA enablement or a password manager rollout."
+      ],
+      "closeout": [
+        "Send the deliverables package: the password policy and adoption guidance.",
+        "Recommend next steps: adopt the policy and enable MFA.",
+        "Confirm the customer understands the requirements.",
+        "Record internal notes: policy drafted.",
+        "Offer MFA enablement support."
+      ]
+    }
+  },
+  "data_backup_policy_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Data Backup Policy Starter, review the backup state from intake, and schedule the drafting.",
+      "Send prep instructions: the customer confirms what data exists and the review responsibilities.",
+      "Pre-work: review the data landscape and prepare the policy template.",
+      "Define the scope: classify the data for backup requirements.",
+      "Draft the policy: set the schedule, retention, and testing rules.",
+      "Assign the responsibilities: document who reviews and tests.",
+      "Deliver the closeout package: the policy and adoption guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Data Backup Policy Starter scope: what gets backed up, how often, and who reviews.",
+        "Confirm the data landscape and the review responsibilities.",
+        "Gather baseline: current backup state and the data types.",
+        "Create the ticket with product id data_backup_policy_starter, expected deliverables (policy draft, adoption guidance), and assign a consultant.",
+        "Check prerequisites: the data landscape provided."
+      ],
+      "delivery": [
+        "Identify the data types and classify them for backup requirements.",
+        "Define what gets backed up: systems, folders, and cloud data.",
+        "Set the backup schedule: frequency and timing expectations.",
+        "Define the retention: how long backups are kept.",
+        "Assign the review and testing responsibilities: who reviews and how often.",
+        "Document the restore expectations: what recovery means.",
+        "Customize the wording to the business.",
+        "Technical verification: confirm the policy aligns with the actual backup setup."
+      ],
+      "documentation": [
+        "Produce the data backup policy draft.",
+        "Document the schedule, retention, and testing rules.",
+        "Record the assigned responsibilities.",
+        "Include the adoption guidance.",
+        "Security rule: no backup credentials in the policy."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: policy draft, data classification, schedule/retention definition, responsibility assignment, restore expectations, and adoption guidance.",
+        "Confirm the scope is defined.",
+        "Confirm the responsibilities are assigned.",
+        "Confirm the policy is actionable.",
+        "Flag follow-ups: backup setup or a backup_monitoring_plan."
+      ],
+      "closeout": [
+        "Send the deliverables package: the data backup policy and adoption guidance.",
+        "Recommend next steps: adopt the policy and close the backup gaps.",
+        "Confirm the customer knows who reviews backups.",
+        "Record internal notes: policy drafted.",
+        "Offer backup setup support."
+      ]
+    }
+  },
+  "incident_response_policy_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Incident Response Policy Starter, review the business from intake, and schedule the drafting.",
+      "Send prep instructions: the customer confirms the response roles and the reporting expectations.",
+      "Pre-work: prepare the incident response template.",
+      "Define the incidents: classify what counts as an incident.",
+      "Draft the procedures: document escalation and reporting.",
+      "Assign the roles: define the response responsibilities.",
+      "Deliver the closeout package: the policy and adoption guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Incident Response Policy Starter scope: basic escalation and response policy.",
+        "Confirm the response roles and the reporting expectations.",
+        "Gather baseline: current incident handling and contact paths.",
+        "Create the ticket with product id incident_response_policy_starter, expected deliverables (policy draft, adoption guidance), and assign a consultant.",
+        "Check prerequisites: the roles and expectations provided."
+      ],
+      "delivery": [
+        "Define and classify incidents: types and severity levels.",
+        "Document the escalation procedures: who is contacted and when.",
+        "Define the reporting procedures: internal and external notifications.",
+        "Assign the response roles: who does what during an incident.",
+        "Document the documentation requirements: what is recorded.",
+        "Define the notification requirements: customer and legal notices.",
+        "Customize the wording to the business.",
+        "Technical verification: confirm the procedures are executable."
+      ],
+      "documentation": [
+        "Produce the incident response policy draft.",
+        "Document the escalation and reporting procedures.",
+        "Record the role assignments.",
+        "Include the adoption guidance.",
+        "Security rule: no credentials in the policy."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: policy draft, incident classification, escalation/reporting procedures, role assignments, documentation/notification requirements, and adoption guidance.",
+        "Confirm the incidents are classified.",
+        "Confirm the escalation path is clear.",
+        "Confirm the roles are assigned.",
+        "Flag follow-ups: a tabletop_exercise to practice the response."
+      ],
+      "closeout": [
+        "Send the deliverables package: the incident response policy and adoption guidance.",
+        "Recommend next steps: a tabletop_exercise to practice.",
+        "Confirm the customer knows how to respond.",
+        "Record internal notes: policy drafted.",
+        "Offer a response exercise."
+      ]
+    }
+  },
+  "vendor_access_policy_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Vendor Access Policy Starter, review the vendor relationships from intake, and schedule the drafting.",
+      "Send prep instructions: the customer confirms the vendors and the access expectations.",
+      "Pre-work: prepare the vendor access policy template.",
+      "Define the process: document how vendors request access.",
+      "Set the approvals: define the access approval requirements.",
+      "Define the lifecycle: document the acceptable use and removal process.",
+      "Deliver the closeout package: the policy and adoption guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Vendor Access Policy Starter scope: how vendors request, use, and lose access.",
+        "Confirm the vendors and the access expectations.",
+        "Gather baseline: current vendor access practices.",
+        "Create the ticket with product id vendor_access_policy_starter, expected deliverables (policy draft, adoption guidance), and assign a consultant.",
+        "Check prerequisites: the vendor list provided."
+      ],
+      "delivery": [
+        "Document the vendor access request process: who asks and how.",
+        "Define the access approval requirements: who approves and the criteria.",
+        "Set the vendor acceptable use expectations: what access means.",
+        "Document the access removal process: when and how access ends.",
+        "Define the review cadence: how often vendor access is reviewed.",
+        "Address the shared and privileged vendor accounts.",
+        "Customize the wording to the business.",
+        "Technical verification: confirm the process is enforceable."
+      ],
+      "documentation": [
+        "Produce the vendor access policy draft.",
+        "Document the request, approval, and removal process.",
+        "Record the acceptable use expectations.",
+        "Include the adoption guidance.",
+        "Security rule: no credentials in the policy."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: policy draft, request process, approval requirements, acceptable use, removal process, and adoption guidance.",
+        "Confirm the process is complete.",
+        "Confirm the approvals are defined.",
+        "Confirm the removal process is documented.",
+        "Flag follow-ups: a quarterly_access_review to enforce it."
+      ],
+      "closeout": [
+        "Send the deliverables package: the vendor access policy and adoption guidance.",
+        "Recommend next steps: adopt the policy and run a quarterly_access_review.",
+        "Confirm the customer understands the process.",
+        "Record internal notes: policy drafted.",
+        "Offer access review support."
+      ]
+    }
+  },
+  "employee_offboarding_checklist": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Employee Offboarding Checklist, review the roles from intake, and schedule the build.",
+      "Send prep instructions: the customer confirms the role types and the offboarding steps.",
+      "Pre-work: prepare the offboarding checklist template.",
+      "Map the steps: create the account and access removal steps.",
+      "Add the data handling: document the data preservation and device collection.",
+      "Refine by role: add the role-aware offboarding considerations.",
+      "Deliver the closeout package: the offboarding checklist documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Employee Offboarding Checklist scope: access removal and data preservation checklist.",
+        "Confirm the role types and the offboarding expectations.",
+        "Gather baseline: current offboarding practices.",
+        "Create the ticket with product id employee_offboarding_checklist, expected deliverables (checklist, documentation), and assign a consultant.",
+        "Check prerequisites: the role types provided."
+      ],
+      "delivery": [
+        "Create the offboarding checklist: every step from notice to completion.",
+        "Document the account and access removal steps: systems, email, and apps.",
+        "Add the device collection procedures: return, wipe, and inventory.",
+        "Define the data preservation requirements: what is kept and how.",
+        "Add the role-aware considerations: admin, finance, and key-holder roles.",
+        "Document the verification step: confirm access is fully removed.",
+        "Include the offboarding timeline.",
+        "Technical verification: confirm the checklist is complete and usable."
+      ],
+      "documentation": [
+        "Produce the offboarding checklist.",
+        "Document the access removal and data preservation steps.",
+        "Record the device collection procedures.",
+        "Include the role-aware considerations.",
+        "Security rule: no credentials in the checklist."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: checklist creation, account/access removal steps, device collection procedures, data preservation, role-aware considerations, and documentation.",
+        "Confirm the checklist covers all systems.",
+        "Confirm the data preservation is defined.",
+        "Confirm the role-aware steps are included.",
+        "Flag follow-ups: running the checklist on the next offboarding."
+      ],
+      "closeout": [
+        "Send the deliverables package: the offboarding checklist.",
+        "Recommend next steps: use the checklist on the next offboarding.",
+        "Confirm the customer knows the offboarding path.",
+        "Record internal notes: checklist built.",
+        "Offer execution support on the next offboarding."
+      ]
+    }
+  },
+  "asset_inventory_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Asset Inventory Starter, review the assets from intake, and schedule the build.",
+      "Send prep instructions: the customer confirms the hardware, software, and accounts to inventory.",
+      "Pre-work: prepare the inventory structure and the collection method.",
+      "Design the structure: define the inventory fields and categories.",
+      "Collect the assets: identify the hardware, software, licenses, and accounts.",
+      "Build the inventory: create the practical asset inventory.",
+      "Deliver the closeout package: the inventory and maintenance guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Asset Inventory Starter scope: initial hardware, software, license, account, or vendor inventory.",
+        "Confirm the asset categories in scope.",
+        "Gather baseline: current asset knowledge and any existing lists.",
+        "Create the ticket with product id asset_inventory_starter, expected deliverables (inventory, maintenance guidance), and assign a consultant.",
+        "Check prerequisites: the access to collect the assets confirmed."
+      ],
+      "delivery": [
+        "Design the inventory structure: fields, categories, and owner.",
+        "Identify the hardware assets: computers, servers, network, and peripherals.",
+        "Inventory the software and licenses: products, versions, and seats.",
+        "List the accounts: systems, cloud, and service accounts.",
+        "List the vendors: providers and their purpose.",
+        "Capture the key details: location, owner, and status.",
+        "Build the practical inventory document or sheet.",
+        "Technical verification: confirm the inventory reflects the real environment."
+      ],
+      "documentation": [
+        "Produce the asset inventory with maintenance guidance.",
+        "Document the structure and fields.",
+        "Record the collection date.",
+        "Include the update schedule.",
+        "Security rule: no credentials in the inventory."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: structure design, hardware identification, software/license inventory, account/vendor listing, practical creation, and maintenance guidance.",
+        "Confirm all asset categories are covered.",
+        "Confirm the details are accurate.",
+        "Confirm the maintenance guidance is clear.",
+        "Flag follow-ups: keeping the inventory current and quarterly reviews."
+      ],
+      "closeout": [
+        "Send the deliverables package: the asset inventory.",
+        "Recommend next steps: update the inventory regularly.",
+        "Confirm the customer can maintain it.",
+        "Record internal notes: inventory built.",
+        "Offer quarterly inventory maintenance."
+      ]
+    }
+  },
+  "security_awareness_policy_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Security Awareness Policy Starter, review the business from intake, and schedule the drafting.",
+      "Send prep instructions: the customer confirms the training expectations and the reporting path.",
+      "Pre-work: prepare the security awareness policy template.",
+      "Draft the policy: set the training requirements and expectations.",
+      "Add the guidance: document the phishing and password practices.",
+      "Define the reporting: document the incident reporting responsibilities.",
+      "Deliver the closeout package: the policy and adoption guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Security Awareness Policy Starter scope: expectations for employee security training.",
+        "Confirm the training expectations and the reporting path.",
+        "Gather baseline: current training practices.",
+        "Create the ticket with product id security_awareness_policy_starter, expected deliverables (policy draft, adoption guidance), and assign a consultant.",
+        "Check prerequisites: the training expectations provided."
+      ],
+      "delivery": [
+        "Define the training requirements: frequency and content.",
+        "Set the phishing expectations: recognition and reporting.",
+        "Document the password practice expectations: management and MFA.",
+        "Define the security incident reporting responsibilities.",
+        "Address the personal devices and data handling expectations.",
+        "Customize the wording to the business.",
+        "Write the adoption guidance.",
+        "Technical verification: confirm the policy is practical."
+      ],
+      "documentation": [
+        "Produce the security awareness policy draft.",
+        "Document the training requirements.",
+        "Record the reporting responsibilities.",
+        "Include the adoption guidance.",
+        "Security rule: no credentials in the policy."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: policy draft, training requirements, phishing/password expectations, reporting responsibilities, program documentation, and adoption guidance.",
+        "Confirm the training requirements are clear.",
+        "Confirm the reporting path is defined.",
+        "Confirm the policy is practical.",
+        "Flag follow-ups: phishing training or security awareness training."
+      ],
+      "closeout": [
+        "Send the deliverables package: the security awareness policy and adoption guidance.",
+        "Recommend next steps: adopt the policy and roll out training.",
+        "Confirm the customer understands the expectations.",
+        "Record internal notes: policy drafted.",
+        "Offer training rollout support."
+      ]
+    }
+  },
+  "remote_work_policy_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Remote Work Policy Starter, review the remote practices from intake, and schedule the drafting.",
+      "Send prep instructions: the customer confirms the remote work setup and the expectations.",
+      "Pre-work: prepare the remote work policy template.",
+      "Draft the policy: set the device and remote security expectations.",
+      "Add the access rules: document the home network, MFA, and data handling.",
+      "Customize the policy: fit the wording to the business.",
+      "Deliver the closeout package: the policy and adoption guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Remote Work Policy Starter scope: device, Wi-Fi, MFA, and data handling expectations.",
+        "Confirm the remote work setup and the expectations.",
+        "Gather baseline: current remote work practices.",
+        "Create the ticket with product id remote_work_policy_starter, expected deliverables (policy draft, adoption guidance), and assign a consultant.",
+        "Check prerequisites: the remote setup details provided."
+      ],
+      "delivery": [
+        "Set the device security expectations: company vs. personal devices.",
+        "Define the home network and Wi-Fi requirements: encryption and isolation.",
+        "Document the MFA and access expectations: authentication for remote work.",
+        "Define the data handling rules: where work data can live.",
+        "Address the VPN and remote access usage.",
+        "Define the physical security expectations for remote work.",
+        "Customize the wording to the business.",
+        "Technical verification: confirm the policy is practical and enforceable."
+      ],
+      "documentation": [
+        "Produce the remote work policy draft.",
+        "Document the device and network expectations.",
+        "Record the MFA and data handling rules.",
+        "Include the adoption guidance.",
+        "Security rule: no credentials in the policy."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: policy draft, device expectations, home network requirements, MFA/access expectations, data handling rules, and adoption guidance.",
+        "Confirm the device expectations are clear.",
+        "Confirm the network and MFA rules are documented.",
+        "Confirm the policy is practical.",
+        "Flag follow-ups: MFA enablement or VPN setup."
+      ],
+      "closeout": [
+        "Send the deliverables package: the remote work policy and adoption guidance.",
+        "Recommend next steps: adopt the policy and enable MFA/VPN.",
+        "Confirm the customer understands the requirements.",
+        "Record internal notes: policy drafted.",
+        "Offer remote access hardening support."
+      ]
+    }
+  },
+  "cyber_insurance_readiness_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and kickoff: confirm the Cyber Insurance Readiness Bundle, review the controls from intake, and kick off the project.",
+      "Send prep instructions: the customer confirms the questionnaire and the access needed.",
+      "Review the controls: assess MFA, backup, endpoint, and admin access.",
+      "Collect the evidence: gather the MFA and backup evidence.",
+      "Support the questionnaire: develop the answer guidance.",
+      "Compile the gap report: document the readiness gaps and summary.",
+      "Deliver the closeout package: the readiness bundle documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Cyber Insurance Readiness Bundle scope: questionnaire support, evidence, and gap report.",
+        "Confirm the questionnaire and the access needed.",
+        "Gather baseline: current MFA, backup, endpoint, and admin state.",
+        "Create the ticket with product id cyber_insurance_readiness_bundle, expected deliverables (evidence, answers, gap report), and assign a consultant.",
+        "Check prerequisites: the questionnaire and the system access confirmed."
+      ],
+      "delivery": [
+        "Review the security questionnaire and map the questions to controls.",
+        "Collect the MFA evidence: enforcement and coverage.",
+        "Collect the backup evidence: configuration and test results.",
+        "Review the endpoint protection: coverage and health.",
+        "Review the admin access: accounts, roles, and MFA.",
+        "Develop the answer guidance for the questionnaire.",
+        "Compile the gap report with the readiness summary.",
+        "Technical verification: confirm the evidence is accurate and complete."
+      ],
+      "documentation": [
+        "Produce the readiness bundle documentation: evidence, answers, and gap report.",
+        "Document the evidence locations.",
+        "Record the readiness summary.",
+        "Include the gap remediation plan.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: questionnaire support, MFA evidence, backup evidence, endpoint review, admin access review, and gap report.",
+        "Confirm all evidence is collected.",
+        "Confirm the questionnaire answers are supported.",
+        "Confirm the gap report is complete.",
+        "Flag follow-ups: closing the gaps before submission."
+      ],
+      "closeout": [
+        "Send the deliverables package: the readiness bundle documentation.",
+        "Recommend next steps: close the gaps and submit the application.",
+        "Confirm the customer is ready to apply.",
+        "Record internal notes: readiness findings.",
+        "Offer a quote for the gap-closing work."
+      ]
+    }
+  },
+  "small_business_policy_pack": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and kickoff: confirm the Small Business Policy Pack, review the business from intake, and kick off the project.",
+      "Send prep instructions: the customer confirms the business context and the priorities.",
+      "Pre-work: prepare the policy templates and the business context.",
+      "Draft the core policies: acceptable use, password/MFA, and backup.",
+      "Draft the response policies: incident response and offboarding.",
+      "Coordinate the pack: align the policies and add the adoption guidance.",
+      "Deliver the closeout package: the coordinated policy pack."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Small Business Policy Pack scope: five coordinated policies.",
+        "Confirm the business context and the priorities.",
+        "Gather baseline: current practices and existing policies.",
+        "Create the ticket with product id small_business_policy_pack, expected deliverables (policy pack, adoption guidance), and assign a consultant.",
+        "Check prerequisites: the business context provided."
+      ],
+      "delivery": [
+        "Draft the acceptable use policy.",
+        "Draft the password and MFA policy.",
+        "Draft the backup policy.",
+        "Draft the incident response policy.",
+        "Build the offboarding checklist.",
+        "Align the policies: consistent language and references.",
+        "Add the adoption guidance and acknowledgment language.",
+        "Technical verification: confirm the pack is coordinated and practical."
+      ],
+      "documentation": [
+        "Produce the coordinated policy pack: the five policies and checklist.",
+        "Document the adoption guidance.",
+        "Record the alignment notes.",
+        "Include the review schedule.",
+        "Security rule: no credentials in the pack."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: acceptable use, password/MFA, backup, incident response, offboarding, and coordinated documentation.",
+        "Confirm all five policies are drafted.",
+        "Confirm the policies are consistent.",
+        "Confirm the adoption guidance is clear.",
+        "Flag follow-ups: adoption and training."
+      ],
+      "closeout": [
+        "Send the deliverables package: the coordinated policy pack.",
+        "Recommend next steps: adopt the policies and train the staff.",
+        "Confirm the customer has a complete policy set.",
+        "Record internal notes: policy pack delivered.",
+        "Offer a policy review after adoption."
+      ]
+    }
+  },
+  "compliance_foundation_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and kickoff: confirm the Compliance Foundation Bundle, review the environment from intake, and kick off the project.",
+      "Send prep instructions: the customer confirms the access and the compliance drivers.",
+      "Build the inventory: establish the asset inventory.",
+      "Run the reviews: perform the access and backup reviews.",
+      "Create the policies: build the policy pack and risk register.",
+      "Coordinate the foundation: align everything and set up the quarterly review.",
+      "Deliver the closeout package: the compliance foundation documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Compliance Foundation Bundle scope: inventory, reviews, policies, risk register, and quarterly option.",
+        "Confirm the access and the compliance drivers.",
+        "Gather baseline: current inventory, access, backup, and policy state.",
+        "Create the ticket with product id compliance_foundation_bundle, expected deliverables (foundation documentation), and assign a consultant.",
+        "Check prerequisites: the access needed is confirmed."
+      ],
+      "delivery": [
+        "Establish the asset inventory: hardware, software, licenses, accounts, and vendors.",
+        "Run the access review: users, admins, and vendors.",
+        "Review the backups: coverage, configuration, and testing.",
+        "Create the policy pack: the core policies for the business.",
+        "Develop the risk register: risks, owners, and next actions.",
+        "Align the foundation pieces: consistent and actionable.",
+        "Set up the quarterly review option.",
+        "Technical verification: confirm the foundation reflects the real environment."
+      ],
+      "documentation": [
+        "Produce the compliance foundation documentation: inventory, review results, policies, and risk register.",
+        "Document the access and backup findings.",
+        "Record the risk register.",
+        "Include the quarterly review plan.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: asset inventory, access review, backup review, policy pack, risk register, and quarterly review option.",
+        "Confirm all foundation pieces are complete.",
+        "Confirm the findings are accurate.",
+        "Confirm the quarterly plan is set.",
+        "Flag follow-ups: closing the risks and quarterly reviews."
+      ],
+      "closeout": [
+        "Send the deliverables package: the compliance foundation documentation.",
+        "Recommend next steps: start the quarterly review cadence.",
+        "Confirm the customer has a compliance foundation.",
+        "Record internal notes: foundation state.",
+        "Schedule the first quarterly review."
+      ]
+    }
+  },
+  "risk_register_starter": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Risk Register Starter, review the business from intake, and schedule the build.",
+      "Send prep instructions: the customer confirms the risk areas and the owners.",
+      "Pre-work: prepare the risk register structure.",
+      "Identify the risks: document the business and IT risks.",
+      "Score the risks: record the owner, impact, and likelihood.",
+      "Define the actions: set the next action for each risk.",
+      "Deliver the closeout package: the risk register and maintenance guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Risk Register Starter scope: initial risk register with owners and actions.",
+        "Confirm the risk areas and the owners.",
+        "Gather baseline: known risks and the business context.",
+        "Create the ticket with product id risk_register_starter, expected deliverables (risk register, maintenance guidance), and assign a consultant.",
+        "Check prerequisites: the risk areas provided."
+      ],
+      "delivery": [
+        "Design the risk register structure: fields, categories, and status.",
+        "Identify the risks: business, IT, security, and resilience risks.",
+        "Document each risk: description and context.",
+        "Assign the owner for each risk.",
+        "Score the impact and likelihood.",
+        "Define the next action for each risk.",
+        "Prioritize the risks by score.",
+        "Technical verification: confirm the register is complete and prioritized."
+      ],
+      "documentation": [
+        "Produce the risk register.",
+        "Document the scoring and priorities.",
+        "Record the maintenance guidance.",
+        "Include the review schedule.",
+        "Security rule: no credentials in the register."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: risk identification, owner/impact/likelihood documentation, next action definition, structure creation, practical development, and maintenance guidance.",
+        "Confirm every key risk is listed.",
+        "Confirm the owners are assigned.",
+        "Confirm the next actions are defined.",
+        "Flag follow-ups: quarterly risk review."
+      ],
+      "closeout": [
+        "Send the deliverables package: the risk register.",
+        "Recommend next steps: review the register quarterly.",
+        "Confirm the customer can manage their risks.",
+        "Record internal notes: risk register.",
+        "Offer quarterly risk reviews."
+      ]
+    }
+  },
+  "quarterly_access_review": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the Quarterly Access Review, collect the system access, and establish the review cadence.",
+      "Send onboarding prep: the customer confirms the users, admins, and vendors to review.",
+      "Pre-work: pull the access lists from the systems.",
+      "Review the access: identify the stale and excessive access.",
+      "Confirm the corrections: apply the approved access corrections.",
+      "Report and follow up: document the review results.",
+      "Deliver the cycle closeout: the access review documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Quarterly Access Review scope: recurring user, admin, and vendor access review.",
+        "Collect the system access and the review expectations.",
+        "Establish the review checklist and the cadence.",
+        "Gather baseline: current access lists and known issues.",
+        "Set expectations: what each review covers."
+      ],
+      "delivery": [
+        "Pull the user access lists: accounts across the systems.",
+        "Review the admin access: privileged accounts and separation.",
+        "Review the vendor access: external accounts and purpose.",
+        "Identify the stale access: former employees and unused accounts.",
+        "Identify the excessive access: over-permissioned accounts.",
+        "Confirm the corrections with the customer.",
+        "Apply the approved access corrections.",
+        "Technical verification: confirm the access lists are current and clean."
+      ],
+      "documentation": [
+        "Produce the access review documentation: findings, corrections, and state.",
+        "Document the stale and excessive access.",
+        "Record the approved changes.",
+        "Maintain the access baseline.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: user review, admin review, vendor review, stale/excessive identification, approved corrections, and documentation.",
+        "Confirm every access area was reviewed.",
+        "Confirm the corrections were applied.",
+        "Confirm the documentation is complete.",
+        "Flag follow-ups: vendor_access_policy_starter or access cleanup."
+      ],
+      "closeout": [
+        "Send the access review documentation.",
+        "Recommend follow-ups for any open items.",
+        "Confirm the access is clean.",
+        "Record internal notes for the next review.",
+        "Schedule the next quarterly review."
+      ]
+    }
+  },
+  "data_handling_checklist": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Data Handling Checklist, review the data practices from intake, and schedule the build.",
+      "Send prep instructions: the customer confirms the sensitive data types and the handling expectations.",
+      "Pre-work: prepare the data handling checklist template.",
+      "Identify the data: document the sensitive data types.",
+      "Define the handling: document the collection, storage, access, and sharing rules.",
+      "Build the checklist: create the practical data handling checklist.",
+      "Deliver the closeout package: the checklist and staff guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Data Handling Checklist scope: how sensitive data should be handled.",
+        "Confirm the data types: customer, payment, health, or business data.",
+        "Gather baseline: current data handling practices.",
+        "Create the ticket with product id data_handling_checklist, expected deliverables (checklist, staff guidance), and assign a consultant.",
+        "Check prerequisites: the data types provided."
+      ],
+      "delivery": [
+        "Identify the sensitive data: customer, payment, health, and business data.",
+        "Document the data collection and storage guidance.",
+        "Set the access and sharing rules: who and how data is shared.",
+        "Define the data retention and disposal procedures.",
+        "Document the encryption and protection expectations.",
+        "Build the practical data handling checklist.",
+        "Write the staff guidance.",
+        "Technical verification: confirm the checklist is practical and compliant-oriented."
+      ],
+      "documentation": [
+        "Produce the data handling checklist.",
+        "Document the collection, storage, access, and sharing rules.",
+        "Record the retention and disposal procedures.",
+        "Include the staff guidance.",
+        "Security rule: no sensitive data samples in the checklist."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: sensitive data identification, collection/storage guidance, access/sharing rules, retention/disposal procedures, practical checklist, and staff guidance.",
+        "Confirm the sensitive data types are covered.",
+        "Confirm the handling rules are practical.",
+        "Confirm the staff guidance is clear.",
+        "Flag follow-ups: policies adoption or a compliance review."
+      ],
+      "closeout": [
+        "Send the deliverables package: the data handling checklist and staff guidance.",
+        "Recommend next steps: train the staff on the checklist.",
+        "Confirm the customer can handle data safely.",
+        "Record internal notes: data handling checklist.",
+        "Offer a compliance review."
+      ]
+    }
+  },
+  "pci_payment_handling_readiness_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the PCI/Payment Handling Readiness Review, review the payment workflow from intake, and schedule the review.",
+      "Send prep instructions: the customer confirms the payment methods and the processing systems.",
+      "Pre-work: prepare the payment handling checklist.",
+      "Review the acceptance: assess how payments are accepted and processed.",
+      "Assess the card data: review the storage and transmission of card data.",
+      "Identify the risks: document the common payment risk areas and recommendations.",
+      "Deliver the closeout package: the payment readiness review documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the PCI/Payment Handling Readiness Review scope: basic payment handling and controls review.",
+        "Confirm the payment methods and the processing systems.",
+        "Gather baseline: how card data flows through the business.",
+        "Create the ticket with product id pci_payment_handling_readiness_review, expected deliverables (readiness report), and assign a consultant.",
+        "Check prerequisites: the payment workflow details confirmed."
+      ],
+      "delivery": [
+        "Review the payment acceptance and processing: terminals, gateways, and invoices.",
+        "Assess the card data handling: where card data is captured.",
+        "Identify the storage risks: stored card data and unsecured records.",
+        "Review the transmission: encryption and secure channels.",
+        "Check the common risk areas: written card numbers, shared terminals, and staff practices.",
+        "Review the access to payment systems.",
+        "Provide the practical recommendations.",
+        "Technical verification: confirm the review reflects the real workflow."
+      ],
+      "documentation": [
+        "Produce the payment readiness review report: findings and recommendations.",
+        "Document the card data flow.",
+        "Record the identified risks.",
+        "Include the prioritized fixes.",
+        "Security rule: no card data or credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: acceptance review, card data handling assessment, storage/transmission risk identification, common risk review, practical recommendations, and documentation.",
+        "Confirm the full payment workflow was reviewed.",
+        "Confirm the risks are documented.",
+        "Confirm the recommendations are practical.",
+        "Flag follow-ups: a compliance_foundation_bundle for broader readiness."
+      ],
+      "closeout": [
+        "Send the deliverables package: the payment readiness review report.",
+        "Recommend next steps: fix the identified risks.",
+        "Confirm the customer understands their payment risks.",
+        "Record internal notes: payment review findings.",
+        "Offer a re-review after fixes."
+      ]
+    }
+  },
+  "hipaa_oriented_it_readiness_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the HIPAA-Oriented IT Readiness Review, review the environment from intake, and schedule the review.",
+      "Send prep instructions: the customer confirms the health data handling and the system access.",
+      "Pre-work: prepare the HIPAA-oriented readiness checklist.",
+      "Review the access controls: assess the access and MFA state.",
+      "Review the protections: assess the encryption, device, backup, and audit capabilities.",
+      "Review the data handling: assess the health data practices.",
+      "Deliver the closeout package: the IT readiness report."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the HIPAA-Oriented IT Readiness Review scope: practical IT readiness review, not a certification.",
+        "Confirm the health data handling and the system access.",
+        "Gather baseline: current access, encryption, backup, and audit state.",
+        "Create the ticket with product id hipaa_oriented_it_readiness_review, expected deliverables (readiness report), and assign a consultant.",
+        "Check prerequisites: the access needed is confirmed."
+      ],
+      "delivery": [
+        "Review the access controls: users, roles, MFA, and separation.",
+        "Assess the encryption and device security: disk, email, and devices.",
+        "Review the backup and recovery: coverage, testing, and retention.",
+        "Assess the audit and logging capability: activity tracking.",
+        "Review the health data handling: storage, access, and sharing.",
+        "Identify the prioritized gaps.",
+        "Document the practical recommendations.",
+        "Technical verification: confirm the review reflects the real environment."
+      ],
+      "documentation": [
+        "Produce the IT readiness report: findings, gaps, and priorities.",
+        "Document the access, encryption, backup, and audit findings.",
+        "Record the health data handling review.",
+        "Include the prioritized gap list.",
+        "Security rule: no health data or credentials in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: access/MFA review, encryption/device assessment, backup/recovery review, audit/logging assessment, health data handling review, and prioritized report.",
+        "Confirm every area was reviewed.",
+        "Confirm the gaps are prioritized.",
+        "Confirm the recommendations are practical.",
+        "Flag follow-ups: closing the critical gaps."
+      ],
+      "closeout": [
+        "Send the deliverables package: the IT readiness report.",
+        "Recommend next steps: close the critical gaps.",
+        "Confirm the customer understands their readiness.",
+        "Record internal notes: readiness findings.",
+        "Offer a re-review after remediation."
+      ]
+    }
+  },
+  "cmmc_nist_starter_gap_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and kickoff: confirm the CMMC/NIST Starter Gap Review, review the environment from intake, and kick off the project.",
+      "Send prep instructions: the customer confirms the target framework and the system access.",
+      "Pre-work: prepare the control review checklist.",
+      "Review the controls: assess the current controls against the framework expectations.",
+      "Identify the gaps: document the control gaps and the readiness level.",
+      "Prioritize the gaps: rank the gaps and estimate the compliance effort.",
+      "Deliver the closeout package: the starter gap review documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the CMMC/NIST Starter Gap Review scope: initial gap review, not an official assessment.",
+        "Confirm the target framework and the system access.",
+        "Gather baseline: current controls and the business context.",
+        "Create the ticket with product id cmmc_nist_starter_gap_review, expected deliverables (gap review documentation), and assign a consultant.",
+        "Check prerequisites: the framework target and the access confirmed."
+      ],
+      "delivery": [
+        "Prepare the control review checklist against the framework expectations.",
+        "Review the current controls: access, awareness, incident response, and physical.",
+        "Identify the control gaps against the common framework expectations.",
+        "Assess the readiness level: where the business stands.",
+        "Prioritize the gaps by risk and effort.",
+        "Estimate the compliance effort for the gaps.",
+        "Document the actionable next steps.",
+        "Technical verification: confirm the gap review reflects the real environment."
+      ],
+      "documentation": [
+        "Produce the starter gap review documentation: controls, gaps, and priorities.",
+        "Document the readiness level.",
+        "Record the effort estimates.",
+        "Include the remediation roadmap.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: control review, gap identification, readiness assessment, prioritization, effort estimation, and documentation.",
+        "Confirm the full control set was reviewed.",
+        "Confirm the gaps are prioritized.",
+        "Confirm the effort estimates are realistic.",
+        "Flag follow-ups: a compliance_foundation_bundle to close the gaps."
+      ],
+      "closeout": [
+        "Send the deliverables package: the starter gap review documentation.",
+        "Recommend next steps: begin the remediation roadmap.",
+        "Confirm the customer understands their readiness.",
+        "Record internal notes: gap review findings.",
+        "Offer a remediation quote."
+      ]
+    }
+  }
+}

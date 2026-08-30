@@ -30,6 +30,19 @@ export async function logAuditEvent(input: AuditEventInput) {
     metadata: input.metadata ?? {},
   };
 
+  const piiFields = ["full_name", "email", "phone", "password", "token", "secret"];
+  if (data.metadata && typeof data.metadata === "object") {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data.metadata as Record<string, unknown>)) {
+      if (piiFields.some((f) => key.toLowerCase().includes(f.toLowerCase()))) {
+        sanitized[key] = "[REDACTED]";
+      } else {
+        sanitized[key] = value;
+      }
+    }
+    data.metadata = sanitized;
+  }
+
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     const { error } = await supabase.from("audit_logs").insert(data);
 

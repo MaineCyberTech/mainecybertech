@@ -35,7 +35,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
       html,
     });
 
-    logger.info({ to, subject }, "Email sent");
+    logger.info({ to: "***", subject }, "Email sent");
     return true;
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

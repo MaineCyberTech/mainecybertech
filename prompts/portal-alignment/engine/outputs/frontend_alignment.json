@@ -1,0 +1,56 @@
+{
+  "findings": [
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "title": "Admin component outside admin directory",
+      "file": "portal\\PortalAdminQuickSwitch.tsx",
+      "detail": "'portal\\PortalAdminQuickSwitch.tsx' suggests admin concern but lives in 'portal'"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "title": "Route groups missing loading/error boundaries",
+      "count": 304,
+      "examples": [
+        {
+          "route": "",
+          "missing_loading": true,
+          "missing_error": true
+        },
+        {
+          "route": "(admin)",
+          "missing_loading": true,
+          "missing_error": false
+        },
+        {
+          "route": "(admin)\\admin",
+          "missing_loading": false,
+          "missing_error": true
+        },
+        {
+          "route": "(admin)\\admin\\ai",
+          "missing_loading": false,
+          "missing_error": true
+        },
+        {
+          "route": "(admin)\\admin\\ai\\triage",
+          "missing_loading": true,
+          "missing_error": true
+        }
+      ]
+    }
+  ],
+  "component_counts": {
+    "admin": 36,
+    "portal": 14,
+    "marketing": 4,
+    "total": 86
+  },
+  "route_groups": [
+    "(admin)",
+    "(portal)",
+    "(public)"
+  ],
+  "page_count": 338
+}

@@ -5,13 +5,24 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
 }));
 
+const mockRequirePermission = jest.fn();
+jest.mock("@/lib/auth/permissions", () => ({
+  requirePermission: (...args: any[]) => mockRequirePermission(...args),
+}));
+
 const mockAuditList = jest.fn();
 const mockOrgsList = jest.fn();
 const mockProfilesList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
     audit: { list: mockAuditList },
-    organizations: { list: mockOrgsList },
+    organizations: {
+    list: (...args: any[]) =>
+      mockOrgsList(...args).then((data: any) => ({
+        items: Array.isArray(data) ? data : data?.items ?? [],
+        total: Array.isArray(data) ? data.length : data?.total ?? 0,
+      })),
+  },
     profiles: { list: mockProfilesList },
   }),
 }));
@@ -42,7 +53,9 @@ describe("AuditPage", () => {
     mockRequireAdminAccess.mockResolvedValue(undefined);
     mockAuditList.mockResolvedValue({ items: [baseLog], total: 1, page: 1, limit: 50 });
     mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme Corp" }]);
-    mockProfilesList.mockResolvedValue([{ id: "actor1", full_name: "Alice Smith", email: "alice@test.com" }]);
+    mockProfilesList.mockResolvedValue([
+      { id: "actor1", full_name: "Alice Smith", email: "alice@test.com" },
+    ]);
   });
 
   it("renders title and description", async () => {

@@ -1,0 +1,37 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "flow": [
+    "Quote request",
+    "Lead review",
+    "Proposal draft",
+    "Client approval",
+    "Organization/contact creation or link",
+    "Project creation",
+    "Ticket/task checklist creation",
+    "Portal visibility",
+    "Closeout"
+  ],
+  "objects": [
+    "organization",
+    "contact",
+    "lead",
+    "proposal",
+    "project",
+    "ticket",
+    "task",
+    "document",
+    "portal_service_request"
+  ],
+  "mappingFields": [
+    "productIds",
+    "bundleIds",
+    "quoteRequestId",
+    "customer",
+    "businessName",
+    "status",
+    "assignedOwner",
+    "priority",
+    "recommendedChecklist",
+    "requiredDocuments"
+  ]
+}

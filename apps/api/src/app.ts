@@ -7,10 +7,12 @@ import { getEnv } from "./config/env";
 import { errorHandler } from "./middleware/error";
 import { notFoundHandler } from "./middleware/not-found";
 import { requestId, requestLogger } from "./middleware/request-id";
-import { rateLimitByUser } from "./middleware/rate-limit";
+import { rateLimitByUser, rateLimitMetrics } from "./middleware/rate-limit";
 import { inputSanitizer } from "./middleware/security";
 import { securityHeaders } from "./middleware/security-headers";
+import { csrfProtection } from "./middleware/csrf";
 import { idempotencyMiddleware } from "./middleware/idempotency";
+import { requestTimeout } from "./middleware/request-timeout";
 import healthRouter from "./routes/health";
 import authRouter from "./routes/auth";
 import organizationsRouter from "./routes/organizations";
@@ -24,6 +26,7 @@ import dashboardRouter from "./routes/dashboard";
 import auditRouter from "./routes/audit";
 import webhooksRouter from "./routes/webhooks";
 import rolesRouter from "./routes/roles";
+import meRouter from "./routes/me";
 import searchRouter from "./routes/search";
 import searchPortalRouter from "./routes/search-portal";
 import docsRouter from "./routes/docs";
@@ -36,6 +39,42 @@ import slaRouter from "./routes/sla";
 import apiKeysRouter from "./routes/api-keys";
 import adminRouter from "./routes/admin";
 import bulkRouter from "./routes/bulk";
+import approvalsRouter from "./routes/approvals";
+import businessOsRouter from "./routes/business-os";
+import proposalsRouter from "./routes/proposals";
+import findingsRouter from "./routes/findings";
+import assetsRouter from "./routes/assets";
+import deviceProfilesRouter from "./routes/device-profiles";
+import domainMonitorsRouter from "./routes/domain-monitors";
+import qbrRouter from "./routes/qbr";
+import fileRequestsRouter from "./routes/file-requests";
+import aiRouter from "./routes/ai";
+import vendorsRouter from "./routes/vendors";
+import serviceCatalogRouter from "./routes/service-catalog";
+import batchRouter from "./routes/batch";
+import securityOpsRouter from "./routes/security-ops";
+import securitySuiteRouter from "./routes/security-suite";
+import governanceRouter from "./routes/governance";
+import fieldServicesRouter from "./routes/field-services";
+import networkDiagramsRouter from "./routes/network-diagrams";
+import eduAutomationRouter from "./routes/edu-automation";
+import finalRouter from "./routes/final";
+import clientOnboardingRouter from "./routes/client-onboarding-command-center";
+import satisfactionPulseWidgetRouter from "./routes/satisfaction-pulse-widget";
+import dynamicClientFormsBuilderRouter from "./routes/dynamic-client-forms-builder";
+import licenseOptimizerRouter from "./routes/license-optimizer";
+import dmarcCoachRouter from "./routes/dmarc-coach";
+import trainingHubRouter from "./routes/training-hub";
+import insuranceBinderRouter from "./routes/insurance-binder";
+import statusPageRouter from "./routes/status-page";
+import uptimeMonitorRouter from "./routes/uptime-monitor";
+import storeRouter from "./routes/store";
+import complianceRouter from "./routes/compliance";
+import cabRouter from "./routes/cab";
+import stagingRouter from "./routes/staging";
+import analyticsRouter from "./routes/analytics";
+import clientPortalRouter from "./routes/client-portal";
+import knowledgeBaseRouter from "./routes/knowledge-base";
 import { initSentry } from "./lib/sentry";
 import { register } from "./lib/metrics";
 
@@ -44,23 +83,34 @@ export function createApp(): Express {
 
   const env = getEnv();
   const app = express();
-  app.set("trust proxy", true);
+  app.set("trust proxy", 1);
 
   app.use(helmet());
-  const allowedOrigins =
-    env.CORS_ORIGIN === "*"
-      ? "*"
-      : env.CORS_ORIGIN.split(",").map((s) => s.trim());
+  const allowedOriginsList = env.CORS_ORIGIN
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   app.use(
     cors({
-      origin: allowedOrigins,
+      // For credentialed requests the browser forbids the wildcard "*", so we
+      // reflect the request's Origin instead of echoing "*". When CORS_ORIGIN
+      // is "*" we reflect any origin (intended allow-all semantics, now
+      // functional with credentials); otherwise only the configured origins
+      // are reflected. Requests without an Origin (server-to-server,
+      // same-origin) are allowed as-is.
+      origin: (origin, cb) => {
+        if (!origin) return cb(null, true);
+        if (env.CORS_ORIGIN === "*") return cb(null, true);
+        if (allowedOriginsList.includes(origin)) return cb(null, true);
+        return cb(null, false);
+      },
       credentials: true,
     }),
   );
   app.use(
     express.json({
       limit: "10mb",
-      verify: (req: any, _res, buf) => {
+      verify: (req: express.Request & { rawBody?: string }, _res, buf) => {
         req.rawBody = buf.toString();
       },
     }),
@@ -72,11 +122,21 @@ export function createApp(): Express {
   const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 300,
-    message: "Too many requests from this IP, please try again later.",
+    message: JSON.stringify({
+      success: false,
+      error: {
+        code: "RATE_LIMIT",
+        message: "Too many requests from this IP, please try again later.",
+        status: 429,
+      },
+    }),
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) =>
-      req.path === "/health" || req.ip === "127.0.0.1" || req.ip === "::1",
+      req.path === "/health" ||
+      req.ip === "127.0.0.1" ||
+      req.ip === "::1" ||
+      req.path.startsWith("/api/v1/webhooks/"),
   });
 
   app.use(limiter);
@@ -84,9 +144,11 @@ export function createApp(): Express {
   app.use(requestId);
   app.use(requestLogger);
   app.use(idempotencyMiddleware);
+  app.use(csrfProtection);
+  app.use(requestTimeout(30000));
 
   app.use("/health", healthRouter);
-  app.use("/metrics", async (_req, res) => {
+  app.use("/metrics", rateLimitMetrics, async (_req, res) => {
     try {
       res.set("Content-Type", register.contentType);
       res.end(await register.metrics());
@@ -108,6 +170,7 @@ export function createApp(): Express {
   app.use("/api/v1/audit", auditRouter);
   app.use("/api/v1/webhooks", webhooksRouter);
   app.use("/api/v1/roles", rolesRouter);
+  app.use("/api/v1/me", meRouter);
   app.use("/api/v1/search", searchRouter);
   app.use("/api/v1/search/portal", searchPortalRouter);
   app.use("/api/v1/public", publicRouter);
@@ -119,6 +182,42 @@ export function createApp(): Express {
   app.use("/api/v1/api-keys", apiKeysRouter);
   app.use("/api/v1/admin", adminRouter);
   app.use("/api/v1/bulk", bulkRouter);
+  app.use("/api/v1/approvals", approvalsRouter);
+  app.use("/api/v1/business-os", businessOsRouter);
+  app.use("/api/v1/proposals", proposalsRouter);
+  app.use("/api/v1/findings", findingsRouter);
+  app.use("/api/v1/assets", assetsRouter);
+  app.use("/api/v1/device-profiles", deviceProfilesRouter);
+  app.use("/api/v1/domain-monitors", domainMonitorsRouter);
+  app.use("/api/v1/qbr", qbrRouter);
+  app.use("/api/v1/file-requests", fileRequestsRouter);
+  app.use("/api/v1/ai", aiRouter);
+  app.use("/api/v1/vendors", vendorsRouter);
+  app.use("/api/v1/service-catalog", serviceCatalogRouter);
+  app.use("/api/v1/batch", batchRouter);
+  app.use("/api/v1/security-ops", securityOpsRouter);
+  app.use("/api/v1/security-suite", securitySuiteRouter);
+  app.use("/api/v1/governance", governanceRouter);
+  app.use("/api/v1/field-services", fieldServicesRouter);
+app.use("/api/v1/network-diagrams", networkDiagramsRouter);
+  app.use("/api/v1/edu-automation", eduAutomationRouter);
+  app.use("/api/v1/final", finalRouter);
+  app.use("/api/v1/client-onboarding", clientOnboardingRouter);
+  app.use("/api/v1/satisfaction-pulse", satisfactionPulseWidgetRouter);
+  app.use("/api/v1/dynamic-forms", dynamicClientFormsBuilderRouter);
+  app.use("/api/v1/license-optimizer", licenseOptimizerRouter);
+  app.use("/api/v1/dmarc-coach", dmarcCoachRouter);
+  app.use("/api/v1/training-hub", trainingHubRouter);
+  app.use("/api/v1/insurance-binder", insuranceBinderRouter);
+  app.use("/api/v1/status-page", statusPageRouter);
+  app.use("/api/v1/uptime-monitor", uptimeMonitorRouter);
+  app.use("/api/v1/store", storeRouter);
+  app.use("/api/v1/compliance", complianceRouter);
+  app.use("/api/v1/cab", cabRouter);
+  app.use("/api/v1/staging", stagingRouter);
+  app.use("/api/v1/analytics", analyticsRouter);
+  app.use("/api/v1/client-portal", clientPortalRouter);
+  app.use("/api/v1/knowledge-base", knowledgeBaseRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

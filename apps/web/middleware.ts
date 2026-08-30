@@ -6,9 +6,7 @@ function isTokenExpired(token: string): boolean {
   try {
     const parts = token.split(".");
     if (parts.length !== 3) return true;
-    const payload = JSON.parse(
-      Buffer.from(parts[1], "base64url").toString("utf-8"),
-    );
+    const payload = JSON.parse(Buffer.from(parts[1], "base64url").toString("utf-8"));
     return payload.exp ? payload.exp * 1000 < Date.now() : true;
   } catch {
     return true;
@@ -29,11 +27,21 @@ function generateNonce(): string {
 function setCspHeaders(
   response: NextResponse,
   nonce: string,
+  host: string,
+  isLocalDev: boolean,
 ): void {
-  response.headers.set(
-    "Content-Security-Policy",
-    `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'`,
-  );
+  if (isLocalDev) {
+    response.headers.set(
+      "Content-Security-Policy",
+      `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://localhost:* http://localhost:* https://*.supabase.co; frame-ancestors 'none'; base-uri 'self'`,
+    );
+  } else {
+    const apiOrigin = `https://${host.replace(/^(www|app)\./, "api.")}`;
+    response.headers.set(
+      "Content-Security-Policy",
+      `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${apiOrigin} wss:; frame-ancestors 'none'; base-uri 'self'`,
+    );
+  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -49,9 +57,7 @@ export async function middleware(request: NextRequest) {
   const isAppDomain = host.startsWith("app.");
 
   const isMarketingRoute =
-    pathname === "/" ||
-    pathname.startsWith("/services") ||
-    pathname === "/contact";
+    pathname === "/" || pathname.startsWith("/services") || pathname === "/contact";
 
   const isAuthRoute =
     pathname.startsWith("/login") ||
@@ -61,8 +67,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/pending") ||
     pathname.startsWith("/auth/callback");
 
-  const isPortalRoute =
-    pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
+  const isPortalRoute = pathname.startsWith("/dashboard") || pathname.startsWith("/portal");
 
   const isAdminRoute = pathname.startsWith("/admin");
 
@@ -72,44 +77,39 @@ export async function middleware(request: NextRequest) {
 
   // Domain-based routing: app.* for portal/auth, www/root for marketing
   if (!isLocalDev) {
-    const appHost = host.startsWith("app.")
-      ? host
-      : `app.${host.replace(/^www\./, "")}`;
+    const appHost = host.startsWith("app.") ? host : `app.${host.replace(/^www\./, "")}`;
 
     if (isAppDomain && isMarketingRoute) {
       const redirect = NextResponse.redirect(new URL("/login", request.url));
-      setCspHeaders(redirect, nonce);
+      setCspHeaders(redirect, nonce, host, isLocalDev);
       return redirect;
     }
 
     if (!isAppDomain && (isAuthRoute || isPortalRoute || isAdminRoute)) {
-      const redirect = NextResponse.redirect(
-        new URL(pathname, `https://${appHost}`),
-      );
-      setCspHeaders(redirect, nonce);
+      const redirect = NextResponse.redirect(new URL(pathname, `https://${appHost}`));
+      setCspHeaders(redirect, nonce, host, isLocalDev);
       return redirect;
     }
   }
 
-  if (!isAuthenticated && isPortalRoute) {
+  if (!isAuthenticated && (isPortalRoute || isAdminRoute)) {
     const redirect = NextResponse.redirect(new URL("/login", request.url));
-    setCspHeaders(redirect, nonce);
+    setCspHeaders(redirect, nonce, host, isLocalDev);
     return redirect;
   }
 
   if (isAuthenticated && (pathname === "/login" || pathname === "/signup")) {
-    const redirect = NextResponse.redirect(
-      new URL("/portal/dashboard", request.url),
-    );
-    setCspHeaders(redirect, nonce);
+    const redirect = NextResponse.redirect(new URL("/portal/dashboard", request.url));
+    setCspHeaders(redirect, nonce, host, isLocalDev);
     return redirect;
   }
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
-  setCspHeaders(response, nonce);
+  response.headers.set("x-nonce", nonce);
+  setCspHeaders(response, nonce, host, isLocalDev);
   return response;
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/|favicon.ico).*)"],
 };

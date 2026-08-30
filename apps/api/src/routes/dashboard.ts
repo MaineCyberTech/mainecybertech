@@ -2,11 +2,13 @@ import { Router } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
+import { requireAdmin } from "../middleware/admin";
 import { responseCache } from "../middleware/cache";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
+router.use(requireAdmin);
 
 router.get("/summary", responseCache(30), async (req, res, next) => {
   try {
@@ -23,7 +25,10 @@ router.get("/summary", responseCache(30), async (req, res, next) => {
       supabase.from("tickets").select("*", { count: "exact", head: true }),
       supabase.from("projects").select("*", { count: "exact", head: true }),
       supabase.from("documents").select("*", { count: "exact", head: true }),
-      supabase.from("memberships").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      supabase
+        .from("memberships")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "pending"),
     ]);
 
     if (msError) throw new AppError("DB_ERROR", msError.message, 500);

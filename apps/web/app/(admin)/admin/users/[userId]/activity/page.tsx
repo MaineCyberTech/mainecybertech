@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { AuditLog, Organization } from "@mct/sdk";
 
 export const metadata = { title: "User Activity - Admin - Maine CyberTech" };
 
@@ -21,11 +22,11 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
   ]);
   const logs = logsResult.items ?? [];
 
-  const orgIds = [...new Set(logs.map((l: any) => l.organization_id).filter(Boolean))] as string[];
+  const orgIds = [...new Set(logs.map((l: AuditLog) => l.organization_id).filter(Boolean))] as string[];
 
-  const organizations = orgIds.length > 0 ? await api.organizations.list({ ids: orgIds }) : [];
+  const organizations = orgIds.length > 0 ? (await api.organizations.list({ ids: orgIds, limit: 100 })).items ?? [] : [];
 
-  const orgMap = new Map(organizations.map((o: any) => [o.id, o]));
+  const orgMap = new Map(organizations.map((o: Organization) => [o.id, o]));
 
   return (
     <div className="space-y-8">
@@ -34,14 +35,12 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
           <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
             {profile?.full_name ?? "User"} Activity
           </h1>
-          <p className="mt-3 text-slate-400">
-            Timeline of actions performed by this user.
-          </p>
+          <p className="mt-3 text-slate-400">Timeline of actions performed by this user.</p>
         </div>
 
         <Link
           href={`/admin/users/${userId}`}
-          className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
+          className="font-orbitron rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
         >
           Back to User
         </Link>
@@ -69,13 +68,13 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
                     </p>
                   </div>
 
-                  <div className="text-right text-xs text-slate-500">
+                  <div className="text-right text-xs text-slate-400">
                     {new Date(log.created_at).toLocaleString()}
                   </div>
                 </div>
 
                 {log.metadata ? (
-                  <pre className="mt-4 overflow-x-auto rounded-md border border-white/10 bg-[#0A1118]/60 p-4 text-xs text-slate-300">
+                  <pre className="mt-4 overflow-x-auto rounded-md border border-white/10 bg-cyber-base/60 p-4 text-xs text-slate-300">
                     {JSON.stringify(log.metadata, null, 2)}
                   </pre>
                 ) : null}

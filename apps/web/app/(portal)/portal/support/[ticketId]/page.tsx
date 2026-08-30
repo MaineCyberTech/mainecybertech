@@ -2,49 +2,103 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import CommentBody from "@/components/CommentBody";
+import TicketReplyForm from "./TicketReplyForm";
+
+type TicketLike = {
+  id?: string;
+  title?: string | null;
+  subject?: string | null;
+  name?: string | null;
+  description?: string | null;
+  details?: string | null;
+  body?: string | null;
+  message?: string | null;
+  category?: string | null;
+  type?: string | null;
+  classification?: string | null;
+  status?: string | null;
+  state?: string | null;
+  ticket_status?: string | null;
+  priority?: string | null;
+  severity?: string | null;
+  is_deleted?: boolean | null;
+  deleted?: boolean | null;
+  deleted_at?: string | null;
+  archived_at?: string | null;
+  created_at?: string | null;
+};
+
+type CommentLike = {
+  id?: string;
+  created_at?: string | null;
+  body?: string | null;
+  comment?: string | null;
+  message?: string | null;
+  author_name?: string | null;
+  created_by_name?: string | null;
+  author_email?: string | null;
+  created_by?: string | null;
+  is_internal?: boolean | null;
+  internal_only?: boolean | null;
+};
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Ticket Details - Portal - Maine CyberTech" };
 
-function ticketSubject(ticket: any) {
+function ticketSubject(ticket: TicketLike) {
   return ticket?.subject ?? ticket?.title ?? ticket?.name ?? `Ticket ${ticket?.id}`;
 }
 
-function ticketDescription(ticket: any) {
-  return ticket?.description ?? ticket?.details ?? ticket?.body ?? ticket?.message ?? "No description provided.";
+function ticketDescription(ticket: TicketLike) {
+  return (
+    ticket?.description ??
+    ticket?.details ??
+    ticket?.body ??
+    ticket?.message ??
+    "No description provided."
+  );
 }
 
-function ticketCategory(ticket: any) {
+function ticketCategory(ticket: TicketLike) {
   return ticket?.category ?? ticket?.type ?? ticket?.classification ?? "General";
 }
 
-function ticketStatus(ticket: any) {
+function ticketStatus(ticket: TicketLike) {
   return String(ticket?.status ?? ticket?.state ?? ticket?.ticket_status ?? "new").toLowerCase();
 }
 
-function ticketPriority(ticket: any) {
+function ticketPriority(ticket: TicketLike) {
   return String(ticket?.priority ?? ticket?.severity ?? "normal").toLowerCase();
 }
 
-function isDeletedTicket(ticket: any) {
+function isDeletedTicket(ticket: TicketLike) {
   const title = String(ticket?.title ?? ticket?.subject ?? "");
-  return Boolean(ticket?.is_deleted ?? ticket?.deleted ?? ticket?.deleted_at ?? ticket?.archived_at) || title.startsWith("[Deleted] ");
+  return (
+    Boolean(ticket?.is_deleted ?? ticket?.deleted ?? ticket?.deleted_at ?? ticket?.archived_at) ||
+    title.startsWith("[Deleted] ")
+  );
 }
 
-function commentBody(comment: any) {
+function commentBody(comment: CommentLike) {
   return comment?.body ?? comment?.comment ?? comment?.message ?? "";
 }
 
-function commentInternal(comment: any) {
+function commentInternal(comment: CommentLike) {
   return Boolean(comment?.is_internal ?? comment?.internal_only ?? false);
 }
 
-function commentAuthor(comment: any) {
-  return comment?.author_name ?? comment?.created_by_name ?? comment?.author_email ?? comment?.created_by ?? "Support";
+function commentAuthor(comment: CommentLike) {
+  return (
+    comment?.author_name ??
+    comment?.created_by_name ??
+    comment?.author_email ??
+    comment?.created_by ??
+    "Support"
+  );
 }
 
 function formatDateTime(value?: string | null) {
@@ -104,62 +158,129 @@ export default async function PortalSupportDetailPage({ params }: Props) {
   if (!membership?.organization_id) {
     return (
       <div className="space-y-6">
-        <PortalBreadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Support", href: "/portal/support" }, { label: "Ticket" }]} />
+        <Breadcrumbs
+          items={[
+            { label: "Portal", href: "/portal/dashboard" },
+            { label: "Support", href: "/portal/support" },
+            { label: "Ticket" },
+          ]}
+        />
         <PortalSubnav current="support" />
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">Access restricted.</div>
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
+          Access restricted.
+        </div>
       </div>
     );
   }
 
-  let ticket: any;
+  let ticket: TicketLike;
   try {
     ticket = await api.tickets.get(ticketId);
   } catch {
-    return <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">Ticket not found.</div>;
+    return (
+      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
+        Ticket not found.
+      </div>
+    );
   }
-  if (isDeletedTicket(ticket)) return <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">Ticket not found.</div>;
+  if (isDeletedTicket(ticket))
+    return (
+      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
+        Ticket not found.
+      </div>
+    );
 
   const rawComments = await api.tickets.listComments(ticketId);
-  const comments = (rawComments ?? []).filter((comment: any) => !commentInternal(comment));
+  const comments = (rawComments ?? []).filter((comment: CommentLike) => !commentInternal(comment));
   const status = ticketStatus(ticket);
   const priority = ticketPriority(ticket);
 
   let isAdmin = false;
-  try { await requireAdminAccess(); isAdmin = true; } catch { isAdmin = false; }
+  try {
+    await requireAdminAccess();
+    isAdmin = true;
+  } catch {
+    isAdmin = false;
+  }
 
   return (
     <div className="space-y-6">
-      <PortalBreadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Support", href: "/portal/support" }, { label: ticketSubject(ticket) }]} />
+      <Breadcrumbs
+        items={[
+          { label: "Portal", href: "/portal/dashboard" },
+          { label: "Support", href: "/portal/support" },
+          { label: ticketSubject(ticket) },
+        ]}
+      />
       <PortalSubnav current="support" />
 
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">{ticketSubject(ticket)}</h1>
+          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+            {ticketSubject(ticket)}
+          </h1>
           <p className="mt-3 text-slate-300">Category: {ticketCategory(ticket)}</p>
-          <p className="mt-2 whitespace-nowrap text-xs text-slate-500">Ticket ID: {ticket.id}</p>
+          <p className="mt-2 whitespace-nowrap text-xs text-slate-400">Ticket ID: {ticket.id}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className={statusClass(status)}>{status}</span>
           <span className={priorityClass(priority)}>{priority}</span>
-          {isAdmin ? <Link href={`/admin/tickets/${ticketId}`} className="cyber-button-secondary">View in Admin</Link> : null}
-          <Link href="/portal/support" className="cyber-button-secondary">Back to Support</Link>
+          {isAdmin ? (
+            <Link href={`/admin/tickets/${ticketId}`} className="cyber-button-secondary">
+              View in Admin
+            </Link>
+          ) : null}
+          <Link href="/portal/support" className="cyber-button-secondary">
+            Back to Support
+          </Link>
         </div>
       </div>
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Details</h2>
-        <div className="mt-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"><p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-300">{ticketDescription(ticket)}</p></div>
+        <div className="mt-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-300">
+            {ticketDescription(ticket)}
+          </p>
+        </div>
       </section>
 
       <section className="cyber-panel">
-        <div className="flex items-center justify-between gap-3"><h2 className="cyber-heading text-lg">Comments</h2><span className="cyber-pill">Total {comments.length}</span></div>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="cyber-heading text-lg">Comments</h2>
+          <span className="cyber-pill">Total {comments.length}</span>
+        </div>
         <div className="mt-6 space-y-4">
-          {comments.length > 0 ? comments.map((comment: any) => (
-            <div key={comment.id ?? `${comment.created_at}-${commentBody(comment)}`} className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4">
-              <div className="flex flex-wrap items-center gap-2"><p className="text-sm font-medium text-slate-50">{commentAuthor(comment)}</p><span className="text-xs text-slate-500" title={formatDateTime(comment.created_at)}>{formatRelativeTime(comment.created_at)}</span></div>
-              <CommentBody body={commentBody(comment)} className="mt-3 text-sm leading-relaxed text-slate-300 markdown-body" />
+          {comments.length > 0 ? (
+            comments.map((comment: CommentLike) => (
+              <div
+                key={comment.id ?? `${comment.created_at}-${commentBody(comment)}`}
+                className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-medium text-slate-50">{commentAuthor(comment)}</p>
+                  <span
+                    className="text-xs text-slate-400"
+                    title={formatDateTime(comment.created_at)}
+                  >
+                    {formatRelativeTime(comment.created_at)}
+                  </span>
+                </div>
+                <CommentBody
+                  body={commentBody(comment)}
+                  className="markdown-body mt-3 text-sm leading-relaxed text-slate-300"
+                />
+              </div>
+            ))
+          ) : (
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
+              No comments yet.
             </div>
-          )) : <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">No comments yet.</div>}
+          )}
+
+          {ticketStatus(ticket) !== "closed" && ticketStatus(ticket) !== "resolved" && (
+            <TicketReplyForm ticketId={ticketId} />
+          )}
         </div>
       </section>
     </div>

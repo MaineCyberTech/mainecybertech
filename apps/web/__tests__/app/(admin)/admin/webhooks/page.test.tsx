@@ -14,6 +14,10 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mocks.requireAdminAccess(...args),
 }));
 
+jest.mock("@/lib/auth/permissions", () => ({
+  requirePermission: (...args: any[]) => mocks.requirePermission(...args),
+}));
+
 jest.mock("next/link", () => {
   return ({ children, href, ...rest }: any) => (
     <a href={href} {...rest}>
@@ -22,7 +26,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -44,9 +48,7 @@ describe("AdminWebhooksPage", () => {
   it("renders page shell with title and description", async () => {
     const Page = (await import("@/app/(admin)/admin/webhooks/page")).default;
     render(await Page());
-    expect(
-      screen.getByRole("heading", { name: "Webhook Endpoints" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Webhook Endpoints" })).toBeInTheDocument();
     expect(screen.getByText(/Manage outbound webhook/)).toBeInTheDocument();
     expect(mocks.requireAdminAccess).toHaveBeenCalledTimes(1);
   });
@@ -54,9 +56,7 @@ describe("AdminWebhooksPage", () => {
   it("renders empty state when no webhooks", async () => {
     const Page = (await import("@/app/(admin)/admin/webhooks/page")).default;
     render(await Page());
-    expect(
-      screen.getByText("No webhook endpoints configured."),
-    ).toBeInTheDocument();
+    expect(screen.getByText("No webhook endpoints configured.")).toBeInTheDocument();
   });
 
   it("renders webhook cards with name and url", async () => {
@@ -74,9 +74,7 @@ describe("AdminWebhooksPage", () => {
     const Page = (await import("@/app/(admin)/admin/webhooks/page")).default;
     render(await Page());
     expect(screen.getByText("Slack Notifier")).toBeInTheDocument();
-    expect(
-      screen.getByText("https://hooks.slack.com/test"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("https://hooks.slack.com/test")).toBeInTheDocument();
   });
 
   it("shows active badge for active webhooks", async () => {
@@ -128,9 +126,7 @@ describe("AdminWebhooksPage", () => {
     const Page = (await import("@/app/(admin)/admin/webhooks/page")).default;
     render(await Page());
     const links = screen.getAllByRole("link");
-    expect(
-      links.some((l) => l.getAttribute("href") === "/admin/webhooks/wh-1"),
-    ).toBe(true);
+    expect(links.some((l) => l.getAttribute("href") === "/admin/webhooks/wh-1")).toBe(true);
   });
 
   it("has new webhook button", async () => {

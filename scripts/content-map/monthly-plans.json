@@ -1,0 +1,347 @@
+{
+  "mct_essential_care": {
+    "marketingCopy": "Very small organizations need a simple, affordable way to keep their technology working without the complexity of a full managed IT program. MCT Essential Care is the entry level of managed care, designed for very small organizations - typically one to five users who need the basics handled. We provide essential monitoring and support, keeping your systems running with a predictable monthly cost and a clear point of contact. It's the managed IT starting point for businesses that need dependable help without paying for capacity they don't use.",
+    "bestFor": [
+      "Very small businesses and nonprofits with a handful of users",
+      "Organizations that want basic managed support at a low cost",
+      "Companies that want a predictable monthly IT cost",
+      "Businesses that want a real IT partner without full managed IT"
+    ],
+    "whatIsIncluded": [
+      "Essential system monitoring",
+      "Basic help desk support",
+      "Proactive maintenance on covered systems",
+      "Single point of contact for IT issues",
+      "Monthly status communication",
+      "Predictable monthly pricing"
+    ],
+    "customerOutcomes": [
+      "Dependable basic IT support at an affordable price",
+      "Essential monitoring keeping systems running",
+      "A clear point of contact when things break",
+      "Predictable monthly IT cost"
+    ]
+  },
+  "mct_business_care": {
+    "marketingCopy": "Growing small businesses need more than break-fix support - they need proactive management, responsive help, and someone watching their systems. MCT Business Care is managed support for growing small businesses: proactive monitoring, responsive help desk, regular maintenance, and security basics. We keep your systems healthy, handle issues quickly, and provide the ongoing attention that prevents problems. It's the managed IT tier for businesses that have outgrown break-fix and want their technology actively managed - not just fixed when it breaks.",
+    "bestFor": [
+      "Growing small businesses with several users and devices",
+      "Organizations that want proactive management, not break-fix",
+      "Companies that want responsive support and regular maintenance",
+      "Businesses that want their technology actively managed"
+    ],
+    "whatIsIncluded": [
+      "Proactive system monitoring",
+      "Responsive help desk support",
+      "Regular maintenance and patching",
+      "Security basics management",
+      "Network and device health oversight",
+      "Monthly reporting"
+    ],
+    "customerOutcomes": [
+      "Proactively managed technology instead of break-fix",
+      "Responsive support when issues arise",
+      "Regular maintenance preventing problems",
+      "A managed IT partner for a growing business"
+    ]
+  },
+  "mct_secure_care": {
+    "marketingCopy": "For businesses that want managed IT with real security depth, MCT Secure Care layers stronger cybersecurity oversight onto managed support: deeper security monitoring, security baseline enforcement, incident response coordination, and security awareness support. We manage your environment with security as a core focus - not an afterthought. You get a managed IT plan where security controls are maintained, monitored, and improved as part of the service. It's the tier for businesses that take security seriously and want it embedded in their IT management.",
+    "bestFor": [
+      "Businesses that want security embedded in their managed IT",
+      "Organizations preparing for insurance that requires ongoing security management",
+      "Companies that want deeper security monitoring and baselines",
+      "Businesses that want incident response coordination built in"
+    ],
+    "whatIsIncluded": [
+      "Deeper security monitoring",
+      "Security baseline enforcement",
+      "Incident response coordination",
+      "Security awareness support",
+      "Access and admin oversight",
+      "Security-focused reporting"
+    ],
+    "customerOutcomes": [
+      "Managed IT with security as a core focus",
+      "Security controls maintained and monitored",
+      "Incident response coordination built in",
+      "A stronger, insurance-ready security posture"
+    ]
+  },
+  "mct_complete_care": {
+    "marketingCopy": "Some businesses want to outsource the coordination of their entire IT - not just the maintenance, but the planning, the projects, and the roadmap. MCT Complete Care is full outsourced IT coordination and roadmap: managed support, security oversight, project management, vendor coordination, and strategic planning. We operate as your IT department - handling day-to-day management, coordinating vendors and projects, and guiding your technology roadmap. You get complete IT coordination for a business that wants technology handled strategically, not just maintained.",
+    "bestFor": [
+      "Businesses that want full outsourced IT coordination",
+      "Organizations that want roadmap and project guidance",
+      "Companies that want vendors and projects coordinated",
+      "Businesses that want to operate like they have an IT department"
+    ],
+    "whatIsIncluded": [
+      "Managed support and maintenance",
+      "Security oversight",
+      "Project management",
+      "Vendor coordination",
+      "Technology roadmap guidance",
+      "Strategic IT planning"
+    ],
+    "customerOutcomes": [
+      "Full outsourced IT coordination",
+      "Vendors and projects managed for you",
+      "A strategic technology roadmap",
+      "IT handled like you have a department"
+    ]
+  },
+  "mct_co_managed_it": {
+    "marketingCopy": "Some businesses have internal IT - an office manager, a part-time tech, an IT person - who could use backup, escalation, and project support. MCT Co-Managed IT supports your internal IT team with escalation, projects, monitoring, security, and documentation. We fill the gaps around your existing staff - handling the monitoring and maintenance they don't have time for, providing escalation for difficult issues, supporting projects, and strengthening security. You get a force multiplier for your internal IT instead of replacing it.",
+    "bestFor": [
+      "Businesses with internal IT that needs backup and escalation",
+      "Organizations that want projects and monitoring handled",
+      "Companies that want to strengthen their internal IT",
+      "Businesses that want co-management rather than full outsourcing"
+    ],
+    "whatIsIncluded": [
+      "Escalation support for your internal IT",
+      "Monitoring and maintenance coverage",
+      "Project support",
+      "Security oversight",
+      "Documentation assistance",
+      "Backup for your IT function"
+    ],
+    "customerOutcomes": [
+      "Your internal IT strengthened with backup",
+      "Escalation and project support available",
+      "Monitoring and security handled",
+      "Co-managed IT that works with your team"
+    ]
+  },
+  "cyber_basic": {
+    "marketingCopy": "Cyber security basics shouldn't be a project you keep meaning to do - they should be a recurring service that keeps your fundamentals in place. Cyber Basic is a recurring security plan covering MFA, email, endpoint status, and quarterly security review support. We keep the security basics maintained and reviewed - confirming MFA stays enforced, email protections hold, endpoint status is healthy, and your security posture gets a quarterly check. It's the recurring security maintenance plan for businesses that want their cyber fundamentals actually maintained.",
+    "bestFor": [
+      "Businesses that want security fundamentals maintained monthly",
+      "Organizations that want MFA and email protections verified",
+      "Companies that want quarterly security reviews",
+      "Businesses that want ongoing security maintenance"
+    ],
+    "whatIsIncluded": [
+      "Recurring MFA status verification",
+      "Email security review",
+      "Endpoint protection status check",
+      "Quarterly security review",
+      "Security maintenance",
+      "Monthly security reporting"
+    ],
+    "customerOutcomes": [
+      "Security fundamentals maintained month after month",
+      "MFA, email, and endpoint status verified",
+      "Quarterly security reviews",
+      "A maintained security baseline"
+    ]
+  },
+  "cyber_plus": {
+    "marketingCopy": "Businesses that want stronger recurring security can add deeper coverage to the basics. Cyber Plus builds on Cyber Basic with endpoint monitoring review, training support, and admin access review - adding the next layer of ongoing security management. We keep the fundamentals maintained and add the deeper oversight: endpoint health reviewed, training supported, and admin access reviewed. You get a more comprehensive recurring security plan that covers more of the controls insurers and audits look for.",
+    "bestFor": [
+      "Businesses that want more than basic security maintenance",
+      "Organizations that want endpoint monitoring and admin reviews",
+      "Companies that want training support as part of security",
+      "Businesses that want a deeper recurring security plan"
+    ],
+    "whatIsIncluded": [
+      "Everything in Cyber Basic",
+      "Endpoint monitoring review",
+      "Security training support",
+      "Admin access review",
+      "Deeper security maintenance",
+      "Enhanced security reporting"
+    ],
+    "customerOutcomes": [
+      "Deeper recurring security coverage",
+      "Endpoint health and admin access reviewed",
+      "Training supported as part of the plan",
+      "A more comprehensive security posture"
+    ]
+  },
+  "cyber_complete": {
+    "marketingCopy": "For businesses that want the most comprehensive recurring security plan, Cyber Complete adds incident retainer, tabletop exercises, compliance mapping, vendor access review, and a security roadmap to Cyber Plus. We maintain the fundamentals and provide the deeper, forward-looking security capabilities: a retainer for incidents, tabletop practice, compliance mapping, vendor oversight, and a security roadmap. It's the most comprehensive recurring security plan we offer - for businesses that want full-cycle security management.",
+    "bestFor": [
+      "Businesses that want comprehensive recurring security",
+      "Organizations that want incident retainer and tabletop coverage",
+      "Companies that want compliance mapping and vendor review",
+      "Businesses that want a security roadmap as part of the plan"
+    ],
+    "whatIsIncluded": [
+      "Everything in Cyber Plus",
+      "Incident response retainer",
+      "Tabletop exercise participation",
+      "Compliance mapping",
+      "Vendor access review",
+      "Security roadmap development"
+    ],
+    "customerOutcomes": [
+      "The most comprehensive recurring security plan",
+      "Incident retainer and tabletop readiness",
+      "Compliance mapping and vendor oversight",
+      "A strategic security roadmap"
+    ]
+  },
+  "managed_dns_plan": {
+    "marketingCopy": "DNS needs ongoing care - changes, documentation, and renewal tracking - and when it's neglected, domains expire, records break, and email fails. The Managed DNS Plan is a recurring service for DNS changes, domain documentation, and renewal tracking. Each month we handle your DNS changes, keep domain and record documentation current, and track renewals so nothing lapses. Your DNS and domains get managed, documented, and protected on an ongoing basis - instead of becoming a problem when something breaks.",
+    "bestFor": [
+      "Businesses with DNS changes and domain management needs",
+      "Organizations that want domain renewals tracked",
+      "Companies that want DNS documentation maintained",
+      "Businesses that want their domains managed proactively"
+    ],
+    "whatIsIncluded": [
+      "Monthly DNS changes and management",
+      "Domain documentation maintenance",
+      "Renewal tracking and reminders",
+      "DNS record review",
+      "Domain security monitoring",
+      "Monthly DNS management summary"
+    ],
+    "customerOutcomes": [
+      "DNS managed and documented monthly",
+      "Domain renewals tracked so nothing lapses",
+      "Records reviewed and kept current",
+      "Proactive domain and DNS management"
+    ]
+  },
+  "unifi_monthly_management_monthly_it_plans": {
+    "marketingCopy": "UniFi networks need ongoing care - firmware, alerts, device health, controller backup, and documentation - and without it, they degrade into the messy state that causes outages. The UniFi Monthly Management is a recurring service for firmware, alerts, device health, controller backup, and network documentation review. Each month your UniFi environment gets firmware updates, alert resolution, health checks, backups, and documentation updates. It's proactive UniFi network management that keeps your wireless reliable and documented month after month.",
+    "bestFor": [
+      "Businesses that rely on their UniFi network daily",
+      "Organizations that want firmware and alerts managed",
+      "Companies that want controller backups maintained",
+      "Businesses that want their network documented monthly"
+    ],
+    "whatIsIncluded": [
+      "Monthly firmware review and updates",
+      "Alert monitoring and resolution",
+      "Device health review",
+      "Controller backup verification",
+      "Network documentation updates",
+      "Monthly network summary"
+    ],
+    "customerOutcomes": [
+      "A reliably managed UniFi network",
+      "Firmware current and alerts addressed",
+      "Controller backups protecting your configuration",
+      "Documented, proactive network management"
+    ]
+  },
+  "camera_maintenance_plan_monthly_it_plans": {
+    "marketingCopy": "Cameras collect dust, firmware goes stale, recording fills storage, and access drifts - and without ongoing care, a camera system silently stops being reliable. The Camera Maintenance Plan is a recurring service for camera and NVR health, firmware, recording, and permissions review. Each cycle your cameras get checked, updated, and verified - recording confirmed, storage reviewed, access controlled. It's proactive camera maintenance that keeps your system recording reliably, instead of discovering failures only when you need the footage.",
+    "bestFor": [
+      "Businesses that depend on their camera system",
+      "Organizations that want camera health verified regularly",
+      "Companies that want firmware and recording managed",
+      "Businesses that want to avoid late discovery of camera failures"
+    ],
+    "whatIsIncluded": [
+      "Recurring camera and NVR health review",
+      "Firmware updates",
+      "Recording verification",
+      "Storage and retention review",
+      "Permissions and access review",
+      "Maintenance report each cycle"
+    ],
+    "customerOutcomes": [
+      "Cameras maintained and recording reliably",
+      "Firmware, storage, and access kept healthy",
+      "Issues caught before they matter",
+      "Documented recurring camera maintenance"
+    ]
+  },
+  "backup_monitoring_plan_monthly_it_plans": {
+    "marketingCopy": "Backups quietly fail - a job stops, storage fills, a credential expires - and businesses usually find out only when they need the data. The Backup Monitoring Plan is a recurring service for ongoing backup status checks and restore-test reminders. Each month we verify your backups are running, catch and escalate failures, report status, and keep restore testing on schedule. It's the recurring oversight that turns backup from setup-and-hope into monitored, verified protection.",
+    "bestFor": [
+      "Businesses that want backups monitored monthly",
+      "Organizations that can't afford late discovery of backup failure",
+      "Companies that want status reports and restore-test reminders",
+      "Businesses that want verified backup reliability"
+    ],
+    "whatIsIncluded": [
+      "Ongoing backup status checks",
+      "Failure detection and escalation",
+      "Monthly backup status report",
+      "Restore-test scheduling and reminders",
+      "Backup configuration review",
+      "Ongoing backup readiness management"
+    ],
+    "customerOutcomes": [
+      "Backups verified and monitored monthly",
+      "Failures caught early, not late",
+      "Restore testing kept on schedule",
+      "Reliable, verified backup protection"
+    ]
+  },
+  "monthly_website_care_plan_monthly_it_plans": {
+    "marketingCopy": "Websites need ongoing care - updates, uptime, backups, form checks, and minor edits - and neglected sites slowly break, get hacked, or go stale. The Monthly Website Care Plan is a recurring service for updates, uptime, backups, form checks, and minor edits. Each month we update your site, verify uptime and backups, check forms, and handle minor edits. Your website stays healthy, secure, and working - maintained on a schedule instead of left to degrade.",
+    "bestFor": [
+      "Businesses that want website maintenance handled monthly",
+      "Organizations that need updates, uptime, and backups managed",
+      "Companies that want form checks and minor edits covered",
+      "Businesses that want a reliable, healthy website"
+    ],
+    "whatIsIncluded": [
+      "CMS, plugin, and theme updates",
+      "Uptime and performance monitoring",
+      "Backup verification and reporting",
+      "Contact form and lead checks",
+      "Minor edits (within scope)",
+      "Monthly website health summary"
+    ],
+    "customerOutcomes": [
+      "A website maintained monthly without your effort",
+      "Updates, uptime, and backups managed",
+      "Forms checked and minor edits handled",
+      "A reliable, healthy website"
+    ]
+  },
+  "monthly_local_seo_plan_monthly_it_plans": {
+    "marketingCopy": "Local SEO compounds through consistent effort - content, optimization, profile management, reviews, and reporting - and a one-time project fades. The Monthly Local SEO Plan is a recurring service for content, optimization, Google Business Profile, reviews, and local reporting. Each month we publish content, optimize your local pages, manage your profile, support review generation, and report on progress. You get ongoing local search growth managed for you, month after month.",
+    "bestFor": [
+      "Local businesses that want ongoing local SEO",
+      "Organizations that want content and optimization managed",
+      "Companies that want profiles and reviews maintained",
+      "Businesses that want monthly local SEO reporting"
+    ],
+    "whatIsIncluded": [
+      "Monthly content development",
+      "Local optimization",
+      "Google Business Profile management",
+      "Review support",
+      "Monthly local SEO reporting",
+      "Ongoing local visibility management"
+    ],
+    "customerOutcomes": [
+      "Consistent, compounding local search improvement",
+      "Content and optimization managed monthly",
+      "Profiles and reviews kept active",
+      "Monthly progress reporting"
+    ]
+  },
+  "compliance_quarterly_review": {
+    "marketingCopy": "Compliance isn't a one-time project - it requires recurring review of access, assets, policies, backup, and risk. The Compliance Quarterly Review is a recurring service for access, asset, policy, backup, and risk register review. Each quarter we review your access, verify assets, confirm policies are current, check backups, and update the risk register. You get documented, recurring compliance review that keeps your compliance posture maintained - and provides the review evidence insurers and auditors want.",
+    "bestFor": [
+      "Businesses that want compliance reviewed quarterly",
+      "Organizations preparing for audit or insurance requirements",
+      "Companies that want access, assets, and risk kept current",
+      "Businesses that want documented recurring compliance review"
+    ],
+    "whatIsIncluded": [
+      "Quarterly access review",
+      "Asset inventory review",
+      "Policy currency review",
+      "Backup verification",
+      "Risk register update",
+      "Quarterly compliance report"
+    ],
+    "customerOutcomes": [
+      "Compliance reviewed and maintained quarterly",
+      "Access, assets, policies, and risk kept current",
+      "Documented review evidence",
+      "A maintained compliance posture"
+    ]
+  }
+}

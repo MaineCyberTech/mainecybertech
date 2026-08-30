@@ -1,0 +1,462 @@
+{
+  "cyber_risk_snapshot": {
+    "marketingCopy": "Most small businesses don't know their biggest cyber risks - and the ones they worry about are often not the ones that actually keep owners up at night. The Cyber Risk Snapshot is a rapid, high-level security review that evaluates your business across identity, endpoints, email, backup, network, and physical security in a single engagement. We produce a numerical risk score, red/amber/green ratings per domain, and a short list of the five most critical actions you should take first. It's the fastest way to go from 'we should probably do something about security' to a concrete, prioritized plan - and it makes an ideal starting point before a deeper assessment or an insurance application.",
+    "bestFor": [
+      "Business owners who want a quick, affordable overview of their real cyber risk",
+      "Organizations that have never had any security assessment and need a starting point",
+      "Companies preparing for their first cyber insurance application",
+      "Businesses that want to identify and fix the most critical risks before the rest"
+    ],
+    "whatIsIncluded": [
+      "High-level security posture review across six domains",
+      "Numerical risk score with per-domain red, amber, and green ratings",
+      "Top five critical actions with clear implementation guidance",
+      "Cyber Risk Snapshot report suitable for leadership review",
+      "30-minute walkthrough of findings and recommendations"
+    ],
+    "customerOutcomes": [
+      "A clear numerical picture of your overall cyber risk in plain English",
+      "The five most critical gaps identified so you know where to start",
+      "A repeatable baseline for measuring security improvement over time",
+      "Risk documentation useful for your first insurance application"
+    ]
+  },
+  "full_cybersecurity_assessment": {
+    "marketingCopy": "A comprehensive cybersecurity assessment is the foundation of any serious security program - it's how you move from guessing to knowing. The Full Cybersecurity Assessment methodically reviews your environment across eight or more domains: identity and access, endpoints, email, network, backup and disaster recovery, applications, physical security, and governance. Using recognized frameworks like NIST and CIS Controls as our lens, we interview key people, review actual configurations, and produce a detailed findings report with dozens of risk-rated findings. Each finding includes evidence, why it matters, and estimated remediation effort. You also receive an executive summary built for leadership and board review, plus a phased remediation roadmap with budget-level guidance.",
+    "bestFor": [
+      "Organizations that want a thorough, evidence-based security assessment across all domains",
+      "Businesses preparing for compliance audits, certifications, or major security investments",
+      "Companies that experienced an incident and need the full risk picture to recover properly",
+      "Leadership teams that need defensible evidence to justify security budget"
+    ],
+    "whatIsIncluded": [
+      "Full-scope assessment across eight or more security domains",
+      "Stakeholder interviews with owners, IT contacts, and key staff",
+      "Configuration review of accessible systems and platforms",
+      "Detailed findings report with risk ratings, evidence, and remediation guidance",
+      "Executive summary suitable for board or leadership presentation",
+      "Phased remediation roadmap with priorities and estimated effort",
+      "Findings walkthrough with Q&A"
+    ],
+    "customerOutcomes": [
+      "A complete, evidence-based inventory of your security gaps and strengths",
+      "Risk-rated findings you can prioritize by actual business impact",
+      "Board-ready documentation that turns security into a decision-support function",
+      "A phased roadmap that sequences remediation by risk and effort"
+    ]
+  },
+  "m365_security_assessment": {
+    "marketingCopy": "Your Microsoft 365 tenant holds your email, files, identities, and collaboration - and its default settings aren't secure enough for most businesses. The M365 Security Assessment is a focused review of everything that matters in your tenant: MFA and Conditional Access, admin role assignments, external sharing and guest access, email protection, retention and backup posture, and identity risk configurations. We inspect the actual settings in your tenant (not a questionnaire), document what's configured versus what Microsoft recommends, and rank every gap by risk so you can fix the dangerous items first. It's the definitive answer to 'how secure is our Microsoft 365, really?'",
+    "bestFor": [
+      "Businesses running Microsoft 365 that haven't had a security review of their tenant",
+      "Organizations that inherited a tenant from a previous provider or employee",
+      "Companies concerned about external sharing, guest access, or admin sprawl",
+      "Businesses preparing for insurance or compliance reviews that cover cloud security"
+    ],
+    "whatIsIncluded": [
+      "MFA and Conditional Access policy review in your actual tenant",
+      "Global and delegated admin role assignment audit",
+      "External sharing and guest access review across SharePoint, OneDrive, and Teams",
+      "Email protection review covering anti-phishing, anti-spam, and spoofing controls",
+      "Retention, backup, and data-loss-prevention posture review",
+      "Identity risk configuration review (legacy auth, risky sign-ins, stale accounts)",
+      "Risk-ranked findings report with tenant-specific remediation guidance"
+    ],
+    "customerOutcomes": [
+      "A tenant-specific picture of your M365 security posture with real settings as evidence",
+      "The most dangerous gaps (legacy auth, admin sprawl, wide-open external sharing) identified first",
+      "Clear, actionable changes mapped to your actual tenant configuration",
+      "Insurance-ready documentation of your cloud security controls"
+    ]
+  },
+  "small_business_ransomware_readiness_review": {
+    "marketingCopy": "Ransomware doesn't just hit big companies - small businesses are the favorite target because they're easier and less likely to have tested backups. The Small Business Ransomware Readiness Review checks the specific controls that decide whether you survive an attack or shut down: are your backups real, tested, and off-site; is MFA stopping account takeover; is endpoint protection active; do users have admin rights they shouldn't; and is there a documented recovery path? We assess each control, show you the gaps in plain English, and rank the fixes by how much they improve your odds of a fast recovery. This review focuses on the handful of things that actually determine ransomware outcomes.",
+    "bestFor": [
+      "Businesses worried about ransomware but unsure whether their backups would actually save them",
+      "Organizations with backups that have never been tested",
+      "Companies where users have local admin rights or MFA isn't enforced",
+      "Businesses that want to understand ransomware survival odds before an attack"
+    ],
+    "whatIsIncluded": [
+      "Backup assessment: does it exist, does it run, is it off-site, and has it been tested",
+      "MFA coverage review across email and critical cloud accounts",
+      "Endpoint protection and patch posture review",
+      "Local admin rights review across workstations",
+      "Recovery documentation and incident-response readiness check",
+      "Ransomware Readiness Scorecard with prioritized hardening steps"
+    ],
+    "customerOutcomes": [
+      "A clear answer to 'would we survive ransomware' with evidence for each control",
+      "Tested-backup gaps identified before you need the backup",
+      "A prioritized hardening list ranked by recovery impact",
+      "Documented ransomware readiness for insurance applications"
+    ]
+  },
+  "nonprofit_cyber_readiness_review": {
+    "marketingCopy": "Nonprofits, churches, and community organizations handle donor data, member information, and volunteer access - yet they're frequently targeted by cybercriminals who assume they can't afford defenses. The Nonprofit Cyber Readiness Review is a budget-aware cybersecurity assessment designed specifically for mission-driven organizations. We evaluate the essentials that matter most at your size: email security and MFA, backup and recovery, volunteer account management, online giving platforms, and staff security habits. Recommendations are prioritized by cost and impact, with free and low-cost options highlighted first. We understand you can't spend like an enterprise - so we focus on the highest-impact protections that fit a nonprofit budget.",
+    "bestFor": [
+      "Nonprofits, churches, and community organizations with limited IT budgets",
+      "Organizations that handle donor, member, or volunteer data",
+      "Groups that rely on volunteers who come and go with access to accounts",
+      "Nonprofits applying for grants or insurance that require security readiness"
+    ],
+    "whatIsIncluded": [
+      "Email security and MFA coverage review",
+      "Backup and recovery posture assessment",
+      "Volunteer account and access management review",
+      "Online giving and payment platform security check",
+      "Staff security awareness and practice review",
+      "Budget-aware recommendations with free and low-cost options prioritized"
+    ],
+    "customerOutcomes": [
+      "A realistic picture of your organization's security posture with nonprofit constraints in mind",
+      "High-impact fixes identified that fit a limited budget",
+      "Volunteer access risks documented and addressed",
+      "Grant- and insurance-ready evidence of responsible data stewardship"
+    ]
+  },
+  "vendor_access_review": {
+    "marketingCopy": "Every vendor with a login into your systems is a potential entry point - and most small businesses have no idea how many vendors have access, to what, or whether that access was ever revoked. The Vendor Access Review maps your vendor relationships to actual system access: who has remote access, which shared accounts exist, what third parties can reach, and what happens to access when a vendor relationship ends. We identify vendor accounts that should have been removed years ago, shared credentials that vendors use that create accountability gaps, and remote-access paths that bypass your security controls. You get a complete vendor-access map and a cleanup plan with documented approvals.",
+    "bestFor": [
+      "Businesses that have worked with multiple vendors, contractors, or IT providers over time",
+      "Organizations where vendors use shared or generic accounts",
+      "Companies that aren't sure which third parties currently have remote access",
+      "Businesses preparing for insurance or compliance reviews covering third-party risk"
+    ],
+    "whatIsIncluded": [
+      "Complete inventory of vendor accounts and their system access",
+      "Shared and generic vendor credential review",
+      "Remote access path review (VPN, RDP, remote support tools)",
+      "Vendor access offboarding process review",
+      "Identification of stale vendor accounts that should be revoked",
+      "Vendor Access Map and prioritized cleanup plan"
+    ],
+    "customerOutcomes": [
+      "A complete map of which vendors can access what - and which shouldn't anymore",
+      "Shared vendor credentials documented and remediation path defined",
+      "Stale vendor access removed with approved, logged changes",
+      "Third-party risk evidence ready for insurance and compliance reviews"
+    ]
+  },
+  "admin_privilege_review": {
+    "marketingCopy": "Admin privileges are the crown jewels of your IT environment - and the accounts that hold them are what attackers target first. The Admin Privilege Review digs into every high-privilege account in your business: who has administrator rights in Microsoft 365, on servers, on domain controllers, and on business-critical cloud apps. We check role assignments against actual job needs, flag excessive or inherited permissions, identify break-glass and shared admin accounts, and assess how changes to privileged access are approved and tracked. You end up with a documented picture of who can do what at the highest levels - and a plan to move toward least privilege without breaking daily operations.",
+    "bestFor": [
+      "Organizations with multiple admins, past IT providers, or unclear role assignments",
+      "Businesses that have given out admin rights casually over the years",
+      "Companies that don't have a documented map of who holds elevated access",
+      "Organizations preparing for audits, insurance, or compliance reviews"
+    ],
+    "whatIsIncluded": [
+      "High-privilege account inventory across Microsoft 365, servers, and cloud apps",
+      "Role assignment review against actual job responsibilities",
+      "Excessive, stale, and shared privileged account identification",
+      "Break-glass and emergency access account review",
+      "Privileged access change-management process assessment",
+      "Least-privilege remediation roadmap with documented approvals"
+    ],
+    "customerOutcomes": [
+      "A complete map of every account with elevated access and why it has it",
+      "Excessive or unnecessary admin rights identified and removed with approval",
+      "Reduced attack surface where compromise of one account no longer means full control",
+      "Privileged access evidence ready for audit and insurance review"
+    ]
+  },
+  "mfa_enforcement_project": {
+    "marketingCopy": "Enabling MFA on one account is easy; enforcing it across every user and system without locking anyone out is a project. The MFA Enforcement Project plans and implements a broader MFA rollout across the systems that matter to your business. We start with a coverage assessment, then build a rollout plan that includes Microsoft 365 Conditional Access enforcement, onboarding of every user with clear instructions, and coverage of critical third-party platforms like banking, payroll, and your domain registrar. We handle the coordination, the enrollment support, and the verification - so MFA gets turned on everywhere, staff stay productive, and nobody gets stuck. When the project is done, MFA isn't optional anymore; it's the rule.",
+    "bestFor": [
+      "Businesses ready to enforce MFA everywhere but worried about rollout friction",
+      "Organizations with partial MFA coverage and no clear path to full enforcement",
+      "Companies where MFA is 'suggested' but not required across all users",
+      "Businesses whose insurance or compliance requirements mandate full MFA enforcement"
+    ],
+    "whatIsIncluded": [
+      "MFA coverage assessment across all business systems",
+      "Microsoft 365 Conditional Access policy design and enforcement",
+      "User enrollment plan with step-by-step instructions for every staff member",
+      "MFA enablement for critical third-party platforms",
+      "Enrollment support and lockout prevention planning",
+      "Post-rollout verification that MFA applies to all users and admin actions"
+    ],
+    "customerOutcomes": [
+      "MFA enforced as a requirement rather than a suggestion across your environment",
+      "Every user enrolled and comfortable with their authenticator setup",
+      "Critical third-party accounts protected by a second factor",
+      "Audit-ready evidence that MFA covers your business"
+    ]
+  },
+  "password_manager_rollout": {
+    "marketingCopy": "A password manager is the single most practical tool for eliminating weak and reused passwords - but only if it's deployed properly and people actually use it. The Password Manager Rollout goes beyond installing software: we help you select the right platform for your team (Bitwarden, 1Password, or Keeper), configure the organization with shared vaults and permissions, migrate critical credentials from spreadsheets and browsers, and train every user on day-to-day use. Staff stop reusing passwords, shared accounts get controlled by the business instead of shared in a spreadsheet, and you get visibility into credential hygiene that didn't exist before. It's the password hygiene project, done so it sticks.",
+    "bestFor": [
+      "Businesses ready to move off spreadsheets and browser-saved passwords",
+      "Organizations that want shared team credentials without insecure sharing",
+      "Companies that bought a password manager but never actually deployed it properly",
+      "Businesses that want to eliminate password reuse as a practical security improvement"
+    ],
+    "whatIsIncluded": [
+      "Password manager platform selection and comparison tailored to your team",
+      "Organization setup with shared vaults, folders, and permission structure",
+      "Migration of critical credentials from spreadsheets and browsers",
+      "Browser and device extension rollout for all users",
+      "Staff training on password generation, sharing, and daily use",
+      "Admin guidance for ongoing vault management and access reviews"
+    ],
+    "customerOutcomes": [
+      "A deployed, configured password manager that staff actually use daily",
+      "Shared credentials controlled by the business instead of shared informally",
+      "Elimination of password reuse across the most important accounts",
+      "Visible credential hygiene that improves your security posture and audit story"
+    ]
+  },
+  "email_security_hardening": {
+    "marketingCopy": "Email is the attack surface attackers exploit most - through spoofed domains, phishing, and misconfigured authentication. The Email Security Hardening service configures practical, high-impact email protections rather than just reviewing them. We correct your SPF, DKIM, and DMARC records so your domain can't be easily impersonated, tighten Microsoft 365 anti-phishing and anti-spam policies including impersonation protection, review mailbox rules for compromise indicators, and confirm MFA protects every mailbox. We make the changes that meaningfully reduce phishing and business email compromise, verify delivery still works, and document what we configured. It's email security turned from a recommendation into a completed configuration.",
+    "bestFor": [
+      "Businesses that want email protections actually configured, not just reviewed",
+      "Organizations whose domain is being spoofed or whose email lands in spam",
+      "Companies with Microsoft 365 that never customized anti-phishing settings",
+      "Businesses hardening their email before insurance or compliance review"
+    ],
+    "whatIsIncluded": [
+      "SPF, DKIM, and DMARC correction and verification",
+      "Microsoft 365 anti-phishing policy configuration including impersonation protection",
+      "Anti-spam and quarantine settings tuning",
+      "Mailbox rule audit for compromise indicators",
+      "MFA verification on all mailboxes",
+      "Post-change deliverability testing and documentation"
+    ],
+    "customerOutcomes": [
+      "A domain that attackers can't easily impersonate in email",
+      "Hardened Microsoft 365 policies that filter more phishing before it reaches inboxes",
+      "Compromise indicators like suspicious forwarding rules identified and removed",
+      "Documented email security configuration you can show insurers and auditors"
+    ]
+  },
+  "endpoint_protection_rollout": {
+    "marketingCopy": "Endpoint protection is only effective if it's deployed on every device, configured properly, and actually being monitored. The Endpoint Protection Rollout ensures your business computers - Windows and Mac - are running a real, current, centrally managed endpoint security solution. We assess what's currently on each device (including the dangerous state of 'nothing' or expired consumer antivirus), select an appropriate business solution, deploy it across your fleet, configure detection and response settings, and set up a monitoring process so alerts aren't ignored. Your endpoints stop being the soft target attackers rely on and start being defended, managed, and accounted for.",
+    "bestFor": [
+      "Businesses with a mix of unprotected or inconsistently protected devices",
+      "Organizations relying on free or expired consumer antivirus",
+      "Companies that want centrally managed endpoint security across their fleet",
+      "Businesses preparing for insurance that requires endpoint protection"
+    ],
+    "whatIsIncluded": [
+      "Current endpoint protection state assessment across all devices",
+      "Solution selection and licensing guidance (Microsoft Defender for Business or similar)",
+      "Central deployment across Windows and Mac workstations",
+      "Detection, response, and alert configuration",
+      "Monitoring process setup so security events aren't missed",
+      "Deployment documentation and fleet-wide coverage verification"
+    ],
+    "customerOutcomes": [
+      "Every business device running current, managed endpoint protection",
+      "A centrally managed view of your fleet's security status",
+      "Detection and response that flags real threats instead of silent gaps",
+      "Insurance- and audit-ready endpoint coverage evidence"
+    ]
+  },
+  "local_admin_removal_project": {
+    "marketingCopy": "When every user has local administrator rights on their computer, a single click on a malicious file can take down the whole machine - and your data. The Local Admin Removal Project reduces these privileges across your selected workstations without disrupting productivity. We identify which users actually need admin rights, plan the removal so legitimate software installs still work, execute the change across the fleet, and handle the support tickets that follow so the transition doesn't break your staff. Removing local admin is one of the most effective, least expensive hardening measures available - and doing it as a planned project instead of a surprise is the only way it succeeds.",
+    "bestFor": [
+      "Businesses where every user can install software and change system settings",
+      "Organizations that want a high-impact hardening win with minimal disruption",
+      "Companies that have dealt with malware infections that started with local admin",
+      "Businesses preparing for insurance or compliance that limits admin rights"
+    ],
+    "whatIsIncluded": [
+      "Current local admin rights assessment across selected workstations",
+      "Legitimate software install and update needs analysis",
+      "Local admin removal plan with exception management",
+      "Fleet-wide execution of the privilege change",
+      "Post-change support for staff affected by the transition",
+      "Documentation of who retains admin rights and why"
+    ],
+    "customerOutcomes": [
+      "Local admin privileges removed across the fleet, shrinking the malware blast radius",
+      "Legitimate software installs still working through approved processes",
+      "A managed exception list instead of everyone-has-admin by default",
+      "A documented hardening improvement that insurers and auditors recognize"
+    ]
+  },
+  "bitlocker_encryption_rollout": {
+    "marketingCopy": "A stolen or lost laptop containing customer data is a breach - unless the drive is encrypted. The BitLocker Encryption Rollout enables full-disk encryption on your supported business devices so that if a computer is lost or stolen, the data on it is unreadable. We verify which devices support BitLocker (and review Mac equivalents), enable encryption properly with recovery keys stored somewhere safe, confirm it's actually protecting data rather than just enabled, and document the recovery key locations so you never get locked out of your own data. Disk encryption is a core insurance and compliance requirement, and this rollout makes it a configured, verified reality.",
+    "bestFor": [
+      "Businesses with laptops that travel, remote workers, or field staff",
+      "Organizations that handle customer, payment, or health data on portable devices",
+      "Companies that aren't sure whether their drives are actually encrypted",
+      "Businesses meeting insurance or compliance requirements for data-at-rest protection"
+    ],
+    "whatIsIncluded": [
+      "BitLocker support and readiness assessment across business devices",
+      "Full-disk encryption enablement with verified protection status",
+      "Recovery key collection and secure storage",
+      "Mac drive encryption review (FileVault) where applicable",
+      "TPM configuration and compatibility handling",
+      "Encryption status documentation for all devices"
+    ],
+    "customerOutcomes": [
+      "Every eligible business device with verified full-disk encryption",
+      "Recovery keys safely stored so encryption never becomes a lockout",
+      "Lost or stolen devices no longer exposing business data",
+      "Data-at-rest protection evidence for insurance and compliance"
+    ]
+  },
+  "dns_filtering_setup": {
+    "marketingCopy": "DNS filtering blocks dangerous websites before your users even reach them, catching phishing, malware, and ransomware delivery at the network level. The DNS Filtering Setup configures protective DNS for your business where it's appropriate, creating a first line of defense that works even when users click something they shouldn't. We evaluate your current DNS setup, recommend an appropriate filtering service, configure it so business traffic is protected while web browsing stays functional, and handle exception requests so legitimate sites aren't blocked. DNS filtering is invisible to your staff but actively blocking threats every day - one of the highest-value, lowest-friction security controls available.",
+    "bestFor": [
+      "Businesses that want network-level protection beyond endpoint software",
+      "Organizations that want to block known-malicious sites without blocking productivity",
+      "Companies preparing for insurance that rewards layered security controls",
+      "Businesses that want an always-on safety net for click-prone staff"
+    ],
+    "whatIsIncluded": [
+      "Current DNS configuration and security review",
+      "Protective DNS service selection (e.g., Cisco Umbrella, DNSFilter, or similar)",
+      "Configuration so all business traffic resolves through filtered DNS",
+      "Category and policy configuration to balance security with productivity",
+      "Exception handling for legitimate blocked sites",
+      "Documentation and verification that filtering is active"
+    ],
+    "customerOutcomes": [
+      "Network-level blocking of known phishing, malware, and ransomware domains",
+      "Protection that works even when a user clicks a bad link",
+      "A filtered DNS environment that doesn't break legitimate browsing",
+      "Another layered control documented for insurance and compliance"
+    ]
+  },
+  "security_awareness_training_setup": {
+    "marketingCopy": "Your staff are the ones who see phishing emails first - and trained staff are your cheapest, most effective security control. The Security Awareness Training Setup establishes a real, ongoing training workflow rather than a one-time lecture. We help you select a training platform that fits your size (KnowBe4, PhishLabs, or similar), configure automated training campaigns, set up phishing simulation schedules, and establish how results get reviewed and reported. You get a system that trains staff continuously, measures who's clicking, and produces the awareness data cyber insurers increasingly require. It's security training that runs itself month after month.",
+    "bestFor": [
+      "Businesses that want ongoing training rather than an annual one-off",
+      "Organizations that need phishing simulation data for insurance",
+      "Companies with staff who regularly click on suspicious emails",
+      "Businesses that want a measurable awareness program without running it manually"
+    ],
+    "whatIsIncluded": [
+      "Security awareness platform selection based on your team size and budget",
+      "Platform configuration with automated training campaigns",
+      "Phishing simulation schedule and content setup",
+      "User enrollment and role assignment",
+      "Result review and reporting process establishment",
+      "Ongoing management guidance for the program"
+    ],
+    "customerOutcomes": [
+      "Continuous security training that reaches every staff member automatically",
+      "Real phishing click and report data to drive improvements",
+      "Insurance-ready awareness program evidence",
+      "A self-running program your business can sustain without daily effort"
+    ]
+  },
+  "incident_response_plan_starter": {
+    "marketingCopy": "The organizations that recover fastest from security incidents are the ones that already decided what to do before the incident happened. The Incident Response Plan Starter creates a practical, first-response plan tailored to your business - not a generic template. We define escalation triggers, assign roles and responsibilities, document the exact steps to contain common incidents like email compromise, ransomware, and data breaches, and establish communication procedures with staff, customers, insurers, and authorities. We keep it actionable: your team knows who's in charge, what to touch, what not to touch, and who to call. It's the difference between a controlled response and a panic.",
+    "bestFor": [
+      "Businesses with no incident response documentation at all",
+      "Organizations that want a usable plan instead of a theoretical policy",
+      "Companies whose insurance or compliance requires an incident response plan",
+      "Small teams that need clear roles and escalation steps defined in advance"
+    ],
+    "whatIsIncluded": [
+      "Incident escalation and trigger definition",
+      "Role assignments covering response, communication, and technical containment",
+      "Step-by-step response procedures for email compromise, ransomware, and breach",
+      "Communication procedures for staff, customers, insurers, and authorities",
+      "Preservation and evidence-handling guidance",
+      "Practical plan document your team can actually use under pressure"
+    ],
+    "customerOutcomes": [
+      "A practical incident response plan customized to your business and systems",
+      "Clear roles so your team doesn't freeze or improvise during an incident",
+      "Defined containment steps that limit damage in the first critical hour",
+      "Plan documentation that satisfies insurance and compliance requirements"
+    ]
+  },
+  "cyber_insurance_readiness_package": {
+    "marketingCopy": "Cyber insurance applications are increasingly strict - and many small businesses get denied, quoted higher premiums, or hit with coverage carve-outs because of common gaps like missing MFA, untested backups, or no documented policies. The Cyber Insurance Readiness Package gets your business in a defensible position before you apply. We review the controls insurers commonly require (MFA, backup, endpoint protection, admin access, incident response, training), help you address the gaps within scope, and compile the evidence insurers ask for. You approach the application with documentation instead of hoping, which improves approval odds, premium levels, and coverage terms.",
+    "bestFor": [
+      "Businesses applying for cyber insurance and unsure what the questionnaire means",
+      "Organizations that were denied coverage or quoted high premiums due to gaps",
+      "Companies that want to strengthen controls before their renewal",
+      "Businesses that want a documented readiness posture rather than best-effort answers"
+    ],
+    "whatIsIncluded": [
+      "Review of common cyber insurance control requirements",
+      "MFA, backup, endpoint, admin access, and training control assessment",
+      "In-scope remediation of the gaps most insurers require",
+      "Evidence collection for insurance questionnaires",
+      "Readiness summary documenting your controls and remaining gaps",
+      "Guidance for completing the insurance application accurately"
+    ],
+    "customerOutcomes": [
+      "A documented, evidence-backed position when applying for cyber insurance",
+      "The most common coverage-denial gaps addressed before you apply",
+      "Confidence in answering the insurance questionnaire accurately",
+      "Better approval odds and, in many cases, better premiums and coverage terms"
+    ]
+  },
+  "security_awareness_lunch_learn": {
+    "marketingCopy": "A one-hour lunch-and-learn is one of the most cost-effective security investments a small business can make - because your staff are the first line of defense. The Security Awareness Lunch & Learn delivers a practical, engaging training session on phishing, passwords, MFA, and safe everyday habits, customized to your team and the threats they actually face. We use real-world examples and interactive discussion rather than slides nobody remembers, and every attendee leaves with a cheat sheet they can actually use. It's perfect for kicking off a security culture or refreshing staff who've become complacent.",
+    "bestFor": [
+      "Businesses that want a high-impact, low-cost staff awareness boost",
+      "Organizations that haven't done any security training and want to start",
+      "Companies with staff who've fallen for phishing or weak-password habits",
+      "Teams that need a refresher that's engaging rather than boring"
+    ],
+    "whatIsIncluded": [
+      "Customized training session covering phishing, passwords, MFA, and safe habits",
+      "Real-world examples relevant to your business and industry",
+      "Interactive discussion with practical takeaways",
+      "Printable reference materials for every attendee",
+      "Session delivery on-site or remote to fit your schedule"
+    ],
+    "customerOutcomes": [
+      "Staff who recognize phishing and report it instead of clicking",
+      "Better password and MFA habits across the team",
+      "A documented training event for insurance and compliance",
+      "A foundation for ongoing security culture"
+    ]
+  },
+  "owner_admin_security_training": {
+    "marketingCopy": "Owners and administrators hold the keys to your business - and their accounts are the highest-value targets. The Owner/Admin Security Training is focused, technical security training for the people who manage your systems: the business owner, the office manager who handles admin accounts, and anyone with elevated access. We cover the specific attacks aimed at privileged users (phishing targeting admins, password attacks, session theft), how to protect admin accounts with MFA and least privilege, how to review security alerts and audit logs, and how to handle a suspected compromise. This is training for the people whose compromise would be catastrophic - so they stop being the weakest link.",
+    "bestFor": [
+      "Business owners who personally hold admin accounts",
+      "Office managers or staff who administer email, domains, and cloud apps",
+      "Organizations where one person's compromise would be catastrophic",
+      "Businesses that want their privileged users to know how to spot admin-targeted attacks"
+    ],
+    "whatIsIncluded": [
+      "Training tailored to owners and administrative users",
+      "Admin-specific attack awareness: spear phishing, password attacks, session theft",
+      "MFA and least-privilege best practices for privileged accounts",
+      "Security alert and audit log interpretation",
+      "Suspected compromise handling procedures",
+      "Practical reference materials for daily admin work"
+    ],
+    "customerOutcomes": [
+      "Privileged users who recognize attacks aimed specifically at them",
+      "Protected admin accounts with MFA and least-privilege habits",
+      "Staff who can interpret security alerts instead of ignoring them",
+      "A documented training event strengthening your highest-risk accounts"
+    ]
+  },
+  "staff_security_starter": {
+    "marketingCopy": "New and existing staff need the security basics before they become a risk - and most small businesses have no formal way to teach them. The Staff Security Starter delivers a packaged set of security training and reference materials that equips every employee with the essentials: recognizing phishing, creating strong passwords, using MFA, handling sensitive data, and knowing what to do if something looks wrong. We customize the materials to your business, provide printable cheat sheets and quick-reference guides, and structure it so new hires can be onboarded quickly and existing staff can refresh easily. It's a security baseline that scales with every person you hire.",
+    "bestFor": [
+      "Businesses that want a repeatable security onboarding process for staff",
+      "Organizations that have never provided formal security guidance to employees",
+      "Companies with high turnover that onboard new staff frequently",
+      "Businesses that want consistent security expectations across the team"
+    ],
+    "whatIsIncluded": [
+      "Packaged staff security training covering phishing, passwords, MFA, and data handling",
+      "Customization to your business systems and workflows",
+      "Printable cheat sheets and quick-reference guides for daily use",
+      "New-hire onboarding structure",
+      "Incident reporting guidance for staff",
+      "Reference materials staff can keep and use"
+    ],
+    "customerOutcomes": [
+      "Every employee with a baseline of security knowledge",
+      "A repeatable onboarding process for future hires",
+      "Fewer clicks on phishing, fewer password shortcuts, better data handling",
+      "Consistent security expectations documented across your team"
+    ]
+  }
+}

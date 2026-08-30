@@ -2,10 +2,14 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { logger } from "@/lib/logger";
-import PortalBreadcrumbs from "@/components/portal/PortalBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
+import EmptyState from "@/components/EmptyState";
+import { AuditLog, Document, Organization, Project, Ticket } from "@mct/sdk";
 
 export const metadata = { title: "Dashboard - Portal - Maine CyberTech" };
+
+type DashboardTicket = Ticket & { subject?: string; name?: string };
 
 function formatDateTime(value?: string | null) {
   if (!value) return "—";
@@ -16,10 +20,7 @@ function formatDateTime(value?: string | null) {
 
 function formatRelativeTime(value?: string | null) {
   if (!value) return "—";
-  const seconds = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(value).getTime()) / 1000),
-  );
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -30,10 +31,8 @@ function formatRelativeTime(value?: string | null) {
   return formatDateTime(value);
 }
 
-function ticketSubject(ticket: any) {
-  return (
-    ticket?.subject ?? ticket?.title ?? ticket?.name ?? `Ticket ${ticket?.id}`
-  );
+function ticketSubject(ticket: DashboardTicket) {
+  return ticket.subject ?? ticket.title ?? ticket.name ?? `Ticket ${ticket.id}`;
 }
 
 function auditActionLabel(action: string) {
@@ -63,52 +62,44 @@ export default async function PortalDashboardPage() {
   if (!membership?.organization_id) {
     return (
       <div className="space-y-6">
-        <PortalBreadcrumbs
-          items={[
-            { label: "Portal", href: "/portal/dashboard" },
-            { label: "Dashboard" },
-          ]}
+        <Breadcrumbs
+          items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Dashboard" }]}
         />
         <PortalSubnav current="dashboard" />
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           <h3 className="font-semibold">No Organization Access</h3>
           <p className="mt-2 text-sm">
-            You are not currently a member of any organization. Please contact
-            your administrator to request access.
+            You are not currently a member of any organization. Please contact your administrator to
+            request access.
           </p>
         </div>
       </div>
     );
   }
 
-  let organization: any = null;
-  let projects: any[] = [];
-  let tickets: any[] = [];
-  let documents: any[] = [];
-  let recentActivity: any[] = [];
+  let organization: Organization | null = null;
+  let projects: Project[] = [];
+  let tickets: DashboardTicket[] = [];
+  let documents: Document[] = [];
+  let recentActivity: AuditLog[] = [];
 
   try {
-    const [
-      orgResult,
-      projectsResult,
-      ticketsResult,
-      documentsResult,
-      auditResult,
-    ] = await Promise.all([
-      api.organizations.get(membership.organization_id).catch(() => null),
-      api.projects
-        .list({ organizationId: membership.organization_id })
-        .catch(() => ({ items: [] })),
-      api.tickets
-        .list({ organizationId: membership.organization_id })
-        .catch(() => ({ items: [] })),
-      api.documents
-        .list({ organizationId: membership.organization_id })
-        .catch(() => ({ items: [] })),
-      api.audit
-        .list({ organizationId: membership.organization_id, limit: 10 })
-        .catch(() => ({ items: [] })),
-    ]);
+    const [orgResult, projectsResult, ticketsResult, documentsResult, auditResult] =
+      await Promise.all([
+        api.organizations.get(membership.organization_id).catch(() => null),
+        api.projects
+          .list({ organizationId: membership.organization_id })
+          .catch(() => ({ items: [] })),
+        api.tickets
+          .list({ organizationId: membership.organization_id })
+          .catch(() => ({ items: [] })),
+        api.documents
+          .list({ organizationId: membership.organization_id })
+          .catch(() => ({ items: [] })),
+        api.audit
+          .list({ organizationId: membership.organization_id, limit: 10 })
+          .catch(() => ({ items: [] })),
+      ]);
 
     organization = orgResult;
     projects = (projectsResult.items ?? []).slice(0, 5);
@@ -121,11 +112,8 @@ export default async function PortalDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <PortalBreadcrumbs
-        items={[
-          { label: "Portal", href: "/portal/dashboard" },
-          { label: "Dashboard" },
-        ]}
+      <Breadcrumbs
+        items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Dashboard" }]}
       />
       <PortalSubnav current="dashboard" />
 
@@ -176,15 +164,15 @@ export default async function PortalDashboardPage() {
           </div>
           <div className="mt-4 space-y-3">
             {projects.length > 0 ? (
-              projects.map((project: any) => (
+              projects.map((project: Project) => (
                 <Link
                   key={project.id}
                   href={`/portal/projects/${project.id}`}
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
                 >
                   <p className="font-medium text-slate-50">{project.name}</p>
                   <p
-                    className="mt-2 text-xs text-slate-500"
+                    className="mt-2 text-xs text-slate-400"
                     title={formatDateTime(project.updated_at)}
                   >
                     Updated {formatRelativeTime(project.updated_at)}
@@ -192,9 +180,11 @@ export default async function PortalDashboardPage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-                No recent project activity.
-              </div>
+              <EmptyState
+                icon="📋"
+                title="No recent project activity"
+                description="Projects will appear here once work begins."
+              />
             )}
           </div>
         </section>
@@ -208,30 +198,27 @@ export default async function PortalDashboardPage() {
           </div>
           <div className="mt-4 space-y-3">
             {tickets.length > 0 ? (
-              tickets.map((ticket: any) => (
+              tickets.map((ticket: DashboardTicket) => (
                 <Link
                   key={ticket.id}
                   href={`/portal/support/${ticket.id}`}
-                  className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
                 >
-                  <p className="font-medium text-slate-50">
-                    {ticketSubject(ticket)}
-                  </p>
+                  <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
                   <p
-                    className="mt-2 text-xs text-slate-500"
-                    title={formatDateTime(
-                      ticket.updated_at ?? ticket.created_at,
-                    )}
+                    className="mt-2 text-xs text-slate-400"
+                    title={formatDateTime(ticket.updated_at ?? ticket.created_at)}
                   >
-                    Updated{" "}
-                    {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}
+                    Updated {formatRelativeTime(ticket.updated_at ?? ticket.created_at)}
                   </p>
                 </Link>
               ))
             ) : (
-              <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-                No recent support activity.
-              </div>
+              <EmptyState
+                icon="🎫"
+                title="No recent support activity"
+                description="Support tickets will appear here as you create them."
+              />
             )}
           </div>
         </section>
@@ -246,18 +233,18 @@ export default async function PortalDashboardPage() {
         </div>
         <div className="mt-4 space-y-3">
           {documents.length > 0 ? (
-            documents.map((doc: any) => (
+            documents.map((doc: Document) => (
               <Link
                 key={doc.id}
                 href={`/portal/documents/${doc.id}`}
-                className="block rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 transition hover:border-emerald-500/20 hover:bg-[#0A1118]/80"
+                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
               >
                 <p className="font-medium text-slate-50">{doc.name}</p>
                 <p className="mt-1 text-xs text-slate-400">
                   {doc.description ?? doc.mime_type ?? "File"}
                 </p>
                 <p
-                  className="mt-1 text-xs text-slate-500"
+                  className="mt-1 text-xs text-slate-400"
                   title={formatDateTime(doc.updated_at ?? doc.created_at)}
                 >
                   Updated {formatRelativeTime(doc.updated_at ?? doc.created_at)}
@@ -265,9 +252,11 @@ export default async function PortalDashboardPage() {
               </Link>
             ))
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-              No recent documents.
-            </div>
+            <EmptyState
+              icon="📄"
+              title="No recent documents"
+              description="Uploaded documents will be listed here."
+            />
           )}
         </div>
       </section>
@@ -278,20 +267,18 @@ export default async function PortalDashboardPage() {
         </div>
         <div className="mt-4 space-y-3">
           {recentActivity.length > 0 ? (
-            recentActivity.map((event: any) => (
+            recentActivity.map((event: AuditLog) => (
               <div
                 key={event.id}
-                className="flex items-start gap-4 rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                className="flex items-start gap-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4"
               >
-                <span className="mt-0.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300 shrink-0">
+                <span className="mt-0.5 shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
                   {event.entity_type}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-slate-300">
-                    {auditActionLabel(event.action)}
-                  </p>
+                  <p className="text-sm text-slate-300">{auditActionLabel(event.action)}</p>
                   <p
-                    className="mt-1 text-xs text-slate-500"
+                    className="mt-1 text-xs text-slate-400"
                     title={formatDateTime(event.created_at)}
                   >
                     {formatRelativeTime(event.created_at)}
@@ -300,9 +287,11 @@ export default async function PortalDashboardPage() {
               </div>
             ))
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
-              No recent activity.
-            </div>
+            <EmptyState
+              icon="📊"
+              title="No recent activity"
+              description="Activity from your organization will appear here."
+            />
           )}
         </div>
       </section>

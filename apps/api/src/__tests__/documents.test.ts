@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import documentsRouter from "../routes/documents";
-import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
 import { invalidateCache } from "../middleware/cache";
 import { errorHandler } from "../middleware/error";
 
@@ -19,6 +19,7 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
+    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
 }));
 
 jest.mock("../services/audit", () => ({
@@ -28,6 +29,21 @@ jest.mock("../services/audit", () => ({
 import { getSupabaseAdmin } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 
+/*
+ * Route-level suites: auth/permission middleware is stubbed so the shared
+ * Supabase mock serves only route queries. Middleware enforcement itself is
+ * covered by security-suite / edge-cases / dedicated middleware tests.
+ */
+jest.mock("../middleware/org-access", () => ({
+  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission:
+    () =>
+    (_req: unknown, _res: unknown, next: () => void) =>
+      next(),
+}));
 const app = createTestApp();
 app.use("/api/v1/documents", documentsRouter);
 app.use(errorHandler);
@@ -41,7 +57,7 @@ function mockSupabase() {
     from: jest.fn(),
     auth: {
       getUser: jest.fn().mockResolvedValue({
-        data: { user: { id: "user-1", email: "test@example.com" } },
+        data: { user: { id: "00000000-0000-0000-0000-000000000777", email: "test@example.com" } },
         error: null,
       }),
     },
@@ -58,8 +74,8 @@ function mockFrom(result: MockResult) {
 }
 
 const DOCUMENT = {
-  id: "doc-1",
-  organization_id: "org-1",
+  id: "00000000-0000-0000-0000-000000000040",
+  organization_id: "00000000-0000-0000-0000-000000000001",
   name: "Test Document",
   description: "A test",
   visibility: "org",
@@ -116,11 +132,11 @@ describe("documents routes", () => {
       mockFrom(result);
 
       const res = await request(app)
-        .get("/api/v1/documents/doc-1")
+        .get("/api/v1/documents/00000000-0000-0000-0000-000000000040")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
-      expect(res.body.data.id).toBe("doc-1");
+      expect(res.body.data.id).toBe("00000000-0000-0000-0000-000000000040");
     });
 
     it("returns 404 when document not found", async () => {
@@ -128,7 +144,7 @@ describe("documents routes", () => {
       mockFrom(result);
 
       const res = await request(app)
-        .get("/api/v1/documents/missing")
+        .get("/api/v1/documents/00000000-0000-0000-0000-000000000999")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
@@ -145,7 +161,7 @@ describe("documents routes", () => {
         .post("/api/v1/documents")
         .set("Authorization", "Bearer token-123")
         .send({
-          organizationId: "org-1",
+          organizationId: "00000000-0000-0000-0000-000000000001",
           name: "New Doc",
           visibility: "org",
         });
@@ -163,7 +179,7 @@ describe("documents routes", () => {
       const res = await request(app)
         .post("/api/v1/documents")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1" });
+        .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
 
       expect(res.status).toBe(400);
     });
@@ -176,7 +192,7 @@ describe("documents routes", () => {
       mockFrom(result);
 
       const res = await request(app)
-        .patch("/api/v1/documents/doc-1")
+        .patch("/api/v1/documents/00000000-0000-0000-0000-000000000040")
         .set("Authorization", "Bearer token-123")
         .send({ name: "Updated Name" });
 
@@ -189,7 +205,7 @@ describe("documents routes", () => {
       mockFrom(result);
 
       const res = await request(app)
-        .patch("/api/v1/documents/missing")
+        .patch("/api/v1/documents/00000000-0000-0000-0000-000000000999")
         .set("Authorization", "Bearer token-123")
         .send({ name: "Updated" });
 
@@ -216,13 +232,12 @@ describe("documents routes", () => {
             error: null,
           } as MockResult),
         )
-        .mockReturnValueOnce(
-          createMockBuilder({ data: null, error: null } as MockResult),
-        );
+        .mockReturnValueOnce(createMockBuilder({ data: null, error: null } as MockResult));
 
       const res = await request(app)
-        .delete("/api/v1/documents/doc-1")
-        .set("Authorization", "Bearer token-123");
+        .delete("/api/v1/documents/00000000-0000-0000-0000-000000000040")
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(204);
       expect(supabase.storage.from).toHaveBeenCalledWith("documents");
@@ -241,18 +256,31 @@ describe("documents routes", () => {
       );
 
       const res = await request(app)
-        .delete("/api/v1/documents/doc-1")
-        .set("Authorization", "Bearer token-123");
+        .delete("/api/v1/documents/00000000-0000-0000-0000-000000000040")
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(204);
     });
 
-    it("returns 404 when document not found", async () => {
-      mockFrom({ data: null, error: new Error("Not found") } as MockResult);
+    it("returns 400 when confirmation is missing", async () => {
+      const { mock } = mockFrom({ data: null, error: null } as MockResult);
 
       const res = await request(app)
-        .delete("/api/v1/documents/missing")
+        .delete("/api/v1/documents/00000000-0000-0000-0000-000000000040")
         .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(400);
+      expect(mock.from).not.toHaveBeenCalled();
+    });
+
+    it("returns 404 when document not found", async () => {
+      const { mock } = mockFrom({ data: null, error: new Error("Not found") } as MockResult);
+
+      const res = await request(app)
+        .delete("/api/v1/documents/00000000-0000-0000-0000-000000000999")
+        .set("Authorization", "Bearer token-123")
+        .send({ confirm: true });
 
       expect(res.status).toBe(404);
     });
@@ -280,7 +308,7 @@ describe("documents routes", () => {
       };
 
       const res = await request(app)
-        .post("/api/v1/documents/doc-1/signed-url")
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
@@ -294,7 +322,7 @@ describe("documents routes", () => {
       } as MockResult);
 
       const res = await request(app)
-        .post("/api/v1/documents/doc-1/signed-url")
+        .post("/api/v1/documents/00000000-0000-0000-0000-000000000040/signed-url")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(400);
@@ -313,9 +341,7 @@ describe("documents routes", () => {
       supabase.from.mockReturnValue(builder);
       supabase.storage = {
         from: jest.fn().mockReturnValue({
-          upload: jest
-            .fn()
-            .mockResolvedValue({ data: { path: "new-path" }, error: null }),
+          upload: jest.fn().mockResolvedValue({ data: { path: "new-path" }, error: null }),
           remove: jest.fn(),
           createSignedUrl: jest.fn(),
         }),
@@ -324,7 +350,7 @@ describe("documents routes", () => {
       const res = await request(app)
         .post("/api/v1/documents/upload")
         .set("Authorization", "Bearer token-123")
-        .field("organizationId", "org-1")
+        .field("organizationId", "00000000-0000-0000-0000-000000000001")
         .field("name", "Uploaded Doc")
         .attach("file", Buffer.from("test content"), "test.txt");
 
@@ -343,7 +369,7 @@ describe("documents routes", () => {
       const res = await request(app)
         .post("/api/v1/documents/upload")
         .set("Authorization", "Bearer token-123")
-        .field("organizationId", "org-1")
+        .field("organizationId", "00000000-0000-0000-0000-000000000001")
         .field("name", "No File");
 
       expect(res.status).toBe(400);
@@ -351,8 +377,8 @@ describe("documents routes", () => {
 
     it("replaces file on existing document when documentId provided", async () => {
       const existingDoc = {
-        id: "doc-1",
-        organization_id: "org-1",
+        id: "00000000-0000-0000-0000-000000000040",
+        organization_id: "00000000-0000-0000-0000-000000000001",
         storage_bucket: "documents",
         storage_path: "old/path.pdf",
         current_version: 2,
@@ -365,20 +391,12 @@ describe("documents routes", () => {
 
       const supabase = mockSupabase();
       supabase.from
-        .mockReturnValueOnce(
-          createMockBuilder({ data: existingDoc, error: null } as MockResult),
-        )
-        .mockReturnValueOnce(
-          createMockBuilder({ data: updatedDoc, error: null } as MockResult),
-        )
-        .mockReturnValueOnce(
-          createMockBuilder({ data: null, error: null } as MockResult),
-        );
+        .mockReturnValueOnce(createMockBuilder({ data: existingDoc, error: null } as MockResult))
+        .mockReturnValueOnce(createMockBuilder({ data: updatedDoc, error: null } as MockResult))
+        .mockReturnValueOnce(createMockBuilder({ data: null, error: null } as MockResult));
       supabase.storage = {
         from: jest.fn().mockReturnValue({
-          upload: jest
-            .fn()
-            .mockResolvedValue({ data: { path: "new/path.pdf" }, error: null }),
+          upload: jest.fn().mockResolvedValue({ data: { path: "new/path.pdf" }, error: null }),
           remove: jest.fn().mockResolvedValue({ data: null, error: null }),
           createSignedUrl: jest.fn(),
         }),
@@ -387,16 +405,14 @@ describe("documents routes", () => {
       const res = await request(app)
         .post("/api/v1/documents/upload")
         .set("Authorization", "Bearer token-123")
-        .field("organizationId", "org-1")
+        .field("organizationId", "00000000-0000-0000-0000-000000000001")
         .field("name", "Replaced Doc")
-        .field("documentId", "doc-1")
+        .field("documentId", "00000000-0000-0000-0000-000000000040")
         .field("currentVersion", "2")
         .attach("file", Buffer.from("new content"), "new.txt");
 
       expect(res.status).toBe(200);
-      expect(supabase.storage.from("documents").remove).toHaveBeenCalledWith([
-        "old/path.pdf",
-      ]);
+      expect(supabase.storage.from("documents").remove).toHaveBeenCalledWith(["old/path.pdf"]);
       expect(logAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({ action: "document.update" }),
       );
@@ -416,17 +432,13 @@ describe("documents routes", () => {
 
     it("returns 500 when storage upload fails", async () => {
       const supabase = mockSupabase();
-      supabase.from.mockReturnValue(
-        createMockBuilder({ data: null, error: null } as MockResult),
-      );
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null } as MockResult));
       supabase.storage = {
         from: jest.fn().mockReturnValue({
-          upload: jest
-            .fn()
-            .mockResolvedValue({
-              data: null,
-              error: { message: "Storage full" },
-            }),
+          upload: jest.fn().mockResolvedValue({
+            data: null,
+            error: { message: "Storage full" },
+          }),
           remove: jest.fn(),
           createSignedUrl: jest.fn(),
         }),
@@ -435,11 +447,160 @@ describe("documents routes", () => {
       const res = await request(app)
         .post("/api/v1/documents/upload")
         .set("Authorization", "Bearer token-123")
-        .field("organizationId", "org-1")
+        .field("organizationId", "00000000-0000-0000-0000-000000000001")
         .field("name", "Fail Upload")
         .attach("file", Buffer.from("test content"), "test.txt");
 
       expect(res.status).toBe(500);
+    });
+  });
+
+  describe("by-id tenant scoping", () => {
+    const ORG = "00000000-0000-0000-0000-000000000001";
+
+    it("GET /:id/versions returns 404 when the parent document is in another org", async () => {
+      const supabase = mockSupabase();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("not found") } as MockResult),
+      );
+
+      const res = await request(app)
+        .get(`/api/v1/documents/00000000-0000-0000-0000-000000000040/versions?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("GET /:id/versions scopes the parent document lookup to the caller's org", async () => {
+      const supabase = mockSupabase();
+      const builder = createMockBuilder({ data: [{ id: "v1" }], error: null, count: 1 } as MockResult);
+      supabase.from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .get(`/api/v1/documents/00000000-0000-0000-0000-000000000040/versions?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(builder.eq).toHaveBeenCalledWith("organization_id", ORG);
+    });
+
+    it("GET /:id/versions/:versionId returns 404 when the parent document is in another org", async () => {
+      const supabase = mockSupabase();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("not found") } as MockResult),
+      );
+
+      const res = await request(app)
+        .get(
+          `/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1?organization_id=${ORG}`,
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
+
+    it("POST /bulk/folder only updates documents owned by the caller's org", async () => {
+      const supabase = mockSupabase() as any;
+      supabase.rpc = jest.fn().mockResolvedValue({
+        data: [{ id: "00000000-0000-0000-0000-000000000101", success: true }],
+        error: null,
+      });
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: [{ id: "00000000-0000-0000-0000-000000000101" }],
+          error: null,
+        } as MockResult),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/documents/bulk/folder?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({
+          documentIds: [
+            "00000000-0000-0000-0000-000000000101",
+            "00000000-0000-0000-0000-000000000102",
+          ],
+          folderPath: "/new",
+        });
+
+      expect(res.status).toBe(200);
+      expect(supabase.rpc).toHaveBeenCalledWith(
+        "bulk_update_with_version",
+        expect.objectContaining({
+          table_name: "documents",
+          updates: [
+            { id: "00000000-0000-0000-0000-000000000101", data: { folder_path: "/new" } },
+          ],
+        }),
+      );
+      // The victim id from another org must be filtered out before the RPC
+      expect(JSON.stringify(supabase.rpc.mock.calls[0])).not.toContain(
+        "00000000-0000-0000-0000-000000000102",
+      );
+    });
+
+    it("POST /bulk/metadata only updates documents owned by the caller's org", async () => {
+      const supabase = mockSupabase() as any;
+      supabase.rpc = jest.fn().mockResolvedValue({
+        data: [{ id: "00000000-0000-0000-0000-000000000101", success: true }],
+        error: null,
+      });
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: [{ id: "00000000-0000-0000-0000-000000000101" }],
+          error: null,
+        } as MockResult),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/documents/bulk/metadata?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .send({
+          documentIds: [
+            "00000000-0000-0000-0000-000000000101",
+            "00000000-0000-0000-0000-000000000102",
+          ],
+          description: "Updated",
+        });
+
+      expect(res.status).toBe(200);
+      expect(supabase.rpc).toHaveBeenCalledWith(
+        "bulk_update_with_version",
+        expect.objectContaining({
+          updates: [
+            { id: "00000000-0000-0000-0000-000000000101", data: { description: "Updated" } },
+          ],
+        }),
+      );
+    });
+
+    it("POST /upload with a cross-org documentId returns 404 and never removes the victim's storage object", async () => {
+      const supabase = mockSupabase();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("not found") } as MockResult),
+      );
+      const removeMock = jest.fn().mockResolvedValue({ data: null, error: null });
+      supabase.storage = {
+        from: jest.fn().mockReturnValue({
+          upload: jest.fn().mockResolvedValue({ data: { path: "new/path.pdf" }, error: null }),
+          remove: removeMock,
+          createSignedUrl: jest.fn(),
+        }),
+      };
+
+      const res = await request(app)
+        .post(`/api/v1/documents/upload?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123")
+        .field("organizationId", ORG)
+        .field("name", "Replaced Doc")
+        .field("documentId", "00000000-0000-0000-0000-000000000099")
+        .attach("file", Buffer.from("new content"), "new.txt");
+
+      expect(res.status).toBe(404);
+      // The version-replace cleanup removes only the freshly uploaded object,
+      // never the victim document's storage object.
+      const removedPaths = removeMock.mock.calls.flat();
+      expect(removedPaths).not.toContain("old/path.pdf");
     });
   });
 });
