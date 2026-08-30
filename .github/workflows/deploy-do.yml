@@ -106,30 +106,24 @@ jobs:
         id: tf
         env:
           DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
-          TF_VAR_do_token: ${{ secrets.DO_API_TOKEN }}
-          TF_VAR_ssh_fingerprint: ${{ secrets.DO_SSH_FINGERPRINT }}
-          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
-          TF_VAR_cloudflare_zone_id_us: ${{ secrets.CLOUDFLARE_ZONE_ID_US }}
-          TF_VAR_droplet_size: "s-1vcpu-512mb-10gb"
-          TF_VAR_environment: ${{ needs.setup.outputs.name }}
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         working-directory: infra/terraform/digitalocean
         run: |
+          set -e
           ENV="${{ needs.setup.outputs.name }}"
-          IP=""
-          if [ -n "$AWS_ACCESS_KEY_ID" ]; then
-            echo "Refreshing Terraform state for $ENV (corrects droplet_ip to the live droplet)..."
-            terraform init -input=false -backend-config=env/backend.$ENV.hcl
-            terraform apply -refresh-only -input=false -auto-approve 2>&1 | tail -5 || echo "terraform refresh failed; falling back to DO API"
-            IP=$(terraform output -raw droplet_ip 2>/dev/null || true)
-          fi
-          if [ -z "$IP" ]; then
-            echo "Falling back to DigitalOcean API ($ENV)..."
+          if [ -n "$DO_API_TOKEN" ]; then
+            # Authoritative: the DO API returns the droplet's CURRENT IP by name.
+            # (Terraform state currently holds a stale IP, so DO API is primary;
+            # the Terraform-state path below is the fallback.)
+            echo "Resolving droplet IP from DigitalOcean API ($ENV)..."
             IP=$(curl -sf -H "Authorization: Bearer $DO_API_TOKEN" \
               "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
               | jq -r --arg name "mct-portal-$ENV" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
+          else
+            echo "DO_API_TOKEN not set; falling back to Terraform state ($ENV)..."
+            terraform init -input=false -backend-config=env/backend.$ENV.hcl
+            IP=$(terraform output -raw droplet_ip)
           fi
           if [ -z "$IP" ]; then
             echo "ERROR: could not resolve droplet IP for $ENV"
