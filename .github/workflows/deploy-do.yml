@@ -112,15 +112,18 @@ jobs:
         run: |
           set -e
           ENV="${{ needs.setup.outputs.name }}"
-          if [ -n "$AWS_ACCESS_KEY_ID" ]; then
-            echo "Resolving droplet IP from Terraform state ($ENV)..."
-            terraform init -input=false -backend-config=env/backend.$ENV.hcl
-            IP=$(terraform output -raw droplet_ip)
-          else
-            echo "DO_SPACES creds not configured; falling back to DigitalOcean API..."
+          if [ -n "$DO_API_TOKEN" ]; then
+            # Authoritative: the DO API returns the droplet's CURRENT IP by name.
+            # (Terraform state currently holds a stale IP, so DO API is primary;
+            # the Terraform-state path below is the fallback.)
+            echo "Resolving droplet IP from DigitalOcean API ($ENV)..."
             IP=$(curl -sf -H "Authorization: Bearer $DO_API_TOKEN" \
               "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
               | jq -r --arg name "mct-portal-$ENV" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
+          else
+            echo "DO_API_TOKEN not set; falling back to Terraform state ($ENV)..."
+            terraform init -input=false -backend-config=env/backend.$ENV.hcl
+            IP=$(terraform output -raw droplet_ip)
           fi
           if [ -z "$IP" ]; then
             echo "ERROR: could not resolve droplet IP for $ENV"
