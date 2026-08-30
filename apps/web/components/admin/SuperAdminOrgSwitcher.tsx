@@ -8,6 +8,15 @@ import { usePermissions } from "@/lib/use-permissions";
 
 type Org = { id: string; name: string; status?: string };
 
+// The admin "list all tenants" endpoint returns a paginated envelope
+// ({ items, total, page, limit }); tolerate both that and a bare array.
+function toOrgArray(result: unknown): Org[] {
+  if (Array.isArray(result)) return result as Org[];
+  const items = (result as { items?: unknown })?.items;
+  if (Array.isArray(items)) return items as Org[];
+  return [];
+}
+
 /**
  * Super-admin tenant switcher for the admin header. Lists every
  * organization so a super admin can inspect any tenant's instance
@@ -26,9 +35,10 @@ export default function SuperAdminOrgSwitcher() {
       .organizations.listAll()
       .then((data) => {
         if (cancelled) return;
-        setOrgs(data ?? []);
-        if (data?.length && !data.some((o) => o.id === value)) {
-          setValue(data[0].id);
+        const arr = toOrgArray(data);
+        setOrgs(arr);
+        if (arr.length && !arr.some((o) => o.id === value)) {
+          setValue(arr[0].id);
         }
       })
       .catch(() => {

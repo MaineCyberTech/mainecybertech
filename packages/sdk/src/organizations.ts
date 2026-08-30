@@ -21,7 +21,7 @@ export class OrganizationsApi {
   }
 
   listAll() {
-    return this.client.get<Organization[]>("/api/v1/admin/organizations");
+    return this.client.get<PaginatedResult<Organization>>("/api/v1/admin/organizations");
   }
 
   get(id: string) {
