@@ -101,22 +101,32 @@ jobs:
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: 1.9
-      - name: Resolve droplet IP from Terraform state
+      - name: Resolve droplet IP (Terraform state, fallback DO API)
         id: tf
         env:
+          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         working-directory: infra/terraform/digitalocean
         run: |
           set -e
-          terraform init -input=false -backend-config=env/backend.${{ needs.setup.outputs.name }}.hcl
-          IP=$(terraform output -raw droplet_ip)
+          ENV="${{ needs.setup.outputs.name }}"
+          if [ -n "$AWS_ACCESS_KEY_ID" ]; then
+            echo "Resolving droplet IP from Terraform state ($ENV)..."
+            terraform init -input=false -backend-config=env/backend.$ENV.hcl
+            IP=$(terraform output -raw droplet_ip)
+          else
+            echo "DO_SPACES creds not configured; falling back to DigitalOcean API..."
+            IP=$(curl -sf -H "Authorization: Bearer $DO_API_TOKEN" \
+              "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
+              | jq -r --arg name "mct-portal-$ENV" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
+          fi
           if [ -z "$IP" ]; then
-            echo "ERROR: terraform output droplet_ip is empty for ${{ needs.setup.outputs.name }}"
+            echo "ERROR: could not resolve droplet IP for $ENV"
             exit 1
           fi
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
-          echo "Using droplet IP from Terraform state (${{ needs.setup.outputs.name }}): $IP"
+          echo "Using droplet IP: $IP"
 
   build-api:
     needs: [setup]
