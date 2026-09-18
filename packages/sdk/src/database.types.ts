@@ -1,6 +1,12 @@
 // Auto-generated from supabase/migrations/*.sql — DO NOT EDIT MANUALLY
 // Run: node scripts/generate-db-types.js to regenerate
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
 
 export type Database = {
   public: {
@@ -61,16 +67,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "ai_draft_outputs_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "ai_draft_outputs_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      ai_policies: {
+      };      ai_policies: {
         Row: {
           approved_at: string | null;
           approved_by: string | null;
@@ -117,16 +116,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "ai_policies_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "ai_policies_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      api_keys: {
+      };      api_keys: {
         Row: {
           created_at: string;
           created_by: string;
@@ -170,23 +162,10 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "api_keys_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "api_keys_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "api_keys_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "api_keys_created_by_fkey", columns: ["created_by"], isOneToOne: false, referencedRelation: "profiles", referencedColumns: ["id"] },
         ];
-      };
-      approval_requests: {
+      };      approval_requests: {
         Row: {
           approved_at: string | null;
           approved_by: string | null;
@@ -263,16 +242,9 @@ export type Database = {
           visibility?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "approval_requests_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "approval_requests_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      assets: {
+      };      assets: {
         Row: {
           asset_tag: string | null;
           asset_type: string;
@@ -379,16 +351,9 @@ export type Database = {
           warranty_expires?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "assets_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "assets_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      audit_logs: {
+      };      audit_logs: {
         Row: {
           action: string;
           actor_type: "user" | "system" | "service";
@@ -429,16 +394,9 @@ export type Database = {
           user_agent?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "audit_logs_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "audit_logs_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      automation_workflows: {
+      };      automation_workflows: {
         Row: {
           created_at: string;
           created_by: string | null;
@@ -488,16 +446,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "automation_workflows_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "automation_workflows_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      backup_status: {
+      };      backup_status: {
         Row: {
           backup_type: string;
           created_at: string;
@@ -565,16 +516,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "backup_status_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "backup_status_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      badges_earned: {
+      };      badges_earned: {
         Row: {
           badge_name: string;
           category: string | null;
@@ -600,16 +544,9 @@ export type Database = {
           points?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "badges_earned_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "badges_earned_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      billing_customers: {
+      };      billing_customers: {
         Row: {
           billing_email: string | null;
           created_at: string;
@@ -644,16 +581,9 @@ export type Database = {
           version?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "billing_customers_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "billing_customers_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      break_glass_accounts: {
+      };      break_glass_accounts: {
         Row: {
           access_procedure: string | null;
           account_name: string;
@@ -706,16 +636,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "break_glass_accounts_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "break_glass_accounts_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      budget_roadmaps: {
+      };      budget_roadmaps: {
         Row: {
           category: string;
           created_at: string;
@@ -762,16 +685,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "budget_roadmaps_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "budget_roadmaps_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      cab_agenda_items: {
+      };      cab_agenda_items: {
         Row: {
           change_request_id: string;
           created_at: string;
@@ -800,30 +716,11 @@ export type Database = {
           organization_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "cab_agenda_items_meeting_id_fkey";
-            columns: ["meeting_id"];
-            isOneToOne: false;
-            referencedRelation: "cab_meetings";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "cab_agenda_items_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "cab_agenda_items_change_request_id_fkey";
-            columns: ["change_request_id"];
-            isOneToOne: false;
-            referencedRelation: "change_requests";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "cab_agenda_items_meeting_id_fkey", columns: ["meeting_id"], isOneToOne: false, referencedRelation: "cab_meetings", referencedColumns: ["id"] },
+          { foreignKeyName: "cab_agenda_items_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "cab_agenda_items_change_request_id_fkey", columns: ["change_request_id"], isOneToOne: false, referencedRelation: "change_requests", referencedColumns: ["id"] },
         ];
-      };
-      cab_meetings: {
+      };      cab_meetings: {
         Row: {
           created_at: string;
           created_by: string | null;
@@ -852,16 +749,9 @@ export type Database = {
           status?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "cab_meetings_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "cab_meetings_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      camera_calculations: {
+      };      camera_calculations: {
         Row: {
           avg_bitrate_mbps: number;
           bitrate_mbps: number;
@@ -917,16 +807,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "camera_calculations_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "camera_calculations_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      change_requests: {
+      };      change_requests: {
         Row: {
           approved_at: string | null;
           approved_by: string | null;
@@ -997,16 +880,9 @@ export type Database = {
           verified_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "change_requests_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "change_requests_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      client_onboarding_checklist_items: {
+      };      client_onboarding_checklist_items: {
         Row: {
           completed_at: string | null;
           completed_by: string | null;
@@ -1059,23 +935,10 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "client_onboarding_checklist_items_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "client_onboarding_checklist_items_onboarding_record_id_fkey";
-            columns: ["onboarding_record_id"];
-            isOneToOne: false;
-            referencedRelation: "client_onboarding_command_center_records";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "client_onboarding_checklist_items_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "client_onboarding_checklist_items_onboarding_record_id_fkey", columns: ["onboarding_record_id"], isOneToOne: false, referencedRelation: "client_onboarding_command_center_records", referencedColumns: ["id"] },
         ];
-      };
-      client_onboarding_command_center_records: {
+      };      client_onboarding_command_center_records: {
         Row: {
           access_collection_status: string;
           access_credentials: Json;
@@ -1182,16 +1045,9 @@ export type Database = {
           version?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "client_onboarding_command_center_records_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "client_onboarding_command_center_records_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      client_runbooks: {
+      };      client_runbooks: {
         Row: {
           category: string | null;
           content: string | null;
@@ -1235,16 +1091,9 @@ export type Database = {
           version?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "client_runbooks_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "client_runbooks_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      compliance_controls: {
+      };      compliance_controls: {
         Row: {
           created_at: string;
           due_at: string | null;
@@ -1279,23 +1128,10 @@ export type Database = {
           title?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "compliance_controls_framework_id_fkey";
-            columns: ["framework_id"];
-            isOneToOne: false;
-            referencedRelation: "compliance_frameworks";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "compliance_controls_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "compliance_controls_framework_id_fkey", columns: ["framework_id"], isOneToOne: false, referencedRelation: "compliance_frameworks", referencedColumns: ["id"] },
+          { foreignKeyName: "compliance_controls_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      compliance_frameworks: {
+      };      compliance_frameworks: {
         Row: {
           created_at: string;
           description: string | null;
@@ -1318,16 +1154,9 @@ export type Database = {
           organization_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "compliance_frameworks_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "compliance_frameworks_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      compliance_readiness: {
+      };      compliance_readiness: {
         Row: {
           assessed_at: string | null;
           control_description: string | null;
@@ -1383,16 +1212,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "compliance_readiness_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "compliance_readiness_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      custom_forms: {
+      };      custom_forms: {
         Row: {
           created_at: string;
           created_by: string | null;
@@ -1430,16 +1252,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "custom_forms_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "custom_forms_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      cyber_scorecards: {
+      };      cyber_scorecards: {
         Row: {
           badge: string | null;
           category: string;
@@ -1474,16 +1289,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "cyber_scorecards_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "cyber_scorecards_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      device_profiles: {
+      };      device_profiles: {
         Row: {
           created_at: string;
           id: string;
@@ -1518,16 +1326,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "device_profiles_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "device_profiles_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      dmarc_analyses: {
+      };      dmarc_analyses: {
         Row: {
           alignment_mode: string | null;
           analyzed_at: string;
@@ -1583,16 +1384,9 @@ export type Database = {
           status?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "dmarc_analyses_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "dmarc_analyses_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      dmarc_assessments: {
+      };      dmarc_assessments: {
         Row: {
           bimi_configured: boolean;
           created_at: string;
@@ -1654,16 +1448,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "dmarc_assessments_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "dmarc_assessments_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      dns_change_requests: {
+      };      dns_change_requests: {
         Row: {
           approved_by: string | null;
           change_description: string | null;
@@ -1710,16 +1497,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "dns_change_requests_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "dns_change_requests_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      document_permissions: {
+      };      document_permissions: {
         Row: {
           can_edit: boolean;
           can_share: boolean;
@@ -1748,23 +1528,10 @@ export type Database = {
           user_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "document_permissions_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "document_permissions_role_id_fkey";
-            columns: ["role_id"];
-            isOneToOne: false;
-            referencedRelation: "roles";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "document_permissions_document_id_fkey", columns: ["document_id"], isOneToOne: false, referencedRelation: "documents", referencedColumns: ["id"] },
+          { foreignKeyName: "document_permissions_role_id_fkey", columns: ["role_id"], isOneToOne: false, referencedRelation: "roles", referencedColumns: ["id"] },
         ];
-      };
-      document_shares: {
+      };      document_shares: {
         Row: {
           access_count: number;
           created_at: string;
@@ -1802,23 +1569,10 @@ export type Database = {
           token?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "document_shares_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "document_shares_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "document_shares_document_id_fkey", columns: ["document_id"], isOneToOne: false, referencedRelation: "documents", referencedColumns: ["id"] },
+          { foreignKeyName: "document_shares_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      document_versions: {
+      };      document_versions: {
         Row: {
           checksum: string | null;
           created_at: string;
@@ -1847,16 +1601,9 @@ export type Database = {
           version_number?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "document_versions_document_id_fkey";
-            columns: ["document_id"];
-            isOneToOne: false;
-            referencedRelation: "documents";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "document_versions_document_id_fkey", columns: ["document_id"], isOneToOne: false, referencedRelation: "documents", referencedColumns: ["id"] },
         ];
-      };
-      documents: {
+      };      documents: {
         Row: {
           created_at: string;
           current_version: number;
@@ -1924,16 +1671,9 @@ export type Database = {
           visibility?: "private" | "org" | "internal" | "public" | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "documents_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "documents_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      domain_monitors: {
+      };      domain_monitors: {
         Row: {
           alerts_enabled: boolean;
           check_interval_hours: number;
@@ -2025,16 +1765,9 @@ export type Database = {
           zone_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "domain_monitors_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "domain_monitors_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      dynamic_client_forms: {
+      };      dynamic_client_forms: {
         Row: {
           closes_at: string | null;
           created_at: string;
@@ -2081,16 +1814,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "dynamic_client_forms_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "dynamic_client_forms_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      dynamic_form_submissions: {
+      };      dynamic_form_submissions: {
         Row: {
           answers: Json;
           created_at: string;
@@ -2128,23 +1854,10 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "dynamic_form_submissions_form_id_fkey";
-            columns: ["form_id"];
-            isOneToOne: false;
-            referencedRelation: "dynamic_client_forms";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "dynamic_form_submissions_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "dynamic_form_submissions_form_id_fkey", columns: ["form_id"], isOneToOne: false, referencedRelation: "dynamic_client_forms", referencedColumns: ["id"] },
+          { foreignKeyName: "dynamic_form_submissions_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      endpoint_security: {
+      };      endpoint_security: {
         Row: {
           av_installed: number;
           coverage_pct: number | null;
@@ -2203,16 +1916,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "endpoint_security_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "endpoint_security_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      file_requests: {
+      };      file_requests: {
         Row: {
           allowed_mime_types: string[] | null;
           completed_at: string | null;
@@ -2277,16 +1983,9 @@ export type Database = {
           visibility?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "file_requests_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "file_requests_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      findings: {
+      };      findings: {
         Row: {
           affected_systems: string | null;
           assigned_to: string | null;
@@ -2369,16 +2068,9 @@ export type Database = {
           visibility?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "findings_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "findings_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      hardware_staging: {
+      };      hardware_staging: {
         Row: {
           asset_tag: string | null;
           configured: boolean;
@@ -2440,16 +2132,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "hardware_staging_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "hardware_staging_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      hardware_staging_checks: {
+      };      hardware_staging_checks: {
         Row: {
           asset_tag: string | null;
           assigned_to: string | null;
@@ -2484,16 +2169,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "hardware_staging_checks_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "hardware_staging_checks_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      identity_verifications: {
+      };      identity_verifications: {
         Row: {
           action_authorized: string | null;
           authorized_at: string | null;
@@ -2549,16 +2227,9 @@ export type Database = {
           verified_by?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "identity_verifications_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "identity_verifications_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      impersonation_log: {
+      };      impersonation_log: {
         Row: {
           actor_role_key: string;
           actor_user_id: string;
@@ -2596,16 +2267,9 @@ export type Database = {
           user_agent?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "impersonation_log_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "impersonation_log_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      incident_responses: {
+      };      incident_responses: {
         Row: {
           affected_systems: string | null;
           closed_at: string | null;
@@ -2670,16 +2334,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "incident_responses_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "incident_responses_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      insurance_evidence: {
+      };      insurance_evidence: {
         Row: {
           category: string;
           collected_at: string | null;
@@ -2753,16 +2410,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "insurance_evidence_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "insurance_evidence_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      invoices: {
+      };      invoices: {
         Row: {
           created_at: string;
           currency: string;
@@ -2815,16 +2465,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "invoices_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "invoices_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      isp_assessments: {
+      };      isp_assessments: {
         Row: {
           bandwidth_current: string | null;
           bandwidth_needed: string | null;
@@ -2898,16 +2541,9 @@ export type Database = {
           voip_ready?: boolean | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "isp_assessments_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "isp_assessments_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      kb_article_generations: {
+      };      kb_article_generations: {
         Row: {
           created_at: string;
           created_by: string | null;
@@ -2957,23 +2593,10 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "kb_article_generations_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "kb_article_generations_source_ticket_id_fkey";
-            columns: ["source_ticket_id"];
-            isOneToOne: false;
-            referencedRelation: "tickets";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "kb_article_generations_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "kb_article_generations_source_ticket_id_fkey", columns: ["source_ticket_id"], isOneToOne: false, referencedRelation: "tickets", referencedColumns: ["id"] },
         ];
-      };
-      knowledge_articles: {
+      };      knowledge_articles: {
         Row: {
           category: string | null;
           content: string | null;
@@ -3020,16 +2643,9 @@ export type Database = {
           view_count?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "knowledge_articles_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "knowledge_articles_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      knowledge_base_articles: {
+      };      knowledge_base_articles: {
         Row: {
           body: string;
           category: string | null;
@@ -3067,16 +2683,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "knowledge_base_articles_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "knowledge_base_articles_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      license_allocations: {
+      };      license_allocations: {
         Row: {
           billing_cycle: string;
           cost_per_seat: number | null;
@@ -3126,16 +2735,9 @@ export type Database = {
           used_seats?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "license_allocations_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "license_allocations_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      license_tracking: {
+      };      license_tracking: {
         Row: {
           annual_cost: number | null;
           assigned_seats: number;
@@ -3191,16 +2793,9 @@ export type Database = {
           vendor?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "license_tracking_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "license_tracking_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      m365_hardening: {
+      };      m365_hardening: {
         Row: {
           admin_count: number;
           audit_logging_enabled: boolean;
@@ -3277,16 +2872,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "m365_hardening_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "m365_hardening_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      maintenance_notices: {
+      };      maintenance_notices: {
         Row: {
           affected_component_ids: string[];
           created_at: string;
@@ -3327,16 +2915,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "maintenance_notices_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "maintenance_notices_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      memberships: {
+      };      memberships: {
         Row: {
           approved_at: string | null;
           approved_by: string | null;
@@ -3383,23 +2964,10 @@ export type Database = {
           user_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "memberships_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "memberships_role_id_fkey";
-            columns: ["role_id"];
-            isOneToOne: false;
-            referencedRelation: "roles";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "memberships_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "memberships_role_id_fkey", columns: ["role_id"], isOneToOne: false, referencedRelation: "roles", referencedColumns: ["id"] },
         ];
-      };
-      module_comments: {
+      };      module_comments: {
         Row: {
           author_id: string;
           body: string;
@@ -3443,16 +3011,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "module_comments_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "module_comments_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      module_timeline_events: {
+      };      module_timeline_events: {
         Row: {
           actor_user_id: string | null;
           created_at: string;
@@ -3487,16 +3048,9 @@ export type Database = {
           organization_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "module_timeline_events_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "module_timeline_events_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      network_diagrams: {
+      };      network_diagrams: {
         Row: {
           created_at: string;
           created_by: string | null;
@@ -3528,16 +3082,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "network_diagrams_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "network_diagrams_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      notification_preferences: {
+      };      notification_preferences: {
         Row: {
           channel: "email" | "sms" | "in_app";
           created_at: string;
@@ -3569,16 +3116,9 @@ export type Database = {
           version?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "notification_preferences_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "notification_preferences_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      notifications: {
+      };      notifications: {
         Row: {
           action: string;
           body: string;
@@ -3622,16 +3162,9 @@ export type Database = {
           user_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "notifications_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "notifications_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      offboarding_checklists: {
+      };      offboarding_checklists: {
         Row: {
           access_reviewed: boolean;
           account_disabled: boolean;
@@ -3699,16 +3232,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "offboarding_checklists_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "offboarding_checklists_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      onboarding_clients: {
+      };      onboarding_clients: {
         Row: {
           backup_configured: boolean;
           client_name: string;
@@ -3767,16 +3293,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "onboarding_clients_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "onboarding_clients_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      organization_domains: {
+      };      organization_domains: {
         Row: {
           auto_approve: boolean;
           created_at: string;
@@ -3799,16 +3318,9 @@ export type Database = {
           organization_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "organization_domains_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "organization_domains_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      organizations: {
+      };      organizations: {
         Row: {
           accent_color: string | null;
           billing_email: string | null;
@@ -3863,9 +3375,9 @@ export type Database = {
           updated_at?: string | null;
           version?: number | null;
         };
-        Relationships: [];
-      };
-      patch_compliance: {
+        Relationships: [
+        ];
+      };      patch_compliance: {
         Row: {
           compliance_pct: number | null;
           created_at: string;
@@ -3924,16 +3436,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "patch_compliance_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "patch_compliance_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      payments: {
+      };      payments: {
         Row: {
           amount_cents: number;
           created_at: string;
@@ -3968,23 +3473,10 @@ export type Database = {
           stripe_payment_intent_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "payments_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "payments_invoice_id_fkey";
-            columns: ["invoice_id"];
-            isOneToOne: false;
-            referencedRelation: "invoices";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "payments_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "payments_invoice_id_fkey", columns: ["invoice_id"], isOneToOne: false, referencedRelation: "invoices", referencedColumns: ["id"] },
         ];
-      };
-      permissions: {
+      };      permissions: {
         Row: {
           action_key: string;
           description: string | null;
@@ -4012,9 +3504,9 @@ export type Database = {
           module_key?: string | null;
           scope?: string | null;
         };
-        Relationships: [];
-      };
-      phishing_campaigns: {
+        Relationships: [
+        ];
+      };      phishing_campaigns: {
         Row: {
           campaign_name: string;
           click_count: number;
@@ -4070,16 +3562,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "phishing_campaigns_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "phishing_campaigns_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      port_maps: {
+      };      port_maps: {
         Row: {
           connected_device: string | null;
           created_at: string;
@@ -4135,16 +3620,9 @@ export type Database = {
           wall_jack_label?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "port_maps_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "port_maps_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      portal_module_settings: {
+      };      portal_module_settings: {
         Row: {
           created_at: string;
           id: string;
@@ -4170,16 +3648,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "portal_module_settings_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "portal_module_settings_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      powershell_scripts: {
+      };      powershell_scripts: {
         Row: {
           approval_required: boolean;
           approved_at: string | null;
@@ -4232,16 +3703,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "powershell_scripts_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "powershell_scripts_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      procurement_quotes: {
+      };      procurement_quotes: {
         Row: {
           comparison_notes: string | null;
           competitor_quote: number | null;
@@ -4288,16 +3752,9 @@ export type Database = {
           vendor_name?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "procurement_quotes_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "procurement_quotes_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      profiles: {
+      };      profiles: {
         Row: {
           avatar_url: string | null;
           created_at: string;
@@ -4344,16 +3801,9 @@ export type Database = {
           version?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "profiles_default_organization_id_fkey";
-            columns: ["default_organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "profiles_default_organization_id_fkey", columns: ["default_organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      project_dependencies: {
+      };      project_dependencies: {
         Row: {
           blocked_by_project_id: string | null;
           created_at: string;
@@ -4382,30 +3832,11 @@ export type Database = {
           project_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "project_dependencies_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "project_dependencies_depends_on_milestone_id_fkey";
-            columns: ["depends_on_milestone_id"];
-            isOneToOne: false;
-            referencedRelation: "project_milestones";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "project_dependencies_blocked_by_project_id_fkey";
-            columns: ["blocked_by_project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "project_dependencies_project_id_fkey", columns: ["project_id"], isOneToOne: false, referencedRelation: "projects", referencedColumns: ["id"] },
+          { foreignKeyName: "project_dependencies_depends_on_milestone_id_fkey", columns: ["depends_on_milestone_id"], isOneToOne: false, referencedRelation: "project_milestones", referencedColumns: ["id"] },
+          { foreignKeyName: "project_dependencies_blocked_by_project_id_fkey", columns: ["blocked_by_project_id"], isOneToOne: false, referencedRelation: "projects", referencedColumns: ["id"] },
         ];
-      };
-      project_milestones: {
+      };      project_milestones: {
         Row: {
           completed_at: string | null;
           created_at: string;
@@ -4443,23 +3874,10 @@ export type Database = {
           title?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "project_milestones_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "project_milestones_phase_id_fkey";
-            columns: ["phase_id"];
-            isOneToOne: false;
-            referencedRelation: "project_phases";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "project_milestones_project_id_fkey", columns: ["project_id"], isOneToOne: false, referencedRelation: "projects", referencedColumns: ["id"] },
+          { foreignKeyName: "project_milestones_phase_id_fkey", columns: ["phase_id"], isOneToOne: false, referencedRelation: "project_phases", referencedColumns: ["id"] },
         ];
-      };
-      project_phases: {
+      };      project_phases: {
         Row: {
           created_at: string;
           description: string | null;
@@ -4497,16 +3915,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "project_phases_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "project_phases_project_id_fkey", columns: ["project_id"], isOneToOne: false, referencedRelation: "projects", referencedColumns: ["id"] },
         ];
-      };
-      project_task_comment_reads: {
+      };      project_task_comment_reads: {
         Row: {
           last_seen_at: string;
           organization_id: string;
@@ -4526,23 +3937,10 @@ export type Database = {
           user_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "project_task_comment_reads_task_id_fkey";
-            columns: ["task_id"];
-            isOneToOne: false;
-            referencedRelation: "project_tasks";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "project_task_comment_reads_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "project_task_comment_reads_task_id_fkey", columns: ["task_id"], isOneToOne: false, referencedRelation: "project_tasks", referencedColumns: ["id"] },
+          { foreignKeyName: "project_task_comment_reads_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      project_task_comments: {
+      };      project_task_comments: {
         Row: {
           author_id: string;
           body: string;
@@ -4574,30 +3972,11 @@ export type Database = {
           task_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "project_task_comments_task_id_fkey";
-            columns: ["task_id"];
-            isOneToOne: false;
-            referencedRelation: "project_tasks";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "project_task_comments_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "project_task_comments_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "project_task_comments_task_id_fkey", columns: ["task_id"], isOneToOne: false, referencedRelation: "project_tasks", referencedColumns: ["id"] },
+          { foreignKeyName: "project_task_comments_project_id_fkey", columns: ["project_id"], isOneToOne: false, referencedRelation: "projects", referencedColumns: ["id"] },
+          { foreignKeyName: "project_task_comments_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      project_tasks: {
+      };      project_tasks: {
         Row: {
           actual_hours: number | null;
           approval_required: boolean;
@@ -4695,30 +4074,11 @@ export type Database = {
           version?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "project_tasks_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "project_tasks_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "project_tasks_parent_task_id_fkey";
-            columns: ["parent_task_id"];
-            isOneToOne: false;
-            referencedRelation: "project_tasks";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "project_tasks_project_id_fkey", columns: ["project_id"], isOneToOne: false, referencedRelation: "projects", referencedColumns: ["id"] },
+          { foreignKeyName: "project_tasks_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "project_tasks_parent_task_id_fkey", columns: ["parent_task_id"], isOneToOne: false, referencedRelation: "project_tasks", referencedColumns: ["id"] },
         ];
-      };
-      project_updates: {
+      };      project_updates: {
         Row: {
           author_id: string;
           body: string;
@@ -4753,23 +4113,10 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "project_updates_project_id_fkey";
-            columns: ["project_id"];
-            isOneToOne: false;
-            referencedRelation: "projects";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "project_updates_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "project_updates_project_id_fkey", columns: ["project_id"], isOneToOne: false, referencedRelation: "projects", referencedColumns: ["id"] },
+          { foreignKeyName: "project_updates_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      projects: {
+      };      projects: {
         Row: {
           created_at: string;
           created_by: string;
@@ -4812,14 +4159,7 @@ export type Database = {
           progress_percent?: number | null;
           start_date?: string | null;
           starts_at?: string | null;
-          status?:
-            | "planned"
-            | "active"
-            | "blocked"
-            | "client_review"
-            | "completed"
-            | "archived"
-            | null;
+          status?: "planned" | "active" | "blocked" | "client_review" | "completed" | "archived" | null;
           updated_at?: string | null;
           version?: number | null;
         };
@@ -4842,28 +4182,14 @@ export type Database = {
           progress_percent?: number | null;
           start_date?: string | null;
           starts_at?: string | null;
-          status?:
-            | "planned"
-            | "active"
-            | "blocked"
-            | "client_review"
-            | "completed"
-            | "archived"
-            | null;
+          status?: "planned" | "active" | "blocked" | "client_review" | "completed" | "archived" | null;
           updated_at?: string | null;
           version?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "projects_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "projects_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      proposal_line_items: {
+      };      proposal_line_items: {
         Row: {
           created_at: string;
           description: string | null;
@@ -4919,23 +4245,10 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "proposal_line_items_proposal_id_fkey";
-            columns: ["proposal_id"];
-            isOneToOne: false;
-            referencedRelation: "proposals";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "proposal_line_items_phase_id_fkey";
-            columns: ["phase_id"];
-            isOneToOne: false;
-            referencedRelation: "proposal_phases";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "proposal_line_items_proposal_id_fkey", columns: ["proposal_id"], isOneToOne: false, referencedRelation: "proposals", referencedColumns: ["id"] },
+          { foreignKeyName: "proposal_line_items_phase_id_fkey", columns: ["phase_id"], isOneToOne: false, referencedRelation: "proposal_phases", referencedColumns: ["id"] },
         ];
-      };
-      proposal_phases: {
+      };      proposal_phases: {
         Row: {
           assumptions: string | null;
           created_at: string;
@@ -4970,16 +4283,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "proposal_phases_proposal_id_fkey";
-            columns: ["proposal_id"];
-            isOneToOne: false;
-            referencedRelation: "proposals";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "proposal_phases_proposal_id_fkey", columns: ["proposal_id"], isOneToOne: false, referencedRelation: "proposals", referencedColumns: ["id"] },
         ];
-      };
-      proposals: {
+      };      proposals: {
         Row: {
           approval_request_id: string | null;
           approved_at: string | null;
@@ -5062,23 +4368,10 @@ export type Database = {
           visibility?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "proposals_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "proposals_approval_request_id_fkey";
-            columns: ["approval_request_id"];
-            isOneToOne: false;
-            referencedRelation: "approval_requests";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "proposals_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "proposals_approval_request_id_fkey", columns: ["approval_request_id"], isOneToOne: false, referencedRelation: "approval_requests", referencedColumns: ["id"] },
         ];
-      };
-      public_interactions: {
+      };      public_interactions: {
         Row: {
           client_email: string | null;
           client_message: string | null;
@@ -5136,9 +4429,9 @@ export type Database = {
           urgency?: string | null;
           user_agent?: string | null;
         };
-        Relationships: [];
-      };
-      qbr_reports: {
+        Relationships: [
+        ];
+      };      qbr_reports: {
         Row: {
           approved_at: string | null;
           approved_by: string | null;
@@ -5200,16 +4493,9 @@ export type Database = {
           visibility?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "qbr_reports_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "qbr_reports_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      retention_policies: {
+      };      retention_policies: {
         Row: {
           created_at: string;
           created_by: string | null;
@@ -5262,16 +4548,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "retention_policies_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "retention_policies_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      risk_register: {
+      };      risk_register: {
         Row: {
           acceptance_expires: string | null;
           accepted_at: string | null;
@@ -5339,16 +4618,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "risk_register_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "risk_register_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      role_permissions: {
+      };      role_permissions: {
         Row: {
           permission_id: string;
           role_id: string;
@@ -5362,23 +4634,10 @@ export type Database = {
           role_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "role_permissions_role_id_fkey";
-            columns: ["role_id"];
-            isOneToOne: false;
-            referencedRelation: "roles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "role_permissions_permission_id_fkey";
-            columns: ["permission_id"];
-            isOneToOne: false;
-            referencedRelation: "permissions";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "role_permissions_role_id_fkey", columns: ["role_id"], isOneToOne: false, referencedRelation: "roles", referencedColumns: ["id"] },
+          { foreignKeyName: "role_permissions_permission_id_fkey", columns: ["permission_id"], isOneToOne: false, referencedRelation: "permissions", referencedColumns: ["id"] },
         ];
-      };
-      roles: {
+      };      roles: {
         Row: {
           created_at: string;
           description: string | null;
@@ -5403,9 +4662,9 @@ export type Database = {
           key?: string | null;
           name?: string | null;
         };
-        Relationships: [];
-      };
-      saas_audits: {
+        Relationships: [
+        ];
+      };      saas_audits: {
         Row: {
           annual_cost: number | null;
           cancellation_risk: string | null;
@@ -5461,16 +4720,9 @@ export type Database = {
           vendor_name?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "saas_audits_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "saas_audits_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      satisfaction_pulse_schedules: {
+      };      satisfaction_pulse_schedules: {
         Row: {
           created_at: string;
           created_by: string | null;
@@ -5520,23 +4772,10 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "satisfaction_pulse_schedules_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "satisfaction_pulse_schedules_template_id_fkey";
-            columns: ["template_id"];
-            isOneToOne: false;
-            referencedRelation: "satisfaction_pulse_templates";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "satisfaction_pulse_schedules_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "satisfaction_pulse_schedules_template_id_fkey", columns: ["template_id"], isOneToOne: false, referencedRelation: "satisfaction_pulse_templates", referencedColumns: ["id"] },
         ];
-      };
-      satisfaction_pulse_templates: {
+      };      satisfaction_pulse_templates: {
         Row: {
           created_at: string;
           created_by: string | null;
@@ -5574,16 +4813,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "satisfaction_pulse_templates_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "satisfaction_pulse_templates_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      satisfaction_pulses: {
+      };      satisfaction_pulses: {
         Row: {
           created_at: string;
           feedback: string | null;
@@ -5639,23 +4871,10 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "satisfaction_pulses_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "satisfaction_pulses_respondent_organization_id_fkey";
-            columns: ["respondent_organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "satisfaction_pulses_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "satisfaction_pulses_respondent_organization_id_fkey", columns: ["respondent_organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      scheduled_check_results: {
+      };      scheduled_check_results: {
         Row: {
           check_target: string | null;
           check_type: string;
@@ -5699,16 +4918,9 @@ export type Database = {
           status?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "scheduled_check_results_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "scheduled_check_results_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      score_history: {
+      };      score_history: {
         Row: {
           category: string;
           id: string;
@@ -5731,16 +4943,9 @@ export type Database = {
           score?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "score_history_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "score_history_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      service_catalog: {
+      };      service_catalog: {
         Row: {
           base_price: number;
           billing_model: string;
@@ -5805,23 +5010,10 @@ export type Database = {
           visibility?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "service_catalog_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "service_catalog_bundle_id_fkey";
-            columns: ["bundle_id"];
-            isOneToOne: false;
-            referencedRelation: "service_catalog";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "service_catalog_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "service_catalog_bundle_id_fkey", columns: ["bundle_id"], isOneToOne: false, referencedRelation: "service_catalog", referencedColumns: ["id"] },
         ];
-      };
-      sharepoint_plans: {
+      };      sharepoint_plans: {
         Row: {
           created_at: string;
           created_by: string | null;
@@ -5868,16 +5060,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "sharepoint_plans_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "sharepoint_plans_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      sla_logs: {
+      };      sla_logs: {
         Row: {
           actual_minutes: number | null;
           breached: boolean;
@@ -5915,23 +5100,10 @@ export type Database = {
           ticket_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "sla_logs_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "sla_logs_ticket_id_fkey";
-            columns: ["ticket_id"];
-            isOneToOne: false;
-            referencedRelation: "tickets";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "sla_logs_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "sla_logs_ticket_id_fkey", columns: ["ticket_id"], isOneToOne: false, referencedRelation: "tickets", referencedColumns: ["id"] },
         ];
-      };
-      sop_library: {
+      };      sop_library: {
         Row: {
           category: string | null;
           compliance_framework: string | null;
@@ -6005,16 +5177,9 @@ export type Database = {
           version?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "sop_library_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "sop_library_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      status_components: {
+      };      status_components: {
         Row: {
           component_type: string;
           created_at: string;
@@ -6049,16 +5214,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "status_components_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "status_components_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      status_incidents: {
+      };      status_incidents: {
         Row: {
           affected_component_ids: string[];
           created_at: string;
@@ -6102,16 +5260,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "status_incidents_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "status_incidents_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      status_items: {
+      };      status_items: {
         Row: {
           created_at: string;
           created_by: string | null;
@@ -6161,16 +5312,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "status_items_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "status_items_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      store_analytics_events: {
+      };      store_analytics_events: {
         Row: {
           anonymous_id: string | null;
           campaign_id: string | null;
@@ -6219,9 +5363,9 @@ export type Database = {
           quote_id?: string | null;
           user_agent?: string | null;
         };
-        Relationships: [];
-      };
-      store_categories: {
+        Relationships: [
+        ];
+      };      store_categories: {
         Row: {
           count: number;
           created_at: string;
@@ -6256,16 +5400,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "store_categories_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "store_categories_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      store_leads: {
+      };      store_leads: {
         Row: {
           assigned_owner: string | null;
           created_at: string;
@@ -6302,9 +5439,9 @@ export type Database = {
           status?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [];
-      };
-      store_products: {
+        Relationships: [
+        ];
+      };      store_products: {
         Row: {
           attributes: Json;
           category: string;
@@ -6369,23 +5506,10 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "store_products_category_id_fkey";
-            columns: ["category_id"];
-            isOneToOne: false;
-            referencedRelation: "store_categories";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "store_products_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "store_products_category_id_fkey", columns: ["category_id"], isOneToOne: false, referencedRelation: "store_categories", referencedColumns: ["id"] },
+          { foreignKeyName: "store_products_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      store_promotions: {
+      };      store_promotions: {
         Row: {
           badge_text: string;
           created_at: string;
@@ -6432,16 +5556,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "store_promotions_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "store_promotions_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      store_proposal_drafts: {
+      };      store_proposal_drafts: {
         Row: {
           created_at: string;
           generated_by: string | null;
@@ -6472,9 +5589,9 @@ export type Database = {
           status?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [];
-      };
-      store_quote_requests: {
+        Relationships: [
+        ];
+      };      store_quote_requests: {
         Row: {
           created_at: string;
           customer: Json;
@@ -6508,9 +5625,9 @@ export type Database = {
           status?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [];
-      };
-      store_quotes: {
+        Relationships: [
+        ];
+      };      store_quotes: {
         Row: {
           created_at: string;
           email: string;
@@ -6548,16 +5665,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "store_quotes_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "store_quotes_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      store_visual_assets: {
+      };      store_visual_assets: {
         Row: {
           accent_color: string | null;
           alt_text: string | null;
@@ -6603,9 +5713,9 @@ export type Database = {
           provenance?: string | null;
           updated_at?: string | null;
         };
-        Relationships: [];
-      };
-      subscriptions: {
+        Relationships: [
+        ];
+      };      subscriptions: {
         Row: {
           amount_cents: number | null;
           created_at: string;
@@ -6649,16 +5759,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "subscriptions_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "subscriptions_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      tabletop_exercises: {
+      };      tabletop_exercises: {
         Row: {
           action_items: string | null;
           after_action_report: string | null;
@@ -6714,16 +5817,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "tabletop_exercises_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "tabletop_exercises_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      ticket_comments: {
+      };      ticket_comments: {
         Row: {
           author_id: string;
           body: string;
@@ -6755,23 +5851,10 @@ export type Database = {
           ticket_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "ticket_comments_ticket_id_fkey";
-            columns: ["ticket_id"];
-            isOneToOne: false;
-            referencedRelation: "tickets";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "ticket_comments_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "ticket_comments_ticket_id_fkey", columns: ["ticket_id"], isOneToOne: false, referencedRelation: "tickets", referencedColumns: ["id"] },
+          { foreignKeyName: "ticket_comments_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      ticket_triage_drafts: {
+      };      ticket_triage_drafts: {
         Row: {
           confidence_score: number;
           converted_ticket_id: string | null;
@@ -6830,23 +5913,10 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "ticket_triage_drafts_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "ticket_triage_drafts_converted_ticket_id_fkey";
-            columns: ["converted_ticket_id"];
-            isOneToOne: false;
-            referencedRelation: "tickets";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "ticket_triage_drafts_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "ticket_triage_drafts_converted_ticket_id_fkey", columns: ["converted_ticket_id"], isOneToOne: false, referencedRelation: "tickets", referencedColumns: ["id"] },
         ];
-      };
-      tickets: {
+      };      tickets: {
         Row: {
           assigned_to: string | null;
           category: string | null;
@@ -6887,14 +5957,7 @@ export type Database = {
           priority?: "low" | "normal" | "high" | "urgent" | null;
           resolution?: string | null;
           source?: string | null;
-          status?:
-            | "new"
-            | "triaged"
-            | "in_progress"
-            | "waiting_on_client"
-            | "resolved"
-            | "closed"
-            | null;
+          status?: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | null;
           updated_at?: string | null;
           version?: number | null;
         };
@@ -6915,29 +5978,15 @@ export type Database = {
           priority?: "low" | "normal" | "high" | "urgent" | null;
           resolution?: string | null;
           source?: string | null;
-          status?:
-            | "new"
-            | "triaged"
-            | "in_progress"
-            | "waiting_on_client"
-            | "resolved"
-            | "closed"
-            | null;
+          status?: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed" | null;
           title?: string | null;
           updated_at?: string | null;
           version?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "tickets_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "tickets_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      time_entries: {
+      };      time_entries: {
         Row: {
           billable: boolean;
           created_at: string;
@@ -6975,23 +6024,10 @@ export type Database = {
           work_date?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "time_entries_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "time_entries_ticket_id_fkey";
-            columns: ["ticket_id"];
-            isOneToOne: false;
-            referencedRelation: "tickets";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "time_entries_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "time_entries_ticket_id_fkey", columns: ["ticket_id"], isOneToOne: false, referencedRelation: "tickets", referencedColumns: ["id"] },
         ];
-      };
-      training_courses: {
+      };      training_courses: {
         Row: {
           category: string;
           created_at: string;
@@ -7035,16 +6071,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "training_courses_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "training_courses_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      training_enrollments: {
+      };      training_enrollments: {
         Row: {
           completed_at: string | null;
           course_id: string;
@@ -7073,16 +6102,9 @@ export type Database = {
           user_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "training_enrollments_course_id_fkey";
-            columns: ["course_id"];
-            isOneToOne: false;
-            referencedRelation: "training_courses";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "training_enrollments_course_id_fkey", columns: ["course_id"], isOneToOne: false, referencedRelation: "training_courses", referencedColumns: ["id"] },
         ];
-      };
-      training_lessons: {
+      };      training_lessons: {
         Row: {
           content: string | null;
           course_id: string;
@@ -7111,16 +6133,9 @@ export type Database = {
           title?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "training_lessons_course_id_fkey";
-            columns: ["course_id"];
-            isOneToOne: false;
-            referencedRelation: "training_courses";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "training_lessons_course_id_fkey", columns: ["course_id"], isOneToOne: false, referencedRelation: "training_courses", referencedColumns: ["id"] },
         ];
-      };
-      training_modules: {
+      };      training_modules: {
         Row: {
           category: string;
           completion_count: number;
@@ -7164,16 +6179,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "training_modules_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "training_modules_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      unifi_surveys: {
+      };      unifi_surveys: {
         Row: {
           access_points: number;
           ap_count: number;
@@ -7241,16 +6249,9 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "unifi_surveys_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "unifi_surveys_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      uptime_checks: {
+      };      uptime_checks: {
         Row: {
           check_interval_minutes: number;
           check_type: string;
@@ -7297,16 +6298,9 @@ export type Database = {
           url?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "uptime_checks_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "uptime_checks_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      uptime_results: {
+      };      uptime_results: {
         Row: {
           check_id: string;
           checked_at: string;
@@ -7341,16 +6335,9 @@ export type Database = {
           ssl_expiry_date?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "uptime_results_check_id_fkey";
-            columns: ["check_id"];
-            isOneToOne: false;
-            referencedRelation: "uptime_checks";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "uptime_results_check_id_fkey", columns: ["check_id"], isOneToOne: false, referencedRelation: "uptime_checks", referencedColumns: ["id"] },
         ];
-      };
-      user_permission_overrides: {
+      };      user_permission_overrides: {
         Row: {
           created_at: string;
           id: string;
@@ -7376,23 +6363,10 @@ export type Database = {
           user_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "user_permission_overrides_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "user_permission_overrides_permission_id_fkey";
-            columns: ["permission_id"];
-            isOneToOne: false;
-            referencedRelation: "permissions";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "user_permission_overrides_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "user_permission_overrides_permission_id_fkey", columns: ["permission_id"], isOneToOne: false, referencedRelation: "permissions", referencedColumns: ["id"] },
         ];
-      };
-      vendor_contacts: {
+      };      vendor_contacts: {
         Row: {
           account_number: string | null;
           contact_name: string | null;
@@ -7448,16 +6422,9 @@ export type Database = {
           vendor_name?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "vendor_contacts_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "vendor_contacts_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      vendor_contracts: {
+      };      vendor_contracts: {
         Row: {
           auto_renews: boolean;
           billing_frequency: string;
@@ -7528,16 +6495,9 @@ export type Database = {
           visibility?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "vendor_contracts_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "vendor_contracts_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      webhook_dead_letters: {
+      };      webhook_dead_letters: {
         Row: {
           attempt_count: number;
           created_at: string;
@@ -7569,16 +6529,9 @@ export type Database = {
           webhook_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "webhook_dead_letters_webhook_id_fkey";
-            columns: ["webhook_id"];
-            isOneToOne: false;
-            referencedRelation: "webhook_endpoints";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "webhook_dead_letters_webhook_id_fkey", columns: ["webhook_id"], isOneToOne: false, referencedRelation: "webhook_endpoints", referencedColumns: ["id"] },
         ];
-      };
-      webhook_deliveries: {
+      };      webhook_deliveries: {
         Row: {
           created_at: string;
           dead_letter: boolean;
@@ -7628,16 +6581,9 @@ export type Database = {
           webhook_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "webhook_deliveries_webhook_id_fkey";
-            columns: ["webhook_id"];
-            isOneToOne: false;
-            referencedRelation: "webhook_endpoints";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "webhook_deliveries_webhook_id_fkey", columns: ["webhook_id"], isOneToOne: false, referencedRelation: "webhook_endpoints", referencedColumns: ["id"] },
         ];
-      };
-      webhook_endpoints: {
+      };      webhook_endpoints: {
         Row: {
           created_at: string;
           created_by: string;
@@ -7687,16 +6633,9 @@ export type Database = {
           version?: number | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "webhook_endpoints_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "webhook_endpoints_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-      website_monitors: {
+      };      website_monitors: {
         Row: {
           alerts_enabled: boolean;
           check_interval_hours: number;
@@ -7755,28 +6694,15 @@ export type Database = {
           url?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "website_monitors_organization_id_fkey";
-            columns: ["organization_id"];
-            isOneToOne: false;
-            referencedRelation: "organizations";
-            referencedColumns: ["id"];
-          },
+          { foreignKeyName: "website_monitors_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
-      };
-    };
+      };    };
     Views: Record<string, never>;
     Functions: Record<string, never>;
     Enums: {
       audit_actor_type: "user" | "system" | "service";
       comment_target_type: "ticket" | "project" | "task" | "document" | "contract";
-      contract_status:
-        | "draft"
-        | "in_review"
-        | "pending_signature"
-        | "signed"
-        | "expired"
-        | "cancelled";
+      contract_status: "draft" | "in_review" | "pending_signature" | "signed" | "expired" | "cancelled";
       document_visibility: "private" | "org" | "internal" | "public";
       invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible" | "overdue";
       membership_status: "pending" | "approved" | "rejected" | "suspended";
@@ -7785,20 +6711,16 @@ export type Database = {
       project_status: "planned" | "active" | "blocked" | "client_review" | "completed" | "archived";
       task_status: "todo" | "in_progress" | "in_review" | "blocked" | "done";
       ticket_priority: "low" | "normal" | "high" | "urgent";
-      ticket_status:
-        | "new"
-        | "triaged"
-        | "in_progress"
-        | "waiting_on_client"
-        | "resolved"
-        | "closed";
+      ticket_status: "new" | "triaged" | "in_progress" | "waiting_on_client" | "resolved" | "closed";
     };
     CompositeTypes: Record<string, never>;
   };
 };
 
 export type Tables<
-  PublicTableNameOrOptions extends keyof Database["public"]["Tables"] | { schema: keyof Database },
+  PublicTableNameOrOptions extends
+    | keyof Database["public"]["Tables"]
+    | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
@@ -7817,7 +6739,9 @@ export type Tables<
     : never;
 
 export type TablesInsert<
-  PublicTableNameOrOptions extends keyof Database["public"]["Tables"] | { schema: keyof Database },
+  PublicTableNameOrOptions extends
+    | keyof Database["public"]["Tables"]
+    | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
@@ -7836,7 +6760,9 @@ export type TablesInsert<
     : never;
 
 export type TablesUpdate<
-  PublicTableNameOrOptions extends keyof Database["public"]["Tables"] | { schema: keyof Database },
+  PublicTableNameOrOptions extends
+    | keyof Database["public"]["Tables"]
+    | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
