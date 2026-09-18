@@ -9,6 +9,37 @@ export type SignUpResult = {
   user: { id: string; email: string | null } | null;
 };
 
+export type MfaFactor = {
+  id: string;
+  friendlyName: string | null;
+  status: string;
+  createdAt?: string;
+};
+
+export type MfaFactorsResult = {
+  totp: MfaFactor[];
+  all: (MfaFactor & { factorType: string })[];
+};
+
+export type MfaEnrollResult = {
+  factorId: string;
+  type: string;
+  friendlyName: string | null;
+  qrCode: string;
+  secret: string;
+  uri: string;
+};
+
+export type MfaChallengeResult = {
+  challengeId: string;
+  expiresAt: number;
+};
+
+export type MfaVerifyResult = {
+  accessToken: string;
+  user: { id: string; email: string | null };
+};
+
 export class AuthApi {
   constructor(private client: ApiClient) {}
 
@@ -44,5 +75,31 @@ export class AuthApi {
       auth_code: authCode,
       code_verifier: codeVerifier,
     });
+  }
+
+  mfaFactors() {
+    return this.client.get<MfaFactorsResult>("/api/v1/auth/mfa/factors");
+  }
+
+  mfaEnroll(friendlyName?: string) {
+    return this.client.post<MfaEnrollResult>("/api/v1/auth/mfa/enroll", { friendlyName });
+  }
+
+  mfaChallenge(factorId: string) {
+    return this.client.post<MfaChallengeResult>("/api/v1/auth/mfa/challenge", { factorId });
+  }
+
+  mfaVerify(factorId: string, challengeId: string, code: string) {
+    return this.client.post<MfaVerifyResult>("/api/v1/auth/mfa/verify", {
+      factorId,
+      challengeId,
+      code,
+    });
+  }
+
+  mfaUnenroll(factorId: string) {
+    return this.client.delete<{ ok: boolean }>(
+      `/api/v1/auth/mfa/factors/${encodeURIComponent(factorId)}`,
+    );
   }
 }

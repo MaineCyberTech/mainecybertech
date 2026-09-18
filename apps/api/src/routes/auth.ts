@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import zxcvbn from "zxcvbn";
-import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
+import { getSupabaseAdmin, getScopedClient, getSupabaseUser } from "../services/supabase";
 import { getEnv } from "../config/env";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -291,48 +291,195 @@ router.post("/forgot-password", rateLimitAuth, rateLimitEmail, async (req, res, 
   }
 });
 
-router.post("/reset-password", requireAuth, rateLimitAuth, rateLimitEmail, async (req, res, next) => {
+router.post(
+  "/reset-password",
+  requireAuth,
+  rateLimitAuth,
+  rateLimitEmail,
+  async (req, res, next) => {
+    try {
+      const { email, password } = z
+        .object({
+          email: z.string().email(),
+          password: z
+            .string()
+            .min(1)
+            .refine(
+              (password) => {
+                const result = validatePasswordStrength(password);
+                return result.valid;
+              },
+              { message: "Password is too weak" },
+            ),
+        })
+        .parse(req.body);
+
+      if (email !== req.authUser!.email) {
+        throw new AppError("FORBIDDEN", "You can only reset your own password", 403);
+      }
+
+      const pwdCheck = validatePasswordStrength(password);
+      if (!pwdCheck.valid) {
+        throw new AppError("WEAK_PASSWORD", pwdCheck.message || "Password is too weak", 400);
+      }
+
+      const supabase = getScopedClient(req, "auth", "write");
+      const { error } = await supabase.auth.admin.updateUserById(req.authUser!.userId, {
+        password,
+      });
+
+      if (error) {
+        throw new AppError("AUTH_ERROR", error.message, 400);
+      }
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "auth.reset-password",
+        entityType: "user",
+        entityId: req.authUser!.userId,
+        metadata: { email },
+      });
+
+      res.json(success({ ok: true }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+// --- Multi-factor authentication (Supabase GoTrue TOTP) -------------------
+//
+// Identity is delegated entirely to hosted Supabase (see AGENTS.md), so MFA
+// factors live in GoTrue's `auth.mfa_factors`; the portal does not store
+// secrets. These endpoints let an authenticated user manage their own
+// authenticator-app factor. They are deliberately non-enforcing: a policy
+// that requires aal2 at request time needs an aal check in `requireAuth`
+// plus Supabase MFA enabled for the project, and is rolled out separately.
+
+router.get("/mfa/factors", requireAuth, async (req, res, next) => {
   try {
-    const { email, password } = z
-      .object({
-        email: z.string().email(),
-        password: z
-          .string()
-          .min(1)
-          .refine(
-            (password) => {
-              const result = validatePasswordStrength(password);
-              return result.valid;
-            },
-            { message: "Password is too weak" },
-          ),
-      })
-      .parse(req.body);
+    const supabase = getSupabaseUser(req, req.userJwt!);
+    const { data, error } = await supabase.auth.mfa.listFactors();
+    if (error) throw new AppError("AUTH_ERROR", error.message, 400);
 
-    if (email !== req.authUser!.email) {
-      throw new AppError("FORBIDDEN", "You can only reset your own password", 403);
-    }
+    res.json(
+      success({
+        totp: (data?.totp ?? []).map((f) => ({
+          id: f.id,
+          friendlyName: f.friendly_name ?? null,
+          status: f.status,
+          createdAt: f.created_at,
+        })),
+        all: (data?.all ?? []).map((f) => ({
+          id: f.id,
+          factorType: f.factor_type,
+          friendlyName: f.friendly_name ?? null,
+          status: f.status,
+        })),
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
 
-    const pwdCheck = validatePasswordStrength(password);
-    if (!pwdCheck.valid) {
-      throw new AppError("WEAK_PASSWORD", pwdCheck.message || "Password is too weak", 400);
-    }
+router.post("/mfa/enroll", requireAuth, rateLimitAuth, async (req, res, next) => {
+  try {
+    const { friendlyName } = z
+      .object({ friendlyName: z.string().max(64).optional() })
+      .parse(req.body ?? {});
 
-    const supabase = getScopedClient(req, "auth", "write");
-    const { error } = await supabase.auth.admin.updateUserById(req.authUser!.userId, {
-      password,
+    const supabase = getSupabaseUser(req, req.userJwt!);
+    const { data, error } = await supabase.auth.mfa.enroll({
+      factorType: "totp",
+      friendlyName,
     });
-
-    if (error) {
-      throw new AppError("AUTH_ERROR", error.message, 400);
-    }
+    if (error) throw new AppError("AUTH_ERROR", error.message, 400);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
-      action: "auth.reset-password",
+      action: "auth.mfa.enroll.started",
       entityType: "user",
       entityId: req.authUser!.userId,
-      metadata: { email },
+      metadata: { factorId: data.id },
+    });
+
+    res.status(201).json(
+      success({
+        factorId: data.id,
+        type: data.type,
+        friendlyName: data.friendly_name ?? null,
+        qrCode: data.totp.qr_code,
+        secret: data.totp.secret,
+        uri: data.totp.uri,
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/mfa/challenge", requireAuth, rateLimitAuth, async (req, res, next) => {
+  try {
+    const { factorId } = z.object({ factorId: z.string().min(1) }).parse(req.body);
+    const supabase = getSupabaseUser(req, req.userJwt!);
+    const { data, error } = await supabase.auth.mfa.challenge({ factorId });
+    if (error) throw new AppError("AUTH_ERROR", error.message, 400);
+
+    res.json(success({ challengeId: data.id, expiresAt: data.expires_at }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/mfa/verify", requireAuth, rateLimitAuth, async (req, res, next) => {
+  try {
+    const { factorId, challengeId, code } = z
+      .object({
+        factorId: z.string().min(1),
+        challengeId: z.string().min(1),
+        code: z.string().min(6).max(8),
+      })
+      .parse(req.body);
+
+    const supabase = getSupabaseUser(req, req.userJwt!);
+    const { data, error } = await supabase.auth.mfa.verify({ factorId, challengeId, code });
+    if (error) throw new AppError("AUTH_ERROR", error.message, 401);
+
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "auth.mfa.verify",
+      entityType: "user",
+      entityId: req.authUser!.userId,
+      metadata: { factorId },
+    });
+
+    // A successful verify upgrades the session to aal2 and returns a fresh
+    // access token; callers should replace their stored token with this one.
+    res.json(
+      success({
+        accessToken: data.access_token,
+        user: { id: req.authUser!.userId, email: req.authUser!.email },
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/mfa/factors/:factorId", requireAuth, rateLimitAuth, async (req, res, next) => {
+  try {
+    const factorId = String(req.params.factorId as string);
+    const supabase = getSupabaseUser(req, req.userJwt!);
+    const { error } = await supabase.auth.mfa.unenroll({ factorId });
+    if (error) throw new AppError("AUTH_ERROR", error.message, 400);
+
+    await logAuditEvent({
+      actorUserId: req.authUser!.userId,
+      action: "auth.mfa.unenroll",
+      entityType: "user",
+      entityId: req.authUser!.userId,
+      metadata: { factorId },
     });
 
     res.json(success({ ok: true }));

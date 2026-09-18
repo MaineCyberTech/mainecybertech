@@ -989,4 +989,59 @@ describe("SDK modules — expanded coverage", () => {
       expect(result).toBeNull();
     });
   });
+
+  describe("AuthApi MFA", () => {
+    it("lists factors", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          totp: [{ id: "f1", friendlyName: "Phone", status: "verified" }],
+          all: [{ id: "f1", factorType: "totp", friendlyName: "Phone", status: "verified" }],
+        }),
+      );
+      const result = await client.auth.mfaFactors();
+      expect(result.totp[0].id).toBe("f1");
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/auth/mfa/factors");
+    });
+
+    it("enrolls a totp factor", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          factorId: "f1",
+          type: "totp",
+          friendlyName: "Phone",
+          qrCode: "<svg/>",
+          secret: "ABC123",
+          uri: "otpauth://totp/x",
+        }),
+      );
+      const result = await client.auth.mfaEnroll("Phone");
+      expect(result.factorId).toBe("f1");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+      expect(String(mockFetch.mock.calls[0][1]?.body)).toContain("Phone");
+    });
+
+    it("creates a challenge", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ challengeId: "c1", expiresAt: 123 }));
+      const result = await client.auth.mfaChallenge("f1");
+      expect(result.challengeId).toBe("c1");
+      expect(String(mockFetch.mock.calls[0][1]?.body)).toContain("f1");
+    });
+
+    it("verifies a challenge", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ accessToken: "aal2-token", user: { id: "u1", email: "a@b.co" } }),
+      );
+      const result = await client.auth.mfaVerify("f1", "c1", "123456");
+      expect(result.accessToken).toBe("aal2-token");
+      expect(String(mockFetch.mock.calls[0][1]?.body)).toContain("123456");
+    });
+
+    it("unenrolls a factor", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ ok: true }));
+      const result = await client.auth.mfaUnenroll("f1");
+      expect(result.ok).toBe(true);
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("DELETE");
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/auth/mfa/factors/f1");
+    });
+  });
 });
