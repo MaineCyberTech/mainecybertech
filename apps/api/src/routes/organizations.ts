@@ -195,7 +195,7 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
     }
 
     const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const idsFilter = req.query.ids as string | undefined;
     if (idsFilter) {
@@ -280,7 +280,7 @@ router.get("/:id/detail", requireOrgAccessByParam, async (req, res, next) => {
       ...new Set((memberships ?? []).map((m: { user_id: string }) => m.user_id)),
     ];
     const memberRoleIds = [
-      ...new Set((memberships ?? []).map((m: { role_id: string }) => m.role_id)),
+      ...new Set((memberships ?? []).map((m) => m.role_id).filter((r): r is string => r !== null)),
     ];
 
     const [{ data: profiles, error: profError }, { data: roles, error: rolesError }] =
@@ -385,9 +385,9 @@ router.patch(
 
       const { data, error } = await supabase
         .from("organizations")
-        .update(updateData)
+        .update(updateData as never)
         .eq("id", String(req.params.id))
-        .eq("version", current.version)
+        .eq("version", current.version as number)
         .select()
         .single();
 

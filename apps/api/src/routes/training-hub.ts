@@ -135,7 +135,7 @@ router.get("/courses/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("training_courses")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Course not found", 404);
@@ -161,8 +161,8 @@ router.patch("/courses/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("training_courses")
-      .update(updateData)
-      .eq("id", req.params.id)
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -187,7 +187,7 @@ router.delete("/courses/:id", async (req, res, next) => {
     const { error } = await supabase
       .from("training_courses")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
@@ -211,14 +211,14 @@ router.post("/courses/:id/enroll", async (req, res, next) => {
     const { data: course, error: courseError } = await supabase
       .from("training_courses")
       .select("id, organization_id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (courseError || !course) throw new AppError("NOT_FOUND", "Course not found", 404);
     const { data, error } = await supabase
       .from("training_enrollments")
       .insert({
-        course_id: req.params.id,
+        course_id: String(req.params.id),
         user_id: userId,
         status: "enrolled",
         progress_percent: 0,
@@ -231,7 +231,7 @@ router.post("/courses/:id/enroll", async (req, res, next) => {
       action: "training.enrollment.created",
       entityType: "training_enrollment",
       entityId: data.id,
-      metadata: { course_id: req.params.id },
+      metadata: { course_id: String(req.params.id) },
     });
     res.status(201).json(success(data));
   } catch (error) {
@@ -252,7 +252,7 @@ router.post("/courses/:id/progress", async (req, res, next) => {
         status: progress >= 100 ? "completed" : "in_progress",
         completed_at: progress >= 100 ? new Date().toISOString() : null,
       })
-      .eq("course_id", req.params.id)
+      .eq("course_id", String(req.params.id))
       .eq("user_id", userId)
       .select()
       .single();
@@ -330,7 +330,7 @@ router.get("/lessons/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("training_lessons")
       .select("*, training_courses!inner(organization_id)")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("training_courses.organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Lesson not found", 404);
@@ -353,15 +353,15 @@ router.patch("/lessons/:id", async (req, res, next) => {
     const { data: scoped, error: scopeError } = await supabase
       .from("training_lessons")
       .select("id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("training_courses.organization_id", req.query.organization_id as string)
       .single();
     if (scopeError || !scoped) throw new AppError("NOT_FOUND", "Lesson not found", 404);
 
     const { data, error } = await supabase
       .from("training_lessons")
-      .update(updateData)
-      .eq("id", req.params.id)
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -385,11 +385,14 @@ router.delete("/lessons/:id", async (req, res, next) => {
     const { data: scoped, error: scopeError } = await supabase
       .from("training_lessons")
       .select("id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("training_courses.organization_id", req.query.organization_id as string)
       .single();
     if (scopeError || !scoped) throw new AppError("NOT_FOUND", "Lesson not found", 404);
-    const { error } = await supabase.from("training_lessons").delete().eq("id", req.params.id);
+    const { error } = await supabase
+      .from("training_lessons")
+      .delete()
+      .eq("id", String(req.params.id));
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

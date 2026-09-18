@@ -133,7 +133,7 @@ router.get("/checks/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("uptime_checks")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Check not found", 404);
@@ -202,8 +202,8 @@ router.patch("/checks/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("uptime_checks")
-      .update(fields)
-      .eq("id", req.params.id)
+      .update(fields as never)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -222,7 +222,7 @@ router.delete("/checks/:id", async (req, res, next) => {
     const { error } = await supabase
       .from("uptime_checks")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.status(204).send();
@@ -237,14 +237,14 @@ router.get("/checks/:id/results", async (req, res, next) => {
     const { data: check, error: checkError } = await supabase
       .from("uptime_checks")
       .select("id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (checkError || !check) throw new AppError("NOT_FOUND", "Check not found", 404);
     const { data, error } = await supabase
       .from("uptime_results")
       .select("*")
-      .eq("check_id", req.params.id)
+      .eq("check_id", String(req.params.id))
       .order("checked_at", { ascending: false })
       .limit(30);
 
@@ -271,7 +271,7 @@ router.get("/checks/:id/uptime", async (req, res, next) => {
     const { data: check, error: checkError } = await supabase
       .from("uptime_checks")
       .select("id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (checkError || !check) throw new AppError("NOT_FOUND", "Check not found", 404);
@@ -282,7 +282,7 @@ router.get("/checks/:id/uptime", async (req, res, next) => {
       const { count: total, error: totalErr } = await supabase
         .from("uptime_results")
         .select("*", { count: "exact", head: true })
-        .eq("check_id", req.params.id)
+        .eq("check_id", String(req.params.id))
         .gte("checked_at", since);
 
       if (totalErr) throw new AppError("DB_ERROR", totalErr.message, 500);
@@ -290,7 +290,7 @@ router.get("/checks/:id/uptime", async (req, res, next) => {
       const { count: up, error: upErr } = await supabase
         .from("uptime_results")
         .select("*", { count: "exact", head: true })
-        .eq("check_id", req.params.id)
+        .eq("check_id", String(req.params.id))
         .eq("is_up", true)
         .gte("checked_at", since);
 

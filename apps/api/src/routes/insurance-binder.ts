@@ -142,7 +142,7 @@ router.post("/", async (req, res, next) => {
         policy_number: parsed.policyNumber ?? null,
         expiry_date: parsed.expiryDate ?? null,
         created_by: req.authUser!.userId,
-      })
+      } as never)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -166,7 +166,7 @@ router.get("/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("insurance_evidence")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Evidence not found", 404);
@@ -198,8 +198,8 @@ router.patch("/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("insurance_evidence")
-      .update(updateData)
-      .eq("id", req.params.id)
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -224,7 +224,7 @@ router.delete("/:id", async (req, res, next) => {
     const { error } = await supabase
       .from("insurance_evidence")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({

@@ -54,7 +54,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.get(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "security-suite", "read");
-      const data = await loadOwned(req, sb as any, table, req.params.id);
+      const data = await loadOwned(req, sb as any, table, String(req.params.id));
       res.json(success(data));
     } catch (e) {
       next(e);
@@ -72,14 +72,18 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
         if (k !== "organizationId") fields[snake(k)] = v;
       }
       fields.organization_id = (parsed as Record<string, unknown>).organizationId;
-      const { data, error } = await sb.from(table).insert(fields).select().single();
+      const { data, error } = await sb
+        .from(table)
+        .insert(fields as never)
+        .select()
+        .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
         organizationId: fields.organization_id as string,
         actorUserId: req.authUser!.userId,
         action: `${path}.created`,
         entityType: path,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.status(201).json(success(data));
     } catch (e) {
@@ -90,7 +94,13 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.patch(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "security-suite", "write");
-      const current = await loadOwned(req, sb as any, table, req.params.id, "id, organization_id");
+      const current = await loadOwned(
+        req,
+        sb as any,
+        table,
+        String(req.params.id),
+        "id, organization_id",
+      );
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
         if (k === "organizationId") continue;
@@ -98,8 +108,8 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       }
       const { data, error } = await sb
         .from(table)
-        .update(fields)
-        .eq("id", req.params.id)
+        .update(fields as never)
+        .eq("id", String(req.params.id))
         .eq("organization_id", current.organization_id as string)
         .select()
         .single();
@@ -110,7 +120,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
         actorUserId: req.authUser!.userId,
         action: `${path}.updated`,
         entityType: path,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.json(success(data));
     } catch (e) {
@@ -121,11 +131,17 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.delete(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "security-suite", "write");
-      const current = await loadOwned(req, sb as any, table, req.params.id, "id, organization_id");
+      const current = await loadOwned(
+        req,
+        sb as any,
+        table,
+        String(req.params.id),
+        "id, organization_id",
+      );
       const { error } = await sb
         .from(table)
         .delete()
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", current.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
@@ -172,7 +188,7 @@ router.post("/identity-verification/:id/verify", async (req, res, next) => {
         verified_by: req.authUser!.userId,
         notes: parsed.notes,
       })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -189,7 +205,7 @@ router.get("/endpoint-security/coverage", async (req, res, next) => {
       .select("*")
       .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    const items = (data ?? []) as EndpointSecurity[];
+    const items = (data ?? []) as unknown as EndpointSecurity[];
     const totalEndpoints = items.reduce((s: number, e) => s + (e.total_endpoints || 0), 0);
     const avCoverage =
       totalEndpoints > 0
@@ -248,7 +264,7 @@ router.post("/m365-hardening/:id/scan", async (req, res, next) => {
     const { data: current, error: fetchError } = await supabase
       .from("m365_hardening")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
     const now = new Date().toISOString();
@@ -259,7 +275,7 @@ router.post("/m365-hardening/:id/scan", async (req, res, next) => {
         scan_status: "completed",
         next_scan_at: new Date(Date.now() + 30 * 86400000).toISOString(),
       })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);

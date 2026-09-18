@@ -39,7 +39,7 @@ router.get("/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("service_catalog")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Service not found", 404);
@@ -113,8 +113,8 @@ router.patch("/:id", async (req, res, next) => {
     }
     const { data, error } = await supabase
       .from("service_catalog")
-      .update(u)
-      .eq("id", req.params.id)
+      .update(u as never)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -139,7 +139,7 @@ router.delete("/:id", async (req, res, next) => {
     const { error } = await supabase
       .from("service_catalog")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({

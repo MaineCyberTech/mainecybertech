@@ -76,7 +76,7 @@ router.get("/frameworks/:id/controls", async (req, res, next) => {
     const { data, error } = await supabase
       .from("compliance_controls")
       .select("*")
-      .eq("framework_id", req.params.id)
+      .eq("framework_id", String(req.params.id))
       .eq("organization_id", orgId)
       .order("created_at", { ascending: false });
 
@@ -95,16 +95,15 @@ router.post("/frameworks/:id/controls", async (req, res, next) => {
     const { data: framework, error: fwError } = await supabase
       .from("compliance_frameworks")
       .select("id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", parsed.organizationId)
       .single();
-    if (fwError || !framework)
-      throw new AppError("NOT_FOUND", "Framework not found", 404);
+    if (fwError || !framework) throw new AppError("NOT_FOUND", "Framework not found", 404);
 
     const { data, error } = await supabase
       .from("compliance_controls")
       .insert({
-        framework_id: req.params.id,
+        framework_id: String(req.params.id),
         organization_id: parsed.organizationId,
         title: parsed.title,
         status: parsed.status,
@@ -137,7 +136,13 @@ router.patch("/controls/:id", async (req, res, next) => {
     const parsed = updateControlSchema.parse(req.body);
     const supabase = getScopedClient(req, "compliance", "write");
 
-    const control = await loadOwned(req, supabase as any, "compliance_controls", req.params.id as string, "id, organization_id");
+    const control = await loadOwned(
+      req,
+      supabase as any,
+      "compliance_controls",
+      String(req.params.id) as string,
+      "id, organization_id",
+    );
 
     const updateData: Record<string, unknown> = {};
     if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -148,8 +153,8 @@ router.patch("/controls/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("compliance_controls")
-      .update(updateData)
-      .eq("id", req.params.id)
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
       .eq("organization_id", control.organization_id as string)
       .select()
       .single();
@@ -174,11 +179,17 @@ router.patch("/controls/:id", async (req, res, next) => {
 router.delete("/controls/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "compliance", "write");
-    const control = await loadOwned(req, supabase as any, "compliance_controls", req.params.id as string, "id, organization_id");
+    const control = await loadOwned(
+      req,
+      supabase as any,
+      "compliance_controls",
+      String(req.params.id) as string,
+      "id, organization_id",
+    );
     const { error } = await supabase
       .from("compliance_controls")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", control.organization_id as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

@@ -81,7 +81,7 @@ export function registerCrud(router: Router, path: string, table: string, schema
       const { data, error } = await sb
         .from(table)
         .select("*")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .single();
       if (error || !data) throw new AppError("NOT_FOUND", "Record not found", 404);
@@ -108,7 +108,7 @@ export function registerCrud(router: Router, path: string, table: string, schema
       const { data, error } = await sb
         .from(table)
         .update(fields as never)
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
@@ -132,7 +132,7 @@ export function registerCrud(router: Router, path: string, table: string, schema
       const { error } = await sb
         .from(table)
         .delete()
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({

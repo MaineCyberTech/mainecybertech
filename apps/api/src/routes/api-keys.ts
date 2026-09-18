@@ -117,8 +117,8 @@ router.patch("/:id", requirePermission("api-keys", "manage"), async (req, res, n
 
     let query = supabase
       .from("api_keys")
-      .update(updateData)
-      .eq("id", req.params.id);
+      .update(updateData as never)
+      .eq("id", String(req.params.id));
     // Org predicate is unconditional for non-platform-admins (fail-closed).
     if (orgId && !(platformAdmin && !explicit)) query = query.eq("organization_id", orgId);
     const { data, error } = await query
@@ -156,7 +156,7 @@ router.delete("/:id", requirePermission("api-keys", "manage"), async (req, res, 
     const explicit =
       (req as unknown as { orgScope?: { platformAdmin?: boolean; explicit?: boolean } }).orgScope
         ?.explicit === true;
-    let query = supabase.from("api_keys").delete().eq("id", req.params.id);
+    let query = supabase.from("api_keys").delete().eq("id", String(req.params.id));
     // Org predicate is unconditional for non-platform-admins (fail-closed).
     if (orgId && !(platformAdmin && !explicit)) query = query.eq("organization_id", orgId);
     const { error } = await query;

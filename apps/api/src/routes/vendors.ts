@@ -57,7 +57,7 @@ function crudEndpoints(
       const { data, error } = await supabase
         .from(table)
         .select("*")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .single();
       if (error || !data) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
@@ -79,7 +79,11 @@ function crudEndpoints(
       fields.organization_id = (parsed as Record<string, unknown>).organizationId;
       fields.created_by = req.authUser!.userId;
 
-      const { data, error } = await supabase.from(table).insert(fields).select().single();
+      const { data, error } = await supabase
+        .from(table)
+        .insert(fields as never)
+        .select()
+        .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
 
       await logAuditEvent({
@@ -87,7 +91,7 @@ function crudEndpoints(
         actorUserId: req.authUser!.userId,
         action: `${resource}.created`,
         entityType: resource,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.status(201).json(success(data));
     } catch (err) {
@@ -107,8 +111,8 @@ function crudEndpoints(
 
       const { data, error } = await supabase
         .from(table)
-        .update(fields)
-        .eq("id", req.params.id)
+        .update(fields as never)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
@@ -119,7 +123,7 @@ function crudEndpoints(
         actorUserId: req.authUser!.userId,
         action: `${resource}.updated`,
         entityType: resource,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
         metadata: parsed as Record<string, unknown>,
       });
       res.json(success(data));
@@ -134,7 +138,7 @@ function crudEndpoints(
       const { error } = await supabase
         .from(table)
         .delete()
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({

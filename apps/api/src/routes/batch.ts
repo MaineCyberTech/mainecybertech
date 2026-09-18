@@ -69,14 +69,18 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
         if (k !== "organizationId") fields[snake(k)] = v;
       }
       fields.organization_id = (parsed as Record<string, unknown>).organizationId;
-      const { data, error } = await sb.from(table).insert(fields).select().single();
+      const { data, error } = await sb
+        .from(table)
+        .insert(fields as never)
+        .select()
+        .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
         organizationId: fields.organization_id as string,
         actorUserId: req.authUser!.userId,
         action: `${path}.created`,
         entityType: path,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.status(201).json(success(data));
     } catch (e) {
@@ -90,7 +94,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const { data, error } = await sb
         .from(table)
         .select("*")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .single();
       if (error || !data) throw new AppError("NOT_FOUND", "Record not found", 404);
@@ -116,8 +120,8 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       }
       const { data, error } = await sb
         .from(table)
-        .update(fields)
-        .eq("id", req.params.id)
+        .update(fields as never)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
@@ -141,7 +145,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const { error } = await sb
         .from(table)
         .delete()
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({

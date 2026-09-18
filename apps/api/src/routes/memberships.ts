@@ -30,7 +30,7 @@ router.get("/", async (req, res, next) => {
     // keep the org filter (caller's active org) for tenant isolation.
     const isSelfLookup = userId != null && userId === req.authUser?.userId;
     if (orgId && !isSelfLookup) query = query.eq("organization_id", orgId);
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
     if (userId) query = query.eq("user_id", userId);
 
     const { data, error } = await query;
@@ -134,7 +134,7 @@ router.patch("/:id", requirePermission("users", "manage"), async (req, res, next
         is_billing_contact: parsed.isBillingContact,
         is_security_contact: parsed.isSecurityContact,
       })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .select()
       .single();
 
@@ -159,7 +159,7 @@ router.delete("/:id", requirePermission("users", "manage"), async (req, res, nex
   try {
     const supabase = getScopedClient(req, "memberships", "write");
     await loadOwned(req, supabase as any, "memberships", String(req.params.id));
-    const { error } = await supabase.from("memberships").delete().eq("id", req.params.id);
+    const { error } = await supabase.from("memberships").delete().eq("id", String(req.params.id));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

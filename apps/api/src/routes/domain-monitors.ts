@@ -12,6 +12,7 @@ import {
   updateDomainMonitorSchema,
 } from "../validators/domain-monitors";
 import { queryInt } from "../lib/query";
+import { toJson } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -182,7 +183,7 @@ router.post("/", async (req, res, next) => {
         owner_user_id: req.authUser!.userId,
         created_by: req.authUser!.userId,
         visibility: parsed.visibility,
-        metadata: parsed.metadata ?? {},
+        metadata: toJson(parsed.metadata ?? {}),
       })
       .select()
       .single();
@@ -240,7 +241,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("domain_monitors")
-      .update(updateData)
+      .update(updateData as never)
       .eq("version", currentVersion)
       .eq("id", String(req.params.id as string))
       .select()

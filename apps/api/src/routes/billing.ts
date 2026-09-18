@@ -109,7 +109,7 @@ router.get("/invoices", async (req, res, next) => {
 
     let query = supabase.from("invoices").select("*", { count: "exact" });
     if (orgId) query = query.eq("organization_id", orgId);
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })
@@ -126,7 +126,7 @@ router.get("/invoices/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "billing", "read");
     const orgId = req.query.organization_id as string | undefined;
-    let query = supabase.from("invoices").select("*").eq("id", req.params.id);
+    let query = supabase.from("invoices").select("*").eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Invoice not found", 404);
@@ -244,7 +244,7 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
               organization_id: customer.organization_id,
               stripe_invoice_id: inv.id,
               invoice_number: inv.number,
-              status,
+              status: status as never,
               // Stripe already returns amounts in the smallest currency unit (cents)
               subtotal_cents: Math.round(inv.subtotal),
               tax_cents: Math.round(inv.tax ?? 0),

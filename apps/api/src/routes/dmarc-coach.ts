@@ -54,7 +54,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "dmarc-coach", "read");
-    let query = supabase.from("dmarc_analyses").select("*").eq("id", req.params.id);
+    let query = supabase.from("dmarc_analyses").select("*").eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Analysis not found", 404);
@@ -76,7 +76,11 @@ router.post("/", async (req, res, next) => {
       if (k === "organizationId") continue;
       if (v !== undefined && v !== null) fields[snakeCase(k)] = v;
     }
-    const { data, error } = await supabase.from("dmarc_analyses").insert(fields).select().single();
+    const { data, error } = await supabase
+      .from("dmarc_analyses")
+      .insert(fields as never)
+      .select()
+      .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       organizationId: parsed.organizationId,
@@ -101,8 +105,8 @@ router.patch("/:id", async (req, res, next) => {
     }
     const { data, error } = await supabase
       .from("dmarc_analyses")
-      .update(fields)
-      .eq("id", req.params.id)
+      .update(fields as never)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -127,7 +131,7 @@ router.delete("/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("dmarc_analyses")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();

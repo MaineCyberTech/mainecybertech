@@ -20,6 +20,7 @@ import {
 import { z } from "zod";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import { queryInt } from "../lib/query";
+import { toJson } from "../lib/db-types";
 
 const createShareSchema = z.object({
   expiresAt: z
@@ -291,7 +292,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     if (orgId) query = query.eq("organization_id", orgId);
 
     const visibility = req.query.visibility as string | undefined;
-    if (visibility) query = query.eq("visibility", visibility);
+    if (visibility) query = query.eq("visibility", visibility as never);
 
     const {
       data: documents,
@@ -318,7 +319,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "documents", "read");
-    let query = supabase.from("documents").select("*").eq("id", req.params.id);
+    let query = supabase.from("documents").select("*").eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -342,14 +343,14 @@ router.post("/", async (req, res, next) => {
         description: parsed.description ?? null,
         visibility: parsed.visibility,
         folder_path: parsed.folderPath ?? null,
-        storage_bucket: parsed.storageBucket ?? null,
-        storage_path: parsed.storagePath ?? null,
+        storage_bucket: parsed.storageBucket ?? "",
+        storage_path: parsed.storagePath ?? "",
         mime_type: parsed.mimeType ?? null,
         file_name: parsed.fileName ?? null,
         file_size: parsed.fileSize ?? null,
-        uploaded_by: parsed.uploadedBy ?? null,
+        uploaded_by: parsed.uploadedBy ?? req.authUser!.userId,
         current_version: parsed.currentVersion ?? null,
-        metadata: parsed.metadata ?? null,
+        metadata: toJson(parsed.metadata ?? null),
       })
       .select()
       .single();
@@ -486,7 +487,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
           organization_id: organizationId,
           name,
           description,
-          visibility,
+          visibility: visibility as never,
           folder_path: folderPath,
           storage_bucket: bucket,
           storage_path: storagePath,
@@ -534,7 +535,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     const supabase = getScopedClient(req, "documents", "write");
     const orgId = req.query.organization_id as string | undefined;
 
-    let currentQuery = supabase.from("documents").select("version").eq("id", req.params.id);
+    let currentQuery = supabase.from("documents").select("version").eq("id", String(req.params.id));
     if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
     const { data: current, error: fetchError } = await currentQuery.single();
 
@@ -561,9 +562,9 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     let query = supabase
       .from("documents")
-      .update(updateData)
-      .eq("id", req.params.id)
-      .eq("version", current.version);
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
+      .eq("version", current.version as number);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.select().single();
 
@@ -592,7 +593,7 @@ router.delete("/:id", requirePermission("documents", "delete"), async (req, res,
     let fetchQuery = supabase
       .from("documents")
       .select("id, organization_id, storage_bucket, storage_path")
-      .eq("id", req.params.id);
+      .eq("id", String(req.params.id));
     if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
     const { data: doc, error: fetchError } = await fetchQuery.single();
 
@@ -602,7 +603,7 @@ router.delete("/:id", requirePermission("documents", "delete"), async (req, res,
       await supabase.storage.from(doc.storage_bucket).remove([doc.storage_path]);
     }
 
-    let deleteQuery = supabase.from("documents").delete().eq("id", req.params.id);
+    let deleteQuery = supabase.from("documents").delete().eq("id", String(req.params.id));
     if (orgId) deleteQuery = deleteQuery.eq("organization_id", orgId);
     const { error } = await deleteQuery;
 
@@ -629,7 +630,7 @@ router.post("/:id/signed-url", async (req, res, next) => {
     let query = supabase
       .from("documents")
       .select("storage_bucket, storage_path")
-      .eq("id", req.params.id);
+      .eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data: doc, error: docError } = await query.single();
 
@@ -688,14 +689,15 @@ router.post("/bulk/folder", async (req, res, next) => {
     const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
       table_name: "documents",
       updates,
-    });
+    } as never);
 
     if (error) {
       throw new AppError("DB_ERROR", error.message, 500);
     }
 
-    const successful = results.filter((r: { success: boolean }) => r.success).length;
-    const failed = results.filter((r: { success: boolean }) => !r.success);
+    const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
+    const successful = resultRows.filter((r) => r.success).length;
+    const failed = resultRows.filter((r) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -743,14 +745,15 @@ router.post("/bulk/metadata", async (req, res, next) => {
     const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
       table_name: "documents",
       updates,
-    });
+    } as never);
 
     if (error) {
       throw new AppError("DB_ERROR", error.message, 500);
     }
 
-    const successful = results.filter((r: { success: boolean }) => r.success).length;
-    const failed = results.filter((r: { success: boolean }) => !r.success);
+    const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
+    const successful = resultRows.filter((r) => r.success).length;
+    const failed = resultRows.filter((r) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -777,7 +780,7 @@ router.get("/:id/versions", async (req, res, next) => {
 
     // Version rows carry no org column — verify the parent document belongs
     // to the caller's org before exposing version metadata (storage paths).
-    let docQuery = supabase.from("documents").select("id").eq("id", req.params.id);
+    let docQuery = supabase.from("documents").select("id").eq("id", String(req.params.id));
     if (orgId) docQuery = docQuery.eq("organization_id", orgId);
     const { data: doc, error: docError } = await docQuery.single();
     if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
@@ -789,7 +792,7 @@ router.get("/:id/versions", async (req, res, next) => {
     const { data, error, count } = await supabase
       .from("document_versions")
       .select("*", { count: "exact" })
-      .eq("document_id", req.params.id)
+      .eq("document_id", String(req.params.id))
       .order("version_number", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -805,7 +808,7 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
     const supabase = getScopedClient(req, "documents", "read");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    let docQuery = supabase.from("documents").select("id").eq("id", req.params.id);
+    let docQuery = supabase.from("documents").select("id").eq("id", String(req.params.id));
     if (orgId) docQuery = docQuery.eq("organization_id", orgId);
     const { data: doc, error: docError } = await docQuery.single();
     if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
@@ -813,8 +816,8 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
     const { data, error } = await supabase
       .from("document_versions")
       .select("*")
-      .eq("id", req.params.versionId)
-      .eq("document_id", req.params.id)
+      .eq("id", String(req.params.versionId))
+      .eq("document_id", String(req.params.id))
       .single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Version not found", 404);
@@ -832,7 +835,7 @@ router.post("/:id/shares", async (req, res, next) => {
     const { data: doc, error: docError } = await supabase
       .from("documents")
       .select("id, organization_id, storage_bucket, storage_path")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
 
     if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
@@ -888,7 +891,7 @@ router.get("/:id/shares", async (req, res, next) => {
     const { data: doc, error: docError } = await supabase
       .from("documents")
       .select("id, organization_id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
 
     if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
@@ -926,7 +929,7 @@ router.patch("/:id/shares/:shareId", async (req, res, next) => {
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
       .select("id, document_id, organization_id")
-      .eq("id", req.params.shareId)
+      .eq("id", String(req.params.shareId))
       .single();
 
     if (shareError || !share) throw new AppError("NOT_FOUND", "Share not found", 404);
@@ -953,8 +956,8 @@ router.patch("/:id/shares/:shareId", async (req, res, next) => {
 
     const { error } = await supabase
       .from("document_shares")
-      .update(updateData)
-      .eq("id", req.params.shareId);
+      .update(updateData as never)
+      .eq("id", String(req.params.shareId));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -964,7 +967,7 @@ router.patch("/:id/shares/:shareId", async (req, res, next) => {
       entityType: "document",
       entityId: share.document_id,
       metadata: {
-        shareId: req.params.shareId,
+        shareId: String(req.params.shareId),
         changes: Object.keys(updateData),
       },
     });
@@ -982,7 +985,7 @@ router.delete("/:id/shares/:shareId", async (req, res, next) => {
     const { data: share, error: shareError } = await supabase
       .from("document_shares")
       .select("id, document_id, organization_id")
-      .eq("id", req.params.shareId)
+      .eq("id", String(req.params.shareId))
       .single();
 
     if (shareError || !share) throw new AppError("NOT_FOUND", "Share not found", 404);
@@ -998,7 +1001,10 @@ router.delete("/:id/shares/:shareId", async (req, res, next) => {
 
     if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
 
-    const { error } = await supabase.from("document_shares").delete().eq("id", req.params.shareId);
+    const { error } = await supabase
+      .from("document_shares")
+      .delete()
+      .eq("id", String(req.params.shareId));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -1007,7 +1013,7 @@ router.delete("/:id/shares/:shareId", async (req, res, next) => {
       action: "document.share.delete",
       entityType: "document",
       entityId: share.document_id,
-      metadata: { shareId: req.params.shareId },
+      metadata: { shareId: String(req.params.shareId) },
     });
 
     res.status(204).send();

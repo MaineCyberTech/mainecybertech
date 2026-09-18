@@ -19,6 +19,7 @@ import {
   publishProposalSchema,
 } from "../validators/proposals";
 import { queryInt } from "../lib/query";
+import { toJson } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -42,7 +43,7 @@ router.get("/export", async (req, res, next) => {
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
     const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
     const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
@@ -67,7 +68,7 @@ router.get("/", async (req, res, next) => {
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
     const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
     const searchFilter = req.query.search as string | undefined;
     if (searchFilter) query = query.ilike("title", `%${searchFilter}%`);
 
@@ -92,7 +93,7 @@ router.get("/:id", async (req, res, next) => {
     let query = supabase
       .from("proposals")
       .select("*")
-      .eq("id", req.params.id as string);
+      .eq("id", String(req.params.id) as string);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -103,26 +104,26 @@ router.get("/:id", async (req, res, next) => {
         supabase
           .from("proposal_phases")
           .select("*")
-          .eq("proposal_id", req.params.id as string)
+          .eq("proposal_id", String(req.params.id) as string)
           .order("sort_order"),
         supabase
           .from("proposal_line_items")
           .select("*")
-          .eq("proposal_id", req.params.id as string)
+          .eq("proposal_id", String(req.params.id) as string)
           .order("sort_order"),
         supabase
           .from("module_comments")
           .select("*")
           .eq("module_key", "proposals")
           .eq("entity_type", "proposal")
-          .eq("entity_id", req.params.id as string)
+          .eq("entity_id", String(req.params.id) as string)
           .order("created_at", { ascending: true }),
         supabase
           .from("module_timeline_events")
           .select("*")
           .eq("module_key", "proposals")
           .eq("entity_type", "proposal")
-          .eq("entity_id", req.params.id as string)
+          .eq("entity_id", String(req.params.id) as string)
           .order("created_at", { ascending: true }),
       ]);
 
@@ -162,7 +163,7 @@ router.post("/", async (req, res, next) => {
         valid_until: parsed.validUntil ?? null,
         owner_user_id: parsed.ownerUserId ?? null,
         created_by: req.authUser!.userId,
-        metadata: parsed.metadata ?? {},
+        metadata: toJson(parsed.metadata ?? {}),
         grand_total: 0,
         total_labor: 0,
         total_materials: 0,
@@ -273,7 +274,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, version, organization_id",
     );
     checkVersionMatch(current.version as number, req.ifMatchVersion);
@@ -290,9 +291,9 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("proposals")
-      .update(updateData)
-      .eq("id", req.params.id as string)
-      .eq("version", current.version)
+      .update(updateData as never)
+      .eq("id", String(req.params.id) as string)
+      .eq("version", current.version as number)
       .select()
       .single();
 
@@ -320,13 +321,13 @@ router.delete("/:id", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
     const { error } = await supabase
       .from("proposals")
       .delete()
-      .eq("id", req.params.id as string);
+      .eq("id", String(req.params.id) as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
@@ -350,14 +351,14 @@ router.post("/:id/phases", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
     const { data, error } = await supabase
       .from("proposal_phases")
       .insert({
-        proposal_id: req.params.id as string,
+        proposal_id: String(req.params.id) as string,
         title: parsed.title,
         description: parsed.description ?? null,
         assumptions: parsed.assumptions ?? null,
@@ -374,7 +375,7 @@ router.post("/:id/phases", async (req, res, next) => {
       action: "proposal.phase.created",
       entityType: "proposal_phase",
       entityId: data.id,
-      metadata: { proposalId: req.params.id as string, title: parsed.title },
+      metadata: { proposalId: String(req.params.id) as string, title: parsed.title },
     });
 
     res.status(201).json(success(data));
@@ -391,7 +392,7 @@ router.patch("/:id/phases/:phaseId", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
@@ -404,9 +405,9 @@ router.patch("/:id/phases/:phaseId", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("proposal_phases")
-      .update(updateData)
-      .eq("id", req.params.phaseId)
-      .eq("proposal_id", req.params.id as string)
+      .update(updateData as never)
+      .eq("id", String(req.params.phaseId))
+      .eq("proposal_id", String(req.params.id) as string)
       .select()
       .single();
 
@@ -418,7 +419,7 @@ router.patch("/:id/phases/:phaseId", async (req, res, next) => {
       action: "proposal.phase.updated",
       entityType: "proposal_phase",
       entityId: data.id,
-      metadata: { proposalId: req.params.id as string, ...parsed },
+      metadata: { proposalId: String(req.params.id) as string, ...parsed },
     });
 
     res.json(success(data));
@@ -434,14 +435,14 @@ router.delete("/:id/phases/:phaseId", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
     const { error } = await supabase
       .from("proposal_phases")
       .delete()
-      .eq("id", req.params.phaseId)
-      .eq("proposal_id", req.params.id as string);
+      .eq("id", String(req.params.phaseId))
+      .eq("proposal_id", String(req.params.id) as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -450,7 +451,7 @@ router.delete("/:id/phases/:phaseId", async (req, res, next) => {
       action: "proposal.phase.deleted",
       entityType: "proposal_phase",
       entityId: String(req.params.phaseId),
-      metadata: { proposalId: req.params.id as string },
+      metadata: { proposalId: String(req.params.id) as string },
     });
 
     res.status(204).send();
@@ -467,7 +468,7 @@ router.post("/:id/items", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
@@ -477,7 +478,7 @@ router.post("/:id/items", async (req, res, next) => {
     const { data, error } = await supabase
       .from("proposal_line_items")
       .insert({
-        proposal_id: req.params.id as string,
+        proposal_id: String(req.params.id) as string,
         phase_id: parsed.phaseId ?? null,
         item_type: parsed.itemType,
         name: parsed.name,
@@ -501,7 +502,7 @@ router.post("/:id/items", async (req, res, next) => {
       action: "proposal.item.created",
       entityType: "proposal_line_item",
       entityId: data.id,
-      metadata: { proposalId: req.params.id as string, name: parsed.name },
+      metadata: { proposalId: String(req.params.id) as string, name: parsed.name },
     });
 
     res.status(201).json(success(data));
@@ -518,7 +519,7 @@ router.patch("/:id/items/:itemId", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
@@ -539,9 +540,9 @@ router.patch("/:id/items/:itemId", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("proposal_line_items")
-      .update(updateData)
-      .eq("id", req.params.itemId)
-      .eq("proposal_id", req.params.id as string)
+      .update(updateData as never)
+      .eq("id", String(req.params.itemId))
+      .eq("proposal_id", String(req.params.id) as string)
       .select()
       .single();
 
@@ -553,7 +554,7 @@ router.patch("/:id/items/:itemId", async (req, res, next) => {
       action: "proposal.item.updated",
       entityType: "proposal_line_item",
       entityId: data.id,
-      metadata: { proposalId: req.params.id as string, ...parsed },
+      metadata: { proposalId: String(req.params.id) as string, ...parsed },
     });
 
     res.json(success(data));
@@ -569,14 +570,14 @@ router.delete("/:id/items/:itemId", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
     const { error } = await supabase
       .from("proposal_line_items")
       .delete()
-      .eq("id", req.params.itemId)
-      .eq("proposal_id", req.params.id as string);
+      .eq("id", String(req.params.itemId))
+      .eq("proposal_id", String(req.params.id) as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -585,7 +586,7 @@ router.delete("/:id/items/:itemId", async (req, res, next) => {
       action: "proposal.item.deleted",
       entityType: "proposal_line_item",
       entityId: String(req.params.itemId),
-      metadata: { proposalId: req.params.id as string },
+      metadata: { proposalId: String(req.params.id) as string },
     });
 
     res.status(204).send();
@@ -603,7 +604,7 @@ router.post("/:id/submit-approval", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id, title, description, status, grand_total, version",
     );
 
@@ -621,10 +622,10 @@ router.post("/:id/submit-approval", async (req, res, next) => {
         request_type: "proposal_approval",
         request_subject: `Proposal: ${proposal.title as string}`,
         request_body: (proposal.description as string) ?? null,
-        request_metadata: { proposalId: proposal.id, grandTotal: proposal.grand_total },
+        request_metadata: toJson({ proposalId: proposal.id, grandTotal: proposal.grand_total }),
         source_module: "proposals",
         source_entity_type: "proposal",
-        source_entity_id: proposal.id,
+        source_entity_id: proposal.id as string,
         priority: "high",
         requested_by: req.authUser!.userId,
       })
@@ -641,7 +642,7 @@ router.post("/:id/submit-approval", async (req, res, next) => {
         approval_request_id: approval.id,
         version: (proposal.version as number) + 1,
       })
-      .eq("id", req.params.id as string)
+      .eq("id", String(req.params.id) as string)
       .eq("version", proposal.version as number);
 
     await logAuditEvent({
@@ -649,7 +650,7 @@ router.post("/:id/submit-approval", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "proposal.submitted_for_approval",
       entityType: "proposal",
-      entityId: req.params.id as string,
+      entityId: String(req.params.id) as string,
       metadata: { approvalRequestId: approval.id },
     });
 
@@ -657,7 +658,7 @@ router.post("/:id/submit-approval", async (req, res, next) => {
       proposal.organization_id as string,
       "proposals",
       "proposal",
-      req.params.id as string,
+      String(req.params.id) as string,
       "submitted_for_approval",
       {},
       req.authUser!.userId,
@@ -678,7 +679,7 @@ router.post("/:id/publish", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id, version, status",
     );
 
@@ -700,7 +701,7 @@ router.post("/:id/publish", async (req, res, next) => {
         metadata: {},
         version: (current.version as number) + 1,
       })
-      .eq("id", req.params.id as string)
+      .eq("id", String(req.params.id) as string)
       .eq("version", current.version as number)
       .select()
       .single();
@@ -713,14 +714,14 @@ router.post("/:id/publish", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "proposal.published",
       entityType: "proposal",
-      entityId: req.params.id as string,
+      entityId: String(req.params.id) as string,
     });
 
     await addTimelineEvent(
       current.organization_id as string,
       "proposals",
       "proposal",
-      req.params.id as string,
+      String(req.params.id) as string,
       "published",
       {},
       req.authUser!.userId,
@@ -739,7 +740,7 @@ router.get("/:id/comments", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
     const { data, error } = await supabase
@@ -747,7 +748,7 @@ router.get("/:id/comments", async (req, res, next) => {
       .select("*")
       .eq("module_key", "proposals")
       .eq("entity_type", "proposal")
-      .eq("entity_id", req.params.id as string)
+      .eq("entity_id", String(req.params.id) as string)
       .order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -764,7 +765,7 @@ router.post("/:id/comments", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
@@ -777,7 +778,7 @@ router.post("/:id/comments", async (req, res, next) => {
         organization_id: proposal.organization_id as string,
         module_key: "proposals",
         entity_type: "proposal",
-        entity_id: req.params.id as string,
+        entity_id: String(req.params.id) as string,
         author_id: req.authUser!.userId,
         body: body.trim(),
         is_internal: (req.body as { isInternal?: boolean }).isInternal ?? false,
@@ -792,7 +793,7 @@ router.post("/:id/comments", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "proposal.comment.created",
       entityType: "proposal",
-      entityId: req.params.id as string,
+      entityId: String(req.params.id) as string,
     });
 
     res.status(201).json(success(data));
@@ -808,7 +809,7 @@ router.get("/:id/timeline", async (req, res, next) => {
       req,
       supabase as any,
       "proposals",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
     const { data, error } = await supabase
@@ -816,7 +817,7 @@ router.get("/:id/timeline", async (req, res, next) => {
       .select("*")
       .eq("module_key", "proposals")
       .eq("entity_type", "proposal")
-      .eq("entity_id", req.params.id as string)
+      .eq("entity_id", String(req.params.id) as string)
       .order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

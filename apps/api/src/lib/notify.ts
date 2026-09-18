@@ -35,10 +35,13 @@ export async function createNotification(opts: NotifyOptions) {
   }
 }
 
-export async function notifyAndEmail(
-  opts: NotifyOptions & { email: string; emailHtml?: string },
-) {
+export async function notifyAndEmail(opts: NotifyOptions & { email?: string; emailHtml?: string }) {
   await createNotification(opts);
+
+  // Email is optional: a recipient with no address still gets an in-app
+  // notification but no email.
+  const emailTo = opts.email;
+  if (!emailTo) return;
 
   const baseUrl = getEnv().APP_BASE_URL;
   const modulePath =
@@ -51,7 +54,7 @@ export async function notifyAndEmail(
           : "";
 
   const emailPayload = {
-    to: opts.email,
+    to: emailTo,
     subject: `[Maine CyberTech] ${opts.title}`,
     text: `${opts.body}\n\nView: ${baseUrl}${modulePath}`,
     html:

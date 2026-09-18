@@ -212,7 +212,7 @@ router.post("/:id/read", async (req, res, next) => {
     const { data, error } = await supabase
       .from("notifications")
       .update({ read: true, read_at: new Date().toISOString() })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("user_id", req.authUser!.userId)
       .select()
       .single();
@@ -223,7 +223,7 @@ router.post("/:id/read", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "notification.read",
       entityType: "notification",
-      entityId: req.params.id,
+      entityId: String(req.params.id),
     });
 
     res.json(success(data));
@@ -322,7 +322,7 @@ router.delete("/:id", async (req, res, next) => {
     const { error } = await supabase
       .from("notifications")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("user_id", req.authUser!.userId);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -331,7 +331,7 @@ router.delete("/:id", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "notification.delete",
       entityType: "notification",
-      entityId: req.params.id,
+      entityId: String(req.params.id),
     });
 
     res.status(204).send();

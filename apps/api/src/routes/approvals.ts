@@ -22,6 +22,7 @@ import {
   addApprovalCommentSchema,
 } from "../validators/approvals";
 import { queryInt } from "../lib/query";
+import { toJson } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -52,7 +53,7 @@ router.get("/export", async (req, res, next) => {
     if (orgId) query = query.eq("organization_id", orgId);
 
     const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const typeFilter = req.query.request_type as string | undefined;
     if (typeFilter) query = query.eq("request_type", typeFilter);
@@ -113,7 +114,7 @@ router.get("/", async (req, res, next) => {
     if (orgId) query = query.eq("organization_id", orgId);
 
     const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const typeFilter = req.query.request_type as string | undefined;
     if (typeFilter) query = query.eq("request_type", typeFilter);
@@ -150,7 +151,7 @@ router.get("/:id", async (req, res, next) => {
     let query = supabase
       .from("approval_requests")
       .select("*")
-      .eq("id", req.params.id as string);
+      .eq("id", String(req.params.id) as string);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -161,7 +162,7 @@ router.get("/:id", async (req, res, next) => {
       .select("*")
       .eq("module_key", "approvals")
       .eq("entity_type", "approval_request")
-      .eq("entity_id", req.params.id as string)
+      .eq("entity_id", String(req.params.id) as string)
       .order("created_at", { ascending: true });
 
     const { data: timeline } = await supabase
@@ -169,7 +170,7 @@ router.get("/:id", async (req, res, next) => {
       .select("*")
       .eq("module_key", "approvals")
       .eq("entity_type", "approval_request")
-      .eq("entity_id", req.params.id as string)
+      .eq("entity_id", String(req.params.id) as string)
       .order("created_at", { ascending: true });
 
     res.json(success({ ...data, comments: comments ?? [], timeline: timeline ?? [] }));
@@ -190,7 +191,7 @@ router.post("/", async (req, res, next) => {
         request_type: parsed.requestType,
         request_subject: parsed.requestSubject,
         request_body: parsed.requestBody ?? null,
-        request_metadata: parsed.requestMetadata ?? {},
+        request_metadata: toJson(parsed.requestMetadata ?? {}),
         source_module: parsed.sourceModule ?? null,
         source_entity_type: parsed.sourceEntityType ?? null,
         source_entity_id: parsed.sourceEntityId ?? null,
@@ -239,7 +240,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
       req,
       supabase as any,
       "approval_requests",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, version, organization_id",
     );
     checkVersionMatch(current.version as number, req.ifMatchVersion);
@@ -257,9 +258,9 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("approval_requests")
-      .update(updateData)
-      .eq("id", req.params.id as string)
-      .eq("version", current.version)
+      .update(updateData as never)
+      .eq("id", String(req.params.id) as string)
+      .eq("version", current.version as number)
       .select()
       .single();
 
@@ -287,13 +288,13 @@ router.delete("/:id", async (req, res, next) => {
       req,
       supabase as any,
       "approval_requests",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
     const { error } = await supabase
       .from("approval_requests")
       .delete()
-      .eq("id", req.params.id as string);
+      .eq("id", String(req.params.id) as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -318,12 +319,12 @@ router.post("/:id/approve", async (req, res, next) => {
       req,
       supabase as any,
       "approval_requests",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
     const result = await approveRequest(
-      req.params.id as string,
+      String(req.params.id) as string,
       req.authUser!.userId,
       approval.organization_id as string,
       parsed.notes,
@@ -333,7 +334,7 @@ router.post("/:id/approve", async (req, res, next) => {
       approval.organization_id as string,
       "approvals",
       "approval_request",
-      req.params.id as string,
+      String(req.params.id) as string,
       "approved",
       { notes: parsed.notes },
       req.authUser!.userId,
@@ -353,12 +354,12 @@ router.post("/:id/reject", async (req, res, next) => {
       req,
       supabase as any,
       "approval_requests",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
     const result = await rejectRequest(
-      req.params.id as string,
+      String(req.params.id) as string,
       req.authUser!.userId,
       approval.organization_id as string,
       parsed.reason,
@@ -368,7 +369,7 @@ router.post("/:id/reject", async (req, res, next) => {
       approval.organization_id as string,
       "approvals",
       "approval_request",
-      req.params.id as string,
+      String(req.params.id) as string,
       "rejected",
       { reason: parsed.reason },
       req.authUser!.userId,
@@ -388,12 +389,12 @@ router.post("/:id/cancel", async (req, res, next) => {
       req,
       supabase as any,
       "approval_requests",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
     const result = await cancelRequest(
-      req.params.id as string,
+      String(req.params.id) as string,
       req.authUser!.userId,
       approval.organization_id as string,
       parsed.reason,
@@ -403,7 +404,7 @@ router.post("/:id/cancel", async (req, res, next) => {
       approval.organization_id as string,
       "approvals",
       "approval_request",
-      req.params.id as string,
+      String(req.params.id) as string,
       "cancelled",
       { reason: parsed.reason },
       req.authUser!.userId,
@@ -422,7 +423,7 @@ router.get("/:id/comments", async (req, res, next) => {
       req,
       supabase as any,
       "approval_requests",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
@@ -431,7 +432,7 @@ router.get("/:id/comments", async (req, res, next) => {
       .select("*")
       .eq("module_key", "approvals")
       .eq("entity_type", "approval_request")
-      .eq("entity_id", req.params.id as string)
+      .eq("entity_id", String(req.params.id) as string)
       .order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -450,7 +451,7 @@ router.post("/:id/comments", async (req, res, next) => {
       req,
       supabase as any,
       "approval_requests",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
@@ -460,7 +461,7 @@ router.post("/:id/comments", async (req, res, next) => {
         organization_id: approval.organization_id as string,
         module_key: "approvals",
         entity_type: "approval_request",
-        entity_id: req.params.id as string,
+        entity_id: String(req.params.id) as string,
         author_id: req.authUser!.userId,
         body: parsed.body,
         is_internal: parsed.isInternal,
@@ -475,7 +476,7 @@ router.post("/:id/comments", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "approval.comment.created",
       entityType: "approval_request",
-      entityId: req.params.id as string,
+      entityId: String(req.params.id) as string,
     });
 
     res.status(201).json(success(data));
@@ -491,7 +492,7 @@ router.get("/:id/timeline", async (req, res, next) => {
       req,
       supabase as any,
       "approval_requests",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
@@ -500,7 +501,7 @@ router.get("/:id/timeline", async (req, res, next) => {
       .select("*")
       .eq("module_key", "approvals")
       .eq("entity_type", "approval_request")
-      .eq("entity_id", req.params.id as string)
+      .eq("entity_id", String(req.params.id) as string)
       .order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);

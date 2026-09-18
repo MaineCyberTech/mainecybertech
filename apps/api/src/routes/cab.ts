@@ -99,12 +99,17 @@ router.post("/meetings", async (req, res, next) => {
 router.get("/meetings/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "cab", "read");
-    const meeting = await loadOwned(req, supabase as any, "cab_meetings", req.params.id as string);
+    const meeting = await loadOwned(
+      req,
+      supabase as any,
+      "cab_meetings",
+      String(req.params.id) as string,
+    );
 
     const { data: agenda, error: agendaError } = await supabase
       .from("cab_agenda_items")
       .select("*")
-      .eq("meeting_id", req.params.id);
+      .eq("meeting_id", String(req.params.id));
     if (agendaError) throw new AppError("DB_ERROR", agendaError.message, 500);
 
     res.json(success({ ...meeting, agenda: agenda ?? [] }));
@@ -121,14 +126,14 @@ router.post("/meetings/:id/agenda", async (req, res, next) => {
       req,
       supabase as any,
       "cab_meetings",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
     const { data, error } = await supabase
       .from("cab_agenda_items")
       .insert({
-        meeting_id: req.params.id,
+        meeting_id: String(req.params.id),
         organization_id: meeting.organization_id as string,
         change_request_id: parsed.changeRequestId,
         decision: parsed.decision,
@@ -161,7 +166,7 @@ router.patch("/agenda/:id", async (req, res, next) => {
       req,
       supabase as any,
       "cab_agenda_items",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
@@ -171,8 +176,8 @@ router.patch("/agenda/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("cab_agenda_items")
-      .update(updateData)
-      .eq("id", req.params.id)
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);

@@ -72,7 +72,7 @@ router.get("/:id", async (req, res, next) => {
     const supabase = getScopedClient(req, "webhook-management", "read");
     await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
     const orgId = req.query.organization_id as string | undefined;
-    let query = supabase.from("webhook_endpoints").select("*").eq("id", req.params.id);
+    let query = supabase.from("webhook_endpoints").select("*").eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Webhook not found", 404);
@@ -136,7 +136,7 @@ router.patch(
       const { data: current, error: fetchError } = await supabase
         .from("webhook_endpoints")
         .select("version")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .single();
 
       if (fetchError || !current) {
@@ -156,9 +156,9 @@ router.patch(
 
       const { data, error } = await supabase
         .from("webhook_endpoints")
-        .update(updateData)
-        .eq("version", current.version)
-        .eq("id", req.params.id)
+        .update(updateData as never)
+        .eq("version", current.version as number)
+        .eq("id", String(req.params.id))
         .select()
         .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -187,7 +187,7 @@ router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, 
     const { data, error } = await supabase
       .from("webhook_endpoints")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -214,7 +214,7 @@ router.get("/:id/deliveries", async (req, res, next) => {
       const { data: webhook } = await supabase
         .from("webhook_endpoints")
         .select("id")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", orgId)
         .maybeSingle();
       if (!webhook) throw new AppError("NOT_FOUND", "Webhook not found", 404);
@@ -226,7 +226,7 @@ router.get("/:id/deliveries", async (req, res, next) => {
     const { data, error, count } = await supabase
       .from("webhook_deliveries")
       .select("*", { count: "exact" })
-      .eq("webhook_id", req.params.id)
+      .eq("webhook_id", String(req.params.id))
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -244,7 +244,7 @@ router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, re
     const { data: webhook, error: fetchError } = await supabase
       .from("webhook_endpoints")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
     if (fetchError || !webhook) throw new AppError("NOT_FOUND", "Webhook not found", 404);
 

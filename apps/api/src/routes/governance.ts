@@ -64,7 +64,7 @@ function crudRoute(
       const { data, error } = await sb
         .from(table)
         .select("*")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .single();
       if (error || !data) throw new AppError("NOT_FOUND", "Not found", 404);
@@ -84,14 +84,18 @@ function crudRoute(
         if (k !== "organizationId") fields[snake(k)] = v;
       }
       fields.organization_id = (parsed as Record<string, unknown>).organizationId;
-      const { data, error } = await sb.from(table).insert(fields).select().single();
+      const { data, error } = await sb
+        .from(table)
+        .insert(fields as never)
+        .select()
+        .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
         organizationId: fields.organization_id as string,
         actorUserId: req.authUser!.userId,
         action: `${path}.created`,
         entityType: path,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.status(201).json(success(data));
     } catch (e) {
@@ -114,8 +118,8 @@ function crudRoute(
       }
       const { data, error } = await sb
         .from(table)
-        .update(fields)
-        .eq("id", req.params.id)
+        .update(fields as never)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
@@ -125,7 +129,7 @@ function crudRoute(
         actorUserId: req.authUser!.userId,
         action: `${path}.updated`,
         entityType: path,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.json(success(data));
     } catch (e) {
@@ -139,7 +143,7 @@ function crudRoute(
       const { error } = await sb
         .from(table)
         .delete()
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
@@ -169,7 +173,7 @@ router.post("/change-requests/:id/submit", async (req, res, next) => {
     let updateQuery = supabase
       .from("change_requests")
       .update({ status: "pending_review", submitted_at: new Date().toISOString() })
-      .eq("id", req.params.id);
+      .eq("id", String(req.params.id));
     if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
     const { data, error } = await updateQuery.select().single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -200,7 +204,7 @@ router.post(
           approved_by: req.authUser!.userId,
           approved_at: new Date().toISOString(),
         })
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("status", "pending_review");
       if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
       const { data, error } = await updateQuery.select().single();
@@ -229,7 +233,7 @@ router.post(
       let updateQuery = supabase
         .from("change_requests")
         .update({ status: "rejected" })
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("status", "pending_review");
       if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
       const { data, error } = await updateQuery.select().single();
@@ -258,7 +262,7 @@ router.post(
       let updateQuery = supabase
         .from("change_requests")
         .update({ status: "implemented", implemented_at: new Date().toISOString() })
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("status", "approved");
       if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
       const { data, error } = await updateQuery.select().single();
@@ -287,7 +291,7 @@ router.post(
       let updateQuery = supabase
         .from("change_requests")
         .update({ status: "verified", verified_at: new Date().toISOString() })
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("status", "implemented");
       if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
       const { data, error } = await updateQuery.select().single();
@@ -334,15 +338,15 @@ router.post(
       let updateQuery = supabase
         .from("risk_register")
         .update({
-          likelihood: parsed.likelihood,
-          impact: parsed.impact,
+          likelihood: String(parsed.likelihood),
+          impact: String(parsed.impact),
           risk_score: riskScore,
           risk_level: riskLevel,
           mitigating_controls: parsed.mitigatingControls,
           accepting_controls: parsed.acceptingControls,
           assessed_at: new Date().toISOString(),
         })
-        .eq("id", req.params.id);
+        .eq("id", String(req.params.id));
       if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
       const { data, error } = await updateQuery.select().single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);

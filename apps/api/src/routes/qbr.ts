@@ -6,6 +6,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { createQbrReportSchema, updateQbrReportSchema } from "../validators/qbr";
 import { queryInt } from "../lib/query";
+import { toJson } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -41,7 +42,7 @@ router.get("/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("qbr_reports")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Report not found", 404);
@@ -173,7 +174,7 @@ router.post("/generate", async (req, res, next) => {
         report_data: reportData,
         generated_by: req.authUser!.userId,
         created_by: req.authUser!.userId,
-        metadata: parsed.metadata ?? {},
+        metadata: toJson(parsed.metadata ?? {}),
       })
       .select()
       .single();
@@ -209,8 +210,8 @@ router.patch("/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("qbr_reports")
-      .update(updateData)
-      .eq("id", req.params.id)
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -237,7 +238,7 @@ router.delete("/:id", async (req, res, next) => {
     const { error } = await supabase
       .from("qbr_reports")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({

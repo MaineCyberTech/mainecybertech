@@ -53,7 +53,7 @@ router.get("/export", async (req, res, next) => {
     if (orgId) query = query.eq("organization_id", orgId);
 
     const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
 
@@ -78,7 +78,7 @@ router.get("/", async (req, res, next) => {
     if (orgId) query = query.eq("organization_id", orgId);
 
     const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const {
       data: tickets,
@@ -105,7 +105,10 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "tickets", "read");
-    let query = supabase.from("tickets").select("*, ticket_comments(*)").eq("id", req.params.id);
+    let query = supabase
+      .from("tickets")
+      .select("*, ticket_comments(*)")
+      .eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -200,7 +203,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     const supabase = getScopedClient(req, "tickets", "write");
     const orgId = req.query.organization_id as string | undefined;
 
-    let currentQuery = supabase.from("tickets").select("version").eq("id", req.params.id);
+    let currentQuery = supabase.from("tickets").select("version").eq("id", String(req.params.id));
     if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
     const { data: current, error: fetchError } = await currentQuery.single();
 
@@ -226,9 +229,9 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     let query = supabase
       .from("tickets")
-      .update(updateData)
-      .eq("id", req.params.id)
-      .eq("version", current.version);
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
+      .eq("version", current.version as number);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.select().single();
 
@@ -259,7 +262,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
           module: "tickets",
           moduleId: data.id,
           action: "assigned",
-          email: assignee.email,
+          email: assignee.email ?? undefined,
         });
       }
     }
@@ -277,7 +280,7 @@ router.get("/:id/comments", async (req, res, next) => {
 
     // Verify the ticket exists and (when scoped) belongs to the caller's org
     // before exposing its comments.
-    let ticketQuery = supabase.from("tickets").select("id").eq("id", req.params.id);
+    let ticketQuery = supabase.from("tickets").select("id").eq("id", String(req.params.id));
     if (orgId) ticketQuery = ticketQuery.eq("organization_id", orgId);
     const { data: ticket, error: ticketError } = await ticketQuery.single();
     if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
@@ -285,7 +288,7 @@ router.get("/:id/comments", async (req, res, next) => {
     const { data, error } = await supabase
       .from("ticket_comments")
       .select("*")
-      .eq("ticket_id", req.params.id)
+      .eq("ticket_id", String(req.params.id))
       .order("created_at", { ascending: true });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -307,7 +310,7 @@ router.post("/:id/comments", async (req, res, next) => {
     let ticketQuery = supabase
       .from("tickets")
       .select("id, organization_id, title, created_by, assigned_to")
-      .eq("id", req.params.id);
+      .eq("id", String(req.params.id));
     if (orgId) ticketQuery = ticketQuery.eq("organization_id", orgId);
     const { data: ticket, error: ticketError } = await ticketQuery.single();
     if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
@@ -315,7 +318,7 @@ router.post("/:id/comments", async (req, res, next) => {
     const { data, error } = await supabase
       .from("ticket_comments")
       .insert({
-        ticket_id: req.params.id,
+        ticket_id: String(req.params.id),
         organization_id: ticket.organization_id,
         author_id: req.authUser!.userId,
         body: parsed.body,
@@ -335,9 +338,9 @@ router.post("/:id/comments", async (req, res, next) => {
     });
 
     if (ticket) {
-      const notifyIds = [ticket.created_by, ticket.assigned_to]
-        .filter(Boolean)
-        .filter((id: string) => id !== req.authUser!.userId);
+      const notifyIds: string[] = [ticket.created_by, ticket.assigned_to]
+        .filter((id): id is string => typeof id === "string")
+        .filter((id) => id !== req.authUser!.userId);
       const uniqueIds = [...new Set(notifyIds)];
       if (uniqueIds.length) {
         const { data: profiles } = await supabase
@@ -352,9 +355,9 @@ router.post("/:id/comments", async (req, res, next) => {
             title: "New Comment on Ticket",
             body: `${req.authUser!.email} commented on "${ticket.title}": "${parsed.body.slice(0, 100)}${parsed.body.length > 100 ? "..." : ""}"`,
             module: "tickets",
-            moduleId: req.params.id,
+            moduleId: String(req.params.id),
             action: "comment",
-            email: profile.email,
+            email: profile.email ?? undefined,
           });
         }
       }
@@ -374,8 +377,8 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
     const { data: existing, error: fetchError } = await supabase
       .from("ticket_comments")
       .select("id, author_id, organization_id, body, created_at")
-      .eq("id", req.params.commentId)
-      .eq("ticket_id", req.params.id)
+      .eq("id", String(req.params.commentId))
+      .eq("ticket_id", String(req.params.id))
       .single();
 
     if (fetchError || !existing) throw new AppError("NOT_FOUND", "Comment not found", 404);
@@ -390,7 +393,7 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
     const { data: ticket } = await supabase
       .from("tickets")
       .select("id, organization_id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
     if (!ticket || ticket.organization_id !== existing.organization_id) {
       throw new AppError("NOT_FOUND", "Comment not found", 404);
@@ -429,7 +432,7 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
     const { data, error } = await supabase
       .from("ticket_comments")
       .update({ body: parsed.body, edited_at: new Date().toISOString() })
-      .eq("id", req.params.commentId)
+      .eq("id", String(req.params.commentId))
       .eq("organization_id", existing.organization_id)
       .select()
       .single();
@@ -457,13 +460,16 @@ router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, n
     const supabase = getScopedClient(req, "tickets", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    let fetchQuery = supabase.from("tickets").select("id, organization_id").eq("id", req.params.id);
+    let fetchQuery = supabase
+      .from("tickets")
+      .select("id, organization_id")
+      .eq("id", String(req.params.id));
     if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
     const { data: ticket, error: fetchError } = await fetchQuery.single();
 
     if (fetchError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
-    let deleteQuery = supabase.from("tickets").delete().eq("id", req.params.id);
+    let deleteQuery = supabase.from("tickets").delete().eq("id", String(req.params.id));
     if (orgId) deleteQuery = deleteQuery.eq("organization_id", orgId);
     const { error } = await deleteQuery;
 

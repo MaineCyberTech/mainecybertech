@@ -51,7 +51,7 @@ router.get("/:id", async (req, res, next) => {
       req,
       supabase as any,
       "knowledge_base_articles",
-      req.params.id as string,
+      String(req.params.id) as string,
     );
 
     res.json(success(article));
@@ -103,7 +103,7 @@ router.patch("/:id", async (req, res, next) => {
       req,
       supabase as any,
       "knowledge_base_articles",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
 
@@ -123,8 +123,8 @@ router.patch("/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("knowledge_base_articles")
-      .update(updateData)
-      .eq("id", req.params.id)
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
       .eq("organization_id", article.organization_id as string)
       .select()
       .single();
@@ -152,13 +152,13 @@ router.delete("/:id", async (req, res, next) => {
       req,
       supabase as any,
       "knowledge_base_articles",
-      req.params.id as string,
+      String(req.params.id) as string,
       "id, organization_id",
     );
     const { error } = await supabase
       .from("knowledge_base_articles")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", article.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

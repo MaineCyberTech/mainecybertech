@@ -288,7 +288,7 @@ router.get("/products/by-id/:id", requireAuth, requireAdmin, async (req, res, ne
 // GET /api/v1/store/products/:slug - product detail (public)
 router.get("/products/:slug", async (req, res, next) => {
   try {
-    const product = await getProductBySlug(req.params.slug);
+    const product = await getProductBySlug(String(req.params.slug));
     if (!product) {
       res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
       return;
@@ -318,7 +318,7 @@ router.get("/categories", async (req, res, next) => {
 // GET /api/v1/store/categories/:slug - category detail with products (public)
 router.get("/categories/:slug", async (req, res, next) => {
   try {
-    const category = await getCategoryBySlug(req.params.slug);
+    const category = await getCategoryBySlug(String(req.params.slug));
     if (!category) {
       res.status(404).json(failure("NOT_FOUND", "Category not found", 404));
       return;

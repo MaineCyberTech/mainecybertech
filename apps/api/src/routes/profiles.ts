@@ -176,7 +176,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     const { data, error } = await supabase
       .from("profiles")
       .update(updateData)
-      .eq("version", current.version)
+      .eq("version", current.version as number)
       .eq("id", String(req.params.id))
       .select()
       .single();

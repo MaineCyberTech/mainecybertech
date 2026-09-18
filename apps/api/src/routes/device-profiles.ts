@@ -10,6 +10,7 @@ import {
   updateDeviceProfileSchema,
   listDeviceProfilesQuerySchema,
 } from "../validators/device-profiles";
+import { toJson } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -59,7 +60,10 @@ router.get("/:id", async (req, res, next) => {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "device-profiles", "read");
 
-    let query = supabase.from("device_profiles").select("*").eq("id", String(req.params.id as string));
+    let query = supabase
+      .from("device_profiles")
+      .select("*")
+      .eq("id", String(req.params.id as string));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -84,7 +88,7 @@ router.post("/", async (req, res, next) => {
         type: parsed.type ?? null,
         manufacturer: parsed.manufacturer ?? null,
         model: parsed.model ?? null,
-        specs: parsed.specs ?? {},
+        specs: toJson(parsed.specs ?? {}),
       })
       .select()
       .single();
@@ -122,7 +126,7 @@ router.patch("/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("device_profiles")
-      .update(updateData)
+      .update(updateData as never)
       .eq("id", String(req.params.id as string))
       .select()
       .single();
@@ -147,7 +151,10 @@ router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "device-profiles", "write");
     await loadOwned(req, supabase as any, "device_profiles", String(req.params.id as string));
-    const { error } = await supabase.from("device_profiles").delete().eq("id", String(req.params.id as string));
+    const { error } = await supabase
+      .from("device_profiles")
+      .delete()
+      .eq("id", String(req.params.id as string));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

@@ -60,7 +60,7 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
       const { data, error } = await sb
         .from(table)
         .select("*")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .single();
       if (error || !data) throw new AppError("NOT_FOUND", "Not found", 404);
@@ -78,14 +78,18 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
         if (k !== "organizationId") f[snake(k)] = v;
       }
       f.organization_id = p.organizationId as string;
-      const { data, error } = await sb.from(table).insert(f).select().single();
+      const { data, error } = await sb
+        .from(table)
+        .insert(f as never)
+        .select()
+        .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
         organizationId: f.organization_id as string,
         actorUserId: req.authUser!.userId,
         action: `${path}.created`,
         entityType: path,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.status(201).json(success(data));
     } catch (e) {
@@ -102,8 +106,8 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
       }
       const { data, error } = await sb
         .from(table)
-        .update(f)
-        .eq("id", req.params.id)
+        .update(f as never)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
@@ -113,7 +117,7 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
         actorUserId: req.authUser!.userId,
         action: `${path}.updated`,
         entityType: path,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.json(success(data));
     } catch (e) {
@@ -127,7 +131,7 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
       const { error } = await sb
         .from(table)
         .delete()
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
@@ -171,14 +175,14 @@ router.post("/automation/:id/execute", async (req, res, next) => {
     const { data: current, error: fetchError } = await supabase
       .from("automation_workflows")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
     const { data, error } = await supabase
       .from("automation_workflows")
       .update({ last_run_status: "running", last_run_at: new Date().toISOString() })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -199,7 +203,7 @@ router.post("/automation/:id/complete", async (req, res, next) => {
         last_result: parsed.result,
         last_run_at: new Date().toISOString(),
       })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -215,7 +219,7 @@ router.post("/kb-generator/:id/generate", async (req, res, next) => {
     const { data: current, error: fetchError } = await supabase
       .from("kb_article_generations")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
@@ -227,7 +231,7 @@ router.post("/kb-generator/:id/generate", async (req, res, next) => {
         status: "generated",
         reviewed_by: req.authUser!.userId,
       })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -262,12 +266,15 @@ router.post("/kb/:id/rate", async (req, res, next) => {
     const { data: article, error: articleErr } = await supabase
       .from("knowledge_articles")
       .select("id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (articleErr || !article) throw new AppError("NOT_FOUND", "Article not found", 404);
     const field = parsed.helpful ? "helpful_count" : "not_helpful_count";
-    await supabase.rpc("increment_article_count", { article_id: req.params.id, field_name: field });
+    await supabase.rpc("increment_article_count", {
+      article_id: String(req.params.id),
+      field_name: field,
+    } as never);
     res.json(success({ rated: true }));
   } catch (err) {
     next(err);
@@ -315,7 +322,7 @@ router.post(
       const { data, error } = await supabase
         .from("phishing_campaigns")
         .update({ status: "active", launched_at: new Date().toISOString() })
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .eq("status", "draft")
         .select()
@@ -342,7 +349,7 @@ router.get("/phishing/:id/results", async (req, res, next) => {
     const { data, error } = await supabase
       .from("phishing_campaigns")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "Campaign not found", 404);
@@ -424,7 +431,7 @@ psRoute("submit", async (req, res, next) => {
     const { data: existing, error: fetchErr } = await sb
       .from("powershell_scripts")
       .select("id, status")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchErr || !existing) throw new AppError("NOT_FOUND", "Script not found", 404);
@@ -442,7 +449,7 @@ psRoute("submit", async (req, res, next) => {
         submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -465,7 +472,7 @@ psRoute("check", async (req, res, next) => {
     const { data: script, error: fetchErr } = await sb
       .from("powershell_scripts")
       .select("id, script_content")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchErr || !script) throw new AppError("NOT_FOUND", "Script not found", 404);
@@ -480,7 +487,7 @@ psRoute("check", async (req, res, next) => {
         risk_level: riskLevel,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -503,7 +510,7 @@ psRoute("approve", async (req, res, next) => {
     const { data: existing, error: fetchErr } = await sb
       .from("powershell_scripts")
       .select("id, status")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchErr || !existing) throw new AppError("NOT_FOUND", "Script not found", 404);
@@ -522,7 +529,7 @@ psRoute("approve", async (req, res, next) => {
         approved_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -545,7 +552,7 @@ psRoute("reject", async (req, res, next) => {
     const { data: existing, error: fetchErr } = await sb
       .from("powershell_scripts")
       .select("id, status")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchErr || !existing) throw new AppError("NOT_FOUND", "Script not found", 404);
@@ -562,7 +569,7 @@ psRoute("reject", async (req, res, next) => {
         status: "rejected",
         updated_at: new Date().toISOString(),
       })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -585,7 +592,7 @@ router.get("/scorecards/summary", async (req, res, next) => {
     const orgId = req.query.organization_id as string | undefined;
 
     let query = sb.from("cyber_scorecards").select("category, score, badge");
-    if (orgId) query = query.eq("organization_id", orgId);
+    if (orgId) query = query.eq("organization_id", orgId as string);
     const { data: scorecards, error: _error } = await query;
     if (!scorecards || scorecards.length === 0) {
       return res.json(
@@ -623,7 +630,7 @@ router.get("/scorecards/summary", async (req, res, next) => {
     const { data: history } = await sb
       .from("score_history")
       .select("score, recorded_at")
-      .eq("organization_id", orgId)
+      .eq("organization_id", orgId as string)
       .order("recorded_at", { ascending: false })
       .limit(20);
 
@@ -746,7 +753,7 @@ router.post("/scorecards/evaluate", async (req, res, next) => {
     }
 
     let query = sb.from("cyber_scorecards").select("id, category, score");
-    query = query.eq("organization_id", orgId);
+    query = query.eq("organization_id", orgId as string);
     const { data: scorecards, error: _error } = await query;
     if (!scorecards || scorecards.length === 0) {
       return res.json(success({ evaluated: 0, badgesAssigned: [] }));
@@ -780,18 +787,18 @@ router.post("/scorecards/evaluate", async (req, res, next) => {
       await sb
         .from("cyber_scorecards")
         .update({ badge, last_updated: new Date().toISOString() })
-        .eq("id", s.id)
-        .eq("organization_id", orgId);
+        .eq("id", s.id as string)
+        .eq("organization_id", orgId as string);
       await sb.from("score_history").insert({
         organization_id: orgId,
-        category: s.category,
-        score: s.score,
+        category: s.category as string,
+        score: s.score as number,
         recorded_at: new Date().toISOString(),
       });
       await sb.from("badges_earned").insert({
         organization_id: orgId,
         badge_name: badge,
-        category: s.category,
+        category: s.category as string,
         earned_at: new Date().toISOString(),
         points,
       });

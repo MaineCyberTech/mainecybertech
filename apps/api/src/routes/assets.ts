@@ -10,6 +10,7 @@ import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { assertResourceOrg } from "../lib/tenant";
 import { createAssetSchema, updateAssetSchema } from "../validators/assets";
 import { queryInt } from "../lib/query";
+import { toJson } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -122,7 +123,7 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "assets", "read");
-    let query = supabase.from("assets").select("*").eq("id", req.params.id);
+    let query = supabase.from("assets").select("*").eq("id", String(req.params.id));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Asset not found", 404);
@@ -133,14 +134,14 @@ router.get("/:id", async (req, res, next) => {
         .select("*")
         .eq("module_key", "assets")
         .eq("entity_type", "asset")
-        .eq("entity_id", req.params.id)
+        .eq("entity_id", String(req.params.id))
         .order("created_at", { ascending: true }),
       supabase
         .from("module_timeline_events")
         .select("*")
         .eq("module_key", "assets")
         .eq("entity_type", "asset")
-        .eq("entity_id", req.params.id)
+        .eq("entity_id", String(req.params.id))
         .order("created_at", { ascending: true }),
     ]);
 
@@ -184,7 +185,7 @@ router.post("/", async (req, res, next) => {
         owner_user_id: req.authUser!.userId,
         created_by: req.authUser!.userId,
         visibility: parsed.visibility,
-        metadata: parsed.metadata ?? {},
+        metadata: toJson(parsed.metadata ?? {}),
       })
       .select()
       .single();
@@ -223,7 +224,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     const { data: current, error: fetchError } = await supabase
       .from("assets")
       .select("version, organization_id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Asset not found", 404);
     assertResourceOrg(req, (current as { organization_id?: string }).organization_id);
@@ -266,9 +267,9 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("assets")
-      .update(updateData)
-      .eq("id", req.params.id)
-      .eq("version", current.version)
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
+      .eq("version", current.version as number)
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -293,13 +294,13 @@ router.delete("/:id", async (req, res, next) => {
     const { data: asset, error: fetchError } = await supabase
       .from("assets")
       .select("organization_id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .maybeSingle();
     if (fetchError) throw new AppError("DB_ERROR", fetchError.message, 500);
     if (!asset) throw new AppError("NOT_FOUND", "Asset not found", 404);
     assertResourceOrg(req, (asset as { organization_id?: string }).organization_id);
 
-    const { error } = await supabase.from("assets").delete().eq("id", req.params.id);
+    const { error } = await supabase.from("assets").delete().eq("id", String(req.params.id));
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -319,7 +320,7 @@ router.get("/:id/comments", async (req, res, next) => {
     const { data: asset, error: assetError } = await supabase
       .from("assets")
       .select("organization_id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .maybeSingle();
     if (assetError) throw new AppError("DB_ERROR", assetError.message, 500);
     assertResourceOrg(req, (asset as { organization_id?: string } | null)?.organization_id);
@@ -329,7 +330,7 @@ router.get("/:id/comments", async (req, res, next) => {
       .select("*")
       .eq("module_key", "assets")
       .eq("entity_type", "asset")
-      .eq("entity_id", req.params.id)
+      .eq("entity_id", String(req.params.id))
       .order("created_at", { ascending: true });
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
@@ -344,7 +345,7 @@ router.post("/:id/comments", async (req, res, next) => {
     const { data: asset, error: assetError } = await supabase
       .from("assets")
       .select("organization_id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .maybeSingle();
     if (assetError) throw new AppError("DB_ERROR", assetError.message, 500);
     if (!asset) throw new AppError("NOT_FOUND", "Asset not found", 404);
@@ -357,7 +358,7 @@ router.post("/:id/comments", async (req, res, next) => {
         organization_id: asset.organization_id,
         module_key: "assets",
         entity_type: "asset",
-        entity_id: req.params.id,
+        entity_id: String(req.params.id),
         author_id: req.authUser!.userId,
         body: body.trim(),
         is_internal: (req.body as { isInternal?: boolean }).isInternal ?? false,
@@ -370,7 +371,7 @@ router.post("/:id/comments", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "asset.comment.created",
       entityType: "asset",
-      entityId: req.params.id,
+      entityId: String(req.params.id),
     });
     res.status(201).json(success(data));
   } catch (error) {
@@ -384,7 +385,7 @@ router.get("/:id/timeline", async (req, res, next) => {
     const { data: asset, error: assetError } = await supabase
       .from("assets")
       .select("organization_id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .maybeSingle();
     if (assetError) throw new AppError("DB_ERROR", assetError.message, 500);
     assertResourceOrg(req, (asset as { organization_id?: string } | null)?.organization_id);
@@ -394,7 +395,7 @@ router.get("/:id/timeline", async (req, res, next) => {
       .select("*")
       .eq("module_key", "assets")
       .eq("entity_type", "asset")
-      .eq("entity_id", req.params.id)
+      .eq("entity_id", String(req.params.id))
       .order("created_at", { ascending: true });
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));

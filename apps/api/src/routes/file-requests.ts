@@ -223,7 +223,7 @@ router.get("/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("file_requests")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "File request not found", 404);
@@ -290,8 +290,8 @@ router.patch("/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("file_requests")
-      .update(updateData)
-      .eq("id", req.params.id)
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
       .select()
       .single();
@@ -318,7 +318,7 @@ router.delete("/:id", async (req, res, next) => {
     const { error } = await supabase
       .from("file_requests")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({

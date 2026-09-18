@@ -49,7 +49,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const { data, error } = await sb
         .from(table)
         .select("*")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .single();
       if (error || !data) throw new AppError("NOT_FOUND", "Not found", 404);
@@ -70,14 +70,18 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
         if (k !== "organizationId") fields[snake(k)] = v;
       }
       fields.organization_id = (parsed as Record<string, unknown>).organizationId;
-      const { data, error } = await sb.from(table).insert(fields).select().single();
+      const { data, error } = await sb
+        .from(table)
+        .insert(fields as never)
+        .select()
+        .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
         organizationId: fields.organization_id as string,
         actorUserId: req.authUser!.userId,
         action: `${path}.created`,
         entityType: path,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.status(201).json(success(data));
     } catch (e) {
@@ -95,8 +99,8 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       }
       const { data, error } = await sb
         .from(table)
-        .update(fields)
-        .eq("id", req.params.id)
+        .update(fields as never)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
@@ -106,7 +110,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
         actorUserId: req.authUser!.userId,
         action: `${path}.updated`,
         entityType: path,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.json(success(data));
     } catch (e) {
@@ -120,7 +124,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       const { error } = await sb
         .from(table)
         .delete()
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
@@ -151,7 +155,7 @@ router.post("/offboarding/:id/complete-step", async (req, res, next) => {
     const { data: current, error: fetchError } = await supabase
       .from("offboarding_checklists")
       .select("completed_steps")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Checklist not found", 404);
     const steps = (current.completed_steps as string[]) || [];
@@ -161,7 +165,7 @@ router.post("/offboarding/:id/complete-step", async (req, res, next) => {
     const { data, error } = await supabase
       .from("offboarding_checklists")
       .update({ completed_steps: updatedSteps })
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -200,18 +204,9 @@ router.get("/patch-compliance/stats", async (req, res, next) => {
     const { data, error } = await q;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     const items = data ?? [];
-    const totalDevices = items.reduce(
-      (s: number, i: Record<string, number>) => s + (i.total_devices ?? 0),
-      0,
-    );
-    const patched = items.reduce(
-      (s: number, i: Record<string, number>) => s + (i.patched_devices ?? 0),
-      0,
-    );
-    const critical = items.reduce(
-      (s: number, i: Record<string, number>) => s + (i.critical_patches ?? 0),
-      0,
-    );
+    const totalDevices = items.reduce((s, i) => s + (i.total_devices ?? 0), 0);
+    const patched = items.reduce((s, i) => s + (i.patched_devices ?? 0), 0);
+    const critical = items.reduce((s, i) => s + (i.critical_patches ?? 0), 0);
     res.json(
       success({
         totalDevices,

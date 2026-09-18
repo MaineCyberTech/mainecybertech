@@ -306,7 +306,7 @@ router.get("/copilot/:ticketId/summarize", async (req, res, next) => {
     const { data: comments } = await supabase
       .from("ticket_comments")
       .select("body, author_id, created_at")
-      .eq("ticket_id", req.params.ticketId)
+      .eq("ticket_id", String(req.params.ticketId))
       .eq("organization_id", ticket.organization_id)
       .order("created_at", { ascending: true });
     const commentList = comments ?? [];
@@ -341,7 +341,7 @@ router.get("/copilot/:ticketId/summarize", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "copilot.summarized",
       entityType: "ticket",
-      entityId: req.params.ticketId,
+      entityId: String(req.params.ticketId),
     });
 
     res.json(success(summary));
@@ -358,14 +358,14 @@ router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
     const { data: ticket, error: ticketError } = await supabase
       .from("tickets")
       .select("id, title, description, status, priority")
-      .eq("id", req.params.ticketId)
+      .eq("id", String(req.params.ticketId))
       .single();
     if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
 
     const { data: comments } = await supabase
       .from("ticket_comments")
       .select("body")
-      .eq("ticket_id", req.params.ticketId)
+      .eq("ticket_id", String(req.params.ticketId))
       .order("created_at", { ascending: false })
       .limit(3);
 
@@ -398,7 +398,7 @@ router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "copilot.reply_drafted",
       entityType: "ticket",
-      entityId: req.params.ticketId,
+      entityId: String(req.params.ticketId),
     });
 
     res.json(

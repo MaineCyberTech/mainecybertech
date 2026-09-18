@@ -7,6 +7,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { loadOwned } from "../lib/tenant";
 import { createStagingSchema, updateStagingSchema } from "../validators/staging";
 import { queryInt } from "../lib/query";
+import { toJson } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -75,7 +76,7 @@ router.post("/", async (req, res, next) => {
         device_name: parsed.deviceName,
         asset_tag: parsed.assetTag ?? null,
         status: parsed.status,
-        checklist: parsed.checklist ?? [],
+        checklist: toJson(parsed.checklist ?? []),
         assigned_to: parsed.assignedTo ?? null,
       })
       .select()
@@ -119,7 +120,7 @@ router.patch("/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("hardware_staging_checks")
-      .update(updateData)
+      .update(updateData as never)
       .eq("id", String(req.params.id as string))
       .select()
       .single();

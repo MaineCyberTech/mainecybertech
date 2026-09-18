@@ -10,6 +10,7 @@ import {
   updateNetworkDiagramSchema,
 } from "../validators/network-diagrams";
 import { queryInt } from "../lib/query";
+import { toJson } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -81,7 +82,7 @@ router.post("/", async (req, res, next) => {
         organization_id: parsed.organizationId,
         name: parsed.name,
         description: parsed.description ?? null,
-        diagram: parsed.diagram ?? { nodes: [], edges: [] },
+        diagram: toJson(parsed.diagram ?? { nodes: [], edges: [] }),
         created_by: req.authUser!.userId,
       })
       .select()
@@ -118,7 +119,7 @@ router.patch("/:id", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("network_diagrams")
-      .update(updateData)
+      .update(updateData as never)
       .eq("id", String(req.params.id as string))
       .select()
       .single();

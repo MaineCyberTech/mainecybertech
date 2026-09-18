@@ -58,7 +58,7 @@ router.get("/export", async (req, res, next) => {
     if (orgId) query = query.eq("organization_id", orgId);
 
     const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
 
@@ -83,7 +83,7 @@ router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
     if (orgId) query = query.eq("organization_id", orgId);
 
     const statusFilter = req.query.status as string | undefined;
-    if (statusFilter) query = query.eq("status", statusFilter);
+    if (statusFilter) query = query.eq("status", statusFilter as never);
 
     const {
       data: projects,
@@ -251,7 +251,7 @@ function projectSubRoute(
       }
       const { data, error } = await supabase
         .from(table)
-        .insert({ ...fields, project_id: parsed.projectId })
+        .insert({ ...fields, project_id: parsed.projectId } as never)
         .select()
         .single();
 
@@ -262,7 +262,7 @@ function projectSubRoute(
         actorUserId: req.authUser!.userId,
         action: `${resource}.created`,
         entityType: resource,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
 
       res.status(201).json(success(data));
@@ -280,10 +280,10 @@ function projectSubRoute(
       const { data: child, error: childError } = await supabase
         .from(table)
         .select("project_id")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .single();
       if (childError || !child) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
-      await assertProjectInOrg(child.project_id as string, orgId);
+      await assertProjectInOrg((child as { project_id: string }).project_id, orgId);
 
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(parsed)) {
@@ -291,8 +291,8 @@ function projectSubRoute(
       }
       const { data, error } = await supabase
         .from(table)
-        .update(fields)
-        .eq("id", req.params.id)
+        .update(fields as never)
+        .eq("id", String(req.params.id))
         .select()
         .single();
 
@@ -311,12 +311,12 @@ function projectSubRoute(
       const { data: child, error: childError } = await supabase
         .from(table)
         .select("project_id")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .single();
       if (childError || !child) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
-      await assertProjectInOrg(child.project_id as string, orgId);
+      await assertProjectInOrg((child as { project_id: string }).project_id, orgId);
 
-      const { error } = await supabase.from(table).delete().eq("id", req.params.id);
+      const { error } = await supabase.from(table).delete().eq("id", String(req.params.id));
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.status(204).send();
@@ -337,7 +337,10 @@ router.get("/:id", async (req, res, next) => {
     const platformAdmin = (req as unknown as { orgAccessPlatformAdmin?: boolean })
       .orgAccessPlatformAdmin;
     const supabase = getScopedClient(req, "projects", "read");
-    let query = supabase.from("projects").select("*, project_tasks(*)").eq("id", req.params.id);
+    let query = supabase
+      .from("projects")
+      .select("*, project_tasks(*)")
+      .eq("id", String(req.params.id));
     // Platform admins are org-agnostic: honor an EXPLICIT org, but don't
     // pin them to the middleware-injected default org (which would 404
     // projects belonging to other tenants).
@@ -359,7 +362,10 @@ router.get("/:id/detail", async (req, res, next) => {
       .orgAccessPlatformAdmin;
     const supabase = getScopedClient(req, "projects", "read");
 
-    let query = supabase.from("projects").select("*, project_tasks(*)").eq("id", req.params.id);
+    let query = supabase
+      .from("projects")
+      .select("*, project_tasks(*)")
+      .eq("id", String(req.params.id));
     if (orgId && !(injected && platformAdmin)) query = query.eq("organization_id", orgId);
     const { data: project, error: projError } = await query.single();
 
@@ -378,23 +384,23 @@ router.get("/:id/detail", async (req, res, next) => {
       supabase
         .from("memberships")
         .select("id, user_id, role_id, status, is_billing_contact, is_security_contact")
-        .eq("organization_id", scopeOrgId)
+        .eq("organization_id", scopeOrgId as string)
         .eq("status", "approved"),
       supabase
         .from("project_tasks")
         .select("*")
-        .eq("project_id", req.params.id)
+        .eq("project_id", String(req.params.id))
         .order("sort_order"),
       supabase
         .from("project_task_comments")
         .select("*")
-        .eq("project_id", req.params.id)
+        .eq("project_id", String(req.params.id))
         .order("created_at", { ascending: true }),
       supabase
         .from("project_task_comment_reads")
         .select("task_id, last_seen_at")
         .eq("user_id", req.authUser!.userId)
-        .eq("organization_id", scopeOrgId),
+        .eq("organization_id", scopeOrgId as string),
     ]);
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
@@ -426,7 +432,7 @@ router.get("/:id/detail", async (req, res, next) => {
     if (profError) throw new AppError("DB_ERROR", profError.message, 500);
 
     const memberRoleIds = [
-      ...new Set((memberships ?? []).map((m: { role_id: string }) => m.role_id)),
+      ...new Set((memberships ?? []).map((m) => m.role_id).filter((r): r is string => r !== null)),
     ];
     const { data: roles, error: rolesError } =
       memberRoleIds.length > 0
@@ -467,7 +473,7 @@ router.post("/", requirePermission("projects", "create"), async (req, res, next)
         starts_at: parsed.startsAt ?? null,
         due_at: parsed.dueAt ?? null,
         external_jira_project_key: parsed.externalJiraProjectKey ?? null,
-      })
+      } as never)
       .select()
       .single();
 
@@ -500,7 +506,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     const supabase = getScopedClient(req, "projects", "write");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    let currentQuery = supabase.from("projects").select("version").eq("id", req.params.id);
+    let currentQuery = supabase.from("projects").select("version").eq("id", String(req.params.id));
     if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
     const { data: current, error: fetchError } = await currentQuery.single();
 
@@ -524,9 +530,9 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     let updateQuery = supabase
       .from("projects")
-      .update(updateData)
-      .eq("id", req.params.id)
-      .eq("version", current.version);
+      .update(updateData as never)
+      .eq("id", String(req.params.id))
+      .eq("version", current.version as number);
     if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
     const { data, error } = await updateQuery.select().single();
 
@@ -561,7 +567,7 @@ router.delete("/:id", requirePermission("projects", "delete"), async (req, res, 
     const { error } = await supabase
       .from("projects")
       .delete()
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .eq("organization_id", project.organization_id as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -583,13 +589,13 @@ router.get("/:id/tasks", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "projects", "read");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
     const { data, error } = await supabase
       .from("project_tasks")
       .select("*")
-      .eq("project_id", req.params.id)
+      .eq("project_id", String(req.params.id))
       .order("sort_order");
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -604,14 +610,14 @@ router.post("/:id/tasks", async (req, res, next) => {
     const parsed = createTaskSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
 
     const { data, error } = await supabase
       .from("project_tasks")
       .insert({
-        project_id: req.params.id,
+        project_id: String(req.params.id),
         title: parsed.title,
         description: parsed.description ?? null,
         details: parsed.details ?? null,
@@ -628,7 +634,7 @@ router.post("/:id/tasks", async (req, res, next) => {
         epic_key: parsed.epicKey ?? null,
         resolution: parsed.resolution ?? null,
         sprint: parsed.sprint ?? null,
-      })
+      } as never)
       .select()
       .single();
 
@@ -639,7 +645,7 @@ router.post("/:id/tasks", async (req, res, next) => {
       action: "project.task.create",
       entityType: "project_task",
       entityId: data.id,
-      metadata: { projectId: req.params.id, title: parsed.title },
+      metadata: { projectId: String(req.params.id), title: parsed.title },
     });
 
     res.status(201).json(success(data));
@@ -660,7 +666,7 @@ router.patch("/:id/tasks/:taskId", requireIfMatch, async (req, res, next) => {
     const { data: currentTask, error: taskFetchError } = await supabase
       .from("project_tasks")
       .select("version")
-      .eq("id", req.params.taskId)
+      .eq("id", String(req.params.taskId))
       .single();
 
     if (taskFetchError || !currentTask) {
@@ -695,10 +701,10 @@ router.patch("/:id/tasks/:taskId", requireIfMatch, async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("project_tasks")
-      .update(updateData)
+      .update(updateData as never)
       .eq("version", currentTask.version)
-      .eq("id", req.params.taskId)
-      .eq("project_id", req.params.id)
+      .eq("id", String(req.params.taskId))
+      .eq("project_id", String(req.params.id))
       .select()
       .single();
 
@@ -710,7 +716,7 @@ router.patch("/:id/tasks/:taskId", requireIfMatch, async (req, res, next) => {
       action: "project.task.update",
       entityType: "project_task",
       entityId: data.id,
-      metadata: { projectId: req.params.id, ...parsed },
+      metadata: { projectId: String(req.params.id), ...parsed },
     });
 
     res.json(success(data));
@@ -723,14 +729,14 @@ router.delete("/:id/tasks/:taskId", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
     const { error } = await supabase
       .from("project_tasks")
       .delete()
-      .eq("id", req.params.taskId)
-      .eq("project_id", req.params.id);
+      .eq("id", String(req.params.taskId))
+      .eq("project_id", String(req.params.id));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -739,7 +745,7 @@ router.delete("/:id/tasks/:taskId", async (req, res, next) => {
       action: "project.task.delete",
       entityType: "project_task",
       entityId: String(req.params.taskId),
-      metadata: { projectId: req.params.id },
+      metadata: { projectId: String(req.params.id) },
     });
 
     res.status(204).send();
@@ -752,10 +758,13 @@ router.get("/:id/tasks/comments", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "projects", "read");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
-    let query = supabase.from("project_task_comments").select("*").eq("project_id", req.params.id);
+    let query = supabase
+      .from("project_task_comments")
+      .select("*")
+      .eq("project_id", String(req.params.id));
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -789,18 +798,18 @@ router.post("/:id/tasks/:taskId/comments", async (req, res, next) => {
     const parsed = addTaskCommentSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
 
     const { data, error } = await supabase
       .from("project_task_comments")
       .insert({
-        task_id: req.params.taskId,
+        task_id: String(req.params.taskId),
         author_id: req.authUser!.userId,
         body: parsed.body,
         is_internal: parsed.isInternal,
-      })
+      } as never)
       .select()
       .single();
 
@@ -811,7 +820,7 @@ router.post("/:id/tasks/:taskId/comments", async (req, res, next) => {
       action: "project.task.comment.create",
       entityType: "project_task_comment",
       entityId: data.id,
-      metadata: { taskId: req.params.taskId, projectId: req.params.id },
+      metadata: { taskId: String(req.params.taskId), projectId: String(req.params.id) },
     });
 
     res.status(201).json(success(data));
@@ -824,13 +833,13 @@ router.get("/:id/updates", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "projects", "read");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
     const { data, error } = await supabase
       .from("project_updates")
       .select("*")
-      .eq("project_id", req.params.id)
+      .eq("project_id", String(req.params.id))
       .order("created_at", { ascending: false });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -845,19 +854,19 @@ router.post("/:id/updates", async (req, res, next) => {
     const parsed = addProjectUpdateSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
 
     const { data, error } = await supabase
       .from("project_updates")
       .insert({
-        project_id: req.params.id,
+        project_id: String(req.params.id),
         author_id: req.authUser!.userId,
         body: parsed.body,
         is_internal: parsed.isInternal,
         is_pinned: parsed.isPinned,
-      })
+      } as never)
       .select()
       .single();
 
@@ -868,7 +877,7 @@ router.post("/:id/updates", async (req, res, next) => {
       action: "project.update.create",
       entityType: "project_update",
       entityId: data.id,
-      metadata: { projectId: req.params.id },
+      metadata: { projectId: String(req.params.id) },
     });
 
     res.status(201).json(success(data));
@@ -882,7 +891,7 @@ router.patch("/:id/updates/:updateId", async (req, res, next) => {
     const parsed = updateProjectUpdateSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
 
@@ -893,9 +902,9 @@ router.patch("/:id/updates/:updateId", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("project_updates")
-      .update(updateData)
-      .eq("id", req.params.updateId)
-      .eq("project_id", req.params.id)
+      .update(updateData as never)
+      .eq("id", String(req.params.updateId))
+      .eq("project_id", String(req.params.id))
       .select()
       .single();
 
@@ -907,7 +916,7 @@ router.patch("/:id/updates/:updateId", async (req, res, next) => {
       action: "project.update.edit",
       entityType: "project_update",
       entityId: String(req.params.updateId),
-      metadata: { projectId: req.params.id, ...parsed },
+      metadata: { projectId: String(req.params.id), ...parsed },
     });
 
     res.json(success(data));
@@ -920,14 +929,14 @@ router.delete("/:id/updates/:updateId", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
     const { error } = await supabase
       .from("project_updates")
       .delete()
-      .eq("id", req.params.updateId)
-      .eq("project_id", req.params.id);
+      .eq("id", String(req.params.updateId))
+      .eq("project_id", String(req.params.id));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -936,7 +945,7 @@ router.delete("/:id/updates/:updateId", async (req, res, next) => {
       action: "project.update.delete",
       entityType: "project_update",
       entityId: String(req.params.updateId),
-      metadata: { projectId: req.params.id },
+      metadata: { projectId: String(req.params.id) },
     });
 
     res.status(204).send();
@@ -950,7 +959,7 @@ router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =>
     const parsed = updateTaskCommentSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
 
@@ -960,9 +969,9 @@ router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =>
 
     const { data, error } = await supabase
       .from("project_task_comments")
-      .update(updateData)
-      .eq("id", req.params.commentId)
-      .eq("task_id", req.params.taskId)
+      .update(updateData as never)
+      .eq("id", String(req.params.commentId))
+      .eq("task_id", String(req.params.taskId))
       .select()
       .single();
 
@@ -974,7 +983,7 @@ router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =>
       action: "project.task.comment.edit",
       entityType: "project_task_comment",
       entityId: String(req.params.commentId),
-      metadata: { taskId: req.params.taskId, projectId: req.params.id },
+      metadata: { taskId: String(req.params.taskId), projectId: String(req.params.id) },
     });
 
     res.json(success(data));
@@ -987,14 +996,14 @@ router.delete("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =
   try {
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
     const { error } = await supabase
       .from("project_task_comments")
       .delete()
-      .eq("id", req.params.commentId)
-      .eq("task_id", req.params.taskId);
+      .eq("id", String(req.params.commentId))
+      .eq("task_id", String(req.params.taskId));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -1003,7 +1012,7 @@ router.delete("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =
       action: "project.task.comment.delete",
       entityType: "project_task_comment",
       entityId: String(req.params.commentId),
-      metadata: { taskId: req.params.taskId, projectId: req.params.id },
+      metadata: { taskId: String(req.params.taskId), projectId: String(req.params.id) },
     });
 
     res.status(204).send();
@@ -1016,7 +1025,7 @@ router.get("/:id/tasks/read-states", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "projects", "read");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
     let query = supabase
@@ -1050,7 +1059,7 @@ router.post("/:id/tasks/reorder", async (req, res, next) => {
     const parsed = reorderTasksSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
 
@@ -1059,7 +1068,7 @@ router.post("/:id/tasks/reorder", async (req, res, next) => {
         .from("project_tasks")
         .update({ sort_order: index + 1 })
         .eq("id", parsed.order[index])
-        .eq("project_id", req.params.id);
+        .eq("project_id", String(req.params.id));
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
     }
@@ -1068,7 +1077,7 @@ router.post("/:id/tasks/reorder", async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "project.task.reorder",
       entityType: "project_task",
-      metadata: { projectId: req.params.id, count: parsed.order.length },
+      metadata: { projectId: String(req.params.id), count: parsed.order.length },
     });
 
     res.json(success({ reordered: parsed.order.length }));
@@ -1082,7 +1091,7 @@ router.post("/:id/tasks/:taskId/read", async (req, res, next) => {
     const parsed = markTaskReadSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
 
@@ -1091,9 +1100,9 @@ router.post("/:id/tasks/:taskId/read", async (req, res, next) => {
     // for projects whose tasks had no prior read row).
     const { error } = await supabase.rpc("mark_task_read", {
       p_user_id: req.authUser!.userId,
-      p_task_id: req.params.taskId,
+      p_task_id: String(req.params.taskId),
       p_organization_id: parsed.organizationId,
-    });
+    } as never);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -1103,7 +1112,7 @@ router.post("/:id/tasks/:taskId/read", async (req, res, next) => {
       action: "project.task.mark_read",
       entityType: "project_task",
       entityId: String(req.params.taskId),
-      metadata: { projectId: req.params.id },
+      metadata: { projectId: String(req.params.id) },
     });
 
     res.json(success({ marked: true }));
@@ -1117,15 +1126,15 @@ router.post("/:id/tasks/:taskId/approve", async (req, res, next) => {
     const parsed = approveTaskSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
 
     const { error } = await supabase.rpc("approve_project_task", {
-      p_task_id: req.params.taskId,
+      p_task_id: String(req.params.taskId),
       p_organization_id: parsed.organizationId,
       p_user_id: req.authUser!.userId,
-    });
+    } as never);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -1135,7 +1144,7 @@ router.post("/:id/tasks/:taskId/approve", async (req, res, next) => {
       action: "project.task.approve",
       entityType: "project_task",
       entityId: String(req.params.taskId),
-      metadata: { projectId: req.params.id },
+      metadata: { projectId: String(req.params.id) },
     });
 
     res.json(success({ approved: true }));
@@ -1149,16 +1158,16 @@ router.post("/:id/tasks/:taskId/portal-comment", async (req, res, next) => {
     const parsed = portalTaskCommentSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
     await assertProjectInOrg(
-      req.params.id,
+      String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
 
     const { error } = await supabase.rpc("add_project_task_comment", {
-      p_task_id: req.params.taskId,
+      p_task_id: String(req.params.taskId),
       p_organization_id: parsed.organizationId,
       p_body: parsed.body,
       p_user_id: req.authUser!.userId,
-    });
+    } as never);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -1168,7 +1177,7 @@ router.post("/:id/tasks/:taskId/portal-comment", async (req, res, next) => {
       action: "project.task.portal_comment",
       entityType: "project_task",
       entityId: String(req.params.taskId),
-      metadata: { projectId: req.params.id },
+      metadata: { projectId: String(req.params.id) },
     });
 
     res.status(201).json(success({ added: true }));

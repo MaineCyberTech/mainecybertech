@@ -164,7 +164,7 @@ export function getScopedClient(
   req: Request,
   moduleKey: string,
   kind: "read" | "write" = "read",
-): SupabaseClient {
+): SupabaseClient<Database> {
   const flag = kind === "write" ? process.env.RLS_WRITES_ENABLED : process.env.RLS_READS_ENABLED;
   const enabled = new Set(
     (flag ?? "")

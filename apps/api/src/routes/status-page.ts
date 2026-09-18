@@ -16,18 +16,18 @@ router.get("/public/:orgId", async (req, res, next) => {
       supabase
         .from("status_components")
         .select("*")
-        .eq("organization_id", req.params.orgId)
+        .eq("organization_id", String(req.params.orgId))
         .order("display_order"),
       supabase
         .from("status_incidents")
         .select("*")
-        .eq("organization_id", req.params.orgId)
+        .eq("organization_id", String(req.params.orgId))
         .neq("status", "resolved")
         .order("started_at", { ascending: false }),
       supabase
         .from("maintenance_notices")
         .select("*")
-        .eq("organization_id", req.params.orgId)
+        .eq("organization_id", String(req.params.orgId))
         .gte("scheduled_start", new Date().toISOString())
         .order("scheduled_start"),
     ]);
@@ -116,7 +116,7 @@ function crudTable(
       const { data, error } = await supabase
         .from(table)
         .select("*")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .single();
       if (error || !data) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
@@ -138,14 +138,18 @@ function crudTable(
         if (k === "organizationId") continue;
         if (v !== undefined && v !== null) fields[snakeCase(k)] = v;
       }
-      const { data, error } = await supabase.from(table).insert(fields).select().single();
+      const { data, error } = await supabase
+        .from(table)
+        .insert(fields as never)
+        .select()
+        .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
         organizationId: parsed.organizationId,
         actorUserId: req.authUser!.userId,
         action: `${resource}.created`,
         entityType: resource,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.status(201).json(success(data));
     } catch (err) {
@@ -163,8 +167,8 @@ function crudTable(
       }
       const { data, error } = await supabase
         .from(table)
-        .update(fields)
-        .eq("id", req.params.id)
+        .update(fields as never)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string)
         .select()
         .single();
@@ -181,7 +185,7 @@ function crudTable(
       const { error } = await supabase
         .from(table)
         .delete()
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("organization_id", req.query.organization_id as string);
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.status(204).send();

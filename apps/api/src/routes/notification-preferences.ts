@@ -10,13 +10,7 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
-const MODULES = [
-  "tickets",
-  "projects",
-  "documents",
-  "billing",
-  "system",
-] as const;
+const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
 const CHANNELS = ["email", "sms", "in_app"] as const;
 
 router.get("/", async (req, res, next) => {
@@ -71,7 +65,7 @@ router.put("/", async (req, res, next) => {
         .from("notification_preferences")
         .upsert(
           {
-            organization_id: organizationId ?? null,
+            organization_id: organizationId as string,
             user_id: req.authUser!.userId,
             module_key: pref.moduleKey,
             channel: pref.channel,
