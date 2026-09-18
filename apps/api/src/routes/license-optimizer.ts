@@ -6,6 +6,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -34,8 +35,8 @@ function snakeCase(str: string): string {
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "license-optimizer", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
     const q = supabase
       .from("license_allocations")
@@ -60,9 +61,12 @@ router.get("/reclaimable/license-list", async (req, res, next) => {
       .eq("organization_id", req.query.organization_id as string)
       .eq("status", "active");
     if (error) throw new AppError("DB_ERROR", error.message, 500);
-    const reclaimable = (data ?? []).filter((l: LicenseAllocationRow) => l.used_seats < l.total_seats * 0.7);
+    const reclaimable = (data ?? []).filter(
+      (l: LicenseAllocationRow) => l.used_seats < l.total_seats * 0.7,
+    );
     const totalSavings = reclaimable.reduce(
-      (sum: number, l: LicenseAllocationRow) => sum + (l.total_seats - l.used_seats) * (l.cost_per_seat || 0),
+      (sum: number, l: LicenseAllocationRow) =>
+        sum + (l.total_seats - l.used_seats) * (l.cost_per_seat || 0),
       0,
     );
     res.json(success({ reclaimable, potentialSavings: Math.round(totalSavings * 100) / 100 }));

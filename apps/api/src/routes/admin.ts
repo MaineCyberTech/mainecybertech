@@ -7,6 +7,7 @@ import { rateLimitEmail } from "../middleware/rate-limit";
 import { sendEmail } from "../lib/email";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -16,8 +17,8 @@ router.use(requireAdmin);
 router.get("/organizations", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     const { data: profile } = await supabase
@@ -32,7 +33,9 @@ router.get("/organizations", async (req, res, next) => {
 
     const query = supabase
       .from("organizations")
-      .select("id, name, slug, status, primary_domain, support_plan, created_at", { count: "exact" })
+      .select("id, name, slug, status, primary_domain, support_plan, created_at", {
+        count: "exact",
+      })
       .order("name")
       .range(offset, offset + limit - 1);
 

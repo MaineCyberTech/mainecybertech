@@ -10,6 +10,7 @@ import {
   listKnowledgeBaseQuerySchema,
   updateKnowledgeBaseSchema,
 } from "../validators/knowledge-base";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -20,8 +21,8 @@ router.get("/", async (req, res, next) => {
   try {
     const { search, category } = listKnowledgeBaseQuerySchema.parse(req.query);
     const supabase = getScopedClient(req, "knowledge-base", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("knowledge_base_articles").select("*", { count: "exact" });
@@ -46,7 +47,12 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "knowledge-base", "read");
-    const article = await loadOwned(req, supabase as any, "knowledge_base_articles", req.params.id as string);
+    const article = await loadOwned(
+      req,
+      supabase as any,
+      "knowledge_base_articles",
+      req.params.id as string,
+    );
 
     res.json(success(article));
   } catch (error) {
@@ -93,7 +99,13 @@ router.patch("/:id", async (req, res, next) => {
   try {
     const parsed = updateKnowledgeBaseSchema.parse(req.body);
     const supabase = getScopedClient(req, "knowledge-base", "write");
-    const article = await loadOwned(req, supabase as any, "knowledge_base_articles", req.params.id as string, "id, organization_id");
+    const article = await loadOwned(
+      req,
+      supabase as any,
+      "knowledge_base_articles",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const fieldMap: Record<string, string> = {
       title: "title",
@@ -136,7 +148,13 @@ router.patch("/:id", async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "knowledge-base", "write");
-    const article = await loadOwned(req, supabase as any, "knowledge_base_articles", req.params.id as string, "id, organization_id");
+    const article = await loadOwned(
+      req,
+      supabase as any,
+      "knowledge_base_articles",
+      req.params.id as string,
+      "id, organization_id",
+    );
     const { error } = await supabase
       .from("knowledge_base_articles")
       .delete()

@@ -7,6 +7,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
 import { requireOrgAccess } from "../middleware/org-access";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -15,8 +16,8 @@ router.use(requireAuth, requireOrgAccess);
 router.get("/", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let orgId = req.query.organization_id as string | undefined;
@@ -50,7 +51,7 @@ router.get("/", requireAdmin, async (req, res, next) => {
       .from("profiles")
       .select(
         "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
-        { count: "exact" }
+        { count: "exact" },
       );
 
     let filteredQuery;
@@ -61,9 +62,7 @@ router.get("/", requireAdmin, async (req, res, next) => {
         .eq("organization_id", orgId)
         .eq("status", "approved");
       const ids = (userIds ?? []).map((u) => u.user_id as string);
-      filteredQuery = ids.length
-        ? baseQuery.in("id", ids)
-        : baseQuery.in("id", ["__no_match__"]);
+      filteredQuery = ids.length ? baseQuery.in("id", ids) : baseQuery.in("id", ["__no_match__"]);
     } else {
       filteredQuery = baseQuery;
     }
@@ -89,9 +88,7 @@ router.get("/", requireAdmin, async (req, res, next) => {
       }
     }
 
-    const finalQuery = filteredQuery
-      .order("email")
-      .range(offset, offset + limit - 1);
+    const finalQuery = filteredQuery.order("email").range(offset, offset + limit - 1);
 
     const { data, error, count } = await finalQuery;
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -464,12 +461,11 @@ router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
           .select("permission_id")
           .in(
             "role_id",
-             memberships.map((m: { role_id: string }) => m.role_id),
-           )
-       : { data: [] as Array<{ permission_id: string }>, error: null };
+            memberships.map((m: { role_id: string }) => m.role_id),
+          )
+      : { data: [] as Array<{ permission_id: string }>, error: null };
 
-     if (rolePermissions.error)
-       throw new AppError("DB_ERROR", rolePermissions.error.message, 500);
+    if (rolePermissions.error) throw new AppError("DB_ERROR", rolePermissions.error.message, 500);
 
     res.json(
       success({

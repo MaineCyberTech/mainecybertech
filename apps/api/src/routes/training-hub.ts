@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -73,8 +74,8 @@ router.get("/my-courses", async (req, res, next) => {
 router.get("/courses", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "training-hub", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     const q = supabase

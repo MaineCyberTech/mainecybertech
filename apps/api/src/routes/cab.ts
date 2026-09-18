@@ -11,6 +11,7 @@ import {
   addCabAgendaItemSchema,
   updateCabAgendaItemSchema,
 } from "../validators/cab";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -22,8 +23,8 @@ router.get("/meetings", async (req, res, next) => {
     const supabase = getScopedClient(req, "cab", "read");
     const orgId = req.query.organization_id as string | undefined;
     const { status } = listCabMeetingsQuerySchema.parse(req.query);
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("cab_meetings").select("*", { count: "exact" });
@@ -55,9 +56,7 @@ router.get("/meetings", async (req, res, next) => {
       agenda: agendaByMeeting[m.id] ?? [],
     }));
 
-    res.json(
-      success({ items, total: count ?? 0, page, limit } as PaginatedResult<unknown>),
-    );
+    res.json(success({ items, total: count ?? 0, page, limit } as PaginatedResult<unknown>));
   } catch (error) {
     next(error);
   }
@@ -118,7 +117,13 @@ router.post("/meetings/:id/agenda", async (req, res, next) => {
   try {
     const parsed = addCabAgendaItemSchema.parse(req.body);
     const supabase = getScopedClient(req, "cab", "write");
-    const meeting = await loadOwned(req, supabase as any, "cab_meetings", req.params.id as string, "id, organization_id");
+    const meeting = await loadOwned(
+      req,
+      supabase as any,
+      "cab_meetings",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const { data, error } = await supabase
       .from("cab_agenda_items")
@@ -152,7 +157,13 @@ router.patch("/agenda/:id", async (req, res, next) => {
     const parsed = updateCabAgendaItemSchema.parse(req.body);
     const supabase = getScopedClient(req, "cab", "write");
 
-    const item = await loadOwned(req, supabase as any, "cab_agenda_items", req.params.id as string, "id, organization_id");
+    const item = await loadOwned(
+      req,
+      supabase as any,
+      "cab_agenda_items",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const updateData: Record<string, unknown> = {};
     if (parsed.decision !== undefined) updateData.decision = parsed.decision;

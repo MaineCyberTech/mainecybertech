@@ -11,6 +11,7 @@ import {
   createDomainMonitorSchema,
   updateDomainMonitorSchema,
 } from "../validators/domain-monitors";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -52,8 +53,8 @@ router.get("/export", async (req, res, next) => {
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "domain-monitors", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let q = supabase.from("domain_monitors").select("*", { count: "exact" });
@@ -64,7 +65,7 @@ router.get("/", async (req, res, next) => {
     const search = req.query.search as string | undefined;
     if (search) q = q.ilike("domain", `%${search}%`);
     const sslBefore = req.query.ssl_expiring_before as string | undefined;
-    if (sslBefore)       q = q.lte("ssl_expires", sslBefore).neq("ssl_expires", null);
+    if (sslBefore) q = q.lte("ssl_expires", sslBefore).neq("ssl_expires", null);
 
     const { data, error, count } = await q
       .order("domain", { ascending: true })
@@ -138,7 +139,10 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "domain-monitors", "read");
-    let query = supabase.from("domain_monitors").select("*").eq("id", String(req.params.id as string));
+    let query = supabase
+      .from("domain_monitors")
+      .select("*")
+      .eq("id", String(req.params.id as string));
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Domain monitor not found", 404);
@@ -203,7 +207,12 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateDomainMonitorSchema.parse(req.body);
     const supabase = getScopedClient(req, "domain-monitors", "write");
-    const current = await loadOwned(req, supabase as any, "domain_monitors", String(req.params.id as string));
+    const current = await loadOwned(
+      req,
+      supabase as any,
+      "domain_monitors",
+      String(req.params.id as string),
+    );
     const currentVersion = current.version as number;
 
     checkVersionMatch(currentVersion, req.ifMatchVersion);
@@ -257,7 +266,10 @@ router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "domain-monitors", "write");
     await loadOwned(req, supabase as any, "domain_monitors", String(req.params.id as string));
-    const { error } = await supabase.from("domain_monitors").delete().eq("id", String(req.params.id as string));
+    const { error } = await supabase
+      .from("domain_monitors")
+      .delete()
+      .eq("id", String(req.params.id as string));
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

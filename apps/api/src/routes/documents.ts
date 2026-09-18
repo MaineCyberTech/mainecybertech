@@ -19,6 +19,7 @@ import {
 } from "../validators/document";
 import { z } from "zod";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { queryInt } from "../lib/query";
 
 const createShareSchema = z.object({
   expiresAt: z
@@ -153,7 +154,10 @@ function sniffImageType(buffer: Buffer): "jpeg" | "png" | "gif" | "webp" | null 
     return "jpeg";
   }
   if (buffer.length >= 8 && buffer.toString("hex", 0, 8) === "89504e470d0a1a0a") return "png";
-  if (buffer.length >= 6 && (buffer.toString("ascii", 0, 6) === "gif87a" || buffer.toString("ascii", 0, 6) === "gif89a")) {
+  if (
+    buffer.length >= 6 &&
+    (buffer.toString("ascii", 0, 6) === "gif87a" || buffer.toString("ascii", 0, 6) === "gif89a")
+  ) {
     return "gif";
   }
   if (
@@ -170,13 +174,21 @@ function validateUploadContent(buffer: Buffer, declaredMime: string): void {
   // Markup/script content is rejected for every declared type — this is the
   // primary stored-XSS vector (an .svg/.html/.xml upload served inline).
   if (looksLikeMarkup(buffer)) {
-    throw new AppError("VALIDATION", "File content looks like HTML/SVG/script and is not allowed", 400);
+    throw new AppError(
+      "VALIDATION",
+      "File content looks like HTML/SVG/script and is not allowed",
+      400,
+    );
   }
 
   if (declaredMime.startsWith("image/")) {
     const sniffed = sniffImageType(buffer);
     if (!sniffed) {
-      throw new AppError("VALIDATION", `File content does not match declared image type ${declaredMime}`, 400);
+      throw new AppError(
+        "VALIDATION",
+        `File content does not match declared image type ${declaredMime}`,
+        400,
+      );
     }
     const expected: Record<string, string> = {
       "image/jpeg": "jpeg",
@@ -245,9 +257,7 @@ router.get("/shares/:token", async (req, res, next) => {
     if (share.max_access) {
       incrementQuery = incrementQuery.lt("access_count", share.max_access);
     }
-    const { data: incremented, error: incrementError } = await incrementQuery
-      .select("id")
-      .single();
+    const { data: incremented, error: incrementError } = await incrementQuery.select("id").single();
     if (incrementError || !incremented) {
       throw new AppError("FORBIDDEN", "Share link has reached maximum access count", 403);
     }
@@ -271,8 +281,8 @@ router.use(requireOrgAccess);
 router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "documents", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("documents").select("*", { count: "exact" });
@@ -411,9 +421,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
 
     if (documentId) {
       const currentVersion = Number(req.body.currentVersion ?? 1);
-      const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-        | string
-        | undefined;
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
       let currentQuery = supabase
         .from("documents")
         .select("storage_bucket, storage_path, current_version")
@@ -580,9 +588,7 @@ router.delete("/:id", requirePermission("documents", "delete"), async (req, res,
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "documents", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
     let fetchQuery = supabase
       .from("documents")
       .select("id, organization_id, storage_bucket, storage_path")
@@ -668,9 +674,7 @@ router.post("/bulk/folder", async (req, res, next) => {
   try {
     const parsed = bulkFolderSchema.parse(req.body);
     const supabase = getScopedClient(req, "documents", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     // The bulk RPC skips its per-row check for service-role calls, so the
     // document ids MUST be pre-filtered to the caller's org.
@@ -725,9 +729,7 @@ router.post("/bulk/metadata", async (req, res, next) => {
       throw new AppError("VALIDATION", "No fields to update", 400);
     }
 
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     // The bulk RPC skips its per-row check for service-role calls, so the
     // document ids MUST be pre-filtered to the caller's org.
@@ -771,9 +773,7 @@ router.post("/bulk/metadata", async (req, res, next) => {
 router.get("/:id/versions", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "documents", "read");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     // Version rows carry no org column — verify the parent document belongs
     // to the caller's org before exposing version metadata (storage paths).
@@ -782,8 +782,8 @@ router.get("/:id/versions", async (req, res, next) => {
     const { data: doc, error: docError } = await docQuery.single();
     if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
 
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
 
     const { data, error, count } = await supabase
@@ -803,9 +803,7 @@ router.get("/:id/versions", async (req, res, next) => {
 router.get("/:id/versions/:versionId", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "documents", "read");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     let docQuery = supabase.from("documents").select("id").eq("id", req.params.id);
     if (orgId) docQuery = docQuery.eq("organization_id", orgId);

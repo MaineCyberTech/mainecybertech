@@ -8,6 +8,7 @@ import { requireAdmin } from "../middleware/admin";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -166,8 +167,8 @@ const createNotificationSchema = z.object({
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "notifications", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
     const unreadOnly = req.query.unread === "true";
 

@@ -11,6 +11,7 @@ import {
   createOnboardingSchema,
   createPatchSchema,
 } from "../validators/security-ops";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -24,8 +25,8 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.get(`/${path}`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "security-ops", "read");
-      const page = Math.max(1, parseInt(req.query.page as string) || 1);
-      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+      const page = Math.max(1, queryInt(req.query.page, 1));
+      const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
       const q = sb
         .from(table)
         .select("*", { count: "exact" })

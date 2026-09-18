@@ -11,6 +11,7 @@ import { AppError, success } from "../types";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 import { loadOwned } from "../lib/tenant";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -117,61 +118,66 @@ router.post("/", requirePermission("webhooks", "manage"), async (req, res, next)
   }
 });
 
-router.patch("/:id", requirePermission("webhooks", "manage"), requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateSchema.parse(req.body);
-    const supabase = getScopedClient(req, "webhook-management", "write");
+router.patch(
+  "/:id",
+  requirePermission("webhooks", "manage"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateSchema.parse(req.body);
+      const supabase = getScopedClient(req, "webhook-management", "write");
 
-    await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
+      await loadOwned(req, supabase as any, "webhook_endpoints", String(req.params.id));
 
-    if (parsed.url !== undefined) {
-      await assertSafeWebhookUrl(parsed.url);
+      if (parsed.url !== undefined) {
+        await assertSafeWebhookUrl(parsed.url);
+      }
+
+      const { data: current, error: fetchError } = await supabase
+        .from("webhook_endpoints")
+        .select("version")
+        .eq("id", req.params.id)
+        .single();
+
+      if (fetchError || !current) {
+        throw new AppError("NOT_FOUND", "Webhook not found", 404);
+      }
+
+      checkVersionMatch(current.version, req.ifMatchVersion);
+
+      const updateData: Record<string, unknown> = {};
+      if (parsed.name !== undefined) updateData.name = parsed.name;
+      if (parsed.url !== undefined) updateData.url = parsed.url;
+      if (parsed.secret !== undefined) updateData.secret = parsed.secret;
+      if (parsed.events !== undefined) updateData.events = parsed.events;
+      if (parsed.isActive !== undefined) updateData.is_active = parsed.isActive;
+
+      updateData.version = current.version + 1;
+
+      const { data, error } = await supabase
+        .from("webhook_endpoints")
+        .update(updateData)
+        .eq("version", current.version)
+        .eq("id", req.params.id)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Webhook not found", 404);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "webhook.update",
+        entityType: "webhook_endpoint",
+        entityId: data.id,
+        metadata: parsed,
+      });
+
+      res.json(success(data));
+    } catch (error) {
+      next(error);
     }
-
-    const { data: current, error: fetchError } = await supabase
-      .from("webhook_endpoints")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
-
-    if (fetchError || !current) {
-      throw new AppError("NOT_FOUND", "Webhook not found", 404);
-    }
-
-    checkVersionMatch(current.version, req.ifMatchVersion);
-
-    const updateData: Record<string, unknown> = {};
-    if (parsed.name !== undefined) updateData.name = parsed.name;
-    if (parsed.url !== undefined) updateData.url = parsed.url;
-    if (parsed.secret !== undefined) updateData.secret = parsed.secret;
-    if (parsed.events !== undefined) updateData.events = parsed.events;
-    if (parsed.isActive !== undefined) updateData.is_active = parsed.isActive;
-
-    updateData.version = current.version + 1;
-
-    const { data, error } = await supabase
-      .from("webhook_endpoints")
-      .update(updateData)
-      .eq("version", current.version)
-      .eq("id", req.params.id)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Webhook not found", 404);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "webhook.update",
-      entityType: "webhook_endpoint",
-      entityId: data.id,
-      metadata: parsed,
-    });
-
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
 
 router.delete("/:id", requirePermission("webhooks", "manage"), async (req, res, next) => {
   try {
@@ -213,8 +219,8 @@ router.get("/:id/deliveries", async (req, res, next) => {
         .maybeSingle();
       if (!webhook) throw new AppError("NOT_FOUND", "Webhook not found", 404);
     }
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
 
     const { data, error, count } = await supabase

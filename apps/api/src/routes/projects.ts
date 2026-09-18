@@ -27,6 +27,7 @@ import {
   createMilestoneSchema,
   createDependencySchema,
 } from "../validators/project";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -72,8 +73,8 @@ router.get("/export", async (req, res, next) => {
 router.get("/", responseCacheNoRenew(30), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "projects", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("projects").select("*", { count: "exact" });
@@ -213,7 +214,7 @@ function projectSubRoute(
 
   router.get(`/${resource}`, async (req, res, next) => {
     try {
-  const supabase = getSupabaseAdmin();
+      const supabase = getSupabaseAdmin();
       const projectId = req.query.project_id as string;
       if (!projectId) throw new AppError("VALIDATION", "project_id required", 400);
 
@@ -239,9 +240,7 @@ function projectSubRoute(
     try {
       const parsed = createSchema.parse(req.body) as Record<string, unknown>;
       const supabase = getScopedClient(req, "projects", "write");
-      const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-        | string
-        | undefined;
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
       await assertProjectInOrg(parsed.projectId as string, orgId);
 
@@ -276,9 +275,7 @@ function projectSubRoute(
     try {
       const parsed = updateSchema.parse(req.body) as Record<string, unknown>;
       const supabase = getScopedClient(req, "projects", "write");
-      const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-        | string
-        | undefined;
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
       const { data: child, error: childError } = await supabase
         .from(table)
@@ -309,9 +306,7 @@ function projectSubRoute(
   router.delete(`/${resource}/:id`, async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "projects", "write");
-      const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-        | string
-        | undefined;
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
       const { data: child, error: childError } = await supabase
         .from(table)
@@ -503,9 +498,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
   try {
     const parsed = updateProjectSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     let currentQuery = supabase.from("projects").select("version").eq("id", req.params.id);
     if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);

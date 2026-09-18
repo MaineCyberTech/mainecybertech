@@ -6,6 +6,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { loadOwned } from "../lib/tenant";
 import { triageInputSchema, convertTriageSchema, copilotReplyDraftSchema } from "../validators/ai";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -261,8 +262,8 @@ router.post("/triage/convert", async (req, res, next) => {
 router.get("/triage", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "ai", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let q = supabase.from("ticket_triage_drafts").select("*", { count: "exact" });

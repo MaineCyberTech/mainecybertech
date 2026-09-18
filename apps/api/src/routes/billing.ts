@@ -9,6 +9,7 @@ import { AppError, success } from "../types";
 import { getEnv } from "../config/env";
 import { httpClients } from "../lib/http-client";
 import { logger } from "../lib/logger";
+import { queryInt } from "../lib/query";
 
 type StripePrice = {
   nickname?: string | null;
@@ -100,8 +101,8 @@ router.get("/summary", async (req, res, next) => {
 router.get("/invoices", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "billing", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
     const orgId = req.query.organization_id as string | undefined;
     const statusFilter = req.query.status as string | undefined;
@@ -156,8 +157,8 @@ router.get("/subscriptions", async (req, res, next) => {
 router.get("/payments", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "billing", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
     const orgId = req.query.organization_id as string | undefined;
 
@@ -310,7 +311,9 @@ router.post("/create-portal-session", async (req, res, next) => {
 
     const supabase = getScopedClient(req, "billing", "write");
     const activeOrgHeader =
-      typeof req.headers?.["x-active-org"] === "string" ? (req.headers["x-active-org"] as string) : undefined;
+      typeof req.headers?.["x-active-org"] === "string"
+        ? (req.headers["x-active-org"] as string)
+        : undefined;
     const orgId =
       (req.body?.organizationId as string | undefined) ??
       (req.query.organization_id as string | undefined) ??

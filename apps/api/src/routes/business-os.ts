@@ -4,6 +4,7 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { responseCache } from "../middleware/cache";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -111,7 +112,7 @@ router.get("/recent-activity", responseCache(15), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
 
-    const limit = Math.min(20, Math.max(1, parseInt(req.query.limit as string) || 10));
+    const limit = Math.min(20, Math.max(1, queryInt(req.query.limit, 10)));
 
     const { data, error } = await supabase
       .from("audit_logs")

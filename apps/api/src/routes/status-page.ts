@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -93,8 +94,8 @@ function crudTable(
   router.get(`/${resource}`, async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "status-page", "read");
-      const page = Math.max(1, parseInt(req.query.page as string) || 1);
-      const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
+      const page = Math.max(1, queryInt(req.query.page, 1));
+      const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
       const offset = (page - 1) * limit;
       const q = supabase
         .from(table)
@@ -192,11 +193,6 @@ function crudTable(
 
 crudTable("components", "status_components", compCreateSchema, compUpdateSchema);
 crudTable("incidents", "status_incidents", incCreateSchema, incCreateSchema.partial());
-crudTable(
-  "maintenance",
-  "maintenance_notices",
-  maintCreateSchema,
-  maintCreateSchema.partial(),
-);
+crudTable("maintenance", "maintenance_notices", maintCreateSchema, maintCreateSchema.partial());
 
 export default router;

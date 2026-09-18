@@ -15,22 +15,18 @@ import {
   form,
   backup,
 } from "../../validators/final";
+import { queryInt } from "../../lib/query";
 
 export function snake(s: string) {
   return s.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
 }
 
-export function registerCrud(
-  router: Router,
-  path: string,
-  table: string,
-  schema: z.ZodTypeAny,
-) {
+export function registerCrud(router: Router, path: string, table: string, schema: z.ZodTypeAny) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
       const sb = getSupabaseAdmin();
-      const pg = Math.max(1, parseInt(req.query.page as string) || 1);
-      const lm = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+      const pg = Math.max(1, queryInt(req.query.page, 1));
+      const lm = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
       const q = sb
         .from(table)
         .select("*", { count: "exact" })
@@ -163,5 +159,6 @@ const schemas: Record<string, { schema: z.ZodTypeAny; table: string }> = {
 };
 
 export function registerCrudRoutes(router: Router) {
-  for (const [p, { schema: s, table }] of Object.entries(schemas)) registerCrud(router, p, table, s);
+  for (const [p, { schema: s, table }] of Object.entries(schemas))
+    registerCrud(router, p, table, s);
 }

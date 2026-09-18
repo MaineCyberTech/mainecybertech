@@ -16,6 +16,7 @@ import {
   createSopSchema,
   updateSopSchema,
 } from "../validators/governance";
+import { queryInt } from "../lib/query";
 
 type SopFrameworkRow = {
   compliance_framework: string | null;
@@ -40,8 +41,8 @@ function crudRoute(
   router.get(`/${path}`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "governance", "read");
-      const page = Math.max(1, parseInt(req.query.page as string) || 1);
-      const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+      const page = Math.max(1, queryInt(req.query.page, 1));
+      const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
       const q = sb
         .from(table)
         .select("*", { count: "exact" })
@@ -164,9 +165,7 @@ crudRoute(
 router.post("/change-requests/:id/submit", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "governance", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
     let updateQuery = supabase
       .from("change_requests")
       .update({ status: "pending_review", submitted_at: new Date().toISOString() })
@@ -187,118 +186,126 @@ router.post("/change-requests/:id/submit", async (req, res, next) => {
     next(err);
   }
 });
-router.post("/change-requests/:id/approve", requirePermission("change-requests", "manage"), async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "governance", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
-    let updateQuery = supabase
-      .from("change_requests")
-      .update({
-        status: "approved",
-        approved_by: req.authUser!.userId,
-        approved_at: new Date().toISOString(),
-      })
-      .eq("id", req.params.id)
-      .eq("status", "pending_review");
-    if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
-    const { data, error } = await updateQuery.select().single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Change request not found", 404);
-    await logAuditEvent({
-      organizationId: data.organization_id,
-      actorUserId: req.authUser!.userId,
-      action: "change_request.approved",
-      entityType: "change_request",
-      entityId: data.id,
-    });
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
-router.post("/change-requests/:id/reject", requirePermission("change-requests", "manage"), async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "governance", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
-    let updateQuery = supabase
-      .from("change_requests")
-      .update({ status: "rejected" })
-      .eq("id", req.params.id)
-      .eq("status", "pending_review");
-    if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
-    const { data, error } = await updateQuery.select().single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Change request not found", 404);
-    await logAuditEvent({
-      organizationId: data.organization_id,
-      actorUserId: req.authUser!.userId,
-      action: "change_request.rejected",
-      entityType: "change_request",
-      entityId: data.id,
-    });
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
-router.post("/change-requests/:id/implement", requirePermission("change-requests", "manage"), async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "governance", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
-    let updateQuery = supabase
-      .from("change_requests")
-      .update({ status: "implemented", implemented_at: new Date().toISOString() })
-      .eq("id", req.params.id)
-      .eq("status", "approved");
-    if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
-    const { data, error } = await updateQuery.select().single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Change request not found", 404);
-    await logAuditEvent({
-      organizationId: data.organization_id,
-      actorUserId: req.authUser!.userId,
-      action: "change_request.implemented",
-      entityType: "change_request",
-      entityId: data.id,
-    });
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
-router.post("/change-requests/:id/verify", requirePermission("change-requests", "manage"), async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "governance", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
-    let updateQuery = supabase
-      .from("change_requests")
-      .update({ status: "verified", verified_at: new Date().toISOString() })
-      .eq("id", req.params.id)
-      .eq("status", "implemented");
-    if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
-    const { data, error } = await updateQuery.select().single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Change request not found", 404);
-    await logAuditEvent({
-      organizationId: data.organization_id,
-      actorUserId: req.authUser!.userId,
-      action: "change_request.verified",
-      entityType: "change_request",
-      entityId: data.id,
-    });
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  "/change-requests/:id/approve",
+  requirePermission("change-requests", "manage"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "governance", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+      let updateQuery = supabase
+        .from("change_requests")
+        .update({
+          status: "approved",
+          approved_by: req.authUser!.userId,
+          approved_at: new Date().toISOString(),
+        })
+        .eq("id", req.params.id)
+        .eq("status", "pending_review");
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error } = await updateQuery.select().single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Change request not found", 404);
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "change_request.approved",
+        entityType: "change_request",
+        entityId: data.id,
+      });
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+router.post(
+  "/change-requests/:id/reject",
+  requirePermission("change-requests", "manage"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "governance", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+      let updateQuery = supabase
+        .from("change_requests")
+        .update({ status: "rejected" })
+        .eq("id", req.params.id)
+        .eq("status", "pending_review");
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error } = await updateQuery.select().single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Change request not found", 404);
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "change_request.rejected",
+        entityType: "change_request",
+        entityId: data.id,
+      });
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+router.post(
+  "/change-requests/:id/implement",
+  requirePermission("change-requests", "manage"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "governance", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+      let updateQuery = supabase
+        .from("change_requests")
+        .update({ status: "implemented", implemented_at: new Date().toISOString() })
+        .eq("id", req.params.id)
+        .eq("status", "approved");
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error } = await updateQuery.select().single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Change request not found", 404);
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "change_request.implemented",
+        entityType: "change_request",
+        entityId: data.id,
+      });
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+router.post(
+  "/change-requests/:id/verify",
+  requirePermission("change-requests", "manage"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "governance", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+      let updateQuery = supabase
+        .from("change_requests")
+        .update({ status: "verified", verified_at: new Date().toISOString() })
+        .eq("id", req.params.id)
+        .eq("status", "implemented");
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error } = await updateQuery.select().single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Change request not found", 404);
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "change_request.verified",
+        entityType: "change_request",
+        entityId: data.id,
+      });
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 crudRoute(
   "risks",
   "risk_register",
@@ -306,44 +313,46 @@ crudRoute(
   updateRiskSchema as unknown as Record<string, unknown>,
 );
 
-router.post("/risks/:id/assess", requirePermission("risk-register", "manage"), async (req, res, next) => {
-  try {
-    const parsed = z
-      .object({
-        likelihood: z.number().int().min(1).max(5),
-        impact: z.number().int().min(1).max(5),
-        mitigatingControls: z.string().optional(),
-        acceptingControls: z.string().optional(),
-      })
-      .parse(req.body);
-    const supabase = getScopedClient(req, "governance", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
-    const riskScore = parsed.likelihood * parsed.impact;
-    const riskLevel =
-      riskScore >= 15 ? "critical" : riskScore >= 10 ? "high" : riskScore >= 5 ? "medium" : "low";
-    let updateQuery = supabase
-      .from("risk_register")
-      .update({
-        likelihood: parsed.likelihood,
-        impact: parsed.impact,
-        risk_score: riskScore,
-        risk_level: riskLevel,
-        mitigating_controls: parsed.mitigatingControls,
-        accepting_controls: parsed.acceptingControls,
-        assessed_at: new Date().toISOString(),
-      })
-      .eq("id", req.params.id);
-    if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
-    const { data, error } = await updateQuery.select().single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Risk not found", 404);
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  "/risks/:id/assess",
+  requirePermission("risk-register", "manage"),
+  async (req, res, next) => {
+    try {
+      const parsed = z
+        .object({
+          likelihood: z.number().int().min(1).max(5),
+          impact: z.number().int().min(1).max(5),
+          mitigatingControls: z.string().optional(),
+          acceptingControls: z.string().optional(),
+        })
+        .parse(req.body);
+      const supabase = getScopedClient(req, "governance", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+      const riskScore = parsed.likelihood * parsed.impact;
+      const riskLevel =
+        riskScore >= 15 ? "critical" : riskScore >= 10 ? "high" : riskScore >= 5 ? "medium" : "low";
+      let updateQuery = supabase
+        .from("risk_register")
+        .update({
+          likelihood: parsed.likelihood,
+          impact: parsed.impact,
+          risk_score: riskScore,
+          risk_level: riskLevel,
+          mitigating_controls: parsed.mitigatingControls,
+          accepting_controls: parsed.acceptingControls,
+          assessed_at: new Date().toISOString(),
+        })
+        .eq("id", req.params.id);
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error } = await updateQuery.select().single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Risk not found", 404);
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 crudRoute(
   "retention",
   "retention_policies",
@@ -399,7 +408,9 @@ router.get("/sop-library/framework-gaps", async (req, res, next) => {
     const coverage = frameworks.map((fw) => {
       const sops = (data ?? []).filter((s: SopFrameworkRow) => s.compliance_framework === fw);
       const active = sops.filter((s: SopFrameworkRow) => s.status === "active").length;
-      const controlIds = [...new Set(sops.flatMap((s: SopFrameworkRow) => s.framework_control_ids ?? []))];
+      const controlIds = [
+        ...new Set(sops.flatMap((s: SopFrameworkRow) => s.framework_control_ids ?? [])),
+      ];
       return {
         framework: fw,
         totalSops: sops.length,
@@ -411,7 +422,8 @@ router.get("/sop-library/framework-gaps", async (req, res, next) => {
       success({
         frameworks: coverage,
         overallCompliance: Math.round(
-          coverage.reduce((s: number, f: { coveragePercent: number }) => s + f.coveragePercent, 0) / coverage.length,
+          coverage.reduce((s: number, f: { coveragePercent: number }) => s + f.coveragePercent, 0) /
+            coverage.length,
         ),
       }),
     );

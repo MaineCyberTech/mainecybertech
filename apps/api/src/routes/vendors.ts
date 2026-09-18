@@ -10,6 +10,7 @@ import {
   createVendorContactSchema,
   updateVendorContactSchema,
 } from "../validators/vendors";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -24,8 +25,8 @@ function crudEndpoints(
   router.get(`/${resource}`, async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "vendors", "read");
-      const page = Math.max(1, parseInt(req.query.page as string) || 1);
-      const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
+      const page = Math.max(1, queryInt(req.query.page, 1));
+      const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
       const offset = (page - 1) * limit;
 
       let q = supabase

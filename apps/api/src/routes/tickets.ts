@@ -19,6 +19,7 @@ import {
   updateTicketCommentSchema,
   bulkTicketUpdateSchema,
 } from "../validators/ticket";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -67,8 +68,8 @@ router.get("/export", async (req, res, next) => {
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "tickets", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("tickets").select("*", { count: "exact" });
@@ -298,9 +299,7 @@ router.post("/:id/comments", async (req, res, next) => {
   try {
     const parsed = addTicketCommentSchema.parse(req.body);
     const supabase = getScopedClient(req, "tickets", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     // Verify the ticket exists AND belongs to the caller's org before
     // commenting — prevents cross-tenant comment injection and notification
@@ -456,14 +455,9 @@ router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, n
   try {
     assertDeleteConfirmed(req.body);
     const supabase = getScopedClient(req, "tickets", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-      | string
-      | undefined;
+    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    let fetchQuery = supabase
-      .from("tickets")
-      .select("id, organization_id")
-      .eq("id", req.params.id);
+    let fetchQuery = supabase.from("tickets").select("id, organization_id").eq("id", req.params.id);
     if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
     const { data: ticket, error: fetchError } = await fetchQuery.single();
 

@@ -4,6 +4,7 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -12,11 +13,8 @@ router.use(requireAuth, requireAdmin);
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(
-      100,
-      Math.max(1, parseInt(req.query.limit as string) || 25),
-    );
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("audit_logs").select("*", { count: "exact" });
@@ -79,9 +77,7 @@ router.get("/export", async (req, res, next) => {
     const entityId = req.query.entity_id as string | undefined;
     if (entityId) query = query.eq("entity_id", entityId);
 
-    const { data, error } = await query
-      .order("created_at", { ascending: false })
-      .limit(10000);
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

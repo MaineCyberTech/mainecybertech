@@ -14,6 +14,7 @@ import {
   verifyFindingSchema,
   resolveFindingSchema,
 } from "../validators/findings";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -56,8 +57,8 @@ router.get("/export", async (req, res, next) => {
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("findings").select("*", { count: "exact" });
@@ -115,7 +116,10 @@ router.get("/:id", async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "findings", "read");
-    let query = supabase.from("findings").select("*").eq("id", req.params.id as string);
+    let query = supabase
+      .from("findings")
+      .select("*")
+      .eq("id", req.params.id as string);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
     if (error || !data) throw new AppError("NOT_FOUND", "Finding not found", 404);
@@ -263,8 +267,17 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "write");
-    await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id");
-    const { error } = await supabase.from("findings").delete().eq("id", req.params.id as string);
+    await loadOwned(
+      req,
+      supabase as any,
+      "findings",
+      req.params.id as string,
+      "id, organization_id",
+    );
+    const { error } = await supabase
+      .from("findings")
+      .delete()
+      .eq("id", req.params.id as string);
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
@@ -285,7 +298,13 @@ router.post("/:id/verify", async (req, res, next) => {
     verifyFindingSchema.parse(req.body);
     const supabase = getScopedClient(req, "findings", "write");
 
-    const current = await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id, status, version");
+    const current = await loadOwned(
+      req,
+      supabase as any,
+      "findings",
+      req.params.id as string,
+      "id, organization_id, status, version",
+    );
 
     if ((current.status as string) !== "resolved")
       throw new AppError("INVALID_STATE", "Only resolved findings can be verified", 400);
@@ -335,7 +354,13 @@ router.post("/:id/resolve", async (req, res, next) => {
     const parsed = resolveFindingSchema.parse(req.body);
     const supabase = getScopedClient(req, "findings", "write");
 
-    const current = await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id, status, version");
+    const current = await loadOwned(
+      req,
+      supabase as any,
+      "findings",
+      req.params.id as string,
+      "id, organization_id, status, version",
+    );
 
     if (!["open", "in_progress"].includes(current.status as string))
       throw new AppError("INVALID_STATE", "Only open or in-progress findings can be resolved", 400);
@@ -383,7 +408,13 @@ router.post("/:id/resolve", async (req, res, next) => {
 router.get("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
-    await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id");
+    await loadOwned(
+      req,
+      supabase as any,
+      "findings",
+      req.params.id as string,
+      "id, organization_id",
+    );
     const { data, error } = await supabase
       .from("module_comments")
       .select("*")
@@ -445,7 +476,13 @@ router.post("/:id/comments", async (req, res, next) => {
 router.get("/:id/timeline", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "read");
-    await loadOwned(req, supabase as any, "findings", req.params.id as string, "id, organization_id");
+    await loadOwned(
+      req,
+      supabase as any,
+      "findings",
+      req.params.id as string,
+      "id, organization_id",
+    );
     const { data, error } = await supabase
       .from("module_timeline_events")
       .select("*")

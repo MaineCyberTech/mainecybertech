@@ -5,6 +5,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { createServiceSchema, updateServiceSchema } from "../validators/service-catalog";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -13,8 +14,8 @@ router.use(requireOrgAccess);
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "service-catalog", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 50));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 50)));
     const offset = (page - 1) * limit;
     const q = supabase
       .from("service_catalog")

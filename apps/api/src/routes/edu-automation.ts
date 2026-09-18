@@ -20,6 +20,7 @@ import {
   ps,
   kbGen,
 } from "../validators/edu-automation";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -31,8 +32,8 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "edu-automation", "read");
-      const pg = Math.max(1, parseInt(req.query.page as string) || 1);
-      const lm = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+      const pg = Math.max(1, queryInt(req.query.page, 1));
+      const lm = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
       const q = sb
         .from(table)
         .select("*", { count: "exact" })
@@ -305,32 +306,36 @@ router.post("/compliance/score", async (req, res, next) => {
   }
 });
 
-router.post("/phishing/:id/launch", requirePermission("phishing-simulations", "edit"), async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "edu-automation", "write");
-    const { data, error } = await supabase
-      .from("phishing_campaigns")
-      .update({ status: "active", launched_at: new Date().toISOString() })
-      .eq("id", req.params.id)
-      .eq("organization_id", req.query.organization_id as string)
-      .eq("status", "draft")
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (data) {
-      await logAuditEvent({
-        organizationId: data.organization_id,
-        actorUserId: req.authUser!.userId,
-        action: "phishing.launched",
-        entityType: "phishing_campaign",
-        entityId: data.id,
-      });
+router.post(
+  "/phishing/:id/launch",
+  requirePermission("phishing-simulations", "edit"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "edu-automation", "write");
+      const { data, error } = await supabase
+        .from("phishing_campaigns")
+        .update({ status: "active", launched_at: new Date().toISOString() })
+        .eq("id", req.params.id)
+        .eq("organization_id", req.query.organization_id as string)
+        .eq("status", "draft")
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (data) {
+        await logAuditEvent({
+          organizationId: data.organization_id,
+          actorUserId: req.authUser!.userId,
+          action: "phishing.launched",
+          entityType: "phishing_campaign",
+          entityId: data.id,
+        });
+      }
+      res.json(success(data));
+    } catch (err) {
+      next(err);
     }
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 router.get("/phishing/:id/results", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "edu-automation", "read");
@@ -666,7 +671,9 @@ router.get("/scorecards/overview", async (req, res, next) => {
     const items = data ?? [];
     const overallScore =
       items.length > 0
-        ? Math.round(items.reduce((s: number, c: ScorecardRow) => s + (c.score || 0), 0) / items.length)
+        ? Math.round(
+            items.reduce((s: number, c: ScorecardRow) => s + (c.score || 0), 0) / items.length,
+          )
         : 0;
     const badges = [...new Set(items.map((c: ScorecardRow) => c.badge).filter(Boolean))];
     const categories = items.map((c: ScorecardRow) => ({

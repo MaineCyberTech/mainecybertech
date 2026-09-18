@@ -8,6 +8,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { createFileRequestSchema, updateFileRequestSchema } from "../validators/file-requests";
 import { createNotification } from "../lib/notify";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -193,8 +194,8 @@ function generateToken(): string {
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "file-requests", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let q = supabase

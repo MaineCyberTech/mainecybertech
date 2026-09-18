@@ -7,6 +7,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 import type { Tables } from "@mct/sdk/database.types";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -108,8 +109,8 @@ router.get("/dashboard", async (req, res, next) => {
 router.get("/checks", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "uptime-monitor", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     const { data, error, count } = await supabase

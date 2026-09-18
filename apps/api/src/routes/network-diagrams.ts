@@ -9,6 +9,7 @@ import {
   createNetworkDiagramSchema,
   updateNetworkDiagramSchema,
 } from "../validators/network-diagrams";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -18,8 +19,8 @@ router.use(requireOrgAccess);
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "network-diagrams", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("network_diagrams").select("*", { count: "exact" });
@@ -30,11 +31,9 @@ router.get("/", async (req, res, next) => {
     const search = req.query.search as string | undefined;
     if (search) query = query.ilike("name", `%${search}%`);
 
-    const {
-      data,
-      error,
-      count,
-    } = await query.order("created_at", { ascending: false }).range(offset, offset + limit - 1);
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -54,7 +53,10 @@ router.get("/", async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "network-diagrams", "read");
-    let query = supabase.from("network_diagrams").select("*").eq("id", String(req.params.id as string));
+    let query = supabase
+      .from("network_diagrams")
+      .select("*")
+      .eq("id", String(req.params.id as string));
 
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
@@ -142,7 +144,10 @@ router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "network-diagrams", "write");
     await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));
-    const { error } = await supabase.from("network_diagrams").delete().eq("id", String(req.params.id as string));
+    const { error } = await supabase
+      .from("network_diagrams")
+      .delete()
+      .eq("id", String(req.params.id as string));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

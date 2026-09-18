@@ -21,6 +21,7 @@ import {
   cancelRequestSchema,
   addApprovalCommentSchema,
 } from "../validators/approvals";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -102,8 +103,8 @@ router.get("/stats", async (req, res, next) => {
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "approvals", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("approval_requests").select("*", { count: "exact" });
@@ -146,7 +147,10 @@ router.get("/:id", async (req, res, next) => {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "approvals", "read");
 
-    let query = supabase.from("approval_requests").select("*").eq("id", req.params.id as string);
+    let query = supabase
+      .from("approval_requests")
+      .select("*")
+      .eq("id", req.params.id as string);
     if (orgId) query = query.eq("organization_id", orgId);
     const { data, error } = await query.single();
 
@@ -279,8 +283,17 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 router.delete("/:id", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "approvals", "write");
-    await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
-    const { error } = await supabase.from("approval_requests").delete().eq("id", req.params.id as string);
+    await loadOwned(
+      req,
+      supabase as any,
+      "approval_requests",
+      req.params.id as string,
+      "id, organization_id",
+    );
+    const { error } = await supabase
+      .from("approval_requests")
+      .delete()
+      .eq("id", req.params.id as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -301,7 +314,13 @@ router.post("/:id/approve", async (req, res, next) => {
   try {
     const parsed = approveRequestSchema.parse(req.body);
     const supabase = getScopedClient(req, "approvals", "write");
-    const approval = await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
+    const approval = await loadOwned(
+      req,
+      supabase as any,
+      "approval_requests",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const result = await approveRequest(
       req.params.id as string,
@@ -330,7 +349,13 @@ router.post("/:id/reject", async (req, res, next) => {
   try {
     const parsed = rejectRequestSchema.parse(req.body);
     const supabase = getScopedClient(req, "approvals", "write");
-    const approval = await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
+    const approval = await loadOwned(
+      req,
+      supabase as any,
+      "approval_requests",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const result = await rejectRequest(
       req.params.id as string,
@@ -359,7 +384,13 @@ router.post("/:id/cancel", async (req, res, next) => {
   try {
     const parsed = cancelRequestSchema.parse(req.body);
     const supabase = getScopedClient(req, "approvals", "write");
-    const approval = await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
+    const approval = await loadOwned(
+      req,
+      supabase as any,
+      "approval_requests",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const result = await cancelRequest(
       req.params.id as string,
@@ -387,7 +418,13 @@ router.post("/:id/cancel", async (req, res, next) => {
 router.get("/:id/comments", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "approvals", "read");
-    await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
+    await loadOwned(
+      req,
+      supabase as any,
+      "approval_requests",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const { data, error } = await supabase
       .from("module_comments")
@@ -450,7 +487,13 @@ router.post("/:id/comments", async (req, res, next) => {
 router.get("/:id/timeline", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "approvals", "read");
-    await loadOwned(req, supabase as any, "approval_requests", req.params.id as string, "id, organization_id");
+    await loadOwned(
+      req,
+      supabase as any,
+      "approval_requests",
+      req.params.id as string,
+      "id, organization_id",
+    );
 
     const { data, error } = await supabase
       .from("module_timeline_events")

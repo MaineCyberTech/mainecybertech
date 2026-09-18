@@ -9,6 +9,7 @@ import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-lock
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { assertResourceOrg } from "../lib/tenant";
 import { createAssetSchema, updateAssetSchema } from "../validators/assets";
+import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -54,8 +55,8 @@ router.get("/export", async (req, res, next) => {
 router.get("/", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "assets", "read");
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     let query = supabase.from("assets").select("*", { count: "exact" });

@@ -17,6 +17,7 @@ import {
   updateDomainSchema,
   onboardSchema,
 } from "../validators/organization";
+import { queryInt } from "../lib/query";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -103,16 +104,14 @@ router.post("/onboard", requireAdmin, async (req, res, next) => {
       userId = authUser.user.id;
       invited = true;
 
-      await supabase
-        .from("profiles")
-        .upsert(
-          {
-            id: userId,
-            email: parsed.adminEmail,
-            full_name: parsed.adminFullName ?? null,
-          },
-          { onConflict: "id" },
-        );
+      await supabase.from("profiles").upsert(
+        {
+          id: userId,
+          email: parsed.adminEmail,
+          full_name: parsed.adminFullName ?? null,
+        },
+        { onConflict: "id" },
+      );
     }
 
     const { data: membership, error: memError } = await supabase
@@ -184,7 +183,9 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
         .eq("user_id", req.authUser!.userId)
         .eq("status", "approved");
 
-      const orgIds = (memberships ?? []).map((m: { organization_id: string }) => m.organization_id).filter(Boolean);
+      const orgIds = (memberships ?? [])
+        .map((m: { organization_id: string }) => m.organization_id)
+        .filter(Boolean);
 
       if (orgIds.length > 0) {
         query = query.in("id", orgIds);
@@ -203,17 +204,13 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
     }
 
     const hasPaging = req.query.page !== undefined || req.query.limit !== undefined;
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 25));
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
     if (hasPaging) query = query.range(offset, offset + limit - 1);
 
-    const {
-      data,
-      error,
-      count,
-    } = await query.order("name");
+    const { data, error, count } = await query.order("name");
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -354,85 +351,87 @@ router.patch(
   requirePermission("organizations", "manage"),
   requireIfMatch,
   async (req, res, next) => {
-  try {
-    const parsed = updateOrganizationSchema.parse(req.body);
-    const supabase = getScopedClient(req, "organizations", "write");
+    try {
+      const parsed = updateOrganizationSchema.parse(req.body);
+      const supabase = getScopedClient(req, "organizations", "write");
 
-    const { data: current, error: fetchError } = await supabase
-      .from("organizations")
-      .select("version")
-      .eq("id", req.params.id)
-      .single();
+      const { data: current, error: fetchError } = await supabase
+        .from("organizations")
+        .select("version")
+        .eq("id", req.params.id)
+        .single();
 
-    if (fetchError || !current) {
-      throw new AppError("NOT_FOUND", "Organization not found", 404);
+      if (fetchError || !current) {
+        throw new AppError("NOT_FOUND", "Organization not found", 404);
+      }
+
+      checkVersionMatch(current.version, req.ifMatchVersion);
+
+      const updateData: Record<string, unknown> = {};
+      if (parsed.name !== undefined) updateData.name = parsed.name;
+      if (parsed.slug !== undefined) updateData.slug = parsed.slug;
+      if (parsed.status !== undefined) updateData.status = parsed.status;
+      if (parsed.primaryDomain !== undefined) updateData.primary_domain = parsed.primaryDomain;
+      if (parsed.supportPlan !== undefined) updateData.support_plan = parsed.supportPlan;
+      if (parsed.logoUrl !== undefined) updateData.logo_url = parsed.logoUrl;
+      if (parsed.brandColor !== undefined) updateData.brand_color = parsed.brandColor;
+      if (parsed.accentColor !== undefined) updateData.accent_color = parsed.accentColor;
+      if (parsed.customDomain !== undefined) updateData.custom_domain = parsed.customDomain;
+
+      updateData.version = current.version + 1;
+
+      const { data, error } = await supabase
+        .from("organizations")
+        .update(updateData)
+        .eq("id", req.params.id)
+        .eq("version", current.version)
+        .select()
+        .single();
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data)
+        throw new AppError("VERSION_CONFLICT", "Organization was modified by another user", 409);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "organization.update",
+        entityType: "organization",
+        entityId: data.id,
+        metadata: parsed,
+      });
+
+      invalidateCache(`/api/v1/organizations`);
+      res.json(success(data));
+    } catch (error) {
+      next(error);
     }
-
-    checkVersionMatch(current.version, req.ifMatchVersion);
-
-    const updateData: Record<string, unknown> = {};
-    if (parsed.name !== undefined) updateData.name = parsed.name;
-    if (parsed.slug !== undefined) updateData.slug = parsed.slug;
-    if (parsed.status !== undefined) updateData.status = parsed.status;
-    if (parsed.primaryDomain !== undefined) updateData.primary_domain = parsed.primaryDomain;
-    if (parsed.supportPlan !== undefined) updateData.support_plan = parsed.supportPlan;
-    if (parsed.logoUrl !== undefined) updateData.logo_url = parsed.logoUrl;
-    if (parsed.brandColor !== undefined) updateData.brand_color = parsed.brandColor;
-    if (parsed.accentColor !== undefined) updateData.accent_color = parsed.accentColor;
-    if (parsed.customDomain !== undefined) updateData.custom_domain = parsed.customDomain;
-
-    updateData.version = current.version + 1;
-
-    const { data, error } = await supabase
-      .from("organizations")
-      .update(updateData)
-      .eq("id", req.params.id)
-      .eq("version", current.version)
-      .select()
-      .single();
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data)
-      throw new AppError("VERSION_CONFLICT", "Organization was modified by another user", 409);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "organization.update",
-      entityType: "organization",
-      entityId: data.id,
-      metadata: parsed,
-    });
-
-    invalidateCache(`/api/v1/organizations`);
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
 
 router.delete(
   "/:id",
   requireOrgAccessByParam,
   requirePermission("organizations", "manage"),
   async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "organizations", "write");
-    const { error } = await supabase.from("organizations").delete().eq("id", req.params.id);
+    try {
+      const supabase = getScopedClient(req, "organizations", "write");
+      const { error } = await supabase.from("organizations").delete().eq("id", req.params.id);
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "organization.delete",
-      entityType: "organization",
-      entityId: String(req.params.id),
-    });
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "organization.delete",
+        entityType: "organization",
+        entityId: String(req.params.id),
+      });
 
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/:id/domains", requireOrgAccessByParam, async (req, res, next) => {
   try {
