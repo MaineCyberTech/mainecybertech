@@ -15,6 +15,10 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "on-first-retry",
+    // Bound individual actions/navigations so a hung request fails the step
+    // clearly well inside the 45s test budget instead of consuming all of it.
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
   },
 
   expect: {

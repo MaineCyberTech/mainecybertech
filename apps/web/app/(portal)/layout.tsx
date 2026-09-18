@@ -11,6 +11,7 @@ import SuperAdminOrgSwitcher from "@/components/admin/SuperAdminOrgSwitcher";
 import PortalGlobalSearch from "@/components/portal/PortalGlobalSearch";
 import { getUnreadCount } from "@/lib/notifications-actions";
 import { setActiveOrg } from "@/lib/org-actions";
+import { withRetry } from "@/lib/retry";
 import PortalSidebarLayout from "@/components/portal/PortalSidebarLayout";
 import RouteGuard from "@/components/RouteGuard";
 
@@ -88,16 +89,14 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   // Run independent calls in parallel
   const [userResult, membershipResult, unreadCountResult, allOrgsResult, permissionsResult] =
     await Promise.all([
-      getApiClient()
-        .users.me()
-        .catch((err) => {
-          // Only treat an explicit auth failure (401/403) as "not signed in".
-          // Transient API errors (429 rate limit, 5xx) must NOT redirect to
-          // /login — the middleware would bounce an authenticated user back
-          // to /portal/dashboard, producing an infinite redirect loop.
-          const status = (err as { status?: number })?.status;
-          return status === 401 || status === 403 ? null : { error: true };
-        }),
+      withRetry(() => getApiClient().users.me()).catch((err) => {
+        // Only treat an explicit auth failure (401/403) as "not signed in".
+        // Transient API errors (429 rate limit, 5xx) must NOT redirect to
+        // /login — the middleware would bounce an authenticated user back
+        // to /portal/dashboard, producing an infinite redirect loop.
+        const status = (err as { status?: number })?.status;
+        return status === 401 || status === 403 ? null : { error: true };
+      }),
       getApprovedMembership().catch(() => null),
       getUnreadCount().catch(() => 0),
       getApiClient()
@@ -130,14 +129,12 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       .organizations.get(membership.organization_id)
       .catch(() => null),
     getApiClient()
-        .memberships.list({ userId: user.userId, status: "approved" })
-        .catch(() => [] as Membership[]),
+      .memberships.list({ userId: user.userId, status: "approved" })
+      .catch(() => [] as Membership[]),
   ]);
 
   const orgIds = new Set(allMemberships.map((m) => m.organization_id));
-  const userOrgs = allOrgs
-    .filter((o) => orgIds.has(o.id))
-    .map((o) => ({ id: o.id, name: o.name }));
+  const userOrgs = allOrgs.filter((o) => orgIds.has(o.id)).map((o) => ({ id: o.id, name: o.name }));
 
   const brandColor = org?.brand_color ?? "#059669";
   const logoUrl = org?.logo_url ?? null;

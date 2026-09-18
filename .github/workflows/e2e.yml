@@ -133,5 +133,10 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: playwright-report
-          path: apps/web/playwright-report/
+          # The config writes the HTML report / traces to the repo root
+          # (.playwright-report / .playwright-results), not under apps/web.
+          path: |
+            .playwright-report/
+            .playwright-results/
+          if-no-files-found: ignore
           retention-days: 7

@@ -1,5 +1,7 @@
 import { test as base, expect, type Page } from "@playwright/test";
 
+export const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+
 export class LoginPage {
   constructor(public readonly page: Page) {}
 
@@ -49,9 +51,32 @@ export async function setActiveOrg(page: Page, organizationId: string) {
     {
       name: "mct_active_org",
       value: organizationId,
-      url: "http://localhost:3000",
+      url: BASE_URL,
     },
   ]);
+}
+
+/**
+ * Navigate to an app route and, for authenticated routes, wait for the
+ * server-rendered shell to paint.
+ *
+ * The admin/portal layouts `throw` when the profile fetch fails with a
+ * transient 5xx/429, so the error boundary renders instead of the header
+ * and downstream locators (e.g. the notification bell) time out with no
+ * useful signal. Waiting on the shell here gives a deterministic failure
+ * point and absorbs ordinary hydration latency.
+ */
+export async function gotoApp(
+  page: Page,
+  path: string,
+  opts: { shell?: boolean } = {},
+): Promise<void> {
+  const { shell = true } = opts;
+  await page.goto(path);
+  await page.waitForLoadState("domcontentloaded");
+  if (shell) {
+    await expect(page.locator("header").first()).toBeVisible({ timeout: 20_000 });
+  }
 }
 
 export const test = base;

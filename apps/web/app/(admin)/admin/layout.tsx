@@ -5,6 +5,7 @@ import AdminHeaderActions from "@/components/admin/AdminHeaderActions";
 import AdminGlobalSearch from "@/components/admin/AdminGlobalSearch";
 import NotificationBell from "@/components/NotificationBell";
 import { getUnreadCount } from "@/lib/notifications-actions";
+import { withRetry } from "@/lib/retry";
 import AdminSidebarLayout from "@/components/admin/AdminSidebarLayout";
 import RouteGuard from "@/components/RouteGuard";
 import SuperAdminOrgSwitcher from "@/components/admin/SuperAdminOrgSwitcher";
@@ -102,7 +103,7 @@ const ADMIN_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   let user;
   try {
-    user = await getApiClient().users.me();
+    user = await withRetry(() => getApiClient().users.me());
   } catch (err) {
     // 401/403 = not signed in -> login. Other failures (429/5xx) must not
     // redirect: the middleware would bounce an authenticated user back to

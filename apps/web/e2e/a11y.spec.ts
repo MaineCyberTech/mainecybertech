@@ -19,6 +19,11 @@ test.describe("accessibility scan", () => {
     test(`${page.name} has no critical axe violations`, async ({ page: p }) => {
       await p.goto(page.path);
       await p.waitForLoadState("domcontentloaded");
+      // Let client-side data/hydration settle so axe scans the rendered DOM
+      // rather than a mid-load skeleton (which intermittently trips
+      // landmark/created-element rules). Bounded: the notification bell's
+      // EventSource can keep the connection busy, so fall through on timeout.
+      await p.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {});
       const results = await new AxeBuilder({ page: p })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
         .analyze();
