@@ -384,6 +384,34 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 
 ## Completed Work
 
+### Typed Supabase admin client + audited row drift (2026-09-18 session)
+
+- **`getSupabaseAdmin` / `getSupabaseAdminNoBreaker` are now
+  `SupabaseClient<Database>`** (`6da96f8`), taking the API from 85 strictness
+  findings to **0**. `getScopedClient` remains untyped (~174 findings) and is a
+  separate follow-up.
+- **Real runtime bugs found by typing** (same class as the earlier
+  `tickets.subject` fix):
+  - `webhook_deliveries.webhook_id` was `NOT NULL` while `logWebhookDelivery`
+    inserts `null` → every generic inbound-webhook delivery log threw, so the
+    log was always empty **and** the idempotency key was never stored
+    (duplicate-processing risk). Migration `5302410` makes it nullable; the
+    worker retry task now skips endpoint-less deliveries (`dfa607b`).
+  - `satisfaction_pulses` was missing `template_id`/`send_at`/`scheduled_for`/
+    `created_by` and `satisfaction_pulse_templates` was missing `subject`/
+    `question`/`default_rating` → those inserts/updates threw. Migration
+    `5302411` adds them.
+  - `respondSatisfactionPulse` read a non-existent `created_by` column.
+- **Generator (`scripts/generate-db-types.js`):** primary-key columns are now
+  treated as `NOT NULL` (fixes nullable `profiles.id`, `store_*.id`), and
+  `ALTER COLUMN ... {DROP,SET} NOT NULL` is now parsed.
+- **New `apps/api/src/lib/db-types.ts`:** `toJson`, `asInsert`, `asUpdate`,
+  `Row`/`Insert`/`Update` aliases (+4 tests).
+- **Remaining API typing cohorts** (~174 findings, only visible when
+  `getScopedClient` is typed): generic CRUD factories (`never`), dynamic
+  payloads (`RejectExcessProperties`), query widening, `Json`, `string|null`
+  rows. The helper approach above is established for these.
+
 ### E2E hardening + API bug fix + MFA backend (2026-09-18 session)
 
 - **E2E flakiness hardening (`44900e3`):**
