@@ -50,7 +50,7 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 - **`portal-knowledge-base` E2E failure — FIXED & validated:** the 3 KB E2E tests now pass in prod mode. Root cause was the inline server-action wrapper `<form action={async (fd) => await createArticle(fd)}>` breaking under Next's production build; fixed via `action={createArticle}` + `void` return + `items` guard (commit `688f9fa`).
 - **E2E has known run-to-run flakiness:** data-dependent tests (notification bell, project/user/document detail, admin-documents modal) fail intermittently due to CI API/Supabase contention — identical seeds, yet the same test passes in one shard and fails in another. This is **not** a product regression and **not** caused by the CORS `*`→`http://localhost:3000` change. The E2E gate is **prod-only** (`deploy-do.yml` `if: name == 'prod'`), so prod deploy is currently blocked by this flakiness while dev (`develop`) deploy is unaffected. **Partially hardened 2026-09-18** (`44900e3`): artifact paths, action/navigation timeouts, shell-wait helper, bounded `networkidle` before axe, and a `withRetry()` around the layout profile fetch (the SDK does not retry 500). Remaining follow-up: convert the ~35 `if (await locator.isVisible())` data gates to auto-waiting waits and add `role="dialog"`/test-id to the documents modals.
-- **MFA/SSO (net-new):** TOTP **management** backend + SDK shipped 2026-09-18 (`334d65f`) and is non-enforcing. Remaining: (1) enable MFA on the hosted Supabase project; (2) an `aal2` check in `requireAuth` so an aal1 session cannot call the API once a factor is enrolled; (3) a login second-factor step and a `/portal` security settings enrollment page; (4) SSO (SAML/OIDC) — own larger effort, needs a paid Supabase plan + per-org provider config.
+- **MFA/SSO (net-new):** TOTP **management** backend + SDK shipped 2026-09-18 (`334d65f`) and is non-enforcing. An opt-in enrollment UI (`/portal/profile/security`) shipped in `471b63e`. Remaining: (1) enable MFA on the hosted Supabase project; (2) an `aal2` check in `requireAuth` so an aal1 session cannot call the API once a factor is enrolled (enforcement deliberately deferred — currently opt-in only); (3) a login second-factor step; (4) SSO (SAML/OIDC) — own larger effort, needs a paid Supabase plan + per-org provider config.
 
 ### Test patterns
 
@@ -420,7 +420,16 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
   `DELETE /auth/mfa/factors/:id`, plus SDK `auth.mfa*`. Delegates to GoTrue
   (`auth.mfa_factors`), so no TOTP secrets are stored and no new table is
   needed. **Non-enforcing by design.** +8 API tests, +5 SDK tests.
-  See "Remaining" below for enforcement + UI.
+  Opt-in enrollment UI at `/portal/profile/security` (`471b63e`), linked from
+  `/portal/profile`. See the Known Debt note for remaining enforcement/SSO.
+- **API query-param widening (`fb093df`):** start of the typing backlog from
+  `docs/database-types-api-adoption.md`. New `apps/api/src/lib/query.ts`
+  (`queryString`/`queryInt`/`queryStringArray`, +11 tests); the 79
+  `parseInt(req.query.page|limit as string) || N` sites across 38 route files
+  now use `queryInt(...)`, which coerces `string | string[]` at runtime instead
+  of lying with an `as string` cast. Remaining cohorts (Json assignments,
+  enum-literal rejects, dynamic row objects, `string | null` row nullability)
+  are still open — see the doc.
 
 ### CSP nonce hardening + deploy-do IP resolution (2026-09-18 session)
 
