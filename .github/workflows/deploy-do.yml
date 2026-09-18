@@ -106,31 +106,63 @@ jobs:
         id: tf
         env:
           DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+          # Optional escape hatch: an environment variable (dev/prod) holding
+          # the droplet's IPv4. Used only when the DO API and Terraform both
+          # fail to yield a valid address.
+          DROPLET_IP_VAR: ${{ vars.DROPLET_IP }}
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         working-directory: infra/terraform/digitalocean
         run: |
           set -e
           ENV="${{ needs.setup.outputs.name }}"
+          DROPLET_NAME="mct-portal-$ENV"
           IP=""
+          is_ipv4() { [[ "$1" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; }
+
           if [ -n "$DO_API_TOKEN" ]; then
             # Authoritative: the DO API returns the droplet's CURRENT IP.
-            # Match by name PREFIX so recycled/recreated droplets with a
-            # suffix still resolve, and take the newest matching droplet.
+            # Match exact name or a suffixed variant (recycled/recreated
+            # droplets), take the newest, and pick the public IPv4.
             echo "Resolving droplet IP from DigitalOcean API ($ENV)..."
-            IP=$(curl -sf -H "Authorization: Bearer $DO_API_TOKEN" \
-              "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
-              | jq -r --arg prefix "mct-portal-$ENV" \
-                  '[.droplets[] | select(.name | startswith($prefix))] | sort_by(.created_at) | last
-                   | (.networks.v4[]? | select(.type == "public") | .ip_address)' 2>/dev/null | head -n1 || true)
+            response=$(curl -sS -w '\n%{http_code}' \
+              -H "Authorization: Bearer $DO_API_TOKEN" \
+              "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" || true)
+            status=$(printf '%s' "$response" | tail -n1)
+            body=$(printf '%s' "$response" | sed '$d')
+            echo "DO API HTTP status: $status"
+            if [ "$status" = "200" ]; then
+              IP=$(printf '%s' "$body" | jq -r --arg name "$DROPLET_NAME" \
+                '[.droplets[] | select(.name == $name or (.name | startswith($name + "-")))]
+                 | sort_by(.created_at) | last
+                 | (.networks.v4[]? | select(.type == "public") | .ip_address) // empty' \
+                2>/dev/null | head -n1 || true)
+            else
+              echo "DO API did not return 200 (token may be invalid/expired)."
+            fi
+          else
+            echo "DO_API_TOKEN is not set; skipping the DO API."
           fi
-          if [ -z "$IP" ]; then
-            echo "DO API did not resolve an IP; falling back to Terraform state ($ENV)..."
-            terraform init -input=false -backend-config=env/backend.$ENV.hcl
-            IP=$(terraform output -raw droplet_ip 2>/dev/null || true)
+
+          if ! is_ipv4 "$IP"; then
+            echo "DO API did not yield a valid IPv4; trying Terraform state ($ENV)..."
+            IP=""
+            terraform init -input=false -backend-config=env/backend.$ENV.hcl >/dev/null 2>&1 \
+              || echo "terraform init failed (non-fatal)"
+            # Extract only an IPv4 from the output: the hashicorp/setup-terraform
+            # wrapper emits ::error:: noise on failure that must never be parsed
+            # as an address (that produced a malformed empty droplet_ip output).
+            IP=$(terraform output -raw droplet_ip 2>/dev/null \
+              | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -n1 || true)
           fi
-          if [ -z "$IP" ]; then
-            echo "ERROR: could not resolve droplet IP for $ENV"
+
+          if ! is_ipv4 "$IP" && is_ipv4 "$DROPLET_IP_VAR"; then
+            echo "Falling back to the DROPLET_IP environment variable."
+            IP="$DROPLET_IP_VAR"
+          fi
+
+          if ! is_ipv4 "$IP"; then
+            echo "ERROR: could not resolve a valid droplet IPv4 for $ENV"
             exit 1
           fi
           echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
