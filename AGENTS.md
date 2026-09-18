@@ -386,10 +386,15 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 
 ### Typed Supabase admin client + audited row drift (2026-09-18 session)
 
-- **`getSupabaseAdmin` / `getSupabaseAdminNoBreaker` are now
-  `SupabaseClient<Database>`** (`6da96f8`), taking the API from 85 strictness
-  findings to **0**. `getScopedClient` remains untyped (~174 findings) and is a
-  separate follow-up.
+- **`getSupabaseAdmin` / `getSupabaseAdminNoBreaker` / `getScopedClient` are
+  all `SupabaseClient<Database>`** (`6da96f8` + `7a9cded`), taking the API from
+  259 strictness findings to **0** — the full database-types adoption is done.
+  `getScopedClient` adoption (`7a9cded`) touched 43 route/service files:
+  `String(req.params.*)` coercion, `toJson()` at Json boundaries,
+  `as never`/typed payloads for the generic CRUD factories and field-map
+  updates, nullability guards, and RPC-arg casts (the generator emits an empty
+  `Functions` map). `notifyAndEmail`'s `email` is now optional so a recipient
+  without an address gets the in-app notification but no email.
 - **Real runtime bugs found by typing** (same class as the earlier
   `tickets.subject` fix):
   - `webhook_deliveries.webhook_id` was `NOT NULL` while `logWebhookDelivery`
@@ -407,10 +412,6 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
   `ALTER COLUMN ... {DROP,SET} NOT NULL` is now parsed.
 - **New `apps/api/src/lib/db-types.ts`:** `toJson`, `asInsert`, `asUpdate`,
   `Row`/`Insert`/`Update` aliases (+4 tests).
-- **Remaining API typing cohorts** (~174 findings, only visible when
-  `getScopedClient` is typed): generic CRUD factories (`never`), dynamic
-  payloads (`RejectExcessProperties`), query widening, `Json`, `string|null`
-  rows. The helper approach above is established for these.
 
 ### E2E hardening + API bug fix + MFA backend (2026-09-18 session)
 
