@@ -61,7 +61,9 @@ function makeRequest(options: FakeRequestOptions = {}): NextRequest {
     headers: new Headers({ host }),
     nextUrl: { pathname, hostname: host, searchParams: new URLSearchParams() },
     cookies: {
-      get: jest.fn(() => (options.token ? { value: options.token } : undefined)),
+      get: jest.fn((name: string) =>
+        name === SESSION_COOKIE && options.token ? { value: options.token } : undefined,
+      ),
     },
   } as unknown as NextRequest;
 }
@@ -76,7 +78,15 @@ function loadMiddlewareInternals(): { isTokenExpired: (token: string) => boolean
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
   });
   const moduleRef = { exports: {} as Record<string, unknown> };
-  const factory = new Function("module", "exports", "crypto", "Buffer", "URL", "Headers", outputText);
+  const factory = new Function(
+    "module",
+    "exports",
+    "crypto",
+    "Buffer",
+    "URL",
+    "Headers",
+    outputText,
+  );
   factory(moduleRef, moduleRef.exports, webcrypto, Buffer, URL, Headers);
   return moduleRef.exports as { isTokenExpired: (token: string) => boolean };
 }
@@ -187,9 +197,7 @@ describe("domain routing", () => {
   });
 
   it("redirects portal routes on the www host to the app.* host", async () => {
-    await middleware(
-      makeRequest({ host: "www.mainecybertech.com", pathname: "/portal/support" }),
-    );
+    await middleware(makeRequest({ host: "www.mainecybertech.com", pathname: "/portal/support" }));
     expectRedirect("/portal/support", "app.mainecybertech.com");
   });
 
@@ -237,6 +245,34 @@ describe("CSP and nonce headers", () => {
     );
     const csp = response.headers.get("Content-Security-Policy") ?? "";
     expect(csp).toContain("https://api.mainecybertech.com");
+  });
+
+  it("uses a nonce-based script-src (no unsafe-inline) on a prod host", async () => {
+    const response = await middleware(
+      makeRequest({ host: "www.mainecybertech.com", pathname: "/contact" }),
+    );
+    const csp = response.headers.get("Content-Security-Policy") ?? "";
+    const scriptSrc = csp.split(";").find((d) => d.trim().startsWith("script-src")) ?? "";
+    expect(scriptSrc).toContain("'nonce-");
+    expect(scriptSrc).toContain("'strict-dynamic'");
+    expect(scriptSrc).not.toContain("'unsafe-inline'");
+  });
+
+  it("puts the same nonce in x-nonce and the CSP script-src", async () => {
+    const response = await middleware(
+      makeRequest({ host: "www.mainecybertech.com", pathname: "/contact" }),
+    );
+    const nonce = response.headers.get("x-nonce");
+    const csp = response.headers.get("Content-Security-Policy") ?? "";
+    expect(nonce).toBeTruthy();
+    expect(csp).toContain(`'nonce-${nonce}'`);
+  });
+
+  it("keeps unsafe-inline in the localhost CSP (no strict nonce in dev)", async () => {
+    const response = await middleware(makeRequest({ host: "localhost:3000", pathname: "/" }));
+    const csp = response.headers.get("Content-Security-Policy") ?? "";
+    expect(csp).toContain("'unsafe-inline'");
+    expect(csp).not.toContain("'strict-dynamic'");
   });
 });
 

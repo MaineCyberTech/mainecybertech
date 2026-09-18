@@ -24,35 +24,41 @@ function generateNonce(): string {
   return nonce;
 }
 
-function setCspHeaders(
-  response: NextResponse,
-  nonce: string,
-  host: string,
-  isLocalDev: boolean,
-): void {
+/**
+ * Build the Content-Security-Policy for the request.
+ *
+ * Production uses a nonce-based script policy. Next.js reads the nonce from
+ * the `Content-Security-Policy` request header and applies it to its own
+ * inline scripts; app components read the nonce from `x-nonce` and pass it to
+ * third-party <Script> tags (GA, Tawk.to). Local dev keeps 'unsafe-inline' /
+ * 'unsafe-eval' so React Fast Refresh works.
+ */
+function buildCsp(nonce: string, host: string, isLocalDev: boolean): string {
   if (isLocalDev) {
-    response.headers.set(
-      "Content-Security-Policy",
-      `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://localhost:* http://localhost:* https://*.supabase.co; frame-ancestors 'none'; base-uri 'self'`,
-    );
-  } else {
-    const apiOrigin = `https://${host.replace(/^(www|app)\./, "api.")}`;
-    response.headers.set(
-      "Content-Security-Policy",
-      `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${apiOrigin} wss:; frame-ancestors 'none'; base-uri 'self'`,
-    );
+    return `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws://localhost:* http://localhost:* https://*.supabase.co`;
   }
+  const apiOrigin = `https://${host.replace(/^(www|app)\./, "api.")}`;
+  return `default-src 'self'; script-src 'self' 'nonce-${nonce}' 'strict-dynamic'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ${apiOrigin} wss:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'`;
+}
+
+function applyCsp(response: NextResponse, csp: string): void {
+  response.headers.set("Content-Security-Policy", csp);
 }
 
 export async function middleware(request: NextRequest) {
   const nonce = generateNonce();
 
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
-
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   const pathname = request.nextUrl.pathname;
   const host = request.headers.get("host") || request.nextUrl.hostname;
+  const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
+  const csp = buildCsp(nonce, host, isLocalDev);
+
+  // Propagate the nonce + CSP to the app. Next.js extracts the nonce from the
+  // CSP request header for its own inline scripts; components read x-nonce.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
 
   const isAppDomain = host.startsWith("app.");
 
@@ -73,40 +79,38 @@ export async function middleware(request: NextRequest) {
 
   const isAuthenticated = token ? !isTokenExpired(token) : false;
 
-  const isLocalDev = host.includes("localhost") || host.includes("127.0.0.1");
-
   // Domain-based routing: app.* for portal/auth, www/root for marketing
   if (!isLocalDev) {
     const appHost = host.startsWith("app.") ? host : `app.${host.replace(/^www\./, "")}`;
 
     if (isAppDomain && isMarketingRoute) {
       const redirect = NextResponse.redirect(new URL("/login", request.url));
-      setCspHeaders(redirect, nonce, host, isLocalDev);
+      applyCsp(redirect, csp);
       return redirect;
     }
 
     if (!isAppDomain && (isAuthRoute || isPortalRoute || isAdminRoute)) {
       const redirect = NextResponse.redirect(new URL(pathname, `https://${appHost}`));
-      setCspHeaders(redirect, nonce, host, isLocalDev);
+      applyCsp(redirect, csp);
       return redirect;
     }
   }
 
   if (!isAuthenticated && (isPortalRoute || isAdminRoute)) {
     const redirect = NextResponse.redirect(new URL("/login", request.url));
-    setCspHeaders(redirect, nonce, host, isLocalDev);
+    applyCsp(redirect, csp);
     return redirect;
   }
 
   if (isAuthenticated && (pathname === "/login" || pathname === "/signup")) {
     const redirect = NextResponse.redirect(new URL("/portal/dashboard", request.url));
-    setCspHeaders(redirect, nonce, host, isLocalDev);
+    applyCsp(redirect, csp);
     return redirect;
   }
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("x-nonce", nonce);
-  setCspHeaders(response, nonce, host, isLocalDev);
+  applyCsp(response, csp);
   return response;
 }
 

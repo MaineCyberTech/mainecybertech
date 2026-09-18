@@ -77,15 +77,15 @@
   },
   "lint-staged": {
     "apps/web/**/*.{ts,tsx}": [
-      "eslint --fix --config apps/web/eslint.config.mjs --max-warnings=0",
+      "eslint --fix --no-warn-ignored --config apps/web/eslint.config.mjs --max-warnings=0",
       "prettier --write"
     ],
     "apps/api/**/*.{ts,tsx}": [
-      "eslint --fix --config apps/api/eslint.config.js --max-warnings=0",
+      "eslint --fix --no-warn-ignored --config apps/api/eslint.config.js --max-warnings=0",
       "prettier --write"
     ],
     "apps/worker/**/*.{ts,tsx}": [
-      "eslint --fix --config apps/worker/eslint.config.js --max-warnings=0",
+      "eslint --fix --no-warn-ignored --config apps/worker/eslint.config.js --max-warnings=0",
       "prettier --write"
     ],
     "packages/**/*.{ts,tsx}": [
