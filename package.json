@@ -36,6 +36,7 @@
     "@storybook/react": "^8.6.18",
     "@storybook/test": "^8.6.18",
     "chromatic": "^17.5.0",
+    "eslint": "^9.17.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
     "pg": "^8.21.0",
@@ -75,8 +76,19 @@
     }
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix --max-warnings=0",
+    "apps/web/**/*.{ts,tsx}": [
+      "eslint --fix --config apps/web/eslint.config.mjs --max-warnings=0",
+      "prettier --write"
+    ],
+    "apps/api/**/*.{ts,tsx}": [
+      "eslint --fix --config apps/api/eslint.config.js --max-warnings=0",
+      "prettier --write"
+    ],
+    "apps/worker/**/*.{ts,tsx}": [
+      "eslint --fix --config apps/worker/eslint.config.js --max-warnings=0",
+      "prettier --write"
+    ],
+    "packages/**/*.{ts,tsx}": [
       "prettier --write"
     ],
     "*.{js,mjs,cjs,json,md}": [
