@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getClientApi } from "@/lib/client-api";
 
@@ -124,6 +125,12 @@ export default function ProfilePage({ initialData }: Props) {
           Profile
         </h1>
         <p className="mt-3 text-slate-400">Update your name, phone number, and job title.</p>
+        <Link
+          href="/portal/profile/security"
+          className="mt-2 inline-block text-sm font-medium text-emerald-400 hover:text-emerald-300"
+        >
+          Security &amp; two-factor authentication →
+        </Link>
       </div>
 
       {message ? (
