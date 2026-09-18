@@ -49,7 +49,8 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 ### Known Debt (2026-08-29)
 
 - **`portal-knowledge-base` E2E failure — FIXED & validated:** the 3 KB E2E tests now pass in prod mode. Root cause was the inline server-action wrapper `<form action={async (fd) => await createArticle(fd)}>` breaking under Next's production build; fixed via `action={createArticle}` + `void` return + `items` guard (commit `688f9fa`).
-- **E2E has known run-to-run flakiness:** data-dependent tests (notification bell, project/user/document detail, admin-documents modal) fail intermittently due to CI API/Supabase contention — identical seeds, yet the same test passes in one shard and fails in another. This is **not** a product regression and **not** caused by the CORS `*`→`http://localhost:3000` change. The E2E gate is **prod-only** (`deploy-do.yml` `if: name == 'prod'`), so prod deploy is currently blocked by this flakiness while dev (`develop`) deploy is unaffected. Hardening Playwright timeouts / `waitForLoadState('networkidle')` is the likely fix when unblocking prod.
+- **E2E has known run-to-run flakiness:** data-dependent tests (notification bell, project/user/document detail, admin-documents modal) fail intermittently due to CI API/Supabase contention — identical seeds, yet the same test passes in one shard and fails in another. This is **not** a product regression and **not** caused by the CORS `*`→`http://localhost:3000` change. The E2E gate is **prod-only** (`deploy-do.yml` `if: name == 'prod'`), so prod deploy is currently blocked by this flakiness while dev (`develop`) deploy is unaffected. **Partially hardened 2026-09-18** (`44900e3`): artifact paths, action/navigation timeouts, shell-wait helper, bounded `networkidle` before axe, and a `withRetry()` around the layout profile fetch (the SDK does not retry 500). Remaining follow-up: convert the ~35 `if (await locator.isVisible())` data gates to auto-waiting waits and add `role="dialog"`/test-id to the documents modals.
+- **MFA/SSO (net-new):** TOTP **management** backend + SDK shipped 2026-09-18 (`334d65f`) and is non-enforcing. Remaining: (1) enable MFA on the hosted Supabase project; (2) an `aal2` check in `requireAuth` so an aal1 session cannot call the API once a factor is enrolled; (3) a login second-factor step and a `/portal` security settings enrollment page; (4) SSO (SAML/OIDC) — own larger effort, needs a paid Supabase plan + per-org provider config.
 
 ### Test patterns
 
@@ -382,6 +383,44 @@ Verified all 787 prompts across 6 packs against actual codebase. Summary:
 The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`). The cookie MUST have `httpOnly: false` so the SDK/JS can read it and set the `x-csrf-token` header. Setting `httpOnly: true` breaks the pattern and causes 403s on cross-origin mutations. The `SameSite: lax` + `Secure` flags provide adequate protection.
 
 ## Completed Work
+
+### E2E hardening + API bug fix + MFA backend (2026-09-18 session)
+
+- **E2E flakiness hardening (`44900e3`):**
+  - `e2e.yml` uploaded `apps/web/playwright-report/`, but the config writes to
+    the repo root (`.playwright-report` / `.playwright-results`) — so failures
+    produced no report/traces. Fixed the artifact paths.
+  - `playwright.config.ts`: `actionTimeout: 15s` + `navigationTimeout: 30s` so
+    a hung action fails inside the 45s budget.
+  - `e2e/fixtures.ts`: `setActiveOrg` now derives the cookie URL from
+    `E2E_BASE_URL` (was hardcoded `localhost:3000`); added `gotoApp()` which
+    waits for the server-rendered shell so "bell not found" becomes a clear
+    failure.
+  - `a11y.spec.ts`: bounded `waitForLoadState("networkidle")` before axe (was
+    scanning a pre-hydration DOM).
+  - `admin/search.spec.ts`: dropped fixed sleeps in favour of auto-waiting
+    assertions.
+  - **Layout resilience:** the SDK retries 429/502/503/504 but **not 500**, so
+    a transient API 500 made `admin/layout.tsx` and `(portal)/layout.tsx`
+    throw → error boundary → missing header/bell. New `lib/retry.ts`
+    `withRetry()` (rethrown on 401/403, two retries at 150/300ms) wraps the
+    `users.me()` profile fetch in both layouts.
+- **Real API bug fixed (`a85b41f`):** `domain_monitors` was created (5302062)
+  without a `version` column while `PATCH /domain-monitors/:id` runs the shared
+  optimistic-locking pattern — `current.version` was `undefined`, so the update
+  wrote `version = NaN` to a non-existent column and 500'd. Migration `5302409`
+  adds `version integer not null default 1`; `database.types.ts` regenerated.
+  +2 If-Match route tests.
+- **Generated types vs prettier (`4ac350f`):** the pre-commit hook reformatted
+  the 6.7k-line generated `packages/sdk/src/database.types.ts`, making every
+  regeneration produce a ~1.4k-line spurious diff. Added it to
+  `.prettierignore`.
+- **MFA backend (`334d65f`):** Supabase-native TOTP factor management —
+  `GET /auth/mfa/factors`, `POST /auth/mfa/enroll|challenge|verify`,
+  `DELETE /auth/mfa/factors/:id`, plus SDK `auth.mfa*`. Delegates to GoTrue
+  (`auth.mfa_factors`), so no TOTP secrets are stored and no new table is
+  needed. **Non-enforcing by design.** +8 API tests, +5 SDK tests.
+  See "Remaining" below for enforcement + UI.
 
 ### CSP nonce hardening + deploy-do IP resolution (2026-09-18 session)
 
