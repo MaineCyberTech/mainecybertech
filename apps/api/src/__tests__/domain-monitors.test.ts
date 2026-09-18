@@ -29,8 +29,12 @@ jest.mock("../config/env", () => ({
   }),
 }));
 
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
+jest.mock("../services/supabase", () => ({
+  getSupabaseAdmin: jest.fn(),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
+}));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 
 import { getSupabaseAdmin } from "../services/supabase";
@@ -62,10 +66,7 @@ jest.mock("../middleware/org-access", () =>
   createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
 );
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/domain-monitors", domainMonitorsRouter);
@@ -135,6 +136,53 @@ describe("Domain Monitors API", () => {
       .set("Authorization", authToken);
     expect(res.status).toBe(200);
   });
+
+  // Regression: domain_monitors was created without a `version` column even
+  // though PATCH runs the shared optimistic-locking pattern. These exercise
+  // the If-Match path (migration 5302409 adds the column).
+  it("PATCH accepts a matching If-Match version", async () => {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(
+      createMockBuilder({
+        data: {
+          id: "00000000-0000-0000-0000-000000000001",
+          organization_id: testOrgId,
+          domain: "example.com",
+          version: 1,
+          status: "active",
+        },
+        error: null,
+      }),
+    );
+    const res = await request(app)
+      .patch("/api/v1/domain-monitors/00000000-0000-0000-0000-000000000001")
+      .set("Authorization", authToken)
+      .set("If-Match", "1")
+      .send({ displayName: "Renamed" });
+    expect(res.status).toBe(200);
+  });
+
+  it("PATCH rejects a stale If-Match version with 409", async () => {
+    const supabase = mockAuth();
+    supabase.from.mockReturnValue(
+      createMockBuilder({
+        data: {
+          id: "00000000-0000-0000-0000-000000000001",
+          organization_id: testOrgId,
+          domain: "example.com",
+          version: 1,
+          status: "active",
+        },
+        error: null,
+      }),
+    );
+    const res = await request(app)
+      .patch("/api/v1/domain-monitors/00000000-0000-0000-0000-000000000001")
+      .set("Authorization", authToken)
+      .set("If-Match", "99")
+      .send({ displayName: "Renamed" });
+    expect(res.status).toBe(409);
+  });
 });
 
 describe("Domain Monitors tenant isolation", () => {
@@ -146,7 +194,13 @@ describe("Domain Monitors tenant isolation", () => {
     const supabase = mockAuth();
     supabase.from.mockReturnValue(
       createMockBuilder({
-        data: { id: MONITOR_ID, organization_id: orgId, domain: "example.com", version: 1, status: "active" },
+        data: {
+          id: MONITOR_ID,
+          organization_id: orgId,
+          domain: "example.com",
+          version: 1,
+          status: "active",
+        },
         error: null,
       }),
     );
