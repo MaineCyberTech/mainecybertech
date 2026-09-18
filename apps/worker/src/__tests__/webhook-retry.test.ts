@@ -31,6 +31,7 @@ function createThenableChain(initialResult: unknown) {
     "delete",
     "eq",
     "in",
+    "not",
     "lt",
     "lte",
     "order",

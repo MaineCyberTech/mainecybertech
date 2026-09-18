@@ -7,9 +7,7 @@ const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 60_000; // 1 minute
 const BATCH_SIZE = 20;
 
-export async function webhookRetry(
-  _payload: Record<string, unknown>,
-): Promise<TaskResult> {
+export async function webhookRetry(_payload: Record<string, unknown>): Promise<TaskResult> {
   try {
     const supabase = getSupabaseAdmin();
 
@@ -18,6 +16,8 @@ export async function webhookRetry(
       .select("id, webhook_id, event, request_body, error, retry_count, next_retry_at, dead_letter")
       .eq("status", "failed")
       .eq("dead_letter", false)
+      // Generic inbound-webhook logs have no endpoint to retry against.
+      .not("webhook_id", "is", null)
       .lt("retry_count", MAX_RETRIES)
       .lte("next_retry_at", new Date().toISOString())
       .order("next_retry_at", { ascending: true })
@@ -39,6 +39,8 @@ export async function webhookRetry(
     let deadLettered = 0;
 
     for (const delivery of deliveries) {
+      // Narrow webhook_id (the column is nullable for generic inbound logs).
+      if (!delivery.webhook_id) continue;
       try {
         const { data: endpoint } = await supabase
           .from("webhook_endpoints")
@@ -84,10 +86,7 @@ export async function webhookRetry(
 
         if (endpoint.secret) {
           const crypto = await import("crypto");
-          const hmac = crypto
-            .createHmac("sha256", endpoint.secret)
-            .update(body)
-            .digest("hex");
+          const hmac = crypto.createHmac("sha256", endpoint.secret).update(body).digest("hex");
           headers["X-Webhook-Signature"] = `sha256=${hmac}`;
         }
 
