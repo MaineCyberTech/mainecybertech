@@ -102,7 +102,7 @@ jobs:
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: 1.9
-      - name: Resolve droplet IP (Terraform state, fallback DO API)
+      - name: Resolve droplet IP (DO API, fallback Terraform state)
         id: tf
         env:
           DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
@@ -112,18 +112,22 @@ jobs:
         run: |
           set -e
           ENV="${{ needs.setup.outputs.name }}"
+          IP=""
           if [ -n "$DO_API_TOKEN" ]; then
-            # Authoritative: the DO API returns the droplet's CURRENT IP by name.
-            # (Terraform state currently holds a stale IP, so DO API is primary;
-            # the Terraform-state path below is the fallback.)
+            # Authoritative: the DO API returns the droplet's CURRENT IP.
+            # Match by name PREFIX so recycled/recreated droplets with a
+            # suffix still resolve, and take the newest matching droplet.
             echo "Resolving droplet IP from DigitalOcean API ($ENV)..."
             IP=$(curl -sf -H "Authorization: Bearer $DO_API_TOKEN" \
               "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" \
-              | jq -r --arg name "mct-portal-$ENV" '[.droplets[] | select(.name==$name)] | sort_by(.created_at) | last | .networks.v4[0].ip_address // empty')
-          else
-            echo "DO_API_TOKEN not set; falling back to Terraform state ($ENV)..."
+              | jq -r --arg prefix "mct-portal-$ENV" \
+                  '[.droplets[] | select(.name | startswith($prefix))] | sort_by(.created_at) | last
+                   | (.networks.v4[]? | select(.type == "public") | .ip_address)' 2>/dev/null | head -n1 || true)
+          fi
+          if [ -z "$IP" ]; then
+            echo "DO API did not resolve an IP; falling back to Terraform state ($ENV)..."
             terraform init -input=false -backend-config=env/backend.$ENV.hcl
-            IP=$(terraform output -raw droplet_ip)
+            IP=$(terraform output -raw droplet_ip 2>/dev/null || true)
           fi
           if [ -z "$IP" ]; then
             echo "ERROR: could not resolve droplet IP for $ENV"
