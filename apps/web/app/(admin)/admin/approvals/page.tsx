@@ -1,6 +1,6 @@
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
-import type { Membership, Organization, Profile } from "@mct/sdk";
+import type { Organization, Profile } from "@mct/sdk";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
@@ -26,7 +26,9 @@ export default async function ApprovalQueuePage() {
   const userIds = pendingMemberships.map((m) => m.user_id).filter(Boolean);
 
   const [orgsResult, profiles] = await Promise.all([
-    orgIds.length ? api.organizations.list({ ids: orgIds, limit: 100 }) : Promise.resolve({ items: [] as Organization[], total: 0, page: 1, limit: 100 }),
+    orgIds.length
+      ? api.organizations.list({ ids: orgIds, limit: 100 })
+      : Promise.resolve({ items: [] as Organization[], total: 0, page: 1, limit: 100 }),
     userIds.length ? api.profiles.list({ ids: userIds }) : Promise.resolve([] as Profile[]),
   ]);
 

@@ -2,12 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
-import type {
-  ProjectTask,
-  ProjectTaskComment,
-  ProjectTaskReadState,
-  Profile,
-} from "@mct/sdk";
 
 type TaskComment = {
   id: string;
@@ -83,13 +77,9 @@ async function fetchTaskRecord(
     task.approved_by,
     ...(comments ?? []).map((c) => c.author_id),
   ];
-  const profileIds = Array.from(
-    new Set(candidateIds.filter((id): id is string => id !== null)),
-  );
+  const profileIds = Array.from(new Set(candidateIds.filter((id): id is string => id !== null)));
 
-  const profiles = profileIds.length
-    ? await api.profiles.list({ ids: profileIds })
-    : [];
+  const profiles = profileIds.length ? await api.profiles.list({ ids: profileIds }) : [];
 
   const profileMap = new Map(profiles.map((p) => [p.id, p]));
   const owner = task.owner_id ? profileMap.get(task.owner_id) : null;
@@ -97,8 +87,7 @@ async function fetchTaskRecord(
   const approver = task.approved_by ? profileMap.get(task.approved_by) : null;
   const unreadCount = currentUserId
     ? (comments ?? []).filter(
-        (c) =>
-          !lastSeenAt || new Date(c.created_at).getTime() > new Date(lastSeenAt).getTime(),
+        (c) => !lastSeenAt || new Date(c.created_at).getTime() > new Date(lastSeenAt).getTime(),
       ).length
     : 0;
 

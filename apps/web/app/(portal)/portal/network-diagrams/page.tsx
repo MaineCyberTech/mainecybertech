@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import EmptyState from "@/components/EmptyState";
 import AdminPagination from "@/components/admin/AdminPagination";
 
 export const dynamic = "force-dynamic";
@@ -35,14 +34,19 @@ function edgesOf(d: NetworkDiagram): NetworkDiagramEdge[] {
   return Array.isArray(diagram?.edges) ? diagram.edges : [];
 }
 
-export default async function PortalNetworkDiagramsPage({ searchParams }: NetworkDiagramsPageProps) {
+export default async function PortalNetworkDiagramsPage({
+  searchParams,
+}: NetworkDiagramsPageProps) {
   const membership = await getApprovedMembership();
   const api = getApiClient();
   const orgId = membership?.organization_id as string | undefined;
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
 
   let diagrams: NetworkDiagram[] = [];
   let total = 0;
@@ -77,17 +81,15 @@ export default async function PortalNetworkDiagramsPage({ searchParams }: Networ
       ) : (
         <>
           <p className="text-sm text-slate-400">
-            {diagrams.length} network diagram{diagrams.length !== 1 ? "s" : ""} for your organization.
+            {diagrams.length} network diagram{diagrams.length !== 1 ? "s" : ""} for your
+            organization.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             {diagrams.map((d) => {
               const nodes = nodesOf(d);
               const edges = edgesOf(d);
               return (
-                <div
-                  key={d.id}
-                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-                >
+                <div key={d.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                   <Link
                     href={`/portal/network-diagrams/${d.id}`}
                     className="font-medium text-slate-50 transition hover:text-emerald-400"
@@ -128,7 +130,10 @@ export default async function PortalNetworkDiagramsPage({ searchParams }: Networ
             limit={limit}
           />
 
-          <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
+          <Link
+            href="/portal/dashboard"
+            className="text-sm text-emerald-500 hover:text-emerald-400"
+          >
             &larr; Dashboard
           </Link>
         </>

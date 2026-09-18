@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useCallback, type ReactNode } from "react";
-import type { CatalogProduct, PricingModel, PurchaseMode, RiskLevel, DeliveryEffort } from "@/lib/catalog/types";
+import type {
+  CatalogProduct,
+  PricingModel,
+  PurchaseMode,
+  RiskLevel,
+  DeliveryEffort,
+} from "@/lib/catalog/types";
 import { createProductAction, updateProductAction } from "./actions";
 
 const PRICING_MODELS: PricingModel[] = [
@@ -26,7 +32,6 @@ type Mode = "create" | "edit";
 export default function ProductForm({
   mode,
   product,
-  categories,
   children,
 }: {
   mode: Mode;

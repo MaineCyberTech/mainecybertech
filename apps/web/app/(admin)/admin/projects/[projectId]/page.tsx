@@ -5,7 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import ProjectTaskListV5 from "@/components/admin/ProjectTaskListV5";
-import type { ProjectDetail, Profile, ProjectTask, ProjectTaskComment, ProjectTaskReadState } from "@mct/sdk";
+import type { ProjectDetail, Profile, ProjectTask, ProjectTaskComment } from "@mct/sdk";
 
 type ExtendedTask = ProjectTask & {
   created_by?: string | null;
@@ -96,14 +96,17 @@ export default async function AdminProjectDetailPage({ params }: Props) {
     }),
   );
 
-  const commentsByTask = new Map<string, Array<{
-    id: string;
-    body: string;
-    is_internal: boolean;
-    created_at: string;
-    author_name: string | null;
-    author_email: string | null;
-  }>>();
+  const commentsByTask = new Map<
+    string,
+    Array<{
+      id: string;
+      body: string;
+      is_internal: boolean;
+      created_at: string;
+      author_name: string | null;
+      author_email: string | null;
+    }>
+  >();
   (rawComments ?? []).forEach((comment: ProjectTaskComment) => {
     const author = profileMap.get(comment.author_id);
     const list = commentsByTask.get(comment.task_id) ?? [];

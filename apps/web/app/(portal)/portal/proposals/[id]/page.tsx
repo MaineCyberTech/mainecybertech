@@ -7,7 +7,7 @@ import { submitProposalAction } from "./actions";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import CommentBody from "@/components/CommentBody";
-import { ProposalDetail, ProposalLineItem, ProposalPhase } from "@mct/sdk";
+import { ProposalDetail, ProposalLineItem } from "@mct/sdk";
 
 export const metadata = { title: "Proposal Details - Portal - Maine CyberTech" };
 export const dynamic = "force-dynamic";
@@ -150,8 +150,8 @@ export default async function PortalProposalDetailPage({ params }: Props) {
                 )}
                 <div className="mt-4 space-y-3">
                   {items
-                  .filter((item: ProposalLineItem) => item.phase_id === phase.id)
-                  .map((item: ProposalLineItem) => (
+                    .filter((item: ProposalLineItem) => item.phase_id === phase.id)
+                    .map((item: ProposalLineItem) => (
                       <div
                         key={item.id}
                         className="flex flex-wrap items-center gap-3 rounded-lg border border-white/10 bg-cyber-base/60 p-4"

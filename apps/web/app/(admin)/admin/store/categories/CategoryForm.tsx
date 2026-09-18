@@ -9,7 +9,6 @@ type Mode = "create" | "edit";
 export default function CategoryForm({
   mode,
   category,
-  products,
   children,
 }: {
   mode: Mode;
