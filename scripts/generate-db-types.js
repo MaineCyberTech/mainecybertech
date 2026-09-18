@@ -137,7 +137,10 @@ function parseCreateTable(sql) {
         const colName = colMatch[1].toLowerCase();
         const colType = colMatch[2].trim();
         const constraints = colMatch[3] || "";
-        const notNull = /NOT\s+NULL/i.test(constraints);
+        const isPrimaryKey = /PRIMARY\s+KEY/i.test(constraints);
+        // Primary keys are implicitly NOT NULL even when the DDL omits it
+        // (e.g. `id uuid primary key references auth.users(id)`).
+        const notNull = /NOT\s+NULL/i.test(constraints) || isPrimaryKey;
         const hasDefault = /DEFAULT\s/i.test(constraints);
         const isGenerated = /GENERATED\s+(ALWAYS|BY\s+DEFAULT)\s+AS/i.test(constraints);
 
@@ -270,6 +273,22 @@ function parseAlterTableRename(sql) {
   return renames;
 }
 
+// ALTER TABLE ... ALTER COLUMN ... {DROP|SET} NOT NULL
+function parseAlterColumnNullability(sql) {
+  const changes = new Map();
+  const re =
+    /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s+ALTER\s+COLUMN\s+["']?(\w+)["']?\s+(DROP\s+NOT\s+NULL|SET\s+NOT\s+NULL)/gi;
+  let m;
+  while ((m = re.exec(sql)) !== null) {
+    const table = m[1].toLowerCase();
+    const col = m[2].toLowerCase();
+    const kind = /DROP/i.test(m[3]) ? "nullable" : "notnull";
+    if (!changes.has(table)) changes.set(table, new Map());
+    changes.get(table).set(col, kind);
+  }
+  return changes;
+}
+
 // Read all migration files in sorted order
 const files = fs
   .readdirSync(MIGRATIONS_DIR)
@@ -372,6 +391,22 @@ for (const file of files) {
   for (const [table, columns] of Object.entries(altered)) {
     if (!tables[table]) tables[table] = {};
     Object.assign(tables[table], columns);
+  }
+
+  // Apply ALTER COLUMN {DROP|SET} NOT NULL
+  const nullability = parseAlterColumnNullability(sql);
+  for (const [table, cols] of nullability) {
+    if (!tables[table]) continue;
+    for (const [col, kind] of cols) {
+      const def = tables[table][col];
+      if (!def || typeof def.row !== "string") continue;
+      if (kind === "nullable") {
+        if (!/\|\s*null$/.test(def.row)) def.row = `${def.row} | null`;
+        def.insertOpt = true;
+      } else {
+        def.row = def.row.replace(/\s*\|\s*null$/, "");
+      }
+    }
   }
 
   // Parse named FK constraints

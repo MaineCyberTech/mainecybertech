@@ -8,6 +8,7 @@ import { encryptProfilePii, type ProfilePiiMap } from "../lib/profile-pii";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
+import { toJson, type UpdateRow } from "../lib/db-types";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -90,7 +91,7 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    if (req.authUser!.userId !== req.params.id) {
+    if (req.authUser!.userId !== String(req.params.id)) {
       const supabaseAdmin = getSupabaseAdmin();
       const { data: profile } = await supabaseAdmin
         .from("profiles")
@@ -105,7 +106,7 @@ router.get("/:id", async (req, res, next) => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Profile not found", 404);
@@ -120,7 +121,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     const parsed = updateProfileSchema.parse(req.body);
 
     // Only allow users to edit their own profile (unless admin role)
-    if (req.authUser!.userId !== req.params.id) {
+    if (req.authUser!.userId !== String(req.params.id)) {
       const supabaseAdmin = getSupabaseAdmin();
       const { data: membership } = await supabaseAdmin
         .from("memberships")
@@ -143,7 +144,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
     const { data: current, error: fetchError } = await supabase
       .from("profiles")
       .select("version, full_name, email, phone, title, encrypted_pii")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
 
     if (fetchError || !current) {
@@ -152,7 +153,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     checkVersionMatch(current.version, req.ifMatchVersion);
 
-    const updateData: Record<string, unknown> = {};
+    const updateData: UpdateRow<"profiles"> = {};
     if (parsed.fullName !== undefined) updateData.full_name = parsed.fullName;
     if (parsed.phone !== undefined) updateData.phone = parsed.phone;
     if (parsed.title !== undefined) updateData.title = parsed.title;
@@ -168,7 +169,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
       phone: (updateData.phone as string | undefined) ?? undefined,
       title: (updateData.title as string | undefined) ?? undefined,
     };
-    updateData.encrypted_pii = encryptProfilePii(currentPii, changesPii);
+    updateData.encrypted_pii = toJson(encryptProfilePii(currentPii, changesPii));
 
     updateData.version = current.version + 1;
 
@@ -176,7 +177,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
       .from("profiles")
       .update(updateData)
       .eq("version", current.version)
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .select()
       .single();
 
@@ -187,7 +188,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
       actorUserId: req.authUser?.userId,
       action: "profile.update",
       entityType: "profile",
-      entityId: req.params.id as string,
+      entityId: String(req.params.id) as string,
       metadata: updateData,
     });
 
@@ -199,7 +200,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
 router.post("/:id/avatar", upload.single("avatar"), async (req, res, next) => {
   try {
-    if (req.authUser!.userId !== req.params.id) {
+    if (req.authUser!.userId !== String(req.params.id)) {
       throw new AppError("FORBIDDEN", "You can only upload your own avatar", 403);
     }
 
@@ -209,7 +210,7 @@ router.post("/:id/avatar", upload.single("avatar"), async (req, res, next) => {
     // Mimetype + filename extension are allowlisted, and the stored extension
     // comes from the validated mimetype (never from originalname). FILE-P2-002
     const { extension, mimetype } = resolveImageUpload(file, "Avatar");
-    const userId = req.params.id as string;
+    const userId = String(req.params.id) as string;
     const storagePath = `${userId}/avatar.${extension}`;
     const supabase = getSupabaseUser(req, req.userJwt!);
 

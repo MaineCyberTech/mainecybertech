@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "./supabase";
 import { logger } from "../lib/logger";
 import type { Request } from "express";
+import { toJson } from "../lib/db-types";
 
 /**
  * Log platform-admin cross-tenant access (impersonation).
@@ -29,7 +30,7 @@ export async function logImpersonation(input: {
       organization_id: input.organizationId,
       reason: input.reason ?? null,
       source: input.source ?? "api",
-      metadata: input.metadata ?? {},
+      metadata: toJson(input.metadata ?? {}),
       ip_address: input.req?.ip ?? null,
       user_agent: input.req?.get?.("user-agent") ?? null,
     });
@@ -41,9 +42,6 @@ export async function logImpersonation(input: {
       );
     }
   } catch (err) {
-    logger.warn(
-      { err },
-      "impersonation log write threw (non-blocking)",
-    );
+    logger.warn({ err }, "impersonation log write threw (non-blocking)");
   }
 }

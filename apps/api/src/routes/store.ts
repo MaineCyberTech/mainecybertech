@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import { z } from "zod";
 import { getSupabaseAdmin } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
@@ -6,7 +6,14 @@ import { requireAdmin } from "../middleware/admin";
 import { AppError, success, failure } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { ZodError } from "zod";
-import { getProducts, getCategories, getProductBySlug, getCategoryBySlug, getProductsByCategory } from "../lib/store-catalog";
+import {
+  getProducts,
+  getCategories,
+  getProductBySlug,
+  getCategoryBySlug,
+  getProductsByCategory,
+} from "../lib/store-catalog";
+import { toJson, type UpdateRow } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -121,7 +128,9 @@ router.post("/promotions", requireAuth, requireAdmin, async (req, res, next) => 
     res.status(201).json(success(data));
   } catch (error) {
     if (error instanceof ZodError) {
-      res.status(400).json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+      res
+        .status(400)
+        .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
       return;
     }
     next(error);
@@ -134,14 +143,15 @@ router.patch("/promotions/:id", requireAuth, requireAdmin, async (req, res, next
     const parsed = updatePromotionSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const updates: Record<string, unknown> = {};
+    const updates: UpdateRow<"store_promotions"> = {};
     if (parsed.name !== undefined) updates.name = parsed.name;
     if (parsed.badgeText !== undefined) updates.badge_text = parsed.badgeText;
     if (parsed.detailText !== undefined) updates.detail_text = parsed.detailText;
     if (parsed.promoType !== undefined) updates.promo_type = parsed.promoType;
     if (parsed.status !== undefined) updates.status = parsed.status;
     if (parsed.terms !== undefined) updates.terms = parsed.terms;
-    if (parsed.eligibilityTargets !== undefined) updates.eligibility_targets = parsed.eligibilityTargets;
+    if (parsed.eligibilityTargets !== undefined)
+      updates.eligibility_targets = parsed.eligibilityTargets;
     if (parsed.startDate !== undefined) updates.start_date = parsed.startDate || null;
     if (parsed.endDate !== undefined) updates.end_date = parsed.endDate || null;
     updates.updated_at = new Date().toISOString();
@@ -149,7 +159,7 @@ router.patch("/promotions/:id", requireAuth, requireAdmin, async (req, res, next
     const { data, error } = await supabase
       .from("store_promotions")
       .update(updates)
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .select()
       .single();
 
@@ -159,7 +169,9 @@ router.patch("/promotions/:id", requireAuth, requireAdmin, async (req, res, next
     res.json(success(data));
   } catch (error) {
     if (error instanceof ZodError) {
-      res.status(400).json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+      res
+        .status(400)
+        .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
       return;
     }
     next(error);
@@ -173,14 +185,14 @@ router.delete("/promotions/:id", requireAuth, requireAdmin, async (req, res, nex
     const { error } = await supabase
       .from("store_promotions")
       .delete()
-      .eq("id", req.params.id);
+      .eq("id", String(req.params.id));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     await logAuditEvent({
       action: "store.promotion.delete",
       entityType: "store_promotion",
-      entityId: String(req.params.id) as string,
+      entityId: String(String(req.params.id)) as string,
     });
 
     res.json(success({ deleted: true }));
@@ -219,7 +231,9 @@ router.post("/quotes", async (req, res, next) => {
     res.status(201).json(success(data));
   } catch (error) {
     if (error instanceof ZodError) {
-      res.status(400).json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+      res
+        .status(400)
+        .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
       return;
     }
     next(error);
@@ -260,7 +274,7 @@ router.get("/products", async (req, res, next) => {
 router.get("/products/by-id/:id", requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const allProducts = await getProducts();
-    const product = allProducts.find((p) => p.id === req.params.id);
+    const product = allProducts.find((p) => p.id === String(req.params.id));
     if (!product) {
       res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
       return;
@@ -368,7 +382,7 @@ router.post("/products", requireAuth, requireAdmin, async (req, res, next) => {
       marketing_headline: parsed.marketingHeadline ?? "",
       marketing_copy: parsed.marketingCopy ?? "",
       tags: parsed.tags ?? [],
-      attributes: parsed.attributes ?? {},
+      attributes: toJson(parsed.attributes ?? {}),
     };
     const { data, error } = await supabase
       .from("store_products")
@@ -401,13 +415,13 @@ router.patch("/products/:id", requireAuth, requireAdmin, async (req, res, next) 
     const existing = await supabase
       .from("store_products")
       .select("id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .maybeSingle();
     if (!existing.data) {
       res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
       return;
     }
-    const row: Record<string, unknown> = {};
+    const row: UpdateRow<"store_products"> = {};
     if (parsed.slug !== undefined) row.slug = parsed.slug;
     if (parsed.name !== undefined) row.name = parsed.name;
     if (parsed.categoryId !== undefined) row.category_id = parsed.categoryId;
@@ -422,11 +436,11 @@ router.patch("/products/:id", requireAuth, requireAdmin, async (req, res, next) 
     if (parsed.marketingHeadline !== undefined) row.marketing_headline = parsed.marketingHeadline;
     if (parsed.marketingCopy !== undefined) row.marketing_copy = parsed.marketingCopy;
     if (parsed.tags !== undefined) row.tags = parsed.tags;
-    if (parsed.attributes !== undefined) row.attributes = parsed.attributes;
+    if (parsed.attributes !== undefined) row.attributes = toJson(parsed.attributes);
     const { data, error } = await supabase
       .from("store_products")
       .update(row)
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -434,7 +448,7 @@ router.patch("/products/:id", requireAuth, requireAdmin, async (req, res, next) 
       actorUserId: req.authUser?.userId,
       action: "store_product.update",
       entityType: "store_product",
-      entityId: String(req.params.id),
+      entityId: String(String(req.params.id)),
     });
     res.json(success(data));
   } catch (error) {
@@ -450,13 +464,16 @@ router.patch("/products/:id", requireAuth, requireAdmin, async (req, res, next) 
 router.delete("/products/:id", requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("store_products").delete().eq("id", req.params.id);
+    const { error } = await supabase
+      .from("store_products")
+      .delete()
+      .eq("id", String(req.params.id));
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser?.userId,
       action: "store_product.delete",
       entityType: "store_product",
-      entityId: String(req.params.id),
+      entityId: String(String(req.params.id)),
     });
     res.status(204).send();
   } catch (error) {
@@ -508,13 +525,13 @@ router.patch("/categories/:id", requireAuth, requireAdmin, async (req, res, next
     const existing = await supabase
       .from("store_categories")
       .select("id")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .maybeSingle();
     if (!existing.data) {
       res.status(404).json(failure("NOT_FOUND", "Category not found", 404));
       return;
     }
-    const row: Record<string, unknown> = {};
+    const row: UpdateRow<"store_categories"> = {};
     if (parsed.name !== undefined) row.name = parsed.name;
     if (parsed.slug !== undefined) row.slug = parsed.slug;
     if (parsed.description !== undefined) row.description = parsed.description;
@@ -523,7 +540,7 @@ router.patch("/categories/:id", requireAuth, requireAdmin, async (req, res, next
     const { data, error } = await supabase
       .from("store_categories")
       .update(row)
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .select()
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -531,7 +548,7 @@ router.patch("/categories/:id", requireAuth, requireAdmin, async (req, res, next
       actorUserId: req.authUser?.userId,
       action: "store_category.update",
       entityType: "store_category",
-      entityId: String(req.params.id),
+      entityId: String(String(req.params.id)),
     });
     res.json(success(data));
   } catch (error) {
@@ -547,13 +564,16 @@ router.patch("/categories/:id", requireAuth, requireAdmin, async (req, res, next
 router.delete("/categories/:id", requireAuth, requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("store_categories").delete().eq("id", req.params.id);
+    const { error } = await supabase
+      .from("store_categories")
+      .delete()
+      .eq("id", String(req.params.id));
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     await logAuditEvent({
       actorUserId: req.authUser?.userId,
       action: "store_category.delete",
       entityType: "store_category",
-      entityId: String(req.params.id),
+      entityId: String(String(req.params.id)),
     });
     res.status(204).send();
   } catch (error) {

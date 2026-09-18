@@ -204,7 +204,9 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
     const orgIds = [
       ...new Set((memberships ?? []).map((m: { organization_id: string }) => m.organization_id)),
     ];
-    const roleIds = [...new Set((memberships ?? []).map((m: { role_id: string }) => m.role_id))];
+    const roleIds = [
+      ...new Set((memberships ?? []).map((m) => m.role_id).filter((r): r is string => r !== null)),
+    ];
 
     // Fetch organizations, roles, and all roles in parallel
     const [
@@ -236,7 +238,9 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
         const userMemberships = (memberships ?? []).filter((m) => m.user_id === profile.id);
         const orgIdsForUser = [...new Set(userMemberships.map((m) => m.organization_id))];
         const userOrganizations = (organizations ?? []).filter((o) => orgIdsForUser.includes(o.id));
-        const userRoles = [...new Set(userMemberships.map((m: { role_id: string }) => m.role_id))];
+        const userRoles = [
+          ...new Set(userMemberships.map((m) => m.role_id).filter((r): r is string => r !== null)),
+        ];
 
         return {
           user: {
@@ -274,7 +278,7 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
-    if (req.authUser?.userId !== req.params.id) {
+    if (req.authUser?.userId !== String(req.params.id)) {
       const supabase = getSupabaseAdmin();
       const { data: membership } = await supabase
         .from("memberships")
@@ -297,7 +301,7 @@ router.get("/:id", async (req, res, next) => {
       .select(
         "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
       )
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "User not found", 404);
@@ -316,7 +320,7 @@ router.get("/:id/detail", requireAdmin, async (req, res, next) => {
       .select(
         "id, full_name, email, phone, title, is_super_admin, default_organization_id, created_at",
       )
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
 
     if (userError || !user) throw new AppError("NOT_FOUND", "User not found", 404);
@@ -326,14 +330,16 @@ router.get("/:id/detail", requireAdmin, async (req, res, next) => {
       .select(
         "id, organization_id, user_id, role_id, status, is_billing_contact, is_security_contact, created_at",
       )
-      .eq("user_id", req.params.id);
+      .eq("user_id", String(req.params.id));
 
     if (memError) throw new AppError("DB_ERROR", memError.message, 500);
 
     const orgIds = [
       ...new Set((memberships ?? []).map((m: { organization_id: string }) => m.organization_id)),
     ];
-    const roleIds = [...new Set((memberships ?? []).map((m: { role_id: string }) => m.role_id))];
+    const roleIds = [
+      ...new Set((memberships ?? []).map((m) => m.role_id).filter((r): r is string => r !== null)),
+    ];
 
     const [{ data: organizations, error: orgsError }, { data: roles, error: rolesError }] =
       await Promise.all([
@@ -404,7 +410,7 @@ router.patch("/:id/role", requirePermission("users", "manage"), async (req, res,
     let query = supabase
       .from("memberships")
       .update({ role_id: roleId })
-      .eq("user_id", req.params.id);
+      .eq("user_id", String(req.params.id));
     if (organizationId) {
       query = query.eq("organization_id", organizationId);
     }
@@ -416,7 +422,7 @@ router.patch("/:id/role", requirePermission("users", "manage"), async (req, res,
       actorUserId: req.authUser!.userId,
       action: "user.role.update",
       entityType: "user",
-      entityId: String(req.params.id),
+      entityId: String(String(req.params.id)),
       metadata: { roleId, organizationId },
     });
 
@@ -429,7 +435,7 @@ router.patch("/:id/role", requirePermission("users", "manage"), async (req, res,
 router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const userId = req.params.id;
+    const userId = String(req.params.id);
 
     const [
       { data: memberships, error: memError },
@@ -461,7 +467,7 @@ router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
           .select("permission_id")
           .in(
             "role_id",
-            memberships.map((m: { role_id: string }) => m.role_id),
+            memberships.map((m) => m.role_id).filter((r): r is string => r !== null),
           )
       : { data: [] as Array<{ permission_id: string }>, error: null };
 
@@ -485,7 +491,7 @@ router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
 router.put("/:id/permissions", requirePermission("users", "manage"), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
-    const userId = req.params.id;
+    const userId = String(req.params.id);
     const { organizationId, permissionId, isAllowed } = z
       .object({
         organizationId: z.string().min(1, "organizationId is required"),

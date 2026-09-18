@@ -2928,14 +2928,13 @@ export type Database = {
           is_security_contact: boolean;
           job_title: string | null;
           organization_id: string;
-          role_id: string;
+          role_id: string | null;
           status: "pending" | "approved" | "rejected" | "suspended";
           updated_at: string;
           user_id: string;
         };
         Insert: {
           organization_id: string;
-          role_id: string;
           user_id: string;
           approved_at?: string | null;
           approved_by?: string | null;
@@ -2945,6 +2944,7 @@ export type Database = {
           is_billing_contact?: boolean | null;
           is_security_contact?: boolean | null;
           job_title?: string | null;
+          role_id?: string | null;
           status?: "pending" | "approved" | "rejected" | "suspended" | null;
           updated_at?: string | null;
         };
@@ -3762,7 +3762,7 @@ export type Database = {
           email: string | null;
           encrypted_pii: Json | null;
           full_name: string | null;
-          id: string | null;
+          id: string;
           is_super_admin: boolean;
           metadata: Json;
           phone: string | null;
@@ -3771,13 +3771,13 @@ export type Database = {
           version: number;
         };
         Insert: {
+          id: string;
           avatar_url?: string | null;
           created_at?: string | null;
           default_organization_id?: string | null;
           email?: string | null;
           encrypted_pii?: Json | null;
           full_name?: string | null;
-          id?: string | null;
           is_super_admin?: boolean | null;
           metadata?: Json | null;
           phone?: string | null;
@@ -4779,12 +4779,15 @@ export type Database = {
         Row: {
           created_at: string;
           created_by: string | null;
+          default_rating: number;
           description: string | null;
           id: string;
           is_active: boolean;
           name: string;
           organization_id: string;
+          question: string | null;
           questions: Json;
+          subject: string | null;
           type: string;
           updated_at: string;
         };
@@ -4793,22 +4796,28 @@ export type Database = {
           organization_id: string;
           created_at?: string | null;
           created_by?: string | null;
+          default_rating?: number | null;
           description?: string | null;
           id?: string | null;
           is_active?: boolean | null;
+          question?: string | null;
           questions?: Json | null;
+          subject?: string | null;
           type?: string | null;
           updated_at?: string | null;
         };
         Update: {
           created_at?: string | null;
           created_by?: string | null;
+          default_rating?: number | null;
           description?: string | null;
           id?: string | null;
           is_active?: boolean | null;
           name?: string | null;
           organization_id?: string | null;
+          question?: string | null;
           questions?: Json | null;
+          subject?: string | null;
           type?: string | null;
           updated_at?: string | null;
         };
@@ -4818,6 +4827,7 @@ export type Database = {
       };      satisfaction_pulses: {
         Row: {
           created_at: string;
+          created_by: string | null;
           feedback: string | null;
           id: string;
           organization_id: string;
@@ -4826,18 +4836,22 @@ export type Database = {
           responded_at: string | null;
           respondent_organization_id: string | null;
           respondent_user_id: string | null;
+          scheduled_for: string | null;
+          send_at: string | null;
           sent_at: string | null;
           source: string;
           source_entity_id: string | null;
           source_entity_type: string | null;
           status: string;
           subject: string;
+          template_id: string | null;
           updated_at: string;
         };
         Insert: {
           organization_id: string;
           subject: string;
           created_at?: string | null;
+          created_by?: string | null;
           feedback?: string | null;
           id?: string | null;
           question?: string | null;
@@ -4845,15 +4859,19 @@ export type Database = {
           responded_at?: string | null;
           respondent_organization_id?: string | null;
           respondent_user_id?: string | null;
+          scheduled_for?: string | null;
+          send_at?: string | null;
           sent_at?: string | null;
           source?: string | null;
           source_entity_id?: string | null;
           source_entity_type?: string | null;
           status?: string | null;
+          template_id?: string | null;
           updated_at?: string | null;
         };
         Update: {
           created_at?: string | null;
+          created_by?: string | null;
           feedback?: string | null;
           id?: string | null;
           organization_id?: string | null;
@@ -4862,17 +4880,21 @@ export type Database = {
           responded_at?: string | null;
           respondent_organization_id?: string | null;
           respondent_user_id?: string | null;
+          scheduled_for?: string | null;
+          send_at?: string | null;
           sent_at?: string | null;
           source?: string | null;
           source_entity_id?: string | null;
           source_entity_type?: string | null;
           status?: string | null;
           subject?: string | null;
+          template_id?: string | null;
           updated_at?: string | null;
         };
         Relationships: [
           { foreignKeyName: "satisfaction_pulses_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
           { foreignKeyName: "satisfaction_pulses_respondent_organization_id_fkey", columns: ["respondent_organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "satisfaction_pulses_template_id_fkey", columns: ["template_id"], isOneToOne: false, referencedRelation: "satisfaction_pulse_templates", referencedColumns: ["id"] },
         ];
       };      scheduled_check_results: {
         Row: {
@@ -5370,7 +5392,7 @@ export type Database = {
           count: number;
           created_at: string;
           description: string;
-          id: string | null;
+          id: string;
           name: string;
           organization_id: string | null;
           product_ids: string[];
@@ -5378,12 +5400,12 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          id: string;
           name: string;
           slug: string;
           count?: number | null;
           created_at?: string | null;
           description?: string | null;
-          id?: string | null;
           organization_id?: string | null;
           product_ids?: string[] | null;
           updated_at?: string | null;
@@ -5448,7 +5470,7 @@ export type Database = {
           category_id: string | null;
           created_at: string;
           display: boolean;
-          id: string | null;
+          id: string;
           marketing_copy: string;
           marketing_headline: string;
           name: string;
@@ -5464,6 +5486,7 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          id: string;
           name: string;
           slug: string;
           attributes?: Json | null;
@@ -5471,7 +5494,6 @@ export type Database = {
           category_id?: string | null;
           created_at?: string | null;
           display?: boolean | null;
-          id?: string | null;
           marketing_copy?: string | null;
           marketing_headline?: string | null;
           organization_id?: string | null;
@@ -6546,12 +6568,11 @@ export type Database = {
           response_status: number | null;
           retry_count: number;
           status: string;
-          webhook_id: string;
+          webhook_id: string | null;
         };
         Insert: {
           event: string;
           status: string;
-          webhook_id: string;
           created_at?: string | null;
           dead_letter?: boolean | null;
           duration_ms?: number | null;
@@ -6563,6 +6584,7 @@ export type Database = {
           response_body?: string | null;
           response_status?: number | null;
           retry_count?: number | null;
+          webhook_id?: string | null;
         };
         Update: {
           created_at?: string | null;

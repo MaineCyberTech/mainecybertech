@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "./supabase";
 import { logAuditEvent } from "./audit";
 import { logger } from "../lib/logger";
+import { toJson } from "../lib/db-types";
 
 export interface ApprovalRecord {
   id: string;
@@ -224,7 +225,7 @@ export async function addTimelineEvent(
     entity_type: entityType,
     entity_id: entityId,
     event_type: eventType,
-    event_data: eventData,
+    event_data: toJson(eventData),
     actor_user_id: actorUserId || null,
   });
 

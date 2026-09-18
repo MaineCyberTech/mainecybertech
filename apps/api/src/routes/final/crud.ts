@@ -56,14 +56,18 @@ export function registerCrud(router: Router, path: string, table: string, schema
         if (k !== "organizationId") f[snake(k)] = v;
       }
       f.organization_id = p.organizationId as string;
-      const { data, error } = await sb.from(table).insert(f).select().single();
+      const { data, error } = await sb
+        .from(table)
+        .insert(f as never)
+        .select()
+        .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       await logAuditEvent({
         organizationId: f.organization_id as string,
         actorUserId: req.authUser!.userId,
         action: `${path}.created`,
         entityType: path,
-        entityId: data.id,
+        entityId: (data as { id: string } | null)?.id,
       });
       res.status(201).json(success(data));
     } catch (e) {
@@ -103,7 +107,7 @@ export function registerCrud(router: Router, path: string, table: string, schema
       }
       const { data, error } = await sb
         .from(table)
-        .update(fields)
+        .update(fields as never)
         .eq("id", req.params.id)
         .eq("organization_id", req.query.organization_id as string)
         .select()

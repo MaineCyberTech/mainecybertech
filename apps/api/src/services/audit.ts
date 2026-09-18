@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "./supabase";
 import { logger } from "../lib/logger";
+import { toJson } from "../lib/db-types";
 
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 100;
@@ -44,7 +45,9 @@ export async function logAuditEvent(input: AuditEventInput) {
   }
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    const { error } = await supabase.from("audit_logs").insert(data);
+    const { error } = await supabase
+      .from("audit_logs")
+      .insert({ ...data, metadata: toJson(data.metadata) });
 
     if (!error) return;
 

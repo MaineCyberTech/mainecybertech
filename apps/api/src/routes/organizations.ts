@@ -237,7 +237,7 @@ router.get("/:id", requireOrgAccessByParam, async (req, res, next) => {
     const { data, error } = await supabase
       .from("organizations")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
 
     if (error || !data) throw new AppError("NOT_FOUND", "Organization not found", 404);
@@ -254,20 +254,23 @@ router.get("/:id/detail", requireOrgAccessByParam, async (req, res, next) => {
     const { data: org, error: orgError } = await supabase
       .from("organizations")
       .select("*")
-      .eq("id", req.params.id)
+      .eq("id", String(req.params.id))
       .single();
 
     if (orgError || !org) throw new AppError("NOT_FOUND", "Organization not found", 404);
 
     const [{ data: domains, error: domError }, { data: memberships, error: memError }] =
       await Promise.all([
-        supabase.from("organization_domains").select("*").eq("organization_id", req.params.id),
+        supabase
+          .from("organization_domains")
+          .select("*")
+          .eq("organization_id", String(req.params.id)),
         supabase
           .from("memberships")
           .select(
             "id, user_id, role_id, status, is_billing_contact, is_security_contact, created_at",
           )
-          .eq("organization_id", req.params.id),
+          .eq("organization_id", String(req.params.id)),
       ]);
 
     if (domError) throw new AppError("DB_ERROR", domError.message, 500);
@@ -358,7 +361,7 @@ router.patch(
       const { data: current, error: fetchError } = await supabase
         .from("organizations")
         .select("version")
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .single();
 
       if (fetchError || !current) {
@@ -383,7 +386,7 @@ router.patch(
       const { data, error } = await supabase
         .from("organizations")
         .update(updateData)
-        .eq("id", req.params.id)
+        .eq("id", String(req.params.id))
         .eq("version", current.version)
         .select()
         .single();
@@ -415,7 +418,10 @@ router.delete(
   async (req, res, next) => {
     try {
       const supabase = getScopedClient(req, "organizations", "write");
-      const { error } = await supabase.from("organizations").delete().eq("id", req.params.id);
+      const { error } = await supabase
+        .from("organizations")
+        .delete()
+        .eq("id", String(req.params.id));
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -439,7 +445,7 @@ router.get("/:id/domains", requireOrgAccessByParam, async (req, res, next) => {
     const { data, error } = await supabase
       .from("organization_domains")
       .select("*")
-      .eq("organization_id", req.params.id);
+      .eq("organization_id", String(req.params.id));
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data));
@@ -456,7 +462,7 @@ router.post("/:id/domains", requireAdmin, async (req, res, next) => {
     const { data, error } = await supabase
       .from("organization_domains")
       .insert({
-        organization_id: req.params.id,
+        organization_id: String(req.params.id),
         domain: parsed.domain,
         auto_approve: parsed.autoApprove,
       })
@@ -487,8 +493,8 @@ router.patch("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
     const { data, error } = await supabase
       .from("organization_domains")
       .update({ auto_approve: parsed.autoApprove })
-      .eq("id", req.params.domainId)
-      .eq("organization_id", req.params.id)
+      .eq("id", String(req.params.domainId))
+      .eq("organization_id", String(req.params.id))
       .select()
       .single();
 
@@ -516,8 +522,8 @@ router.delete("/:id/domains/:domainId", requireAdmin, async (req, res, next) => 
     const { data: deleted, error } = await supabase
       .from("organization_domains")
       .delete()
-      .eq("id", req.params.domainId)
-      .eq("organization_id", req.params.id)
+      .eq("id", String(req.params.domainId))
+      .eq("organization_id", String(req.params.id))
       .select()
       .single();
 
@@ -553,7 +559,7 @@ router.post(
       // Mimetype + filename extension are allowlisted, and the stored extension
       // comes from the validated mimetype (never from originalname).
       const { extension, mimetype } = resolveImageUpload(file, "Logo");
-      const storagePath = `${req.authUser!.userId}/org-${req.params.id}-logo.${extension}`;
+      const storagePath = `${req.authUser!.userId}/org-${String(req.params.id)}-logo.${extension}`;
 
       const { error: uploadError } = await supabase.storage
         .from("logos")
@@ -569,7 +575,7 @@ router.post(
       await supabase
         .from("organizations")
         .update({ logo_url: publicUrl.publicUrl })
-        .eq("id", req.params.id);
+        .eq("id", String(req.params.id));
 
       await logAuditEvent({
         actorUserId: req.authUser!.userId,

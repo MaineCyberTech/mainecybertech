@@ -78,7 +78,7 @@ router.get("/public/:token", async (req, res, next) => {
       .select(
         "id, title, description, token, storage_path, max_file_size_mb, allowed_mime_types, max_files, expires_at, upload_count, status",
       )
-      .eq("token", req.params.token)
+      .eq("token", String(req.params.token))
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "File request not found or expired", 404);
     if (data.status !== "active")
@@ -112,7 +112,7 @@ router.post("/public/:token/upload", upload.single("file"), async (req, res, nex
     const { data, error } = await supabase
       .from("file_requests")
       .select("*")
-      .eq("token", req.params.token)
+      .eq("token", String(req.params.token))
       .single();
     if (error || !data) throw new AppError("NOT_FOUND", "File request not found or expired", 404);
     if (data.status !== "active")
@@ -166,7 +166,7 @@ router.post("/public/:token/upload", upload.single("file"), async (req, res, nex
       metadata: { fileName: safeName, sizeBytes: req.file.size },
     });
 
-    if (data.notify_on_upload) {
+    if (data.notify_on_upload && data.created_by) {
       await createNotification({
         userId: data.created_by,
         organizationId: data.organization_id,

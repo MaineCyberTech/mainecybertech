@@ -1,14 +1,11 @@
-﻿import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Request } from "express";
 import type { Database } from "@mct/sdk/database.types";
 import { getEnv } from "../config/env";
 import WebSocket from "ws";
-import {
-  createSupabaseCircuitBreaker,
-  CircuitBreaker,
-} from "../lib/circuit-breaker";
+import { createSupabaseCircuitBreaker, CircuitBreaker } from "../lib/circuit-breaker";
 
-let _adminClient: SupabaseClient | null = null;
+let _adminClient: SupabaseClient<Database> | null = null;
 const circuitBreaker = createSupabaseCircuitBreaker();
 
 function isTestEnv(): boolean {
@@ -28,44 +25,40 @@ function circuitBreakingFetch(...args: Parameters<typeof fetch>): ReturnType<typ
   return circuitBreaker.execute(() => fetch(...args));
 }
 
-export function getSupabaseAdmin(): SupabaseClient {
+export function getSupabaseAdmin(): SupabaseClient<Database> {
   if (!_adminClient) {
     const env = getEnv();
-    _adminClient = createClient(
-      env.SUPABASE_URL,
-      env.SUPABASE_SERVICE_ROLE_KEY,
-      {
-        db: {
-          timeout: 30_000,
-        },
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-        global: {
-          fetch: circuitBreakingFetch,
-        },
-        realtime: {
-          transport: WebSocket as any,
-        },
+    _adminClient = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+      db: {
+        timeout: 30_000,
       },
-    );
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+      global: {
+        fetch: circuitBreakingFetch,
+      },
+      realtime: {
+        transport: WebSocket as any,
+      },
+    });
   }
   return _adminClient;
 }
 
 /**
  * Unwrapped admin client for health probes and other non-request paths.
- * Circuit-breaker failures must NOT be counted from liveness/readiness probes â€”
+ * Circuit-breaker failures must NOT be counted from liveness/readiness probes —
  * a cold-starting dependency would otherwise trip the breaker and wedge the
  * whole API behind fail-fast "Circuit breaker is OPEN" errors.
  */
-let _adminClientNoBreaker: SupabaseClient | null = null;
+let _adminClientNoBreaker: SupabaseClient<Database> | null = null;
 
-export function getSupabaseAdminNoBreaker(): SupabaseClient {
+export function getSupabaseAdminNoBreaker(): SupabaseClient<Database> {
   if (!_adminClientNoBreaker) {
     const env = getEnv();
-    _adminClientNoBreaker = createClient(
+    _adminClientNoBreaker = createClient<Database>(
       env.SUPABASE_URL,
       env.SUPABASE_SERVICE_ROLE_KEY,
       {
@@ -85,7 +78,10 @@ export function getSupabaseAdminNoBreaker(): SupabaseClient {
  * GC'd (WeakMap) or the TTL elapses, after which a fresh client is built.
  */
 const USER_CLIENT_TTL_MS = 60_000;
-const userClientCache = new WeakMap<Request, { client: SupabaseClient<Database>; expires: number }>();
+const userClientCache = new WeakMap<
+  Request,
+  { client: SupabaseClient<Database>; expires: number }
+>();
 
 function buildUserClient(jwt: string): SupabaseClient<Database> {
   const env = getEnv();
@@ -124,7 +120,10 @@ export function getSupabaseUser(jwt: string): SupabaseClient<Database>;
  * Repeated calls within the same request and TTL reuse the cached client.
  */
 export function getSupabaseUser(req: Request, jwt: string): SupabaseClient<Database>;
-export function getSupabaseUser(reqOrJwt: Request | string, jwt?: string): SupabaseClient<Database> {
+export function getSupabaseUser(
+  reqOrJwt: Request | string,
+  jwt?: string,
+): SupabaseClient<Database> {
   if (typeof reqOrJwt === "string") {
     // Backwards-compatible per-call path: no request to key the cache on.
     return buildUserClient(reqOrJwt);
@@ -158,20 +157,20 @@ export function getSupabaseUser(reqOrJwt: Request | string, jwt?: string): Supab
  * watch behavior, then roll forward.
  *
  * `kind` selects which allow-list gates the call:
- *  - "read"  → RLS_READS_ENABLED
- *  - "write" → RLS_WRITES_ENABLED
+ *  - "read"  ? RLS_READS_ENABLED
+ *  - "write" ? RLS_WRITES_ENABLED
  */
 export function getScopedClient(
   req: Request,
   moduleKey: string,
   kind: "read" | "write" = "read",
 ): SupabaseClient {
-  const flag =
-    kind === "write"
-      ? process.env.RLS_WRITES_ENABLED
-      : process.env.RLS_READS_ENABLED;
+  const flag = kind === "write" ? process.env.RLS_WRITES_ENABLED : process.env.RLS_READS_ENABLED;
   const enabled = new Set(
-    (flag ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+    (flag ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
   );
   if (enabled.has(moduleKey) && req.userJwt) {
     return getSupabaseUser(req, req.userJwt);

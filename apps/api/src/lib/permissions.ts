@@ -40,7 +40,7 @@ export interface EffectivePermissions {
   memberships: Array<{
     id: string;
     organization_id: string;
-    role_id: string;
+    role_id: string | null;
     status: string;
   }>;
 }
@@ -93,7 +93,9 @@ export async function resolveEffectivePermissions(
     };
   }
 
-  const roleIds = [...new Set(memberships.map((m) => m.role_id))];
+  const roleIds = [
+    ...new Set(memberships.map((m) => m.role_id).filter((r): r is string => r !== null)),
+  ];
   const orgIds = [...new Set(memberships.map((m) => m.organization_id))];
   const roles = [
     ...new Set(

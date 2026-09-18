@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "../services/supabase";
 import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
+import { toJson, asUpdate } from "../lib/db-types";
 
 export interface SatisfactionPulseRecord {
   id: string;
@@ -175,7 +176,7 @@ export async function updateSatisfactionPulse(
 
   const { data, error } = await supabase
     .from("satisfaction_pulses")
-    .update(updateData)
+    .update(asUpdate<"satisfaction_pulses">(updateData))
     .eq("organization_id", organizationId)
     .eq("id", id)
     .select()
@@ -372,7 +373,7 @@ export async function updateTemplate(
 
   const { data, error } = await supabase
     .from("satisfaction_pulse_templates")
-    .update(input)
+    .update(asUpdate<"satisfaction_pulse_templates">(input as Record<string, unknown>))
     .eq("organization_id", organizationId)
     .eq("id", id)
     .select()
@@ -447,7 +448,7 @@ export async function createSchedule(
       template_id: input.templateId,
       name: input.name,
       trigger_type: input.triggerType,
-      trigger_config: input.triggerConfig,
+      trigger_config: toJson(input.triggerConfig),
       frequency: input.frequency,
       cron_expression: input.cronExpression,
       is_active: input.isActive ?? true,
@@ -480,7 +481,7 @@ export async function updateSchedule(
 
   const { data, error } = await supabase
     .from("satisfaction_pulse_schedules")
-    .update(input)
+    .update(asUpdate<"satisfaction_pulse_schedules">(input as Record<string, unknown>))
     .eq("organization_id", organizationId)
     .eq("id", id)
     .select()

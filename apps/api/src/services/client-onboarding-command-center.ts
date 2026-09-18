@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "./supabase";
 import { logAuditEvent } from "./audit";
 import { AppError, success } from "../types";
+import { toJson, asUpdate } from "../lib/db-types";
 
 export interface OnboardingRecord {
   id: string;
@@ -618,17 +619,17 @@ export async function createOnboardingRecord(
       discovery_notes: input.discoveryNotes,
       m365_setup_status: input.m365SetupStatus ?? "not_started",
       m365_tenant_id: input.m365TenantId,
-      m365_licenses: input.m365Licenses ?? {},
+      m365_licenses: toJson(input.m365Licenses ?? {}),
       access_collection_status: input.accessCollectionStatus ?? "not_started",
-      access_credentials: input.accessCredentials ?? {},
+      access_credentials: toJson(input.accessCredentials ?? {}),
       network_baseline_status: input.networkBaselineStatus ?? "not_started",
       network_diagram_url: input.networkDiagramUrl,
-      network_scan_results: input.networkScanResults ?? {},
+      network_scan_results: toJson(input.networkScanResults ?? {}),
       documentation_status: input.documentationStatus ?? "not_started",
       documentation_url: input.documentationUrl,
       security_baseline_status: input.securityBaselineStatus ?? "not_started",
       security_baseline_score: input.securityBaselineScore,
-      security_findings: input.securityFindings ?? [],
+      security_findings: toJson(input.securityFindings ?? []),
       support_handoff_status: input.supportHandoffStatus ?? "not_started",
       support_handoff_notes: input.supportHandoffNotes,
       next_review_at: input.nextReviewAt,
@@ -692,7 +693,7 @@ export async function updateOnboardingRecord(
 
   const { data, error } = await supabase
     .from("client_onboarding_command_center_records")
-    .update(updateData)
+    .update(asUpdate<"client_onboarding_command_center_records">(updateData))
     .eq("organization_id", organizationId)
     .eq("id", id)
     .select()
@@ -866,7 +867,7 @@ export async function updateChecklistItem(
 
   const { data, error } = await supabase
     .from("client_onboarding_checklist_items")
-    .update(updateData)
+    .update(asUpdate<"client_onboarding_checklist_items">(updateData))
     .eq("organization_id", organizationId)
     .eq("id", itemId)
     .select()

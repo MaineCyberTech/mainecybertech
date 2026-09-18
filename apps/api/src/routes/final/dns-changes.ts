@@ -11,10 +11,11 @@ export function registerDnsChangeRoutes(router: Router) {
     async (req, res, next) => {
       try {
         const supabase = getSupabaseAdmin();
-        const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-          | string
-          | undefined;
-        let fetchQuery = supabase.from("dns_change_requests").select("*").eq("id", req.params.id);
+        const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+        let fetchQuery = supabase
+          .from("dns_change_requests")
+          .select("*")
+          .eq("id", String(req.params.id));
         if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
         const { data: existing, error: fetchError } = await fetchQuery.single();
         if (fetchError || !existing)
@@ -27,7 +28,7 @@ export function registerDnsChangeRoutes(router: Router) {
             status: "approved",
             approved_by: req.authUser!.userId,
           })
-          .eq("id", req.params.id)
+          .eq("id", String(req.params.id))
           .eq("organization_id", existing.organization_id)
           .select()
           .single();
@@ -54,10 +55,11 @@ export function registerDnsChangeRoutes(router: Router) {
     async (req, res, next) => {
       try {
         const supabase = getSupabaseAdmin();
-        const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-          | string
-          | undefined;
-        let fetchQuery = supabase.from("dns_change_requests").select("*").eq("id", req.params.id);
+        const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+        let fetchQuery = supabase
+          .from("dns_change_requests")
+          .select("*")
+          .eq("id", String(req.params.id));
         if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
         const { data: existing, error: fetchError } = await fetchQuery.single();
         if (fetchError || !existing)
@@ -67,7 +69,7 @@ export function registerDnsChangeRoutes(router: Router) {
         const { data, error } = await supabase
           .from("dns_change_requests")
           .update({ status: "rejected" })
-          .eq("id", req.params.id)
+          .eq("id", String(req.params.id))
           .eq("organization_id", existing.organization_id)
           .select()
           .single();
@@ -94,10 +96,11 @@ export function registerDnsChangeRoutes(router: Router) {
     async (req, res, next) => {
       try {
         const supabase = getSupabaseAdmin();
-        const orgId = (req.query.organization_id ?? req.body?.organizationId) as
-          | string
-          | undefined;
-        let fetchQuery = supabase.from("dns_change_requests").select("*").eq("id", req.params.id);
+        const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+        let fetchQuery = supabase
+          .from("dns_change_requests")
+          .select("*")
+          .eq("id", String(req.params.id));
         if (orgId) fetchQuery = fetchQuery.eq("organization_id", orgId);
         const { data: existing, error: fetchError } = await fetchQuery.single();
         if (fetchError || !existing)
@@ -110,7 +113,7 @@ export function registerDnsChangeRoutes(router: Router) {
             status: "implemented",
             implemented_at: new Date().toISOString(),
           })
-          .eq("id", req.params.id)
+          .eq("id", String(req.params.id))
           .eq("organization_id", existing.organization_id)
           .select()
           .single();

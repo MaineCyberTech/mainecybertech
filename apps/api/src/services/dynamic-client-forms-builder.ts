@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "./supabase";
 import { logAuditEvent } from "./audit";
 import { AppError, success } from "../types";
+import { toJson, type UpdateRow } from "../lib/db-types";
 
 export interface DynamicForm {
   id: string;
@@ -103,8 +104,8 @@ export async function createDynamicForm(
       description: input.description ?? null,
       form_type: input.formType ?? "intake",
       status: "draft",
-      fields: input.fields ?? [],
-      settings: input.settings ?? {},
+      fields: toJson(input.fields ?? []),
+      settings: toJson(input.settings ?? {}),
       closes_at: input.closesAt ?? null,
       created_by: userId,
     })
@@ -140,13 +141,13 @@ export async function updateDynamicForm(
   },
 ) {
   const supabase = getSupabaseAdmin();
-  const updateData: Record<string, unknown> = {};
+  const updateData: UpdateRow<"dynamic_client_forms"> = {};
   if (input.title !== undefined) updateData.title = input.title;
   if (input.description !== undefined) updateData.description = input.description;
   if (input.formType !== undefined) updateData.form_type = input.formType;
   if (input.status !== undefined) updateData.status = input.status;
-  if (input.fields !== undefined) updateData.fields = input.fields;
-  if (input.settings !== undefined) updateData.settings = input.settings;
+  if (input.fields !== undefined) updateData.fields = toJson(input.fields);
+  if (input.settings !== undefined) updateData.settings = toJson(input.settings);
   if (input.closesAt !== undefined) updateData.closes_at = input.closesAt;
   updateData.updated_at = new Date().toISOString();
 
@@ -200,7 +201,7 @@ export async function publishDynamicForm(
   closesAt?: string | null,
 ) {
   const supabase = getSupabaseAdmin();
-  const updateData: Record<string, unknown> = {
+  const updateData: UpdateRow<"dynamic_client_forms"> = {
     status: "published",
     published_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -258,7 +259,7 @@ export async function submitDynamicForm(
       form_id: formId,
       organization_id: organizationId,
       respondent_email: respondentEmail,
-      answers,
+      answers: toJson(answers),
       status: "submitted",
     })
     .select()

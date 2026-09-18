@@ -6,6 +6,7 @@ import { requireAdmin } from "../middleware/admin";
 import { AppError, success, failure } from "../types";
 import { ZodError } from "zod";
 import { logger } from "../lib/logger";
+import { toJson } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -37,7 +38,7 @@ router.post("/track", async (req, res, next) => {
       quiz_id: parsed.quizId || null,
       quote_id: parsed.quoteId || null,
       campaign_id: parsed.campaignId || null,
-      metadata: parsed.metadata || {},
+      metadata: toJson(parsed.metadata || {}),
       anonymous_id: parsed.anonymousId || null,
       ip_address: req.ip || req.socket.remoteAddress || null,
       user_agent: (req.headers["user-agent"] as string) || null,
@@ -50,7 +51,9 @@ router.post("/track", async (req, res, next) => {
     res.json(success({ ok: true }));
   } catch (error) {
     if (error instanceof ZodError) {
-      res.status(400).json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+      res
+        .status(400)
+        .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
       return;
     }
     next(error);

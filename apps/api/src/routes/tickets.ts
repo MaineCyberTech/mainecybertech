@@ -499,7 +499,7 @@ router.post("/bulk", requireAdmin, async (req, res, next) => {
     const { data: results, error } = await supabase.rpc("bulk_update_with_version", {
       table_name: "tickets",
       updates,
-    });
+    } as never);
 
     if (error) {
       if (error.message.includes("Version conflict")) {
@@ -508,8 +508,9 @@ router.post("/bulk", requireAdmin, async (req, res, next) => {
       throw new AppError("DB_ERROR", error.message, 500);
     }
 
-    const successful = results.filter((r: { success: boolean }) => r.success).length;
-    const failed = results.filter((r: { success: boolean }) => !r.success);
+    const resultRows = (results as unknown as { success: boolean }[] | null) ?? [];
+    const successful = resultRows.filter((r) => r.success).length;
+    const failed = resultRows.filter((r) => !r.success);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,

@@ -9,6 +9,7 @@ import { getEnv } from "../config/env";
 import { verifyWebhookSignature, validateWebhookTimestamp } from "../lib/webhook-signature";
 import { claimIdempotencyKey, storeIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
 import { recordWebhookDelivery } from "../lib/metrics";
+import { type Row } from "../lib/db-types";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -252,7 +253,10 @@ router.post("/jira", async (req, res, next) => {
     }
 
     if (!validateWebhookTimestamp(event, undefined, { requireTimestamp: true })) {
-      logger.warn({ event: event.webhookEvent, issueKey }, "Jira webhook timestamp outside tolerance");
+      logger.warn(
+        { event: event.webhookEvent, issueKey },
+        "Jira webhook timestamp outside tolerance",
+      );
       res.status(400).json(failure("BAD_REQUEST", "Webhook timestamp outside tolerance", 400));
       return;
     }
@@ -279,7 +283,10 @@ router.post("/jira", async (req, res, next) => {
           .single();
 
         if (task && task.status !== mappedStatus) {
-          await supabase.from("project_tasks").update({ status: mappedStatus }).eq("id", task.id);
+          await supabase
+            .from("project_tasks")
+            .update({ status: mappedStatus as Row<"project_tasks">["status"] })
+            .eq("id", task.id);
           logger.info(
             { issueKey, taskId: task.id, from: task.status, to: mappedStatus },
             "Task status synced from Jira webhook",
@@ -341,7 +348,10 @@ router.post("/jsm", async (req, res, next) => {
     }
 
     if (!validateWebhookTimestamp(event, undefined, { requireTimestamp: true })) {
-      logger.warn({ event: event.webhookEvent, issueKey }, "JSM webhook timestamp outside tolerance");
+      logger.warn(
+        { event: event.webhookEvent, issueKey },
+        "JSM webhook timestamp outside tolerance",
+      );
       res.status(400).json(failure("BAD_REQUEST", "Webhook timestamp outside tolerance", 400));
       return;
     }
@@ -368,7 +378,10 @@ router.post("/jsm", async (req, res, next) => {
           .single();
 
         if (ticket && ticket.status !== mappedStatus) {
-          await supabase.from("tickets").update({ status: mappedStatus }).eq("id", ticket.id);
+          await supabase
+            .from("tickets")
+            .update({ status: mappedStatus as Row<"tickets">["status"] })
+            .eq("id", ticket.id);
           logger.info(
             {
               issueKey,
