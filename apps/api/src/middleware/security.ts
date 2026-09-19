@@ -2,25 +2,26 @@ import { type Request, type Response, type NextFunction } from "express";
 import { AppError } from "../types";
 import { logger } from "../lib/logger";
 
+// High-signal XSS markers only. This is a defence-in-depth blocklist, NOT the
+// primary control — output encoding (React) and Zod validation are. Broad
+// patterns here caused false positives on legitimate input (e.g. `on\w+=`
+// matched "monitor=", `url\(` matched "curl(", `-->` matched prose, `0x…`
+// matched hex/hashes), so they were removed.
 const DANGEROUS_PATTERNS = [
   /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/i,
   /javascript:/i,
-  /on\w+\s*=/i,
   /data:text\/html/i,
   /vbscript:/i,
   /expression\s*\(/i,
-  /url\s*\(/i,
-  /<!--/,
-  /-->/,
 ];
 
+// Conservative SQLi heuristics. Real protection is Supabase parameterized
+// queries; the previous trailing `;`/`--` and CONCAT/CAST/0x patterns matched
+// ordinary text and were dropped.
 const SQL_INJECTION_PATTERNS = [
   /(?:UNION\s+(?:ALL\s+)?SELECT|INSERT\s+INTO|DELETE\s+FROM|DROP\s+TABLE|ALTER\s+TABLE|CREATE\s+TABLE|EXEC\s*\(|EXECUTE\s*\()/i,
-  /(?:--|\/\*|\*\/|;)\s*$/im,
   /'\s*(?:OR|AND)\s+['\d]/i,
-  /(?:CHAR|CONCAT|CONVERT|CAST)\s*\(/i,
   /(?:SLEEP|BENCHMARK|WAITFOR\s+DELAY)\s*\(/i,
-  /0x[0-9a-fA-F]+/,
 ];
 
 function containsDangerousContent(value: unknown): boolean {
