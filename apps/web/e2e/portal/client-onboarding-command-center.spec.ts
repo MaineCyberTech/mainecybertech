@@ -10,23 +10,24 @@ test.describe("Client Onboarding Command Center - Portal", () => {
     await page.waitForLoadState("domcontentloaded");
   });
 
-  test("page loads and shows empty state when no onboarding records", async ({ page }) => {
+  test("page loads and lists seeded onboarding records", async ({ page }) => {
     await expect(
       page.getByRole("heading", { name: "Client Onboarding Command Center" }),
     ).toBeVisible();
-    await expect(page.getByText("No onboarding records yet", { exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Create Onboarding" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "New Onboarding" })).toBeVisible();
+    // GAP_ORG is seeded with onboarding records (seed 06/08), so the record
+    // list renders rather than the empty state.
+    await expect(page.getByText("Westbrook Dental")).toBeVisible();
   });
 
   test("shows onboarding records when they exist", async ({ page }) => {
-    // This test would need seeded data - for now just verify page structure
     await expect(
       page.getByRole("heading", { name: "Client Onboarding Command Center" }),
     ).toBeVisible();
   });
 
   test("can navigate to new onboarding page", async ({ page }) => {
-    await page.getByRole("link", { name: "Create Onboarding" }).click();
+    await page.getByRole("link", { name: "New Onboarding" }).click();
     await expect(page).toHaveURL(/\/portal\/client-onboarding-command-center\/new/);
   });
 
