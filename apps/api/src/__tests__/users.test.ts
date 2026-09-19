@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import usersRouter from "../routes/users";
-import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -18,7 +18,9 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
 }));
 
 jest.mock("../services/audit", () => ({
@@ -58,12 +60,11 @@ const USER = { id: "user-1", email: "test@example.com", full_name: "Test User" }
 jest.mock("../middleware/org-access", () => ({
   requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
   requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
+  assertOrgScopeMatches: jest.fn(),
+  assertSharesActiveOrg: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/users", usersRouter);
@@ -155,7 +156,7 @@ describe("users routes", () => {
       const res = await request(app)
         .patch("/api/v1/users/user-1/role")
         .set("Authorization", "Bearer token-123")
-        .send({ roleId: "role-admin" });
+        .send({ roleId: "role-admin", organizationId: "org-1" });
 
       expect(res.status).toBe(200);
       expect(res.body.data.updated).toBe(true);

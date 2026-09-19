@@ -17,6 +17,7 @@ import {
   updateSopSchema,
 } from "../validators/governance";
 import { queryInt } from "../lib/query";
+import { parsePartialUpdate } from "../lib/validators";
 
 type SopFrameworkRow = {
   compliance_framework: string | null;
@@ -105,12 +106,13 @@ function crudRoute(
   router.patch(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "governance", "write");
-      let body: Record<string, unknown> = req.body as Record<string, unknown>;
-      if (updateSchema) {
-        body = (updateSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
-          req.body,
-        ) as Record<string, unknown>;
-      }
+      // Prefer a dedicated update schema; otherwise derive a partial whitelist
+      // from the create schema so raw keys cannot be mass-assigned.
+      const body: Record<string, unknown> = updateSchema
+        ? ((updateSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
+            req.body,
+          ) as Record<string, unknown>)
+        : parsePartialUpdate(createSchema, req.body);
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(body)) {
         if (k === "organizationId") continue;

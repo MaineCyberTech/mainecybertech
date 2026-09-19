@@ -16,7 +16,9 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
 }));
 
 jest.mock("../services/impersonation", () => ({
@@ -25,7 +27,12 @@ jest.mock("../services/impersonation", () => ({
 
 import { getSupabaseAdmin } from "../services/supabase";
 import { logImpersonation } from "../services/impersonation";
-import { requireOrgAccess, requireOrgAccessByParam } from "../middleware/org-access";
+import {
+  requireOrgAccess,
+  requireOrgAccessByParam,
+  assertOrgScopeMatches,
+  assertSharesActiveOrg,
+} from "../middleware/org-access";
 
 function mockReq(
   opts: {
@@ -571,5 +578,63 @@ describe("req.orgScope population (QW-1)", () => {
       impersonation: false,
     });
     expect(req.orgId).toBe("00000000-0000-0000-0000-000000000001");
+  });
+});
+
+describe("assertOrgScopeMatches", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("allows a matching active org", () => {
+    const req = mockReq({ userId: "user-1" });
+    req.orgId = "org-1";
+    expect(() => assertOrgScopeMatches(req, "org-1")).not.toThrow();
+  });
+
+  it("allows a platform admin targeting another org", () => {
+    const req = mockReq({ userId: "user-1" });
+    req.orgId = "org-1";
+    req.orgScope = { orgId: "org-1", explicit: false, platformAdmin: true, impersonation: true };
+    expect(() => assertOrgScopeMatches(req, "org-2")).not.toThrow();
+  });
+
+  it("rejects a non-platform-admin targeting another org", () => {
+    const req = mockReq({ userId: "user-1" });
+    req.orgId = "org-1";
+    req.orgScope = { orgId: "org-1", explicit: true, platformAdmin: false, impersonation: false };
+    expect(() => assertOrgScopeMatches(req, "org-2")).toThrow();
+  });
+
+  it("rejects when there is no active org", () => {
+    const req = mockReq({ userId: "user-1" });
+    expect(() => assertOrgScopeMatches(req, "org-1")).toThrow();
+  });
+});
+
+describe("assertSharesActiveOrg", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("allows a platform admin without a query", async () => {
+    const req = mockReq({ userId: "user-1" });
+    req.orgScope = { orgId: null, explicit: false, platformAdmin: true, impersonation: false };
+    await expect(assertSharesActiveOrg(req, "user-2")).resolves.toBeUndefined();
+  });
+
+  it("rejects when there is no active org", async () => {
+    const req = mockReq({ userId: "user-1" });
+    await expect(assertSharesActiveOrg(req, "user-2")).rejects.toThrow();
+  });
+
+  it("allows when the target is a member of the active org", async () => {
+    mockSupabase({ membershipRow: { id: "m1" } });
+    const req = mockReq({ userId: "user-1" });
+    req.orgId = "org-1";
+    await expect(assertSharesActiveOrg(req, "user-2")).resolves.toBeUndefined();
+  });
+
+  it("rejects when the target is not in the active org", async () => {
+    mockSupabase({ membershipRow: null });
+    const req = mockReq({ userId: "user-1" });
+    req.orgId = "org-1";
+    await expect(assertSharesActiveOrg(req, "user-2")).rejects.toThrow();
   });
 });

@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import profilesRouter, { resolveImageUpload } from "../routes/profiles";
-import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -18,7 +18,9 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
   getSupabaseUser: jest.fn(),
 }));
 
@@ -66,12 +68,11 @@ const PROFILE = {
 jest.mock("../middleware/org-access", () => ({
   requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
   requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
+  assertOrgScopeMatches: jest.fn(),
+  assertSharesActiveOrg: jest.fn().mockResolvedValue(undefined),
 }));
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/profiles", profilesRouter);
@@ -251,11 +252,15 @@ describe("profiles routes", () => {
       });
 
       it("maps image/jpeg -> jpg", () => {
-        expect(resolveImageUpload({ originalname: "x.jpg", mimetype: "image/jpeg" }, "Avatar").extension).toBe("jpg");
+        expect(
+          resolveImageUpload({ originalname: "x.jpg", mimetype: "image/jpeg" }, "Avatar").extension,
+        ).toBe("jpg");
       });
 
       it("rejects image/svg+xml via the mimetype allowlist", () => {
-        expect(() => resolveImageUpload({ originalname: "evil.svg", mimetype: "image/svg+xml" }, "Avatar")).toThrow();
+        expect(() =>
+          resolveImageUpload({ originalname: "evil.svg", mimetype: "image/svg+xml" }, "Avatar"),
+        ).toThrow();
       });
 
       it("ignores the .js filename extension and stores as .png (filename never echoed)", () => {

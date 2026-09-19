@@ -97,7 +97,11 @@ async function resolveDefaultOrgId(
       .limit(1);
 
     if (active && active.length > 0) {
-      return { orgId: active[0].organization_id as string, platformAdmin: false, impersonation: false };
+      return {
+        orgId: active[0].organization_id as string,
+        platformAdmin: false,
+        impersonation: false,
+      };
     }
 
     // Platform admins (admin/super_admin in any org) can switch into any
@@ -141,7 +145,11 @@ async function resolveDefaultOrgId(
   // all tenants, so do NOT pin them to the first membership's org.
   if (isPlatformAdmin) return { orgId: null, platformAdmin: true, impersonation: false };
 
-  return { orgId: memberships[0].organization_id as string, platformAdmin: false, impersonation: false };
+  return {
+    orgId: memberships[0].organization_id as string,
+    platformAdmin: false,
+    impersonation: false,
+  };
 }
 
 export async function requireOrgAccess(req: Request, _res: Response, next: NextFunction) {
@@ -155,10 +163,11 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
     const orgId = extractOrgId(req);
     if (!orgId) {
       const activeOrgId = extractActiveOrgId(req);
-      const { orgId: defaultOrgId, platformAdmin, impersonation } = await resolveDefaultOrgId(
-        req.authUser.userId,
-        activeOrgId,
-      );
+      const {
+        orgId: defaultOrgId,
+        platformAdmin,
+        impersonation,
+      } = await resolveDefaultOrgId(req.authUser.userId, activeOrgId);
 
       if (impersonation && defaultOrgId) {
         // Platform admin entering a tenant via active-org switch without a
@@ -249,5 +258,42 @@ export async function requireOrgAccessByParam(req: Request, _res: Response, next
     next();
   } catch (error) {
     next(error);
+  }
+}
+
+/**
+ * Assert that a handler mutating a specific target organization is allowed to
+ * do so. Router-level `requireOrgAccess` cannot scope to a body/param org (the
+ * caller supplies it), so handlers that accept one must call this after
+ * parsing. Platform admins may act cross-tenant (already audited by the
+ * org-access gate); everyone else must target their own active org.
+ */
+export function assertOrgScopeMatches(req: Request, targetOrgId: string): void {
+  if (req.orgScope?.platformAdmin) return;
+  if (req.orgId && req.orgId === targetOrgId) return;
+  throw new AppError("FORBIDDEN", "You can only manage resources in your active organization", 403);
+}
+
+/**
+ * Assert the caller shares their active organization with `userId` (or is a
+ * platform admin). Prevents cross-tenant reads/writes of another user's
+ * profile or permission overrides.
+ */
+export async function assertSharesActiveOrg(req: Request, userId: string): Promise<void> {
+  if (req.orgScope?.platformAdmin) return;
+  const orgId = req.orgId;
+  if (!orgId) {
+    throw new AppError("FORBIDDEN", "No active organization", 403);
+  }
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("memberships")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("organization_id", orgId)
+    .eq("status", "approved")
+    .maybeSingle();
+  if (!data) {
+    throw new AppError("FORBIDDEN", "You do not share an organization with this user", 403);
   }
 }

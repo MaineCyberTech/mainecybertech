@@ -6,7 +6,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { encryptProfilePii, type ProfilePiiMap } from "../lib/profile-pii";
 import { requireAuth } from "../middleware/auth";
-import { requireOrgAccess } from "../middleware/org-access";
+import { requireOrgAccess, assertSharesActiveOrg } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { toJson, type UpdateRow } from "../lib/db-types";
 
@@ -122,6 +122,8 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
 
     // Only allow users to edit their own profile (unless admin role)
     if (req.authUser!.userId !== String(req.params.id)) {
+      await assertSharesActiveOrg(req, String(req.params.id));
+
       const supabaseAdmin = getSupabaseAdmin();
       const { data: membership } = await supabaseAdmin
         .from("memberships")

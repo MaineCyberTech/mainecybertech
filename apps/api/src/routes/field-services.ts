@@ -13,6 +13,7 @@ import {
   createStagingSchema,
 } from "../validators/field-services";
 import { queryInt } from "../lib/query";
+import { parsePartialUpdate } from "../lib/validators";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -89,8 +90,11 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   router.patch(`/${path}/:id`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "field-services", "write");
+      // Whitelist writes to fields the create schema declares (partial) so a
+      // caller cannot mass-assign organization_id / created_by / id.
+      const parsed = parsePartialUpdate(createSchema, req.body);
       const fields: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
+      for (const [k, v] of Object.entries(parsed)) {
         if (k === "organizationId") continue;
         if (v !== undefined) fields[snake(k)] = v;
       }

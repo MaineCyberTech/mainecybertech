@@ -6,7 +6,11 @@ import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
-import { requireOrgAccess } from "../middleware/org-access";
+import {
+  requireOrgAccess,
+  assertOrgScopeMatches,
+  assertSharesActiveOrg,
+} from "../middleware/org-access";
 import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
@@ -279,6 +283,11 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
 router.get("/:id", async (req, res, next) => {
   try {
     if (req.authUser?.userId !== String(req.params.id)) {
+      // Caller must be an admin AND share their active organization with the
+      // target (platform admins may read cross-tenant). Without the shared-org
+      // check an admin of any tenant could read any profile's PII.
+      await assertSharesActiveOrg(req, String(req.params.id));
+
       const supabase = getSupabaseAdmin();
       const { data: membership } = await supabase
         .from("memberships")
@@ -313,6 +322,7 @@ router.get("/:id", async (req, res, next) => {
 
 router.get("/:id/detail", requireAdmin, async (req, res, next) => {
   try {
+    await assertSharesActiveOrg(req, String(req.params.id));
     const supabase = getSupabaseAdmin();
 
     const { data: user, error: userError } = await supabase
@@ -385,9 +395,14 @@ router.patch("/:id/role", requirePermission("users", "manage"), async (req, res,
     const { roleId, organizationId } = z
       .object({
         roleId: z.string().min(1, "roleId is required"),
-        organizationId: z.string().optional(),
+        organizationId: z.string().min(1, "organizationId is required"),
       })
       .parse(req.body);
+
+    // Keep the role change inside the caller's active tenant (or require a
+    // platform admin). Without this an admin could omit organizationId and
+    // rewrite the target user's role across every organization.
+    assertOrgScopeMatches(req, organizationId);
 
     const supabase = getSupabaseAdmin();
 
@@ -407,14 +422,11 @@ router.patch("/:id/role", requirePermission("users", "manage"), async (req, res,
       }
     }
 
-    let query = supabase
+    const { error } = await supabase
       .from("memberships")
       .update({ role_id: roleId })
-      .eq("user_id", String(req.params.id));
-    if (organizationId) {
-      query = query.eq("organization_id", organizationId);
-    }
-    const { error } = await query;
+      .eq("user_id", String(req.params.id))
+      .eq("organization_id", organizationId);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -436,6 +448,7 @@ router.get("/:id/permissions", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const userId = String(req.params.id);
+    await assertSharesActiveOrg(req, userId);
 
     const [
       { data: memberships, error: memError },
@@ -499,6 +512,10 @@ router.put("/:id/permissions", requirePermission("users", "manage"), async (req,
         isAllowed: z.boolean().nullable(),
       })
       .parse(req.body);
+
+    // Overrides are org-scoped; the caller must be acting in that org (or be
+    // a platform admin) so they cannot grant/deny in another tenant.
+    assertOrgScopeMatches(req, organizationId);
 
     const { data: existing, error: checkError } = await supabase
       .from("user_permission_overrides")
