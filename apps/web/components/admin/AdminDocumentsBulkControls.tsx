@@ -170,16 +170,30 @@ export default function AdminDocumentsBulkControls({
 
       {showFolderModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
-            <h3 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-folder-title"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setShowFolderModal(false);
+            }}
+            className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+          >
+            <h3
+              id="bulk-folder-title"
+              className="font-display text-lg uppercase tracking-[0.12em] text-slate-50"
+            >
               Bulk Folder Reassignment
             </h3>
             <p className="mt-3 text-sm text-slate-300">
               Apply one folder path across {selectedIds.length} selected document(s).
             </p>
             <div className="mt-4">
-              <label className="cyber-label">Folder Path</label>
+              <label htmlFor="bulk-folder" className="cyber-label">
+                Folder Path
+              </label>
               <input
+                id="bulk-folder"
                 value={folderValue}
                 onChange={(e) => setFolderValue(e.target.value)}
                 className="cyber-input"
@@ -215,8 +229,19 @@ export default function AdminDocumentsBulkControls({
 
       {showMetadataModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-2xl rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
-            <h3 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-meta-title"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setShowMetadataModal(false);
+            }}
+            className="w-full max-w-2xl rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+          >
+            <h3
+              id="bulk-meta-title"
+              className="font-display text-lg uppercase tracking-[0.12em] text-slate-50"
+            >
               Bulk Metadata Edit
             </h3>
             <p className="mt-3 text-sm text-slate-300">
@@ -225,8 +250,11 @@ export default function AdminDocumentsBulkControls({
             </p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <div>
-                <label className="cyber-label">Folder Path (optional)</label>
+                <label htmlFor="bulk-meta-folder" className="cyber-label">
+                  Folder Path (optional)
+                </label>
                 <input
+                  id="bulk-meta-folder"
                   value={metaFolder}
                   onChange={(e) => setMetaFolder(e.target.value)}
                   className="cyber-input"
