@@ -16,7 +16,9 @@ export default async function PortalCameraCalculatorPage() {
   try {
     const r = await api.fieldServices.camera.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[camera-calculator/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Camera Storage Calculator">

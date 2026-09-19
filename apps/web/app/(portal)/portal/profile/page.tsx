@@ -22,7 +22,9 @@ export default async function ProfilePage() {
         title: user.title ?? null,
       };
     }
-  } catch {}
+  } catch (error) {
+    console.error("[profile/page]", error);
+  }
 
   if (!initialData) {
     return (

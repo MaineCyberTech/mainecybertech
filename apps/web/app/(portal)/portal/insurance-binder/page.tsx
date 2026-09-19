@@ -16,7 +16,9 @@ export default async function PortalInsuranceBinderPage() {
   try {
     const r = (await api.insuranceBinder.list({ organizationId: orgId })) as any;
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[insurance-binder/page]", error);
+  }
 
   const statusColor = (status: string) => {
     const s = status.toLowerCase();

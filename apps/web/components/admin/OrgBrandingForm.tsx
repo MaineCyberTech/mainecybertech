@@ -40,7 +40,9 @@ export default function OrgBrandingForm({
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch {}
+    } catch (error) {
+      console.error("[admin/OrgBrandingForm]", error);
+    }
     setSaving(false);
   }
 

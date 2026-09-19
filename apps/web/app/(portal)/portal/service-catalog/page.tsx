@@ -18,7 +18,9 @@ export default async function PortalServiceCatalogPage() {
   try {
     const r = await api.serviceCatalog.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[service-catalog/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Service Catalog">

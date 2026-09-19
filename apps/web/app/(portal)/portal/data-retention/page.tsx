@@ -16,7 +16,9 @@ export default async function PortalDataRetentionPage() {
   try {
     const r = await api.governance.retention.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[data-retention/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Data Retention">

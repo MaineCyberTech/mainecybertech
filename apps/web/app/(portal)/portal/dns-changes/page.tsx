@@ -16,7 +16,9 @@ export default async function DnsChangesPage() {
   try {
     const r = await api.final.dnsChanges.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[dns-changes/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="DNS Changes">

@@ -18,7 +18,9 @@ export default async function SlaPage() {
     const r = await api.sla.metrics({ organizationId: orgId });
     summary = ((r as Record<string, unknown>).summary as Record<string, unknown>) ?? {};
     byMetric = ((r as Record<string, unknown>).byMetric as Array<Record<string, unknown>>) ?? [];
-  } catch {}
+  } catch (error) {
+    console.error("[sla/page]", error);
+  }
 
   const total = Number(summary.total ?? 0);
   const breached = Number(summary.breached ?? 0);

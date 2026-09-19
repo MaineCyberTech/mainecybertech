@@ -17,7 +17,9 @@ export default async function PortalIncidentResponsePage() {
   try {
     const r = await api.securitySuite.incidents.list({ organizationId: orgId });
     items = r.items as IncidentRecord[];
-  } catch {}
+  } catch (error) {
+    console.error("[incident-response/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Incident Response">

@@ -17,7 +17,9 @@ export default async function PortalM365HardeningPage() {
   try {
     const r = await api.securitySuite.m365.list({ organizationId: orgId });
     items = r.items as M365HardeningRecord[];
-  } catch {}
+  } catch (error) {
+    console.error("[m365-hardening/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="M365 Security">

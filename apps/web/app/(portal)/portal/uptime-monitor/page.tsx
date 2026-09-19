@@ -16,7 +16,9 @@ export default async function PortalUptimeMonitorPage() {
   try {
     const r = (await api.uptimeMonitor.listChecks({ organizationId: orgId })) as any;
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[uptime-monitor/page]", error);
+  }
 
   const statusBadge = (s: string) => {
     const status = s.toLowerCase();

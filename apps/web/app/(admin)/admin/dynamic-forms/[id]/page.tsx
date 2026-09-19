@@ -17,11 +17,15 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   let submissions: Array<Record<string, unknown>> = [];
   try {
     record = (await api.dynamicForms.get(id)) as unknown as Record<string, unknown>;
-  } catch {}
+  } catch (error) {
+    console.error("[[id]/page]", error);
+  }
   try {
     const r = await api.dynamicForms.listSubmissions(id, { limit: 50, page: 1 });
     submissions = (r?.items as unknown as Array<Record<string, unknown>>) ?? [];
-  } catch {}
+  } catch (error) {
+    console.error("[[id]/page]", error);
+  }
 
   const formName = String(record?.form_name ?? record?.title ?? "Form Detail");
 

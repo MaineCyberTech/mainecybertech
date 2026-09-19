@@ -16,7 +16,9 @@ export default async function PortalTabletopPage() {
   try {
     const r = await api.governance.tabletop.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[tabletop/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Tabletop Exercises">

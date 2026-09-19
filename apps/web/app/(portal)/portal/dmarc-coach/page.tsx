@@ -16,7 +16,9 @@ export default async function PortalDmarcCoachPage() {
   try {
     const r = (await api.dmarcCoach.list({ organizationId: orgId })) as any;
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[dmarc-coach/page]", error);
+  }
 
   const gradeColor = (grade: string) => {
     const g = grade.toUpperCase();

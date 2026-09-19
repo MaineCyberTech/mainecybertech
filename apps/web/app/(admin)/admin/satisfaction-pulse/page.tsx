@@ -19,13 +19,19 @@ export default async function SatisfactionPulseAdminPage() {
   try {
     const r = await api.satisfactionPulse.list({ limit: 100, page: 1 });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[satisfaction-pulse/page]", error);
+  }
   try {
     templates = (await api.satisfactionPulse.listTemplates()) as unknown as typeof templates;
-  } catch {}
+  } catch (error) {
+    console.error("[satisfaction-pulse/page]", error);
+  }
   try {
     schedules = (await api.satisfactionPulse.listSchedules()) as unknown as typeof schedules;
-  } catch {}
+  } catch (error) {
+    console.error("[satisfaction-pulse/page]", error);
+  }
 
   return (
     <AdminPageShell

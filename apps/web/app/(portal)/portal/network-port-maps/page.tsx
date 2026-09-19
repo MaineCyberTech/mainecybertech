@@ -16,7 +16,9 @@ export default async function PortalNetworkPortMapsPage() {
   try {
     const r = await api.fieldServices.portMaps.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[network-port-maps/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Network Port Maps">

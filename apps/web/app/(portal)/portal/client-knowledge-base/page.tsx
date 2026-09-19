@@ -22,11 +22,11 @@ export default async function PortalKnowledgeBasePage() {
   try {
     if (orgId) {
       const r = await api.knowledgeBase.list({ organizationId: orgId });
-      items = Array.isArray(r?.items)
-        ? (r.items as unknown as Array<Record<string, unknown>>)
-        : [];
+      items = Array.isArray(r?.items) ? (r.items as unknown as Array<Record<string, unknown>>) : [];
     }
-  } catch {}
+  } catch (error) {
+    console.error("[client-knowledge-base/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Knowledge Base">
@@ -80,7 +80,10 @@ export default async function PortalKnowledgeBasePage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             {items.map((a) => (
-              <div key={String(a.id)} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+              <div
+                key={String(a.id)}
+                className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+              >
                 <p className="font-medium text-slate-50">{String(a.title || "Article")}</p>
                 <p className="mt-1 text-xs text-slate-400">
                   {(a.category as string) && <span>Category: {String(a.category)} &bull; </span>}

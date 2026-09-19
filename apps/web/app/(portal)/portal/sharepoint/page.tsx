@@ -16,7 +16,9 @@ export default async function SharePointPage() {
   try {
     const r = await api.final.sharepoint.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[sharepoint/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="SharePoint & Teams">

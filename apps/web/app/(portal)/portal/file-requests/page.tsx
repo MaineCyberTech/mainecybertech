@@ -16,7 +16,9 @@ export default async function PortalFileRequestsPage() {
   try {
     const r = await api.fileRequests.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[file-requests/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Secure File Requests">

@@ -16,7 +16,9 @@ export default async function SaasAuditPage() {
   try {
     const r = await api.final.saasAudit.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[saas-audit/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="SaaS Audit">

@@ -16,7 +16,9 @@ export default async function DynamicFormsAdminPage() {
   try {
     const r = await api.dynamicForms.list({ limit: 100, page: 1 });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[dynamic-forms/page]", error);
+  }
 
   return (
     <AdminPageShell

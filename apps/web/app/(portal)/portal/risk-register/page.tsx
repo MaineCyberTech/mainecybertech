@@ -16,7 +16,9 @@ export default async function PortalRiskRegisterPage() {
   try {
     const r = await api.governance.risks.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[risk-register/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Risk Register">

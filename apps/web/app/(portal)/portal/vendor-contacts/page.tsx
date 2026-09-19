@@ -16,7 +16,9 @@ export default async function PortalVendorContactsPage() {
   try {
     const r = await api.vendors.contacts.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[vendor-contacts/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Vendor Contacts">

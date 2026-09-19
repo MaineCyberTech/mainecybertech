@@ -18,7 +18,9 @@ export default async function PortalBudgetsPage() {
   try {
     const r = await api.final.budgets.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[budgets/page]", error);
+  }
 
   function priorityBadge(priority: string) {
     const p = priority.toLowerCase();

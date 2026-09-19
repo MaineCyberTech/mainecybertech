@@ -67,7 +67,9 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch {}
+    } catch (error) {
+      console.error("[[webhookId]/WebhookDetailClient]", error);
+    }
     setSaving(false);
   }
 

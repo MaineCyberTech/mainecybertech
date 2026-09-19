@@ -16,7 +16,9 @@ export default async function PortalTimeEntriesPage() {
   try {
     const r = await api.final.timeEntries.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[time-entries/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Time Entries">

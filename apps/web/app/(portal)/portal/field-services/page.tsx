@@ -16,7 +16,9 @@ export default async function FieldServicesPage() {
   try {
     const r = await api.fieldServices.isp.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[field-services/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Field Services">

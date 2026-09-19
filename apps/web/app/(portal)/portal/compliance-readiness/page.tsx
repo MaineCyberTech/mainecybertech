@@ -41,7 +41,9 @@ export default async function PortalComplianceReadinessPage() {
       );
       controls = controlSets.flat();
     }
-  } catch {}
+  } catch (error) {
+    console.error("[compliance-readiness/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Compliance Readiness">
@@ -67,10 +69,7 @@ export default async function PortalComplianceReadinessPage() {
             {frameworks.map((f) => {
               const frameworkControls = controls.filter((c) => c.framework_id === f.id);
               return (
-                <div
-                  key={f.id}
-                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-                >
+                <div key={f.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                   <div className="flex items-center justify-between">
                     <p className="font-medium text-slate-50">{f.name}</p>
                     <StatusPill
@@ -85,9 +84,7 @@ export default async function PortalComplianceReadinessPage() {
                       }
                     />
                   </div>
-                  {f.description && (
-                    <p className="mt-1 text-xs text-slate-400">{f.description}</p>
-                  )}
+                  {f.description && <p className="mt-1 text-xs text-slate-400">{f.description}</p>}
                   <div className="mt-3 overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
@@ -105,22 +102,15 @@ export default async function PortalComplianceReadinessPage() {
                             <td className="py-1 pr-4">
                               <StatusPill status={c.status} />
                             </td>
+                            <td className="py-1 pr-4 text-slate-300">{c.owner ?? "—"}</td>
                             <td className="py-1 pr-4 text-slate-300">
-                              {c.owner ?? "—"}
-                            </td>
-                            <td className="py-1 pr-4 text-slate-300">
-                              {c.due_at
-                                ? new Date(c.due_at).toISOString().slice(0, 10)
-                                : "—"}
+                              {c.due_at ? new Date(c.due_at).toISOString().slice(0, 10) : "—"}
                             </td>
                           </tr>
                         ))}
                         {frameworkControls.length === 0 && (
                           <tr>
-                            <td
-                              colSpan={4}
-                              className="py-2 text-xs text-slate-400"
-                            >
+                            <td colSpan={4} className="py-2 text-xs text-slate-400">
                               No controls yet.
                             </td>
                           </tr>
@@ -135,7 +125,10 @@ export default async function PortalComplianceReadinessPage() {
               <p className="text-sm text-slate-400">No compliance frameworks yet.</p>
             )}
           </div>
-          <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
+          <Link
+            href="/portal/dashboard"
+            className="text-sm text-emerald-500 hover:text-emerald-400"
+          >
             &larr; Dashboard
           </Link>
         </>

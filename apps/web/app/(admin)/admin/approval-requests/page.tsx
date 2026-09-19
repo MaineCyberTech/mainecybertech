@@ -59,10 +59,14 @@ export default async function ApprovalRequestsAdminPage({
     const r = await api.approvals.list({ page, limit, status, requestType, search });
     items = r.items as unknown as typeof items;
     total = r.total ?? 0;
-  } catch {}
+  } catch (error) {
+    console.error("[approval-requests/page]", error);
+  }
   try {
     stats = (await api.approvals.stats()) as unknown as Record<string, number>;
-  } catch {}
+  } catch (error) {
+    console.error("[approval-requests/page]", error);
+  }
 
   const totalPages = Math.ceil(total / limit);
   const buildHref = (p: number) => {

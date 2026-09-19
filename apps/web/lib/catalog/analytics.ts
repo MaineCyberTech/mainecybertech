@@ -26,7 +26,9 @@ export function track(event: string, data?: Omit<TrackEvent, "event">) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     }).catch(() => {});
-  } catch {}
+  } catch (error) {
+    console.error("[catalog/analytics]", error);
+  }
 }
 
 export function getEventLog(): TrackEvent[] {

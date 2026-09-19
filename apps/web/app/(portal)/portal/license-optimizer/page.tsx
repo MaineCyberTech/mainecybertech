@@ -16,7 +16,9 @@ export default async function PortalLicenseOptimizerPage() {
   try {
     const r = (await api.licenseOptimizer.list({ organizationId: orgId })) as any;
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[license-optimizer/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="License Optimizer">

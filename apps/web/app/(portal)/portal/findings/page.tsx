@@ -18,7 +18,9 @@ export default async function PortalFindingsPage() {
   try {
     const r = await api.findings.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[findings/page]", error);
+  }
 
   let isAdmin = false;
   try {

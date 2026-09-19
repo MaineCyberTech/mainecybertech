@@ -17,7 +17,9 @@ export default async function PortalIdentityVerificationPage() {
   try {
     const r = await api.securitySuite.idVerify.list({ organizationId: orgId });
     items = r.items as IdentityVerification[];
-  } catch {}
+  } catch (error) {
+    console.error("[identity-verification/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Identity Verification">

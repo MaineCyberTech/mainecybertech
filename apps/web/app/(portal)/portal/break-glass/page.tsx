@@ -16,7 +16,9 @@ export default async function PortalBreakGlassPage() {
   try {
     const r = await api.securityOps.breakGlass.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[break-glass/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Break Glass Accounts">

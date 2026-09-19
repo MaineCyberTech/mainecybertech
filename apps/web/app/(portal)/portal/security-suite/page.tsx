@@ -29,7 +29,9 @@ export default async function SecuritySuitePage() {
   try {
     const r = await api.securitySuite.m365.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[security-suite/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Security Suite">

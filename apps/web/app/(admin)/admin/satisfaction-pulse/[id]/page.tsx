@@ -16,7 +16,9 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   let record: Record<string, unknown> | null = null;
   try {
     record = (await api.satisfactionPulse.get(id)) as unknown as Record<string, unknown>;
-  } catch {}
+  } catch (error) {
+    console.error("[[id]/page]", error);
+  }
 
   return (
     <AdminPageShell

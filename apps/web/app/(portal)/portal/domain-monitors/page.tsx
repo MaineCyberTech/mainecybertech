@@ -45,7 +45,9 @@ export default async function DomainMonitorsPage() {
   try {
     const r = await api.domainMonitors.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[domain-monitors/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Domain Monitors">

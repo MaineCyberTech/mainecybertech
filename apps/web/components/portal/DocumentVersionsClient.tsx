@@ -22,7 +22,9 @@ export default function DocumentVersionsClient({ documentId }: Props) {
     try {
       const result = await getClientApi().documents.listVersions(documentId);
       setVersions(result.items);
-    } catch {}
+    } catch (error) {
+      console.error("[portal/DocumentVersionsClient]", error);
+    }
     setLoading(false);
   }, [documentId]);
 

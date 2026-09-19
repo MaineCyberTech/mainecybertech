@@ -13,7 +13,9 @@ export default async function PortalStatusPage() {
   try {
     const r = await api.batch.status.public();
     items = r as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[status/page]", error);
+  }
 
   const sev = (s: string) =>
     ({

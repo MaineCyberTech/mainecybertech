@@ -16,7 +16,9 @@ export default async function GovernancePage() {
   try {
     const r = await api.governance.changes.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[governance/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Governance">

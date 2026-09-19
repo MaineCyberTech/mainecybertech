@@ -20,7 +20,9 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
       Record<string, unknown>
     >;
     record = items.find((r) => r.id === id) ?? null;
-  } catch {}
+  } catch (error) {
+    console.error("[[id]/page]", error);
+  }
 
   return (
     <AdminPageShell

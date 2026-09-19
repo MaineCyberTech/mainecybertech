@@ -16,7 +16,9 @@ export default async function PortalPhishingSimulationsPage() {
   try {
     const r = await api.eduAutomation.phishing.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[phishing-simulations/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Phishing Simulations">

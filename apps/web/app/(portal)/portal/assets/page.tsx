@@ -16,7 +16,9 @@ export default async function PortalAssetsPage() {
   try {
     const r = await api.assets.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[assets/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Assets">

@@ -35,17 +35,22 @@ export default async function WebhookDetailPage({ params }: Props) {
     );
   }
 
-  let deliveries: { items: Array<{
-    id: string;
-    event: string;
-    status: string;
-    response_status?: number | null;
-    duration_ms?: number | null;
-    created_at: string;
-  }>; total: number } = { items: [], total: 0 };
+  let deliveries: {
+    items: Array<{
+      id: string;
+      event: string;
+      status: string;
+      response_status?: number | null;
+      duration_ms?: number | null;
+      created_at: string;
+    }>;
+    total: number;
+  } = { items: [], total: 0 };
   try {
     deliveries = await api.webhooks.listDeliveries(webhookId, { limit: 20 });
-  } catch {}
+  } catch (error) {
+    console.error("[[webhookId]/page]", error);
+  }
 
   return (
     <AdminPageShell

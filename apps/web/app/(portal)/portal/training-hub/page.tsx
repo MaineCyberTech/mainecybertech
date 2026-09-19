@@ -16,7 +16,9 @@ export default async function PortalTrainingHubPage() {
   try {
     const r = (await api.trainingHub.courses.list({ organizationId: orgId })) as any;
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[training-hub/page]", error);
+  }
 
   const difficultyColor = (level: string) => {
     const l = level.toLowerCase();

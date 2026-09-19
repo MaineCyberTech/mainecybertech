@@ -16,10 +16,14 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   let timeline: unknown[] = [];
   try {
     record = (await api.approvals.get(id)) as unknown as Record<string, unknown>;
-  } catch {}
+  } catch (error) {
+    console.error("[[id]/page]", error);
+  }
   try {
     timeline = await api.approvals.getTimeline(id);
-  } catch {}
+  } catch (error) {
+    console.error("[[id]/page]", error);
+  }
 
   return (
     <AdminPageShell

@@ -18,13 +18,17 @@ export default async function PortalCabPage() {
   try {
     const r = await api.cab.list({ organizationId: orgId });
     meetings = r.items as unknown as typeof meetings;
-  } catch {}
+  } catch (error) {
+    console.error("[cab/page]", error);
+  }
   try {
     const cr = await api.governance.changes.list({ organizationId: orgId, status: "pending" });
     pendingChanges = (cr.items as unknown as Array<Record<string, unknown>>).filter(
       (c) => String(c.status) === "pending",
     );
-  } catch {}
+  } catch (error) {
+    console.error("[cab/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Change Advisory Board">
@@ -41,7 +45,9 @@ export default async function PortalCabPage() {
         <h2 className="text-lg font-medium text-slate-50">Meetings</h2>
         <div className="grid gap-4 md:grid-cols-2">
           {meetings.map((m) => {
-            const agenda = Array.isArray(m.agenda) ? (m.agenda as Array<Record<string, unknown>>) : [];
+            const agenda = Array.isArray(m.agenda)
+              ? (m.agenda as Array<Record<string, unknown>>)
+              : [];
             return (
               <div
                 key={String(m.id)}
@@ -55,9 +61,7 @@ export default async function PortalCabPage() {
                   </p>
                   <StatusPill status={String(m.status || "unknown")} />
                 </div>
-                {m.notes ? (
-                  <p className="mt-1 text-xs text-slate-400">{String(m.notes)}</p>
-                ) : null}
+                {m.notes ? <p className="mt-1 text-xs text-slate-400">{String(m.notes)}</p> : null}
                 <p className="mt-2 text-xs uppercase tracking-wide text-slate-500">
                   Agenda ({agenda.length})
                 </p>
@@ -84,7 +88,9 @@ export default async function PortalCabPage() {
       </section>
 
       <section className="space-y-3" aria-label="Pending Change Requests">
-        <h2 className="text-lg font-medium text-slate-50">Pending Change Requests (add to a meeting)</h2>
+        <h2 className="text-lg font-medium text-slate-50">
+          Pending Change Requests (add to a meeting)
+        </h2>
         <div className="grid gap-4 md:grid-cols-2">
           {pendingChanges.map((c) => (
             <div
@@ -96,7 +102,8 @@ export default async function PortalCabPage() {
                 <StatusPill status={String(c.status || "unknown")} />
               </div>
               <p className="mt-1 text-xs text-slate-400">
-                Priority: {String(c.priority || "N/A")} &bull; Type: {String(c.change_type || "N/A")}
+                Priority: {String(c.priority || "N/A")} &bull; Type:{" "}
+                {String(c.change_type || "N/A")}
               </p>
             </div>
           ))}

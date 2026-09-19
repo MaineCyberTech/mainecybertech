@@ -16,7 +16,9 @@ export default async function PortalEndpointSecurityPage() {
   try {
     const r = await api.securitySuite.endpoints.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[endpoint-security/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Endpoint Security">

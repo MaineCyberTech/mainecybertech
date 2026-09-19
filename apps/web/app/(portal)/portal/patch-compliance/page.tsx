@@ -16,7 +16,9 @@ export default async function PortalPatchCompliancePage() {
   try {
     const r = await api.securityOps.patchCompliance.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[patch-compliance/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Patch Compliance">

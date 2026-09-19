@@ -16,7 +16,9 @@ export default async function PortalQbrPage() {
   try {
     const r = await api.qbr.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[qbr/page]", error);
+  }
 
   function statusBadge(status: string) {
     const s = status.toLowerCase();

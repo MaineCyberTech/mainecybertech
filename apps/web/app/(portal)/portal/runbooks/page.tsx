@@ -16,7 +16,9 @@ export default async function PortalRunbooksPage() {
   try {
     const r = await api.final.runbooks.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[runbooks/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Runbooks">

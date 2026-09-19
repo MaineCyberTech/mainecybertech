@@ -16,7 +16,9 @@ export default async function PortalUnifiSurveysPage() {
   try {
     const r = await api.fieldServices.unifi.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[unifi-site-surveys/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="UniFi Site Surveys">

@@ -18,7 +18,9 @@ export default async function PortalVendorContractsPage() {
   try {
     const r = await api.vendors.contracts.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[vendor-contracts/page]", error);
+  }
 
   function statusBadge(status: string) {
     const s = status.toLowerCase();

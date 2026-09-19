@@ -29,7 +29,9 @@ export default async function SecurityOpsPage() {
   try {
     const r = await api.securityOps.onboarding.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[security-ops/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Security Operations">

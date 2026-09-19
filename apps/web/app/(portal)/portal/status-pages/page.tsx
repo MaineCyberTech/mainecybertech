@@ -16,7 +16,9 @@ export default async function PortalStatusPagesPage() {
   try {
     const r = (await api.statusPage.components.list({ organizationId: orgId })) as any;
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[status-pages/page]", error);
+  }
 
   const statusColor = (status: string) => {
     const s = status.toLowerCase();

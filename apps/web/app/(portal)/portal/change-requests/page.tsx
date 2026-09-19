@@ -16,7 +16,9 @@ export default async function PortalChangeRequestsPage() {
   try {
     const r = await api.governance.changes.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[change-requests/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Change Requests">

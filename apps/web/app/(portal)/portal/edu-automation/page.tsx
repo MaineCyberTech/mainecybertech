@@ -16,7 +16,9 @@ export default async function EduAutomationPage() {
   try {
     const r = await api.eduAutomation.compliance.list({ organization_id: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[edu-automation/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Education Automation">

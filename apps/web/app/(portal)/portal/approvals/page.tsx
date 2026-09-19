@@ -48,7 +48,9 @@ export default async function ApprovalsPage() {
   try {
     const r = await api.approvals.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[approvals/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Approvals">

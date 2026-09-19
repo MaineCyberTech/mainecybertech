@@ -16,7 +16,9 @@ export default async function PortalBackupDrPage() {
   try {
     const r = await api.final.backups.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[backup-dr/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Backup & DR">

@@ -16,7 +16,9 @@ export default async function PortalSopLibraryPage() {
   try {
     const r = await api.governance.sopLibrary.list({ organizationId: orgId });
     items = r.items as unknown as typeof items;
-  } catch {}
+  } catch (error) {
+    console.error("[sop-library/page]", error);
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="SOP Library">
