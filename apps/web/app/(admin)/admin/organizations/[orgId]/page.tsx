@@ -75,18 +75,29 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="cyber-label">Name</label>
-              <input name="name" defaultValue={org.name} className="cyber-input" />
+              <label className="cyber-label" htmlFor="org-name">
+                Name
+              </label>
+              <input id="org-name" name="name" defaultValue={org.name} className="cyber-input" />
             </div>
 
             <div>
-              <label className="cyber-label">Slug</label>
-              <input name="slug" defaultValue={org.slug} className="cyber-input" />
+              <label className="cyber-label" htmlFor="org-slug">
+                Slug
+              </label>
+              <input id="org-slug" name="slug" defaultValue={org.slug} className="cyber-input" />
             </div>
 
             <div>
-              <label className="cyber-label">Status</label>
-              <select name="status" defaultValue={org.status} className="cyber-input">
+              <label className="cyber-label" htmlFor="org-status">
+                Status
+              </label>
+              <select
+                id="org-status"
+                name="status"
+                defaultValue={org.status}
+                className="cyber-input"
+              >
                 <option value="pending">pending</option>
                 <option value="approved">approved</option>
                 <option value="rejected">rejected</option>
@@ -95,8 +106,11 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
             </div>
 
             <div>
-              <label className="cyber-label">Primary Domain</label>
+              <label className="cyber-label" htmlFor="org-primary-domain">
+                Primary Domain
+              </label>
               <input
+                id="org-primary-domain"
                 name="primaryDomain"
                 defaultValue={org.primary_domain ?? ""}
                 className="cyber-input"
@@ -104,8 +118,11 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
             </div>
 
             <div>
-              <label className="cyber-label">Support Plan</label>
+              <label className="cyber-label" htmlFor="org-support-plan">
+                Support Plan
+              </label>
               <input
+                id="org-support-plan"
                 name="supportPlan"
                 defaultValue={org.support_plan ?? ""}
                 className="cyber-input"

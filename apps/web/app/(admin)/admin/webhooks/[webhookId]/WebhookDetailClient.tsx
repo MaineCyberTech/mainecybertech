@@ -108,16 +108,22 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
         <div className="mt-6 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="cyber-label">Name</label>
+              <label className="cyber-label" htmlFor="webhook-name">
+                Name
+              </label>
               <input
+                id="webhook-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="cyber-input"
               />
             </div>
             <div>
-              <label className="cyber-label">Status</label>
+              <label className="cyber-label" htmlFor="webhook-status">
+                Status
+              </label>
               <select
+                id="webhook-status"
                 value={isActive ? "true" : "false"}
                 onChange={(e) => setIsActive(e.target.value === "true")}
                 className="cyber-input"
@@ -128,8 +134,11 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
             </div>
           </div>
           <div>
-            <label className="cyber-label">URL</label>
+            <label className="cyber-label" htmlFor="webhook-url">
+              URL
+            </label>
             <input
+              id="webhook-url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               className="cyber-input font-mono text-sm"
@@ -137,8 +146,11 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
             />
           </div>
           <div>
-            <label className="cyber-label">Secret (optional)</label>
+            <label className="cyber-label" htmlFor="webhook-secret-optional">
+              Secret (optional)
+            </label>
             <input
+              id="webhook-secret-optional"
               value={secret}
               onChange={(e) => setSecret(e.target.value)}
               className="cyber-input font-mono text-sm"

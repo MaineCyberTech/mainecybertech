@@ -294,8 +294,16 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
             className="mt-6 flex flex-col gap-4 md:flex-row md:items-end"
           >
             <div className="w-full max-w-sm">
-              <label className="cyber-label">Type DELETE to confirm</label>
-              <input name="confirmation" className="cyber-input" placeholder="DELETE" required />
+              <label className="cyber-label" htmlFor="ticket-type-delete-to-confirm">
+                Type DELETE to confirm
+              </label>
+              <input
+                id="ticket-type-delete-to-confirm"
+                name="confirmation"
+                className="cyber-input"
+                placeholder="DELETE"
+                required
+              />
             </div>
             <button
               type="submit"
@@ -318,8 +326,11 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
             className="mt-6 space-y-6"
           >
             <div>
-              <label className="cyber-label">Title</label>
+              <label className="cyber-label" htmlFor="ticket-title">
+                Title
+              </label>
               <input
+                id="ticket-title"
                 name="subject"
                 defaultValue={displayTicketTitle(ticket)}
                 className="cyber-input"
@@ -328,8 +339,15 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               <div>
-                <label className="cyber-label">Status</label>
-                <select name="status" defaultValue={status} className="cyber-input">
+                <label className="cyber-label" htmlFor="ticket-status">
+                  Status
+                </label>
+                <select
+                  id="ticket-status"
+                  name="status"
+                  defaultValue={status}
+                  className="cyber-input"
+                >
                   <option value="new">new</option>
                   <option value="triaged">triaged</option>
                   <option value="pending">pending</option>
@@ -338,8 +356,15 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                 </select>
               </div>
               <div>
-                <label className="cyber-label">Priority</label>
-                <select name="priority" defaultValue={priority} className="cyber-input">
+                <label className="cyber-label" htmlFor="ticket-priority">
+                  Priority
+                </label>
+                <select
+                  id="ticket-priority"
+                  name="priority"
+                  defaultValue={priority}
+                  className="cyber-input"
+                >
                   <option value="low">low</option>
                   <option value="normal">normal</option>
                   <option value="high">high</option>
@@ -347,8 +372,11 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                 </select>
               </div>
               <div>
-                <label className="cyber-label">Category</label>
+                <label className="cyber-label" htmlFor="ticket-category">
+                  Category
+                </label>
                 <input
+                  id="ticket-category"
                   name="category"
                   defaultValue={ticketCategory(ticket)}
                   className="cyber-input"
@@ -356,8 +384,11 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
               </div>
             </div>
             <div>
-              <label className="cyber-label">Description</label>
+              <label className="cyber-label" htmlFor="ticket-description">
+                Description
+              </label>
               <textarea
+                id="ticket-description"
                 name="description"
                 rows={6}
                 className="cyber-input"
@@ -534,8 +565,11 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
           className="mt-6 space-y-4"
         >
           <div>
-            <label className="cyber-label">Add Comment</label>
+            <label className="cyber-label" htmlFor="ticket-add-comment">
+              Add Comment
+            </label>
             <textarea
+              id="ticket-add-comment"
               name="body"
               rows={4}
               className="cyber-input"

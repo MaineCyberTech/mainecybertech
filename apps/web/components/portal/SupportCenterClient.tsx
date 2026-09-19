@@ -266,8 +266,11 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
               className="space-y-4 px-6 py-6"
             >
               <div>
-                <label className="cyber-label">Title</label>
+                <label className="cyber-label" htmlFor="support-title">
+                  Title
+                </label>
                 <input
+                  id="support-title"
                   name="subject"
                   className="cyber-input"
                   placeholder="What do you need help with?"
@@ -276,8 +279,15 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="cyber-label">Priority</label>
-                  <select name="priority" defaultValue="normal" className="cyber-input">
+                  <label className="cyber-label" htmlFor="support-priority">
+                    Priority
+                  </label>
+                  <select
+                    id="support-priority"
+                    name="priority"
+                    defaultValue="normal"
+                    className="cyber-input"
+                  >
                     <option value="low">low</option>
                     <option value="normal">normal</option>
                     <option value="high">high</option>
@@ -285,8 +295,11 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
                   </select>
                 </div>
                 <div>
-                  <label className="cyber-label">Category</label>
+                  <label className="cyber-label" htmlFor="support-category">
+                    Category
+                  </label>
                   <input
+                    id="support-category"
                     name="category"
                     className="cyber-input"
                     placeholder="Networking, Endpoint, Billing..."
@@ -294,8 +307,11 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
                 </div>
               </div>
               <div>
-                <label className="cyber-label">Description</label>
+                <label className="cyber-label" htmlFor="support-description">
+                  Description
+                </label>
                 <textarea
+                  id="support-description"
                   name="description"
                   rows={6}
                   className="cyber-input"
