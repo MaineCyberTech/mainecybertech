@@ -62,7 +62,10 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     if (secrets.length > 0) {
       for (const secret of secrets) {
         try {
-          const decoded = jwt.verify(token, secret) as {
+          // Pin the algorithm to prevent algorithm-confusion attacks. On
+          // mismatch this throws and falls through to the Supabase check, so
+          // an asymmetric-signed project still authenticates via the fallback.
+          const decoded = jwt.verify(token, secret, { algorithms: ["HS256"] }) as {
             sub: string;
             email?: string;
             exp?: number;

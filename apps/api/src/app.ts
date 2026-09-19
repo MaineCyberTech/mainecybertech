@@ -86,8 +86,7 @@ export function createApp(): Express {
   app.set("trust proxy", 1);
 
   app.use(helmet());
-  const allowedOriginsList = env.CORS_ORIGIN
-    .split(",")
+  const allowedOriginsList = env.CORS_ORIGIN.split(",")
     .map((s) => s.trim())
     .filter(Boolean);
   app.use(
@@ -148,8 +147,22 @@ export function createApp(): Express {
   app.use(requestTimeout(30000));
 
   app.use("/health", healthRouter);
-  app.use("/metrics", rateLimitMetrics, async (_req, res) => {
+  app.use("/metrics", rateLimitMetrics, async (req, res) => {
     try {
+      // Optional shared-token gate: 404 (not 401) so the endpoint is not
+      // advertised. Enabled by setting METRICS_TOKEN; internal scrapers send
+      // it as a bearer token.
+      const metricsToken = getEnv().METRICS_TOKEN;
+      if (metricsToken) {
+        const header = req.headers.authorization;
+        const provided =
+          (header?.startsWith("Bearer ") ? header.slice(7) : undefined) ??
+          (typeof req.query.token === "string" ? req.query.token : undefined);
+        if (provided !== metricsToken) {
+          res.status(404).end();
+          return;
+        }
+      }
       res.set("Content-Type", register.contentType);
       res.end(await register.metrics());
     } catch (ex) {
@@ -199,7 +212,7 @@ export function createApp(): Express {
   app.use("/api/v1/security-suite", securitySuiteRouter);
   app.use("/api/v1/governance", governanceRouter);
   app.use("/api/v1/field-services", fieldServicesRouter);
-app.use("/api/v1/network-diagrams", networkDiagramsRouter);
+  app.use("/api/v1/network-diagrams", networkDiagramsRouter);
   app.use("/api/v1/edu-automation", eduAutomationRouter);
   app.use("/api/v1/final", finalRouter);
   app.use("/api/v1/client-onboarding", clientOnboardingRouter);

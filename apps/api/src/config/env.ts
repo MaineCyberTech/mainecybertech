@@ -35,6 +35,9 @@ const envSchema = z.object({
   M365_WEBHOOK_SECRET: z.string().optional(),
   M365_CLIENT_STATE: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
+  // Shared bearer token gating GET /metrics. When set, the endpoint 404s
+  // without it; Prometheus must send `Authorization: Bearer <token>`.
+  METRICS_TOKEN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

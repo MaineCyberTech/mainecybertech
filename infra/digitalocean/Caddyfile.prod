@@ -19,6 +19,10 @@ www.mainecybertech.com, app.mainecybertech.com {
 api.mainecybertech.com {
     tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
 
+    # Prometheus scrapes this internally; never expose it publicly.
+    @metrics path /metrics
+    respond @metrics 404
+
     @sse path /api/v1/notifications/stream
     reverse_proxy @sse api:4000 {
         flush_interval -1

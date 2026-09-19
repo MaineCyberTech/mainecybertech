@@ -11,6 +11,7 @@ import { assertResourceOrg } from "../lib/tenant";
 import { createAssetSchema, updateAssetSchema } from "../validators/assets";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
+import { moduleCommentSchema } from "../validators/comments";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -350,8 +351,8 @@ router.post("/:id/comments", async (req, res, next) => {
     if (assetError) throw new AppError("DB_ERROR", assetError.message, 500);
     if (!asset) throw new AppError("NOT_FOUND", "Asset not found", 404);
     assertResourceOrg(req, (asset as { organization_id?: string }).organization_id);
-    const { body } = req.body as { body: string; isInternal?: boolean };
-    if (!body?.trim()) throw new AppError("VALIDATION", "Comment body is required", 400);
+    const { body, isInternal } = moduleCommentSchema.parse(req.body);
+    if (!body.trim()) throw new AppError("VALIDATION", "Comment body is required", 400);
     const { data, error } = await supabase
       .from("module_comments")
       .insert({
@@ -361,7 +362,7 @@ router.post("/:id/comments", async (req, res, next) => {
         entity_id: String(req.params.id),
         author_id: req.authUser!.userId,
         body: body.trim(),
-        is_internal: (req.body as { isInternal?: boolean }).isInternal ?? false,
+        is_internal: isInternal ?? false,
       })
       .select()
       .single();

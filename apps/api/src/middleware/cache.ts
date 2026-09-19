@@ -105,18 +105,32 @@ class CacheBackend {
       return;
     }
 
-    for (const key of this.memoryCache.keys()) {
+    for (const key of [...this.memoryCache.keys()]) {
       if (key.startsWith(pattern)) {
         this.memoryCache.delete(key);
       }
     }
     if (this.useRedis && this.redis) {
-      this.redis
-        .keys(`${pattern}*`)
-        .then((keys: string[]) => {
-          if (keys.length) this.redis!.del(keys);
-        })
-        .catch(() => {});
+      // SCAN instead of KEYS: KEYS blocks the server for the whole keyspace.
+      const redis = this.redis;
+      void (async () => {
+        try {
+          let batch: string[] = [];
+          for await (const key of redis.scanIterator({
+            MATCH: `${pattern}*`,
+            COUNT: 100,
+          })) {
+            batch.push(String(key));
+            if (batch.length >= 100) {
+              await redis.del(batch);
+              batch = [];
+            }
+          }
+          if (batch.length) await redis.del(batch);
+        } catch {
+          // Best-effort invalidation; TTL will evict eventually.
+        }
+      })();
     }
   }
 
@@ -143,13 +157,13 @@ function buildCacheKey(req: Request): string {
   // full mount path so cache keys never collide across routers.
   const fullPath = `${req.baseUrl ?? ""}${req.path}`;
   const baseKey = `${fullPath}:${JSON.stringify(req.query)}`;
-  const authUser = (req as Request & { authUser?: { userId: string; orgId?: string } }).authUser;
-  if (authUser?.orgId) {
-    return `org=${authUser.orgId}:${baseKey}`;
-  }
-  if (authUser?.userId) {
-    return `user=${authUser.userId}:${baseKey}`;
-  }
+  // Scope keys with a SUFFIX so invalidateCache(path) can match by prefix.
+  // (Previously the scope was a prefix, so invalidateCache("/api/v1/x") never
+  // matched an authenticated key and mutations never evicted cached lists.)
+  const orgId = (req as Request & { orgId?: string | null }).orgId;
+  if (orgId) return `${baseKey}:org=${orgId}`;
+  const authUser = (req as Request & { authUser?: { userId: string } }).authUser;
+  if (authUser?.userId) return `${baseKey}:user=${authUser.userId}`;
   return baseKey;
 }
 

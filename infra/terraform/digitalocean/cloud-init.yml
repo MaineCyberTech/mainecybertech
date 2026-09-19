@@ -26,4 +26,5 @@ runcmd:
 %{ endfor ~}
   - ufw allow 80/tcp
   - ufw allow 443/tcp
-  - ufw allow 2376/tcp comment 'Docker'
+  # NOTE: do NOT open 2376 (Docker daemon TCP). If dockerd is ever configured
+  # for TCP that port is unauthenticated remote code execution.

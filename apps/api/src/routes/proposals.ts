@@ -20,6 +20,7 @@ import {
 } from "../validators/proposals";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
+import { moduleCommentSchema } from "../validators/comments";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -769,8 +770,8 @@ router.post("/:id/comments", async (req, res, next) => {
       "id, organization_id",
     );
 
-    const { body } = req.body as { body: string; isInternal?: boolean };
-    if (!body || !body.trim()) throw new AppError("VALIDATION", "Comment body is required", 400);
+    const { body, isInternal } = moduleCommentSchema.parse(req.body);
+    if (!body.trim()) throw new AppError("VALIDATION", "Comment body is required", 400);
 
     const { data, error } = await supabase
       .from("module_comments")
@@ -781,7 +782,7 @@ router.post("/:id/comments", async (req, res, next) => {
         entity_id: String(req.params.id) as string,
         author_id: req.authUser!.userId,
         body: body.trim(),
-        is_internal: (req.body as { isInternal?: boolean }).isInternal ?? false,
+        is_internal: isInternal ?? false,
       })
       .select()
       .single();
