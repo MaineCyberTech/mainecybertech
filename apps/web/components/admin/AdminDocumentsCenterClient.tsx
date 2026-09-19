@@ -979,8 +979,11 @@ export default function AdminDocumentsCenterClient({
         className="mt-4 grid gap-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4 md:grid-cols-2"
       >
         <div>
-          <label className="cyber-label">Name</label>
+          <label className="cyber-label" htmlFor="doc-name">
+            Name
+          </label>
           <input
+            id="doc-name"
             name="name"
             className="cyber-input"
             defaultValue={docName(doc)}
@@ -988,8 +991,11 @@ export default function AdminDocumentsCenterClient({
           />
         </div>
         <div>
-          <label className="cyber-label">Folder</label>
+          <label className="cyber-label" htmlFor="doc-folder">
+            Folder
+          </label>
           <input
+            id="doc-folder"
             name="category"
             className="cyber-input"
             defaultValue={String(doc.folder_path ?? "")}
@@ -997,8 +1003,11 @@ export default function AdminDocumentsCenterClient({
           />
         </div>
         <div className="md:col-span-2">
-          <label className="cyber-label">Description</label>
+          <label className="cyber-label" htmlFor="doc-description">
+            Description
+          </label>
           <textarea
+            id="doc-description"
             name="description"
             rows={3}
             className="cyber-input"
@@ -1007,8 +1016,11 @@ export default function AdminDocumentsCenterClient({
           />
         </div>
         <div className="md:col-span-2">
-          <label className="cyber-label">Storage Path</label>
+          <label className="cyber-label" htmlFor="doc-storage-path">
+            Storage Path
+          </label>
           <input
+            id="doc-storage-path"
             name="storagePath"
             className="cyber-input"
             defaultValue={String(doc.storage_path ?? "")}
@@ -1133,8 +1145,11 @@ export default function AdminDocumentsCenterClient({
       <section className="cyber-panel">
         <div className="flex flex-wrap items-end gap-4 xl:gap-5">
           <div className="min-w-[260px] flex-[1.4_1_320px]">
-            <label className="cyber-label">Search</label>
+            <label className="cyber-label" htmlFor="doc-search">
+              Search
+            </label>
             <input
+              id="doc-search"
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -1143,8 +1158,11 @@ export default function AdminDocumentsCenterClient({
             />
           </div>
           <div className="min-w-[220px] flex-[1_1_220px]">
-            <label className="cyber-label">Organization</label>
+            <label className="cyber-label" htmlFor="doc-organization">
+              Organization
+            </label>
             <select
+              id="doc-organization"
               value={orgFilter}
               onChange={(e) => setOrgFilter(e.target.value)}
               className="cyber-input"
@@ -1158,8 +1176,11 @@ export default function AdminDocumentsCenterClient({
             </select>
           </div>
           <div className="min-w-[200px] flex-[0.8_1_220px]">
-            <label className="cyber-label">Visibility</label>
+            <label className="cyber-label" htmlFor="doc-visibility">
+              Visibility
+            </label>
             <select
+              id="doc-visibility"
               value={visibilityFilter}
               onChange={(e) => setVisibilityFilter(e.target.value)}
               className="cyber-input"
@@ -1767,8 +1788,16 @@ export default function AdminDocumentsCenterClient({
             >
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div>
-                  <label className="cyber-label">Organization</label>
-                  <select name="organizationId" className="cyber-input" defaultValue="" required>
+                  <label className="cyber-label" htmlFor="doc-organization-2">
+                    Organization
+                  </label>
+                  <select
+                    id="doc-organization-2"
+                    name="organizationId"
+                    className="cyber-input"
+                    defaultValue=""
+                    required
+                  >
                     <option value="">Select organization</option>
                     {organizations.map((organization) => (
                       <option key={organization.id} value={organization.id}>
@@ -1778,30 +1807,50 @@ export default function AdminDocumentsCenterClient({
                   </select>
                 </div>
                 <div>
-                  <label className="cyber-label">Name</label>
+                  <label className="cyber-label" htmlFor="doc-name-2">
+                    Name
+                  </label>
                   <input
+                    id="doc-name-2"
                     name="name"
                     className="cyber-input"
                     placeholder="Optional for multi-file mode"
                   />
                 </div>
                 <div>
-                  <label className="cyber-label">Storage Bucket</label>
-                  <input name="bucket" className="cyber-input" defaultValue="documents" />
+                  <label className="cyber-label" htmlFor="doc-storage-bucket">
+                    Storage Bucket
+                  </label>
+                  <input
+                    id="doc-storage-bucket"
+                    name="bucket"
+                    className="cyber-input"
+                    defaultValue="documents"
+                  />
                 </div>
               </div>
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
-                  <label className="cyber-label">Folder Path</label>
+                  <label className="cyber-label" htmlFor="doc-folder-path">
+                    Folder Path
+                  </label>
                   <input
+                    id="doc-folder-path"
                     name="category"
                     className="cyber-input"
                     placeholder="Optional folder/category"
                   />
                 </div>
                 <div>
-                  <label className="cyber-label">Visibility</label>
-                  <select name="visibility" className="cyber-input" defaultValue="private">
+                  <label className="cyber-label" htmlFor="doc-visibility-2">
+                    Visibility
+                  </label>
+                  <select
+                    id="doc-visibility-2"
+                    name="visibility"
+                    className="cyber-input"
+                    defaultValue="private"
+                  >
                     {VISIBILITY_OPTIONS.map((option) => (
                       <option key={option} value={option}>
                         {option}
@@ -1810,8 +1859,15 @@ export default function AdminDocumentsCenterClient({
                   </select>
                 </div>
                 <div>
-                  <label className="cyber-label">Existing Storage Path (optional)</label>
-                  <input name="fileUrl" className="cyber-input" placeholder="orgs/.../file.ext" />
+                  <label className="cyber-label" htmlFor="doc-existing-storage-path-optional">
+                    Existing Storage Path (optional)
+                  </label>
+                  <input
+                    id="doc-existing-storage-path-optional"
+                    name="fileUrl"
+                    className="cyber-input"
+                    placeholder="orgs/.../file.ext"
+                  />
                 </div>
               </div>
               <div>
@@ -1842,8 +1898,15 @@ export default function AdminDocumentsCenterClient({
                 </div>
               </div>
               <div>
-                <label className="cyber-label">Description</label>
-                <textarea name="description" rows={4} className="cyber-input" />
+                <label className="cyber-label" htmlFor="doc-description-2">
+                  Description
+                </label>
+                <textarea
+                  id="doc-description-2"
+                  name="description"
+                  rows={4}
+                  className="cyber-input"
+                />
               </div>
               <div className="flex items-center justify-end gap-3">
                 <button
@@ -2010,8 +2073,11 @@ export default function AdminDocumentsCenterClient({
                   >
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <label className="cyber-label">Name</label>
+                        <label className="cyber-label" htmlFor="doc-name-3">
+                          Name
+                        </label>
                         <input
+                          id="doc-name-3"
                           name="name"
                           className="cyber-input"
                           defaultValue={docName(drawerDoc)}
@@ -2019,8 +2085,11 @@ export default function AdminDocumentsCenterClient({
                         />
                       </div>
                       <div>
-                        <label className="cyber-label">Folder</label>
+                        <label className="cyber-label" htmlFor="doc-folder-2">
+                          Folder
+                        </label>
                         <input
+                          id="doc-folder-2"
                           name="category"
                           className="cyber-input"
                           defaultValue={String(drawerDoc.folder_path ?? "")}
@@ -2029,8 +2098,11 @@ export default function AdminDocumentsCenterClient({
                       </div>
                     </div>
                     <div>
-                      <label className="cyber-label">Description</label>
+                      <label className="cyber-label" htmlFor="doc-description-3">
+                        Description
+                      </label>
                       <textarea
+                        id="doc-description-3"
                         name="description"
                         rows={4}
                         className="cyber-input"
@@ -2039,8 +2111,11 @@ export default function AdminDocumentsCenterClient({
                       />
                     </div>
                     <div>
-                      <label className="cyber-label">Storage Path</label>
+                      <label className="cyber-label" htmlFor="doc-storage-path-2">
+                        Storage Path
+                      </label>
                       <input
+                        id="doc-storage-path-2"
                         name="storagePath"
                         className="cyber-input"
                         defaultValue={String(drawerDoc.storage_path ?? "")}
@@ -2048,8 +2123,11 @@ export default function AdminDocumentsCenterClient({
                       />
                     </div>
                     <div>
-                      <label className="cyber-label">Visibility</label>
+                      <label className="cyber-label" htmlFor="doc-visibility-3">
+                        Visibility
+                      </label>
                       <select
+                        id="doc-visibility-3"
                         className="cyber-input"
                         defaultValue={docVisibility(drawerDoc)}
                         onChange={(e) => {
@@ -2090,8 +2168,11 @@ export default function AdminDocumentsCenterClient({
                       className="mt-4 space-y-4"
                     >
                       <div>
-                        <label className="cyber-label">Bucket</label>
+                        <label className="cyber-label" htmlFor="doc-bucket">
+                          Bucket
+                        </label>
                         <input
+                          id="doc-bucket"
                           name="bucket"
                           className="cyber-input"
                           defaultValue={docBucket(drawerDoc)}
@@ -2099,8 +2180,11 @@ export default function AdminDocumentsCenterClient({
                         />
                       </div>
                       <div>
-                        <label className="cyber-label">Replacement File</label>
+                        <label className="cyber-label" htmlFor="doc-replacement-file">
+                          Replacement File
+                        </label>
                         <input
+                          id="doc-replacement-file"
                           type="file"
                           name="file"
                           className="cyber-input"

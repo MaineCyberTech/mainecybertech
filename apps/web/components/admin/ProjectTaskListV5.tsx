@@ -259,8 +259,11 @@ export default function ProjectTaskListV5({
 
       <div className="grid gap-4 md:grid-cols-4">
         <div>
-          <label className="cyber-label">Search</label>
+          <label className="cyber-label" htmlFor="task-search">
+            Search
+          </label>
           <input
+            id="task-search"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             className="cyber-input"
@@ -347,12 +350,16 @@ export default function ProjectTaskListV5({
         <input type="hidden" name="organizationId" value={organizationId} />
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
-            <label className="cyber-label">Task Title</label>
-            <input name="title" className="cyber-input" required />
+            <label className="cyber-label" htmlFor="task-task-title">
+              Task Title
+            </label>
+            <input id="task-task-title" name="title" className="cyber-input" required />
           </div>
           <div>
-            <label className="cyber-label">Status</label>
-            <select name="status" defaultValue="todo" className="cyber-input">
+            <label className="cyber-label" htmlFor="task-status">
+              Status
+            </label>
+            <select id="task-status" name="status" defaultValue="todo" className="cyber-input">
               <option value="todo">todo</option>
               <option value="in_progress">in_progress</option>
               <option value="done">done</option>
@@ -360,8 +367,10 @@ export default function ProjectTaskListV5({
             </select>
           </div>
           <div>
-            <label className="cyber-label">Owner</label>
-            <select name="ownerId" className="cyber-input">
+            <label className="cyber-label" htmlFor="task-owner">
+              Owner
+            </label>
+            <select id="task-owner" name="ownerId" className="cyber-input">
               <option value="">Unassigned</option>
               {owners.map((owner) => (
                 <option key={owner.id} value={owner.id}>
@@ -371,24 +380,38 @@ export default function ProjectTaskListV5({
             </select>
           </div>
           <div>
-            <label className="cyber-label">Sort Order</label>
+            <label className="cyber-label" htmlFor="task-sort-order">
+              Sort Order
+            </label>
             <input
+              id="task-sort-order"
               name="sortOrder"
               defaultValue={String((items.length || 0) + 1)}
               className="cyber-input"
             />
           </div>
           <div>
-            <label className="cyber-label">Due Date & Time</label>
-            <input type="datetime-local" name="dueAt" className="cyber-input" />
+            <label className="cyber-label" htmlFor="task-due-date-time">
+              Due Date & Time
+            </label>
+            <input
+              id="task-due-date-time"
+              type="datetime-local"
+              name="dueAt"
+              className="cyber-input"
+            />
           </div>
           <div className="md:col-span-2">
-            <label className="cyber-label">Description</label>
-            <textarea name="description" rows={2} className="cyber-input" />
+            <label className="cyber-label" htmlFor="task-description">
+              Description
+            </label>
+            <textarea id="task-description" name="description" rows={2} className="cyber-input" />
           </div>
           <div className="md:col-span-2">
-            <label className="cyber-label">Details</label>
-            <textarea name="details" rows={3} className="cyber-input" />
+            <label className="cyber-label" htmlFor="task-details">
+              Details
+            </label>
+            <textarea id="task-details" name="details" rows={3} className="cyber-input" />
           </div>
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-300">
@@ -757,12 +780,26 @@ function AdminTaskCard({
           <input type="hidden" name="taskId" value={taskState.id} />
           <div className="grid gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="cyber-label">Task Title</label>
-              <input name="title" defaultValue={taskState.title} className="cyber-input" />
+              <label className="cyber-label" htmlFor="task-task-title-2">
+                Task Title
+              </label>
+              <input
+                id="task-task-title-2"
+                name="title"
+                defaultValue={taskState.title}
+                className="cyber-input"
+              />
             </div>
             <div>
-              <label className="cyber-label">Status</label>
-              <select name="status" defaultValue={taskState.status} className="cyber-input">
+              <label className="cyber-label" htmlFor="task-status-2">
+                Status
+              </label>
+              <select
+                id="task-status-2"
+                name="status"
+                defaultValue={taskState.status}
+                className="cyber-input"
+              >
                 <option value="todo">todo</option>
                 <option value="in_progress">in_progress</option>
                 <option value="done">done</option>
@@ -770,8 +807,11 @@ function AdminTaskCard({
               </select>
             </div>
             <div>
-              <label className="cyber-label">Owner</label>
+              <label className="cyber-label" htmlFor="task-owner-2">
+                Owner
+              </label>
               <select
+                id="task-owner-2"
                 name="ownerId"
                 defaultValue={taskState.owner_id ?? ""}
                 className="cyber-input"
@@ -785,16 +825,22 @@ function AdminTaskCard({
               </select>
             </div>
             <div>
-              <label className="cyber-label">Sort Order</label>
+              <label className="cyber-label" htmlFor="task-sort-order-2">
+                Sort Order
+              </label>
               <input
+                id="task-sort-order-2"
                 name="sortOrder"
                 defaultValue={String(taskState.sort_order ?? 0)}
                 className="cyber-input"
               />
             </div>
             <div>
-              <label className="cyber-label">Due Date & Time</label>
+              <label className="cyber-label" htmlFor="task-due-date-time-2">
+                Due Date & Time
+              </label>
               <input
+                id="task-due-date-time-2"
                 type="datetime-local"
                 name="dueAt"
                 defaultValue={toDateTimeLocalUtc(taskState.due_at)}
@@ -802,8 +848,11 @@ function AdminTaskCard({
               />
             </div>
             <div className="md:col-span-2">
-              <label className="cyber-label">Description</label>
+              <label className="cyber-label" htmlFor="task-description-2">
+                Description
+              </label>
               <textarea
+                id="task-description-2"
                 name="description"
                 rows={2}
                 defaultValue={taskState.description ?? ""}
@@ -811,8 +860,11 @@ function AdminTaskCard({
               />
             </div>
             <div className="md:col-span-2">
-              <label className="cyber-label">Details</label>
+              <label className="cyber-label" htmlFor="task-details-2">
+                Details
+              </label>
               <textarea
+                id="task-details-2"
                 name="details"
                 rows={3}
                 defaultValue={taskState.details ?? ""}
