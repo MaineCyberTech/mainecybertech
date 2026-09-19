@@ -71,9 +71,17 @@ export default function ProductForm({
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60" onClick={() => setOpen(false)} />
-          <div className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="product-form-title"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setOpen(false);
+            }}
+            className="relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-white/10 bg-slate-900 p-6 shadow-xl"
+          >
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-50">
+              <h2 id="product-form-title" className="text-lg font-bold text-slate-50">
                 {mode === "create" ? "Create Product" : "Edit Product"}
               </h2>
               <button
