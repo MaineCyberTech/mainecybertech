@@ -115,7 +115,14 @@ router.post("/submit", async (req, res, next) => {
   try {
     const parsed = submitSchema.parse(req.body);
 
-    if (parsed.captchaToken) {
+    // When Turnstile is configured, a verified token is required. Previously
+    // the check was skipped whenever the token was absent, so an attacker
+    // could bypass it by simply omitting the field.
+    const captchaSecret = getEnv().TURNSTILE_SECRET_KEY;
+    if (captchaSecret) {
+      if (!parsed.captchaToken) {
+        throw new AppError("CAPTCHA_REQUIRED", "CAPTCHA verification is required.", 400);
+      }
       const valid = await verifyCaptcha(parsed.captchaToken);
       if (!valid) {
         throw new AppError("CAPTCHA_FAILED", "CAPTCHA verification failed. Please try again.", 400);

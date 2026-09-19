@@ -34,15 +34,15 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 **Security model:** Auth User → Profile → Membership → Role → Permission/Override → RLS → Storage
 
-## Test Status (2026-08-28 Verified)
+## Test Status (2026-09-18 Verified)
 
-**2,734 tests, all passing. 225 suites.**
+**2,926 tests, all passing. 332 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 853           | 82     | Jest + supertest                  |
-| Web     | 1,543         | 220    | Jest + Testing Library            |
-| SDK     | 264           | 2      | Jest (mocked fetch)               |
+| API     | 1,018         | 93     | Jest + supertest                  |
+| Web     | 1,565         | 229    | Jest + Testing Library            |
+| SDK     | 269           | 2      | Jest (mocked fetch)               |
 | Worker  | 74            | 8      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
 
@@ -83,18 +83,18 @@ pnpm e2e                     # Playwright E2E
 
 ## File Counts (2026-08-26 Verified)
 
-| Category                  | Count | Notes                                                                                                           |
-| ------------------------- | ----- | --------------------------------------------------------------------------------------------------------------- |
-| API route files           | 55    | `apps/api/src/routes/*.ts`                                                                                      |
-| API SDK modules           | 53    | `packages/sdk/src/`                                                                                             |
-| Worker task files         | 13    | Registered in `apps/worker/src/main.ts`                                                                         |
-| Web pages                 | 301   | Admin 196, Portal 77, Public 26, Root 2                                                                         |
-| Web components            | 86    | `apps/web/components/`                                                                                          |
-| SQL migrations            | 99    | `supabase/migrations/` (incl. 5302133 impersonation_log, 5302134 store catalog, 5302135 profiles encrypted_pii) |
-| Seed files                | 9     | `supabase/seeds/`                                                                                               |
-| GitHub Actions workflows  | 13    | `.github/workflows/`                                                                                            |
-| AI prompt files           | 787   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                    |
-| Build/dev/utility scripts | 8     | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `seed-store.ts`, `generate-db-types.js`, etc.)             |
+| Category                  | Count | Notes                                                                                                                        |
+| ------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------- |
+| API route files           | 62    | `apps/api/src/routes/*.ts` (70 incl. `routes/final/`)                                                                        |
+| API SDK modules           | 61    | `packages/sdk/src/`                                                                                                          |
+| Worker task files         | 13    | Registered in `apps/worker/src/main.ts`                                                                                      |
+| Web pages                 | 306   | Admin 197, Portal 81, Public 26, Root 2                                                                                      |
+| Web components            | 90    | `apps/web/components/`                                                                                                       |
+| SQL migrations            | 110   | `supabase/migrations/` (incl. 5302409 domain_monitors version, 5302410 webhook_id nullable, 5302411 satisfaction_pulse cols) |
+| Seed files                | 10    | `supabase/seeds/*.sql`                                                                                                       |
+| GitHub Actions workflows  | 13    | `.github/workflows/`                                                                                                         |
+| AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                 |
+| Build/dev/utility scripts | 33    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `seed-store.ts`, `generate-db-types.js`, etc.)                          |
 
 ## Database Types (2026-08-26)
 
@@ -221,11 +221,11 @@ SENTRY_DSN=
 | deploy-do.yml           | push to develop | Build images, SSH deploy to droplet                     |
 | terraform-do.yml        | push to develop | Terraform plan/apply for DO infra                       |
 | validate.yml            | push to develop | Pre-deploy gate (tests + lint + typecheck + migrations) |
-| storybook.yml           | push/PR         | Build Storybook                                         |
-| chromatic.yml           | push/PR         | Visual regression                                       |
-| a11y.yml                | push/PR         | Accessibility scans                                     |
-| build-web.yml           | push/PR         | Next.js build check                                     |
-| build-api.yml           | push/PR         | API build check                                         |
+| build-push.yml          | workflow_call   | Build/push GHCR images (called by deploy-do)            |
+| chromatic.yml           | push/PR         | Visual regression (Storybook)                           |
+| db-backup.yml           | schedule/manual | Database backup to Spaces                               |
+| db-restore-test.yml     | schedule/manual | Restore a backup into a throwaway DB and validate       |
+| dependency-review.yml   | pull_request    | Block PRs introducing vulnerable dependencies           |
 
 **Deploy pipeline:** validate → supabase-migrations → build images → SSH deploy to droplet (Caddy auto-restarts).
 
