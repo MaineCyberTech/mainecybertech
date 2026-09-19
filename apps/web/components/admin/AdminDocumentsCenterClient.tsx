@@ -1194,7 +1194,7 @@ export default function AdminDocumentsCenterClient({
             </select>
           </div>
           <div className="min-w-[230px] flex-[0.9_1_240px]">
-            <label className="cyber-label">View</label>
+            <span className="cyber-label">View</span>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <button
                 type="button"
@@ -1871,7 +1871,9 @@ export default function AdminDocumentsCenterClient({
                 </div>
               </div>
               <div>
-                <label className="cyber-label">Upload File(s)</label>
+                <label className="cyber-label" htmlFor="doc-upload-files">
+                  Upload File(s)
+                </label>
                 <div className="rounded-2xl border border-dashed border-emerald-500/20 bg-emerald-500/5 p-5 text-center text-sm text-slate-300 transition hover:border-emerald-500/35 hover:bg-emerald-500/10">
                   <p className="font-semibold text-emerald-300">Choose one or more files</p>
                   <p className="mt-2 text-slate-400">
@@ -1880,6 +1882,7 @@ export default function AdminDocumentsCenterClient({
                   </p>
                   <input
                     ref={createFileRef}
+                    id="doc-upload-files"
                     type="file"
                     name="file"
                     multiple

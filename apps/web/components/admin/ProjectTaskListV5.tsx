@@ -271,7 +271,7 @@ export default function ProjectTaskListV5({
           />
         </div>
         <div>
-          <label className="cyber-label">Quick Status</label>
+          <span className="cyber-label">Quick Status</span>
           <div className="mt-2 flex flex-wrap gap-2">
             {[
               ["all", "All"],
@@ -292,7 +292,7 @@ export default function ProjectTaskListV5({
           </div>
         </div>
         <div className="md:col-span-2">
-          <label className="cyber-label">Owners</label>
+          <span className="cyber-label">Owners</span>
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
