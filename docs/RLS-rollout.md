@@ -16,10 +16,15 @@ on one leaf module at a time without a big-bang change.
   e.g. `satisfaction-pulse,findings`.
 - `kind: "read"` consults `RLS_READS_ENABLED`; `kind: "write"` consults
   `RLS_WRITES_ENABLED` (independent).
-- Empty/unset → every call returns the service-role client (current default).
-- The flag values are injected into the API container `.env` by
-  `deploy-do.yml` from the `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` GitHub
-  **secrets** (per environment `dev` / `prod`).
+- **Current state (2026-09-19):** these are set as **repo-level** GitHub
+  secrets (2026-08-30) and enable a _broad_ list — ~44 modules for reads and
+  ~17 for writes. So RLS is already enforced for most read paths in every
+  environment. An environment-level secret (`--env dev|prod`) overrides the
+  repo value; unset/empty falls back to the repo value (not to "off").
+- The values are injected into the API container `.env` by `deploy-do.yml`
+  from those secrets. To scope a change to one environment, set/delete the
+  **environment** secret (env overrides repo); to change the default, edit the
+  repo secret.
 - Covered by `apps/api/src/__tests__/get-scoped-client.test.ts`.
 
 ## Preconditions before enabling a module

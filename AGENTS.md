@@ -395,13 +395,15 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
   updates, nullability guards, and RPC-arg casts (the generator emits an empty
   `Functions` map). `notifyAndEmail`'s `email` is now optional so a recipient
   without an address gets the in-app notification but no email.
-  **RLS rollout:** `getScopedClient` still returns the service-role client by
-  default; per-module Postgres RLS is enabled via the `RLS_READS_ENABLED` /
-  `RLS_WRITES_ENABLED` allow-lists. See `docs/RLS-rollout.md` for the safe
-  enablement runbook (mechanism covered by `get-scoped-client.test.ts`).
+  **RLS rollout:** `getScopedClient` returns the user-scoped (RLS) client for
+  any module listed in `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED`. These are
+  **repo-level GitHub secrets** (2026-08-30) enabling a broad list (~44 read /
+  ~17 write modules), so RLS is already enforced for most read paths; an
+  environment secret overrides the repo value. See `docs/RLS-rollout.md`.
   Platform admins acting cross-tenant (org switcher) keep the service-role
   client so their audited admin access is unaffected; only regular members
-  are switched to the RLS client.
+  are switched to the RLS client (mechanism covered by
+  `get-scoped-client.test.ts`).
 - **Real runtime bugs found by typing** (same class as the earlier
   `tickets.subject` fix):
   - `webhook_deliveries.webhook_id` was `NOT NULL` while `logWebhookDelivery`
