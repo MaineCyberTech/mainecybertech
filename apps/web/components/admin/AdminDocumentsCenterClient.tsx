@@ -1174,7 +1174,7 @@ export default function AdminDocumentsCenterClient({
           </div>
           <div className="min-w-[230px] flex-[0.9_1_240px]">
             <label className="cyber-label">View</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}

@@ -89,7 +89,7 @@ export default function StoreAuditClient() {
         </div>
       ) : (
         <>
-          <div className="mb-6 mt-6 grid grid-cols-4 gap-3">
+          <div className="mb-6 mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-3 text-center">
               <p className="text-2xl font-bold text-slate-50">{total}</p>
               <p className="text-xs text-slate-500">Total</p>

@@ -95,7 +95,7 @@ export default function ProductForm({
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === "edit" && <input type="hidden" name="id" value={product!.id} />}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label
                     htmlFor="prod-name"
@@ -128,7 +128,7 @@ export default function ProductForm({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label
                     htmlFor="prod-categoryId"
@@ -159,7 +159,7 @@ export default function ProductForm({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
                   <label
                     htmlFor="prod-type"
@@ -204,7 +204,7 @@ export default function ProductForm({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label
                     htmlFor="prod-pricingModel"
@@ -265,7 +265,7 @@ export default function ProductForm({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label
                     htmlFor="prod-marketingHeadline"
@@ -312,7 +312,7 @@ export default function ProductForm({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
                   <label
                     htmlFor="prod-riskLevel"

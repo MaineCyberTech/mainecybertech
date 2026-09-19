@@ -4,8 +4,10 @@ import request from "supertest";
 import { idempotencyMiddleware } from "../middleware/idempotency";
 
 jest.mock("../lib/idempotency", () => ({
+  claimIdempotencyKey: jest.fn(),
   checkIdempotencyKey: jest.fn(),
   storeIdempotencyKey: jest.fn(),
+  deleteIdempotencyKey: jest.fn(),
 }));
 
 jest.mock("../lib/logger", () => ({
@@ -17,7 +19,20 @@ jest.mock("../lib/logger", () => ({
   },
 }));
 
-import { checkIdempotencyKey, storeIdempotencyKey } from "../lib/idempotency";
+import {
+  claimIdempotencyKey,
+  checkIdempotencyKey,
+  storeIdempotencyKey,
+  deleteIdempotencyKey,
+} from "../lib/idempotency";
+
+const claim = claimIdempotencyKey as jest.Mock;
+const check = checkIdempotencyKey as jest.Mock;
+const store = storeIdempotencyKey as jest.Mock;
+const del = deleteIdempotencyKey as jest.Mock;
+
+// Keys are scoped by method + route + header value.
+const scoped = (name: string) => `POST:/test:${name}`;
 
 function createApp() {
   const app = express();
@@ -32,74 +47,81 @@ function createApp() {
 describe("idempotencyMiddleware", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (checkIdempotencyKey as jest.Mock).mockResolvedValue(null);
-    (storeIdempotencyKey as jest.Mock).mockResolvedValue(undefined);
+    claim.mockResolvedValue(true);
+    check.mockResolvedValue(null);
+    store.mockResolvedValue(undefined);
+    del.mockResolvedValue(undefined);
   });
 
   it("passes through when no idempotency-key header", async () => {
-    const app = createApp();
-    const res = await request(app).post("/test").send({ data: "hello" });
-
+    const res = await request(createApp()).post("/test").send({ data: "hello" });
     expect(res.status).toBe(200);
-    expect(res.body.ok).toBe(true);
-    expect(checkIdempotencyKey).not.toHaveBeenCalled();
+    expect(claim).not.toHaveBeenCalled();
   });
 
-  it("passes through when idempotency-key is new", async () => {
-    (checkIdempotencyKey as jest.Mock).mockResolvedValue(null);
-    const app = createApp();
-    const res = await request(app)
+  it("claims a new key and stores the successful response", async () => {
+    const res = await request(createApp())
       .post("/test")
       .set("idempotency-key", "unique-key-123")
       .send({ data: "hello" });
 
     expect(res.status).toBe(200);
-    expect(checkIdempotencyKey).toHaveBeenCalledWith("unique-key-123");
-    expect(storeIdempotencyKey).toHaveBeenCalled();
+    expect(claim).toHaveBeenCalledWith(scoped("unique-key-123"), "processing");
+    expect(store).toHaveBeenCalledTimes(1);
+    const [storedKey, storedValue] = store.mock.calls[0] as [string, string];
+    expect(storedKey).toBe(scoped("unique-key-123"));
+    expect(JSON.parse(storedValue)).toEqual({
+      kind: "json",
+      status: 200,
+      body: { ok: true },
+    });
   });
 
-  it("returns 409 when idempotency-key already exists", async () => {
-    (checkIdempotencyKey as jest.Mock).mockResolvedValue("existing-result");
-    const app = createApp();
-    const res = await request(app)
+  it("replays the stored response for a completed duplicate", async () => {
+    claim.mockResolvedValue(false);
+    check.mockResolvedValue(
+      JSON.stringify({ kind: "json", status: 201, body: { replayed: true } }),
+    );
+
+    const res = await request(createApp())
       .post("/test")
-      .set("idempotency-key", "duplicate-key")
+      .set("idempotency-key", "done-key")
+      .send({ data: "hello" });
+
+    expect(res.status).toBe(201);
+    expect(res.body).toEqual({ replayed: true });
+    expect(res.headers["x-idempotent-replay"]).toBe("true");
+    expect(res.headers["idempotency-key"]).toBe("done-key");
+  });
+
+  it("returns 409 when a duplicate is still in flight", async () => {
+    claim.mockResolvedValue(false);
+    check.mockResolvedValue("processing");
+
+    const res = await request(createApp())
+      .post("/test")
+      .set("idempotency-key", "inflight-key")
       .send({ data: "hello" });
 
     expect(res.status).toBe(409);
-    expect(res.body.error).toMatch(/already processed/i);
-    expect(res.body.existingId).toBe("existing-result");
+    expect(res.body.error).toMatch(/already in progress/i);
+    expect(res.headers["idempotency-key"]).toBe("inflight-key");
   });
 
   it("rejects idempotency-key longer than 256 chars", async () => {
-    const app = createApp();
-    const longKey = "a".repeat(257);
-    const res = await request(app)
+    const res = await request(createApp())
       .post("/test")
-      .set("idempotency-key", longKey)
+      .set("idempotency-key", "a".repeat(257))
       .send({ data: "hello" });
 
     expect(res.status).toBe(400);
     expect(res.body.error).toMatch(/too long/i);
-    expect(checkIdempotencyKey).not.toHaveBeenCalled();
+    expect(claim).not.toHaveBeenCalled();
   });
 
-  it("accepts idempotency-key exactly 256 chars", async () => {
-    const app = createApp();
-    const key256 = "a".repeat(256);
-    const res = await request(app)
-      .post("/test")
-      .set("idempotency-key", key256)
-      .send({ data: "hello" });
-
-    expect(res.status).toBe(200);
-    expect(checkIdempotencyKey).toHaveBeenCalledWith(key256);
-  });
-
-  it("continues processing when idempotency check fails", async () => {
-    (checkIdempotencyKey as jest.Mock).mockRejectedValue(new Error("Redis down"));
-    const app = createApp();
-    const res = await request(app)
+  it("fails open when the claim throws", async () => {
+    claim.mockRejectedValue(new Error("Redis down"));
+    const res = await request(createApp())
       .post("/test")
       .set("idempotency-key", "error-key")
       .send({ data: "hello" });
@@ -108,7 +130,7 @@ describe("idempotencyMiddleware", () => {
     expect(res.body.ok).toBe(true);
   });
 
-  it("does not store key on non-2xx response", async () => {
+  it("releases the key (no store) on a non-2xx response", async () => {
     const app = express();
     app.use(express.json());
     app.use(idempotencyMiddleware);
@@ -122,17 +144,7 @@ describe("idempotencyMiddleware", () => {
       .send({ data: "hello" });
 
     expect(res.status).toBe(500);
-    expect(storeIdempotencyKey).not.toHaveBeenCalled();
-  });
-
-  it("sets idempotency-key response header on cache hit", async () => {
-    (checkIdempotencyKey as jest.Mock).mockResolvedValue("cached-result");
-    const app = createApp();
-    const res = await request(app)
-      .post("/test")
-      .set("idempotency-key", "hit-key")
-      .send({ data: "hello" });
-
-    expect(res.headers["idempotency-key"]).toBe("hit-key");
+    expect(store).not.toHaveBeenCalled();
+    expect(del).toHaveBeenCalledWith("POST:/fail:fail-key");
   });
 });
