@@ -69,4 +69,24 @@ describe("getScopedClient RLS allow-list", () => {
     );
     expect((writeClient2 as unknown as { __key: string }).__key).toBe("anon-key");
   });
+
+  it("keeps the service-role client for a platform admin acting cross-tenant", () => {
+    process.env.RLS_READS_ENABLED = "satisfaction-pulse";
+    const req = {
+      userJwt: "jwt-123",
+      orgScope: { orgId: "org-2", explicit: true, platformAdmin: true, impersonation: true },
+    };
+    const client = getScopedClient(req as never, "satisfaction-pulse", "read");
+    expect((client as unknown as { __key: string }).__key).toBe("service-role-key");
+  });
+
+  it("uses the user-scoped client for a non-admin member", () => {
+    process.env.RLS_READS_ENABLED = "satisfaction-pulse";
+    const req = {
+      userJwt: "jwt-123",
+      orgScope: { orgId: "org-1", explicit: true, platformAdmin: false, impersonation: false },
+    };
+    const client = getScopedClient(req as never, "satisfaction-pulse", "read");
+    expect((client as unknown as { __key: string }).__key).toBe("anon-key");
+  });
 });

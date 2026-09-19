@@ -31,11 +31,13 @@ on one leaf module at a time without a big-bang change.
    pattern and `docs/RLS-coverage-matrix.md` for current coverage. Avoid raw
    `organization_id in (select organization_id from memberships where
 user_id = auth.uid())` (no status filter).
-2. **No cross-tenant service-role need.** A user-scoped client cannot read
-   another tenant's rows. If the module has platform-admin cross-tenant
-   endpoints (org switcher / impersonation), those calls must keep using
-   `getSupabaseAdmin()` (or the service-role role) — do not route them
-   through the allow-listed `getScopedClient`.
+2. **No cross-tenant service-role need for regular members.** A user-scoped
+   client cannot read another tenant's rows. This is handled for **platform
+   admins**: `getScopedClient` keeps the service-role client when
+   `req.orgScope.platformAdmin` is set (org switcher / impersonation), so
+   admin cross-tenant access is unaffected — their access is already audited
+   by `requireOrgAccess`. Only regular (non-admin) members are switched to the
+   RLS client.
 3. **No anonymous access.** The scoped client is only chosen when
    `req.userJwt` is set, so public routes are unaffected.
 

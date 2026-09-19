@@ -38,6 +38,12 @@ const envSchema = z.object({
   // Shared bearer token gating GET /metrics. When set, the endpoint 404s
   // without it; Prometheus must send `Authorization: Bearer <token>`.
   METRICS_TOKEN: z.string().optional(),
+  // Comma-separated module keys whose reads/writes use the user-scoped (RLS)
+  // client instead of the service-role client. Empty = service-role (default).
+  // Read directly from process.env by getScopedClient; documented here for
+  // discoverability. See docs/RLS-rollout.md.
+  RLS_READS_ENABLED: z.string().optional(),
+  RLS_WRITES_ENABLED: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

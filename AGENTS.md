@@ -399,6 +399,9 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
   default; per-module Postgres RLS is enabled via the `RLS_READS_ENABLED` /
   `RLS_WRITES_ENABLED` allow-lists. See `docs/RLS-rollout.md` for the safe
   enablement runbook (mechanism covered by `get-scoped-client.test.ts`).
+  Platform admins acting cross-tenant (org switcher) keep the service-role
+  client so their audited admin access is unaffected; only regular members
+  are switched to the RLS client.
 - **Real runtime bugs found by typing** (same class as the earlier
   `tickets.subject` fix):
   - `webhook_deliveries.webhook_id` was `NOT NULL` while `logWebhookDelivery`

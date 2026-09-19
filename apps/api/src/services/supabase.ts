@@ -173,7 +173,14 @@ export function getScopedClient(
       .filter(Boolean),
   );
   if (enabled.has(moduleKey) && req.userJwt) {
-    return getSupabaseUser(req, req.userJwt);
+    // Platform admins acting cross-tenant (org switcher / impersonation) are
+    // not members of the target org, so a user-scoped client would be
+    // RLS-blocked and hide every row. Keep the service-role client for them —
+    // their cross-tenant access is already audited by requireOrgAccess.
+    const platformAdmin = req.orgScope?.platformAdmin ?? false;
+    if (!platformAdmin) {
+      return getSupabaseUser(req, req.userJwt);
+    }
   }
   return getSupabaseAdmin();
 }
