@@ -262,8 +262,11 @@ export default function AdminDocumentsBulkControls({
                 />
               </div>
               <div>
-                <label className="cyber-label">Visibility (optional)</label>
+                <label className="cyber-label" htmlFor="bulk-visibility-optional">
+                  Visibility (optional)
+                </label>
                 <select
+                  id="bulk-visibility-optional"
                   value={metaVisibility}
                   onChange={(e) => setMetaVisibility(e.target.value as DocumentVisibility | "")}
                   className="cyber-input"
@@ -278,8 +281,11 @@ export default function AdminDocumentsBulkControls({
               </div>
             </div>
             <div className="mt-4">
-              <label className="cyber-label">Description (optional)</label>
+              <label className="cyber-label" htmlFor="bulk-description-optional">
+                Description (optional)
+              </label>
               <textarea
+                id="bulk-description-optional"
                 value={metaDescription}
                 onChange={(e) => setMetaDescription(e.target.value)}
                 rows={4}

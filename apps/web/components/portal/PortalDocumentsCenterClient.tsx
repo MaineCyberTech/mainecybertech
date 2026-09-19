@@ -17,7 +17,9 @@ type SortKey = "updated" | "name" | "type";
 type Props = {
   documents: DocumentRecord[];
   organizationId: string;
-  uploadAction: (formData: FormData) => Promise<{ ok: boolean; error?: string; document?: unknown }>;
+  uploadAction: (
+    formData: FormData,
+  ) => Promise<{ ok: boolean; error?: string; document?: unknown }>;
   bulkFolderAction?: (formData: FormData) => Promise<BulkActionResult>;
   bulkMetadataAction?: (formData: FormData) => Promise<BulkActionResult>;
 };
@@ -299,8 +301,11 @@ export default function PortalDocumentsCenterClient({
           <div className="mt-4 rounded-lg border border-white/10 bg-cyber-base/80 p-4">
             <form onSubmit={handleBulkFolder} className="flex flex-wrap items-end gap-4">
               <div className="min-w-[200px] flex-1">
-                <label className="cyber-label">Folder Path</label>
+                <label className="cyber-label" htmlFor="pdoc-folder-path">
+                  Folder Path
+                </label>
                 <input
+                  id="pdoc-folder-path"
                   name="folderPath"
                   className="cyber-input"
                   placeholder="e.g. /Contracts/2026"
@@ -325,8 +330,11 @@ export default function PortalDocumentsCenterClient({
           <div className="mt-4 rounded-lg border border-white/10 bg-cyber-base/80 p-4">
             <form onSubmit={handleBulkMetadata} className="space-y-3">
               <div>
-                <label className="cyber-label">Description</label>
+                <label className="cyber-label" htmlFor="pdoc-description">
+                  Description
+                </label>
                 <textarea
+                  id="pdoc-description"
                   name="description"
                   rows={2}
                   className="cyber-input"
@@ -334,8 +342,11 @@ export default function PortalDocumentsCenterClient({
                 />
               </div>
               <div>
-                <label className="cyber-label">Folder Path</label>
+                <label className="cyber-label" htmlFor="pdoc-folder-path-2">
+                  Folder Path
+                </label>
                 <input
+                  id="pdoc-folder-path-2"
                   name="folderPath"
                   className="cyber-input"
                   placeholder="e.g. /Contracts/2026"

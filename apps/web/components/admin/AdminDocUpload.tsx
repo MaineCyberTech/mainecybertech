@@ -37,8 +37,11 @@ export default function AdminDocUpload({ organizationId }: Props) {
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="cyber-label">Title</label>
+        <label className="cyber-label" htmlFor="upload-title">
+          Title
+        </label>
         <input
+          id="upload-title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="cyber-input mt-1"
@@ -47,8 +50,11 @@ export default function AdminDocUpload({ organizationId }: Props) {
         />
       </div>
       <div>
-        <label className="cyber-label">Description (optional)</label>
+        <label className="cyber-label" htmlFor="upload-description-optional">
+          Description (optional)
+        </label>
         <textarea
+          id="upload-description-optional"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           className="cyber-input mt-1"
@@ -57,8 +63,11 @@ export default function AdminDocUpload({ organizationId }: Props) {
         />
       </div>
       <div>
-        <label className="cyber-label">File</label>
+        <label className="cyber-label" htmlFor="upload-file">
+          File
+        </label>
         <input
+          id="upload-file"
           type="file"
           onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           className="mt-1 block w-full text-sm text-slate-400 file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-emerald-600/20 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-emerald-400 hover:file:bg-emerald-600/30"

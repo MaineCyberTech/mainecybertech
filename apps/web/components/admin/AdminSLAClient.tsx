@@ -46,8 +46,11 @@ export default function AdminSLAClient({
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-4">
         <div className="min-w-[200px]">
-          <label className="cyber-label">Organization</label>
+          <label className="cyber-label" htmlFor="sla-organization">
+            Organization
+          </label>
           <select
+            id="sla-organization"
             value={orgFilter}
             onChange={(e) => setOrgFilter(e.target.value)}
             className="cyber-input"
@@ -61,8 +64,11 @@ export default function AdminSLAClient({
           </select>
         </div>
         <div className="min-w-[120px]">
-          <label className="cyber-label">Days</label>
+          <label className="cyber-label" htmlFor="sla-days">
+            Days
+          </label>
           <select
+            id="sla-days"
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
             className="cyber-input"

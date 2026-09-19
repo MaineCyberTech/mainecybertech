@@ -124,8 +124,11 @@ export default function AdminApiKeysClient({
           <h3 className="cyber-heading text-lg">New API Key</h3>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="cyber-label">Organization</label>
+              <label className="cyber-label" htmlFor="apikey-organization">
+                Organization
+              </label>
               <select
+                id="apikey-organization"
                 value={newOrgId}
                 onChange={(e) => setNewOrgId(e.target.value)}
                 className="cyber-input"
@@ -139,8 +142,11 @@ export default function AdminApiKeysClient({
               </select>
             </div>
             <div>
-              <label className="cyber-label">Key Name</label>
+              <label className="cyber-label" htmlFor="apikey-key-name">
+                Key Name
+              </label>
               <input
+                id="apikey-key-name"
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
