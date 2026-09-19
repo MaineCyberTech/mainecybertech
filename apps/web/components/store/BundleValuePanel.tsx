@@ -11,7 +11,7 @@ export default function BundleValuePanel({
 }: BundleValuePanelProps) {
   return (
     <div className="rounded border border-emerald-600/20 bg-emerald-600/5 p-6">
-      <h4 className="font-orbitron mb-3 text-sm font-bold uppercase tracking-widest text-emerald-400">
+      <h4 className="mb-3 font-display text-sm font-bold uppercase tracking-widest text-emerald-400">
         What&rsquo;s Included
       </h4>
       <p className="mb-4 text-sm leading-relaxed text-slate-300">{includedValueText}</p>

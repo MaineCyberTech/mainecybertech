@@ -45,7 +45,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         </nav>
 
         <div className="mb-12">
-          <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+          <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
             {category.name.split(" ")[0]}{" "}
             <span className="text-emerald-500">{category.name.split(" ").slice(1).join(" ")}</span>
           </h1>

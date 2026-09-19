@@ -62,7 +62,7 @@ export default function CategoryVisualHeader({
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h2 className="font-orbitron text-2xl font-bold uppercase tracking-wider text-slate-50">
+            <h2 className="font-display text-2xl font-bold uppercase tracking-wider text-slate-50">
               {categoryName}
             </h2>
             <span

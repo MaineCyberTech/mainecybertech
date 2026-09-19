@@ -40,7 +40,15 @@ function documentVisibility(d: Document) {
 function projectName(p: Project & { title?: string }) {
   return p?.name ?? p?.title ?? `Project ${p?.id}`;
 }
-function isDeletedTicket(t: Ticket & { subject?: string; is_deleted?: boolean; deleted?: boolean; deleted_at?: string; archived_at?: string }) {
+function isDeletedTicket(
+  t: Ticket & {
+    subject?: string;
+    is_deleted?: boolean;
+    deleted?: boolean;
+    deleted_at?: string;
+    archived_at?: string;
+  },
+) {
   const title = String(t?.title ?? t?.subject ?? "");
   return (
     Boolean(t?.is_deleted ?? t?.deleted ?? t?.deleted_at ?? t?.archived_at ?? t?.resolution) ||
@@ -106,7 +114,7 @@ export default async function AdminHomePage() {
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Organizations
             </p>
-            <p className="font-orbitron text-lg text-slate-50 sm:text-xl">{orgs.length}</p>
+            <p className="font-display text-lg text-slate-50 sm:text-xl">{orgs.length}</p>
           </div>
           <p className="mt-2 text-xs text-slate-400 sm:mt-3 sm:text-sm">
             Total customer organizations in the platform.
@@ -117,7 +125,7 @@ export default async function AdminHomePage() {
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Tickets
             </p>
-            <p className="font-orbitron text-lg text-slate-50 sm:text-xl">
+            <p className="font-display text-lg text-slate-50 sm:text-xl">
               {ticketsResult.total ?? recentTicketsAll.length}
             </p>
           </div>
@@ -130,7 +138,7 @@ export default async function AdminHomePage() {
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Documents
             </p>
-            <p className="font-orbitron text-lg text-slate-50 sm:text-xl">
+            <p className="font-display text-lg text-slate-50 sm:text-xl">
               {docsResult.total ?? recentDocs.length}
             </p>
           </div>
@@ -143,7 +151,7 @@ export default async function AdminHomePage() {
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Projects
             </p>
-            <p className="font-orbitron text-lg text-slate-50 sm:text-xl">
+            <p className="font-display text-lg text-slate-50 sm:text-xl">
               {projectsResult.total ?? recentProjects.length}
             </p>
           </div>
@@ -156,7 +164,7 @@ export default async function AdminHomePage() {
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Pending Approvals
             </p>
-            <p className="font-orbitron text-lg text-slate-50 sm:text-xl">
+            <p className="font-display text-lg text-slate-50 sm:text-xl">
               {pendingOrganizations.length + pendingMembershipsResult.length}
             </p>
           </div>
@@ -393,19 +401,19 @@ export default async function AdminHomePage() {
         <h2 className="cyber-heading text-lg">Quick Actions</h2>
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-7">
           <Link href="/admin/approvals" className={quick}>
-            <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-sm uppercase tracking-[0.12em] text-slate-50">
               Approvals
             </h3>
             <p className="mt-3 text-sm text-slate-400">Review pending orgs and memberships.</p>
           </Link>
           <Link href="/admin/organizations" className={quick}>
-            <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-sm uppercase tracking-[0.12em] text-slate-50">
               Organizations
             </h3>
             <p className="mt-3 text-sm text-slate-400">Manage customer org records and settings.</p>
           </Link>
           <Link href="/admin/users" className={quick}>
-            <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-sm uppercase tracking-[0.12em] text-slate-50">
               Users
             </h3>
             <p className="mt-3 text-sm text-slate-400">
@@ -413,13 +421,13 @@ export default async function AdminHomePage() {
             </p>
           </Link>
           <Link href="/admin/tickets" className={quick}>
-            <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-sm uppercase tracking-[0.12em] text-slate-50">
               Tickets
             </h3>
             <p className="mt-3 text-sm text-slate-400">Jump into the active support queue.</p>
           </Link>
           <Link href="/admin/documents" className={quick}>
-            <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-sm uppercase tracking-[0.12em] text-slate-50">
               Documents
             </h3>
             <p className="mt-3 text-sm text-slate-400">
@@ -427,7 +435,7 @@ export default async function AdminHomePage() {
             </p>
           </Link>
           <Link href="/admin/projects" className={quick}>
-            <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-sm uppercase tracking-[0.12em] text-slate-50">
               Projects
             </h3>
             <p className="mt-3 text-sm text-slate-400">
@@ -435,7 +443,7 @@ export default async function AdminHomePage() {
             </p>
           </Link>
           <Link href="/portal/dashboard" className={quick}>
-            <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-sm uppercase tracking-[0.12em] text-slate-50">
               Client Portal
             </h3>
             <p className="mt-3 text-sm text-slate-400">Open the customer-facing portal.</p>

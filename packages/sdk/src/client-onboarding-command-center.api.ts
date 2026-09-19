@@ -25,37 +25,44 @@ export class ClientOnboardingApi {
     searchParams.set("limit", String(params.limit ?? 25));
 
     const response = await this.client.get<PaginatedResult<ClientOnboardingRecord>>(
-      `/client-onboarding?${searchParams.toString()}`,
+      `/api/v1/client-onboarding?${searchParams.toString()}`,
     );
     return response;
   }
 
   async get(id: string) {
-    const response = await this.client.get<ClientOnboardingRecord>(`/client-onboarding/${id}`);
+    const response = await this.client.get<ClientOnboardingRecord>(
+      `/api/v1/client-onboarding/${id}`,
+    );
     return response;
   }
 
   async create(data: CreateOnboardingInput) {
-    const response = await this.client.post<ClientOnboardingRecord>("/client-onboarding", data);
+    const response = await this.client.post<ClientOnboardingRecord>(
+      "/api/v1/client-onboarding",
+      data,
+    );
     return response;
   }
 
   async update(id: string, data: UpdateOnboardingInput) {
     const response = await this.client.patch<ClientOnboardingRecord>(
-      `/client-onboarding/${id}`,
+      `/api/v1/client-onboarding/${id}`,
       data,
     );
     return response;
   }
 
   async remove(id: string) {
-    const response = await this.client.delete<{ deleted: boolean }>(`/client-onboarding/${id}`);
+    const response = await this.client.delete<{ deleted: boolean }>(
+      `/api/v1/client-onboarding/${id}`,
+    );
     return response;
   }
 
   async completePhase(id: string, data: CompletePhaseInput) {
     const response = await this.client.post<ClientOnboardingRecord>(
-      `/client-onboarding/${id}/complete-phase`,
+      `/api/v1/client-onboarding/${id}/complete-phase`,
       data,
     );
     return response;
@@ -70,14 +77,14 @@ export class ClientOnboardingApi {
     searchParams.set("format", params.format ?? "csv");
 
     const response = await this.client.get(
-      `/client-onboarding/export.csv?${searchParams.toString()}`,
+      `/api/v1/client-onboarding/export.csv?${searchParams.toString()}`,
     );
     return response;
   }
 
   async listChecklistItems(onboardingRecordId: string) {
     const response = await this.client.get<ChecklistItem[]>(
-      `/client-onboarding/${onboardingRecordId}/checklist`,
+      `/api/v1/client-onboarding/${onboardingRecordId}/checklist`,
     );
     return response;
   }
@@ -88,7 +95,7 @@ export class ClientOnboardingApi {
     data: UpdateChecklistItemInput,
   ) {
     const response = await this.client.patch<ChecklistItem>(
-      `/client-onboarding/${onboardingRecordId}/checklist/${itemId}`,
+      `/api/v1/client-onboarding/${onboardingRecordId}/checklist/${itemId}`,
       data,
     );
     return response;

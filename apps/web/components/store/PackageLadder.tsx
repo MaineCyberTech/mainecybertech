@@ -73,14 +73,14 @@ export default function PackageLadder({ category }: PackageLadderProps) {
             >
               {meta.label}
             </span>
-            <h3 className="font-orbitron mb-2 text-lg font-bold uppercase tracking-wider text-slate-50">
+            <h3 className="mb-2 font-display text-lg font-bold uppercase tracking-wider text-slate-50">
               {product.name}
             </h3>
             <p className="mb-4 flex-1 text-sm leading-relaxed text-slate-400">{product.summary}</p>
             <p className="mb-6 text-sm font-semibold text-emerald-400">{product.priceRange}</p>
             <Link
               href={`/store/${product.slug}`}
-              className="font-orbitron mt-auto inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-3 text-center text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="mt-auto inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-3 text-center font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Learn More
             </Link>

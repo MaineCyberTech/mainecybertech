@@ -18,6 +18,8 @@ const envSchema = z.object({
   SENTRY_DSN: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  // AES-256-GCM key for profile PII at rest (hex/base64, 32 bytes).
+  FIELD_ENCRYPTION_KEY: z.string().optional(),
   PUBLIC_TRAFFIC_WEBHOOK_URL: z.string().optional(),
   PUBLIC_LEAD_WEBHOOK_URL: z.string().optional(),
   JSM_DOMAIN: z.string().optional(),

@@ -13,14 +13,14 @@ export default function TermsPage() {
       <div className="mx-auto max-w-4xl">
         <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Terms of Service" }]} />
 
-        <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+        <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
           Terms of <span className="text-emerald-500">Service</span>
         </h1>
         <p className="mt-4 text-sm text-slate-500">Last updated: July 1, 2026</p>
 
         <div className="cyber-panel mt-10 space-y-8">
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               Service Description
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
@@ -33,7 +33,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               User Obligations
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
@@ -46,7 +46,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               Intellectual Property
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
@@ -58,7 +58,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               Limitation of Liability
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
@@ -71,7 +71,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               Termination
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
@@ -83,7 +83,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               Governing Law
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">

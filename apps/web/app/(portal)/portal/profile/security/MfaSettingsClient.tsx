@@ -73,7 +73,7 @@ export default function MfaSettingsClient({ initialFactors }: { initialFactors: 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+        <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
           Security
         </h1>
         <p className="mt-3 text-slate-400">

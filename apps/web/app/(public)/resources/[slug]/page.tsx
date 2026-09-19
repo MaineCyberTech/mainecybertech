@@ -128,7 +128,7 @@ export default async function ResourceDetailPage({
           <span className="mb-4 inline-block w-fit rounded-full border border-emerald-600/20 bg-emerald-600/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">
             Checklist
           </span>
-          <h1 className="font-orbitron mt-4 text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+          <h1 className="mt-4 font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
             {magnet.title}
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-slate-400">
@@ -138,7 +138,7 @@ export default async function ResourceDetailPage({
         </div>
 
         <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 backdrop-blur-sm">
-          <h2 className="font-orbitron mb-6 text-xl font-bold uppercase tracking-wider text-emerald-400">
+          <h2 className="mb-6 font-display text-xl font-bold uppercase tracking-wider text-emerald-400">
             Checklist Items
           </h2>
           <ul className="space-y-4">
@@ -154,7 +154,7 @@ export default async function ResourceDetailPage({
         </div>
 
         <div className="mt-12 rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 text-center backdrop-blur-sm">
-          <h2 className="font-orbitron text-xl font-bold uppercase tracking-wider text-slate-50">
+          <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-50">
             Want the Full Checklist?
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-slate-400">
@@ -163,13 +163,13 @@ export default async function ResourceDetailPage({
           <div className="mt-6 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Link
               href={`/contact?resource=${magnet.id}`}
-              className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Send Me the Download
             </Link>
             <Link
               href="/contact"
-              className="font-orbitron inline-block rounded border-2 border-slate-600 px-8 py-3 text-xs font-bold uppercase tracking-widest text-slate-300 transition hover:border-emerald-600 hover:text-emerald-500"
+              className="inline-block rounded border-2 border-slate-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-slate-300 transition hover:border-emerald-600 hover:text-emerald-500"
             >
               Ask a Question
             </Link>
@@ -178,7 +178,7 @@ export default async function ResourceDetailPage({
 
         {related.length > 0 && (
           <div className="mt-16">
-            <h2 className="font-orbitron mb-6 text-xl font-bold uppercase tracking-wider text-slate-50">
+            <h2 className="mb-6 font-display text-xl font-bold uppercase tracking-wider text-slate-50">
               Related <span className="text-emerald-500">Services</span>
             </h2>
             <div className="flex flex-wrap gap-3">

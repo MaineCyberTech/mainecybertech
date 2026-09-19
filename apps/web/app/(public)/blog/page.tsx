@@ -46,7 +46,7 @@ export default function BlogPage() {
           </Link>
 
           <div className="mb-16 text-center">
-            <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+            <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
               Maine CyberTech <span className="text-emerald-500">Blog</span>
             </h1>
             <p className="mt-4 text-lg text-slate-400">
@@ -67,7 +67,7 @@ export default function BlogPage() {
                   </span>
                   <span className="text-xs text-slate-500">{post.datePublished}</span>
                 </div>
-                <h2 className="font-orbitron text-xl font-bold text-slate-50">
+                <h2 className="font-display text-xl font-bold text-slate-50">
                   <Link
                     href={`/blog/${post.slug}`}
                     className="no-underline transition hover:text-emerald-400"

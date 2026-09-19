@@ -38,7 +38,7 @@ export default function PortalServicesPage() {
       <PortalSubnav current="services" />
 
       <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm">
-        <h1 className="font-orbitron text-2xl font-bold uppercase tracking-wider text-slate-50">
+        <h1 className="font-display text-2xl font-bold uppercase tracking-wider text-slate-50">
           Service Hub
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-slate-400">
@@ -54,7 +54,7 @@ export default function PortalServicesPage() {
           >
             <div className="mb-4 flex items-center gap-3">
               <span className="text-2xl">{sectionIcons[section] ?? "▸"}</span>
-              <h2 className="font-orbitron text-sm font-bold uppercase tracking-wider text-slate-50">
+              <h2 className="font-display text-sm font-bold uppercase tracking-wider text-slate-50">
                 {section}
               </h2>
             </div>
@@ -93,7 +93,7 @@ export default function PortalServicesPage() {
       </div>
 
       <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm">
-        <h2 className="font-orbitron mb-4 text-lg font-bold uppercase tracking-wider text-slate-50">
+        <h2 className="mb-4 font-display text-lg font-bold uppercase tracking-wider text-slate-50">
           Service Statuses
         </h2>
         <div className="flex flex-wrap gap-2">
@@ -111,7 +111,7 @@ export default function PortalServicesPage() {
       </div>
 
       <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 text-center backdrop-blur-sm">
-        <h2 className="font-orbitron text-xl font-bold uppercase tracking-wider text-slate-50">
+        <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-50">
           Request a New Service
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-slate-400">
@@ -119,7 +119,7 @@ export default function PortalServicesPage() {
         </p>
         <Link
           href="/store"
-          className="font-orbitron mt-6 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+          className="mt-6 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
         >
           Browse Services
         </Link>

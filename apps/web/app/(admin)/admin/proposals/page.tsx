@@ -103,7 +103,7 @@ export default async function ProposalsPage() {
             href="/admin/organizations"
             className="rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-600/25 hover:bg-cyber-base/80"
           >
-            <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-sm uppercase tracking-[0.12em] text-slate-50">
               Select Client
             </h3>
             <p className="mt-3 text-sm text-slate-400">
@@ -114,7 +114,7 @@ export default async function ProposalsPage() {
             href="/admin/approvals"
             className="rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-600/25 hover:bg-cyber-base/80"
           >
-            <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-sm uppercase tracking-[0.12em] text-slate-50">
               Approval Queue
             </h3>
             <p className="mt-3 text-sm text-slate-400">
@@ -125,7 +125,7 @@ export default async function ProposalsPage() {
             href="/admin/projects"
             className="rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-600/25 hover:bg-cyber-base/80"
           >
-            <h3 className="font-orbitron text-sm uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-sm uppercase tracking-[0.12em] text-slate-50">
               Projects
             </h3>
             <p className="mt-3 text-sm text-slate-400">

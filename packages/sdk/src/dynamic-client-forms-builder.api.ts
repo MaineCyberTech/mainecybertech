@@ -22,41 +22,47 @@ export class DynamicFormsApi {
     searchParams.set("limit", String(params.limit ?? 25));
 
     const response = await this.client.get<PaginatedResult<DynamicFormRecord>>(
-      `/dynamic-forms?${searchParams.toString()}`,
+      `/api/v1/dynamic-forms?${searchParams.toString()}`,
     );
     return response;
   }
 
   async get(id: string) {
-    const response = await this.client.get<DynamicFormRecord>(`/dynamic-forms/${id}`);
+    const response = await this.client.get<DynamicFormRecord>(`/api/v1/dynamic-forms/${id}`);
     return response;
   }
 
   async create(data: CreateDynamicFormInput) {
-    const response = await this.client.post<DynamicFormRecord>("/dynamic-forms", data);
+    const response = await this.client.post<DynamicFormRecord>("/api/v1/dynamic-forms", data);
     return response;
   }
 
   async update(id: string, data: UpdateDynamicFormInput) {
-    const response = await this.client.patch<DynamicFormRecord>(`/dynamic-forms/${id}`, data);
+    const response = await this.client.patch<DynamicFormRecord>(
+      `/api/v1/dynamic-forms/${id}`,
+      data,
+    );
     return response;
   }
 
   async remove(id: string) {
-    const response = await this.client.delete<{ deleted: boolean }>(`/dynamic-forms/${id}`);
+    const response = await this.client.delete<{ deleted: boolean }>(`/api/v1/dynamic-forms/${id}`);
     return response;
   }
 
   async publish(id: string, data?: { closesAt?: string | null }) {
     const response = await this.client.post<DynamicFormRecord>(
-      `/dynamic-forms/${id}/publish`,
+      `/api/v1/dynamic-forms/${id}/publish`,
       data ?? {},
     );
     return response;
   }
 
   async submit(id: string, data: SubmitDynamicFormInput) {
-    const response = await this.client.post<FormSubmission>(`/dynamic-forms/${id}/submit`, data);
+    const response = await this.client.post<FormSubmission>(
+      `/api/v1/dynamic-forms/${id}/submit`,
+      data,
+    );
     return response;
   }
 
@@ -66,7 +72,7 @@ export class DynamicFormsApi {
     if (params?.limit) searchParams.set("limit", String(params.limit));
 
     const response = await this.client.get<PaginatedResult<FormSubmission>>(
-      `/dynamic-forms/${id}/submissions?${searchParams.toString()}`,
+      `/api/v1/dynamic-forms/${id}/submissions?${searchParams.toString()}`,
     );
     return response;
   }
@@ -78,7 +84,9 @@ export class DynamicFormsApi {
     if (params.formType) searchParams.set("formType", params.formType);
     searchParams.set("format", params.format ?? "csv");
 
-    const response = await this.client.get(`/dynamic-forms/export.csv?${searchParams.toString()}`);
+    const response = await this.client.get(
+      `/api/v1/dynamic-forms/export.csv?${searchParams.toString()}`,
+    );
     return response;
   }
 }

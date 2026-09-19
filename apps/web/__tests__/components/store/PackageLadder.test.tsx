@@ -19,7 +19,7 @@ describe("PackageLadder", () => {
   it("renders with MCT styling", () => {
     const { container } = render(<PackageLadder category="Cybersecurity" />);
     expect(container.querySelector(".grid")).toBeInTheDocument();
-    expect(container.querySelector(".font-orbitron")).toBeInTheDocument();
+    expect(container.querySelector(".font-display")).toBeInTheDocument();
   });
 
   it("returns null for unknown category", () => {

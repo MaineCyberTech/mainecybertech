@@ -6,12 +6,12 @@ import { VersionBadge } from "@/components/version-badge";
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-body",
 });
 
 const orbitron = Orbitron({
   subsets: ["latin"],
-  variable: "--font-orbitron",
+  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
@@ -29,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${orbitron.variable} font-inter cyber-page-bg antialiased`}
+        className={`${inter.variable} ${orbitron.variable} cyber-page-bg font-body antialiased`}
       >
         <a
           href="#main-content"

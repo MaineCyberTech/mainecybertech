@@ -127,7 +127,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
         </Link>
 
         <div className="mb-12 text-center">
-          <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+          <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
             {service.title.split(" ")[0]}{" "}
             <span className="text-emerald-500">{service.title.split(" ").slice(1).join(" ")}</span>
           </h1>
@@ -143,7 +143,7 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
             ))}
             <Link
               href="/contact"
-              className="font-orbitron mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Get Support Now
             </Link>

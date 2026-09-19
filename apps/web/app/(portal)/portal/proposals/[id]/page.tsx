@@ -205,31 +205,31 @@ export default async function PortalProposalDetailPage({ params }: Props) {
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400">Labor</p>
-            <p className="font-orbitron mt-3 text-xl text-slate-50">
+            <p className="mt-3 font-display text-xl text-slate-50">
               {fmtCurrency(proposal.total_labor ?? 0)}
             </p>
           </div>
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400">Materials</p>
-            <p className="font-orbitron mt-3 text-xl text-slate-50">
+            <p className="mt-3 font-display text-xl text-slate-50">
               {fmtCurrency(proposal.total_materials ?? 0)}
             </p>
           </div>
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400">Recurring</p>
-            <p className="font-orbitron mt-3 text-xl text-slate-50">
+            <p className="mt-3 font-display text-xl text-slate-50">
               {fmtCurrency(proposal.total_recurring ?? 0)}
             </p>
           </div>
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400">One-Time</p>
-            <p className="font-orbitron mt-3 text-xl text-slate-50">
+            <p className="mt-3 font-display text-xl text-slate-50">
               {fmtCurrency(proposal.total_one_time ?? 0)}
             </p>
           </div>
         </div>
         <div className="mt-6 text-right">
-          <p className="font-orbitron text-2xl text-emerald-400">
+          <p className="font-display text-2xl text-emerald-400">
             Grand Total: {fmtCurrency(proposal.grand_total ?? 0)}
           </p>
         </div>

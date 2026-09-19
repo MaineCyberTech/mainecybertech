@@ -9,7 +9,7 @@ export default function PendingPage() {
       <title>Pending Approval — Maine CyberTech</title>
       <main className="mx-auto flex min-h-screen max-w-2xl items-center px-6">
         <div className="w-full rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-8 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-md">
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+          <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             Approval Pending
           </h1>
           <p className="mt-4 text-slate-400">

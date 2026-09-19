@@ -19,7 +19,7 @@ export default function StoreCategoryCard({
       className="glass-card glass-card-hover group flex flex-col p-8 no-underline sm:p-10"
     >
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-orbitron text-lg font-bold uppercase tracking-wider text-slate-50">
+        <h3 className="font-display text-lg font-bold uppercase tracking-wider text-slate-50">
           {name}
         </h3>
         <span className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">

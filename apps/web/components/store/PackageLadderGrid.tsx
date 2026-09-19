@@ -9,7 +9,7 @@ export default function PackageLadderGrid() {
     <div className="space-y-12">
       {ladders.map((ladder) => (
         <div key={ladder.category}>
-          <h3 className="font-orbitron mb-6 text-center text-2xl font-bold uppercase tracking-wider text-slate-50">
+          <h3 className="mb-6 text-center font-display text-2xl font-bold uppercase tracking-wider text-slate-50">
             {ladder.category} <span className="text-emerald-500">Packages</span>
           </h3>
           <PackageLadder category={ladder.category} />

@@ -44,7 +44,7 @@ export default function StoreProductCard({
           {categoryName}
         </span>
         <TrustBadgeList surface="product_card" maxBadges={2} />
-        <h3 className="font-orbitron mb-4 mt-2 text-lg font-bold uppercase tracking-wider text-slate-50 transition-colors group-hover:text-emerald-400">
+        <h3 className="mb-4 mt-2 font-display text-lg font-bold uppercase tracking-wider text-slate-50 transition-colors group-hover:text-emerald-400">
           {name}
         </h3>
         <p className="mb-6 flex-1 leading-relaxed text-slate-400">{summary}</p>
@@ -58,7 +58,7 @@ export default function StoreProductCard({
       <button
         onClick={handleAddToQuote}
         disabled={added}
-        className="font-orbitron mt-4 w-full rounded border border-emerald-600/30 bg-emerald-600/10 px-4 py-2 text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:bg-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-4 w-full rounded border border-emerald-600/30 bg-emerald-600/10 px-4 py-2 font-display text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:bg-emerald-600/20 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {added ? "✓ Added to Quote" : alreadyAdded ? "In Quote" : "Add to Quote"}
       </button>

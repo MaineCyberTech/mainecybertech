@@ -3,12 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
-import {
-  Project,
-  ProjectTask,
-  ProjectTaskComment,
-  ProjectTaskReadState,
-} from "@mct/sdk";
+import { Project, ProjectTask, ProjectTaskComment, ProjectTaskReadState } from "@mct/sdk";
 
 export const metadata = { title: "Projects - Portal - Maine CyberTech" };
 
@@ -104,7 +99,9 @@ export default async function PortalProjectsPage() {
   const taskMap = new Map(tasks.map((task: ProjectTask) => [task.id, task.project_id]));
 
   const reads = compound.reads ?? [];
-  const readMap = new Map((reads ?? []).map((row: ProjectTaskReadState) => [row.task_id, row.last_seen_at]));
+  const readMap = new Map(
+    (reads ?? []).map((row: ProjectTaskReadState) => [row.task_id, row.last_seen_at]),
+  );
   const unreadByProject = new Map<string, number>();
 
   (comments ?? []).forEach((comment: ProjectTaskComment) => {
@@ -141,7 +138,7 @@ export default async function PortalProjectsPage() {
                   className="block rounded-lg border border-white/10 bg-cyber-base/60 p-5 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="font-orbitron text-lg uppercase tracking-[0.12em] text-slate-50">
+                    <h3 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">
                       {project.name}
                     </h3>
                     <div className="flex flex-wrap gap-2">

@@ -100,7 +100,7 @@ export default function ServiceFinderQuiz({ questions }: ServiceFinderQuizProps)
           <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-600/20">
             <span className="text-3xl text-emerald-400">✓</span>
           </div>
-          <h2 className="font-orbitron text-2xl font-bold uppercase tracking-wider text-slate-50">
+          <h2 className="font-display text-2xl font-bold uppercase tracking-wider text-slate-50">
             Your Recommendations
           </h2>
           <p className="mt-3 text-slate-400">
@@ -142,7 +142,7 @@ export default function ServiceFinderQuiz({ questions }: ServiceFinderQuizProps)
           <div className="mt-10 text-center">
             <Link
               href={`/store/${recommendations.quickWin.slug}`}
-              className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Start With a Quick Win
             </Link>
@@ -185,7 +185,7 @@ export default function ServiceFinderQuiz({ questions }: ServiceFinderQuizProps)
       </div>
 
       <div className="glass-card rounded-2xl border border-white/10 bg-[rgba(18,30,45,0.7)] p-8 backdrop-blur-xl sm:p-12">
-        <h2 className="font-orbitron text-xl font-bold uppercase tracking-wider text-slate-50">
+        <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-50">
           {currentQuestion.label}
         </h2>
         {!currentQuestion.required && <p className="mt-1 text-xs text-slate-500">(optional)</p>}

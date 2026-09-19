@@ -53,7 +53,7 @@ export default async function AdminVisualsPage() {
           </div>
         </div>
 
-        <h3 className="font-orbitron text-lg font-bold uppercase tracking-wider text-slate-50">
+        <h3 className="font-display text-lg font-bold uppercase tracking-wider text-slate-50">
           Category Visuals
         </h3>
 
@@ -77,7 +77,7 @@ export default async function AdminVisualsPage() {
           ))}
         </div>
 
-        <h3 className="font-orbitron mt-8 text-lg font-bold uppercase tracking-wider text-slate-50">
+        <h3 className="mt-8 font-display text-lg font-bold uppercase tracking-wider text-slate-50">
           Asset Rules
         </h3>
 

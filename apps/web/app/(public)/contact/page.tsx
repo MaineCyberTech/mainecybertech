@@ -12,7 +12,7 @@ export default function ContactPage() {
     <section className="min-h-screen px-4 pb-20 pt-32 sm:px-6 sm:pt-40">
       <div className="mx-auto max-w-7xl">
         <div className="mb-16 text-center">
-          <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+          <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
             Contact <span className="text-emerald-500">Us</span>
           </h1>
           <p className="mt-4 text-lg text-slate-400">
@@ -22,7 +22,7 @@ export default function ContactPage() {
 
         <div className="grid gap-12 lg:grid-cols-2">
           <div>
-            <h2 className="font-orbitron text-3xl font-bold uppercase tracking-wider text-slate-50">
+            <h2 className="font-display text-3xl font-bold uppercase tracking-wider text-slate-50">
               Let&apos;s Connect
             </h2>
             <p className="mb-10 mt-6 text-lg leading-relaxed text-slate-400">

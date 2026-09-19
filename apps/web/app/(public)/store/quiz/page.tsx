@@ -19,7 +19,7 @@ export default function QuizPage() {
     <section className="min-h-screen px-4 pb-20 pt-32 sm:px-6 sm:pt-40">
       <div className="mx-auto max-w-2xl">
         <div className="mb-10 text-center">
-          <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+          <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
             Service{" "}
             <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(5,150,105,0.5)]">
               Finder

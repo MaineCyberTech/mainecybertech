@@ -22,9 +22,14 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
   ]);
   const logs = logsResult.items ?? [];
 
-  const orgIds = [...new Set(logs.map((l: AuditLog) => l.organization_id).filter(Boolean))] as string[];
+  const orgIds = [
+    ...new Set(logs.map((l: AuditLog) => l.organization_id).filter(Boolean)),
+  ] as string[];
 
-  const organizations = orgIds.length > 0 ? (await api.organizations.list({ ids: orgIds, limit: 100 })).items ?? [] : [];
+  const organizations =
+    orgIds.length > 0
+      ? ((await api.organizations.list({ ids: orgIds, limit: 100 })).items ?? [])
+      : [];
 
   const orgMap = new Map(organizations.map((o: Organization) => [o.id, o]));
 
@@ -32,7 +37,7 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+          <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             {profile?.full_name ?? "User"} Activity
           </h1>
           <p className="mt-3 text-slate-400">Timeline of actions performed by this user.</p>
@@ -40,7 +45,7 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
 
         <Link
           href={`/admin/users/${userId}`}
-          className="font-orbitron rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
+          className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-display text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
         >
           Back to User
         </Link>

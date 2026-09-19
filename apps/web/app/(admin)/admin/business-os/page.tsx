@@ -28,7 +28,7 @@ function statCard(label: string, value: number, description: string, href?: stri
     <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">{label}</p>
-        <p className="font-orbitron text-xl text-slate-50">{value}</p>
+        <p className="font-display text-xl text-slate-50">{value}</p>
       </div>
       <p className="mt-3 text-sm text-slate-400">{description}</p>
       {href && (

@@ -497,7 +497,7 @@ export default function TestAccountsPage() {
     <main className="min-h-screen overflow-y-auto bg-cyber-base">
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="mb-8 text-center">
-          <h1 className="font-orbitron text-3xl font-bold uppercase tracking-[0.1em] text-slate-100">
+          <h1 className="font-display text-3xl font-bold uppercase tracking-[0.1em] text-slate-100">
             Test Accounts
           </h1>
           <p className="mt-3 text-sm text-slate-400">

@@ -121,9 +121,7 @@ export default function ProfilePage({ initialData }: Props) {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
-          Profile
-        </h1>
+        <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">Profile</h1>
         <p className="mt-3 text-slate-400">Update your name, phone number, and job title.</p>
         <Link
           href="/portal/profile/security"
@@ -202,7 +200,7 @@ export default function ProfilePage({ initialData }: Props) {
       <hr className="border-white/10" />
 
       <div>
-        <h2 className="font-orbitron text-lg uppercase tracking-[0.14em] text-slate-50">Avatar</h2>
+        <h2 className="font-display text-lg uppercase tracking-[0.14em] text-slate-50">Avatar</h2>
         <p className="mt-2 text-slate-400">
           Upload a profile photo (JPEG, PNG, WebP, or GIF, max 2MB).
         </p>
@@ -218,7 +216,7 @@ export default function ProfilePage({ initialData }: Props) {
           )}
         </div>
         <div>
-          <label className="font-orbitron relative cursor-pointer rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10">
+          <label className="relative cursor-pointer rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-display text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10">
             {uploadingAvatar ? "Uploading..." : "Choose File"}
             <input
               type="file"
@@ -236,7 +234,7 @@ export default function ProfilePage({ initialData }: Props) {
       <hr className="border-white/10" />
 
       <div>
-        <h2 className="font-orbitron text-lg uppercase tracking-[0.14em] text-slate-50">
+        <h2 className="font-display text-lg uppercase tracking-[0.14em] text-slate-50">
           Change Password
         </h2>
         <p className="mt-2 text-slate-400">Update your account password.</p>

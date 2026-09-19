@@ -84,7 +84,9 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
   const userIds = [...new Set(logs.map((l) => l.actor_user_id).filter(Boolean))] as string[];
 
   const [organizationsResult, profiles] = await Promise.all([
-    orgIds.length > 0 ? api.organizations.list({ ids: orgIds, limit: 100 }) : Promise.resolve({ items: [] as Organization[], total: 0, page: 1, limit: 100 }),
+    orgIds.length > 0
+      ? api.organizations.list({ ids: orgIds, limit: 100 })
+      : Promise.resolve({ items: [] as Organization[], total: 0, page: 1, limit: 100 }),
     userIds.length > 0 ? api.profiles.list({ ids: userIds }) : Promise.resolve([] as Profile[]),
   ]);
 
@@ -119,7 +121,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+          <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             Audit & Activity
           </h1>
           <p className="mt-3 text-slate-400">
@@ -132,7 +134,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
       </div>
 
       <section className="rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-6 backdrop-blur-md">
-        <h2 className="font-orbitron text-lg uppercase tracking-[0.12em] text-slate-50">Filters</h2>
+        <h2 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">Filters</h2>
         <form action="/admin/audit" className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <select
             name="action"
@@ -195,7 +197,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
       </section>
 
       <section className="space-y-4">
-        <h2 className="font-orbitron text-lg uppercase tracking-[0.12em] text-slate-50">
+        <h2 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">
           Recent Events
         </h2>
 

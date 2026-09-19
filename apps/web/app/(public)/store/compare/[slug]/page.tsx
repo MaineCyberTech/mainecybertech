@@ -118,7 +118,7 @@ export default async function CompareDetailPage({ params }: { params: Promise<{ 
           <span className="text-slate-300">{comparison.title}</span>
         </nav>
 
-        <h1 className="font-orbitron mb-4 text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+        <h1 className="mb-4 font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
           {comparison.title}
         </h1>
         <p className="mb-12 text-lg leading-relaxed text-slate-400">
@@ -175,7 +175,7 @@ export default async function CompareDetailPage({ params }: { params: Promise<{ 
         <div className="mt-12 text-center">
           <Link
             href="/contact"
-            className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Not Sure? Talk to Us
           </Link>

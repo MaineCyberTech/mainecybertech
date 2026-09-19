@@ -78,7 +78,16 @@ function isDeletedTicket(ticket: TicketRecord) {
   );
 }
 
-function commentBody(comment: TicketComment & { comment?: string; message?: string; author_name?: string; created_by_name?: string; author_email?: string; created_by?: string }) {
+function commentBody(
+  comment: TicketComment & {
+    comment?: string;
+    message?: string;
+    author_name?: string;
+    created_by_name?: string;
+    author_email?: string;
+    created_by?: string;
+  },
+) {
   return comment?.body ?? comment?.comment ?? comment?.message ?? "";
 }
 
@@ -86,7 +95,14 @@ function commentInternal(comment: TicketComment & { internal_only?: boolean }) {
   return Boolean(comment?.is_internal ?? comment?.internal_only ?? false);
 }
 
-function commentAuthor(comment: TicketComment & { author_name?: string; created_by_name?: string; author_email?: string; created_by?: string }) {
+function commentAuthor(
+  comment: TicketComment & {
+    author_name?: string;
+    created_by_name?: string;
+    author_email?: string;
+    created_by?: string;
+  },
+) {
   return (
     comment?.author_name ??
     comment?.created_by_name ??
@@ -198,7 +214,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
 
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+          <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             {displayTicketTitle(ticket)}
           </h1>
           <p className="mt-3 text-slate-300">
@@ -261,7 +277,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
         <section className="rounded-xl border border-red-500/20 bg-red-500/10 p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h2 className="font-orbitron text-lg uppercase tracking-[0.12em] text-red-200">
+              <h2 className="font-display text-lg uppercase tracking-[0.12em] text-red-200">
                 Confirm Ticket Deletion
               </h2>
               <p className="mt-3 max-w-2xl text-sm text-red-100/90">
@@ -411,83 +427,98 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
         </div>
         <div className="mt-6 space-y-4">
           {comments.length > 0 ? (
-            comments.map((comment: TicketComment & { edited_at?: string; author_name?: string; created_by_name?: string; author_email?: string; created_by?: string; comment?: string; message?: string; internal_only?: boolean }) => {
-              const isEditing = editComment === comment.id;
-              const fiveMinMs = 5 * 60 * 1000;
-              const canEdit =
-                comment.created_at &&
-                Date.now() - new Date(comment.created_at).getTime() < fiveMinMs;
+            comments.map(
+              (
+                comment: TicketComment & {
+                  edited_at?: string;
+                  author_name?: string;
+                  created_by_name?: string;
+                  author_email?: string;
+                  created_by?: string;
+                  comment?: string;
+                  message?: string;
+                  internal_only?: boolean;
+                },
+              ) => {
+                const isEditing = editComment === comment.id;
+                const fiveMinMs = 5 * 60 * 1000;
+                const canEdit =
+                  comment.created_at &&
+                  Date.now() - new Date(comment.created_at).getTime() < fiveMinMs;
 
-              return (
-                <div
-                  key={comment.id ?? `${comment.created_at}-${commentBody(comment)}`}
-                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium text-slate-50">{commentAuthor(comment)}</p>
-                      {commentInternal(comment) ? (
-                        <span className="inline-flex min-h-7 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-amber-300">
-                          Internal
+                return (
+                  <div
+                    key={comment.id ?? `${comment.created_at}-${commentBody(comment)}`}
+                    className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium text-slate-50">
+                          {commentAuthor(comment)}
+                        </p>
+                        {commentInternal(comment) ? (
+                          <span className="inline-flex min-h-7 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-amber-300">
+                            Internal
+                          </span>
+                        ) : null}
+                        <span
+                          className="text-xs text-slate-400"
+                          title={formatDateTime(comment.created_at)}
+                        >
+                          {formatRelativeTime(comment.created_at)}
                         </span>
+                        {comment.edited_at ? (
+                          <span className="text-xs italic text-slate-600">(edited)</span>
+                        ) : null}
+                      </div>
+                      {canEdit && !isEditing ? (
+                        <a
+                          href={`/admin/tickets/${ticketId}?editComment=${comment.id}`}
+                          className="text-xs text-slate-400 underline hover:text-slate-300"
+                        >
+                          Edit
+                        </a>
                       ) : null}
-                      <span
-                        className="text-xs text-slate-400"
-                        title={formatDateTime(comment.created_at)}
-                      >
-                        {formatRelativeTime(comment.created_at)}
-                      </span>
-                      {comment.edited_at ? (
-                        <span className="text-xs italic text-slate-600">(edited)</span>
+                      {isEditing ? (
+                        <a
+                          href={`/admin/tickets/${ticketId}`}
+                          className="text-xs text-slate-400 underline hover:text-slate-300"
+                        >
+                          Cancel
+                        </a>
                       ) : null}
                     </div>
-                    {canEdit && !isEditing ? (
-                      <a
-                        href={`/admin/tickets/${ticketId}?editComment=${comment.id}`}
-                        className="text-xs text-slate-400 underline hover:text-slate-300"
-                      >
-                        Edit
-                      </a>
-                    ) : null}
                     {isEditing ? (
-                      <a
-                        href={`/admin/tickets/${ticketId}`}
-                        className="text-xs text-slate-400 underline hover:text-slate-300"
+                      <form
+                        action={
+                          editCommentAction.bind(null, ticketId, comment.id) as unknown as (
+                            fd: FormData,
+                          ) => void
+                        }
+                        className="mt-3 space-y-3"
                       >
-                        Cancel
-                      </a>
-                    ) : null}
-                  </div>
-                  {isEditing ? (
-                    <form
-                      action={
-                        editCommentAction.bind(null, ticketId, comment.id) as unknown as (
-                          fd: FormData,
-                        ) => void
-                      }
-                      className="mt-3 space-y-3"
-                    >
-                      <textarea
-                        name="body"
-                        rows={3}
-                        aria-label="Edit comment"
-                        className="cyber-input"
-                        defaultValue={commentBody(comment)}
-                        required
+                        <textarea
+                          name="body"
+                          rows={3}
+                          aria-label="Edit comment"
+                          className="cyber-input"
+                          defaultValue={commentBody(comment)}
+                          required
+                        />
+                        <button type="submit" className="cyber-button-secondary text-xs">
+                          Save Edit
+                        </button>
+                      </form>
+                    ) : (
+                      <CommentBody
+                        body={commentBody(comment)}
+                        className="markdown-body mt-3 text-sm leading-relaxed text-slate-300"
                       />
-                      <button type="submit" className="cyber-button-secondary text-xs">
-                        Save Edit
-                      </button>
-                    </form>
-                  ) : (
-                    <CommentBody
-                      body={commentBody(comment)}
-                      className="markdown-body mt-3 text-sm leading-relaxed text-slate-300"
-                    />
-                  )}
-                </div>
-              );
-            })
+                    )}
+                  </div>
+                );
+              },
+            )
           ) : (
             <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No comments yet.

@@ -438,7 +438,7 @@ export default function AdminTicketCenterClient({
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+          <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             Tickets
           </h1>
           <p className="mt-3 text-slate-300">
@@ -722,7 +722,7 @@ export default function AdminTicketCenterClient({
           <div className="my-8 w-full max-w-2xl rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
-                <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">
+                <h2 className="font-display text-xl uppercase tracking-[0.12em] text-slate-50">
                   Create Ticket
                 </h2>
                 <p className="mt-1 text-sm text-slate-400">

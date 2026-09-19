@@ -28,7 +28,7 @@ export default function CaseStudiesIndexPage() {
           <span className="text-slate-300">Case Studies</span>
         </nav>
 
-        <h1 className="font-orbitron mb-4 text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+        <h1 className="mb-4 font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
           Case{" "}
           <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(5,150,105,0.5)]">
             Studies
@@ -40,7 +40,7 @@ export default function CaseStudiesIndexPage() {
 
         {caseStudies.length === 0 ? (
           <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-12 text-center backdrop-blur-sm">
-            <h2 className="font-orbitron mb-4 text-xl font-bold uppercase tracking-wider text-slate-50">
+            <h2 className="mb-4 font-display text-xl font-bold uppercase tracking-wider text-slate-50">
               Coming Soon
             </h2>
             <p className="mx-auto max-w-lg text-sm leading-relaxed text-slate-400">
@@ -50,7 +50,7 @@ export default function CaseStudiesIndexPage() {
             </p>
             <Link
               href="/contact"
-              className="font-orbitron mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Ask About Our Work
             </Link>
@@ -66,7 +66,7 @@ export default function CaseStudiesIndexPage() {
                 <span className="mb-3 inline-block w-fit rounded-full border border-emerald-600/20 bg-emerald-600/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-emerald-400">
                   {cs.organization}
                 </span>
-                <h3 className="font-orbitron mb-3 text-lg font-bold uppercase tracking-wider text-slate-50">
+                <h3 className="mb-3 font-display text-lg font-bold uppercase tracking-wider text-slate-50">
                   {cs.title}
                 </h3>
                 <p className="mb-4 flex-1 text-sm leading-relaxed text-slate-400">{cs.summary}</p>

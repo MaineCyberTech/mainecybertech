@@ -38,7 +38,7 @@ export default function StorePage() {
     <>
       <section className="flex min-h-[60vh] items-center justify-center px-4 pb-16 pt-24 text-center sm:pb-24 sm:pt-32">
         <div className="max-w-4xl">
-          <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl lg:text-6xl">
+          <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl lg:text-6xl">
             Browse Our{" "}
             <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(5,150,105,0.5)]">
               Services
@@ -110,7 +110,7 @@ export default function StorePage() {
       <section className="px-4 pb-24 sm:px-6 sm:pb-32">
         <div className="mx-auto max-w-4xl">
           <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 backdrop-blur-sm">
-            <h2 className="font-orbitron text-xl font-bold uppercase tracking-wider text-slate-50">
+            <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-50">
               Not Sure Where to Start?
             </h2>
             <p className="mt-3 leading-relaxed text-slate-400">
@@ -122,7 +122,7 @@ export default function StorePage() {
             </p>
             <Link
               href="/contact"
-              className="font-orbitron mt-6 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="mt-6 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Talk to a Human
             </Link>
@@ -136,7 +136,7 @@ export default function StorePage() {
         <div className="mx-auto max-w-7xl">
           <h2
             id="categories"
-            className="font-orbitron mb-12 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl"
+            className="mb-12 text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl"
           >
             Browse by <span className="text-emerald-500">Category</span>
           </h2>
@@ -157,7 +157,7 @@ export default function StorePage() {
       {featured.length > 0 && (
         <section id="quick-wins" className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
           <div className="mx-auto max-w-7xl">
-            <h2 className="font-orbitron mb-4 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+            <h2 className="mb-4 text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
               Quick <span className="text-emerald-500">Wins</span>
             </h2>
             <p className="mb-12 text-center text-lg text-slate-400">
@@ -183,7 +183,7 @@ export default function StorePage() {
 
       <section id="ladders" className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-7xl">
-          <h2 className="font-orbitron mb-4 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="mb-4 text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Compare <span className="text-emerald-500">Packages</span>
           </h2>
           <p className="mb-12 text-center text-lg text-slate-400">
@@ -197,7 +197,7 @@ export default function StorePage() {
       {monthlyPlans.length > 0 && (
         <section id="monthly-plans" className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
           <div className="mx-auto max-w-7xl">
-            <h2 className="font-orbitron mb-12 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+            <h2 className="mb-12 text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
               Monthly IT <span className="text-emerald-500">Plans</span>
             </h2>
             <p className="mb-12 text-center text-lg text-slate-400">
@@ -224,7 +224,7 @@ export default function StorePage() {
       {emergency.length > 0 && (
         <section id="emergency" className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
           <div className="mx-auto max-w-7xl">
-            <h2 className="font-orbitron mb-4 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+            <h2 className="mb-4 text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
               Emergency <span className="text-emerald-500">Support</span>
             </h2>
             <p className="mb-4 text-center text-lg text-slate-400">
@@ -255,7 +255,7 @@ export default function StorePage() {
 
       <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="font-orbitron text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Ready to Get <span className="text-emerald-500">Started?</span>
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
@@ -264,7 +264,7 @@ export default function StorePage() {
           </p>
           <Link
             href="/contact"
-            className="font-orbitron mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Contact Us
           </Link>

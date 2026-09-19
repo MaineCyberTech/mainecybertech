@@ -353,7 +353,7 @@ export default async function ClientOnboardingDetailPage({ params }: Props) {
           {record.security_baseline_score !== null && (
             <section className="cyber-panel">
               <h2 className="cyber-heading text-lg">Security Baseline Score</h2>
-              <div className="font-orbitron mt-4 text-3xl text-emerald-400">
+              <div className="mt-4 font-display text-3xl text-emerald-400">
                 {record.security_baseline_score}/100
               </div>
               {record.security_findings.length > 0 && (

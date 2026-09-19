@@ -91,7 +91,7 @@ export default async function LocationLandingPage({
           <span className="text-slate-300">Locations / {town}</span>
         </nav>
 
-        <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+        <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
           {town} <span className="text-emerald-500">IT Support & Cybersecurity</span>
         </h1>
         <p className="mt-4 text-lg leading-relaxed text-slate-400">
@@ -102,7 +102,7 @@ export default async function LocationLandingPage({
 
       {allProducts.length > 0 && (
         <div className="mx-auto mt-16 max-w-7xl">
-          <h2 className="font-orbitron mb-8 text-center text-2xl font-bold uppercase tracking-wider text-slate-50">
+          <h2 className="mb-8 text-center font-display text-2xl font-bold uppercase tracking-wider text-slate-50">
             Services Available in <span className="text-emerald-500">{town}</span>
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -128,7 +128,7 @@ export default async function LocationLandingPage({
       <div className="mx-auto mt-16 max-w-4xl text-center">
         <Link
           href="/contact"
-          className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+          className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
         >
           Get Started in {town}
         </Link>

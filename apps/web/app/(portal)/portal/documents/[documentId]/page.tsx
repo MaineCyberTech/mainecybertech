@@ -90,7 +90,7 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+          <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             {displayTitle}
           </h1>
           <p className="mt-3 text-slate-400">{document.file_name}</p>

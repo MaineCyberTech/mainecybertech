@@ -39,7 +39,9 @@ export default async function PortalTimelinePage() {
 
   const allTasks = (
     await Promise.all(projects.map((p: Project) => api.projects.listTasks(p.id).catch(() => [])))
-  ).flatMap((tasks, i) => (tasks as ProjectTask[]).map((t: ProjectTask) => ({ ...t, project_id: projects[i].id })));
+  ).flatMap((tasks, i) =>
+    (tasks as ProjectTask[]).map((t: ProjectTask) => ({ ...t, project_id: projects[i].id })),
+  );
 
   return (
     <div className="space-y-6">
@@ -50,7 +52,7 @@ export default async function PortalTimelinePage() {
 
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+          <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             Project Timeline
           </h1>
           <p className="mt-3 text-slate-400">
@@ -73,7 +75,10 @@ export default async function PortalTimelinePage() {
         </div>
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <p className="text-2xl font-bold text-emerald-400">
-            {allTasks.filter((t: ProjectTask) => !t.due_at || new Date(t.due_at) >= new Date()).length}
+            {
+              allTasks.filter((t: ProjectTask) => !t.due_at || new Date(t.due_at) >= new Date())
+                .length
+            }
           </p>
           <p className="text-xs text-slate-400">Upcoming</p>
         </div>

@@ -27,7 +27,7 @@ export default function CampaignBanner() {
     <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
       <div className="mx-auto max-w-7xl">
         <div className="mb-12 text-center">
-          <span className="font-orbitron inline-block rounded-full border border-emerald-600/20 bg-emerald-600/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-emerald-400">
+          <span className="inline-block rounded-full border border-emerald-600/20 bg-emerald-600/10 px-4 py-1.5 font-display text-xs font-bold uppercase tracking-widest text-emerald-400">
             Seasonal Focus
           </span>
         </div>
@@ -46,7 +46,7 @@ export default function CampaignBanner() {
                     <StoreIconTile iconName={campaign.visual.icon} className="h-6 w-6" size={24} />
                   </div>
                   <div>
-                    <h3 className="font-orbitron text-lg font-bold uppercase tracking-wider text-slate-50">
+                    <h3 className="font-display text-lg font-bold uppercase tracking-wider text-slate-50">
                       {campaign.name}
                     </h3>
                     <p className="text-xs text-slate-500">{campaign.audience}</p>
@@ -74,7 +74,7 @@ export default function CampaignBanner() {
                 <div className="mt-6">
                   <Link
                     href="/contact"
-                    className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+                    className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-2.5 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
                   >
                     Learn More
                   </Link>

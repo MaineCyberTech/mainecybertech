@@ -13,14 +13,14 @@ export default function PrivacyPage() {
       <div className="mx-auto max-w-4xl">
         <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Privacy Policy" }]} />
 
-        <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+        <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
           Privacy <span className="text-emerald-500">Policy</span>
         </h1>
         <p className="mt-4 text-sm text-slate-500">Last updated: July 1, 2026</p>
 
         <div className="cyber-panel mt-10 space-y-8">
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               Information We Collect
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               How We Use Your Information
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               Data Sharing with Third Parties
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
@@ -82,7 +82,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               Data Retention
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               Your Rights (GDPR / CCPA)
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">
@@ -110,7 +110,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="cybergreen font-orbitron text-xl font-bold uppercase tracking-wider">
+            <h2 className="cybergreen font-display text-xl font-bold uppercase tracking-wider">
               Contact Information
             </h2>
             <p className="cyber-text mt-3 leading-relaxed">

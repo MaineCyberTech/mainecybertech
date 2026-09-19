@@ -37,7 +37,7 @@ export async function generateMetadata({
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm">
-      <h2 className="font-orbitron mb-4 text-lg font-bold uppercase tracking-wider text-emerald-400">
+      <h2 className="mb-4 font-display text-lg font-bold uppercase tracking-wider text-emerald-400">
         {title}
       </h2>
       {children}
@@ -96,11 +96,11 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
           <div className="mt-4">
             <TrustBadgeList surface="product_detail" maxBadges={4} />
           </div>
-          <h1 className="font-orbitron mt-4 text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+          <h1 className="mt-4 font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
             {product.name}
           </h1>
           <p className="mt-4 text-lg leading-relaxed text-slate-400">{product.summary}</p>
-          <p className="font-orbitron mt-4 text-xl font-bold text-emerald-400">
+          <p className="mt-4 font-display text-xl font-bold text-emerald-400">
             {product.priceRange}
           </p>
         </div>
@@ -204,7 +204,7 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
         <div className="mt-12 text-center">
           <Link
             href={`/contact?service=${product.slug}`}
-            className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Request This Service
           </Link>
@@ -212,7 +212,7 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
 
         {product.intakeFields.length > 0 && (
           <div className="mx-auto mt-16 max-w-2xl">
-            <h2 className="font-orbitron mb-8 text-center text-2xl font-bold uppercase tracking-wider text-slate-50">
+            <h2 className="mb-8 text-center font-display text-2xl font-bold uppercase tracking-wider text-slate-50">
               Request This <span className="text-emerald-500">Service</span>
             </h2>
             <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm sm:p-10">
@@ -230,7 +230,7 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
 
       {recommendations.length > 0 && (
         <div className="mx-auto mt-24 max-w-7xl">
-          <h2 className="font-orbitron mb-12 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="mb-12 text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Recommended <span className="text-emerald-500">Next Steps</span>
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -251,7 +251,7 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
 
       {sameCategory.length > 0 && (
         <div className="mx-auto mt-24 max-w-7xl">
-          <h2 className="font-orbitron mb-12 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="mb-12 text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             More <span className="text-emerald-500">{product.category}</span> Services
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

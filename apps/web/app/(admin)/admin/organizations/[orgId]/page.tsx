@@ -203,41 +203,50 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
 
         <div className="mt-6 space-y-4">
           {memberships && memberships.length > 0 ? (
-            memberships.map((membership: { id: string; user_id: string; role_id: string; status: string; is_billing_contact: boolean; is_security_contact: boolean }) => {
-              const profile = profileMap.get(membership.user_id);
-              const role = roleMap.get(membership.role_id);
+            memberships.map(
+              (membership: {
+                id: string;
+                user_id: string;
+                role_id: string;
+                status: string;
+                is_billing_contact: boolean;
+                is_security_contact: boolean;
+              }) => {
+                const profile = profileMap.get(membership.user_id);
+                const role = roleMap.get(membership.role_id);
 
-              return (
-                <Link
-                  key={membership.id}
-                  href={`/admin/users/${membership.user_id}`}
-                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-600/20 hover:bg-cyber-base/80"
-                >
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                      <p className="font-medium text-slate-50">
-                        {profile?.full_name ?? "Unknown User"}
-                      </p>
-                      <p className="text-sm text-slate-400">
-                        {profile?.email ?? "No email"} • Role: {role?.name ?? "Unknown"} • Status:{" "}
-                        {membership.status}
-                      </p>
-                    </div>
+                return (
+                  <Link
+                    key={membership.id}
+                    href={`/admin/users/${membership.user_id}`}
+                    className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-600/20 hover:bg-cyber-base/80"
+                  >
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <p className="font-medium text-slate-50">
+                          {profile?.full_name ?? "Unknown User"}
+                        </p>
+                        <p className="text-sm text-slate-400">
+                          {profile?.email ?? "No email"} • Role: {role?.name ?? "Unknown"} • Status:{" "}
+                          {membership.status}
+                        </p>
+                      </div>
 
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      {membership.is_billing_contact ? (
-                        <span className="cyber-pill-success">Billing Contact</span>
-                      ) : null}
-                      {membership.is_security_contact ? (
-                        <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-sky-300">
-                          Security Contact
-                        </span>
-                      ) : null}
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {membership.is_billing_contact ? (
+                          <span className="cyber-pill-success">Billing Contact</span>
+                        ) : null}
+                        {membership.is_security_contact ? (
+                          <span className="rounded-full border border-sky-500/20 bg-sky-500/10 px-3 py-1 text-sky-300">
+                            Security Contact
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              );
-            })
+                  </Link>
+                );
+              },
+            )
           ) : (
             <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No memberships found.
@@ -256,7 +265,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
           </div>
           <Link
             href={`/admin/organizations/${org.id}/billing`}
-            className="font-orbitron rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
+            className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-display text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
           >
             View Billing
           </Link>
@@ -271,7 +280,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
           </div>
           <Link
             href="/admin/documents"
-            className="font-orbitron rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
+            className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-display text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
           >
             All Documents
           </Link>

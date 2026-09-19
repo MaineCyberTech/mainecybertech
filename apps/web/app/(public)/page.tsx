@@ -95,7 +95,7 @@ export default function HomePage() {
 
       <section className="flex min-h-screen items-center justify-center px-4 pb-16 pt-24 text-center sm:pb-24 sm:pt-32">
         <div className="max-w-4xl">
-          <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl lg:text-6xl">
+          <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl lg:text-6xl">
             Managed IT, Cybersecurity &amp; Technology Support for{" "}
             <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(5,150,105,0.5)]">
               Maine
@@ -109,13 +109,13 @@ export default function HomePage() {
           </p>
           <Link
             href="/store"
-            className="font-orbitron mt-4 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="mt-4 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Browse Services
           </Link>
           <a
             href="/contact"
-            className="font-orbitron mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Get Support Now
           </a>
@@ -124,7 +124,7 @@ export default function HomePage() {
 
       <section className="px-4 pb-24 sm:px-6 sm:pb-32">
         <div className="mx-auto max-w-7xl">
-          <h2 className="font-orbitron mb-12 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="mb-12 text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             <span className="text-emerald-500">Services</span> for Maine Organizations
           </h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -137,7 +137,7 @@ export default function HomePage() {
 
       <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-4xl">
-          <h2 className="font-orbitron text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Who We <span className="text-emerald-500">Help</span>
           </h2>
           <p className="mt-4 text-center text-lg text-slate-400">
@@ -175,7 +175,7 @@ export default function HomePage() {
                 key={audience.name}
                 className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm"
               >
-                <h3 className="font-orbitron text-lg font-bold text-slate-100">{audience.name}</h3>
+                <h3 className="font-display text-lg font-bold text-slate-100">{audience.name}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{audience.desc}</p>
               </div>
             ))}
@@ -185,7 +185,7 @@ export default function HomePage() {
 
       <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="font-orbitron text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Why <span className="text-emerald-500">Maine CyberTech</span>
           </h2>
           <div className="mt-12 grid gap-8 sm:grid-cols-3">
@@ -207,7 +207,7 @@ export default function HomePage() {
                 key={reason.title}
                 className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm"
               >
-                <h3 className="font-orbitron text-lg font-bold text-emerald-400">{reason.title}</h3>
+                <h3 className="font-display text-lg font-bold text-emerald-400">{reason.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{reason.desc}</p>
               </div>
             ))}
@@ -217,7 +217,7 @@ export default function HomePage() {
 
       <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-4xl">
-          <h2 className="font-orbitron text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Common Problems <span className="text-emerald-500">We Solve</span>
           </h2>
           <div className="mt-12 grid gap-6 sm:grid-cols-2">
@@ -251,7 +251,7 @@ export default function HomePage() {
                 key={item.issue}
                 className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm"
               >
-                <h3 className="font-orbitron text-base font-bold text-red-400">{item.issue}</h3>
+                <h3 className="font-display text-base font-bold text-red-400">{item.issue}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{item.fix}</p>
               </div>
             ))}
@@ -261,7 +261,7 @@ export default function HomePage() {
 
       <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="font-orbitron text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Technology <span className="text-emerald-500">Areas</span>
           </h2>
           <p className="mt-4 text-lg text-slate-400">
@@ -298,7 +298,7 @@ export default function HomePage() {
 
       <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-6xl">
-          <h2 className="font-orbitron text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Recent <span className="text-emerald-500">Blog Posts</span>
           </h2>
           <p className="mt-4 text-center text-lg text-slate-400">
@@ -314,7 +314,7 @@ export default function HomePage() {
                 <span className="rounded bg-emerald-600/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-wider text-emerald-400">
                   {post.category}
                 </span>
-                <h3 className="font-orbitron mt-3 text-sm font-bold text-slate-100 transition group-hover:text-emerald-400">
+                <h3 className="mt-3 font-display text-sm font-bold text-slate-100 transition group-hover:text-emerald-400">
                   {post.title}
                 </h3>
                 <p className="mt-2 text-xs leading-relaxed text-slate-500">{post.datePublished}</p>
@@ -324,7 +324,7 @@ export default function HomePage() {
           <div className="mt-10 text-center">
             <Link
               href="/blog"
-              className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               View All Blog Posts
             </Link>
@@ -334,7 +334,7 @@ export default function HomePage() {
 
       <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="font-orbitron text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Serving <span className="text-emerald-500">Maine</span>
           </h2>
           <p className="mt-4 text-lg text-slate-400">
@@ -349,7 +349,7 @@ export default function HomePage() {
           </p>
           <a
             href="/contact"
-            className="font-orbitron mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="mt-8 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Schedule a Consultation
           </a>
@@ -358,7 +358,7 @@ export default function HomePage() {
 
       <section className="border-t border-white/5 px-4 py-24 sm:px-6 sm:pb-32">
         <div className="mx-auto max-w-3xl">
-          <h2 className="font-orbitron text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+          <h2 className="text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
             Frequently Asked <span className="text-emerald-500">Questions</span>
           </h2>
           <div className="mt-12 space-y-6">
@@ -388,7 +388,7 @@ export default function HomePage() {
                 key={faq.q}
                 className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm"
               >
-                <h3 className="font-orbitron text-lg font-bold text-slate-100">{faq.q}</h3>
+                <h3 className="font-display text-lg font-bold text-slate-100">{faq.q}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{faq.a}</p>
               </div>
             ))}
@@ -396,7 +396,7 @@ export default function HomePage() {
           <div className="mt-12 text-center">
             <a
               href="/contact"
-              className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+              className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
             >
               Contact Us Today
             </a>

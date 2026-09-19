@@ -208,7 +208,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="font-orbitron mb-8 text-center text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
+      <h1 className="mb-8 text-center font-display text-3xl font-bold uppercase tracking-wider text-slate-50 sm:text-4xl">
         Build Your <span className="text-emerald-500">Quote</span>
       </h1>
 
@@ -282,7 +282,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
 
             <Link
               href="/store"
-              className="font-orbitron block w-full rounded border border-emerald-600/30 bg-emerald-600/10 px-4 py-3 text-center text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:bg-emerald-600/20"
+              className="block w-full rounded border border-emerald-600/30 bg-emerald-600/10 px-4 py-3 text-center font-display text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:bg-emerald-600/20"
             >
               + Add More Products
             </Link>
@@ -355,7 +355,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
               <button
                 type="submit"
                 disabled={submitting || items.length === 0}
-                className="font-orbitron w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-3 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
+                className="w-full rounded border-2 border-emerald-600 bg-emerald-600 px-6 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/5 disabled:text-slate-400 disabled:shadow-none"
               >
                 {submitting ? "Submitting..." : "Submit Quote Request"}
               </button>

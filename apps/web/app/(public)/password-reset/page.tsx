@@ -43,7 +43,7 @@ export default function PasswordResetPage() {
         <div className="w-full rounded-lg border border-white/5 bg-[rgba(18,30,45,0.75)] p-8 shadow-[0_20px_40px_rgba(0,0,0,0.45)] backdrop-blur-md">
           {done ? (
             <>
-              <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+              <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
                 Password Reset
               </h1>
               <div className="mt-6 rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-emerald-300">
@@ -52,7 +52,7 @@ export default function PasswordResetPage() {
             </>
           ) : (
             <>
-              <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+              <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
                 Set New Password
               </h1>
               <p className="mt-3 text-sm text-slate-400">Enter your email and new password.</p>

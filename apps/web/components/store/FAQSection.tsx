@@ -21,7 +21,7 @@ export default function FAQSection({ productId, categoryId }: FAQSectionProps) {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-orbitron text-2xl font-bold uppercase tracking-wider text-slate-50">
+      <h2 className="font-display text-2xl font-bold uppercase tracking-wider text-slate-50">
         Frequently Asked <span className="text-emerald-500">Questions</span>
       </h2>
       {faqs.map((faq) => (
@@ -29,7 +29,7 @@ export default function FAQSection({ productId, categoryId }: FAQSectionProps) {
           key={faq.id}
           className="group rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-4 backdrop-blur-sm"
         >
-          <summary className="font-orbitron cursor-pointer text-sm font-bold text-slate-100 transition group-open:text-emerald-400">
+          <summary className="cursor-pointer font-display text-sm font-bold text-slate-100 transition group-open:text-emerald-400">
             {faq.question}
           </summary>
           <p className="mt-3 text-sm leading-relaxed text-slate-400">{faq.answer}</p>

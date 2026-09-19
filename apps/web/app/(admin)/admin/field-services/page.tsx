@@ -50,7 +50,7 @@ export default async function FieldServicesPage() {
             href={`/admin/field-services/${m.key}`}
             className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-center transition hover:border-emerald-600/25 hover:bg-cyber-base/80"
           >
-            <p className="font-orbitron text-xl text-slate-50">{m.count}</p>
+            <p className="font-display text-xl text-slate-50">{m.count}</p>
             <p className="mt-1 text-xs text-slate-400">{m.label}</p>
           </Link>
         ))}

@@ -202,7 +202,7 @@ export default function AdminBillingClient({
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="font-orbitron rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10 disabled:opacity-50"
+            className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2 font-display text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10 disabled:opacity-50"
           >
             {syncing ? "Syncing..." : "Sync from Stripe"}
           </button>

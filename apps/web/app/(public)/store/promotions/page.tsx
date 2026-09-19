@@ -55,7 +55,7 @@ export default async function PublicPromotionsPage() {
     <>
       <section className="px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32">
         <div className="mx-auto max-w-5xl">
-          <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl lg:text-6xl">
+          <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl lg:text-6xl">
             Current{" "}
             <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(5,150,105,0.5)]">
               Promotions
@@ -72,7 +72,7 @@ export default async function PublicPromotionsPage() {
         <div className="mx-auto max-w-5xl">
           {active.length === 0 ? (
             <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-12 text-center backdrop-blur-sm">
-              <h2 className="font-orbitron text-xl font-bold uppercase tracking-wider text-slate-300">
+              <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-300">
                 No Active Promotions
               </h2>
               <p className="mt-3 text-slate-400">
@@ -81,7 +81,7 @@ export default async function PublicPromotionsPage() {
               </p>
               <Link
                 href="/store"
-                className="font-orbitron mt-6 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+                className="mt-6 inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
               >
                 Browse Services
               </Link>
@@ -106,7 +106,7 @@ function PromotionCard({ promotion: p }: { promotion: Promotion }) {
   return (
     <div className="rounded-lg border border-white/10 bg-slate-900/60 p-6 backdrop-blur-sm transition hover:border-emerald-600/20">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-orbitron text-lg font-bold uppercase tracking-wider text-slate-50">
+        <h3 className="font-display text-lg font-bold uppercase tracking-wider text-slate-50">
           {p.name}
         </h3>
         <PromoBadge

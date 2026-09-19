@@ -171,7 +171,7 @@ export default function AdminDocumentsBulkControls({
       {showFolderModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
-            <h3 className="font-orbitron text-lg uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">
               Bulk Folder Reassignment
             </h3>
             <p className="mt-3 text-sm text-slate-300">
@@ -216,7 +216,7 @@ export default function AdminDocumentsBulkControls({
       {showMetadataModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div className="w-full max-w-2xl rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
-            <h3 className="font-orbitron text-lg uppercase tracking-[0.12em] text-slate-50">
+            <h3 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">
               Bulk Metadata Edit
             </h3>
             <p className="mt-3 text-sm text-slate-300">

@@ -29,7 +29,7 @@ export default function CompareIndexPage() {
           <span className="text-slate-300">Compare</span>
         </nav>
 
-        <h1 className="font-orbitron mb-4 text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+        <h1 className="mb-4 font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
           Service{" "}
           <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(5,150,105,0.5)]">
             Comparisons
@@ -52,7 +52,7 @@ export default function CompareIndexPage() {
                 href={`/store/compare/${comparison.slug}`}
                 className="glass-card glass-card-hover group flex flex-col p-8 no-underline sm:p-10"
               >
-                <h3 className="font-orbitron mb-3 text-lg font-bold uppercase tracking-wider text-slate-50">
+                <h3 className="mb-3 font-display text-lg font-bold uppercase tracking-wider text-slate-50">
                   {comparison.title}
                 </h3>
                 <p className="mb-4 text-sm text-slate-500">
@@ -70,7 +70,7 @@ export default function CompareIndexPage() {
         <div className="mt-16 text-center">
           <Link
             href="/store"
-            className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-10 py-4 font-display text-sm font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Browse All Services
           </Link>

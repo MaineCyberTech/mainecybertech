@@ -31,10 +31,10 @@ function ProductCard({ product }: ProductCardProps) {
           {categoryIcons[product.category] ?? "▸"} {product.category}
         </span>
       </div>
-      <h3 className="font-orbitron mb-2 text-lg font-bold text-slate-50">{product.name}</h3>
+      <h3 className="mb-2 font-display text-lg font-bold text-slate-50">{product.name}</h3>
       <p className="mb-4 line-clamp-3 text-sm leading-relaxed text-slate-400">{product.summary}</p>
       <div className="flex items-center justify-between">
-        <span className="font-orbitron text-sm font-bold text-emerald-400">
+        <span className="font-display text-sm font-bold text-emerald-400">
           {product.priceRange}
         </span>
         <span
@@ -50,7 +50,7 @@ function ProductCard({ product }: ProductCardProps) {
       <div className="mt-4 border-t border-white/5 pt-4">
         <a
           href={`/store/products/${product.slug}`}
-          className="font-orbitron w-full text-center text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:text-emerald-300"
+          className="w-full text-center font-display text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:text-emerald-300"
         >
           View Details →
         </a>
@@ -76,7 +76,7 @@ function PromotionCard({ promotion }: { promotion: StorePromotion }) {
               {promotion.promo_type.replace(/_/g, " ")}
             </span>
           </div>
-          <h4 className="font-orbitron mb-1 text-base font-bold text-slate-50">{promotion.name}</h4>
+          <h4 className="mb-1 font-display text-base font-bold text-slate-50">{promotion.name}</h4>
           <p className="mb-3 text-sm leading-relaxed text-slate-400">{promotion.detail_text}</p>
           {promotion.terms && (
             <p className="text-xs italic leading-relaxed text-slate-500">
@@ -97,7 +97,7 @@ function CampaignCard({ campaign }: { campaign: SeasonalCampaign }) {
           {campaign.audience}
         </span>
       </div>
-      <h4 className="font-orbitron mb-2 text-lg font-bold text-slate-50">{campaign.headline}</h4>
+      <h4 className="mb-2 font-display text-lg font-bold text-slate-50">{campaign.headline}</h4>
       <p className="mb-4 text-sm leading-relaxed text-slate-400">
         Recommended products: {campaign.recommendedProducts.join(", ") || "Various"}
       </p>
@@ -105,7 +105,7 @@ function CampaignCard({ campaign }: { campaign: SeasonalCampaign }) {
         <span className="text-xs text-slate-500">Seasonal Campaign</span>
         <Link
           href={`/store/campaigns/${campaign.id}`}
-          className="font-orbitron text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:text-emerald-300"
+          className="font-display text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:text-emerald-300"
         >
           View Campaign →
         </Link>
@@ -151,7 +151,7 @@ export default async function PortalStorePage() {
               Service Catalog
             </span>
           </div>
-          <h1 className="font-orbitron mb-4 text-3xl font-bold uppercase tracking-wider text-slate-50">
+          <h1 className="mb-4 font-display text-3xl font-bold uppercase tracking-wider text-slate-50">
             Maine CyberTech Store
           </h1>
           <p className="text-lg leading-relaxed text-slate-300">
@@ -165,7 +165,7 @@ export default async function PortalStorePage() {
       {promotions.length > 0 && (
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-orbitron text-xl font-bold uppercase tracking-wider text-slate-50">
+            <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-50">
               Current Promotions
             </h2>
           </div>
@@ -181,7 +181,7 @@ export default async function PortalStorePage() {
       {campaigns.length > 0 && (
         <section>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-orbitron text-xl font-bold uppercase tracking-wider text-slate-50">
+            <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-50">
               Seasonal Campaigns
             </h2>
           </div>
@@ -195,7 +195,7 @@ export default async function PortalStorePage() {
 
       {/* Product Categories */}
       <section>
-        <h2 className="font-orbitron mb-6 text-xl font-bold uppercase tracking-wider text-slate-50">
+        <h2 className="mb-6 font-display text-xl font-bold uppercase tracking-wider text-slate-50">
           Services by Category
         </h2>
         <div className="space-y-8">
@@ -203,7 +203,7 @@ export default async function PortalStorePage() {
             <div key={categoryName}>
               <div className="mb-4 flex items-center gap-3">
                 <span className="text-2xl">{categoryIcons[categoryName] ?? "▸"}</span>
-                <h3 className="font-orbitron text-lg font-bold uppercase tracking-wider text-slate-50">
+                <h3 className="font-display text-lg font-bold uppercase tracking-wider text-slate-50">
                   {categoryName}
                 </h3>
                 <span className="ml-auto rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -222,7 +222,7 @@ export default async function PortalStorePage() {
 
       {/* CTA */}
       <section className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-8 text-center backdrop-blur-sm">
-        <h2 className="font-orbitron mb-3 text-xl font-bold uppercase tracking-wider text-slate-50">
+        <h2 className="mb-3 font-display text-xl font-bold uppercase tracking-wider text-slate-50">
           Need Help Choosing?
         </h2>
         <p className="mx-auto mb-6 mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">
@@ -232,13 +232,13 @@ export default async function PortalStorePage() {
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link
             href="/portal/service-catalog"
-            className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
+            className="inline-block rounded border-2 border-emerald-600 bg-emerald-600 px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-transparent hover:text-emerald-500 hover:shadow-[0_0_25px_rgba(5,150,105,0.5)]"
           >
             Service Finder Quiz
           </Link>
           <Link
             href="/store/contact"
-            className="font-orbitron inline-block rounded border-2 border-emerald-600 bg-transparent px-8 py-3 text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:bg-emerald-600/10 hover:shadow-[0_0_25px_rgba(5,150,105,0.2)]"
+            className="inline-block rounded border-2 border-emerald-600 bg-transparent px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:bg-emerald-600/10 hover:shadow-[0_0_25px_rgba(5,150,105,0.2)]"
           >
             Contact Sales
           </Link>

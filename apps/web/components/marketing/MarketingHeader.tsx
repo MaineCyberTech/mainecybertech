@@ -81,7 +81,7 @@ export default function MarketingHeader() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 sm:py-4">
         <Link href={linkHref("/")} className="flex items-center gap-3 no-underline">
-          <span className="font-orbitron text-lg font-bold uppercase tracking-wider text-slate-50 sm:text-xl">
+          <span className="font-display text-lg font-bold uppercase tracking-wider text-slate-50 sm:text-xl">
             Maine{" "}
             <span className="text-emerald-500 drop-shadow-[0_0_10px_rgba(5,150,105,0.4)]">
               CyberTech
