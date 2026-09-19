@@ -138,7 +138,9 @@ export default function SidebarShell({
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1">{children}</main>
+      <main id="main-content" className="min-w-0 flex-1">
+        {children}
+      </main>
     </div>
   );
 }

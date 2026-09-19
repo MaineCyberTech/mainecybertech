@@ -11,6 +11,7 @@ import {
   updateKnowledgeBaseSchema,
 } from "../validators/knowledge-base";
 import { queryInt } from "../lib/query";
+import { sanitizeSearchTerm } from "../lib/search";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -29,7 +30,10 @@ router.get("/", async (req, res, next) => {
     const orgId = req.query.organization_id as string | undefined;
     if (orgId) query = query.eq("organization_id", orgId);
     if (category) query = query.eq("category", category);
-    if (search) query = query.or(`title.ilike.%${search}%,body.ilike.%${search}%`);
+    if (search) {
+      const term = sanitizeSearchTerm(search);
+      if (term) query = query.or(`title.ilike.%${term}%,body.ilike.%${term}%`);
+    }
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })

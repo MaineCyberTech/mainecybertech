@@ -453,7 +453,7 @@ export default function TestAccountsPage() {
 
   if (!isTestAccountsEnabled()) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-cyber-base px-6">
+      <div className="flex min-h-screen items-center justify-center bg-cyber-base px-6">
         <div className="text-center">
           <h1 className="text-xl font-bold text-slate-100">Not Available</h1>
           <p className="mt-2 text-sm text-slate-400">
@@ -468,7 +468,7 @@ export default function TestAccountsPage() {
             </Link>
           </p>
         </div>
-      </main>
+      </div>
     );
   }
 
@@ -494,7 +494,7 @@ export default function TestAccountsPage() {
   }
 
   return (
-    <main className="min-h-screen overflow-y-auto bg-cyber-base">
+    <div className="min-h-screen overflow-y-auto bg-cyber-base">
       <div className="mx-auto max-w-5xl px-4 py-12">
         <div className="mb-8 text-center">
           <h1 className="font-display text-3xl font-bold uppercase tracking-[0.1em] text-slate-100">
@@ -593,6 +593,6 @@ export default function TestAccountsPage() {
           </Link>
         </div>
       </div>
-    </main>
+    </div>
   );
 }

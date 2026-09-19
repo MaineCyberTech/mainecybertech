@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <div className="pointer-events-none fixed left-1/2 top-[20%] -z-10 h-[800px] w-[800px] -translate-x-1/2 bg-[radial-gradient(circle,rgba(5,150,105,0.08)_0%,transparent_60%)]" />
         <ThemeProvider defaultTheme="system" storageKey="mct-theme">
-          <main id="main-content">{children}</main>
+          <div>{children}</div>
           <VersionBadge />
         </ThemeProvider>
       </body>

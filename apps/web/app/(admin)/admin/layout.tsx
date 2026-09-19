@@ -160,7 +160,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
         <AdminSidebarLayout
           permissions={
             permissionsResult
@@ -172,7 +172,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             {children}
           </RouteGuard>
         </AdminSidebarLayout>
-      </main>
+      </div>
     </div>
   );
 }

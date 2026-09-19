@@ -22,6 +22,7 @@ import {
 } from "../validators/edu-automation";
 import { queryInt } from "../lib/query";
 import { parsePartialUpdate } from "../lib/validators";
+import { sanitizeSearchTerm } from "../lib/search";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -247,7 +248,7 @@ router.post("/kb-generator/:id/generate", async (req, res, next) => {
 });
 router.get("/kb/search", async (req, res, next) => {
   try {
-    const q = req.query.q as string;
+    const q = sanitizeSearchTerm(req.query.q);
     if (!q) throw new AppError("VALIDATION", "Search query required", 400);
     const supabase = getScopedClient(req, "edu-automation", "read");
     const { data, error } = await supabase

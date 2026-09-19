@@ -5,6 +5,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requireOrgAccess } from "../middleware/org-access";
 import { logAuditEvent } from "../services/audit";
+import { sanitizeSearchTerm } from "../lib/search";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -12,7 +13,7 @@ router.use(requireAuth, requireAdmin, requireOrgAccess);
 
 router.get("/", async (req, res, next) => {
   try {
-    const q = ((req.query.q as string) || "").trim();
+    const q = sanitizeSearchTerm(req.query.q);
     if (!q || q.length < 2) {
       res.json(success({ users: [], organizations: [], tickets: [], projects: [], documents: [] }));
       return;

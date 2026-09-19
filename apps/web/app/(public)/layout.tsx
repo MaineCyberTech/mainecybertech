@@ -77,7 +77,7 @@ export default async function PublicLayout({ children }: { children: React.React
 
       <ParticleBackground />
       <MarketingHeader />
-      <main>{children}</main>
+      <main id="main-content">{children}</main>
     </>
   );
 }
