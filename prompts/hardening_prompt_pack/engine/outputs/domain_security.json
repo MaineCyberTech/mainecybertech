@@ -1,0 +1,14 @@
+{
+  "domain": "security",
+  "findings": [
+    {
+      "severity": "P0",
+      "domain": "security",
+      "file": "apps/api/src/routes/users.ts",
+      "issue": "Missing tenant isolation (requireOrgAccess)",
+      "impact": "Users can access cross-org records",
+      "fix": "Add requireOrgAccess middleware to this router"
+    }
+  ],
+  "count": 1
+}

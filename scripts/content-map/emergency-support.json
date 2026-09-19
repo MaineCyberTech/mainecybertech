@@ -1,0 +1,224 @@
+{
+  "emergency_remote_support": {
+    "marketingCopy": "When a system is down and nobody can work, waiting for a scheduled appointment isn't an option. MCT Emergency Remote Support is priority same-day remote support for down systems and urgent issues, with rapid response to get you back up without waiting. When something breaks and it's blocking work, we connect fast and start solving. This is the response for urgent problems that need immediate attention - get priority support and fast resolution.",
+    "bestFor": [
+      "Businesses with an urgent system issue right now",
+      "Organizations that can't wait for a scheduled appointment",
+      "Companies with a down system or blocked workflow",
+      "Businesses that need priority remote response"
+    ],
+    "whatIsIncluded": [
+      "Priority same-day remote support",
+      "Rapid response to urgent issues",
+      "Remote diagnosis and fix",
+      "Direct access to an engineer",
+      "Fast resolution of blocking problems"
+    ],
+    "customerOutcomes": [
+      "Quick recovery from an urgent issue",
+      "Priority support without the wait",
+      "A down system back up faster",
+      "Direct, immediate remote help"
+    ]
+  },
+  "emergency_on_site_visit": {
+    "marketingCopy": "Some failures can't be fixed remotely - the server room, the network closet, the physical hardware need a technician in the building. MCT Emergency On-Site Visit is priority on-site response for situations requiring hands-on work, with fast dispatch when your issue needs someone there. When the problem is physical or network-level and remote access isn't possible, we dispatch a technician to your location to resolve it. This is the emergency response for issues that require in-person hands-on service.",
+    "bestFor": [
+      "Businesses with an issue that requires hands-on work",
+      "Organizations where remote access isn't possible",
+      "Companies with a physical or network-level failure",
+      "Businesses that need a technician dispatched fast"
+    ],
+    "whatIsIncluded": [
+      "Priority on-site response",
+      "Fast dispatch of a technician",
+      "Hands-on diagnosis and repair",
+      "On-site resolution of the issue",
+      "Emergency coordination"
+    ],
+    "customerOutcomes": [
+      "A technician on site fast",
+      "Physical and network issues resolved",
+      "Hands-on help when remote isn't possible",
+      "Recovery from an on-site emergency"
+    ]
+  },
+  "email_compromise_response": {
+    "marketingCopy": "A compromised email account is one of the most urgent threats a business faces - attackers send scams to your contacts, access sensitive mail, and set up forwarding to keep reading your messages. MCT Email Compromise Response is an immediate response service to contain and remediate a compromised email account: securing it, revoking attacker access, removing forwarding rules, and preventing further damage. When you suspect or confirm an email breach, we act immediately to contain it, clean it up, and harden it against recurrence.",
+    "bestFor": [
+      "Businesses that suspect or confirm a compromised email account",
+      "Organizations that need fast containment of an email breach",
+      "Companies that want forwarding and attacker access removed",
+      "Businesses that want to harden email after a compromise"
+    ],
+    "whatIsIncluded": [
+      "Immediate containment of the compromised account",
+      "Password and session reset",
+      "Removal of forwarding rules and attacker access",
+      "Inbox and mail-rule review",
+      "Email security hardening",
+      "Guidance for notifying affected contacts"
+    ],
+    "customerOutcomes": [
+      "A compromised email account contained fast",
+      "Attacker access and forwarding removed",
+      "Email hardened against recurrence",
+      "Damage from the breach limited"
+    ]
+  },
+  "ransomware_first_response": {
+    "marketingCopy": "When ransomware hits, every hour matters - systems encrypted, backups questioned, business operations at stake. MCT Ransomware First Response is an immediate incident response for ransomware: isolating systems, preserving evidence, and guiding recovery. When ransomware strikes, we act fast to contain the spread, preserve evidence for insurance and law enforcement, and coordinate your recovery path. This is the first-response service for a ransomware event - the immediate containment and guidance that limits damage.",
+    "bestFor": [
+      "Businesses experiencing a ransomware event",
+      "Organizations that need immediate containment",
+      "Companies that need evidence preserved for insurance",
+      "Businesses that need guided recovery coordination"
+    ],
+    "whatIsIncluded": [
+      "Immediate containment and isolation",
+      "Evidence preservation",
+      "Impact assessment",
+      "Recovery guidance and coordination",
+      "Communication support",
+      "Post-incident security recommendations"
+    ],
+    "customerOutcomes": [
+      "Ransomware contained fast to limit spread",
+      "Evidence preserved for insurance and authorities",
+      "A guided recovery path",
+      "Damage minimized through rapid response"
+    ]
+  },
+  "website_down_emergency": {
+    "marketingCopy": "Your website is down and customers can't find you - bookings lost, orders stopped, leads going to competitors. MCT Website Down Emergency is fast response to restore a down website: diagnosing whether it's a host issue, configuration, or an attack, and getting your site back online. When your site goes down, we respond quickly to identify the cause and restore service. This is emergency response for your website - fast diagnosis and restoration when downtime is costing you business.",
+    "bestFor": [
+      "Businesses whose website is currently down",
+      "Organizations losing customers during downtime",
+      "Companies that need fast diagnosis and restoration",
+      "Businesses that want to prevent a repeat outage"
+    ],
+    "whatIsIncluded": [
+      "Fast diagnosis of the outage cause",
+      "Host, configuration, and attack assessment",
+      "Website restoration",
+      "Emergency mitigation",
+      "Root cause and prevention guidance"
+    ],
+    "customerOutcomes": [
+      "A down website restored fast",
+      "The outage cause diagnosed",
+      "Customer-facing disruption minimized",
+      "Prevention guidance for future outages"
+    ]
+  },
+  "network_down_emergency": {
+    "marketingCopy": "When the network is down, nobody can work - email, files, phones, and applications all stop. MCT Network Down Emergency is fast response to restore a down network: diagnosing hardware, routing, DNS, and configuration issues, and getting connectivity back. When your network fails, we respond quickly to identify the fault and restore service. This is emergency response for your network - rapid diagnosis and restoration when your whole operation is offline.",
+    "bestFor": [
+      "Businesses whose network is down",
+      "Organizations where the whole operation is offline",
+      "Companies that need hardware and routing diagnosis",
+      "Businesses that need connectivity restored fast"
+    ],
+    "whatIsIncluded": [
+      "Fast network outage diagnosis",
+      "Hardware, routing, DNS, and configuration review",
+      "Connectivity restoration",
+      "Emergency mitigation",
+      "Root cause and prevention guidance"
+    ],
+    "customerOutcomes": [
+      "A down network restored fast",
+      "The outage cause identified",
+      "Work restored for the whole business",
+      "Prevention guidance for future outages"
+    ]
+  },
+  "computer_won_t_boot_support": {
+    "marketingCopy": "When a computer won't boot, important work can feel locked inside it - and knowing whether the data is recoverable or the drive is failing matters fast. MCT Computer Won't Boot Support is diagnostic and recovery support for computers that won't start: determining the cause, recovering data where possible, and getting the device working again. We diagnose why the computer won't boot, attempt data recovery, and restore it to working condition. This is the support service for a computer that won't start up.",
+    "bestFor": [
+      "Businesses with a computer that won't boot",
+      "Organizations worried about data on the device",
+      "Companies that need diagnosis and recovery",
+      "Businesses that need the device working again"
+    ],
+    "whatIsIncluded": [
+      "Diagnosis of the boot failure cause",
+      "Data recovery attempt",
+      "Repair or reinstallation as needed",
+      "Drive health assessment",
+      "Backup guidance to prevent recurrence"
+    ],
+    "customerOutcomes": [
+      "A clear diagnosis of the boot failure",
+      "Data recovered where possible",
+      "The computer working again",
+      "A backup plan to prevent future loss"
+    ]
+  },
+  "data_recovery_coordination": {
+    "marketingCopy": "When critical data disappears - a deleted folder, a failed drive, an accidental overwrite - what you do next determines whether it comes back. MCT Data Recovery Coordination is expert coordination for urgent data recovery: assessing the situation, recommending the right approach, and working with professional recovery services when needed. We coordinate the recovery effort - evaluating recovery options, avoiding actions that worsen the situation, and managing professional recovery when the stakes are high. This is the service for getting important data back.",
+    "bestFor": [
+      "Businesses that lost critical data",
+      "Organizations facing a failed drive or deletion",
+      "Companies that want expert recovery coordination",
+      "Businesses with high-stakes data that must be recovered"
+    ],
+    "whatIsIncluded": [
+      "Immediate assessment of the data loss",
+      "Recovery option evaluation",
+      "Guidance to avoid worsening the situation",
+      "Coordination with professional recovery services",
+      "Restore assistance once data is recovered"
+    ],
+    "customerOutcomes": [
+      "Critical data recovered where possible",
+      "An expert coordinated the recovery effort",
+      "Actions taken right to maximize recovery",
+      "Recovery handled with minimal further risk"
+    ]
+  },
+  "emergency_support_retainer": {
+    "marketingCopy": "For businesses that can't accept slow response in a crisis, a retainer locks in priority access to emergency support. MCT Emergency Support Retainer is a standing arrangement for guaranteed-priority emergency response: pre-negotiated terms, priority escalation, and fast service when an incident happens. With a retainer in place, your business is known, your systems are documented, and when an emergency strikes you jump the queue. This is the service for organizations that treat emergency response as a requirement, not an option.",
+    "bestFor": [
+      "Businesses that need guaranteed emergency response",
+      "Organizations that can't tolerate long downtime",
+      "Companies that want priority access in a crisis",
+      "Businesses that want pre-arranged emergency terms"
+    ],
+    "whatIsIncluded": [
+      "Guaranteed priority emergency response",
+      "Pre-negotiated response terms",
+      "Priority escalation in an incident",
+      "Faster dispatch for on-site emergencies",
+      "Recurring coordination"
+    ],
+    "customerOutcomes": [
+      "Priority response guaranteed in a crisis",
+      "No waiting when it matters most",
+      "Faster recovery from emergencies",
+      "Emergency support treated as a requirement"
+    ]
+  },
+  "critical_account_lockout_help": {
+    "marketingCopy": "When a critical account is locked - the admin who runs the systems, the owner who approves payments - the business grinds to a halt. MCT Critical Account Lockout Help is priority support to restore access to critical accounts: verifying identity, resetting credentials, and getting you back in control quickly. When a critical account is locked or inaccessible, we work fast to restore access safely - balancing speed with security verification. This is the emergency service for regaining control of an account that blocks business.",
+    "bestFor": [
+      "Businesses with a locked critical account",
+      "Organizations blocked by an inaccessible admin account",
+      "Companies that need secure, fast access restoration",
+      "Businesses that need to verify and reset credentials"
+    ],
+    "whatIsIncluded": [
+      "Priority response to the account lockout",
+      "Identity verification",
+      "Credential reset and access restoration",
+      "Account security review",
+      "Access recovery guidance"
+    ],
+    "customerOutcomes": [
+      "A critical account restored fast",
+      "Secure, verified access recovery",
+      "Business unblocked quickly",
+      "Account security reviewed after recovery"
+    ]
+  }
+}

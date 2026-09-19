@@ -18,12 +18,18 @@ storybook-static/
 .env.*
 !.env.example
 !.env.*.example
+.env.local
+.playwright-auth.json
+.playwright-report/
+.playwright-results/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/launch.json
 !.vscode/settings.json
 .idea/
-*.swp *.swo *~
+*.swp
+*.swo
+*~
 .DS_Store
 Thumbs.db
 .vercel/
@@ -36,6 +42,7 @@ scripts/*.local.sh
 scripts/*.local.ps1
 tmp/
 temp/
+# Terraform
 terraform.exe
 /terraform
 **/.terraform/*

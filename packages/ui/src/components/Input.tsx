@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { forwardRef, InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 import { cn } from "@mct/ui/lib/cn";
@@ -41,7 +41,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           </p>
         )}
         {helperText && !error && (
-          <p id={helperId} className="mt-1.5 text-sm text-slate-500">
+          <p id={helperId} className="mt-1.5 text-sm text-slate-400">
             {helperText}
           </p>
         )}
@@ -90,7 +90,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           </p>
         )}
         {helperText && !error && (
-          <p id={helperId} className="mt-1.5 text-sm text-slate-500">
+          <p id={helperId} className="mt-1.5 text-sm text-slate-400">
             {helperText}
           </p>
         )}

@@ -14,7 +14,12 @@ export default function DocumentPreview({ url, mimeType, fileName, className = "
   if (mime.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) {
     return (
       <div className={`overflow-hidden rounded-lg border border-white/10 ${className}`}>
-        <img src={url} alt={fileName ?? "Preview"} className="h-auto max-h-96 w-full object-contain bg-[#071018]" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt={fileName ?? "Preview"}
+          className="h-auto max-h-96 w-full bg-cyber-card-deep object-contain"
+        />
       </div>
     );
   }
@@ -30,7 +35,7 @@ export default function DocumentPreview({ url, mimeType, fileName, className = "
   if (mime.startsWith("video/") || ["mp4", "webm", "ogg"].includes(ext)) {
     return (
       <div className={`overflow-hidden rounded-lg border border-white/10 ${className}`}>
-        <video controls className="h-auto max-h-96 w-full bg-[#071018]">
+        <video controls className="h-auto max-h-96 w-full bg-cyber-card-deep">
           <source src={url} type={mime || undefined} />
         </video>
       </div>
@@ -39,13 +44,16 @@ export default function DocumentPreview({ url, mimeType, fileName, className = "
 
   if (mime.startsWith("audio/") || ["mp3", "wav", "ogg", "flac"].includes(ext)) {
     return (
-      <div className={`rounded-lg border border-white/10 bg-[#0A1118]/60 p-6 ${className}`}>
+      <div className={`rounded-lg border border-white/10 bg-cyber-base/60 p-6 ${className}`}>
         <audio controls className="w-full" src={url} />
       </div>
     );
   }
 
-  if (mime.includes("text/") || ["txt", "csv", "json", "xml", "md", "log", "yaml", "yml"].includes(ext)) {
+  if (
+    mime.includes("text/") ||
+    ["txt", "csv", "json", "xml", "md", "log", "yaml", "yml"].includes(ext)
+  ) {
     return (
       <div className={`overflow-hidden rounded-lg border border-white/10 ${className}`}>
         <iframe src={url} className="h-64 w-full" title={fileName ?? "Text Preview"} />
@@ -54,9 +62,16 @@ export default function DocumentPreview({ url, mimeType, fileName, className = "
   }
 
   return (
-    <div className={`rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-center text-amber-300 ${className}`}>
+    <div
+      className={`rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-center text-amber-300 ${className}`}
+    >
       <p className="text-sm">Preview not available for this file type.</p>
-      <a href={url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-emerald-400 hover:text-emerald-300 underline">
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="mt-2 inline-block text-xs text-emerald-400 underline hover:text-emerald-300"
+      >
         Download to view
       </a>
     </div>

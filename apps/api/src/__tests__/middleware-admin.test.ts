@@ -16,13 +16,15 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
+    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
 
 function mockReq(userId?: string) {
-  return { authUser: userId ? { userId, email: "test@example.com" } : undefined } as unknown as Request;
+  return {
+    authUser: userId ? { userId, email: "test@example.com" } : undefined,
+  } as unknown as Request;
 }
 
 function mockRes() {
@@ -52,7 +54,7 @@ describe("requireAdmin middleware", () => {
   });
 
   it("calls next() for user with admin role", async () => {
-    mockSupabase([{ roles: { id: "role-1", key: "admin" } }]);
+    mockSupabase([{ roles: { id: "00000000-0000-0000-0000-000000000020", key: "admin" } }]);
     const next = jest.fn();
 
     await requireAdmin(mockReq("user-1"), mockRes(), next as NextFunction);
@@ -61,7 +63,7 @@ describe("requireAdmin middleware", () => {
   });
 
   it("calls next() for user with super_admin role", async () => {
-    mockSupabase([{ roles: { id: "role-1", key: "super_admin" } }]);
+    mockSupabase([{ roles: { id: "00000000-0000-0000-0000-000000000020", key: "super_admin" } }]);
     const next = jest.fn();
 
     await requireAdmin(mockReq("user-1"), mockRes(), next as NextFunction);
@@ -87,7 +89,7 @@ describe("requireAdmin middleware", () => {
   });
 
   it("returns 403 when no admin role", async () => {
-    mockSupabase([{ roles: { id: "role-1", key: "client_user" } }]);
+    mockSupabase([{ roles: { id: "00000000-0000-0000-0000-000000000020", key: "client_user" } }]);
     const next = jest.fn();
 
     await requireAdmin(mockReq("user-1"), mockRes(), next as NextFunction);

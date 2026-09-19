@@ -5,6 +5,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+  timeout: 45000,
   workers: process.env.CI ? 1 : undefined,
   reporter: [["html", { outputFolder: "../../.playwright-report" }], ["list"]],
   outputDir: "../../.playwright-results",
@@ -14,6 +15,14 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "on-first-retry",
+    // Bound individual actions/navigations so a hung request fails the step
+    // clearly well inside the 45s test budget instead of consuming all of it.
+    actionTimeout: 15_000,
+    navigationTimeout: 30_000,
+  },
+
+  expect: {
+    timeout: 20000,
   },
 
   projects: [

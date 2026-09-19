@@ -27,9 +27,7 @@ describe("createPortalTicket", () => {
   it("creates a ticket with all form fields", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { createPortalTicket } = await import(
-      "@/app/(portal)/portal/support/actions"
-    );
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
     formData.set("title", "Test ticket");
@@ -53,26 +51,20 @@ describe("createPortalTicket", () => {
   it("uses default priority when not provided", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { createPortalTicket } = await import(
-      "@/app/(portal)/portal/support/actions"
-    );
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
     formData.set("title", "Test");
 
     await createPortalTicket(formData);
 
-    expect(mockTicketsCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ priority: "normal" }),
-    );
+    expect(mockTicketsCreate).toHaveBeenCalledWith(expect.objectContaining({ priority: "normal" }));
   });
 
   it("uses null for empty description and category", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { createPortalTicket } = await import(
-      "@/app/(portal)/portal/support/actions"
-    );
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
     formData.set("title", "Test");
@@ -84,49 +76,43 @@ describe("createPortalTicket", () => {
     );
   });
 
-  it("throws when no approved membership", async () => {
+  it("returns error when no approved membership", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
-    const { createPortalTicket } = await import(
-      "@/app/(portal)/portal/support/actions"
-    );
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
     formData.set("title", "Test");
 
-    await expect(createPortalTicket(formData)).rejects.toThrow(
-      "No approved organization membership found.",
-    );
+    const result = await createPortalTicket(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("No approved organization membership found");
     expect(mockTicketsCreate).not.toHaveBeenCalled();
   });
 
-  it("throws when title is empty or whitespace", async () => {
+  it("returns error when title is empty or whitespace", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { createPortalTicket } = await import(
-      "@/app/(portal)/portal/support/actions"
-    );
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
     formData.set("title", "   ");
 
-    await expect(createPortalTicket(formData)).rejects.toThrow(
-      "Title is required.",
-    );
+    const result = await createPortalTicket(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Title is required");
     expect(mockTicketsCreate).not.toHaveBeenCalled();
   });
 
-  it("throws when title is missing from form data", async () => {
+  it("returns error when title is missing from form data", async () => {
     mockGetApprovedMembership.mockResolvedValue({ organization_id: "org-1" });
 
-    const { createPortalTicket } = await import(
-      "@/app/(portal)/portal/support/actions"
-    );
+    const { createPortalTicket } = await import("@/app/(portal)/portal/support/actions");
 
     const formData = new FormData();
 
-    await expect(createPortalTicket(formData)).rejects.toThrow(
-      "Title is required.",
-    );
+    const result = await createPortalTicket(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Title is required");
   });
 });

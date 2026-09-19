@@ -2,7 +2,7 @@
 
 This pack is designed for an intelligent AI coding/review agent to compare:
 
-- **Reference repo:** `C:\temp\mainecybertechportal`
+- **Reference repo:** `C:\temp\chat`
 - **Current repo:** the active working repository in the agent's context
 
 ## Goals

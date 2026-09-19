@@ -1,0 +1,104 @@
+﻿{
+  "meta": {
+    "phase": 5,
+    "description": "Cross-Domain Reconciliation — connecting findings from phases 1-4",
+    "sources": [
+      "inventory.json",
+      "schema_alignment.json",
+      "api_contract.json",
+      "frontend_alignment.json"
+    ],
+    "total_prior_findings": 37,
+    "cross_domain_chains": 5
+  },
+  "findings": [
+    {
+      "severity": "P0",
+      "phase": 5,
+      "category": "reconciliation",
+      "file_primary": "packages/sdk/src/client.ts",
+      "files_involved": [
+        "apps/api/src/routes/tickets.ts",
+        "apps/api/src/routes/projects.ts",
+        "apps/api/src/routes/audit.ts",
+        "packages/sdk/src/tickets.ts",
+        "packages/sdk/src/projects.ts",
+        "packages/sdk/src/audit.ts",
+        "packages/sdk/src/client.ts",
+        "apps/web/components/admin/"
+      ],
+      "issue": "ExportData chain broken: API returns CSV binary via sendExportResponse but SDK client.get<Blob>() calls executeFetch which runs res.json() — CSV content cannot be parsed as JSON",
+      "impact": "Calling tickets.exportData(), projects.exportData(), or audit.exportData() from the SDK will throw a JSON parse error on the CSV response. Export buttons in admin UI are broken end-to-end.",
+      "fix": "Add client.getBlob() method that uses res.text() or res.blob() with appropriate Content-Type handling. Route export SDK methods through getBlob() instead of get().",
+      "chain": "schema (tables have data) → api (sendExportResponse writes CSV to res) → sdk (client.get<Blob> calls res.json() → crash) → frontend (export button triggers crash)"
+    },
+    {
+      "severity": "P1",
+      "phase": 5,
+      "category": "reconciliation",
+      "file_primary": "apps/web/app/(public)",
+      "files_involved": [
+        "apps/web/app/(public)/login/page.tsx",
+        "apps/web/app/(public)/signup/page.tsx",
+        "apps/web/app/(public)/forgot-password/page.tsx",
+        "apps/web/app/(public)/password-reset/page.tsx",
+        "apps/web/app/(public)/pending/page.tsx",
+        "apps/web/app/(public)/layout.tsx"
+      ],
+      "issue": "Auth entry-point chain broken: 5 authentication pages in (public) route group have no metadata titles AND the route group itself has no loading.tsx. These are the first pages new users encounter — poor SEO and blank loading state.",
+      "impact": "Login, signup, forgot-password, password-reset, and pending pages show 'Untitled' in browser tab and have no loading skeleton during auth redirects. New user experience degraded.",
+      "fix": "Add 'export const metadata = { title: \"...\" }' to all 5 pages. Create apps/web/app/(public)/loading.tsx with a spinner matching the marketing design.",
+      "chain": "frontend (5 auth pages) → missing metadata → poor SEO/UX when these are the primary entry points to the application"
+    },
+    {
+      "severity": "P2",
+      "phase": 5,
+      "category": "reconciliation",
+      "file_primary": "apps/web/app/(admin)/admin/tickets/actions.ts",
+      "files_involved": [
+        "apps/web/app/(admin)/admin/tickets/actions.ts",
+        "apps/web/app/(admin)/admin/tickets/[ticketId]/actions.ts",
+        "apps/web/app/(admin)/admin/projects/actions.ts",
+        "apps/web/app/(admin)/admin/projects/[projectId]/actions.ts",
+        "apps/web/app/(portal)/portal/support/actions.ts",
+        "apps/web/app/(portal)/portal/support/[ticketId]/actions.ts",
+        "apps/web/app/(portal)/portal/projects/[projectId]/actions.ts"
+      ],
+      "issue": "Server action error handling pattern chain: 7 of 12 server action files throw errors directly while only 4 use the project's { ok, error } convention. Callers must handle both patterns (catch block vs check result.ok).",
+      "impact": "Inconsistent DX for client components consuming server actions. Some use try/catch, others check result.ok. This contradicts AGENTS.md convention: 'Bulk actions: Return { ok, error } instead of throwing'.",
+      "fix": "Wrap all server action bodies in try/catch that returns { ok, error }. Remove bare 'throw new Error()' calls from server actions. Standardize on result.ok checking in client components.",
+      "chain": "frontend (server actions) → inconsistent error return pattern → client components must handle both throw and {ok,error} → code debt and potential uncaught errors"
+    },
+    {
+      "severity": "P2",
+      "phase": 5,
+      "category": "reconciliation",
+      "file_primary": "supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql",
+      "files_involved": [
+        "apps/api/src/routes/*.ts",
+        "packages/sdk/src/*.ts",
+        "apps/web/components/portal/",
+        "apps/web/components/admin/"
+      ],
+      "issue": "Dead schema chain: 10 DB tables (appointments, chat_messages, chat_threads, comments, contracts, contract_signers, document_permissions, onboarding_submissions, project_members, webhook_dead_letters) exist in migrations but have NO API queries, NO SDK methods, and NO frontend pages — dead code across all layers.",
+      "impact": "10 tables taking up schema space with no corresponding feature at any layer. Each adds to migration size, seed complexity, and cognitive load when understanding the schema.",
+      "fix": "Drop 9 tables with no API routes (keep webhook_dead_letters if worker uses it). Verify no worker SQL references them. Add migration: DROP TABLE IF EXISTS public.comments, public.contracts, ...",
+      "chain": "schema (10 dead tables) → api (no .from() calls) → sdk (no methods) → frontend (no pages) → full-stack dead code"
+    },
+    {
+      "severity": "P1",
+      "phase": 5,
+      "category": "reconciliation",
+      "file_primary": "apps/api/src/routes/tickets.ts",
+      "files_involved": [
+        "apps/api/src/routes/tickets.ts",
+        "packages/sdk/src/tickets.ts",
+        "apps/web/components/admin/tickets/"
+      ],
+      "issue": "Ticket comments type mismatch chain: API returns plain TicketComment[] from GET /tickets/:id/comments but SDK types it as PaginatedResult<TicketComment> in listComments(). Frontend components consuming the SDK's listComments() will crash trying to access .data on a plain array.",
+      "impact": "TypeScript won't catch this at compile time (PaginatedResult<T> has .data as array, and arrays have a .data property that's undefined). At runtime, ticket comment lists will show 'undefined' or crash when rendering.",
+      "fix": "Change SDK listComments() return type from PaginatedResult<TicketComment> to TicketComment[] to match the API's actual response shape. Verify all callers of listComments() in the frontend handle the correct shape.",
+      "chain": "api (returns TicketComment[] from GET /:id/comments) → sdk (listComments typed as PaginatedResult<TicketComment> → mismatch) → frontend (components access .data on array → undefined → crash)"
+    }
+  ]
+}

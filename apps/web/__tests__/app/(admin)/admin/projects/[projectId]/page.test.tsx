@@ -22,7 +22,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.map((i: any) => i.label).join(" > ")}</nav>;
   };
@@ -35,7 +35,14 @@ jest.mock("@/components/admin/AdminSubnav", () => {
 });
 
 jest.mock("@/components/admin/AdminPageShell", () => {
-  return function MockPageShell({ title, description, breadcrumbs, subnav, actions, children }: any) {
+  return function MockPageShell({
+    title,
+    description,
+    breadcrumbs,
+    subnav,
+    actions,
+    children,
+  }: any) {
     return (
       <div>
         {breadcrumbs}
@@ -74,8 +81,12 @@ jest.mock("@/app/(admin)/admin/projects/[projectId]/actions", () => ({
 }));
 
 const baseProject = {
-  id: "p1", name: "Security Audit", description: "Q2 audit", organization_id: "o1",
-  status: "active", priority: "high",
+  id: "p1",
+  name: "Security Audit",
+  description: "Q2 audit",
+  organization_id: "o1",
+  status: "active",
+  priority: "high",
 };
 
 function makeDetail(projectOverrides: Record<string, any> = {}, extra: Record<string, any> = {}) {
@@ -140,11 +151,16 @@ describe("AdminProjectDetailPage", () => {
   });
 
   it("renders ProjectTaskListV5 with tasks and owners", async () => {
-    mockProjectsGetDetail.mockResolvedValue(makeDetail({}, {
-      memberships: [{ id: "m1", user_id: "u1", organization_id: "o1", status: "approved" }],
-      profiles: [{ id: "u1", full_name: "Alice", email: "alice@t.com" }],
-      tasks: [{ id: "t1", title: "Task 1", created_by: "u1", owner_id: "u1" }],
-    }));
+    mockProjectsGetDetail.mockResolvedValue(
+      makeDetail(
+        {},
+        {
+          memberships: [{ id: "m1", user_id: "u1", organization_id: "o1", status: "approved" }],
+          profiles: [{ id: "u1", full_name: "Alice", email: "alice@t.com" }],
+          tasks: [{ id: "t1", title: "Task 1", created_by: "u1", owner_id: "u1" }],
+        },
+      ),
+    );
     const Page = (await import("@/app/(admin)/admin/projects/[projectId]/page")).default;
     render(await Page({ params: Promise.resolve({ projectId: "p1" }) }));
     expect(screen.getByTestId("task-list")).toBeInTheDocument();
@@ -181,12 +197,26 @@ describe("AdminProjectDetailPage", () => {
   });
 
   it("handles task comments with unread count", async () => {
-    mockProjectsGetDetail.mockResolvedValue(makeDetail({}, {
-      memberships: [{ id: "m1", user_id: "u1", organization_id: "o1", status: "approved" }],
-      profiles: [{ id: "u1", full_name: "Alice", email: "a@t.com" }],
-      tasks: [{ id: "t1", title: "Task 1", created_by: "u1", owner_id: "u1" }],
-      comments: [{ id: "c1", task_id: "t1", author_id: "u1", body: "Nice work", is_internal: false, created_at: new Date().toISOString() }],
-    }));
+    mockProjectsGetDetail.mockResolvedValue(
+      makeDetail(
+        {},
+        {
+          memberships: [{ id: "m1", user_id: "u1", organization_id: "o1", status: "approved" }],
+          profiles: [{ id: "u1", full_name: "Alice", email: "a@t.com" }],
+          tasks: [{ id: "t1", title: "Task 1", created_by: "u1", owner_id: "u1" }],
+          comments: [
+            {
+              id: "c1",
+              task_id: "t1",
+              author_id: "u1",
+              body: "Nice work",
+              is_internal: false,
+              created_at: new Date().toISOString(),
+            },
+          ],
+        },
+      ),
+    );
     const Page = (await import("@/app/(admin)/admin/projects/[projectId]/page")).default;
     render(await Page({ params: Promise.resolve({ projectId: "p1" }) }));
     expect(screen.getByTestId("task-count")).toHaveTextContent("1");

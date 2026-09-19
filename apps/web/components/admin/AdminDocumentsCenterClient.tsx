@@ -14,13 +14,7 @@ type OrganizationRecord = { id: string; name?: string | null };
 type VisibilityValue = "private" | "org" | "internal" | "public";
 type DrawerTab = "overview" | "edit" | "file" | "preview";
 type ViewMode = "list" | "table" | "grid";
-type SortKey =
-  | "updated"
-  | "name"
-  | "organization"
-  | "folder"
-  | "type"
-  | "visibility";
+type SortKey = "updated" | "name" | "organization" | "folder" | "type" | "visibility";
 type ToastTone = "success" | "info" | "warning" | "error";
 type Toast = { id: number; tone: ToastTone; title: string; message: string };
 type ActionResult = {
@@ -38,14 +32,7 @@ type DocumentRecord = Record<string, any> & {
   resolved_url?: string | null;
   display_name?: string;
   file_extension?: string | null;
-  preview_kind?:
-    | "image"
-    | "pdf"
-    | "text"
-    | "video"
-    | "audio"
-    | "office"
-    | "download";
+  preview_kind?: "image" | "pdf" | "text" | "video" | "audio" | "office" | "download";
   organization_name?: string | null;
 };
 
@@ -68,21 +55,12 @@ type ConfirmState =
   | { type: "bulkDelete" }
   | { type: "bulkVisibility"; visibility: VisibilityValue };
 
-const VISIBILITY_OPTIONS: VisibilityValue[] = [
-  "private",
-  "org",
-  "internal",
-  "public",
-];
+const VISIBILITY_OPTIONS: VisibilityValue[] = ["private", "org", "internal", "public"];
 const UI_PREFS_KEY = "admin-documents-ui-prefs-v2233";
 
 function docName(doc: DocumentRecord) {
   return String(
-    doc?.display_name ??
-      doc?.title ??
-      doc?.name ??
-      doc?.file_name ??
-      `Document ${doc?.id}`,
+    doc?.display_name ?? doc?.title ?? doc?.name ?? doc?.file_name ?? `Document ${doc?.id}`,
   );
 }
 function docDescription(doc: DocumentRecord) {
@@ -130,19 +108,11 @@ function fileType(doc: DocumentRecord) {
     return "Image";
   if (mime.includes("html") || ext === "html") return "HTML";
   if (mime.includes("markdown") || ext === "md") return "Markdown";
-  if (
-    mime.includes("text/") ||
-    ["txt", "log", "json", "xml", "yaml", "yml", "csv"].includes(ext)
-  )
+  if (mime.includes("text/") || ["txt", "log", "json", "xml", "yaml", "yml", "csv"].includes(ext))
     return "Text";
-  if (
-    mime.includes("sheet") ||
-    mime.includes("excel") ||
-    ["xlsx", "xls"].includes(ext)
-  )
+  if (mime.includes("sheet") || mime.includes("excel") || ["xlsx", "xls"].includes(ext))
     return "Spreadsheet";
-  if (mime.includes("word") || ["doc", "docx", "odt"].includes(ext))
-    return "Document";
+  if (mime.includes("word") || ["doc", "docx", "odt"].includes(ext)) return "Document";
   return ext ? ext.toUpperCase() : "Unknown";
 }
 function canPreview(doc: DocumentRecord) {
@@ -153,10 +123,7 @@ function canPreview(doc: DocumentRecord) {
 }
 function formatRelativeTime(value?: string | null) {
   if (!value) return "—";
-  const seconds = Math.max(
-    0,
-    Math.floor((Date.now() - new Date(value).getTime()) / 1000),
-  );
+  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -216,30 +183,22 @@ function chipClass(seed: string, kind: "org" | "folder") {
           "border-orange-500/20 bg-orange-500/10 text-orange-200",
         ];
   const idx =
-    Math.abs(Array.from(seed).reduce((sum, ch) => sum + ch.charCodeAt(0), 0)) %
-    palettes.length;
+    Math.abs(Array.from(seed).reduce((sum, ch) => sum + ch.charCodeAt(0), 0)) % palettes.length;
   return `inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${palettes[idx]}`;
 }
 function toastClass(tone: ToastTone) {
-  if (tone === "success")
-    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-200";
-  if (tone === "warning")
-    return "border-amber-500/20 bg-amber-500/10 text-amber-200";
+  if (tone === "success") return "border-emerald-500/20 bg-emerald-500/10 text-emerald-200";
+  if (tone === "warning") return "border-amber-500/20 bg-amber-500/10 text-amber-200";
   if (tone === "error") return "border-red-500/20 bg-red-500/10 text-red-200";
   return "border-blue-500/20 bg-blue-500/10 text-blue-200";
 }
 
-function FileThumb({
-  doc,
-  large = false,
-}: {
-  doc: DocumentRecord;
-  large?: boolean;
-}) {
+function FileThumb({ doc, large = false }: { doc: DocumentRecord; large?: boolean }) {
   const type = fileType(doc);
   const size = large ? "h-36 w-full" : "h-14 w-14";
   if (type === "Image" && doc.resolved_url) {
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={doc.resolved_url}
         alt={docName(doc)}
@@ -259,7 +218,7 @@ function FileThumb({
             : type;
   return (
     <div
-      className={`flex ${size} items-center justify-center rounded-xl border border-white/10 bg-[#071018]/80 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-300 ring-1 ring-white/5`}
+      className={`flex ${size} items-center justify-center rounded-xl border border-white/10 bg-cyber-card-deep/80 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-300 ring-1 ring-white/5`}
     >
       {label}
     </div>
@@ -287,16 +246,10 @@ function ConfirmModal({
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
       <div className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
-        <h3 className="font-orbitron text-lg uppercase tracking-[0.12em] text-slate-50">
-          {title}
-        </h3>
+        <h3 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">{title}</h3>
         <p className="mt-3 text-sm text-slate-300">{body}</p>
         <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            className="cyber-button-secondary"
-            onClick={onClose}
-          >
+          <button type="button" className="cyber-button-secondary" onClick={onClose}>
             Cancel
           </button>
           <button
@@ -330,8 +283,7 @@ export default function AdminDocumentsCenterClient({
   bulkMetadataAction,
 }: Props) {
   const router = useRouter();
-  const [localDocuments, setLocalDocuments] =
-    useState<DocumentRecord[]>(documents);
+  const [localDocuments, setLocalDocuments] = useState<DocumentRecord[]>(documents);
   const [search, setSearch] = useState("");
   const [orgFilter, setOrgFilter] = useState("");
   const [visibilityFilter, setVisibilityFilter] = useState("");
@@ -347,15 +299,11 @@ export default function AdminDocumentsCenterClient({
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [inlineRenameId, setInlineRenameId] = useState<string | null>(null);
   const [inlineNameValue, setInlineNameValue] = useState("");
-  const [inlineVisibilityId, setInlineVisibilityId] = useState<string | null>(
-    null,
-  );
+  const [inlineVisibilityId, setInlineVisibilityId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [successMap, setSuccessMap] = useState<Record<string, string>>({});
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
-  const [bulkVisibilityValue, setBulkVisibilityValue] = useState<
-    VisibilityValue | ""
-  >("");
+  const [bulkVisibilityValue, setBulkVisibilityValue] = useState<VisibilityValue | "">("");
   const createFormRef = useRef<HTMLFormElement | null>(null);
   const createFileRef = useRef<HTMLInputElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
@@ -378,8 +326,7 @@ export default function AdminDocumentsCenterClient({
       }>;
       if (typeof prefs.search === "string") setSearch(prefs.search);
       if (typeof prefs.orgFilter === "string") setOrgFilter(prefs.orgFilter);
-      if (typeof prefs.visibilityFilter === "string")
-        setVisibilityFilter(prefs.visibilityFilter);
+      if (typeof prefs.visibilityFilter === "string") setVisibilityFilter(prefs.visibilityFilter);
       if (prefs.sortKey) setSortKey(prefs.sortKey);
       if (prefs.sortDir) setSortDir(prefs.sortDir);
       if (prefs.viewMode) setViewMode(prefs.viewMode);
@@ -415,8 +362,7 @@ export default function AdminDocumentsCenterClient({
     const q = search.trim().toLowerCase();
     const items = localDocuments.filter((doc) => {
       if (orgFilter && String(doc.organization_id) !== orgFilter) return false;
-      if (visibilityFilter && docVisibility(doc) !== visibilityFilter)
-        return false;
+      if (visibilityFilter && docVisibility(doc) !== visibilityFilter) return false;
       if (!q) return true;
       const haystack = [
         docName(doc),
@@ -462,20 +408,9 @@ export default function AdminDocumentsCenterClient({
       return 0;
     });
     return items;
-  }, [
-    localDocuments,
-    orgFilter,
-    visibilityFilter,
-    search,
-    sortKey,
-    sortDir,
-    orgMap,
-  ]);
+  }, [localDocuments, orgFilter, visibilityFilter, search, sortKey, sortDir, orgMap]);
 
-  const visibleItems = useMemo(
-    () => filtered.slice(0, visibleCount),
-    [filtered, visibleCount],
-  );
+  const visibleItems = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
   const privateCount = useMemo(
     () => filtered.filter((doc) => docVisibility(doc) === "private").length,
     [filtered],
@@ -549,10 +484,7 @@ export default function AdminDocumentsCenterClient({
       message,
     };
     setToasts((cur) => [toast, ...cur].slice(0, 4));
-    window.setTimeout(
-      () => setToasts((cur) => cur.filter((item) => item.id !== toast.id)),
-      5000,
-    );
+    window.setTimeout(() => setToasts((cur) => cur.filter((item) => item.id !== toast.id)), 5000);
   }
 
   function markSuccess(docId: string, label = "Saved") {
@@ -571,9 +503,7 @@ export default function AdminDocumentsCenterClient({
     setLocalDocuments((cur) => {
       const exists = cur.some((doc) => doc.id === updated.id);
       return exists
-        ? cur.map((doc) =>
-            doc.id === updated.id ? { ...doc, ...updated } : doc,
-          )
+        ? cur.map((doc) => (doc.id === updated.id ? { ...doc, ...updated } : doc))
         : [updated, ...cur];
     });
   }
@@ -613,15 +543,9 @@ export default function AdminDocumentsCenterClient({
         ids.includes(doc.id)
           ? {
               ...doc,
-              ...(updates.description !== undefined
-                ? { description: updates.description }
-                : {}),
-              ...(updates.folder_path !== undefined
-                ? { folder_path: updates.folder_path }
-                : {}),
-              ...(updates.visibility !== undefined
-                ? { visibility: updates.visibility }
-                : {}),
+              ...(updates.description !== undefined ? { description: updates.description } : {}),
+              ...(updates.folder_path !== undefined ? { folder_path: updates.folder_path } : {}),
+              ...(updates.visibility !== undefined ? { visibility: updates.visibility } : {}),
             }
           : doc,
       ),
@@ -687,11 +611,7 @@ export default function AdminDocumentsCenterClient({
       const result = await action();
       if (!result.ok) {
         rollback?.();
-        pushToast(
-          "error",
-          "Action failed",
-          result.error ?? "Unexpected error.",
-        );
+        pushToast("error", "Action failed", result.error ?? "Unexpected error.");
         return;
       }
       onSuccess?.(result);
@@ -713,24 +633,14 @@ export default function AdminDocumentsCenterClient({
   async function copyText(value: string, label: string) {
     try {
       await navigator.clipboard.writeText(value);
-      pushToast(
-        "success",
-        `${label} copied`,
-        "The value was copied to your clipboard.",
-      );
+      pushToast("success", `${label} copied`, "The value was copied to your clipboard.");
     } catch {
-      pushToast(
-        "error",
-        "Copy failed",
-        "Clipboard access was blocked by the browser.",
-      );
+      pushToast("error", "Copy failed", "Clipboard access was blocked by the browser.");
     }
   }
 
   function toggleSelection(id: string) {
-    setSelectedIds((cur) =>
-      cur.includes(id) ? cur.filter((item) => item !== id) : [...cur, id],
-    );
+    setSelectedIds((cur) => (cur.includes(id) ? cur.filter((item) => item !== id) : [...cur, id]));
   }
 
   function toggleSort(next: SortKey) {
@@ -777,10 +687,7 @@ export default function AdminDocumentsCenterClient({
     });
   }
 
-  async function saveVisibility(
-    doc: DocumentRecord,
-    visibility: VisibilityValue,
-  ) {
+  async function saveVisibility(doc: DocumentRecord, visibility: VisibilityValue) {
     if (docVisibility(doc) === visibility) {
       setInlineVisibilityId(null);
       return;
@@ -807,10 +714,7 @@ export default function AdminDocumentsCenterClient({
     });
   }
 
-  async function submitMetadataForm(
-    event: FormEvent<HTMLFormElement>,
-    doc: DocumentRecord,
-  ) {
+  async function submitMetadataForm(event: FormEvent<HTMLFormElement>, doc: DocumentRecord) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     formData.set("documentId", doc.id);
@@ -845,19 +749,12 @@ export default function AdminDocumentsCenterClient({
     });
   }
 
-  async function submitReplaceFile(
-    event: FormEvent<HTMLFormElement>,
-    doc: DocumentRecord,
-  ) {
+  async function submitReplaceFile(event: FormEvent<HTMLFormElement>, doc: DocumentRecord) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) {
-      pushToast(
-        "warning",
-        "Choose a file",
-        "Select a replacement file before saving.",
-      );
+      pushToast("warning", "Choose a file", "Select a replacement file before saving.");
       return;
     }
     formData.set("documentId", doc.id);
@@ -901,9 +798,7 @@ export default function AdminDocumentsCenterClient({
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const files = createFileRef.current?.files
-      ? Array.from(createFileRef.current.files)
-      : [];
+    const files = createFileRef.current?.files ? Array.from(createFileRef.current.files) : [];
 
     if (!String(formData.get("organizationId") ?? "").trim()) {
       pushToast(
@@ -917,14 +812,10 @@ export default function AdminDocumentsCenterClient({
     if (files.length > 1) {
       for (const file of files) {
         const data = new FormData();
-        data.set(
-          "organizationId",
-          String(formData.get("organizationId") ?? ""),
-        );
+        data.set("organizationId", String(formData.get("organizationId") ?? ""));
         data.set(
           "name",
-          String(formData.get("name") ?? "").trim() ||
-            file.name.replace(/\.[^.]+$/, ""),
+          String(formData.get("name") ?? "").trim() || file.name.replace(/\.[^.]+$/, ""),
         );
         data.set("bucket", String(formData.get("bucket") ?? "documents"));
         data.set("category", String(formData.get("category") ?? ""));
@@ -933,20 +824,12 @@ export default function AdminDocumentsCenterClient({
         data.set("file", file);
         const result = await createDocumentAction(data);
         if (!result.ok) {
-          pushToast(
-            "error",
-            "Create failed",
-            result.error ?? `Failed to create ${file.name}.`,
-          );
+          pushToast("error", "Create failed", result.error ?? `Failed to create ${file.name}.`);
           return;
         }
         upsertDocument(result.document);
       }
-      pushToast(
-        "success",
-        "Documents created",
-        `Created ${files.length} documents successfully.`,
-      );
+      pushToast("success", "Documents created", `Created ${files.length} documents successfully.`);
       setShowCreateModal(false);
       setDroppedFileName("");
       form.reset();
@@ -1000,17 +883,14 @@ export default function AdminDocumentsCenterClient({
       formData.set("bulkVisibility", visibility);
       selectedIds.forEach((id) => formData.append("documentIds", id));
       setLocalDocuments((cur) =>
-        cur.map((doc) =>
-          selectedIds.includes(doc.id) ? { ...doc, visibility } : doc,
-        ),
+        cur.map((doc) => (selectedIds.includes(doc.id) ? { ...doc, visibility } : doc)),
       );
       setConfirmState(null);
       await executeAction({
         busyKey: "bulk-visibility",
         rollback: () => setLocalDocuments(snapshot),
         action: () => bulkVisibilityAction(formData),
-        onSuccess: () =>
-          selectedIds.forEach((id) => markSuccess(id, "Bulk saved")),
+        onSuccess: () => selectedIds.forEach((id) => markSuccess(id, "Bulk saved")),
         successTitle: "Bulk visibility updated",
         successMessage: `${selectedIds.length} documents updated successfully.`,
       });
@@ -1047,6 +927,7 @@ export default function AdminDocumentsCenterClient({
           }
           if (e.key === "Escape") setInlineRenameId(null);
         }}
+        aria-label="Rename document"
         className="cyber-input h-10"
         autoFocus
         disabled={Boolean(busyId?.endsWith(doc.id))}
@@ -1070,6 +951,7 @@ export default function AdminDocumentsCenterClient({
     return (
       <select
         autoFocus
+        aria-label="Document visibility"
         className="cyber-input h-10 min-w-[140px]"
         defaultValue={docVisibility(doc)}
         onBlur={() => setInlineVisibilityId(null)}
@@ -1097,8 +979,11 @@ export default function AdminDocumentsCenterClient({
         className="mt-4 grid gap-4 rounded-2xl border border-emerald-500/15 bg-emerald-500/5 p-4 md:grid-cols-2"
       >
         <div>
-          <label className="cyber-label">Name</label>
+          <label className="cyber-label" htmlFor="doc-name">
+            Name
+          </label>
           <input
+            id="doc-name"
             name="name"
             className="cyber-input"
             defaultValue={docName(doc)}
@@ -1106,8 +991,11 @@ export default function AdminDocumentsCenterClient({
           />
         </div>
         <div>
-          <label className="cyber-label">Folder</label>
+          <label className="cyber-label" htmlFor="doc-folder">
+            Folder
+          </label>
           <input
+            id="doc-folder"
             name="category"
             className="cyber-input"
             defaultValue={String(doc.folder_path ?? "")}
@@ -1115,8 +1003,11 @@ export default function AdminDocumentsCenterClient({
           />
         </div>
         <div className="md:col-span-2">
-          <label className="cyber-label">Description</label>
+          <label className="cyber-label" htmlFor="doc-description">
+            Description
+          </label>
           <textarea
+            id="doc-description"
             name="description"
             rows={3}
             className="cyber-input"
@@ -1125,15 +1016,18 @@ export default function AdminDocumentsCenterClient({
           />
         </div>
         <div className="md:col-span-2">
-          <label className="cyber-label">Storage Path</label>
+          <label className="cyber-label" htmlFor="doc-storage-path">
+            Storage Path
+          </label>
           <input
+            id="doc-storage-path"
             name="storagePath"
             className="cyber-input"
             defaultValue={String(doc.storage_path ?? "")}
             disabled={Boolean(busyId?.endsWith(doc.id))}
           />
         </div>
-        <div className="md:col-span-2 flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 md:col-span-2">
           {renderStatusPill(doc.id)}
           <div className="flex gap-3">
             <button
@@ -1197,46 +1091,40 @@ export default function AdminDocumentsCenterClient({
       <section className="cyber-panel">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+            <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
               Documents
             </h1>
             <p className="mt-3 text-slate-300">
-              2.2.3.3b consolidates the working 2.2.3.3 layout with mounted bulk
-              folder reassignment and safe bulk metadata actions.
+              2.2.3.3b consolidates the working 2.2.3.3 layout with mounted bulk folder reassignment
+              and safe bulk metadata actions.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-4">
-            <div className="rounded-xl border border-white/10 bg-[#071018]/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
-              <span className="block text-xs uppercase tracking-[0.12em] text-slate-500">
+            <div className="rounded-xl border border-white/10 bg-cyber-card-deep/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
+              <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                 Total
               </span>
               <span className="mt-1 block font-semibold text-slate-50">
                 {localDocuments.length}
               </span>
             </div>
-            <div className="rounded-xl border border-white/10 bg-[#071018]/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
-              <span className="block text-xs uppercase tracking-[0.12em] text-slate-500">
+            <div className="rounded-xl border border-white/10 bg-cyber-card-deep/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
+              <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                 Selected
               </span>
-              <span className="mt-1 block font-semibold text-slate-50">
-                {selectedIds.length}
-              </span>
+              <span className="mt-1 block font-semibold text-slate-50">{selectedIds.length}</span>
             </div>
-            <div className="rounded-xl border border-white/10 bg-[#071018]/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
-              <span className="block text-xs uppercase tracking-[0.12em] text-slate-500">
+            <div className="rounded-xl border border-white/10 bg-cyber-card-deep/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
+              <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                 Private
               </span>
-              <span className="mt-1 block font-semibold text-slate-50">
-                {privateCount}
-              </span>
+              <span className="mt-1 block font-semibold text-slate-50">{privateCount}</span>
             </div>
-            <div className="rounded-xl border border-white/10 bg-[#071018]/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
-              <span className="block text-xs uppercase tracking-[0.12em] text-slate-500">
+            <div className="rounded-xl border border-white/10 bg-cyber-card-deep/80 px-4 py-3 text-sm text-slate-400 shadow-[0_10px_40px_rgba(2,6,23,0.22)]">
+              <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                 Internal
               </span>
-              <span className="mt-1 block font-semibold text-slate-50">
-                {internalCount}
-              </span>
+              <span className="mt-1 block font-semibold text-slate-50">{internalCount}</span>
             </div>
           </div>
         </div>
@@ -1248,11 +1136,7 @@ export default function AdminDocumentsCenterClient({
           >
             New Document
           </button>
-          <button
-            type="button"
-            className="cyber-button-secondary"
-            onClick={() => router.refresh()}
-          >
+          <button type="button" className="cyber-button-secondary" onClick={() => router.refresh()}>
             Refresh View
           </button>
         </div>
@@ -1261,8 +1145,11 @@ export default function AdminDocumentsCenterClient({
       <section className="cyber-panel">
         <div className="flex flex-wrap items-end gap-4 xl:gap-5">
           <div className="min-w-[260px] flex-[1.4_1_320px]">
-            <label className="cyber-label">Search</label>
+            <label className="cyber-label" htmlFor="doc-search">
+              Search
+            </label>
             <input
+              id="doc-search"
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -1271,8 +1158,11 @@ export default function AdminDocumentsCenterClient({
             />
           </div>
           <div className="min-w-[220px] flex-[1_1_220px]">
-            <label className="cyber-label">Organization</label>
+            <label className="cyber-label" htmlFor="doc-organization">
+              Organization
+            </label>
             <select
+              id="doc-organization"
               value={orgFilter}
               onChange={(e) => setOrgFilter(e.target.value)}
               className="cyber-input"
@@ -1286,8 +1176,11 @@ export default function AdminDocumentsCenterClient({
             </select>
           </div>
           <div className="min-w-[200px] flex-[0.8_1_220px]">
-            <label className="cyber-label">Visibility</label>
+            <label className="cyber-label" htmlFor="doc-visibility">
+              Visibility
+            </label>
             <select
+              id="doc-visibility"
               value={visibilityFilter}
               onChange={(e) => setVisibilityFilter(e.target.value)}
               className="cyber-input"
@@ -1301,38 +1194,26 @@ export default function AdminDocumentsCenterClient({
             </select>
           </div>
           <div className="min-w-[230px] flex-[0.9_1_240px]">
-            <label className="cyber-label">View</label>
-            <div className="grid grid-cols-3 gap-2">
+            <span className="cyber-label">View</span>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
               <button
                 type="button"
                 onClick={() => setViewMode("list")}
-                className={
-                  viewMode === "list"
-                    ? "cyber-button"
-                    : "cyber-button-secondary"
-                }
+                className={viewMode === "list" ? "cyber-button" : "cyber-button-secondary"}
               >
                 List
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("table")}
-                className={
-                  viewMode === "table"
-                    ? "cyber-button"
-                    : "cyber-button-secondary"
-                }
+                className={viewMode === "table" ? "cyber-button" : "cyber-button-secondary"}
               >
                 Table
               </button>
               <button
                 type="button"
                 onClick={() => setViewMode("grid")}
-                className={
-                  viewMode === "grid"
-                    ? "cyber-button"
-                    : "cyber-button-secondary"
-                }
+                className={viewMode === "grid" ? "cyber-button" : "cyber-button-secondary"}
               >
                 Grid
               </button>
@@ -1342,9 +1223,7 @@ export default function AdminDocumentsCenterClient({
             <button
               type="button"
               className="cyber-button-secondary"
-              onClick={() =>
-                setSelectedIds(visibleItems.map((item) => item.id))
-              }
+              onClick={() => setSelectedIds(visibleItems.map((item) => item.id))}
             >
               Select All Visible
             </button>
@@ -1386,7 +1265,7 @@ export default function AdminDocumentsCenterClient({
 
       {selectedIds.length > 0 ? (
         <>
-          <section className="cyber-panel border border-emerald-500/20 bg-[#071018]/92">
+          <section className="cyber-panel bg-cyber-card-deep/92 border border-emerald-500/20">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-50">
@@ -1394,19 +1273,16 @@ export default function AdminDocumentsCenterClient({
                   {selectedIds.length === 1 ? "" : "s"} selected
                 </p>
                 <p className="mt-1 text-sm text-slate-400">
-                  Review the action before it runs. Bulk changes now open a
-                  confirmation modal first.
+                  Review the action before it runs. Bulk changes now open a confirmation modal
+                  first.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <select
                     value={bulkVisibilityValue}
-                    onChange={(e) =>
-                      setBulkVisibilityValue(
-                        e.target.value as VisibilityValue | "",
-                      )
-                    }
+                    onChange={(e) => setBulkVisibilityValue(e.target.value as VisibilityValue | "")}
+                    aria-label="Bulk visibility"
                     className="cyber-input min-w-[180px]"
                   >
                     <option value="">Set visibility...</option>
@@ -1419,9 +1295,7 @@ export default function AdminDocumentsCenterClient({
                   <button
                     type="button"
                     className="cyber-button-secondary"
-                    disabled={
-                      !bulkVisibilityValue || busyId === "bulk-visibility"
-                    }
+                    disabled={!bulkVisibilityValue || busyId === "bulk-visibility"}
                     onClick={() => {
                       if (bulkVisibilityValue) {
                         setConfirmState({
@@ -1431,9 +1305,7 @@ export default function AdminDocumentsCenterClient({
                       }
                     }}
                   >
-                    {busyId === "bulk-visibility"
-                      ? "Updating..."
-                      : "Update Visibility"}
+                    {busyId === "bulk-visibility" ? "Updating..." : "Update Visibility"}
                   </button>
                 </div>
                 <button
@@ -1529,10 +1401,10 @@ export default function AdminDocumentsCenterClient({
               }}
             />
           ) : viewMode === "table" ? (
-            <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10 bg-[#071018]/70">
+            <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10 bg-cyber-card-deep/70">
               <table className="min-w-full divide-y divide-white/10 text-sm">
-                <thead className="bg-[#071018]/95">
-                  <tr className="text-left text-xs uppercase tracking-[0.12em] text-slate-500">
+                <thead className="bg-cyber-card-deep/95">
+                  <tr className="text-left text-xs uppercase tracking-[0.12em] text-slate-400">
                     <th className="px-4 py-3">Select</th>
                     <th className="px-4 py-3">File</th>
                     <th className="px-4 py-3">Name</th>
@@ -1544,7 +1416,7 @@ export default function AdminDocumentsCenterClient({
                     <th className="px-4 py-3">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/10 bg-[#0A1118]/60">
+                <tbody className="divide-y divide-white/10 bg-cyber-base/60">
                   {visibleItems.map((document) => (
                     <tr key={document.id} className="hover:bg-white/[0.02]">
                       <td className="px-4 py-3 align-top">
@@ -1553,6 +1425,7 @@ export default function AdminDocumentsCenterClient({
                           className="h-4 w-4"
                           checked={selectedSet.has(document.id)}
                           onChange={() => toggleSelection(document.id)}
+                          aria-label="Select document"
                         />
                       </td>
                       <td className="px-4 py-3 align-top">
@@ -1560,39 +1433,24 @@ export default function AdminDocumentsCenterClient({
                       </td>
                       <td className="px-4 py-3 align-top">
                         <div>{renderInlineName(document)}</div>
-                        <div className="mt-1 text-xs text-slate-500">
-                          {document.id}
-                        </div>
+                        <div className="mt-1 text-xs text-slate-400">{document.id}</div>
                       </td>
                       <td className="px-4 py-3 align-top">
-                        <span
-                          className={chipClass(
-                            orgName(document, orgMap),
-                            "org",
-                          )}
-                        >
+                        <span className={chipClass(orgName(document, orgMap), "org")}>
                           {orgName(document, orgMap)}
                         </span>
                       </td>
                       <td className="px-4 py-3 align-top">
-                        <span
-                          className={chipClass(docFolder(document), "folder")}
-                        >
+                        <span className={chipClass(docFolder(document), "folder")}>
                           {docFolder(document)}
                         </span>
                       </td>
+                      <td className="px-4 py-3 align-top">{renderInlineVisibility(document)}</td>
                       <td className="px-4 py-3 align-top">
-                        {renderInlineVisibility(document)}
-                      </td>
-                      <td className="px-4 py-3 align-top">
-                        <span className={typeClass(fileType(document))}>
-                          {fileType(document)}
-                        </span>
+                        <span className={typeClass(fileType(document))}>{fileType(document)}</span>
                       </td>
                       <td className="px-4 py-3 align-top text-slate-400">
-                        {formatRelativeTime(
-                          document.updated_at ?? document.created_at,
-                        )}
+                        {formatRelativeTime(document.updated_at ?? document.created_at)}
                       </td>
                       <td className="px-4 py-3 align-top">
                         <div className="flex flex-wrap items-center gap-2">
@@ -1631,14 +1489,10 @@ export default function AdminDocumentsCenterClient({
                             type="button"
                             className="cyber-button-secondary"
                             onClick={() =>
-                              setExpandedId(
-                                expandedId === document.id ? null : document.id,
-                              )
+                              setExpandedId(expandedId === document.id ? null : document.id)
                             }
                           >
-                            {expandedId === document.id
-                              ? "Hide Edit"
-                              : "Quick Edit"}
+                            {expandedId === document.id ? "Hide Edit" : "Quick Edit"}
                           </button>
                           <button
                             type="button"
@@ -1682,6 +1536,7 @@ export default function AdminDocumentsCenterClient({
                       className="mt-1 h-4 w-4"
                       checked={selectedSet.has(document.id)}
                       onChange={() => toggleSelection(document.id)}
+                      aria-label="Select document"
                     />
                   </div>
                   <div className="mt-4 space-y-3">
@@ -1690,31 +1545,23 @@ export default function AdminDocumentsCenterClient({
                       {renderStatusPill(document.id)}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <span
-                        className={visibilityClass(docVisibility(document))}
-                      >
+                      <span className={visibilityClass(docVisibility(document))}>
                         {docVisibility(document)}
                       </span>
-                      <span className={typeClass(fileType(document))}>
-                        {fileType(document)}
-                      </span>
+                      <span className={typeClass(fileType(document))}>{fileType(document)}</span>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <span
-                        className={chipClass(orgName(document, orgMap), "org")}
-                      >
+                      <span className={chipClass(orgName(document, orgMap), "org")}>
                         {orgName(document, orgMap)}
                       </span>
-                      <span
-                        className={chipClass(docFolder(document), "folder")}
-                      >
+                      <span className={chipClass(docFolder(document), "folder")}>
                         {docFolder(document)}
                       </span>
                     </div>
-                    <p className="text-sm text-slate-400 line-clamp-3">
+                    <p className="line-clamp-3 text-sm text-slate-400">
                       {docDescription(document)}
                     </p>
-                    <div className="rounded-xl border border-white/10 bg-[#071018]/70 p-3 text-xs text-slate-400">
+                    <div className="rounded-xl border border-white/10 bg-cyber-card-deep/70 p-3 text-xs text-slate-400">
                       <div className="flex items-center justify-between">
                         <span>Version</span>
                         <span>{String(document.current_version ?? 1)}</span>
@@ -1722,9 +1569,7 @@ export default function AdminDocumentsCenterClient({
                       <div className="mt-2 flex items-center justify-between">
                         <span>Updated</span>
                         <span>
-                          {formatRelativeTime(
-                            document.updated_at ?? document.created_at,
-                          )}
+                          {formatRelativeTime(document.updated_at ?? document.created_at)}
                         </span>
                       </div>
                       <div className="mt-2 flex items-center justify-between">
@@ -1753,14 +1598,10 @@ export default function AdminDocumentsCenterClient({
                         type="button"
                         className="cyber-button-secondary"
                         onClick={() =>
-                          setExpandedId(
-                            expandedId === document.id ? null : document.id,
-                          )
+                          setExpandedId(expandedId === document.id ? null : document.id)
                         }
                       >
-                        {expandedId === document.id
-                          ? "Hide Edit"
-                          : "Quick Edit"}
+                        {expandedId === document.id ? "Hide Edit" : "Quick Edit"}
                       </button>
                     </div>
                     {quickEditPanel(document)}
@@ -1781,44 +1622,29 @@ export default function AdminDocumentsCenterClient({
                       className="mt-1 h-4 w-4"
                       checked={selectedSet.has(document.id)}
                       onChange={() => toggleSelection(document.id)}
+                      aria-label="Select document"
                     />
                     <FileThumb doc={document} />
                     <div className="flex-1 space-y-3">
                       <div className="flex flex-wrap items-center gap-2">
                         {renderInlineName(document)}
                         {renderInlineVisibility(document)}
-                        <span className={typeClass(fileType(document))}>
-                          {fileType(document)}
-                        </span>
-                        <span
-                          className={chipClass(
-                            orgName(document, orgMap),
-                            "org",
-                          )}
-                        >
+                        <span className={typeClass(fileType(document))}>{fileType(document)}</span>
+                        <span className={chipClass(orgName(document, orgMap), "org")}>
                           {orgName(document, orgMap)}
                         </span>
-                        <span
-                          className={chipClass(docFolder(document), "folder")}
-                        >
+                        <span className={chipClass(docFolder(document), "folder")}>
                           {docFolder(document)}
                         </span>
                         {renderStatusPill(document.id)}
                       </div>
-                      <p className="text-sm text-slate-400">
-                        {docDescription(document)}
-                      </p>
-                      <div className="flex flex-wrap gap-4 text-xs text-slate-500">
+                      <p className="text-sm text-slate-400">{docDescription(document)}</p>
+                      <div className="flex flex-wrap gap-4 text-xs text-slate-400">
                         <span>
-                          Updated{" "}
-                          {formatRelativeTime(
-                            document.updated_at ?? document.created_at,
-                          )}
+                          Updated {formatRelativeTime(document.updated_at ?? document.created_at)}
                         </span>
                         <span>Bucket: {docBucket(document)}</span>
-                        <span>
-                          Version: {String(document.current_version ?? 1)}
-                        </span>
+                        <span>Version: {String(document.current_version ?? 1)}</span>
                         <span>Size: {formatBytes(document.file_size)}</span>
                       </div>
                       <div className="flex flex-wrap gap-3">
@@ -1856,14 +1682,10 @@ export default function AdminDocumentsCenterClient({
                           type="button"
                           className="cyber-button-secondary"
                           onClick={() =>
-                            setExpandedId(
-                              expandedId === document.id ? null : document.id,
-                            )
+                            setExpandedId(expandedId === document.id ? null : document.id)
                           }
                         >
-                          {expandedId === document.id
-                            ? "Hide Edit"
-                            : "Quick Edit"}
+                          {expandedId === document.id ? "Hide Edit" : "Quick Edit"}
                         </button>
                         <button
                           type="button"
@@ -1910,17 +1732,16 @@ export default function AdminDocumentsCenterClient({
               <h2 className="cyber-heading text-lg">Polish Notes</h2>
               <span className="cyber-pill">2.2.3.3b</span>
             </div>
-            <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-[#071018]/80 p-4 text-sm text-slate-400">
+            <div className="mt-4 space-y-3 rounded-xl border border-white/10 bg-cyber-card-deep/80 p-4 text-sm text-slate-400">
               <p>• Bulk actions still confirm before destructive updates.</p>
               <p>• Active filters remain surfaced as removable chips.</p>
               <p>
-                • Safe bulk folder reassignment and metadata editing are now
-                mounted without replacing the working 2.2.3.3 preview and drawer
-                behavior.
+                • Safe bulk folder reassignment and metadata editing are now mounted without
+                replacing the working 2.2.3.3 preview and drawer behavior.
               </p>
               <p>
-                • Local optimistic updates keep row badges and list state
-                responsive after bulk edits.
+                • Local optimistic updates keep row badges and list state responsive after bulk
+                edits.
               </p>
             </div>
           </section>
@@ -1929,10 +1750,21 @@ export default function AdminDocumentsCenterClient({
 
       {showCreateModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-3xl rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-document-title"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setShowCreateModal(false);
+            }}
+            className="w-full max-w-3xl rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+          >
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
               <div>
-                <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">
+                <h2
+                  id="create-document-title"
+                  className="font-display text-xl uppercase tracking-[0.12em] text-slate-50"
+                >
                   Create Document
                 </h2>
                 <p className="mt-1 text-sm text-slate-400">
@@ -1956,8 +1788,11 @@ export default function AdminDocumentsCenterClient({
             >
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div>
-                  <label className="cyber-label">Organization</label>
+                  <label className="cyber-label" htmlFor="doc-organization-2">
+                    Organization
+                  </label>
                   <select
+                    id="doc-organization-2"
                     name="organizationId"
                     className="cyber-input"
                     defaultValue=""
@@ -1972,16 +1807,22 @@ export default function AdminDocumentsCenterClient({
                   </select>
                 </div>
                 <div>
-                  <label className="cyber-label">Name</label>
+                  <label className="cyber-label" htmlFor="doc-name-2">
+                    Name
+                  </label>
                   <input
+                    id="doc-name-2"
                     name="name"
                     className="cyber-input"
                     placeholder="Optional for multi-file mode"
                   />
                 </div>
                 <div>
-                  <label className="cyber-label">Storage Bucket</label>
+                  <label className="cyber-label" htmlFor="doc-storage-bucket">
+                    Storage Bucket
+                  </label>
                   <input
+                    id="doc-storage-bucket"
                     name="bucket"
                     className="cyber-input"
                     defaultValue="documents"
@@ -1990,16 +1831,22 @@ export default function AdminDocumentsCenterClient({
               </div>
               <div className="grid gap-4 md:grid-cols-3">
                 <div>
-                  <label className="cyber-label">Folder Path</label>
+                  <label className="cyber-label" htmlFor="doc-folder-path">
+                    Folder Path
+                  </label>
                   <input
+                    id="doc-folder-path"
                     name="category"
                     className="cyber-input"
                     placeholder="Optional folder/category"
                   />
                 </div>
                 <div>
-                  <label className="cyber-label">Visibility</label>
+                  <label className="cyber-label" htmlFor="doc-visibility-2">
+                    Visibility
+                  </label>
                   <select
+                    id="doc-visibility-2"
                     name="visibility"
                     className="cyber-input"
                     defaultValue="private"
@@ -2012,10 +1859,11 @@ export default function AdminDocumentsCenterClient({
                   </select>
                 </div>
                 <div>
-                  <label className="cyber-label">
+                  <label className="cyber-label" htmlFor="doc-existing-storage-path-optional">
                     Existing Storage Path (optional)
                   </label>
                   <input
+                    id="doc-existing-storage-path-optional"
                     name="fileUrl"
                     className="cyber-input"
                     placeholder="orgs/.../file.ext"
@@ -2023,17 +1871,18 @@ export default function AdminDocumentsCenterClient({
                 </div>
               </div>
               <div>
-                <label className="cyber-label">Upload File(s)</label>
+                <label className="cyber-label" htmlFor="doc-upload-files">
+                  Upload File(s)
+                </label>
                 <div className="rounded-2xl border border-dashed border-emerald-500/20 bg-emerald-500/5 p-5 text-center text-sm text-slate-300 transition hover:border-emerald-500/35 hover:bg-emerald-500/10">
-                  <p className="font-semibold text-emerald-300">
-                    Choose one or more files
-                  </p>
+                  <p className="font-semibold text-emerald-300">Choose one or more files</p>
                   <p className="mt-2 text-slate-400">
-                    This consolidated pass preserves the working upload flow and
-                    keeps the admin interactions aligned with 2.2.3.3.
+                    This consolidated pass preserves the working upload flow and keeps the admin
+                    interactions aligned with 2.2.3.3.
                   </p>
                   <input
                     ref={createFileRef}
+                    id="doc-upload-files"
                     type="file"
                     name="file"
                     multiple
@@ -2047,15 +1896,20 @@ export default function AdminDocumentsCenterClient({
                     }
                   />
                   {droppedFileName ? (
-                    <p className="mt-3 text-emerald-300">
-                      Selected: {droppedFileName}
-                    </p>
+                    <p className="mt-3 text-emerald-300">Selected: {droppedFileName}</p>
                   ) : null}
                 </div>
               </div>
               <div>
-                <label className="cyber-label">Description</label>
-                <textarea name="description" rows={4} className="cyber-input" />
+                <label className="cyber-label" htmlFor="doc-description-2">
+                  Description
+                </label>
+                <textarea
+                  id="doc-description-2"
+                  name="description"
+                  rows={4}
+                  className="cyber-input"
+                />
               </div>
               <div className="flex items-center justify-end gap-3">
                 <button
@@ -2065,11 +1919,7 @@ export default function AdminDocumentsCenterClient({
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="cyber-button"
-                  disabled={busyId === "create"}
-                >
+                <button type="submit" className="cyber-button" disabled={busyId === "create"}>
                   {busyId === "create" ? "Creating..." : "Create Document"}
                 </button>
               </div>
@@ -2081,9 +1931,9 @@ export default function AdminDocumentsCenterClient({
       {drawerDoc ? (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/70 p-4 backdrop-blur-sm">
           <div className="h-full w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-[#071018]/95 px-6 py-4 backdrop-blur">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-cyber-card-deep/95 px-6 py-4 backdrop-blur">
               <div>
-                <h2 className="font-orbitron text-xl uppercase tracking-[0.12em] text-slate-50">
+                <h2 className="font-display text-xl uppercase tracking-[0.12em] text-slate-50">
                   {docName(drawerDoc)}
                 </h2>
                 <p className="mt-1 text-sm text-slate-400">
@@ -2103,8 +1953,8 @@ export default function AdminDocumentsCenterClient({
             </div>
             <div className="space-y-6 px-6 py-6">
               <div className="grid gap-4 md:grid-cols-4">
-                <div className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4 text-sm text-slate-400">
-                  <span className="block text-xs uppercase tracking-[0.12em] text-slate-500">
+                <div className="rounded-xl border border-white/10 bg-cyber-base/60 p-4 text-sm text-slate-400">
+                  <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                     Visibility
                   </span>
                   <span className="mt-2 inline-flex">
@@ -2113,26 +1963,24 @@ export default function AdminDocumentsCenterClient({
                     </span>
                   </span>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4 text-sm text-slate-400">
-                  <span className="block text-xs uppercase tracking-[0.12em] text-slate-500">
+                <div className="rounded-xl border border-white/10 bg-cyber-base/60 p-4 text-sm text-slate-400">
+                  <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                     Type
                   </span>
                   <span className="mt-2 inline-flex">
-                    <span className={typeClass(fileType(drawerDoc))}>
-                      {fileType(drawerDoc)}
-                    </span>
+                    <span className={typeClass(fileType(drawerDoc))}>{fileType(drawerDoc)}</span>
                   </span>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4 text-sm text-slate-400">
-                  <span className="block text-xs uppercase tracking-[0.12em] text-slate-500">
+                <div className="rounded-xl border border-white/10 bg-cyber-base/60 p-4 text-sm text-slate-400">
+                  <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                     Version
                   </span>
                   <span className="mt-2 block font-semibold text-slate-50">
                     {String(drawerDoc.current_version ?? 1)}
                   </span>
                 </div>
-                <div className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4 text-sm text-slate-400">
-                  <span className="block text-xs uppercase tracking-[0.12em] text-slate-500">
+                <div className="rounded-xl border border-white/10 bg-cyber-base/60 p-4 text-sm text-slate-400">
+                  <span className="block text-xs uppercase tracking-[0.12em] text-slate-400">
                     Size
                   </span>
                   <span className="mt-2 block font-semibold text-slate-50">
@@ -2141,58 +1989,45 @@ export default function AdminDocumentsCenterClient({
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {(["overview", "edit", "file", "preview"] as DrawerTab[]).map(
-                  (tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => setDrawerTab(tab)}
-                      className={
-                        drawerTab === tab
-                          ? "cyber-button"
-                          : "cyber-button-secondary"
-                      }
-                    >
-                      {tab[0].toUpperCase() + tab.slice(1)}
-                    </button>
-                  ),
-                )}
+                {(["overview", "edit", "file", "preview"] as DrawerTab[]).map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setDrawerTab(tab)}
+                    className={drawerTab === tab ? "cyber-button" : "cyber-button-secondary"}
+                  >
+                    {tab[0].toUpperCase() + tab.slice(1)}
+                  </button>
+                ))}
               </div>
 
               {drawerTab === "overview" ? (
-                <section className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4">
-                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
-                    Overview
-                  </p>
+                <section className="rounded-xl border border-white/10 bg-cyber-base/60 p-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Overview</p>
                   <div className="mt-3 space-y-2 text-sm text-slate-300">
                     <p>
-                      <span className="text-slate-500">Organization:</span>{" "}
+                      <span className="text-slate-400">Organization:</span>{" "}
                       {orgName(drawerDoc, orgMap)}
                     </p>
                     <p>
-                      <span className="text-slate-500">Folder:</span>{" "}
-                      {docFolder(drawerDoc)}
+                      <span className="text-slate-400">Folder:</span> {docFolder(drawerDoc)}
                     </p>
                     <p>
-                      <span className="text-slate-500">Bucket:</span>{" "}
-                      {docBucket(drawerDoc)}
+                      <span className="text-slate-400">Bucket:</span> {docBucket(drawerDoc)}
                     </p>
                     <p>
-                      <span className="text-slate-500">Path:</span>{" "}
-                      {docPath(drawerDoc)}
+                      <span className="text-slate-400">Path:</span> {docPath(drawerDoc)}
                     </p>
                     <p>
-                      <span className="text-slate-500">Resolved Link:</span>{" "}
+                      <span className="text-slate-400">Resolved Link:</span>{" "}
                       {drawerDoc.resolved_url ?? "Unresolved"}
                     </p>
                     <p>
-                      <span className="text-slate-500">Updated:</span>{" "}
-                      {formatRelativeTime(
-                        drawerDoc.updated_at ?? drawerDoc.created_at,
-                      )}
+                      <span className="text-slate-400">Updated:</span>{" "}
+                      {formatRelativeTime(drawerDoc.updated_at ?? drawerDoc.created_at)}
                     </p>
                   </div>
-                  <div className="mt-4 rounded-xl border border-white/10 bg-[#071018]/80 p-4 text-sm text-slate-400">
+                  <div className="mt-4 rounded-xl border border-white/10 bg-cyber-card-deep/80 p-4 text-sm text-slate-400">
                     {docDescription(drawerDoc)}
                   </div>
                   <div className="mt-4 flex flex-wrap gap-3">
@@ -2229,8 +2064,8 @@ export default function AdminDocumentsCenterClient({
               ) : null}
 
               {drawerTab === "edit" ? (
-                <section className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4">
-                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                <section className="rounded-xl border border-white/10 bg-cyber-base/60 p-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-400">
                     Metadata Editor
                   </p>
                   <form
@@ -2241,8 +2076,11 @@ export default function AdminDocumentsCenterClient({
                   >
                     <div className="grid gap-4 md:grid-cols-2">
                       <div>
-                        <label className="cyber-label">Name</label>
+                        <label className="cyber-label" htmlFor="doc-name-3">
+                          Name
+                        </label>
                         <input
+                          id="doc-name-3"
                           name="name"
                           className="cyber-input"
                           defaultValue={docName(drawerDoc)}
@@ -2250,8 +2088,11 @@ export default function AdminDocumentsCenterClient({
                         />
                       </div>
                       <div>
-                        <label className="cyber-label">Folder</label>
+                        <label className="cyber-label" htmlFor="doc-folder-2">
+                          Folder
+                        </label>
                         <input
+                          id="doc-folder-2"
                           name="category"
                           className="cyber-input"
                           defaultValue={String(drawerDoc.folder_path ?? "")}
@@ -2260,8 +2101,11 @@ export default function AdminDocumentsCenterClient({
                       </div>
                     </div>
                     <div>
-                      <label className="cyber-label">Description</label>
+                      <label className="cyber-label" htmlFor="doc-description-3">
+                        Description
+                      </label>
                       <textarea
+                        id="doc-description-3"
                         name="description"
                         rows={4}
                         className="cyber-input"
@@ -2270,8 +2114,11 @@ export default function AdminDocumentsCenterClient({
                       />
                     </div>
                     <div>
-                      <label className="cyber-label">Storage Path</label>
+                      <label className="cyber-label" htmlFor="doc-storage-path-2">
+                        Storage Path
+                      </label>
                       <input
+                        id="doc-storage-path-2"
                         name="storagePath"
                         className="cyber-input"
                         defaultValue={String(drawerDoc.storage_path ?? "")}
@@ -2279,15 +2126,15 @@ export default function AdminDocumentsCenterClient({
                       />
                     </div>
                     <div>
-                      <label className="cyber-label">Visibility</label>
+                      <label className="cyber-label" htmlFor="doc-visibility-3">
+                        Visibility
+                      </label>
                       <select
+                        id="doc-visibility-3"
                         className="cyber-input"
                         defaultValue={docVisibility(drawerDoc)}
                         onChange={(e) => {
-                          void saveVisibility(
-                            drawerDoc,
-                            e.target.value as VisibilityValue,
-                          );
+                          void saveVisibility(drawerDoc, e.target.value as VisibilityValue);
                         }}
                         disabled={Boolean(busyId?.endsWith(drawerDoc.id))}
                       >
@@ -2304,9 +2151,7 @@ export default function AdminDocumentsCenterClient({
                         className="cyber-button"
                         disabled={busyId === `metadata:${drawerDoc.id}`}
                       >
-                        {busyId === `metadata:${drawerDoc.id}`
-                          ? "Saving..."
-                          : "Save metadata"}
+                        {busyId === `metadata:${drawerDoc.id}` ? "Saving..." : "Save metadata"}
                       </button>
                     </div>
                   </form>
@@ -2315,8 +2160,8 @@ export default function AdminDocumentsCenterClient({
 
               {drawerTab === "file" ? (
                 <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
-                  <section className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4">
-                    <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                  <section className="rounded-xl border border-white/10 bg-cyber-base/60 p-4">
+                    <p className="text-xs uppercase tracking-[0.12em] text-slate-400">
                       Replace File
                     </p>
                     <form
@@ -2326,8 +2171,11 @@ export default function AdminDocumentsCenterClient({
                       className="mt-4 space-y-4"
                     >
                       <div>
-                        <label className="cyber-label">Bucket</label>
+                        <label className="cyber-label" htmlFor="doc-bucket">
+                          Bucket
+                        </label>
                         <input
+                          id="doc-bucket"
                           name="bucket"
                           className="cyber-input"
                           defaultValue={docBucket(drawerDoc)}
@@ -2335,8 +2183,11 @@ export default function AdminDocumentsCenterClient({
                         />
                       </div>
                       <div>
-                        <label className="cyber-label">Replacement File</label>
+                        <label className="cyber-label" htmlFor="doc-replacement-file">
+                          Replacement File
+                        </label>
                         <input
+                          id="doc-replacement-file"
                           type="file"
                           name="file"
                           className="cyber-input"
@@ -2349,20 +2200,18 @@ export default function AdminDocumentsCenterClient({
                           className="cyber-button"
                           disabled={busyId === `replace:${drawerDoc.id}`}
                         >
-                          {busyId === `replace:${drawerDoc.id}`
-                            ? "Replacing..."
-                            : "Replace file"}
+                          {busyId === `replace:${drawerDoc.id}` ? "Replacing..." : "Replace file"}
                         </button>
                       </div>
                     </form>
                   </section>
-                  <section className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4">
-                    <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                  <section className="rounded-xl border border-white/10 bg-cyber-base/60 p-4">
+                    <p className="text-xs uppercase tracking-[0.12em] text-slate-400">
                       Danger Zone
                     </p>
                     <p className="mt-3 text-sm text-slate-400">
-                      Deleting removes the record and attempts storage cleanup
-                      for the current file path.
+                      Deleting removes the record and attempts storage cleanup for the current file
+                      path.
                     </p>
                     <div className="mt-4 flex justify-end">
                       <button
@@ -2373,9 +2222,7 @@ export default function AdminDocumentsCenterClient({
                         }}
                         disabled={busyId === `delete:${drawerDoc.id}`}
                       >
-                        {busyId === `delete:${drawerDoc.id}`
-                          ? "Deleting..."
-                          : "Delete document"}
+                        {busyId === `delete:${drawerDoc.id}` ? "Deleting..." : "Delete document"}
                       </button>
                     </div>
                   </section>
@@ -2383,13 +2230,12 @@ export default function AdminDocumentsCenterClient({
               ) : null}
 
               {drawerTab === "preview" ? (
-                <section className="rounded-xl border border-white/10 bg-[#0A1118]/60 p-4">
-                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
-                    Preview
-                  </p>
+                <section className="rounded-xl border border-white/10 bg-cyber-base/60 p-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-slate-400">Preview</p>
                   {drawerDoc.resolved_url && canPreview(drawerDoc) ? (
                     <div className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-black/30">
                       {fileType(drawerDoc) === "Image" ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={drawerDoc.resolved_url}
                           alt={docName(drawerDoc)}
@@ -2404,11 +2250,10 @@ export default function AdminDocumentsCenterClient({
                       )}
                     </div>
                   ) : (
-                    <div className="mt-4 rounded-xl border border-white/10 bg-[#071018]/80 p-4 text-sm text-slate-400">
-                      Inline preview is not available for this file type. Use
-                      Open to view it in a new tab. If the file should preview
-                      inline, verify the stored MIME type and extension are
-                      accurate.
+                    <div className="mt-4 rounded-xl border border-white/10 bg-cyber-card-deep/80 p-4 text-sm text-slate-400">
+                      Inline preview is not available for this file type. Use Open to view it in a
+                      new tab. If the file should preview inline, verify the stored MIME type and
+                      extension are accurate.
                     </div>
                   )}
                   <div className="mt-4 flex flex-wrap gap-3">

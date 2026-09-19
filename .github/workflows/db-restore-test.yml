@@ -1,0 +1,58 @@
+name: Database Restore Test
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Every Monday at 6 AM UTC
+  workflow_dispatch:
+
+jobs:
+  restore-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Find latest backup
+        id: find-backup
+        run: |
+          LATEST=$(aws s3 ls "${{ secrets.S3_BACKUP_BUCKET }}/" --recursive | sort | tail -1 | awk '{print $4}')
+          echo "backup_file=$LATEST" >> $GITHUB_OUTPUT
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+      - name: Download backup
+        run: |
+          aws s3 cp "${{ secrets.S3_BACKUP_BUCKET }}/${{ steps.find-backup.outputs.backup_file }}" /tmp/restore.sql.gz
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+
+      - name: Start temp PostgreSQL
+        run: |
+          docker run -d --name test-pg \
+            -e POSTGRES_PASSWORD=test \
+            -e POSTGRES_DB=restore_test \
+            -p 5432:5432 \
+            postgres:16-alpine
+          sleep 5
+
+      - name: Restore backup to temp database
+        run: |
+          gunzip -c /tmp/restore.sql.gz | psql "postgresql://postgres:test@localhost:5432/restore_test"
+
+      - name: Verify database integrity
+        run: |
+          echo "=== Checking table count ==="
+          psql "postgresql://postgres:test@localhost:5432/restore_test" -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';"
+          echo "=== Checking migrations applied ==="
+          psql "postgresql://postgres:test@localhost:5432/restore_test" -c "SELECT count(*) FROM information_schema.tables WHERE table_name = '_migrations';" || true
+          echo "=== Restore test completed successfully ==="
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop test-pg 2>/dev/null || true
+          docker rm test-pg 2>/dev/null || true
+          rm -f /tmp/restore.sql.gz

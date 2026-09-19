@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { AuditLog, Profile } from "@mct/sdk";
 
 export const metadata = { title: "Organization Activity - Admin - Maine CyberTech" };
 
@@ -10,9 +11,7 @@ type OrgActivityPageProps = {
   }>;
 };
 
-export default async function OrganizationActivityPage({
-  params
-}: OrgActivityPageProps) {
+export default async function OrganizationActivityPage({ params }: OrgActivityPageProps) {
   await requireAdminAccess();
   const { orgId } = await params;
   const api = getApiClient();
@@ -23,17 +22,19 @@ export default async function OrganizationActivityPage({
   ]);
   const logs = logsResult.items ?? [];
 
-  const userIds = [...new Set(logs.map((l: any) => l.actor_user_id).filter(Boolean))] as string[];
+  const userIds = [
+    ...new Set(logs.map((l: AuditLog) => l.actor_user_id).filter(Boolean)),
+  ] as string[];
 
   const profiles = userIds.length > 0 ? await api.profiles.list({ ids: userIds }) : [];
 
-  const profileMap = new Map(profiles.map((p: any) => [p.id, p]));
+  const profileMap = new Map(profiles.map((p: Profile) => [p.id, p]));
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+          <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             {org?.name ?? "Organization"} Activity
           </h1>
           <p className="mt-3 text-slate-400">
@@ -43,7 +44,7 @@ export default async function OrganizationActivityPage({
 
         <Link
           href={`/admin/organizations/${orgId}`}
-          className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
+          className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-display text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
         >
           Back to Organization
         </Link>
@@ -71,13 +72,13 @@ export default async function OrganizationActivityPage({
                     </p>
                   </div>
 
-                  <div className="text-right text-xs text-slate-500">
+                  <div className="text-right text-xs text-slate-400">
                     {new Date(log.created_at).toLocaleString()}
                   </div>
                 </div>
 
                 {log.metadata ? (
-                  <pre className="mt-4 overflow-x-auto rounded-md border border-white/10 bg-[#0A1118]/60 p-4 text-xs text-slate-300">
+                  <pre className="mt-4 overflow-x-auto rounded-md border border-white/10 bg-cyber-base/60 p-4 text-xs text-slate-300">
                     {JSON.stringify(log.metadata, null, 2)}
                   </pre>
                 ) : null}

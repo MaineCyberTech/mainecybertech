@@ -11,8 +11,11 @@ test.describe("contact page", () => {
 
   test("shows validation errors on empty submit", async ({ page }) => {
     await page.goto("/contact");
-    await page.getByRole("button", { name: /submit service request/i }).click();
-    await expect(page.getByText(/required/i).first()).toBeVisible({ timeout: 5000 });
+    await page.getByRole("checkbox", { name: /consent to my data/i }).check();
+    const submit = page.getByRole("button", { name: /submit service request/i });
+    await expect(submit).toBeVisible({ timeout: 10000 });
+    await submit.click();
+    await expect(page.getByText("Required", { exact: true }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("phone link navigates to tel:", async ({ page }) => {

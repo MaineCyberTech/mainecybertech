@@ -1,0 +1,83 @@
+{
+  "findings_count": 6,
+  "severity_breakdown": {
+    "P2": 3,
+    "P3": 3
+  },
+  "remediation_plan": [
+    {
+      "severity": "P2",
+      "domain": "database",
+      "title": "Tables defined in migrations but unreferenced in API code",
+      "recommended_action": "14 table(s) created in migrations but not referenced in API TypeScript source",
+      "effort": "medium"
+    },
+    {
+      "severity": "P3",
+      "domain": "database",
+      "title": "Migration number gaps detected",
+      "recommended_action": "Review and address",
+      "effort": "small"
+    },
+    {
+      "severity": "P2",
+      "domain": "api",
+      "title": "SDK methods defined but unreferenced in frontend",
+      "recommended_action": "27 SDK method(s) exist but are not called from web code",
+      "effort": "medium"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "title": "Admin component outside admin directory",
+      "recommended_action": "'portal\\PortalAdminQuickSwitch.tsx' suggests admin concern but lives in 'portal'",
+      "effort": "small"
+    },
+    {
+      "severity": "P3",
+      "domain": "frontend",
+      "title": "Route groups missing loading/error boundaries",
+      "recommended_action": "Review and address",
+      "effort": "small"
+    },
+    {
+      "severity": "P2",
+      "domain": "cross-domain",
+      "title": "Database tables never queried in API code",
+      "recommended_action": "37 table(s) defined in migrations but never used in any .from() call",
+      "effort": "medium"
+    }
+  ],
+  "engine_fixes": [
+    {
+      "file": null,
+      "action": "fix",
+      "severity": "P2"
+    },
+    {
+      "file": null,
+      "action": "fix",
+      "severity": "P3"
+    },
+    {
+      "file": null,
+      "action": "fix",
+      "severity": "P2"
+    },
+    {
+      "file": "portal\\PortalAdminQuickSwitch.tsx",
+      "action": "fix",
+      "severity": "P3"
+    },
+    {
+      "file": null,
+      "action": "fix",
+      "severity": "P3"
+    },
+    {
+      "file": null,
+      "action": "fix",
+      "severity": "P2"
+    }
+  ]
+}

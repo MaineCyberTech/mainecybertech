@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
+import { createTestApp, createMockBuilder, createOrgAccessStub, type MockResult } from "./helpers";
 import membershipsRouter from "../routes/memberships";
-import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -18,7 +18,7 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
+    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
 }));
 
 jest.mock("../services/audit", () => ({
@@ -37,18 +37,28 @@ function mockAuth() {
   return supabase;
 }
 
-function mockAdmin() {
-  const supabase = mockAuth();
-  supabase.from
-    .mockReturnValueOnce(createMockBuilder({
-      data: [{ roles: { id: "role-admin", key: "admin" } }],
-      error: null,
-    }));
-  return supabase;
-}
+const MEMBERSHIP = {
+  id: "mem-1",
+  organization_id: "00000000-0000-0000-0000-000000000001",
+  user_id: "user-1",
+  role_id: "00000000-0000-0000-0000-000000000020",
+  status: "approved",
+};
 
-const MEMBERSHIP = { id: "mem-1", organization_id: "org-1", user_id: "user-1", role_id: "role-1", status: "approved" };
-
+/*
+ * Route-level suites: auth/permission middleware is stubbed so the shared
+ * Supabase mock serves only route queries. Middleware enforcement itself is
+ * covered by security-suite / edge-cases / dedicated middleware tests.
+ */
+jest.mock("../middleware/org-access", () =>
+  createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
+);
+jest.mock("../middleware/permissions", () => ({
+  requirePermission:
+    () =>
+    (_req: unknown, _res: unknown, next: () => void) =>
+      next(),
+}));
 const app = createTestApp();
 app.use("/api/v1/memberships", membershipsRouter);
 app.use(errorHandler);
@@ -74,7 +84,9 @@ describe("memberships routes", () => {
 
     it("filters by organization_id", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/memberships?organization_id=org-1")
@@ -82,12 +94,35 @@ describe("memberships routes", () => {
 
       expect(res.status).toBe(200);
     });
+
+    it("does not org-scope self lookups (user_id = caller)", async () => {
+      const supabase = mockAuth();
+      const builder = createMockBuilder({ data: [MEMBERSHIP], error: null });
+      const eqSpy = jest.fn().mockReturnValue(builder);
+      builder.eq = eqSpy;
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(builder);
+
+      const res = await request(app)
+        .get("/api/v1/memberships?user_id=user-1&status=approved&organization_id=org-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      // The org filter must NOT be applied for self-lookups (the handler
+      // receives the injected active org but must return all memberships
+      // so getApprovedMembership can resolve the active org / platform admin).
+      const eqCalls = eqSpy.mock.calls.map((c) => c[0]);
+      expect(eqCalls).not.toContain("organization_id");
+      expect(eqCalls).toContain("status");
+      expect(eqCalls).toContain("user_id");
+    });
   });
 
   describe("GET /mine", () => {
     it("returns current user memberships", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [MEMBERSHIP], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [MEMBERSHIP], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/memberships/mine")
@@ -99,7 +134,7 @@ describe("memberships routes", () => {
 
   describe("POST /invite", () => {
     it("invites a user to an organization (admin only)", async () => {
-      const supabase = mockAdmin();
+      const supabase = mockAuth();
       supabase.from
         .mockReturnValueOnce(createMockBuilder({ data: { id: "user-2" }, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: null, error: null }))
@@ -108,26 +143,33 @@ describe("memberships routes", () => {
       const res = await request(app)
         .post("/api/v1/memberships/invite")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", email: "invitee@example.com", roleId: "role-1" });
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          email: "invitee@example.com",
+          roleId: "00000000-0000-0000-0000-000000000020",
+        });
 
       expect(res.status).toBe(201);
     });
 
     it("returns 404 when user email not found", async () => {
-      const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
+      const supabase = mockAuth();
+      supabase.from.mockReturnValueOnce(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .post("/api/v1/memberships/invite")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", email: "missing@example.com", roleId: "role-1" });
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          email: "missing@example.com",
+          roleId: "00000000-0000-0000-0000-000000000020",
+        });
 
       expect(res.status).toBe(404);
     });
 
     it("returns 409 when membership already exists", async () => {
-      const supabase = mockAdmin();
+      const supabase = mockAuth();
       supabase.from
         .mockReturnValueOnce(createMockBuilder({ data: { id: "user-2" }, error: null }))
         .mockReturnValueOnce(createMockBuilder({ data: { id: "existing-mem" }, error: null }));
@@ -135,7 +177,11 @@ describe("memberships routes", () => {
       const res = await request(app)
         .post("/api/v1/memberships/invite")
         .set("Authorization", "Bearer token-123")
-        .send({ organizationId: "org-1", email: "invitee@example.com", roleId: "role-1" });
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          email: "invitee@example.com",
+          roleId: "00000000-0000-0000-0000-000000000020",
+        });
 
       expect(res.status).toBe(409);
     });
@@ -143,24 +189,41 @@ describe("memberships routes", () => {
 
   describe("PATCH /:id", () => {
     it("updates a membership (admin only)", async () => {
-      const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: { ...MEMBERSHIP, status: "approved" }, error: null }));
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: { ...MEMBERSHIP, status: "approved" }, error: null }),
+      );
 
       const res = await request(app)
         .patch("/api/v1/memberships/mem-1")
         .set("Authorization", "Bearer token-123")
-        .send({ roleId: "role-1", status: "approved" });
+        .send({ roleId: "00000000-0000-0000-0000-000000000020", status: "approved" });
 
       expect(res.status).toBe(200);
+    });
+
+    it("returns 404 when the membership belongs to another org", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { ...MEMBERSHIP, organization_id: "00000000-0000-0000-0000-000000000002" },
+          error: null,
+        }),
+      );
+
+      const res = await request(app)
+        .patch("/api/v1/memberships/mem-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ roleId: "00000000-0000-0000-0000-000000000020", status: "approved" });
+
+      expect(res.status).toBe(404);
     });
   });
 
   describe("DELETE /:id", () => {
     it("deletes a membership (admin only)", async () => {
-      const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(createMockBuilder({ data: MEMBERSHIP, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/memberships/mem-1")
@@ -168,5 +231,22 @@ describe("memberships routes", () => {
 
       expect(res.status).toBe(204);
     });
+
+    it("returns 404 when the membership belongs to another org", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: { ...MEMBERSHIP, organization_id: "00000000-0000-0000-0000-000000000002" },
+          error: null,
+        }),
+      );
+
+      const res = await request(app)
+        .delete("/api/v1/memberships/mem-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+    });
   });
 });
+

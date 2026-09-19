@@ -26,7 +26,7 @@ export default async function AdminOrgBillingPage({ params }: Props) {
     <div className="space-y-8">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-orbitron text-2xl uppercase tracking-[0.14em] text-slate-50">
+          <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
             {org?.name ?? "Organization"} Billing
           </h1>
           <p className="mt-3 text-slate-400">
@@ -35,7 +35,7 @@ export default async function AdminOrgBillingPage({ params }: Props) {
         </div>
         <Link
           href={`/admin/organizations/${orgId}`}
-          className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-orbitron text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
+          className="rounded-lg border-2 border-emerald-600 bg-transparent px-4 py-2.5 font-display text-xs font-bold uppercase tracking-[0.18em] text-emerald-500 transition-all hover:bg-emerald-600/10"
         >
           Back to Organization
         </Link>

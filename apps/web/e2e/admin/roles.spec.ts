@@ -3,7 +3,7 @@ import { test, expect } from "../fixtures";
 test.describe("admin roles page", () => {
   test("renders roles heading", async ({ page }) => {
     await page.goto("/admin/roles");
-    await expect(page.getByRole("heading", { name: /roles/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Roles & Permissions", exact: true })).toBeVisible();
   });
 
   test("shows role list or empty state", async ({ page }) => {

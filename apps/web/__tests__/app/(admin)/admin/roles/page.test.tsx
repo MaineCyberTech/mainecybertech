@@ -5,6 +5,11 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
 }));
 
+const mockRequirePermission = jest.fn();
+jest.mock("@/lib/auth/permissions", () => ({
+  requirePermission: (...args: any[]) => mockRequirePermission(...args),
+}));
+
 const mockRolesListWithPermissions = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
@@ -20,7 +25,17 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+}));
+
+jest.mock("@/lib/client-api", () => ({
+  getClientApi: () => ({
+    roles: { create: jest.fn() },
+  }),
+}));
+
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -151,9 +166,7 @@ describe("AdminRolesPage", () => {
     const Page = (await import("@/app/(admin)/admin/roles/page")).default;
     render(await Page());
     const links = screen.getAllByRole("link");
-    expect(
-      links.some((l) => l.getAttribute("href") === "/admin/roles/role-1"),
-    ).toBe(true);
+    expect(links.some((l) => l.getAttribute("href") === "/admin/roles/role-1")).toBe(true);
   });
 
   it("handles missing description gracefully", async () => {

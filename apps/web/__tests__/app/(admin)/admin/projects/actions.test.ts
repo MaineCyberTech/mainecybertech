@@ -20,9 +20,7 @@ describe("createProject", () => {
   });
 
   it("creates a project with all fields", async () => {
-    const { createProject } = await import(
-      "@/app/(admin)/admin/projects/actions"
-    );
+    const { createProject } = await import("@/app/(admin)/admin/projects/actions");
 
     const formData = new FormData();
     formData.set("organizationId", "org-1");
@@ -48,9 +46,7 @@ describe("createProject", () => {
   });
 
   it("uses default values when optional fields not provided", async () => {
-    const { createProject } = await import(
-      "@/app/(admin)/admin/projects/actions"
-    );
+    const { createProject } = await import("@/app/(admin)/admin/projects/actions");
 
     const formData = new FormData();
     formData.set("organizationId", "org-1");
@@ -69,47 +65,41 @@ describe("createProject", () => {
     });
   });
 
-  it("throws when organizationId is missing", async () => {
-    const { createProject } = await import(
-      "@/app/(admin)/admin/projects/actions"
-    );
+  it("returns error when organizationId is missing", async () => {
+    const { createProject } = await import("@/app/(admin)/admin/projects/actions");
 
     const formData = new FormData();
     formData.set("name", "Project X");
 
-    await expect(createProject(formData)).rejects.toThrow(
-      "Organization and project name are required.",
-    );
+    const result = await createProject(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Organization and project name");
     expect(mockProjectsCreate).not.toHaveBeenCalled();
   });
 
-  it("throws when name is missing", async () => {
-    const { createProject } = await import(
-      "@/app/(admin)/admin/projects/actions"
-    );
+  it("returns error when name is missing", async () => {
+    const { createProject } = await import("@/app/(admin)/admin/projects/actions");
 
     const formData = new FormData();
     formData.set("organizationId", "org-1");
     formData.set("name", "");
 
-    await expect(createProject(formData)).rejects.toThrow(
-      "Organization and project name are required.",
-    );
+    const result = await createProject(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Organization and project name");
     expect(mockProjectsCreate).not.toHaveBeenCalled();
   });
 
-  it("throws when name is whitespace only", async () => {
-    const { createProject } = await import(
-      "@/app/(admin)/admin/projects/actions"
-    );
+  it("returns error when name is whitespace only", async () => {
+    const { createProject } = await import("@/app/(admin)/admin/projects/actions");
 
     const formData = new FormData();
     formData.set("organizationId", "org-1");
     formData.set("name", "   ");
 
-    await expect(createProject(formData)).rejects.toThrow(
-      "Organization and project name are required.",
-    );
+    const result = await createProject(formData);
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("Organization and project name");
     expect(mockProjectsCreate).not.toHaveBeenCalled();
   });
 });

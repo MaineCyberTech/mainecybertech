@@ -1,6 +1,7 @@
 {
   "name": "@mct/ui",
   "private": true,
+  "license": "ISC",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {

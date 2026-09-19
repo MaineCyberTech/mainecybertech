@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/node";
 import { logger } from "./logger";
+import { taskExecutionsTotal, taskExecutionDuration } from "./metrics";
 
 export interface TaskMessage {
   type: string;
@@ -37,13 +38,28 @@ export async function executeTask(message: TaskMessage): Promise<TaskResult> {
   const handler = getTaskHandler(message.type);
   if (!handler) {
     logger.warn({ type: message.type }, "No handler registered for task type");
+    taskExecutionsTotal.inc({ task_type: message.type, status: "no_handler" });
     return { ok: false, error: `Unknown task type: ${message.type}` };
   }
 
+  const start = Date.now();
   try {
     const result = await handler(message.payload);
+    const duration = (Date.now() - start) / 1000;
+    taskExecutionDuration.observe({ task_type: message.type }, duration);
+
+    if (result.ok) {
+      taskExecutionsTotal.inc({ task_type: message.type, status: "success" });
+    } else {
+      taskExecutionsTotal.inc({ task_type: message.type, status: "failure" });
+    }
+
     return result;
   } catch (error) {
+    const duration = (Date.now() - start) / 1000;
+    taskExecutionDuration.observe({ task_type: message.type }, duration);
+    taskExecutionsTotal.inc({ task_type: message.type, status: "error" });
+
     const errMsg = error instanceof Error ? error.message : String(error);
     logger.error({ type: message.type, error: errMsg }, "Task handler threw");
     Sentry.captureException(error, {

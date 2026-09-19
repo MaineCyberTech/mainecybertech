@@ -1,15 +1,27 @@
+# Default Caddyfile (prod-equivalent security headers; used as deploy fallback)
+
 www.mainecybertech.com, app.mainecybertech.com {
+    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+
     reverse_proxy web:3000
 
     header / {
         X-Frame-Options "DENY"
         X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
     }
 }
 
 api.mainecybertech.com {
-    # SSE endpoint needs no buffering
+    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+
+    # Prometheus scrapes this internally; never expose it publicly.
+    @metrics path /metrics
+    respond @metrics 404
+
     @sse path /api/v1/notifications/stream
     reverse_proxy @sse api:4000 {
         flush_interval -1
@@ -19,22 +31,35 @@ api.mainecybertech.com {
     header / {
         X-Frame-Options "DENY"
         X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
     }
 }
 
 www.mainecybertech.us, app.mainecybertech.us {
+    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+
     reverse_proxy web:3000
 
     header / {
         X-Frame-Options "DENY"
         X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
     }
 }
 
 api.mainecybertech.us {
-    # SSE endpoint needs no buffering
+    tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem
+
+    # Prometheus scrapes this internally; never expose it publicly.
+    @metrics path /metrics
+    respond @metrics 404
+
     @sse path /api/v1/notifications/stream
     reverse_proxy @sse api:4000 {
         flush_interval -1
@@ -44,6 +69,9 @@ api.mainecybertech.us {
     header / {
         X-Frame-Options "DENY"
         X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
         Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
     }
 }

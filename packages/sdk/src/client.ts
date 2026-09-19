@@ -11,6 +11,8 @@ export interface RetryOptions {
 export interface ClientOptions {
   baseUrl: string;
   getToken?: () => Promise<string | null>;
+  getCsrfToken?: () => string | undefined;
+  getActiveOrgId?: () => Promise<string | null> | string | null;
   timeoutMs?: number;
   retries?: Partial<RetryOptions>;
 }
@@ -23,19 +25,13 @@ const DEFAULT_RETRY: RetryOptions = {
   retryableStatuses: [429, 502, 503, 504],
 };
 
-function buildQuery(
-  params?: Record<string, string | number | undefined>,
-): string {
+function buildQuery(params?: Record<string, string | number | undefined>): string {
   if (!params) return "";
   const entries = Object.entries(params).filter(([, v]) => v !== undefined);
   if (entries.length === 0) return "";
   return (
     "?" +
-    entries
-      .map(
-        ([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`,
-      )
-      .join("&")
+    entries.map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`).join("&")
   );
 }
 
@@ -46,20 +42,22 @@ function sleep(ms: number): Promise<void> {
 export class ApiClient {
   private baseUrl: string;
   private getToken: () => Promise<string | null>;
+  private getCsrfToken: () => string | undefined;
+  private getActiveOrgId: () => Promise<string | null> | string | null;
   private timeoutMs: number;
   private retry: RetryOptions;
+  private unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
   constructor(opts: ClientOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/+$/, "");
     this.getToken = opts.getToken ?? (async () => null);
+    this.getCsrfToken = opts.getCsrfToken ?? (() => undefined);
+    this.getActiveOrgId = opts.getActiveOrgId ?? (() => null);
     this.timeoutMs = opts.timeoutMs ?? 30_000;
     this.retry = { ...DEFAULT_RETRY, ...opts.retries };
   }
 
-  private async executeFetch<T>(
-    url: string,
-    init: RequestInit,
-  ): Promise<T> {
+  private async executeFetch<T>(url: string, init: RequestInit): Promise<T> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= this.retry.maxRetries; attempt++) {
@@ -134,13 +132,21 @@ export class ApiClient {
     body?: unknown,
     params?: Record<string, string | number | undefined>,
   ): Promise<T> {
-    const token = await this.getToken();
+    const [token, activeOrgId] = await Promise.all([this.getToken(), this.getActiveOrgId()]);
     const url = `${this.baseUrl}${path}${buildQuery(params)}`;
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    } else if (this.unsafeMethods.has(method)) {
+      const csrfToken = this.getCsrfToken();
+      if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+    }
+    if (activeOrgId) {
+      headers["X-Active-Org"] = activeOrgId;
+    }
 
     return this.executeFetch<T>(url, {
       method,
@@ -149,10 +155,7 @@ export class ApiClient {
     });
   }
 
-  get<T>(
-    path: string,
-    params?: Record<string, string | number | undefined>,
-  ): Promise<T> {
+  get<T>(path: string, params?: Record<string, string | number | undefined>): Promise<T> {
     return this.request<T>("GET", path, undefined, params);
   }
 
@@ -160,16 +163,51 @@ export class ApiClient {
     return this.request<T>("POST", path, body);
   }
 
-  patch<T>(path: string, body?: unknown): Promise<T> {
-    return this.request<T>("PATCH", path, body);
+  patch<T>(
+    path: string,
+    body?: unknown,
+    params?: Record<string, string | number | undefined>,
+  ): Promise<T> {
+    return this.request<T>("PATCH", path, body, params);
   }
 
   put<T>(path: string, body?: unknown): Promise<T> {
     return this.request<T>("PUT", path, body);
   }
 
-  delete<T>(path: string): Promise<T> {
-    return this.request<T>("DELETE", path);
+  delete<T>(
+    path: string,
+    params?: Record<string, string | number | undefined>,
+    body?: unknown,
+  ): Promise<T> {
+    return this.request<T>("DELETE", path, body, params);
+  }
+
+  async getBlob(path: string, params?: Record<string, string | number | undefined>): Promise<Blob> {
+    const token = await this.getToken();
+    const url = `${this.baseUrl}${path}${buildQuery(params)}`;
+    const headers: Record<string, string> = {};
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+
+    try {
+      const res = await fetch(url, {
+        method: "GET",
+        headers,
+        credentials: "include",
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        throw new ApiError("HTTP_ERROR", `HTTP ${res.status}`, res.status);
+      }
+
+      return res.blob();
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async postFormData<T>(path: string, formData: FormData): Promise<T> {

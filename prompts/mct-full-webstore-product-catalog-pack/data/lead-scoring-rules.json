@@ -1,0 +1,86 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "scoreBands": [
+    {
+      "id": "low",
+      "min": 0,
+      "max": 24
+    },
+    {
+      "id": "medium",
+      "min": 25,
+      "max": 59
+    },
+    {
+      "id": "high",
+      "min": 60,
+      "max": 84
+    },
+    {
+      "id": "priority",
+      "min": 85,
+      "max": 100
+    }
+  ],
+  "rules": [
+    {
+      "id": "emergency_selected",
+      "label": "Emergency service selected",
+      "points": 30
+    },
+    {
+      "id": "monthly_plan_selected",
+      "label": "Monthly plan selected",
+      "points": 25
+    },
+    {
+      "id": "cyber_insurance_selected",
+      "label": "Cyber insurance readiness selected",
+      "points": 20
+    },
+    {
+      "id": "multiple_items",
+      "label": "Multiple products in quote",
+      "points": 15
+    },
+    {
+      "id": "ten_plus_users",
+      "label": "10+ users indicated",
+      "points": 15
+    },
+    {
+      "id": "admin_access_available",
+      "label": "Admin access available",
+      "points": 10
+    },
+    {
+      "id": "onsite_network_camera",
+      "label": "Onsite/network/camera scope",
+      "points": 20
+    },
+    {
+      "id": "asked_for_consult",
+      "label": "Requested consult",
+      "points": 10
+    }
+  ],
+  "statuses": [
+    "new",
+    "needs_review",
+    "high_priority",
+    "waiting_on_customer",
+    "quoted",
+    "converted",
+    "closed_lost"
+  ],
+  "adminFields": [
+    "leadScore",
+    "leadBand",
+    "leadStatus",
+    "scoreBreakdown",
+    "recommendedNextAction",
+    "assignedOwner",
+    "lastContactedAt",
+    "followUpDueAt"
+  ]
+}

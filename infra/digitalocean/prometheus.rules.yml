@@ -1,0 +1,40 @@
+# Basic alerting rules for the MCT portal stack.
+# NOTE: These rules are evaluated by Prometheus; for delivery (email/Slack/etc.)
+# an Alertmanager deployment is required. The Watchdog rule below is a common
+# liveness signal that fires once per day and is used to validate the alert path.
+groups:
+  - name: mct-service-availability
+    rules:
+      - alert: MCTServiceDown
+        expr: up{job=~"mct-api|mct-worker"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "MCT service {{ $labels.job }} is down"
+          description: "Prometheus cannot scrape {{ $labels.job }} (target {{ $labels.instance }}) for more than 2 minutes."
+
+      - alert: MCTHighRequestErrorRate
+        expr: |
+          sum by (job) (
+            rate(http_requests_total{status=~"5.."}[5m])
+            /
+            clamp_min(rate(http_requests_total[5m]), 0.0001)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "MCT 5xx error rate above 5% ({{ $labels.job }})"
+          description: "The 5xx error rate for {{ $labels.job }} has been above 5% for 5 minutes."
+
+      - alert: Watchdog
+        expr: vector(1)
+        labels:
+          severity: none
+          team: platform
+        annotations:
+          summary: "Prometheus Watchdog"
+          description: "This alert is a liveness signal — firing at least once a day means the alerting pipeline is healthy."

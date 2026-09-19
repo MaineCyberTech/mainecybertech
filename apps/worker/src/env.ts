@@ -1,23 +1,20 @@
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 import { z } from "zod";
-import { logger } from "./logger";
 
 export const envSchema = z.object({
-  NODE_ENV: z
-    .enum(["development", "production", "test"])
-    .default("development"),
-  LOG_LEVEL: z
-    .enum(["debug", "info", "warn", "error", "silent"])
-    .default("info"),
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
   WORKER_CONCURRENCY: z.coerce.number().default(10),
   WORKER_TIMEOUT: z.coerce.number().default(30000),
-  QUEUE_BACKEND: z.enum(["bullmq", "sqs"]).default("bullmq"),
-  REDIS_URL: z.string().default("redis://redis:6379"),
+  QUEUE_BACKEND: z.enum(["bullmq", "sqs", "inline"]).default("inline"),
+  REDIS_URL: z.string().url().optional(),
+  TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),
+  REDIS_PASSWORD: z.string().optional(),
   SQS_QUEUE_URL: z.string().optional(),
-  SUPABASE_URL: z.string().url().optional(),
-  SUPABASE_ANON_KEY: z.string().optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+  SUPABASE_URL: z.string().url(),
+  SUPABASE_ANON_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   STRIPE_SECRET_KEY: z.string().optional(),
   JIRA_BASE_URL: z.string().optional(),
   JIRA_EMAIL: z.string().optional(),
@@ -40,6 +37,24 @@ export const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+/**
+ * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
+ * does not already carry credentials. Used by the BullMQ connection.
+ */
+export function resolveRedisUrl(url: string, password?: string): string {
+  if (!password) return url;
+  try {
+    const parsed = new URL(url);
+    if (!parsed.username && !parsed.password) {
+      parsed.password = password;
+      return parsed.toString();
+    }
+  } catch {
+    // Malformed URL — leave as-is, the client will surface the error.
+  }
+  return url;
+}
+
 export function parseEnv(raw: Record<string, string | undefined>): Env {
   return envSchema.parse(raw);
 }
@@ -47,10 +62,11 @@ export function parseEnv(raw: Record<string, string | undefined>): Env {
 let env: Env;
 try {
   env = parseEnv(process.env);
-  logger.info("Environment validation passed");
+  console.log("Environment validation passed");
 } catch (error) {
-  logger.error(error, "Invalid environment variables");
-  process.exit(1);
+  throw new Error(
+    `Invalid environment variables: ${error instanceof Error ? error.message : String(error)}`,
+  );
 }
 
 export { env };

@@ -3,18 +3,45 @@ name: Validate
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+        with:
+          node-version: 20
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10 --activate
+      - name: Clear pnpm cache
+        run: pnpm store prune
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Dependency audit
+        # Hard fail: high/critical vulnerabilities block the deploy gate (and
+        # every workflow that calls validate.yml, including terraform-do prod 
+        # apply).
+        # --prod: only audit production dependencies (dev deps like storybook 
+        # have unpatchable image-size vulns)
+        run: pnpm audit --audit-level=high --prod
+
   test:
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [20.x]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -26,17 +53,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run tests
-        run: pnpm test
+      - name: Run tests with coverage
+        run: pnpm test:coverage
 
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
         with:
           node-version: 20
 
@@ -55,10 +82,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
         with:
           node-version: 20
 
@@ -72,3 +99,15 @@ jobs:
 
       - name: TypeCheck
         run: pnpm typecheck
+
+  prompt-provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+        with:
+          node-version: 20
+      - name: Verify prompt pack provenance
+        # Supply-chain guard for the 787 files under prompts/ (P2-1) — a change
+        # to any file breaks the tree hashes and fails the deploy gate.
+        run: node scripts/verify-prompts.js verify

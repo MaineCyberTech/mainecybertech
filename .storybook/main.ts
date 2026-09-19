@@ -1,7 +1,10 @@
 import type { StorybookConfig } from "@storybook/nextjs";
 
 const config: StorybookConfig = {
-  stories: ["../packages/ui/src/**/*.stories.@(ts|tsx)"],
+  stories: [
+    "../apps/web/components/**/*.stories.@(ts|tsx)",
+    "../packages/ui/src/**/*.stories.@(ts|tsx)",
+  ],
   addons: [
     "@storybook/addon-links",
     "@storybook/addon-essentials",
@@ -15,7 +18,7 @@ const config: StorybookConfig = {
   docs: {
     autodocs: "tag",
   },
-  staticDirs: ["../public"],
+  staticDirs: ["../apps/web/public"],
   webpackFinal: async (config) => {
     config.resolve = config.resolve || {};
     config.resolve.alias = {

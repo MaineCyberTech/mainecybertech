@@ -1,0 +1,16 @@
+{
+  "immediate": [
+    "Add requireOrgAccess to users.ts router",
+    "Add timeout to JWT fallback Supabase getUser()",
+    "Add data retention purging worker task"
+  ],
+  "short_term": [
+    "Implement Redis-backed response cache for all list endpoints",
+    "Add per-email rate limiting on auth endpoints",
+    "Wire Prometheus metrics into worker health server"
+  ],
+  "medium_term": [
+    "Add SSE/WebSocket real-time notifications instead of 30s polling",
+    "Implement mobile-responsive PWA with push notifications"
+  ]
+}

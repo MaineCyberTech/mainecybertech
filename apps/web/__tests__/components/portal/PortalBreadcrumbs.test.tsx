@@ -8,16 +8,16 @@ jest.mock("next/link", () => {
   );
 });
 
-describe("PortalBreadcrumbs", () => {
-  let PortalBreadcrumbs: typeof import("@/components/portal/PortalBreadcrumbs").default;
+describe("Breadcrumbs", () => {
+  let Breadcrumbs: typeof import("@/components/Breadcrumbs").default;
 
   beforeAll(async () => {
-    PortalBreadcrumbs = (await import("@/components/portal/PortalBreadcrumbs")).default;
+    Breadcrumbs = (await import("@/components/Breadcrumbs")).default;
   });
 
   it("renders breadcrumb items with links for non-last items", () => {
     render(
-      <PortalBreadcrumbs
+      <Breadcrumbs
         items={[
           { label: "Portal", href: "/portal/dashboard" },
           { label: "Support", href: "/portal/support" },
@@ -35,11 +35,8 @@ describe("PortalBreadcrumbs", () => {
 
   it("renders last item as non-link text", () => {
     render(
-      <PortalBreadcrumbs
-        items={[
-          { label: "Portal", href: "/portal/dashboard" },
-          { label: "Details" },
-        ]}
+      <Breadcrumbs
+        items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Details" }]}
       />,
     );
 
@@ -48,14 +45,14 @@ describe("PortalBreadcrumbs", () => {
   });
 
   it("renders single item without separator", () => {
-    const { container } = render(<PortalBreadcrumbs items={[{ label: "Home" }]} />);
+    const { container } = render(<Breadcrumbs items={[{ label: "Home" }]} />);
     expect(screen.getByText("Home")).toBeInTheDocument();
     expect(container.querySelectorAll("span.text-slate-600")).toHaveLength(0);
   });
 
   it("renders separators between items", () => {
     const { container } = render(
-      <PortalBreadcrumbs
+      <Breadcrumbs
         items={[
           { label: "Portal", href: "/portal/dashboard" },
           { label: "Support", href: "/portal/support" },
@@ -69,24 +66,19 @@ describe("PortalBreadcrumbs", () => {
 
   it("renders last item with lighter text color", () => {
     render(
-      <PortalBreadcrumbs
-        items={[
-          { label: "Portal", href: "/portal/dashboard" },
-          { label: "Active" },
-        ]}
-      />,
+      <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Active" }]} />,
     );
     const activeItem = screen.getByText("Active");
     expect(activeItem).toHaveClass("text-slate-200");
   });
 
   it("has aria-label for navigation", () => {
-    render(<PortalBreadcrumbs items={[{ label: "Home" }]} />);
+    render(<Breadcrumbs items={[{ label: "Home" }]} />);
     expect(screen.getByLabelText("Breadcrumb")).toBeInTheDocument();
   });
 
   it("renders item without href as span", () => {
-    render(<PortalBreadcrumbs items={[{ label: "Standalone" }]} />);
+    render(<Breadcrumbs items={[{ label: "Standalone" }]} />);
     const item = screen.getByText("Standalone");
     expect(item.tagName).toBe("SPAN");
   });

@@ -1,3 +1,5 @@
+import { setCircuitBreakerStatus } from "./metrics";
+
 export type CircuitState = "closed" | "open" | "half-open";
 
 export interface CircuitBreakerConfig {
@@ -24,14 +26,16 @@ export class CircuitBreaker {
   private lastSuccess?: Date;
   private nextAttempt?: Date;
   private readonly config: Required<CircuitBreakerConfig>;
+  private readonly name: string;
 
-  constructor(config: CircuitBreakerConfig) {
+  constructor(config: CircuitBreakerConfig, name = "default") {
     this.config = {
       failureThreshold: config.failureThreshold,
       successThreshold: config.successThreshold,
       timeout: config.timeout,
       monitoringWindow: config.monitoringWindow ?? 60_000,
     };
+    this.name = name;
   }
 
   getState(): CircuitBreakerStats {
@@ -66,13 +70,24 @@ export class CircuitBreaker {
     }
 
     try {
-      const result = await operation();
+      const op = operation();
+      op.catch(() => {});
+      const result = await Promise.race([
+        op,
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Circuit breaker timeout")), this.config.timeout),
+        ),
+      ]);
       this.onSuccess();
       return result;
     } catch (error) {
       this.onFailure();
       throw error;
     }
+  }
+
+  private emitState(): void {
+    setCircuitBreakerStatus(this.name, this.state);
   }
 
   private onSuccess(): void {
@@ -86,6 +101,7 @@ export class CircuitBreaker {
         this.successes = 0;
       }
     }
+    this.emitState();
   }
 
   private onFailure(): void {
@@ -95,13 +111,11 @@ export class CircuitBreaker {
     if (this.state === "half-open") {
       this.state = "open";
       this.nextAttempt = new Date(Date.now() + this.config.timeout);
-    } else if (
-      this.state === "closed" &&
-      this.failures >= this.config.failureThreshold
-    ) {
+    } else if (this.state === "closed" && this.failures >= this.config.failureThreshold) {
       this.state = "open";
       this.nextAttempt = new Date(Date.now() + this.config.timeout);
     }
+    this.emitState();
   }
 
   reset(): void {
@@ -120,5 +134,5 @@ export function createSupabaseCircuitBreaker(): CircuitBreaker {
     successThreshold: 2,
     timeout: 30_000,
     monitoringWindow: 60_000,
-  });
+  }, "supabase");
 }

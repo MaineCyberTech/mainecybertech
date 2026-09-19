@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "question", "answer"],
+  "properties": {
+    "id": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "question": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "answer": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "productIds": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "categoryIds": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "public": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "schemaEligible": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    }
+  }
+}

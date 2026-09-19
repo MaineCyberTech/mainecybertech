@@ -17,6 +17,13 @@ permissions:
   contents: read
   id-token: write
   pull-requests: write
+  actions: write
+
+# Serialize terraform runs per branch: concurrent applies could corrupt the
+# shared DO Spaces state lock or race each other (e.g. a push and a manual apply).
+concurrency:
+  group: terraform-do-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   terraform-plan:
@@ -24,14 +31,14 @@ jobs:
     defaults:
       run:
         working-directory: infra/terraform/digitalocean
-    environment: dev
+    environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: 1.9
 
@@ -71,26 +78,30 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: |
-          export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
-          export AWS_SDK_LOAD_CONFIG=0
-          terraform init
+        run: terraform init -input=false -backend-config=env/backend.${{ steps.env.outputs.name }}.hcl
 
       - name: Terraform Validate
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: terraform validate
 
       - name: Terraform Plan
         id: plan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
         run: |
           terraform plan \
             -var-file="${{ steps.env.outputs.name }}.tfvars" \
             -no-color \
+            -input=false \
             -out=tfplan 2>&1 | tee ${{ runner.temp }}/tfplan.txt
         continue-on-error: false
 
       - name: Post plan to PR
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
           script: |
             const fs = require('fs');
@@ -105,31 +116,57 @@ jobs:
             });
 
       - name: Upload plan
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: tfplan-${{ steps.env.outputs.name }}
           path: infra/terraform/digitalocean/tfplan
           retention-days: 1
 
-  terraform-apply-prod:
+  # ===== Deployment gates =====
+  # validate always runs for every terraform run (test + lint + typecheck).
+  validate-gate:
+    needs: terraform-plan
+    uses: ./.github/workflows/validate.yml
+    secrets: inherit
+
+  # e2e + migrations: required for the PROD apply only (firewall changes must not
+  # ship with untested/ummigrated code — a malicious or broken PR could otherwise
+  # silently open firewall rules). Skipped on develop to keep dev applies fast;
+  # skipped jobs do not block the apply because apply-prod guards with
+  # !failure() && !cancelled().
+  e2e-gate:
     needs: terraform-plan
     if: github.ref_name == 'main'
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+
+  migrate-gate:
+    needs: terraform-plan
+    if: github.ref_name == 'main'
+    uses: ./.github/workflows/supabase-migrations.yml
+    secrets: inherit
+
+  terraform-apply-prod:
+    needs: [terraform-plan, validate-gate, e2e-gate, migrate-gate]
+    if: ${{ github.ref_name == 'main' && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     environment: prod-approval
     defaults:
       run:
         working-directory: infra/terraform/digitalocean
+    outputs:
+      droplet_ip: ${{ steps.apply.outputs.droplet_ip }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: 1.9
 
       - name: Download plan
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: tfplan-prod
           path: infra/terraform/digitalocean
@@ -138,33 +175,38 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: |
-          export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
-          export AWS_SDK_LOAD_CONFIG=0
-          terraform init
+        run: terraform init -input=false -backend-config=env/backend.prod.hcl
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        id: apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+        run: |
+          terraform apply -auto-approve -input=false tfplan
+          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT
 
   terraform-apply-dev:
-    needs: terraform-plan
-    if: github.ref_name == 'develop'
+    needs: [terraform-plan, validate-gate]
+    if: ${{ github.ref_name == 'develop' && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     environment: dev
     defaults:
       run:
         working-directory: infra/terraform/digitalocean
+    outputs:
+      droplet_ip: ${{ steps.apply.outputs.droplet_ip }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
           terraform_version: 1.9
 
       - name: Download plan
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           name: tfplan-dev
           path: infra/terraform/digitalocean
@@ -173,10 +215,13 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
-        run: |
-          export AWS_ENDPOINT_URL=https://nyc3.digitaloceanspaces.com
-          export AWS_SDK_LOAD_CONFIG=0
-          terraform init
+        run: terraform init -input=false -backend-config=env/backend.dev.hcl
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+        id: apply
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+        run: |
+          terraform apply -auto-approve -input=false tfplan
+          echo "droplet_ip=$(terraform output -raw droplet_ip)" >> $GITHUB_OUTPUT

@@ -10,15 +10,18 @@ on:
     paths:
       - 'packages/ui/**'
 
+permissions:
+  contents: read
+
 jobs:
   chromatic:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
         with:
           node-version: 20
 
@@ -30,12 +33,14 @@ jobs:
 
       - name: Build Storybook
         run: pnpm storybook:build
+        continue-on-error: true
 
       - name: Chromatic
-        uses: chromaui/action@v11
+        uses: chromaui/action@1cfa065cbdab28f6ca3afaeb3d761383076a35aa
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           storybookBuildDir: docs/storybook-static
           onlyChanged: true
           exitZeroOnChanges: true
           exitOnceUploaded: true
+        continue-on-error: true

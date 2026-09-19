@@ -335,75 +335,7 @@ begin
         uploaded_by = excluded.uploaded_by,
         checksum = excluded.checksum;
 
-  -- Seed document permissions with exact live table shape.
-  -- Role-based permissions keep this portable and do not require synthetic auth users.
-  insert into public.document_permissions (
-    document_id,
-    role_id,
-    can_view,
-    can_edit,
-    can_share
-  )
-  select v_doc_acme, v_role_admin, true, true, true
-  where not exists (
-    select 1 from public.document_permissions
-    where document_id = v_doc_acme and role_id = v_role_admin and user_id is null
-  );
-
-  insert into public.document_permissions (
-    document_id,
-    role_id,
-    can_view,
-    can_edit,
-    can_share
-  )
-  select v_doc_acme, v_role_technician, true, false, false
-  where not exists (
-    select 1 from public.document_permissions
-    where document_id = v_doc_acme and role_id = v_role_technician and user_id is null
-  );
-
-  insert into public.document_permissions (
-    document_id,
-    role_id,
-    can_view,
-    can_edit,
-    can_share
-  )
-  select v_doc_northwind, v_role_client_admin, true, true, true
-  where not exists (
-    select 1 from public.document_permissions
-    where document_id = v_doc_northwind and role_id = v_role_client_admin and user_id is null
-  );
-
-  insert into public.document_permissions (
-    document_id,
-    role_id,
-    can_view,
-    can_edit,
-    can_share
-  )
-  select v_doc_northwind, v_role_client_user, true, false, false
-  where not exists (
-    select 1 from public.document_permissions
-    where document_id = v_doc_northwind and role_id = v_role_client_user and user_id is null
-  );
-
-  -- Optional user-specific permission examples if suitable users exist.
-  if v_northwind_client_user is not null then
-    insert into public.document_permissions (
-      document_id,
-      user_id,
-      can_view,
-      can_edit,
-      can_share
-    )
-    select v_doc_northwind, v_northwind_client_user, true, false, false
-    where not exists (
-      select 1 from public.document_permissions
-      where document_id = v_doc_northwind and user_id = v_northwind_client_user
-    );
-  end if;
+  -- Document permissions removed (table dropped in migration 5302055)
 end $$;
 
 commit;

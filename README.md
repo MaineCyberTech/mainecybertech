@@ -1,7 +1,7 @@
 # Maine CyberTech Portal
 
 <p align="center">
-  <img src="./docs/handoff/assets/maine_cyber_tech_brand_mark.png" alt="Maine Cyber Tech" width="520" />
+  <strong>Maine CyberTech</strong>
 </p>
 
 <p align="center">
@@ -40,13 +40,13 @@ The platform is designed to support:
 
 ### Production-ready now
 
-- frontend / web app with complete test coverage (427 tests)
-- API / backend with security middleware and OpenAPI docs (155 tests)
-- database / RLS foundation
-- SDK package with retry logic (89 tests)
-- worker framework with 5 task handlers (24 tests)
+- frontend / web app with complete test coverage (1,565 tests)
+- API / backend with security middleware and OpenAPI docs (1,018 tests)
+- database / RLS foundation (110 migrations)
+- SDK package with retry logic (269 tests)
+- worker framework with 13 task handlers (74 tests)
 - Docker images for all services (web, api, worker)
-- E2E tests with Playwright
+- E2E tests with Playwright (90 spec files)
 - CI/CD pipelines (test, lint, typecheck, build, deploy, E2E)
 - Security hardening (XSS prevention, CSP headers, rate limiting)
 - Performance optimization (database indexes, response caching)
@@ -62,7 +62,7 @@ The platform is designed to support:
 
 | Requirement        | Version                | Notes                            |
 | ------------------ | ---------------------- | -------------------------------- |
-| **Node.js**        | 18+ (20 recommended)   | [nodejs.org](https://nodejs.org) |
+| **Node.js**        | 20+                    | [nodejs.org](https://nodejs.org) |
 | **pnpm**           | 10+                    | `npm install -g pnpm`            |
 | **Docker Desktop** | Latest                 | Required for local Supabase      |
 | **Supabase CLI**   | Latest                 | `npm install -g supabase`        |
@@ -70,17 +70,17 @@ The platform is designed to support:
 
 ### Production
 
-| Service               | Provider                                   | Required By                                  |
-| --------------------- | ------------------------------------------ | -------------------------------------------- |
-| **Supabase project**  | [supabase.com](https://supabase.com)       | Database, Auth, Storage                      |
-| **AWS account**       | [aws.amazon.com](https://aws.amazon.com)   | ECS (API + Worker), S3, SSM, ALB, CloudWatch |
-| **Vercel account**    | [vercel.com](https://vercel.com)           | Web app hosting                              |
-| **Stripe account**    | [stripe.com](https://stripe.com)           | Billing (optional)                           |
-| **Atlassian account** | [atlassian.com](https://www.atlassian.com) | Jira/JSM sync (optional)                     |
-| **Microsoft 365**     | [microsoft.com](https://www.microsoft.com) | Calendar sync (optional)                     |
-| **SMTP provider**     | Any                                        | Email notifications (optional)               |
-| **Sentry account**    | [sentry.io](https://sentry.io)             | Error tracking (optional)                    |
-| **Slack workspace**   | [slack.com](https://slack.com)             | Alarm notifications (optional)               |
+| Service                  | Provider                                     | Required By                         |
+| ------------------------ | -------------------------------------------- | ----------------------------------- |
+| **Supabase project**     | [supabase.com](https://supabase.com)         | Database, Auth, Storage             |
+| **DigitalOcean account** | [digitalocean.com](https://digitalocean.com) | Droplet hosting, Terraform provider |
+| **Cloudflare account**   | [cloudflare.com](https://cloudflare.com)     | DNS, CDN, TLS                       |
+| **Stripe account**       | [stripe.com](https://stripe.com)             | Billing (optional)                  |
+| **Atlassian account**    | [atlassian.com](https://www.atlassian.com)   | Jira/JSM sync (optional)            |
+| **Microsoft 365**        | [microsoft.com](https://www.microsoft.com)   | Calendar sync (optional)            |
+| **SMTP provider**        | Any                                          | Email notifications (optional)      |
+| **Sentry account**       | [sentry.io](https://sentry.io)               | Error tracking (optional)           |
+| **Slack workspace**      | [slack.com](https://slack.com)               | Alarm notifications (optional)      |
 
 ### GitHub Secrets Required
 
@@ -110,26 +110,25 @@ pnpm install
 
 ```bash
 # 1. Configure infrastructure
-cd infra/terraform
+cd infra/terraform/digitalocean
 terraform init -backend-config=env/backend.prod.hcl
 terraform apply -var-file=env/prod.tfvars
 
 # 2. Deploy services (via GitHub Actions or manual)
-#    - Push to main triggers: api-deploy-ecs, worker-deploy-ecs, web-prod-vercel
+#    - Push to develop triggers: deploy-do.yml (build + SSH deploy to droplet)
+#    - Push to main triggers: deploy-do.yml (prod deploy with E2E + migration gates)
 #    - Run migrations: .github/workflows/supabase-migrations.yml
 
 # 3. Configure domains
-#    - Web: app.mainecybertech.com → Vercel
-#    - API: api.mainecybertech.com → AWS ALB
-
-# See docs/DEPLOYMENT_PLAN_TERRAFORM_VERCEL.md for the full 7-phase plan
+#    - Web: app.mainecybertech.com → Caddy reverse proxy on droplet
+#    - API: api.mainecybertech.com → Caddy reverse proxy on droplet
 ```
 
 ## Useful Commands
 
 ```bash
-pnpm test                    # All unit tests (733)
-pnpm e2e                     # E2E tests (125) (125)
+pnpm test                    # All unit tests (2,926)
+pnpm e2e                     # E2E tests (90 spec files)
 pnpm --filter=api dev        # API dev server
 pnpm --filter=web dev        # Web dev server (auto-started by Playwright)
 pnpm --filter=api typecheck  # TypeScript check
@@ -138,7 +137,7 @@ pnpm --filter=web lint       # ESLint
 
 ## Quick links
 
-- **Developer setup:** [docs/README.dev.md](./docs/README.dev.md)
+- **Developer setup:** [README.dev.md](./README.dev.md)
 - **Architectural analysis:** [docs/ARCHITECTURAL_ANALYSIS.md](./docs/ARCHITECTURAL_ANALYSIS.md)
 - **Environment variables:** [docs/ENVIRONMENT_VARIABLES.md](./docs/ENVIRONMENT_VARIABLES.md)
 - **Documentation index:** [docs/INDEX.md](./docs/INDEX.md)
@@ -146,28 +145,15 @@ pnpm --filter=web lint       # ESLint
 - **Rollback procedures:** [docs/ROLLBACK_PROCEDURES.md](./docs/ROLLBACK_PROCEDURES.md)
 - **Monitoring & alerting:** [docs/MONITORING_AND_ALERTING.md](./docs/MONITORING_AND_ALERTING.md)
 - **Secrets rotation:** [docs/SECRETS_ROTATION.md](./docs/SECRETS_ROTATION.md)
-- **Deployment plan:** [docs/DEPLOYMENT_PLAN_TERRAFORM_VERCEL.md](./docs/DEPLOYMENT_PLAN_TERRAFORM_VERCEL.md)
-- **Production cutover:** [docs/PRODUCTION_CUTOVER_CHECKLIST.md](./docs/PRODUCTION_CUTOVER_CHECKLIST.md)
 - **GitHub secrets matrix:** [docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md](./docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md)
 - **Infrastructure as Code:** [infra/terraform/](./infra/terraform/)
-- **GitHub secrets matrix:** [docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md](./docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md) — includes all 23 SSM parameters
 
-### Infrastructure Gaps Fixed
-
-During a comprehensive audit, 13 gaps were identified and fixed:
+### Infrastructure
 
 - **SSM secrets** — 16 integration secrets (Stripe, Sentry, SMTP, Jira, JSM, M365) added to Terraform with conditional creation
-- **ECS injection** — All new secrets wired into `runtime.tf` task definitions + IAM permissions
 - **Docker HEALTHCHECK** — Added to worker Dockerfile (port 3001)
 - **Web build args** — `NEXT_PUBLIC_API_URL` added as Docker build arg
 - **CI/CD gates** — E2E tests now gate all production deploys; validation gates all dev deploys
-- **Developer setup:** [docs/README.dev.md](./docs/README.dev.md)
-- **Environment variables:** [docs/ENVIRONMENT_VARIABLES.md](./docs/ENVIRONMENT_VARIABLES.md)
-- **Documentation index:** [docs/INDEX.md](./docs/INDEX.md)
-- **Supabase migration workflow:** [docs/SUPABASE_MIGRATION_WORKFLOW.md](./docs/SUPABASE_MIGRATION_WORKFLOW.md)
-- **Rollback procedures:** [docs/ROLLBACK_PROCEDURES.md](./docs/ROLLBACK_PROCEDURES.md)
-- **Monitoring & alerting:** [docs/MONITORING_AND_ALERTING.md](./docs/MONITORING_AND_ALERTING.md)
-- **Secrets rotation:** [docs/SECRETS_ROTATION.md](./docs/SECRETS_ROTATION.md)
 
 ## Key Design Decisions
 
@@ -236,7 +222,7 @@ Auth User → Profile → Membership → Role → Permission / Override → RLS 
 
 ## Testing
 
-The monorepo includes **695 tests** across all packages. See [AGENTS.md](AGENTS.md) for the current breakdown.
+The monorepo includes **2,926 tests** across all packages. See [AGENTS.md](AGENTS.md) for the current breakdown.
 
 ### Running tests
 
@@ -321,32 +307,22 @@ Each service expects a `.env.local` file in its app directory:
 
 GitHub Actions workflows in `.github/workflows/`:
 
-| Workflow                     | Trigger                             | Purpose                                               |
-| ---------------------------- | ----------------------------------- | ----------------------------------------------------- |
-| `validate.yml`               | workflow_call                       | Reusable gate: test + lint + typecheck                |
-| `test.yml`                   | push/PR main,develop                | Run all unit/integration tests                        |
-| `lint.yml`                   | push/PR main,develop                | Lint check                                            |
-| `typecheck.yml`              | push/PR main,develop                | TypeScript type checking                              |
-| `e2e.yml`                    | push/PR main,develop, workflow_call | Build web, run Playwright E2E tests                   |
-| `supabase-migrations.yml`    | push main+develop, workflow_call    | Run Supabase DB migrations                            |
-| `api-deploy-ecs.prod.yml`    | push main                           | Deploy API to ECS prod (validate + approval)          |
-| `api-deploy-ecs.dev.yml`     | push develop                        | Deploy API to ECS dev                                 |
-| `worker-deploy-ecs.prod.yml` | push main                           | Deploy worker to ECS prod (validate + approval)       |
-| `worker-deploy-ecs.dev.yml`  | push develop                        | Deploy worker to ECS dev                              |
-| `web-prod-vercel.yml`        | push main                           | Deploy web to Vercel production (validate + approval) |
-| `web-dev-vercel.yml`         | push develop                        | Deploy web to Vercel preview                          |
-| `web-preview.yml`            | PR                                  | Validate web build (no deploy)                        |
-| `terraform-plan.prod.yml`    | PR main                             | Plan prod infra changes                               |
-| `terraform-apply.prod.yml`   | push main                           | Apply prod infra                                      |
-| `terraform-plan.dev.yml`     | PR develop                          | Plan dev infra changes                                |
-| `terraform-apply.dev.yml`    | push develop                        | Apply dev infra                                       |
+| Workflow                  | Trigger                             | Purpose                                          |
+| ------------------------- | ----------------------------------- | ------------------------------------------------ |
+| `validate.yml`            | workflow_call                       | Reusable gate: test + lint + typecheck           |
+| `test.yml`                | push/PR main,develop                | Run all unit/integration tests                   |
+| `lint.yml`                | push/PR main,develop                | Lint check                                       |
+| `typecheck.yml`           | push/PR main,develop                | TypeScript type checking                         |
+| `e2e.yml`                 | push/PR main,develop, workflow_call | Build web, run Playwright E2E tests              |
+| `supabase-migrations.yml` | push main+develop, workflow_call    | Run Supabase DB migrations                       |
+| `deploy-do.yml`           | push main+develop                   | Build images, SSH deploy to DigitalOcean droplet |
+| `terraform-do.yml`        | push develop                        | Terraform plan/apply for DO infra                |
+| `build-push.yml`          | workflow_dispatch                   | Manual Docker image build + push to GHCR         |
+| `chromatic.yml`           | push/PR                             | Visual regression (Storybook)                    |
+| `db-backup.yml`           | schedule/manual                     | Database backup to Spaces                        |
+| `db-restore-test.yml`     | schedule/manual                     | Restore a backup into a throwaway DB             |
+| `dependency-review.yml`   | pull_request                        | Block PRs with vulnerable dependencies           |
 
 ## License
 
 ISC
-#   t r i g g e r 
- 
- 
-
- 
- 

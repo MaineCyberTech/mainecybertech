@@ -1,8 +1,9 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import organizationsRouter from "../routes/organizations";
-import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
+import organizationsRouter, { resolveImageUpload } from "../routes/organizations";
+import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
 import { errorHandler } from "../middleware/error";
+import { AppError } from "../types";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -18,7 +19,7 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
+    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
 }));
 
 jest.mock("../services/audit", () => ({
@@ -28,7 +29,7 @@ jest.mock("../services/audit", () => ({
 import { getSupabaseAdmin } from "../services/supabase";
 
 function mockAuth() {
-  const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn() };
+  const supabase = { from: jest.fn(), auth: { getUser: jest.fn() }, rpc: jest.fn(), storage: { from: jest.fn() } };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
   supabase.auth.getUser.mockResolvedValue({
     data: { user: { id: "user-1", email: "test@example.com" } },
@@ -37,19 +38,70 @@ function mockAuth() {
   return supabase;
 }
 
+function mockStorage(supabase: ReturnType<typeof mockAuth>) {
+  supabase.storage.from.mockReturnValue({
+    upload: jest.fn().mockResolvedValue({ data: { path: "x" }, error: null }),
+    getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: "https://cdn/logo" } }),
+  });
+}
+
 function mockAdmin() {
   const supabase = mockAuth();
-  supabase.from
-    .mockReturnValueOnce(createMockBuilder({
+  supabase.from.mockReturnValueOnce(
+    createMockBuilder({
       data: [{ roles: { id: "role-admin", key: "admin" } }],
       error: null,
-    }));
+    }),
+  );
   return supabase;
 }
 
-const ORG = { id: "org-1", name: "Test Org", slug: "test-org", status: "active" };
-const DOMAIN = { id: "dom-1", organization_id: "org-1", domain: "example.com" };
+const ORG = {
+  id: "00000000-0000-0000-0000-000000000001",
+  name: "Test Org",
+  slug: "test-org",
+  status: "active",
+};
+const DOMAIN = {
+  id: "dom-1",
+  organization_id: "00000000-0000-0000-0000-000000000001",
+  domain: "example.com",
+};
 
+/*
+ * Route-level suites: auth/permission middleware is stubbed so the shared
+ * Supabase mock serves only route queries. Middleware enforcement itself is
+ * covered by security-suite / edge-cases / dedicated middleware tests.
+ *
+ * QW-2: the org-access stub still passes through `requireOrgAccess`, but it
+ * enforces `requireOrgAccessByParam` by rejecting any :id that is not one of the
+ * caller's organizations (mirroring production's 403 for cross-tenant access).
+ * This keeps existing param-route tests green while letting us assert that a
+ * caller cannot rename/delete another tenant's organization.
+ */
+const mockAllowedOrgParams = new Set<string>([
+  "org-1",
+  "00000000-0000-0000-0000-000000000001",
+  "missing",
+  "nonexistent",
+]);
+jest.mock("../middleware/org-access", () => ({
+  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireOrgAccessByParam: (req: any, _res: unknown, next: (e?: unknown) => void) => {
+    if (!mockAllowedOrgParams.has(req.params?.id)) {
+      return next(
+        new AppError("FORBIDDEN", "You do not have access to this organization", 403),
+      );
+    }
+    next();
+  },
+}));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission:
+    () =>
+    (_req: unknown, _res: unknown, next: () => void) =>
+      next(),
+}));
 const app = createTestApp();
 app.use("/api/v1/organizations", organizationsRouter);
 app.use(errorHandler);
@@ -62,7 +114,9 @@ describe("organizations routes", () => {
   describe("GET /", () => {
     it("returns organizations", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [ORG], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [ORG], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations")
@@ -74,7 +128,9 @@ describe("organizations routes", () => {
 
     it("filters by status", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [ORG], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [ORG], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations?status=active")
@@ -85,7 +141,9 @@ describe("organizations routes", () => {
 
     it("filters by ids", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [ORG], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [ORG], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations?ids=org-1,org-2")
@@ -93,24 +151,94 @@ describe("organizations routes", () => {
 
       expect(res.status).toBe(200);
     });
+
+    it("shows all organizations for platform admins (admin role, not super admin)", async () => {
+      const supabase = mockAuth();
+      supabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: "platform-admin-user", email: "admin@example.com" } },
+        error: null,
+      });
+      supabase.from
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { id: "platform-admin-user", is_super_admin: false },
+            error: null,
+          }),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [ORG, { ...ORG, id: "org-2", name: "Other Org" }],
+            error: null,
+          }),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [{ roles: { id: "role-admin", key: "admin" } }],
+            error: null,
+          }),
+        );
+
+      const res = await request(app)
+        .get("/api/v1/organizations")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(2);
+    });
+
+    it("scopes organizations to memberships for client-scoped users", async () => {
+      const supabase = mockAuth();
+      supabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: "client-user", email: "client@example.com" } },
+        error: null,
+      });
+      supabase.from
+        .mockReturnValueOnce(
+          createMockBuilder({ data: { id: "client-user", is_super_admin: false }, error: null }),
+        )
+        .mockReturnValueOnce(createMockBuilder({ data: [ORG], error: null }))
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [{ roles: { id: "role-client", key: "client_user" } }],
+            error: null,
+          }),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [{ organization_id: "00000000-0000-0000-0000-000000000001" }],
+            error: null,
+          }),
+        );
+
+      const res = await request(app)
+        .get("/api/v1/organizations")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(1);
+    });
   });
 
   describe("GET /:id", () => {
     it("returns an organization", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: ORG, error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: ORG, error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations/org-1")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
-      expect(res.body.data.id).toBe("org-1");
+      expect(res.body.data.id).toBe("00000000-0000-0000-0000-000000000001");
     });
 
     it("returns 404 when not found", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: null, error: new Error("Not found") }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("Not found") }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations/missing")
@@ -123,8 +251,7 @@ describe("organizations routes", () => {
   describe("POST /", () => {
     it("creates an organization (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: ORG, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: ORG, error: null }));
 
       const res = await request(app)
         .post("/api/v1/organizations")
@@ -138,8 +265,7 @@ describe("organizations routes", () => {
   describe("PATCH /:id", () => {
     it("updates an organization (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: ORG, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: ORG, error: null }));
 
       const res = await request(app)
         .patch("/api/v1/organizations/org-1")
@@ -153,8 +279,7 @@ describe("organizations routes", () => {
   describe("DELETE /:id", () => {
     it("deletes an organization (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/organizations/org-1")
@@ -167,7 +292,9 @@ describe("organizations routes", () => {
   describe("GET /:id/domains", () => {
     it("returns domains for an organization", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(createMockBuilder({ data: [DOMAIN], error: null }));
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: [DOMAIN], error: null }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations/org-1/domains")
@@ -181,8 +308,7 @@ describe("organizations routes", () => {
   describe("POST /:id/domains", () => {
     it("adds a domain (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
 
       const res = await request(app)
         .post("/api/v1/organizations/org-1/domains")
@@ -196,8 +322,7 @@ describe("organizations routes", () => {
   describe("PATCH /:id/domains/:domainId", () => {
     it("updates a domain (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
 
       const res = await request(app)
         .patch("/api/v1/organizations/org-1/domains/dom-1")
@@ -211,8 +336,7 @@ describe("organizations routes", () => {
   describe("DELETE /:id/domains/:domainId", () => {
     it("deletes a domain (admin only)", async () => {
       const supabase = mockAdmin();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
 
       const res = await request(app)
         .delete("/api/v1/organizations/org-1/domains/dom-1")
@@ -225,11 +349,26 @@ describe("organizations routes", () => {
   describe("GET /:id/detail", () => {
     it("returns compound organization detail in a single call", async () => {
       const supabase = mockAuth();
-      const orgBuilder = createMockBuilder({ data: { id: "org-1", name: "Test Org", status: "active" }, error: null });
-      const domainBuilder = createMockBuilder({ data: [{ id: "dom-1", domain: "test.com" }], error: null });
-      const membershipBuilder = createMockBuilder({ data: [{ id: "m1", user_id: "user-1", role_id: "r1", status: "approved" }], error: null });
-      const profileBuilder = createMockBuilder({ data: [{ id: "user-1", full_name: "Test", email: "t@t.com" }], error: null });
-      const roleBuilder = createMockBuilder({ data: [{ id: "r1", key: "admin", name: "Admin" }], error: null });
+      const orgBuilder = createMockBuilder({
+        data: { id: "00000000-0000-0000-0000-000000000001", name: "Test Org", status: "active" },
+        error: null,
+      });
+      const domainBuilder = createMockBuilder({
+        data: [{ id: "dom-1", domain: "test.com" }],
+        error: null,
+      });
+      const membershipBuilder = createMockBuilder({
+        data: [{ id: "m1", user_id: "user-1", role_id: "r1", status: "approved" }],
+        error: null,
+      });
+      const profileBuilder = createMockBuilder({
+        data: [{ id: "user-1", full_name: "Test", email: "t@t.com" }],
+        error: null,
+      });
+      const roleBuilder = createMockBuilder({
+        data: [{ id: "r1", key: "admin", name: "Admin" }],
+        error: null,
+      });
 
       let callCount = 0;
       supabase.from.mockImplementation(() => {
@@ -256,13 +395,114 @@ describe("organizations routes", () => {
 
     it("returns 404 when organization not found", async () => {
       const supabase = mockAuth();
-      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: { message: "Not found" } }));
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: { message: "Not found" } }),
+      );
 
       const res = await request(app)
         .get("/api/v1/organizations/nonexistent/detail")
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe("POST /:id/logo", () => {
+    const ORG_ID = "00000000-0000-0000-0000-000000000001";
+
+    it("stores the logo with the extension derived from the validated mimetype (FILE-P2-002)", async () => {
+      const supabase = mockAuth();
+      mockStorage(supabase);
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: ORG, error: null }),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/organizations/${ORG_ID}/logo`)
+        .set("Authorization", "Bearer token-123")
+        // logo.webp -> image/webp -> stored as .webp
+        .attach("logo", Buffer.from("binary-image"), "logo.webp");
+
+      expect(res.status).toBe(200);
+      expect(supabase.storage.from).toHaveBeenCalledWith("logos");
+      const uploadCall = supabase.storage.from("logos").upload.mock.calls[0];
+      expect(uploadCall[0]).toMatch(new RegExp(`^user-1/org-${ORG_ID}-logo\\.webp$`));
+    });
+
+    it("stores a .png logo as .png", async () => {
+      const supabase = mockAuth();
+      mockStorage(supabase);
+      (getSupabaseAdmin as jest.Mock)().from.mockReturnValue(
+        createMockBuilder({ data: ORG, error: null }),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/organizations/${ORG_ID}/logo`)
+        .set("Authorization", "Bearer token-123")
+        .attach("logo", Buffer.from("binary-image"), "logo.png");
+
+      expect(res.status).toBe(200);
+      const uploadCall = supabase.storage.from("logos").upload.mock.calls[0];
+      expect(uploadCall[0]).toMatch(new RegExp(`^user-1/org-${ORG_ID}-logo\\.png$`));
+    });
+
+    // Direct unit test of the hardening helper: the stored extension must come
+    // from the VALIDATED mimetype, never from the attacker-controlled filename.
+    describe("resolveImageUpload (FILE-P2-002)", () => {
+      it("derives the stored extension from the mimetype, ignoring a .svg filename", () => {
+        const { extension, mimetype } = resolveImageUpload(
+          { originalname: "evil.svg", mimetype: "image/png" },
+          "Logo",
+        );
+        expect(mimetype).toBe("image/png");
+        expect(extension).toBe("png");
+      });
+
+      it("maps image/webp -> webp", () => {
+        expect(resolveImageUpload({ originalname: "x.webp", mimetype: "image/webp" }, "Logo").extension).toBe("webp");
+      });
+
+      it("rejects image/svg+xml via the mimetype allowlist", () => {
+        expect(() => resolveImageUpload({ originalname: "evil.svg", mimetype: "image/svg+xml" }, "Logo")).toThrow();
+      });
+    });
+
+    it("rejects a real image/svg+xml upload (FILE-P1-001)", async () => {
+      mockAuth();
+
+      const res = await request(app)
+        .post(`/api/v1/organizations/${ORG_ID}/logo`)
+        .set("Authorization", "Bearer token-123")
+        .attach("logo", Buffer.from("<svg></svg>"), "logo.svg");
+
+      expect(res.status).toBe(400);
+    });
+  });
+
+  describe("PATCH /:id tenant isolation (QW-2)", () => {
+    it("returns 403 when the caller is not a member of the target organization", async () => {
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(createMockBuilder({ data: ORG, error: null }));
+
+      const res = await request(app)
+        .patch("/api/v1/organizations/org-other")
+        .set("Authorization", "Bearer token-123")
+        .send({ name: "Hijacked" });
+
+      expect(res.status).toBe(403);
+    });
+  });
+
+  describe("DELETE /:id tenant isolation (QW-2)", () => {
+    it("returns 403 when the caller is not a member of the target organization", async () => {
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+
+      const res = await request(app)
+        .delete("/api/v1/organizations/org-other")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
     });
   });
 });

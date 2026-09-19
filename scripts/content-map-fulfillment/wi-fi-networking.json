@@ -1,0 +1,1370 @@
+{
+  "wi_fi_coverage_check": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Wi-Fi Coverage Check, review the coverage scope and equipment from intake, and schedule the site walkthrough or guided remote assessment.",
+      "Send prep instructions: the customer confirms the areas to cover, the times people are present, and the current access point locations.",
+      "Pre-work: prepare the Wi-Fi analyzer, the floor/site plan, and the access point inventory.",
+      "Run the coverage assessment: test signal strength across the space and map dead zones and interference.",
+      "Review configuration: examine access point placement, channels, and settings against the findings.",
+      "Build the coverage map and upgrade path: document the results and the practical upgrade recommendations.",
+      "Deliver the closeout package: the coverage map, findings report, and the prioritized upgrade path."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Wi-Fi Coverage Check scope: assessment only, not installation.",
+        "Confirm the coverage scope (office, warehouse, outdoor areas) and the current access point locations.",
+        "Gather baseline: equipment inventory (router/AP brand/model), user/device count, and reported dead zones.",
+        "Create the ticket with product id wi_fi_coverage_check, expected deliverables (coverage map, findings, upgrade path), and assign a technician.",
+        "Check prerequisites: site access scheduled and the customer confirms when the space is occupied."
+      ],
+      "delivery": [
+        "Walk the site with the floor plan and Wi-Fi analyzer, testing signal strength room by room.",
+        "Identify dead zones, weak areas, and interference sources (microwaves, neighbors, metal, thick walls).",
+        "Review access point placement and configuration: channels, power, band steering, and roaming.",
+        "Map the coverage results onto the floor plan with signal ratings.",
+        "Classify findings by impact and effort for the upgrade path.",
+        "Recommend practical upgrades: AP placement, additional APs, or configuration changes.",
+        "Technical verification: confirm the measurements are accurate and the map reflects the real environment."
+      ],
+      "documentation": [
+        "Produce the coverage map with signal ratings per area.",
+        "Document the findings: dead zones, interference, and configuration issues.",
+        "Produce the prioritized upgrade path with cost and effort estimates.",
+        "Record the access point inventory and settings reviewed.",
+        "Security rule: no credentials or sensitive data in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: onsite/guided assessment, signal testing, dead zone and interference identification, placement/config review, coverage map, and upgrade path.",
+        "Confirm the coverage map covers the full agreed scope.",
+        "Confirm the upgrade path is practical and prioritized.",
+        "Confirm the customer understands the findings.",
+        "Flag follow-ups: business_wi_fi_setup or unifi_wi_fi_install for the recommended upgrades."
+      ],
+      "closeout": [
+        "Send the deliverables package: coverage map, findings report, and upgrade path.",
+        "Recommend next steps: access point install, router replacement, or guest_wi_fi_setup if separation is missing.",
+        "Confirm the customer knows which areas need work and why.",
+        "Record internal notes: coverage findings and equipment state.",
+        "Offer a re-check after the recommended upgrades are installed."
+      ]
+    }
+  },
+  "network_health_check": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Network Health Check, review the equipment and coverage scope from intake, and schedule the review.",
+      "Send prep instructions: the customer confirms the network equipment list, any current issues, and access to the admin consoles.",
+      "Pre-work: prepare the health check checklist covering router, switches, Wi-Fi, cabling, IP scheme, and security.",
+      "Run the health check: review router and switch health, Wi-Fi configuration, cabling, IP/DHCP/DNS, and basic security risks.",
+      "Compile the findings: document the issues with severity and the recommended fixes.",
+      "Review with the customer: present the prioritized fixes and answer questions.",
+      "Deliver the closeout package: the network health report with the prioritized fixes."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Network Health Check scope: comprehensive review across router, switches, Wi-Fi, cabling, IP, and security.",
+        "Confirm admin access to the network gear and any current issues reported.",
+        "Gather baseline: equipment inventory, user/device count, and known problem areas.",
+        "Create the ticket with product id network_health_check, expected deliverables (health report, prioritized fixes), and assign a technician.",
+        "Check prerequisites: console access arranged and the customer confirms the equipment list."
+      ],
+      "delivery": [
+        "Review router health and configuration: uptime, firmware, DHCP scope, DNS, and NAT settings.",
+        "Review switch health: port status, errors, power, and configuration.",
+        "Review Wi-Fi configuration: SSIDs, channels, security, and coverage.",
+        "Inspect cabling and physical infrastructure: terminations, labeling, and rack condition.",
+        "Review the IP scheme and DHCP/DNS: subnetting, conflicts, and reservations.",
+        "Perform the basic security risk review: open ports, default passwords, and exposed management.",
+        "Compile the findings with severity and the recommended fixes.",
+        "Technical verification: confirm each finding is evidence-backed and no changes were made during the review."
+      ],
+      "documentation": [
+        "Produce the network health report: per-area findings with severity and fixes.",
+        "Document the equipment configuration state reviewed.",
+        "Include the prioritized fix list ordered by risk and impact.",
+        "Record the cabling and infrastructure observations.",
+        "Security rule: no credentials or IP details beyond what is needed for the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: router/switch review, Wi-Fi assessment, cabling inspection, IP/DHCP/DNS review, security review, and report.",
+        "Confirm the report covers all agreed areas.",
+        "Confirm the fixes are prioritized and actionable.",
+        "Confirm no change was made during the review.",
+        "Flag follow-ups: firewall_setup, vlan_setup, or unifi_network_cleanup for the recommended fixes."
+      ],
+      "closeout": [
+        "Send the deliverables package: network health report and prioritized fixes.",
+        "Recommend next steps: the top-priority fixes, and a follow-up health check after changes.",
+        "Confirm the customer understands the findings.",
+        "Record internal notes: equipment state and recommended fixes.",
+        "Offer a re-check after fixes are implemented."
+      ]
+    }
+  },
+  "small_office_network_audit": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Small Office Network Audit, review the site from intake, and schedule the on-site audit.",
+      "Send prep instructions: the customer confirms the equipment list, the physical layout, and access to consoles.",
+      "Pre-work: prepare the audit checklist: device inventory, mapping, configuration review, and security risk assessment.",
+      "Run the audit: inventory every network device and connection, identify unknown devices, and review configurations.",
+      "Build the network map: create the layout diagram and document the connections.",
+      "Assess risks and improvements: document the security risks and the improvement recommendations.",
+      "Deliver the closeout package: the network documentation, risk assessment, and improvement recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Small Office Network Audit scope: full documentation plus risk assessment.",
+        "Confirm the physical site, the equipment, and console access.",
+        "Gather baseline: reported issues, device count, and the office layout.",
+        "Create the ticket with product id small_office_network_audit, expected deliverables (diagram, documentation, risk report, recommendations), and assign a technician.",
+        "Check prerequisites: on-site access arranged and the customer confirms the equipment inventory."
+      ],
+      "delivery": [
+        "Inventory every network device: router, firewall, switches, APs, and connected infrastructure with model and serial.",
+        "Trace and document every connection: port to device, VLAN membership, and link speeds.",
+        "Identify unknown and risky devices: devices not in the inventory, unauthorized APs, and unmanaged gear.",
+        "Review configurations: admin credentials policy, firmware, remote access, and segmentation.",
+        "Perform the security risk assessment: open ports, default creds, exposure, and Wi-Fi security.",
+        "Build the network layout diagram reflecting the actual topology.",
+        "Compile the improvement recommendations with priorities.",
+        "Technical verification: confirm the diagram matches the physical reality and no change was made."
+      ],
+      "documentation": [
+        "Produce the network diagram and layout documentation.",
+        "Document the device and connection inventory with ports and VLANs.",
+        "Produce the security risk assessment with severity ratings.",
+        "List the improvement recommendations with priority and effort.",
+        "Security rule: management credentials never appear in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: device/connection inventory, layout mapping, unknown device identification, configuration review, security assessment, and recommendations.",
+        "Confirm the diagram reflects the physical network.",
+        "Confirm the risk findings are accurate and prioritized.",
+        "Confirm the customer understands the unknown device findings.",
+        "Flag follow-ups: firewall_setup, vlan_setup, and network_documentation_package maintenance."
+      ],
+      "closeout": [
+        "Send the deliverables package: network diagram, documentation, risk report, and recommendations.",
+        "Recommend next steps: fix the high-risk findings, segment with VLANs, or add a firewall.",
+        "Confirm the customer knows which devices are unknown and risky.",
+        "Record internal notes: the network baseline and recommended changes.",
+        "Offer a follow-up audit after fixes."
+      ]
+    }
+  },
+  "guest_wi_fi_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Guest Wi-Fi Review, review the network from intake, and schedule the review.",
+      "Send prep instructions: the customer confirms how guests currently connect and whether a guest network exists.",
+      "Pre-work: prepare the review checklist for guest separation, password practices, and risk.",
+      "Run the review: assess the guest network configuration, business/guest isolation, and password practices.",
+      "Classify the findings: document the separation gaps and password risks.",
+      "Build recommendations: propose the guest network improvements with priorities.",
+      "Deliver the closeout package: the guest Wi-Fi separation documentation and improvement recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Guest Wi-Fi Review scope: review only, no configuration changes.",
+        "Confirm whether a guest network currently exists and how guests connect.",
+        "Gather baseline: SSID list, password practices, and the business network exposure.",
+        "Create the ticket with product id guest_wi_fi_review, expected deliverables (separation assessment, recommendations, documentation), and assign a technician.",
+        "Check prerequisites: console access to review the Wi-Fi configuration."
+      ],
+      "delivery": [
+        "Review the guest network configuration: SSID, security type, and password policy.",
+        "Assess business and guest traffic isolation: VLAN separation, client isolation, and LAN access.",
+        "Review password practices: shared password, printed/signposted password, and change frequency.",
+        "Assess guest network risks: captive portal presence, bandwidth limits, and access to printers/servers.",
+        "Classify each finding by severity and business impact.",
+        "Build the improvement recommendations: separated VLAN, portal, or password rotation.",
+        "Technical verification: confirm the assessment reflects the actual configuration."
+      ],
+      "documentation": [
+        "Produce the guest Wi-Fi separation documentation: current state and findings.",
+        "Document the isolation gaps and password risks with severity.",
+        "Produce the improvement recommendations with priorities.",
+        "Record the current SSID and security configuration.",
+        "Security rule: do not include the actual guest password in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: configuration review, isolation assessment, password review, risk assessment, recommendations, and documentation.",
+        "Confirm the isolation findings are accurate (does guest traffic reach the business LAN?).",
+        "Confirm the recommendations are actionable.",
+        "Confirm the customer understands the guest risk.",
+        "Flag follow-ups: guest_wi_fi_setup or vlan_setup for the recommended separation."
+      ],
+      "closeout": [
+        "Send the deliverables package: separation documentation and recommendations.",
+        "Recommend next steps: guest_wi_fi_setup for proper separation, or password rotation now.",
+        "Confirm the customer knows the current guest risk level.",
+        "Record internal notes: guest network state and recommended changes.",
+        "Offer a re-review after the fixes are implemented."
+      ]
+    }
+  },
+  "camera_network_readiness_check": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Camera Network Readiness Check, review the site and camera plans from intake, and schedule the readiness assessment.",
+      "Send prep instructions: the customer confirms the camera count/type planned, the recording requirements, and the network equipment.",
+      "Pre-work: prepare the capacity and readiness checklist covering bandwidth, wiring, Wi-Fi suitability, and NVR.",
+      "Run the assessment: evaluate network capacity, wiring readiness, Wi-Fi suitability for wireless cameras, and NVR considerations.",
+      "Check remote access readiness: assess the path for viewing cameras remotely.",
+      "Compile the report: document the gaps and recommendations.",
+      "Deliver the closeout package: the camera readiness report with gaps and recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Camera Network Readiness Check scope: assessment to determine if the network supports cameras.",
+        "Confirm the planned camera count/type and the recording requirements (resolution, retention).",
+        "Gather baseline: switch/AP inventory, PoE availability, wiring state, and internet bandwidth.",
+        "Create the ticket with product id camera_network_readiness_check, expected deliverables (readiness report, gaps, recommendations), and assign a technician.",
+        "Check prerequisites: site access and the camera plan confirmed."
+      ],
+      "delivery": [
+        "Assess network capacity: switch port availability, PoE budget, bandwidth headroom, and uplink speed.",
+        "Review wiring readiness: cabling paths, terminations, and the feasibility of running new cable.",
+        "Assess Wi-Fi suitability for wireless cameras: coverage, signal quality, and interference at the planned locations.",
+        "Review NVR and recording infrastructure: where recording lives, storage capacity, and bandwidth for streaming.",
+        "Check remote access readiness: the path for remote viewing, static IP/VPN, and port exposure.",
+        "Classify each gap by impact and effort.",
+        "Build the readiness report with the recommended path.",
+        "Technical verification: confirm the assessment reflects the real site conditions."
+      ],
+      "documentation": [
+        "Produce the camera readiness report: per-area findings and the gap analysis.",
+        "Document the network capacity and wiring state.",
+        "Produce the recommendations: cabling, PoE, switches, and remote access path.",
+        "Record the recording requirements and storage estimate.",
+        "Security rule: no camera credentials or sensitive locations beyond what is needed."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: capacity/bandwidth assessment, wiring readiness, Wi-Fi suitability, NVR considerations, remote access check, and report.",
+        "Confirm the findings match the site reality.",
+        "Confirm the recommendations are actionable for the camera install.",
+        "Confirm the customer understands the gaps.",
+        "Flag follow-ups: camera_site_survey, vlan_setup for the camera network, or cabling work."
+      ],
+      "closeout": [
+        "Send the deliverables package: camera readiness report and recommendations.",
+        "Recommend next steps: camera_site_survey or camera_and_wi_fi_bundle for the full deployment.",
+        "Confirm the customer knows what must be upgraded first.",
+        "Record internal notes: readiness findings and the recommended path.",
+        "Offer a re-check after the upgrades."
+      ]
+    }
+  },
+  "outdoor_wi_fi_planning_visit": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Outdoor Wi-Fi Planning Visit, review the outdoor areas from intake, and schedule the site visit.",
+      "Send prep instructions: the customer confirms the areas to cover, the expected user count, and any constraints (structures, power, aesthetics).",
+      "Pre-work: prepare the site plan, the AP placement methodology, and the weatherproofing checklist.",
+      "Walk the site: assess the outdoor area, mounting points, power, and cabling paths.",
+      "Plan the deployment: determine AP placement, power/wiring requirements, and weatherproofing needs.",
+      "Define coverage validation: establish the approach to validate the planned coverage after install.",
+      "Deliver the closeout package: the outdoor Wi-Fi deployment plan with placement, power, wiring, and validation approach."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Outdoor Wi-Fi Planning Visit scope: planning only, not installation.",
+        "Confirm the outdoor areas, expected concurrent users, and any constraints.",
+        "Gather baseline: existing indoor network, outdoor mounting options, and power availability.",
+        "Create the ticket with product id outdoor_wi_fi_planning_visit, expected deliverables (deployment plan, placement, wiring/power plan), and assign a technician.",
+        "Check prerequisites: site visit scheduled and the customer confirms the coverage areas."
+      ],
+      "delivery": [
+        "Walk the outdoor site and map the required coverage areas onto the site plan.",
+        "Assess mounting options: walls, poles, roofs, and sightlines for AP coverage.",
+        "Assess power and cabling: existing outlets, PoE paths, and the need for new wiring or conduit.",
+        "Consider weatherproofing: enclosure, surge protection, and environmental ratings for the APs.",
+        "Determine AP count and placement for the required coverage with overlaps.",
+        "Define the coverage validation approach: where to test signal after install.",
+        "Compile the deployment plan with a phased approach.",
+        "Technical verification: confirm the plan accounts for the real site constraints."
+      ],
+      "documentation": [
+        "Produce the outdoor deployment plan: AP placement map, power/wiring plan, and weatherproofing.",
+        "Document the equipment requirements: AP models, enclosures, and PoE injectors/switches.",
+        "Record the coverage validation approach.",
+        "Include the phased deployment sequence.",
+        "Security rule: no credentials in the plan."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: site walkthrough, AP placement planning, power/cabling planning, weatherproofing, coverage validation approach, and deployment plan.",
+        "Confirm the placement plan covers all agreed areas.",
+        "Confirm power and wiring requirements are realistic.",
+        "Confirm the customer understands the equipment and labor needed.",
+        "Flag follow-ups: outdoor_coverage_bundle for deployment, or unifi_wi_fi_install for the install."
+      ],
+      "closeout": [
+        "Send the deliverables package: the outdoor deployment plan.",
+        "Recommend next steps: outdoor_coverage_bundle or unifi_wi_fi_install to execute.",
+        "Confirm the customer knows the equipment list and budget.",
+        "Record internal notes: site constraints and the plan.",
+        "Offer a quote for the deployment work."
+      ]
+    }
+  },
+  "firewall_configuration_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Firewall Configuration Review, review the firewall from intake, and schedule the review with console access.",
+      "Send prep instructions: the customer confirms the firewall model, any known issues, and who approves changes.",
+      "Pre-work: prepare the review checklist: rules, open ports, remote access, segmentation, and management access.",
+      "Run the review: examine firewall rules, open ports, remote access configuration, segmentation, and management security.",
+      "Classify the findings: document exposure and risks with severity.",
+      "Build recommendations: propose the rule changes and hardening steps.",
+      "Deliver the closeout package: the firewall configuration report with recommended changes."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Firewall Configuration Review scope: review only, changes only after approval.",
+        "Confirm the firewall model and admin access path.",
+        "Gather baseline: current rules, open ports, and known issues.",
+        "Create the ticket with product id firewall_configuration_review, expected deliverables (configuration report, recommended changes), and assign a senior network technician.",
+        "Check prerequisites: console access and the customer confirms who approves changes."
+      ],
+      "delivery": [
+        "Export and review the firewall rules: source/destination/service and any overly broad or redundant rules.",
+        "Identify open and unnecessary exposure: inbound ports, forwarded services, and published apps.",
+        "Review remote access configuration: VPN type, MFA, and who can reach management.",
+        "Assess network segmentation: VLAN separation and inter-segment policy.",
+        "Review management access security: admin accounts, authentication, and exposure.",
+        "Classify each finding by severity and exploitability.",
+        "Build the recommended changes: rule cleanup, exposure reduction, and hardening.",
+        "Technical verification: confirm the findings match the live configuration and no change was made."
+      ],
+      "documentation": [
+        "Produce the firewall configuration report: findings, severity, and recommended changes.",
+        "Document the rules, ports, and remote access state reviewed.",
+        "Include the prioritized hardening steps.",
+        "Record the segmentation assessment.",
+        "Security rule: no passwords or VPN secrets in the report."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: rule review, open port identification, remote access review, segmentation assessment, management access review, and report.",
+        "Confirm the exposure findings are accurate.",
+        "Confirm the recommendations are actionable and prioritized.",
+        "Confirm no change was made without approval.",
+        "Flag follow-ups: firewall_setup if replacement is needed, and vlan_setup for segmentation."
+      ],
+      "closeout": [
+        "Send the deliverables package: firewall configuration report and recommended changes.",
+        "Recommend next steps: apply the critical fixes, replace the firewall if end-of-life, or segment the network.",
+        "Confirm the customer approves the recommended change list.",
+        "Record internal notes: firewall state and recommended changes.",
+        "Offer to execute the approved changes."
+      ]
+    }
+  },
+  "isp_failover_readiness_review": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the ISP Failover Readiness Review, review the current internet from intake, and schedule the review.",
+      "Send prep instructions: the customer confirms the current ISP, plan speeds, and how dependent the business is on the internet.",
+      "Pre-work: prepare the feasibility checklist: current setup, backup options, failover methods, and costs.",
+      "Run the review: assess the current internet setup and the feasibility of backup options for the location.",
+      "Evaluate failover options: compare a second ISP, LTE/5G, and automatic failover.",
+      "Analyze cost and continuity impact: compare reliability and costs and the business impact of outages.",
+      "Deliver the closeout package: the failover readiness recommendations and option comparison."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the ISP Failover Readiness Review scope: options and recommendations, not installation.",
+        "Confirm the current ISP, plan, speeds, and the business's internet dependency.",
+        "Gather baseline: outage history, location coverage options, and budget.",
+        "Create the ticket with product id isp_failover_readiness_review, expected deliverables (option comparison, recommendations), and assign a technician.",
+        "Check prerequisites: the customer confirms current internet details and outage impact."
+      ],
+      "delivery": [
+        "Review the current internet setup: ISP, plan, speeds, equipment, and uptime experience.",
+        "Assess backup internet feasibility: which providers cover the location and their plan options.",
+        "Evaluate failover methods: automatic failover routers, second ISP, and LTE/5G gateways.",
+        "Compare costs: monthly costs, hardware, and installation for each option.",
+        "Assess continuity impact: which functions fail during an outage and for how long.",
+        "Recommend the failover setup matched to the business's risk tolerance.",
+        "Technical verification: confirm the option research reflects current availability at the location."
+      ],
+      "documentation": [
+        "Produce the failover readiness report: current setup, options compared, and costs.",
+        "Document the option comparison table: speeds, reliability, cost, and setup.",
+        "Include the continuity impact assessment.",
+        "Record the recommended failover path.",
+        "Security rule: no provider account details or credentials."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: current setup review, feasibility assessment, option evaluation, cost/reliability comparison, continuity assessment, and recommendations.",
+        "Confirm the option research matches local availability.",
+        "Confirm the cost comparison is current.",
+        "Confirm the recommendation matches the business's risk profile.",
+        "Flag follow-ups: lte_5g_backup_internet_setup or isp_cutover_support to implement."
+      ],
+      "closeout": [
+        "Send the deliverables package: failover readiness report and option comparison.",
+        "Recommend next steps: lte_5g_backup_internet_setup or isp_cutover_support.",
+        "Confirm the customer understands the options and costs.",
+        "Record internal notes: current setup and recommended path.",
+        "Offer a quote for the recommended setup."
+      ]
+    }
+  },
+  "basic_router_replacement": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Basic Router Replacement, review the current router and needs from intake, and schedule the replacement.",
+      "Send prep instructions: the customer confirms the current router, the ISP details, and any static IP or special requirements.",
+      "Pre-work: prepare the replacement recommendation, the configuration plan, and the network settings to carry over.",
+      "Install the new router: install the business-grade router and configure the basic network settings.",
+      "Configure SSIDs and security: set up the network names, passwords, and security.",
+      "Connect and test devices: reconnect devices and verify internet and internal access.",
+      "Deliver the closeout package: the router configuration documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Basic Router Replacement scope: replace a consumer router with a business-grade configuration.",
+        "Confirm the current router, ISP details, and any static IP or VPN requirements.",
+        "Gather baseline: current SSIDs, passwords, DHCP settings, and connected devices.",
+        "Create the ticket with product id basic_router_replacement, expected deliverables (installed router, configuration documentation), and assign a technician.",
+        "Check prerequisites: the new router or the recommendation approved, and the ISP login/static IP details."
+      ],
+      "delivery": [
+        "Assess the current router: model, settings, and why it needs replacement.",
+        "Recommend/install the business-grade router with the right specs.",
+        "Configure the base network: WAN/IP, DHCP scope, DNS, and NAT.",
+        "Configure SSIDs and security: staff network name/password and security mode.",
+        "Carry over any static IP, port forwards, or VPN settings with confirmation.",
+        "Connect and test devices: internet access, internal access, and wireless connectivity.",
+        "Technical verification: confirm internet works, wireless connects, and no device was left broken."
+      ],
+      "documentation": [
+        "Produce the router configuration documentation: model, WAN/IP, DHCP, SSIDs, and security.",
+        "Record any static IP or port-forward settings.",
+        "Document the device connections tested.",
+        "Include the admin access details reference (credentials in the secure store).",
+        "Security rule: passwords never appear in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: consumer router assessment, business-grade install, SSID/security config, DHCP/basic settings, device testing, and documentation.",
+        "Confirm internet and wireless work after the replacement.",
+        "Confirm no device was left disconnected.",
+        "Confirm the configuration documentation was delivered.",
+        "Flag follow-ups: guest_wi_fi_setup if separation is needed, or business_wi_fi_setup for better coverage."
+      ],
+      "closeout": [
+        "Send the deliverables package: router configuration documentation.",
+        "Recommend next steps: guest Wi-Fi separation, or business APs for better coverage.",
+        "Confirm the old router is retired (wiped or repurposed safely).",
+        "Record internal notes: new router details and configuration.",
+        "Schedule a short check-in to confirm stability."
+      ]
+    }
+  },
+  "business_wi_fi_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Business Wi-Fi Setup, review the coverage scope and equipment from intake, and schedule the install.",
+      "Send prep instructions: the customer confirms the areas to cover, the SSID naming preferences, and the admin access.",
+      "Pre-work: prepare the AP placement plan, the SSID/security design, and the management setup.",
+      "Install the access points: install and position the business APs for coverage.",
+      "Configure the network: set up the secure staff SSID, channels, and security.",
+      "Set up management and monitoring: configure the controller and monitoring access.",
+      "Deliver the closeout package: the Wi-Fi setup documentation and management access notes."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Business Wi-Fi Setup scope: AP install and secure SSID configuration.",
+        "Confirm the coverage scope, user count, and any guest network needs.",
+        "Gather baseline: existing network gear, switch/PoE availability, and AP count needed.",
+        "Create the ticket with product id business_wi_fi_setup, expected deliverables (installed APs, secure SSIDs, documentation), and assign a technician.",
+        "Check prerequisites: APs available or approved, cabling ready, and management console access."
+      ],
+      "delivery": [
+        "Plan AP placement: position for coverage across the agreed areas.",
+        "Install the APs: mount, connect PoE, and physically secure them.",
+        "Adopt the APs into the management controller.",
+        "Configure the staff SSID: name, strong passphrase, WPA2/WPA3, and security.",
+        "Configure wireless settings: channels, power, band steering, and roaming.",
+        "Set up management and monitoring: controller access and alert defaults.",
+        "Test coverage and connectivity: verify signal and roaming across the space.",
+        "Technical verification: confirm all APs are adopted, the SSID broadcasts, and coverage is adequate."
+      ],
+      "documentation": [
+        "Produce the Wi-Fi setup documentation: AP inventory, SSIDs, security settings, and management access.",
+        "Document the AP placement with the coverage plan.",
+        "Record the controller details and how to manage the system.",
+        "Include the network settings applied.",
+        "Security rule: Wi-Fi passwords stored in the secure store, not the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: AP selection/install, secure staff SSID, coverage planning, security configuration, management/monitoring setup, and documentation.",
+        "Confirm coverage is adequate across the agreed areas.",
+        "Confirm the SSID is secured and devices connect reliably.",
+        "Confirm management access works.",
+        "Flag follow-ups: guest_wi_fi_setup for separation, or unifi_monthly_management for ongoing care."
+      ],
+      "closeout": [
+        "Send the deliverables package: Wi-Fi setup documentation.",
+        "Recommend next steps: guest_wi_fi_setup for visitor separation, or monthly management.",
+        "Confirm the customer can connect and knows the SSID/password location.",
+        "Record internal notes: AP inventory and configuration.",
+        "Offer a coverage re-check after a week of use."
+      ]
+    }
+  },
+  "guest_wi_fi_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Guest Wi-Fi Setup, review the network from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the guest areas, the guest naming preference, and the password policy.",
+      "Pre-work: prepare the guest network design: SSID, VLAN, isolation, and access controls.",
+      "Configure the guest SSID: create the dedicated guest network with the agreed name and security.",
+      "Isolate guest traffic: set up the guest VLAN and ensure guests cannot reach business systems.",
+      "Verify separation and coverage: test guest access and confirm business isolation.",
+      "Deliver the closeout package: the guest Wi-Fi setup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Guest Wi-Fi Setup scope: create a separated guest network.",
+        "Confirm the guest areas, the SSID name, and the password policy.",
+        "Gather baseline: existing Wi-Fi gear, VLAN capability, and whether a guest VLAN exists.",
+        "Create the ticket with product id guest_wi_fi_setup, expected deliverables (guest SSID, isolation, verification, documentation), and assign a technician.",
+        "Check prerequisites: the Wi-Fi gear supports guest/VLAN separation and the customer confirms naming."
+      ],
+      "delivery": [
+        "Design the guest network: SSID name, VLAN assignment, and isolation approach.",
+        "Create the guest SSID on the appropriate APs covering the guest areas.",
+        "Configure the guest VLAN and routing so guests reach only the internet.",
+        "Set access controls: password, captive portal if desired, and bandwidth limits.",
+        "Verify separation: confirm a guest device cannot reach business systems or printers.",
+        "Test guest access: connect with a guest device and confirm internet works.",
+        "Technical verification: confirm guest and business networks are isolated and both work."
+      ],
+      "documentation": [
+        "Produce the guest Wi-Fi setup documentation: SSID, VLAN, isolation, and access controls.",
+        "Document the password policy and rotation guidance.",
+        "Record the separation verification results.",
+        "Include how to change the guest password.",
+        "Security rule: the current guest password is stored in the secure store, not the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: dedicated guest SSID, isolation from business systems, access controls, coverage consideration, separation verification, and documentation.",
+        "Confirm guests cannot reach business systems (verified).",
+        "Confirm guest internet access works.",
+        "Confirm the customer knows how to change the guest password.",
+        "Flag follow-ups: password rotation schedule, captive portal, and guest_wi_fi_review periodically."
+      ],
+      "closeout": [
+        "Send the deliverables package: guest Wi-Fi setup documentation.",
+        "Recommend next steps: password rotation schedule, or a captive portal for businesses with heavy guest traffic.",
+        "Confirm the guest network is isolated and working.",
+        "Record internal notes: guest network config.",
+        "Offer a demonstration of how to change the password."
+      ]
+    }
+  },
+  "vlan_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the VLAN Setup, review the device segments from intake, and schedule the project.",
+      "Send prep instructions: the customer confirms which device groups to separate (staff, guest, IoT, cameras) and approves the design.",
+      "Pre-work: design the VLAN plan: segments, IP ranges, and inter-segment policy.",
+      "Configure the VLANs: set up the segments on the managed switches.",
+      "Set up routing and security: configure routing and the inter-segment security policy.",
+      "Assign and verify devices: move devices to their VLAN and verify access.",
+      "Deliver the closeout package: the segmentation documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the VLAN Setup scope and the segments required (staff, guest, IoT, camera, other).",
+        "Confirm the network gear supports VLANs and the customer approves the design.",
+        "Gather baseline: current flat network layout, device groups, and managed switch capability.",
+        "Create the ticket with product id vlan_setup, expected deliverables (VLANs configured, verification, documentation), and assign a senior network technician.",
+        "Check prerequisites: managed switches confirmed, maintenance window agreed, and the design approved."
+      ],
+      "delivery": [
+        "Design the segmentation plan: VLANs, IP subnets, and the routing policy between segments.",
+        "Configure the VLANs on the managed switches: tagging, access ports, and trunking.",
+        "Configure routing: inter-VLAN routing with the firewall or router handling the policy.",
+        "Set the inter-segment security policy: what can talk to what (e.g., cameras to NVR only).",
+        "Assign devices to VLANs: staff, guest, IoT, and camera devices to their segments.",
+        "Verify access: confirm each segment reaches what it needs and cannot reach what it should not.",
+        "Test business continuity: printers, servers, and shared resources still accessible from staff VLAN.",
+        "Technical verification: confirm inter-segment rules are enforced and no device lost needed access."
+      ],
+      "documentation": [
+        "Produce the segmentation documentation: VLAN table, IP subnets, and inter-segment policy.",
+        "Document the switch port assignments.",
+        "Record the verification results per segment.",
+        "Include the change log and rollback notes.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: segmentation planning, VLAN design, switch configuration, routing/policy setup, device assignment, and documentation.",
+        "Confirm each segment is isolated as designed.",
+        "Confirm business-critical access still works from the staff VLAN.",
+        "Confirm cameras/IoT are segregated from staff.",
+        "Flag follow-ups: firewall_setup for stronger inter-segment control, and network_documentation_package."
+      ],
+      "closeout": [
+        "Send the deliverables package: segmentation documentation and verification results.",
+        "Recommend next steps: firewall_setup if not present, or camera_and_wi_fi_bundle for the camera VLAN extension.",
+        "Confirm no device lost needed access.",
+        "Record internal notes: VLAN design and assignment.",
+        "Offer a follow-up check after a few days of use."
+      ]
+    }
+  },
+  "firewall_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Firewall Setup, review the network and requirements from intake, and schedule the deployment.",
+      "Send prep instructions: the customer confirms the firewall model (or approves a recommendation), the network layout, and the maintenance window.",
+      "Pre-work: design the rule set, remote access approach, and segmentation plan.",
+      "Install the firewall: install and configure the business firewall.",
+      "Configure security: apply the rule set, secure remote access, and segmentation/routing.",
+      "Test and verify: verify the rules, remote access, and business connectivity.",
+      "Deliver the closeout package: the firewall configuration documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Firewall Setup scope: deploy a business firewall with rules, remote access, and segmentation.",
+        "Confirm the firewall model or approve the recommendation, and the maintenance window.",
+        "Gather baseline: current router/firewall, internet details, static IPs, and the network layout.",
+        "Create the ticket with product id firewall_setup, expected deliverables (installed firewall, rules, documentation), and assign a senior network technician.",
+        "Check prerequisites: hardware available, ISP details confirmed, and the change window agreed."
+      ],
+      "delivery": [
+        "Install the firewall: rack/place, power, connect WAN and LAN.",
+        "Configure the base: WAN/IP, LAN interfaces, DHCP, and DNS.",
+        "Design and apply the security rule set: allow what is needed, deny by default.",
+        "Configure secure remote access: VPN with MFA for admin and remote workers.",
+        "Set up segmentation and routing: VLAN interfaces and inter-segment policy.",
+        "Test the rules: verify outbound works, inbound exposure is minimal, and remote access functions.",
+        "Verify business connectivity: internet, servers, printers, and cloud apps.",
+        "Technical verification: confirm the rule set is enforced and remote access is secure."
+      ],
+      "documentation": [
+        "Produce the firewall configuration documentation: interfaces, rules, VPN, and routing.",
+        "Document the remote access setup and MFA requirements.",
+        "Record the segmentation and inter-segment policy.",
+        "Include the admin access reference (credentials in the secure store).",
+        "Security rule: no passwords or VPN secrets in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: firewall selection/install, rule set design, secure remote access, segmentation/routing, rule testing, and documentation.",
+        "Confirm the rule set is enforced and business traffic works.",
+        "Confirm remote access is secured with MFA.",
+        "Confirm no business application broke during cutover.",
+        "Flag follow-ups: firewall_configuration_review annually, and unifi_monthly_management if applicable."
+      ],
+      "closeout": [
+        "Send the deliverables package: firewall configuration documentation.",
+        "Recommend next steps: annual configuration review, vlan_setup for deeper segmentation, or failover.",
+        "Confirm the customer understands the remote access setup.",
+        "Record internal notes: firewall model, rules, and configuration.",
+        "Offer a follow-up after the first week."
+      ]
+    }
+  },
+  "switch_installation": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Switch Installation, review the port needs from intake, and schedule the install.",
+      "Send prep instructions: the customer confirms the switch model (or approves a recommendation) and the devices to connect.",
+      "Pre-work: prepare the switch configuration plan: ports, VLANs, and management.",
+      "Install the switch: rack-mount and connect power and uplinks.",
+      "Configure the switch: ports, VLANs, and management access.",
+      "Connect and test: connect devices, verify links, and integrate with the network.",
+      "Deliver the closeout package: the switch configuration documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Switch Installation scope and the port count/VLAN needs.",
+        "Confirm the switch model or recommend one based on port count and PoE needs.",
+        "Gather baseline: current network gear, cabling, and device list to connect.",
+        "Create the ticket with product id switch_installation, expected deliverables (installed switch, configuration documentation), and assign a technician.",
+        "Check prerequisites: switch available, rack space, and the change window."
+      ],
+      "delivery": [
+        "Install the switch: rack-mount, connect power, and connect the uplink.",
+        "Configure management access: IP, admin credentials, and remote management.",
+        "Configure the ports: access/trunk, VLAN assignment, and PoE settings.",
+        "Set up any needed VLANs matching the network plan.",
+        "Connect the devices: patch ports to the devices per the plan.",
+        "Test links and connectivity: verify each port links and devices reach the network.",
+        "Verify integration: confirm the switch works with the rest of the network.",
+        "Technical verification: confirm every connected device has connectivity and the management is reachable."
+      ],
+      "documentation": [
+        "Produce the switch configuration documentation: ports, VLANs, management, and uplink.",
+        "Document the port-to-device mapping.",
+        "Record the switch model, serial, and location.",
+        "Include the management access reference (credentials in the secure store).",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: installation, port/VLAN configuration, link testing, network integration, management access, and documentation.",
+        "Confirm all connected devices have connectivity.",
+        "Confirm the switch is managed and reachable.",
+        "Confirm the VLANs match the plan.",
+        "Flag follow-ups: patch_panel_cleanup for labeling, or network_documentation_package."
+      ],
+      "closeout": [
+        "Send the deliverables package: switch configuration documentation.",
+        "Recommend next steps: vlan_setup for segmentation, or network documentation.",
+        "Confirm the switch is working and devices connected.",
+        "Record internal notes: switch details and configuration.",
+        "Offer a follow-up if a device has an issue."
+      ]
+    }
+  },
+  "patch_panel_cleanup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Patch Panel Cleanup, review the network closet from intake, and schedule the visit.",
+      "Send prep instructions: the customer confirms the closet location and any known cabling confusion.",
+      "Pre-work: prepare the labeling materials, the port documentation template, and the toner.",
+      "Organize the rack: clean up the cabling and organize the network closet.",
+      "Label and document: label the cables and map every port to its device.",
+      "Identify and fix undocumented connections: tone out unknown runs and document them.",
+      "Deliver the closeout package: the network closet documentation and future-change guidance."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Patch Panel Cleanup scope: organize, label, and document the network rack.",
+        "Confirm the closet location and the number of ports/cables.",
+        "Gather baseline: current labeling state and known mystery connections.",
+        "Create the ticket with product id patch_panel_cleanup, expected deliverables (organized rack, labeling, documentation), and assign a technician.",
+        "Check prerequisites: site access and the customer confirms the cabling scope."
+      ],
+      "delivery": [
+        "Organize the rack: dress cables, remove clutter, and arrange the equipment cleanly.",
+        "Label the cables at both ends with a consistent scheme.",
+        "Tone out the connections: identify which cable goes where.",
+        "Map every port to its device: patch panel port, switch port, and device.",
+        "Fix undocumented or incorrect connections: reroute or re-patch where needed.",
+        "Document the final state: rack layout, labels, and port-to-device mapping.",
+        "Take photos of the finished closet for reference.",
+        "Technical verification: confirm no device lost connectivity during the cleanup."
+      ],
+      "documentation": [
+        "Produce the network closet documentation: rack layout, labeling scheme, and port-to-device mapping.",
+        "Include the photos of the finished closet.",
+        "Document the cable labeling convention.",
+        "Provide future-change guidance: how to add a device and keep the documentation current.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: rack organization, cable labeling, port-to-device documentation, undocumented connection fixing, closet documentation, and future-change guidance.",
+        "Confirm every port is documented and labeled.",
+        "Confirm no device lost connectivity.",
+        "Confirm the photos and documentation were delivered.",
+        "Flag follow-ups: network_documentation_package for the full documentation, or switch reconfiguration."
+      ],
+      "closeout": [
+        "Send the deliverables package: closet documentation and photos.",
+        "Recommend next steps: network_documentation_package for full diagrams, or a maintenance schedule.",
+        "Confirm the closet is organized and documented.",
+        "Record internal notes: cabling state and any issues found.",
+        "Offer a follow-up if the customer makes changes."
+      ]
+    }
+  },
+  "network_documentation_package": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Network Documentation Package, review the network from intake, and schedule the documentation session.",
+      "Send prep instructions: the customer confirms the equipment and vendor details, and provides any existing documentation.",
+      "Pre-work: prepare the documentation templates: diagram, IP list, device map, and vendor summary.",
+      "Gather the network details: inventory devices, IPs, connections, and management access.",
+      "Build the documentation: create the diagrams, IP list, device map, and vendor summary.",
+      "Review with the customer: verify the documentation matches the real network.",
+      "Deliver the closeout package: the complete network documentation package."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Network Documentation Package scope and the network(s) in scope.",
+        "Confirm the equipment and vendor details and any existing documentation.",
+        "Gather baseline: device inventory, IPs, and connections.",
+        "Create the ticket with product id network_documentation_package, expected deliverables (diagrams, IP list, device map, vendor summary), and assign a technician.",
+        "Check prerequisites: console access and the customer confirms the scope."
+      ],
+      "delivery": [
+        "Inventory the network devices and their connections.",
+        "Collect the IP and addressing scheme: subnets, DHCP/DNS, and static IPs.",
+        "Document management access: how each device is managed (credentials referenced in the secure store).",
+        "Create the network diagrams: logical and physical topology.",
+        "Build the device map and inventory: models, serials, locations, and ports.",
+        "Compile the vendor summary: ISPs, circuit details, and support contacts.",
+        "Verify the documentation against the live network.",
+        "Technical verification: confirm the diagrams and inventory are accurate."
+      ],
+      "documentation": [
+        "Produce the network diagrams: logical and physical topology.",
+        "Produce the IP and address scheme documentation.",
+        "Build the device map and inventory.",
+        "Compile the management notes and vendor/provider summary.",
+        "Security rule: management credentials referenced only, never included."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: diagrams, IP documentation, device map, management notes, vendor summary, and the complete package.",
+        "Confirm the documentation matches the live network.",
+        "Confirm the vendor details are accurate.",
+        "Confirm the customer can use the package for management and disaster recovery.",
+        "Flag follow-ups: keeping the documentation current, and network_documentation refreshes."
+      ],
+      "closeout": [
+        "Send the deliverables package: the complete network documentation.",
+        "Recommend next steps: a documentation maintenance schedule, or unifi_site_documentation for UniFi specifics.",
+        "Confirm the customer can find the key details quickly.",
+        "Record internal notes: where the documentation is stored.",
+        "Offer a documentation refresh in 6-12 months."
+      ]
+    }
+  },
+  "isp_cutover_support": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the ISP Cutover Support, review the new provider and current setup from intake, and schedule the cutover window.",
+      "Send prep instructions: the customer confirms the new ISP order status, the activation date, and who coordinates with the provider.",
+      "Pre-work: prepare the cutover plan: timeline, equipment configuration, and DNS/static IP details.",
+      "Coordinate activation: work with the provider on the activation and installation.",
+      "Prepare the equipment: configure the router/firewall for the new connection.",
+      "Execute the cutover: switch to the new connection and support the transition.",
+      "Deliver the closeout package: the cutover documentation and post-activation verification."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the ISP Cutover Support scope: coordinate activation, cutover, and verification.",
+        "Confirm the new provider, order status, activation date, and current setup.",
+        "Gather baseline: current ISP details, static IPs, DNS, and equipment.",
+        "Create the ticket with product id isp_cutover_support, expected deliverables (coordinated cutover, verification, documentation), and assign a technician.",
+        "Check prerequisites: the new connection is scheduled, and the customer confirms who can coordinate with the provider."
+      ],
+      "delivery": [
+        "Review the new order: provider, plan, speeds, and activation date.",
+        "Build the cutover timeline: activation, configuration, and cutover steps.",
+        "Prepare the equipment: configure the router/firewall for the new connection settings.",
+        "Coordinate the provider: schedule the installation and confirm the service is ready.",
+        "Execute the cutover: switch traffic to the new connection at the agreed time.",
+        "Test post-activation: internet, email, VPN, cloud apps, and any static IP/DNS.",
+        "Verify DNS and services: confirm MX, and any hosted services are reachable.",
+        "Technical verification: confirm the new connection performs as ordered and nothing broke."
+      ],
+      "documentation": [
+        "Produce the cutover documentation: timeline, provider details, and configuration.",
+        "Document the post-activation test results.",
+        "Record the old and new connection details.",
+        "Include the rollback notes if the cutover had to be reversed.",
+        "Security rule: no provider account credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: provider coordination, timeline planning, equipment preparation, cutover day support, post-activation testing, and documentation.",
+        "Confirm the new connection works and performs as ordered.",
+        "Confirm email and cloud services are unaffected.",
+        "Confirm the customer knows the new provider support path.",
+        "Flag follow-ups: old connection cancellation, failover setup, and speed verification."
+      ],
+      "closeout": [
+        "Send the deliverables package: cutover documentation and verification.",
+        "Recommend next steps: cancel the old connection, set up failover, or network_documentation update.",
+        "Confirm the cutover is complete and stable.",
+        "Record internal notes: new provider details and configuration.",
+        "Offer a follow-up check after a few days."
+      ]
+    }
+  },
+  "lte_5g_backup_internet_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the LTE/5G Backup Internet Setup, review the location and coverage from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the current internet, the cellular provider option, and the failover expectations.",
+      "Pre-work: assess LTE/5G coverage options and select the cellular solution.",
+      "Configure the backup connection: set up the cellular gateway or failover device.",
+      "Configure failover: set automatic failover and fallback rules.",
+      "Test and verify: simulate a failover and verify coverage/performance.",
+      "Deliver the closeout package: the backup internet documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the LTE/5G Backup Internet Setup scope: configure backup internet with failover.",
+        "Confirm the current internet, the location, and the cellular option.",
+        "Gather baseline: current ISP, router/firewall model, and the coverage at the location.",
+        "Create the ticket with product id lte_5g_backup_internet_setup, expected deliverables (backup configured, failover tested, documentation), and assign a technician.",
+        "Check prerequisites: the cellular device/plan available and the customer confirms the failover expectations."
+      ],
+      "delivery": [
+        "Assess coverage options: check which cellular networks cover the location and the expected speeds.",
+        "Select the solution: LTE/5G gateway or a failover-capable router with cellular.",
+        "Configure the backup connection: APN, credentials, and the cellular settings.",
+        "Set up failover: configure automatic failover when the primary drops.",
+        "Configure fallback: set the return-to-primary behavior.",
+        "Test the failover: disconnect the primary and verify the backup takes over with minimal interruption.",
+        "Verify performance: measure the backup speeds and confirm critical apps work.",
+        "Technical verification: confirm failover works automatically and the backup covers the business needs."
+      ],
+      "documentation": [
+        "Produce the backup internet documentation: device, plan, APN, and failover settings.",
+        "Document the failover test results and performance.",
+        "Record the coverage assessment.",
+        "Include how to monitor the backup connection.",
+        "Security rule: no cellular account credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: coverage assessment, solution selection, backup configuration, failover configuration/testing, performance verification, and documentation.",
+        "Confirm the failover test succeeded automatically.",
+        "Confirm the backup speeds meet the business needs.",
+        "Confirm the customer knows when the backup is active.",
+        "Flag follow-ups: monitoring the backup, data plan limits, and isp_failover_readiness_review for options."
+      ],
+      "closeout": [
+        "Send the deliverables package: backup internet documentation.",
+        "Recommend next steps: monitor the data plan usage, and confirm the failover covers critical functions.",
+        "Confirm the failover works and the customer understands it.",
+        "Record internal notes: backup device and configuration.",
+        "Offer a re-test of the failover in 30 days."
+      ]
+    }
+  },
+  "unifi_controller_setup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the UniFi Controller Setup, review the UniFi gear from intake, and schedule the setup.",
+      "Send prep instructions: the customer confirms the UniFi devices present and the desired network structure.",
+      "Pre-work: prepare the controller install method, the device adoption plan, and the network design.",
+      "Install or clean the controller: set up the UniFi Network controller or fix the existing one.",
+      "Adopt and configure devices: adopt the UniFi devices and configure them.",
+      "Set up the network and SSIDs: configure the networks, SSIDs, and settings.",
+      "Deliver the closeout package: the UniFi setup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the UniFi Controller Setup scope: controller install/cleanup and device adoption.",
+        "Confirm the UniFi devices present and the controller state.",
+        "Gather baseline: current controller, device firmware, and the network design.",
+        "Create the ticket with product id unifi_controller_setup, expected deliverables (controller configured, devices adopted, documentation), and assign a UniFi technician.",
+        "Check prerequisites: controller access and the UniFi device list confirmed."
+      ],
+      "delivery": [
+        "Install or clean the UniFi Network controller: set it up fresh or fix the existing configuration.",
+        "Adopt the UniFi devices: switches, APs, and gateways into the controller.",
+        "Configure the devices: names, firmware, and settings.",
+        "Set up the networks and SSIDs per the design.",
+        "Configure controller management: admin access, alerts, and backups.",
+        "Align firmware versions across the fleet.",
+        "Test connectivity and management.",
+        "Technical verification: confirm all devices are adopted and the network functions."
+      ],
+      "documentation": [
+        "Produce the UniFi setup documentation: controller details, device inventory, and networks/SSIDs.",
+        "Document the management access (credentials in the secure store).",
+        "Record the firmware versions.",
+        "Include the alert and backup settings.",
+        "Security rule: no controller credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: controller install/cleanup, device adoption/configuration, network/SSID setup, management config, firmware alignment, and documentation.",
+        "Confirm all devices are adopted and managed.",
+        "Confirm the network and SSIDs work.",
+        "Confirm management access and backups are configured.",
+        "Flag follow-ups: unifi_monthly_management for ongoing care, or unifi_site_documentation."
+      ],
+      "closeout": [
+        "Send the deliverables package: UniFi setup documentation.",
+        "Recommend next steps: unifi_monthly_management, or guest_wi_fi_setup if needed.",
+        "Confirm the controller is healthy and all devices adopted.",
+        "Record internal notes: controller and device state.",
+        "Offer a follow-up check after a week."
+      ]
+    }
+  },
+  "unifi_wi_fi_install": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the UniFi Wi-Fi Install, review the coverage scope from intake, and schedule the install.",
+      "Send prep instructions: the customer confirms the areas to cover, the AP count approved, and the SSID naming.",
+      "Pre-work: prepare the AP placement plan and the SSID/security design.",
+      "Install the access points: mount and connect the UniFi APs.",
+      "Adopt and configure: adopt the APs and configure staff/guest SSIDs.",
+      "Configure security and settings: wireless settings, security, and guest separation.",
+      "Verify and deliver: test coverage and deliver the Wi-Fi install documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the UniFi Wi-Fi Install scope: AP install, SSIDs, guest network, and basic settings.",
+        "Confirm the coverage scope, AP count, and any guest needs.",
+        "Gather baseline: existing UniFi gear, switch/PoE, and cabling readiness.",
+        "Create the ticket with product id unifi_wi_fi_install, expected deliverables (installed APs, SSIDs, guest network, documentation), and assign a UniFi technician.",
+        "Check prerequisites: APs available, cabling ready, and the controller accessible."
+      ],
+      "delivery": [
+        "Plan AP placement for coverage across the agreed areas.",
+        "Install the UniFi APs: mount, connect PoE, and secure them.",
+        "Adopt the APs into the controller.",
+        "Configure the staff SSID and the guest SSID with security.",
+        "Set up guest network separation: VLAN and isolation.",
+        "Configure wireless settings: channels, power, band steering, and roaming.",
+        "Test coverage and connectivity across the space.",
+        "Technical verification: confirm all APs are adopted, SSIDs broadcast, and coverage is adequate."
+      ],
+      "documentation": [
+        "Produce the Wi-Fi install documentation: AP inventory, SSIDs, security, and guest network.",
+        "Document the AP placement.",
+        "Record the wireless settings applied.",
+        "Include the management access reference.",
+        "Security rule: Wi-Fi passwords in the secure store, not the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: AP placement planning, install/adoption, staff and guest SSIDs, guest separation, wireless security, and coverage verification.",
+        "Confirm coverage is adequate and roaming works.",
+        "Confirm the guest network is separated.",
+        "Confirm all APs are managed.",
+        "Flag follow-ups: unifi_monthly_management, or unifi_network_cleanup if the fleet needs cleanup."
+      ],
+      "closeout": [
+        "Send the deliverables package: Wi-Fi install documentation.",
+        "Recommend next steps: unifi_monthly_management for ongoing care.",
+        "Confirm the customer can connect and knows the SSID/password location.",
+        "Record internal notes: AP inventory and configuration.",
+        "Offer a coverage re-check after use."
+      ]
+    }
+  },
+  "unifi_network_cleanup": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the UniFi Network Cleanup, review the UniFi fleet from intake, and schedule the cleanup.",
+      "Send prep instructions: the customer confirms the UniFi devices and any known naming or alert issues.",
+      "Pre-work: review the controller state: device names, firmware, topology, and alerts.",
+      "Standardize naming: fix the device naming scheme.",
+      "Review and update firmware: align firmware and updates.",
+      "Verify topology and alerts: check connections and resolve alerts.",
+      "Deliver the closeout package: the UniFi network documentation and cleanup summary."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the UniFi Network Cleanup scope: naming, firmware, topology, alerts, and configuration.",
+        "Confirm the UniFi fleet and the controller access.",
+        "Gather baseline: current device names, firmware versions, topology, and open alerts.",
+        "Create the ticket with product id unifi_network_cleanup, expected deliverables (cleanup executed, documentation), and assign a UniFi technician.",
+        "Check prerequisites: controller access and a maintenance window for firmware updates."
+      ],
+      "delivery": [
+        "Standardize the device naming: consistent scheme (location, type, role).",
+        "Review firmware versions: identify updates and apply them in a maintenance window.",
+        "Verify the topology: confirm connections match reality and fix discrepancies.",
+        "Review alerts: resolve stale/actionable alerts and tune notification settings.",
+        "Clean the configuration: remove unused SSIDs, networks, and orphaned settings.",
+        "Update the controller settings for consistency.",
+        "Test connectivity after the cleanup.",
+        "Technical verification: confirm the topology is accurate, firmware current, and alerts clean."
+      ],
+      "documentation": [
+        "Produce the UniFi network documentation: device names, firmware, topology, and alerts.",
+        "Document the cleanup changes made.",
+        "Record the firmware versions after the update.",
+        "Include the alert settings and monitoring.",
+        "Security rule: no controller credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: naming standardization, firmware review/update, topology verification, alert resolution, configuration cleanup, and documentation.",
+        "Confirm the topology is accurate.",
+        "Confirm firmware is aligned and alerts are clean.",
+        "Confirm no connectivity was broken.",
+        "Flag follow-ups: unifi_monthly_management to keep it clean."
+      ],
+      "closeout": [
+        "Send the deliverables package: UniFi network documentation and cleanup summary.",
+        "Recommend next steps: unifi_monthly_management for ongoing care.",
+        "Confirm the fleet is clean and healthy.",
+        "Record internal notes: cleanup changes.",
+        "Offer a follow-up check."
+      ]
+    }
+  },
+  "unifi_monthly_management": {
+    "fulfillmentWorkflow": [
+      "Confirm scope and onboard: confirm the UniFi Monthly Management plan, collect the controller access, and establish the monthly cycle.",
+      "Send onboarding prep: the customer confirms the controller and the notification contact.",
+      "Pre-work: establish the controller baseline and the monthly checklist.",
+      "Run monthly management: review firmware, resolve alerts, check device health, and back up the controller.",
+      "Maintain documentation: update the UniFi configuration documentation.",
+      "Report and follow up: deliver the monthly network summary.",
+      "Deliver the monthly closeout: the summary, open items, and recommendations."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the UniFi Monthly Management scope: ongoing firmware, alerts, health, backups, and documentation.",
+        "Collect the controller access and the notification contact.",
+        "Establish the monthly checklist and reporting date.",
+        "Gather baseline: controller state, device inventory, firmware, and open alerts.",
+        "Set expectations: what is covered and the escalation path."
+      ],
+      "delivery": [
+        "Review firmware monthly: identify and apply updates in a maintenance window.",
+        "Monitor and resolve alerts: address device, network, and security alerts.",
+        "Check device health: uptime, connectivity, and performance.",
+        "Configure and verify controller backups: ensure recovery is possible.",
+        "Maintain the configuration documentation with changes.",
+        "Log all work and flag items needing approval.",
+        "Technical verification: confirm the controller, devices, and backups are healthy at month end."
+      ],
+      "documentation": [
+        "Produce the monthly network summary: firmware, alerts, health, and changes.",
+        "Maintain the UniFi configuration documentation.",
+        "Track open alerts and pending items.",
+        "Record backup verification results.",
+        "Security rule: no credentials in the summary."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: firmware review/updates, alert monitoring, health review, controller backups, documentation maintenance, and monthly summary.",
+        "Confirm firmware is current and alerts are clean.",
+        "Confirm the controller backup is verified.",
+        "Confirm the summary was delivered.",
+        "Flag follow-ups: recurring alerts, device replacements, and plan upgrades."
+      ],
+      "closeout": [
+        "Send the monthly network summary with open items.",
+        "Recommend upgrades when patterns show need.",
+        "Confirm the controller is healthy and backed up.",
+        "Record internal notes for the next cycle.",
+        "Schedule the next month's cycle."
+      ]
+    }
+  },
+  "unifi_site_documentation": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the UniFi Site Documentation, review the site from intake, and schedule the documentation visit.",
+      "Send prep instructions: the customer confirms the UniFi devices and the site layout.",
+      "Pre-work: prepare the documentation templates: device inventory, ports, photos, IPs, and topology.",
+      "Gather the site details: inventory devices, ports, IPs, and take photos.",
+      "Build the documentation: create the device/port/IP records and the topology.",
+      "Review with the customer: verify the documentation is accurate.",
+      "Deliver the closeout package: the complete UniFi site documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the UniFi Site Documentation scope and the site(s) in scope.",
+        "Confirm the UniFi devices and the site access.",
+        "Gather baseline: controller access and any existing documentation.",
+        "Create the ticket with product id unifi_site_documentation, expected deliverables (device/port/IP docs, photos, topology), and assign a technician.",
+        "Check prerequisites: site access and controller access."
+      ],
+      "delivery": [
+        "Inventory the UniFi devices: models, serials, locations, and roles.",
+        "Document the ports and connections: switch ports, AP uplinks, and patch mapping.",
+        "Take site photos: equipment, rack, and physical layout.",
+        "Document the IP addresses: static assignments, DHCP reservations, and subnets.",
+        "Record the controller notes: admin access reference, firmware, and settings.",
+        "Build the topology: logical and physical diagrams.",
+        "Technical verification: confirm the documentation matches the live site."
+      ],
+      "documentation": [
+        "Produce the UniFi site documentation: device inventory, ports, photos, IPs, and controller notes.",
+        "Include the topology diagrams.",
+        "Document the physical layout with photos.",
+        "Record management access references (credentials in the secure store).",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: device inventory, port/connection documentation, photos, IP documentation, controller notes, and topology.",
+        "Confirm the documentation matches the live site.",
+        "Confirm the photos and topology are accurate.",
+        "Confirm the customer can use it for support and recovery.",
+        "Flag follow-ups: keeping the documentation current, and network_documentation_package for the full network."
+      ],
+      "closeout": [
+        "Send the deliverables package: the complete UniFi site documentation.",
+        "Recommend next steps: a documentation refresh schedule.",
+        "Confirm the customer can find device and port details quickly.",
+        "Record internal notes: where the documentation is stored.",
+        "Offer a documentation refresh in 6-12 months."
+      ]
+    }
+  },
+  "small_office_wi_fi_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Small Office Wi-Fi Bundle, review the office and needs from intake, and schedule the project.",
+      "Send prep instructions: the customer confirms the coverage areas, the device count, and approval for the gear.",
+      "Pre-work: prepare the router/firewall review, AP install plan, and SSID design.",
+      "Review the router/firewall: assess the current routing/firewall gear and fix issues.",
+      "Install the access points: install the APs and configure the staff SSID.",
+      "Configure the guest network: set up the guest SSID and separation.",
+      "Verify and deliver: verify coverage and deliver the Wi-Fi setup documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Small Office Wi-Fi Bundle scope: router/firewall review, APs, staff and guest SSIDs, coverage verification, and documentation.",
+        "Confirm the office coverage, device count, and the gear budget.",
+        "Gather baseline: current router/firewall, switch/PoE, and cabling.",
+        "Create the ticket with product id small_office_wi_fi_bundle, expected deliverables (working Wi-Fi, guest network, documentation), and assign a technician.",
+        "Check prerequisites: gear approved, cabling ready, and the install window."
+      ],
+      "delivery": [
+        "Review the router/firewall: assess health, firmware, and security; fix or recommend replacement.",
+        "Plan and install the access points for coverage.",
+        "Configure the staff SSID with security and the right wireless settings.",
+        "Configure the guest SSID with separation from the business network.",
+        "Verify coverage across the office and roaming.",
+        "Test staff and guest access independently.",
+        "Technical verification: confirm coverage, separation, and stability."
+      ],
+      "documentation": [
+        "Produce the Wi-Fi setup documentation: AP inventory, SSIDs, security, and guest separation.",
+        "Document the router/firewall review findings.",
+        "Record the coverage verification.",
+        "Include the management access reference.",
+        "Security rule: Wi-Fi passwords in the secure store."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: router/firewall review, AP installation, staff SSID, guest SSID/separation, coverage verification, and documentation.",
+        "Confirm staff and guest networks work and are separated.",
+        "Confirm coverage is adequate.",
+        "Confirm the router/firewall findings were addressed.",
+        "Flag follow-ups: unifi_monthly_management or firewall_setup if needed."
+      ],
+      "closeout": [
+        "Send the deliverables package: Wi-Fi setup documentation.",
+        "Recommend next steps: unifi_monthly_management, or firewall setup.",
+        "Confirm the office Wi-Fi is working.",
+        "Record internal notes: equipment and configuration.",
+        "Offer a follow-up check."
+      ]
+    }
+  },
+  "business_network_foundation": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Business Network Foundation, review the office and needs from intake, and schedule the project.",
+      "Send prep instructions: the customer confirms the coverage areas, device count, and approval for the gear.",
+      "Pre-work: design the network: firewall, switch, Wi-Fi, VLAN basics, and labeling.",
+      "Install the firewall and switch: deploy and configure the business firewall and managed switch.",
+      "Set up Wi-Fi and VLAN basics: install APs, configure SSIDs, and set up basic segmentation.",
+      "Label and document: label the rack and cabling and verify the network.",
+      "Deliver the closeout package: the network foundation documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Business Network Foundation scope: firewall, managed switch, Wi-Fi, VLAN basics, labeling, and documentation.",
+        "Confirm the office, device count, and the hardware budget.",
+        "Gather baseline: current network gear, ISP details, and cabling state.",
+        "Create the ticket with product id business_network_foundation, expected deliverables (foundation network, documentation), and assign a senior network technician.",
+        "Check prerequisites: hardware approved, ISP details confirmed, and the project window."
+      ],
+      "delivery": [
+        "Install and configure the business firewall: WAN/IP, rules, and remote access.",
+        "Install and configure the managed switch: ports, VLANs, and management.",
+        "Install the APs and configure the business Wi-Fi with secure SSIDs.",
+        "Set up VLAN basics: staff/guest/device segmentation.",
+        "Label the rack and cabling: consistent labeling of ports and cables.",
+        "Test the full network: internet, wired, wireless, and segmentation.",
+        "Technical verification: confirm security, coverage, and segmentation are working."
+      ],
+      "documentation": [
+        "Produce the network foundation documentation: firewall, switch, Wi-Fi, VLANs, and labeling.",
+        "Document the network design and settings.",
+        "Record the labeling scheme and port mapping.",
+        "Include the management access references.",
+        "Security rule: no credentials in the documentation."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: firewall install/config, switch install/config, Wi-Fi setup, VLAN basics, labeling, and documentation.",
+        "Confirm the network is secure, segmented, and working.",
+        "Confirm coverage and wired connectivity.",
+        "Confirm the labeling and documentation are complete.",
+        "Flag follow-ups: vlan_setup for deeper segmentation, or network_documentation_package."
+      ],
+      "closeout": [
+        "Send the deliverables package: the network foundation documentation.",
+        "Recommend next steps: deeper segmentation, camera network, or ongoing management.",
+        "Confirm the foundation network is live and documented.",
+        "Record internal notes: network design and settings.",
+        "Offer a follow-up check after use."
+      ]
+    }
+  },
+  "outdoor_coverage_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Outdoor Coverage Bundle, review the outdoor areas from intake, and schedule the project.",
+      "Send prep instructions: the customer confirms the areas to cover, the user count, and the hardware budget.",
+      "Pre-work: plan the outdoor coverage: AP selection, placement, power, and wiring.",
+      "Install the outdoor APs: mount, power, and weatherproof the access points.",
+      "Configure the network: set up SSIDs, security, and the wireless settings.",
+      "Validate coverage: test the coverage across the outdoor areas.",
+      "Deliver the closeout package: the outdoor deployment documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Outdoor Coverage Bundle scope: outdoor planning and deployment.",
+        "Confirm the outdoor areas, concurrent users, and hardware budget.",
+        "Gather baseline: existing network, power availability, and mounting options.",
+        "Create the ticket with product id outdoor_coverage_bundle, expected deliverables (outdoor Wi-Fi deployed, validated, documented), and assign a technician.",
+        "Check prerequisites: hardware approved, cabling/power planned, and the install window."
+      ],
+      "delivery": [
+        "Plan the outdoor coverage: AP count, placement, and overlaps.",
+        "Select weatherproof APs: outdoor-rated models and enclosures.",
+        "Install the APs: mount, connect power/cabling, and weatherproof.",
+        "Configure the SSIDs and security: outdoor network naming and access.",
+        "Configure the wireless settings: channels, power, and roaming with indoor APs.",
+        "Validate coverage: test signal across the outdoor areas.",
+        "Adjust placement or settings based on the validation.",
+        "Technical verification: confirm coverage meets the requirement and the gear is weatherproofed."
+      ],
+      "documentation": [
+        "Produce the outdoor deployment documentation: AP inventory, placement, power/wiring, and settings.",
+        "Document the coverage validation results.",
+        "Record the weatherproofing and enclosure details.",
+        "Include the SSID/security configuration.",
+        "Security rule: Wi-Fi passwords in the secure store."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: coverage planning, weatherproof AP selection/install, power/wiring, SSID/security, coverage validation, and documentation.",
+        "Confirm coverage meets the requirement.",
+        "Confirm the gear is properly weatherproofed.",
+        "Confirm the network is secure.",
+        "Flag follow-ups: unifi_monthly_management, or guest_wi_fi_setup for visitor areas."
+      ],
+      "closeout": [
+        "Send the deliverables package: outdoor deployment documentation.",
+        "Recommend next steps: ongoing management and seasonal checks.",
+        "Confirm the outdoor coverage works.",
+        "Record internal notes: AP inventory and placement.",
+        "Offer a seasonal coverage re-check."
+      ]
+    }
+  },
+  "camera_and_wi_fi_bundle": {
+    "fulfillmentWorkflow": [
+      "Confirm purchase scope and schedule: confirm the Camera and Wi-Fi Bundle, review the site and camera plans from intake, and schedule the project.",
+      "Send prep instructions: the customer confirms the camera count/type, the recording requirements, and the Wi-Fi coverage needs.",
+      "Pre-work: run the camera network readiness assessment and design the VLAN and Wi-Fi plan.",
+      "Prepare the network: set up the camera VLAN, Wi-Fi infrastructure, and capacity.",
+      "Configure the NVR and recording: set up recording, storage, and retention.",
+      "Integrate and test: connect the cameras and Wi-Fi, and verify the full system.",
+      "Deliver the closeout package: the complete system documentation."
+    ],
+    "internalProcedure": {
+      "triage": [
+        "Verify the Camera and Wi-Fi Bundle scope: readiness, camera VLAN, Wi-Fi, NVR, and integration.",
+        "Confirm the camera count/type, recording requirements, and Wi-Fi needs.",
+        "Gather baseline: network gear, switch/PoE, cabling, and bandwidth.",
+        "Create the ticket with product id camera_and_wi_fi_bundle, expected deliverables (cameras and Wi-Fi working, documentation), and assign a senior technician.",
+        "Check prerequisites: camera plan approved, hardware budget confirmed, and the project window."
+      ],
+      "delivery": [
+        "Run the camera network readiness assessment: capacity, PoE, wiring, and bandwidth.",
+        "Configure the camera VLAN: isolate the cameras from the business network.",
+        "Set up the Wi-Fi infrastructure: APs, SSIDs, and coverage.",
+        "Configure the NVR: recording, storage, retention, and remote access.",
+        "Integrate the cameras: connect, adopt, and verify camera streams.",
+        "Verify the Wi-Fi coverage and camera network separation.",
+        "Test the full system: recording, playback, and remote viewing.",
+        "Technical verification: confirm cameras record, are isolated, and remote access is secure."
+      ],
+      "documentation": [
+        "Produce the complete system documentation: network, VLANs, Wi-Fi, cameras, and NVR.",
+        "Document the camera inventory and placement.",
+        "Record the recording settings and retention.",
+        "Include the remote access setup.",
+        "Security rule: camera/NVR credentials in the secure store."
+      ],
+      "qa": [
+        "Verify every whatIsIncluded item: readiness assessment, camera VLAN, Wi-Fi infrastructure, NVR configuration, integration, and documentation.",
+        "Confirm cameras record and playback correctly.",
+        "Confirm the camera network is isolated.",
+        "Confirm Wi-Fi coverage is adequate.",
+        "Flag follow-ups: camera_maintenance_plan, unifi_monthly_management, and remote access review."
+      ],
+      "closeout": [
+        "Send the deliverables package: the complete system documentation.",
+        "Recommend next steps: camera_maintenance_plan for ongoing care.",
+        "Confirm the cameras and Wi-Fi are working.",
+        "Record internal notes: system inventory and configuration.",
+        "Offer a follow-up check after use."
+      ]
+    }
+  }
+}

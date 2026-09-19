@@ -1,9 +1,5 @@
 import { jest } from "@jest/globals";
-import {
-  envSchema,
-  parseEnv,
-  type Env,
-} from "../env";
+import { envSchema, parseEnv, type Env } from "../env";
 import {
   registerTask,
   getTaskHandler,
@@ -26,19 +22,26 @@ jest.mock("pino", () => {
 jest.mock("dotenv/config", () => ({}));
 
 describe("env schema", () => {
+  const REQUIRED = {
+    SUPABASE_URL: "https://test.supabase.co",
+    SUPABASE_ANON_KEY: "test-anon-key",
+    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
+  };
+
   it("parses valid env with defaults", () => {
-    const env = parseEnv({});
+    const env = parseEnv({ ...REQUIRED });
 
     expect(env.NODE_ENV).toBe("development");
     expect(env.LOG_LEVEL).toBe("info");
     expect(env.WORKER_CONCURRENCY).toBe(10);
     expect(env.WORKER_TIMEOUT).toBe(30000);
-    expect(env.SUPABASE_URL).toBeUndefined();
-    expect(env.SUPABASE_ANON_KEY).toBeUndefined();
+    expect(env.SUPABASE_URL).toBe("https://test.supabase.co");
+    expect(env.SUPABASE_ANON_KEY).toBe("test-anon-key");
   });
 
   it("accepts provided values", () => {
     const env = parseEnv({
+      ...REQUIRED,
       NODE_ENV: "production",
       LOG_LEVEL: "debug",
       WORKER_CONCURRENCY: "5",
@@ -56,23 +59,24 @@ describe("env schema", () => {
   });
 
   it("rejects invalid NODE_ENV", () => {
-    expect(() => parseEnv({ NODE_ENV: "invalid" })).toThrow();
+    expect(() => parseEnv({ ...REQUIRED, NODE_ENV: "invalid" })).toThrow();
   });
 
   it("rejects invalid LOG_LEVEL", () => {
-    expect(() => parseEnv({ LOG_LEVEL: "verbose" })).toThrow();
+    expect(() => parseEnv({ ...REQUIRED, LOG_LEVEL: "verbose" })).toThrow();
   });
 
   it("rejects non-numeric WORKER_CONCURRENCY", () => {
-    expect(() => parseEnv({ WORKER_CONCURRENCY: "abc" })).toThrow();
+    expect(() => parseEnv({ ...REQUIRED, WORKER_CONCURRENCY: "abc" })).toThrow();
   });
 
   it("rejects invalid SUPABASE_URL", () => {
-    expect(() => parseEnv({ SUPABASE_URL: "not-a-url" })).toThrow();
+    expect(() => parseEnv({ ...REQUIRED, SUPABASE_URL: "not-a-url" })).toThrow();
   });
 
   it("coerces string numbers to numbers", () => {
     const env = parseEnv({
+      ...REQUIRED,
       WORKER_CONCURRENCY: "42",
       WORKER_TIMEOUT: "99999",
     });
@@ -146,9 +150,9 @@ describe("executeTask", () => {
   });
 
   it("returns error when handler throws", async () => {
-    const handler = jest.fn<() => Promise<TaskResult>>().mockRejectedValue(
-      new Error("handler exploded"),
-    );
+    const handler = jest
+      .fn<() => Promise<TaskResult>>()
+      .mockRejectedValue(new Error("handler exploded"));
     registerTask("throwing-task", handler);
 
     const result = await executeTask({

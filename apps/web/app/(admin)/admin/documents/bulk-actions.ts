@@ -8,7 +8,7 @@ export type BulkActionResult = {
   error?: string;
   ids?: string[];
   folderPath?: string | null;
-  applied?: Record<string, any>;
+  applied?: Record<string, unknown>;
 };
 
 const ALLOWED_VISIBILITY: DocumentVisibility[] = ["private", "org", "public", "internal"];
