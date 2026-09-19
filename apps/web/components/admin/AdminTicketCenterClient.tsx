@@ -719,10 +719,21 @@ export default function AdminTicketCenterClient({
 
       {openModal ? (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 sm:items-center">
-          <div className="my-8 w-full max-w-2xl rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-ticket-title"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setOpenModal(false);
+            }}
+            className="my-8 w-full max-w-2xl rounded-xl border border-white/10 bg-cyber-card-deep shadow-2xl"
+          >
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
-                <h2 className="font-display text-xl uppercase tracking-[0.12em] text-slate-50">
+                <h2
+                  id="create-ticket-title"
+                  className="font-display text-xl uppercase tracking-[0.12em] text-slate-50"
+                >
                   Create Ticket
                 </h2>
                 <p className="mt-1 text-sm text-slate-400">

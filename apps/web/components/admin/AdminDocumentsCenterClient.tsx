@@ -1729,10 +1729,21 @@ export default function AdminDocumentsCenterClient({
 
       {showCreateModal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-3xl rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-document-title"
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setShowCreateModal(false);
+            }}
+            className="w-full max-w-3xl rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+          >
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
               <div>
-                <h2 className="font-display text-xl uppercase tracking-[0.12em] text-slate-50">
+                <h2
+                  id="create-document-title"
+                  className="font-display text-xl uppercase tracking-[0.12em] text-slate-50"
+                >
                   Create Document
                 </h2>
                 <p className="mt-1 text-sm text-slate-400">
