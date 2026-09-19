@@ -15,6 +15,7 @@
  */
 import { getSupabaseAdmin } from "../services/supabase";
 import { AppError } from "../types";
+import { roleKeyOf } from "./roles";
 
 /**
  * Role keys that the requirePermission middleware treats as having every
@@ -99,9 +100,7 @@ export async function resolveEffectivePermissions(
   const orgIds = [...new Set(memberships.map((m) => m.organization_id))];
   const roles = [
     ...new Set(
-      memberships
-        .map((m: any) => m.roles?.key)
-        .filter((k: unknown): k is string => typeof k === "string"),
+      memberships.map((m) => roleKeyOf(m.roles)).filter((k): k is string => typeof k === "string"),
     ),
   ];
 

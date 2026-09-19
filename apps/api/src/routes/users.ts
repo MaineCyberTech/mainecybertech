@@ -12,6 +12,7 @@ import {
   assertSharesActiveOrg,
 } from "../middleware/org-access";
 import { queryInt } from "../lib/query";
+import { roleKeyOf } from "../lib/roles";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -80,10 +81,7 @@ router.get("/", requireAdmin, async (req, res, next) => {
         .eq("status", "approved")
         .maybeSingle();
 
-      if (
-        !membership ||
-        !["admin", "super_admin"].includes((membership.roles as unknown as { key: string }).key)
-      ) {
+      if (!membership || !["admin", "super_admin"].includes(roleKeyOf(membership.roles) ?? "")) {
         throw new AppError(
           "FORBIDDEN",
           "You do not have access to users in this organization",
@@ -142,10 +140,7 @@ router.get("/compound", requireAdmin, async (req, res, next) => {
         .eq("status", "approved")
         .maybeSingle();
 
-      if (
-        !membership ||
-        !["admin", "super_admin"].includes((membership.roles as unknown as { key: string }).key)
-      ) {
+      if (!membership || !["admin", "super_admin"].includes(roleKeyOf(membership.roles) ?? "")) {
         throw new AppError(
           "FORBIDDEN",
           "You do not have access to users in this organization",
@@ -297,7 +292,7 @@ router.get("/:id", async (req, res, next) => {
         .limit(1)
         .maybeSingle();
 
-      const roleKey = (membership?.roles as unknown as { key?: string } | null)?.key;
+      const roleKey = roleKeyOf(membership?.roles);
       const isAdmin = !!roleKey && ["admin", "super_admin"].includes(roleKey);
 
       if (!isAdmin) {

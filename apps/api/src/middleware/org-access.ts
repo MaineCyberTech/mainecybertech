@@ -2,7 +2,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logImpersonation } from "../services/impersonation";
 import { AppError } from "../types";
-import { isPlatformAdminKey } from "../lib/roles";
+import { isPlatformAdminKey, roleKeyOf } from "../lib/roles";
 
 function extractOrgId(req: Request): string | null {
   if (req.query.organization_id) return req.query.organization_id as string;
@@ -42,12 +42,12 @@ async function checkOrgAccess(
 
   if (allMemberships && allMemberships.length > 0) {
     const adminRole = allMemberships.find((row) => {
-      const key = (row.roles as unknown as { key?: string } | null)?.key;
+      const key = roleKeyOf(row.roles);
       return isPlatformAdminKey(key);
     });
     if (adminRole) {
       // Platform admin entering a tenant they are NOT a member of => impersonation
-      const roleKey = (adminRole.roles as unknown as { key: string }).key;
+      const roleKey = roleKeyOf(adminRole.roles) ?? "platform-admin";
       void logImpersonation({
         actorUserId: userId,
         actorRoleKey: roleKey,
@@ -115,7 +115,7 @@ async function resolveDefaultOrgId(
 
     if (allMemberships && allMemberships.length > 0) {
       const adminRole = allMemberships.find((row) => {
-        const key = (row.roles as unknown as { key?: string } | null)?.key;
+        const key = roleKeyOf(row.roles);
         return isPlatformAdminKey(key);
       });
       if (adminRole) {
@@ -137,8 +137,7 @@ async function resolveDefaultOrgId(
   }
 
   const isPlatformAdmin = memberships.some((row) => {
-    const key = (row.roles as unknown as { key?: string } | null)?.key;
-    return isPlatformAdminKey(key);
+    return isPlatformAdminKey(roleKeyOf(row.roles));
   });
 
   // Platform admins are org-agnostic: without an explicit org they see

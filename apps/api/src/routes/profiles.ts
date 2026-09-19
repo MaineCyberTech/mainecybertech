@@ -9,6 +9,7 @@ import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess, assertSharesActiveOrg } from "../middleware/org-access";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { toJson, type UpdateRow } from "../lib/db-types";
+import { roleKeyOf } from "../lib/roles";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -133,7 +134,7 @@ router.patch("/:id", requireIfMatch, async (req, res, next) => {
         .limit(1)
         .maybeSingle();
 
-      const roleKey = (membership?.roles as unknown as { key?: string } | null)?.key;
+      const roleKey = roleKeyOf(membership?.roles);
       const isAdmin = !!roleKey && ["admin", "super_admin"].includes(roleKey);
 
       if (!isAdmin) {

@@ -10,7 +10,7 @@ import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { createNotification, notifyAndEmail } from "../lib/notify";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
-import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS } from "../lib/roles";
+import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS, roleKeyOf } from "../lib/roles";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
 import {
   createTicketSchema,
@@ -411,9 +411,7 @@ router.patch("/:id/comments/:commentId", async (req, res, next) => {
         .eq("status", "approved");
 
       const isOrgAdmin =
-        memberships?.some((row) =>
-          isPlatformAdminKey((row.roles as unknown as { key: string }).key),
-        ) ?? false;
+        memberships?.some((row) => isPlatformAdminKey(roleKeyOf(row.roles))) ?? false;
 
       if (!isOrgAdmin) {
         throw new AppError("FORBIDDEN", "Only the comment author can edit this comment", 403);

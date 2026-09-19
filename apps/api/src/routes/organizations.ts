@@ -9,7 +9,7 @@ import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
-import { isPlatformAdminKey } from "../lib/roles";
+import { isPlatformAdminKey, roleKeyOf } from "../lib/roles";
 import {
   createOrganizationSchema,
   updateOrganizationSchema,
@@ -173,7 +173,9 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
         .eq("user_id", req.authUser!.userId)
         .eq("status", "approved");
 
-      isPlatformAdmin = (memberRoles ?? []).some((m: any) => isPlatformAdminKey(m.roles?.key));
+      isPlatformAdmin = (memberRoles ?? []).some((m: any) =>
+        isPlatformAdminKey(roleKeyOf(m.roles)),
+      );
     }
 
     if (!isPlatformAdmin) {
