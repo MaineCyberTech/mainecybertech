@@ -13,7 +13,7 @@ export function VersionBadge() {
   });
 
   return (
-    <div className="border-[var(--color-border-primary)]/50 bg-[var(--color-background-secondary)]/80 fixed bottom-2 right-2 z-40 flex select-none items-center gap-1.5 rounded border px-2 py-1 font-mono text-xs text-[var(--color-foreground-tertiary)] shadow-sm backdrop-blur-sm">
+    <div className="fixed bottom-2 right-2 z-40 flex select-none items-center gap-1.5 rounded border border-white/10 bg-cyber-base/80 px-2 py-1 font-mono text-xs text-slate-400 shadow-sm backdrop-blur-sm">
       <span className="opacity-60">v</span>
       <span>{APP_VERSION}</span>
       <span className="opacity-40">·</span>

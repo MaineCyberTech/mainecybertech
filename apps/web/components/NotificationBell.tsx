@@ -58,8 +58,10 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
 
   const playNotificationChime = useCallback(() => {
     try {
-      const ctx = new (window.AudioContext ||
-        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext)();
+      const ctx = new (
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      )();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.connect(gain);
@@ -261,8 +263,9 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
                         e.stopPropagation();
                         handleMarkRead(n.id);
                       }}
-                      className="shrink-0 rounded p-1 text-slate-600 opacity-0 transition hover:text-slate-300 group-hover:opacity-100"
+                      className="shrink-0 rounded p-1 text-slate-600 opacity-0 transition hover:text-slate-300 focus:opacity-100 group-hover:opacity-100"
                       title="Dismiss"
+                      aria-label="Dismiss notification"
                     >
                       <svg
                         className="h-3 w-3"
@@ -325,6 +328,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
                       type="button"
                       role="switch"
                       aria-checked={prefs[m] ?? true}
+                      aria-label={`${m === "system" ? "System" : m} notifications`}
                       onClick={() => handleTogglePref(m, !(prefs[m] ?? true))}
                       className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${(prefs[m] ?? true) ? "bg-emerald-600" : "bg-white/10"}`}
                     >

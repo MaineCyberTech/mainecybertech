@@ -338,6 +338,7 @@ export default function AdminSidebarContent({
                       key={item.key}
                       href={item.href}
                       onClick={() => setActiveGroup(null)}
+                      aria-current={isActive(item.href) ? "page" : undefined}
                       ref={(el) => {
                         groupLinks.current[`${group.label}-${itemIndex}`] = el;
                       }}
@@ -365,6 +366,7 @@ export default function AdminSidebarContent({
                       key={item.key}
                       href={item.href}
                       onClick={() => setActiveGroup(null)}
+                      aria-current={isActive(item.href) ? "page" : undefined}
                       ref={(el) => {
                         groupLinks.current[`${group.label}-${itemIndex}`] = el;
                       }}

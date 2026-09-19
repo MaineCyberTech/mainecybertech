@@ -61,6 +61,7 @@ export default function AdminListPageSearch({
         type="search"
         value={local}
         placeholder={placeholder}
+        aria-label="Search"
         onChange={(event) => handleChange(event.target.value)}
         className="w-full rounded-lg border border-white/10 bg-cyber-base py-2 pl-10 pr-3 text-sm text-slate-200 placeholder:text-slate-500 focus:border-emerald-500/40 focus:outline-none"
       />

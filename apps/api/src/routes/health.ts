@@ -1,13 +1,78 @@
 import { Router } from "express";
 import { success } from "../types";
 import { getSupabaseAdminNoBreaker } from "../services/supabase";
-import { getEnv } from "../config/env";
+import { getEnv, type Env } from "../config/env";
 import { checkRedisHealth } from "../lib/health";
 
 const router: ReturnType<typeof Router> = Router();
 
+type Check = { status: string; latencyMs?: number; error?: string };
+
+// /health is unauthenticated and, when configured, calls Stripe and JSM on
+// every hit — an amplification/DoS vector and a config-disclosure oracle.
+// Cache the external provider checks for a short window so repeated probes
+// reuse the last result instead of fanning out.
+const PROVIDER_TTL_MS = 30_000;
+let externalCache: { at: number; stripe: Check; jsm: Check } | null = null;
+
+async function fetchWithTimeout(url: string, init: RequestInit, ms = 5000): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function getExternalChecks(
+  env: Env,
+): Promise<{ stripe: Check; jsm: Check; healthy: boolean }> {
+  if (externalCache && Date.now() - externalCache.at < PROVIDER_TTL_MS) {
+    const healthy =
+      externalCache.stripe.status !== "unhealthy" && externalCache.jsm.status !== "unhealthy";
+    return { ...externalCache, healthy };
+  }
+
+  let stripe: Check;
+  if (env.STRIPE_SECRET_KEY) {
+    const start = Date.now();
+    try {
+      const res = await fetchWithTimeout("https://api.stripe.com/v1/balance", {
+        headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
+      });
+      stripe = { status: res.ok ? "healthy" : "unhealthy", latencyMs: Date.now() - start };
+    } catch {
+      stripe = { status: "unhealthy", latencyMs: Date.now() - start };
+    }
+  } else {
+    stripe = { status: "not_configured" };
+  }
+
+  let jsm: Check;
+  if (env.JSM_DOMAIN && env.JSM_EMAIL && env.JSM_API_TOKEN) {
+    const start = Date.now();
+    try {
+      const res = await fetchWithTimeout(`https://${env.JSM_DOMAIN}/rest/servicedeskapi/info`, {
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${env.JSM_EMAIL}:${env.JSM_API_TOKEN}`).toString("base64")}`,
+        },
+      });
+      jsm = { status: res.ok ? "healthy" : "unhealthy", latencyMs: Date.now() - start };
+    } catch {
+      jsm = { status: "unhealthy", latencyMs: Date.now() - start };
+    }
+  } else {
+    jsm = { status: "not_configured" };
+  }
+
+  externalCache = { at: Date.now(), stripe, jsm };
+  const healthy = stripe.status !== "unhealthy" && jsm.status !== "unhealthy";
+  return { stripe, jsm, healthy };
+}
+
 router.get("/", async (_req, res) => {
-  const checks: Record<string, { status: string; latencyMs?: number; error?: string }> = {};
+  const checks: Record<string, Check> = {};
   let healthy = true;
 
   const dbStart = Date.now();
@@ -25,54 +90,10 @@ router.get("/", async (_req, res) => {
   }
 
   const env = getEnv();
-
-  if (env.STRIPE_SECRET_KEY) {
-    const stripeStart = Date.now();
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch("https://api.stripe.com/v1/balance", {
-        headers: { Authorization: `Bearer ${env.STRIPE_SECRET_KEY}` },
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      checks.stripe = {
-        status: res.ok ? "healthy" : "unhealthy",
-        latencyMs: Date.now() - stripeStart,
-      };
-      if (!res.ok) healthy = false;
-    } catch {
-      checks.stripe = { status: "unhealthy", latencyMs: Date.now() - stripeStart };
-      healthy = false;
-    }
-  } else {
-    checks.stripe = { status: "not_configured" };
-  }
-
-  if (env.JSM_DOMAIN && env.JSM_EMAIL && env.JSM_API_TOKEN) {
-    const jsmStart = Date.now();
-    try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch(`https://${env.JSM_DOMAIN}/rest/servicedeskapi/info`, {
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${env.JSM_EMAIL}:${env.JSM_API_TOKEN}`).toString("base64")}`,
-        },
-        signal: controller.signal,
-      });
-      clearTimeout(timeout);
-      checks.jsm = {
-        status: res.ok ? "healthy" : "unhealthy",
-        latencyMs: Date.now() - jsmStart,
-      };
-      if (!res.ok) healthy = false;
-    } catch {
-      checks.jsm = { status: "unhealthy", latencyMs: Date.now() - jsmStart };
-      healthy = false;
-    }
-  } else {
-    checks.jsm = { status: "not_configured" };
-  }
+  const external = await getExternalChecks(env);
+  checks.stripe = external.stripe;
+  checks.jsm = external.jsm;
+  if (!external.healthy) healthy = false;
 
   // Redis is used for the response cache + BullMQ queue. It is optional in
   // single-instance deployments (cache falls back to memory), so Redis status

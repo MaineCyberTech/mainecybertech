@@ -7,6 +7,8 @@ on:
     paths:
       - "apps/web/e2e/**"
       - "apps/web/playwright.config.ts"
+      - "apps/web/app/**"
+      - "apps/web/components/**"
       - "packages/**"
       - "supabase/seeds/**"
       - "supabase/migrations/**"
@@ -16,6 +18,8 @@ on:
     paths:
       - "apps/web/e2e/**"
       - "apps/web/playwright.config.ts"
+      - "apps/web/app/**"
+      - "apps/web/components/**"
       - "packages/**"
       - "supabase/seeds/**"
       - "supabase/migrations/**"
