@@ -105,6 +105,11 @@ export class GovernanceApi {
     remove: (id: string) => this.c.delete(`/api/v1/governance/risks/${id}`),
     assess: (id: string, d: Record<string, unknown>) =>
       this.c.post(`/api/v1/governance/risks/${id}/assess`, d),
+    accept: (
+      id: string,
+      d: { acceptanceExpires?: string | null; acceptingControls?: string | null } = {},
+    ) => this.c.post(`/api/v1/governance/risks/${id}/accept`, d),
+    reopen: (id: string) => this.c.post(`/api/v1/governance/risks/${id}/reopen`, {}),
   };
   retention = {
     list: (p?: Record<string, string | number | undefined>) =>

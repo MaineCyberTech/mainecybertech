@@ -359,6 +359,87 @@ router.post(
     }
   },
 );
+router.post(
+  "/risks/:id/accept",
+  requirePermission("risk-register", "manage"),
+  async (req, res, next) => {
+    try {
+      const parsed = z
+        .object({
+          acceptanceExpires: z.string().optional().nullable(),
+          acceptingControls: z.string().max(5000).optional().nullable(),
+        })
+        .parse(req.body);
+      const supabase = getScopedClient(req, "governance", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+      const acceptedAt = new Date().toISOString();
+      let updateQuery = supabase
+        .from("risk_register")
+        .update({
+          status: "accepted",
+          accepted_by: req.authUser!.userId,
+          accepted_at: acceptedAt,
+          acceptance_expires: parsed.acceptanceExpires ?? null,
+          accepting_controls: parsed.acceptingControls ?? null,
+        })
+        .eq("id", String(req.params.id));
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error } = await updateQuery.select().single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Risk not found", 404);
+
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: req.authUser!.userId,
+        action: "risk.accepted",
+        entityType: "risk_register",
+        entityId: String(req.params.id),
+        metadata: { acceptanceExpires: parsed.acceptanceExpires ?? null },
+      });
+
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  "/risks/:id/reopen",
+  requirePermission("risk-register", "manage"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "governance", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+      let updateQuery = supabase
+        .from("risk_register")
+        .update({
+          status: "open",
+          accepted_by: null,
+          accepted_at: null,
+          acceptance_expires: null,
+        })
+        .eq("id", String(req.params.id));
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error } = await updateQuery.select().single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Risk not found", 404);
+
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: req.authUser!.userId,
+        action: "risk.reopened",
+        entityType: "risk_register",
+        entityId: String(req.params.id),
+      });
+
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
 crudRoute(
   "retention",
   "retention_policies",

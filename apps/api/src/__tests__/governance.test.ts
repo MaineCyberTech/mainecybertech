@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder  } from "./helpers";
+import { createTestApp, createMockBuilder } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -28,8 +28,12 @@ jest.mock("../config/env", () => ({
     JSM_REQUEST_TYPE_ID: "",
   }),
 }));
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
+jest.mock("../services/supabase", () => ({
+  getSupabaseAdmin: jest.fn(),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
+}));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 import { getSupabaseAdmin } from "../services/supabase";
 import router from "../routes/governance";
@@ -60,10 +64,7 @@ jest.mock("../middleware/org-access", () => ({
   requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/governance", router);
@@ -231,6 +232,29 @@ describe("Governance API", () => {
       .set("Authorization", auth)
       .send({ organizationId: org, riskDescription: "Phishing risk" });
     expect(r.status).toBe(201);
+  });
+
+  it("accepts a risk (records the acceptance)", async () => {
+    const s = ma();
+    s.from.mockReturnValue(
+      createMockBuilder({ data: { id: "r-1", status: "accepted" }, error: null }),
+    );
+    const r = await request(app)
+      .post("/api/v1/governance/risks/r-1/accept")
+      .set("Authorization", auth)
+      .send({ acceptanceExpires: "2027-01-01T00:00:00.000Z" });
+    expect(r.status).toBe(200);
+    expect(r.body.data.status).toBe("accepted");
+  });
+
+  it("reopens an accepted risk", async () => {
+    const s = ma();
+    s.from.mockReturnValue(createMockBuilder({ data: { id: "r-1", status: "open" }, error: null }));
+    const r = await request(app)
+      .post("/api/v1/governance/risks/r-1/reopen")
+      .set("Authorization", auth);
+    expect(r.status).toBe(200);
+    expect(r.body.data.status).toBe("open");
   });
 
   it("returns 401 without auth token", async () => {

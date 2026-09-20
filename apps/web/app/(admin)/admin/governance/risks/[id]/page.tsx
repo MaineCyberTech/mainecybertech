@@ -7,6 +7,7 @@ import RecordDetail from "@/components/admin/RecordDetail";
 import { getModuleConfig } from "@/lib/module-config";
 import { updateModuleRecord, deleteModuleRecord } from "@/lib/module-record-actions";
 import RiskAssessButton from "./RiskAssessButton";
+import RiskAcceptButton from "./RiskAcceptButton";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,11 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
       title={String(record?.risk_description ?? config.label)}
     >
       {record && <RiskAssessButton id={id} />}
+      {record && (
+        <div className="mt-4">
+          <RiskAcceptButton id={id} status={String(record.status ?? "open")} />
+        </div>
+      )}
       <div className="mt-4">
         <RecordDetail
           id={id}

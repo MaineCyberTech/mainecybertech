@@ -1124,5 +1124,20 @@ describe("SDK modules — expanded coverage", () => {
       expect(body).toContain("stepName");
       expect(body).not.toContain("itemName");
     });
+
+    it("governance.risks.accept posts to the accept endpoint", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "r1", status: "accepted" }));
+      await client.governance.risks.accept("r1", {
+        acceptanceExpires: "2027-01-01T00:00:00.000Z",
+      });
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/governance/risks/r1/accept");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+    });
+
+    it("governance.risks.reopen posts to the reopen endpoint", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "r1", status: "open" }));
+      await client.governance.risks.reopen("r1");
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/governance/risks/r1/reopen");
+    });
   });
 });
