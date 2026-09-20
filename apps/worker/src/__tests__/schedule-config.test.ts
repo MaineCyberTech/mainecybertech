@@ -31,9 +31,10 @@ describe("schedule-config", () => {
         "jira-sync",
         "jsm-sync",
         "m365-calendar-sync",
+        "scheduled-notifications",
       ]),
     );
-    expect(scheduledScans.length).toBe(18);
+    expect(scheduledScans.length).toBe(19);
   });
 
   it("honors the stagger offset in the initial boot delay", () => {
@@ -56,6 +57,11 @@ describe("schedule-config", () => {
     expect(hourly.length).toBeGreaterThan(0);
     expect(sixHourly.length).toBeGreaterThan(0);
     expect(daily.length).toBeGreaterThan(0);
+  });
+
+  it("schedules the task-due notification scan with its payload", () => {
+    const scan = scheduledScans.find((s) => s.name === "scheduled-notifications");
+    expect(scan?.payload).toEqual({ type: "task-due" });
   });
 
   describe("isScanConfigured", () => {

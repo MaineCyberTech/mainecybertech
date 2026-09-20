@@ -127,7 +127,7 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
     }
     const interval = setInterval(() => {
       logger.info(`Running scheduled ${scan.name}`);
-      runScheduledTask(scan.name).catch((error) => {
+      runScheduledTask(scan.name, scan.payload).catch((error) => {
         logger.error({ error }, `Scheduled ${scan.name} failed`);
       });
     }, scan.intervalMs);
@@ -137,7 +137,7 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
     // at boot and the remaining offsets were dead config.
     const initial = setTimeout(() => {
       logger.info(`Running initial ${scan.name}`);
-      runScheduledTask(scan.name).catch((error) => {
+      runScheduledTask(scan.name, scan.payload).catch((error) => {
         logger.error({ error }, `Initial ${scan.name} failed`);
       });
     }, initialScanDelayMs(scan));

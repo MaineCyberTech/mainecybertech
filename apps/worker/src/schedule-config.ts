@@ -20,6 +20,8 @@ export interface ScheduledScan {
    * "not configured" failure.
    */
   requiresEnv?: string[];
+  /** Payload passed to the task handler (e.g. a discriminant). */
+  payload?: Record<string, unknown>;
 }
 
 export const scheduledScans: ScheduledScan[] = [
@@ -55,6 +57,12 @@ export const scheduledScans: ScheduledScan[] = [
     intervalMs: SCAN_INTERVAL_DAILY_MS,
     offsetMin: 90,
     requiresEnv: ["M365_TENANT_ID", "M365_CLIENT_ID", "M365_CLIENT_SECRET"],
+  },
+  {
+    name: "scheduled-notifications",
+    intervalMs: SCAN_INTERVAL_DAILY_MS,
+    offsetMin: 95,
+    payload: { type: "task-due" },
   },
 ];
 

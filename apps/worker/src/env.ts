@@ -31,6 +31,7 @@ export const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   API_BASE_URL: z.string().url().optional(),
+  APP_BASE_URL: z.string().url().optional(),
   SENTRY_DSN: z.string().optional(),
   HEALTH_PORT: z.coerce.number().default(3001),
 });
