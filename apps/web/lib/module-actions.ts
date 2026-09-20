@@ -1602,6 +1602,54 @@ export async function createStatusMaintenance(formData: FormData) {
   }
 }
 
+export async function createKbArticle(formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.knowledgeBase.create({
+      organizationId: String(formData.get("organizationId") || ""),
+      title: String(formData.get("title") || ""),
+      body: String(formData.get("body") || ""),
+      category: String(formData.get("category") || "") || null,
+      isPublished: String(formData.get("isPublished") || "") === "true",
+    });
+    revalidatePath("/admin/knowledge-base");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function createComplianceFramework(formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.compliance.createFramework({
+      organizationId: String(formData.get("organizationId") || ""),
+      name: String(formData.get("name") || ""),
+      description: String(formData.get("description") || "") || null,
+    });
+    revalidatePath("/admin/compliance-readiness");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function createComplianceControl(formData: FormData) {
+  const api = getApiClient();
+  try {
+    const frameworkId = String(formData.get("frameworkId") || "");
+    await api.compliance.createControl(frameworkId, {
+      organizationId: String(formData.get("organizationId") || ""),
+      title: String(formData.get("title") || ""),
+      status: "not_started",
+    });
+    revalidatePath("/admin/compliance-readiness");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
 export async function createUptimeCheck(formData: FormData) {
   const api = getApiClient();
   try {

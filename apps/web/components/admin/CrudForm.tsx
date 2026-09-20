@@ -16,9 +16,17 @@ type CrudFormProps = {
   title: string;
   action: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
   onSuccess?: () => void;
+  /** Values submitted with the form but not rendered as inputs. */
+  hiddenFields?: Record<string, string>;
 };
 
-export default function CrudForm({ fields, title, action, onSuccess }: CrudFormProps) {
+export default function CrudForm({
+  fields,
+  title,
+  action,
+  onSuccess,
+  hiddenFields,
+}: CrudFormProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [open, setOpen] = useState(false);
@@ -65,6 +73,11 @@ export default function CrudForm({ fields, title, action, onSuccess }: CrudFormP
           Cancel
         </button>
       </div>
+
+      {hiddenFields &&
+        Object.entries(hiddenFields).map(([key, value]) => (
+          <input key={key} type="hidden" name={key} value={value} />
+        ))}
 
       {fields.map((f) => (
         <div key={f.key}>
