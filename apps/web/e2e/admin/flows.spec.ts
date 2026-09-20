@@ -45,7 +45,7 @@ test.describe("admin organization flows", () => {
     await page.goto("/admin/organizations");
     await expect(page.getByRole("heading", { name: /organizations/i })).toBeVisible();
 
-    const orgLink = page.locator("a[href*='/admin/organizations/']").first();
+    const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
       await orgLink.click();
       await expect(page).toHaveURL(/\/admin\/organizations\//);
@@ -54,7 +54,7 @@ test.describe("admin organization flows", () => {
 
   test("org detail shows basics form", async ({ page }) => {
     await page.goto("/admin/organizations");
-    const orgLink = page.locator("a[href*='/admin/organizations/']").first();
+    const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
       await orgLink.click();
       await expect(page.getByText(/organization basics|name/i).first()).toBeVisible();

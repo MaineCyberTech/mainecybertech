@@ -120,7 +120,7 @@ export default function ProjectTimelineView({
     `${basePath}/projects/${projectId ?? taskRows.find((r) => r.task.id === taskId)?.task.project_id ?? ""}`;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="project-timeline-view">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-2">
           {(["week", "month", "quarter"] as const).map((z) => (

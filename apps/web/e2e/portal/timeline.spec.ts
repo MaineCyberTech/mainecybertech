@@ -50,9 +50,9 @@ test.describe("portal project task views", () => {
       const timelineBtn = page.getByRole("button", { name: /timeline/i });
       if (await visibleWithin(timelineBtn)) {
         await timelineBtn.click();
-        await expect(
-          page.getByText(/tasks with due dates/i).or(page.getByText(/no tasks/i)),
-        ).toBeVisible();
+        // The timeline view renders either task rows or an empty-period
+        // message, so assert the view container rather than its copy.
+        await expect(page.getByTestId("project-timeline-view")).toBeVisible();
       }
     }
   });

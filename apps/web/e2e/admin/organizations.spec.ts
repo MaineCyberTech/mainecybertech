@@ -14,7 +14,7 @@ test.describe("admin organizations list", () => {
   });
 
   test("each org card links to detail page", async ({ page }) => {
-    const orgLinks = page.locator("a[href*='/admin/organizations/']");
+    const orgLinks = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])");
     const count = await orgLinks.count();
     if (count > 0) {
       const firstLink = orgLinks.first();
@@ -23,7 +23,7 @@ test.describe("admin organizations list", () => {
   });
 
   test("can navigate to org detail", async ({ page }) => {
-    const orgLink = page.locator("a[href*='/admin/organizations/']").first();
+    const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
       await orgLink.click();
       await expect(page).toHaveURL(/\/admin\/organizations\//);
@@ -41,7 +41,7 @@ test.describe("admin organization detail", () => {
 
   test("shows org basics form when org exists", async ({ page }) => {
     await page.goto("/admin/organizations");
-    const orgLink = page.locator("a[href*='/admin/organizations/']").first();
+    const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
       await orgLink.click();
       await expect(page.getByText(/organization basics|name|slug/i).first()).toBeVisible();
@@ -50,7 +50,7 @@ test.describe("admin organization detail", () => {
 
   test("shows domains section", async ({ page }) => {
     await page.goto("/admin/organizations");
-    const orgLink = page.locator("a[href*='/admin/organizations/']").first();
+    const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
       await orgLink.click();
       await expect(page.getByText(/domains/i).first()).toBeVisible();
@@ -59,7 +59,7 @@ test.describe("admin organization detail", () => {
 
   test("shows memberships section", async ({ page }) => {
     await page.goto("/admin/organizations");
-    const orgLink = page.locator("a[href*='/admin/organizations/']").first();
+    const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
       await orgLink.click();
       await page.waitForURL(/\/admin\/organizations\//, { timeout: 5000 });

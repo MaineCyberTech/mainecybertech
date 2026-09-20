@@ -3,7 +3,7 @@ import { test, expect, visibleWithin } from "../fixtures";
 test.describe("admin org branding", () => {
   test("org detail shows branding section", async ({ page }) => {
     await page.goto("/admin/organizations");
-    const orgLink = page.locator("a[href*='/admin/organizations/']").first();
+    const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
       await page.goto((await orgLink.getAttribute("href")) ?? "/admin/organizations");
       await expect(page.getByRole("heading", { name: /branding/i })).toBeVisible({
@@ -14,7 +14,7 @@ test.describe("admin org branding", () => {
 
   test("branding has colors and save", async ({ page }) => {
     await page.goto("/admin/organizations");
-    const orgLink = page.locator("a[href*='/admin/organizations/']").first();
+    const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
       await page.goto((await orgLink.getAttribute("href")) ?? "/admin/organizations");
       await expect(page.getByRole("button", { name: /save branding/i })).toBeVisible({
