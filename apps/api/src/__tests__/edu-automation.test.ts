@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder  } from "./helpers";
+import { createTestApp, createMockBuilder } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -28,8 +28,12 @@ jest.mock("../config/env", () => ({
     JSM_REQUEST_TYPE_ID: "",
   }),
 }));
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
+jest.mock("../services/supabase", () => ({
+  getSupabaseAdmin: jest.fn(),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
+}));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 import { getSupabaseAdmin } from "../services/supabase";
 import router from "../routes/edu-automation";
@@ -60,10 +64,7 @@ jest.mock("../middleware/org-access", () => ({
   requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/edu-automation", router);
@@ -198,5 +199,45 @@ describe("Edu Automation API", () => {
     expect(r.status).toBe(200);
     expect(r.body.data.generated_content).toContain("# Password Reset Runbook");
     expect(r.body.data.status).toBe("generated");
+  });
+
+  it("derives the KB draft from the linked source ticket", async () => {
+    const s = ma();
+    const generationBuilder = createMockBuilder({
+      data: { id: "kg-2", source_ticket_id: "tk-1", source_title: "Fallback", status: "draft" },
+      error: null,
+    });
+    const builders: Record<string, unknown> = {
+      kb_article_generations: generationBuilder,
+      tickets: createMockBuilder({
+        data: {
+          title: "VPN keeps dropping",
+          description: "Users lose the VPN connection hourly.",
+          resolution: "Updated the VPN client.",
+        },
+        error: null,
+      }),
+      ticket_comments: createMockBuilder({
+        data: [{ body: "Reinstalled the VPN client", is_internal: true }],
+        error: null,
+      }),
+    };
+    s.from.mockImplementation(
+      (table: string) =>
+        (builders[table] as ReturnType<typeof createMockBuilder>) ??
+        createMockBuilder({ data: null, error: null }),
+    );
+
+    const r = await request(app)
+      .post("/api/v1/edu-automation/kb-generator/kg-2/generate")
+      .set("Authorization", auth);
+
+    expect(r.status).toBe(200);
+    const payload = (generationBuilder.update as jest.Mock).mock.calls[0][0] as {
+      generated_content: string;
+    };
+    expect(payload.generated_content).toContain("VPN keeps dropping");
+    expect(payload.generated_content).toContain("Reinstalled the VPN client");
+    expect(payload.generated_content).toContain("Updated the VPN client.");
   });
 });

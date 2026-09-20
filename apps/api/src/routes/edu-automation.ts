@@ -228,7 +228,64 @@ router.post("/kb-generator/:id/generate", async (req, res, next) => {
       .eq("organization_id", req.query.organization_id as string)
       .single();
     if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
-    const generatedBody = `# ${current.source_title || "Generated Article"}\n\nThis article was auto-generated from the provided source.\n\n## Overview\n\nGenerated content based on KB generation request.\n\n## Key Points\n\n- Review and customize this content\n- Add relevant internal knowledge\n- Verify against current procedures\n\n## Next Steps\n\n1. Review the generated content\n2. Publish to the knowledge base\n3. Notify relevant team members`;
+
+    // Derive the draft from the linked source ticket (description, internal
+    // comments, resolution) rather than emitting a fixed template.
+    const orgId = req.query.organization_id as string;
+    let ticket: {
+      title?: string;
+      description?: string | null;
+      resolution?: string | null;
+    } | null = null;
+    let comments: Array<{ body: string; is_internal: boolean }> = [];
+
+    if (current.source_ticket_id) {
+      const { data: t } = await supabase
+        .from("tickets")
+        .select("title, description, resolution")
+        .eq("id", current.source_ticket_id)
+        .eq("organization_id", orgId)
+        .maybeSingle();
+      ticket = t ?? null;
+
+      const { data: c } = await supabase
+        .from("ticket_comments")
+        .select("body, is_internal")
+        .eq("ticket_id", current.source_ticket_id)
+        .eq("organization_id", orgId)
+        .order("created_at", { ascending: true })
+        .limit(20);
+      comments = c ?? [];
+    }
+
+    const title = ticket?.title || current.source_title || "Generated Article";
+    const overview = ticket?.description?.trim() || "No source description was provided.";
+    const steps = comments
+      .filter((c) => c.is_internal)
+      .map((c) => c.body.trim())
+      .filter(Boolean);
+    const resolution = ticket?.resolution?.trim();
+
+    const lines = [
+      `# ${title}`,
+      "",
+      "## Overview",
+      "",
+      overview,
+      "",
+      "## Resolution steps",
+      "",
+      ...(steps.length
+        ? steps.map((s, i) => `${i + 1}. ${s}`)
+        : ["1. Document the steps taken to resolve this issue."]),
+      "",
+      ...(resolution ? ["## Outcome", "", resolution, ""] : []),
+      "## Review notes",
+      "",
+      "- Verify the steps against the current environment",
+      "- Remove any client-specific details before publishing",
+    ];
+    const generatedBody = lines.join("\n");
     const { data, error } = await supabase
       .from("kb_article_generations")
       .update({
