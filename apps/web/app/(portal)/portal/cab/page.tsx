@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import PortalCabClient from "./PortalCabClient";
+import CabMeetingsClient from "@/components/cab/CabMeetingsClient";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Change Advisory Board - Portal - Maine CyberTech" };
@@ -59,7 +59,11 @@ export default async function PortalCabPage() {
         organization.
       </p>
 
-      <PortalCabClient organizationId={orgId} meetings={meetings} pendingChanges={pendingChanges} />
+      <CabMeetingsClient
+        organizationId={orgId}
+        meetings={meetings}
+        pendingChanges={pendingChanges}
+      />
 
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard
