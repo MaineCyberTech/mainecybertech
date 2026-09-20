@@ -6,6 +6,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import StatusPill from "@/components/StatusPill";
+import LinkedRunbook from "@/components/runbooks/LinkedRunbook";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Incident - Portal - Maine CyberTech" };
@@ -27,6 +28,7 @@ type IncidentDetail = {
   eradicated_at: string | null;
   recovered_at: string | null;
   closed_at: string | null;
+  runbook_id?: string | null;
 };
 
 function formatDate(value: string | null): string {
@@ -62,6 +64,22 @@ export default async function PortalIncidentDetailPage({ params }: Props) {
   }
 
   if (!incident) notFound();
+
+  let linkedRunbook: {
+    title: string;
+    category?: string | null;
+    version?: string | null;
+    content?: string | null;
+  } | null = null;
+  if (incident.runbook_id) {
+    try {
+      linkedRunbook = (await api.final.runbooks.get(
+        incident.runbook_id,
+      )) as unknown as typeof linkedRunbook;
+    } catch {
+      linkedRunbook = null;
+    }
+  }
 
   return (
     <div className="space-y-6" role="region" aria-label="Incident">
@@ -143,6 +161,8 @@ export default async function PortalIncidentDetailPage({ params }: Props) {
           </p>
         </section>
       ) : null}
+
+      <LinkedRunbook runbook={linkedRunbook} />
 
       <Link
         href="/portal/incident-response"

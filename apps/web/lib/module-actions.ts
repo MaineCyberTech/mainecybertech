@@ -1054,6 +1054,7 @@ export async function updateIncident(id: string, formData: FormData) {
       affectedSystems: String(formData.get("affectedSystems") || ""),
       rootCause: String(formData.get("rootCause") || ""),
       lessonsLearned: String(formData.get("lessonsLearned") || ""),
+      runbookId: String(formData.get("runbookId") || "") || null,
     });
     revalidatePath("/admin/incidents");
     return { ok: true };

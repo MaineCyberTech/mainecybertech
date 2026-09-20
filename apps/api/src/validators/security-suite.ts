@@ -13,6 +13,7 @@ export const createIncidentSchema = z.object({
   severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
   affectedSystems: z.string().max(2000).optional().nullable(),
   leadUserId: z.string().uuid().optional().nullable(),
+  runbookId: z.string().uuid().optional().nullable(),
 });
 export const createIdVerifySchema = z.object({
   organizationId: z.string().uuid(),

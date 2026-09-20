@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 
 const mockGet = jest.fn();
+const mockRunbookGet = jest.fn();
 const mockGetApprovedMembership = jest.fn().mockResolvedValue({ organization_id: "org-1" });
 
 jest.mock("next/navigation", () => ({
@@ -20,6 +21,7 @@ jest.mock("next/link", () => ({
 jest.mock("@/lib/api", () => ({
   getApiClient: jest.fn().mockReturnValue({
     securitySuite: { incidents: { get: mockGet } },
+    final: { runbooks: { get: mockRunbookGet } },
   }),
 }));
 
@@ -89,6 +91,23 @@ describe("PortalIncidentDetailPage", () => {
   it("calls notFound when the incident cannot be loaded", async () => {
     mockGet.mockRejectedValue(new Error("404"));
     await expect(renderPage()).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("renders the linked response runbook", async () => {
+    mockGet.mockResolvedValue({ ...INCIDENT, runbook_id: "rb-1" });
+    mockRunbookGet.mockResolvedValue({
+      id: "rb-1",
+      title: "Ransomware playbook",
+      category: "Security",
+      version: "1.0",
+      content: "Isolate the host, then notify.",
+    });
+
+    await renderPage();
+
+    expect(screen.getByText(/Ransomware playbook/)).toBeInTheDocument();
+    expect(screen.getByText(/Isolate the host/)).toBeInTheDocument();
+    expect(mockRunbookGet).toHaveBeenCalledWith("rb-1");
   });
 
   it("renders nothing without an approved membership", async () => {

@@ -18,6 +18,7 @@ export interface IncidentRecord {
   status: string;
   detected_at: string | null;
   contained_at: string | null;
+  runbook_id?: string | null;
 }
 export interface IdentityVerification {
   id: string;

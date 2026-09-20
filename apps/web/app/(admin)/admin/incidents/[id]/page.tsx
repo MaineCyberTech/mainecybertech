@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
+import LinkedRunbook from "@/components/runbooks/LinkedRunbook";
 import { updateIncident, deleteIncident } from "@/lib/module-actions";
 import { revalidatePath } from "next/cache";
 
@@ -23,6 +24,23 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
     >;
   } catch (error) {
     console.error("[[id]/page]", error);
+  }
+
+  let linkedRunbook: {
+    title: string;
+    category?: string | null;
+    version?: string | null;
+    content?: string | null;
+  } | null = null;
+  const runbookId = record?.runbook_id as string | null | undefined;
+  if (runbookId) {
+    try {
+      linkedRunbook = (await withRetry(() =>
+        api.final.runbooks.get(runbookId),
+      )) as unknown as typeof linkedRunbook;
+    } catch (error) {
+      console.error("[[id]/page] runbook", error);
+    }
   }
 
   return (
@@ -61,6 +79,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
           { key: "affectedSystems", label: "Affected Systems", type: "textarea" },
           { key: "rootCause", label: "Root Cause", type: "textarea" },
           { key: "lessonsLearned", label: "Lessons Learned", type: "textarea" },
+          { key: "runbookId", label: "Response Runbook ID", placeholder: "Runbook UUID" },
         ]}
         updateAction={updateIncident}
         onUpdate={async () => {
@@ -75,6 +94,9 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
         parentHref="/admin/incidents"
         parentLabel="Incidents"
       />
+      <div className="mt-4">
+        <LinkedRunbook runbook={linkedRunbook} />
+      </div>
     </AdminPageShell>
   );
 }

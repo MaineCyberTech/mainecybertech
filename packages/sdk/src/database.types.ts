@@ -2286,6 +2286,7 @@ export type Database = {
           organization_id: string;
           recovered_at: string | null;
           root_cause: string | null;
+          runbook_id: string | null;
           severity: string;
           status: string;
           title: string;
@@ -2308,6 +2309,7 @@ export type Database = {
           lessons_learned?: string | null;
           recovered_at?: string | null;
           root_cause?: string | null;
+          runbook_id?: string | null;
           severity?: string | null;
           status?: string | null;
           updated_at?: string | null;
@@ -2328,6 +2330,7 @@ export type Database = {
           organization_id?: string | null;
           recovered_at?: string | null;
           root_cause?: string | null;
+          runbook_id?: string | null;
           severity?: string | null;
           status?: string | null;
           title?: string | null;
@@ -2335,6 +2338,7 @@ export type Database = {
         };
         Relationships: [
           { foreignKeyName: "incident_responses_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+          { foreignKeyName: "incident_responses_runbook_id_fkey", columns: ["runbook_id"], isOneToOne: false, referencedRelation: "client_runbooks", referencedColumns: ["id"] },
         ];
       };      insurance_evidence: {
         Row: {
