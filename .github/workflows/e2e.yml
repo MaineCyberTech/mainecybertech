@@ -58,10 +58,13 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install chromium
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1
-        with:
-          version: latest
+      - name: Install Supabase CLI
+        # Pinned and installed from npm rather than `supabase/setup-cli` with
+        # `version: latest`: the action resolves `releases/latest` via the
+        # GitHub API, which intermittently fails E2E with
+        # "Failed to resolve latest Supabase CLI release: rate limit exceeded".
+        # Matches the pin in supabase-migrations.yml / package.json.
+        run: npm install -g supabase@2.107.0
 
       - name: Start Supabase
         run: supabase start
