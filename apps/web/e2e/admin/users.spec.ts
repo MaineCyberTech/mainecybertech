@@ -27,7 +27,7 @@ test.describe("admin users list", () => {
     if (await visibleWithin(userLink)) {
       await clickOrGoto(page, userLink);
       await expect(page).toHaveURL(/\/admin\/users/);
-      await expect(page.getByRole("heading")).toBeVisible();
+      await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
     }
   });
 });
