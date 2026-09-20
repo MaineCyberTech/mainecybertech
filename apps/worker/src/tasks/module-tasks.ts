@@ -509,7 +509,7 @@ export const vendorContractRenewalCheck: TaskHandler = async (_payload): Promise
     const { data: contracts, error: fetchError } = await supabase
       .from("vendor_contracts")
       .select(
-        "id, organization_id, vendor_name, service_name, renewal_date, auto_renews, renewal_notice_days, status",
+        "id, organization_id, vendor_name, service_name, renewal_date, auto_renews, renewal_notice_days, status, owner_user_id",
       )
       .eq("status", "active")
       .lte("renewal_date", sixtyDaysFromNow)
@@ -524,9 +524,44 @@ export const vendorContractRenewalCheck: TaskHandler = async (_payload): Promise
       return { ok: true };
     }
 
+    // Notify the contract owner once per renewal (idempotent per contract).
+    let notified = 0;
+    for (const contract of contracts as Array<{
+      id: string;
+      organization_id: string;
+      vendor_name: string;
+      service_name: string;
+      renewal_date: string | null;
+      owner_user_id: string | null;
+    }>) {
+      if (!contract.owner_user_id) continue;
+
+      const { data: existing } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("user_id", contract.owner_user_id)
+        .eq("module", "vendor-contracts")
+        .eq("module_id", contract.id)
+        .eq("action", "renewal-due")
+        .maybeSingle();
+      if (existing) continue;
+
+      await supabase.from("notifications").insert({
+        user_id: contract.owner_user_id,
+        organization_id: contract.organization_id,
+        title: "Vendor contract renewal due",
+        body: `${contract.vendor_name} / ${contract.service_name} renews on ${contract.renewal_date ?? "an upcoming date"}.`,
+        module: "vendor-contracts",
+        module_id: contract.id,
+        action: "renewal-due",
+      });
+      notified++;
+    }
+
     logger.info(
       {
         count: contracts.length,
+        notified,
         upcoming: (contracts as Array<{ vendor_name: string; service_name: string }>).map(
           (c) => `${c.vendor_name}/${c.service_name}`,
         ),

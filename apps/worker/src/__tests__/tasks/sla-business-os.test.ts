@@ -68,6 +68,7 @@ import {
   businessOsSnapshot,
   automationRunCheck,
   approvalOverdueCheck,
+  vendorContractRenewalCheck,
 } from "../../tasks/module-tasks";
 
 describe("slaLogCheck", () => {
@@ -179,6 +180,49 @@ describe("approvalOverdueCheck", () => {
     expect(result).toEqual({ ok: true });
     expect(currentChain.insert).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: "user-9", module: "approvals", action: "overdue" }),
+    );
+  });
+});
+
+describe("vendorContractRenewalCheck", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    currentChain = createThenableChain({ data: [], error: null });
+  });
+
+  it("returns { ok: true } when there are no upcoming renewals", async () => {
+    const result = await vendorContractRenewalCheck({});
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("returns { ok: false } when the contract fetch fails", async () => {
+    currentChain._setResult({ data: null, error: { message: "Fetch failed" } });
+    const result = await vendorContractRenewalCheck({});
+    expect(result.ok).toBe(false);
+  });
+
+  it("notifies the contract owner about an upcoming renewal", async () => {
+    currentChain._setResult({
+      data: [
+        {
+          id: "vc-1",
+          organization_id: "org-1",
+          vendor_name: "Acme",
+          service_name: "Backup",
+          renewal_date: "2026-10-01",
+          owner_user_id: "user-5",
+        },
+      ],
+      error: null,
+    });
+    const result = await vendorContractRenewalCheck({});
+    expect(result).toEqual({ ok: true });
+    expect(currentChain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user-5",
+        module: "vendor-contracts",
+        action: "renewal-due",
+      }),
     );
   });
 });
