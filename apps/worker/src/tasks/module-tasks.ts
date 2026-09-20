@@ -1452,7 +1452,6 @@ export const slaLogCheck: TaskHandler = async (_payload): Promise<TaskResult> =>
 export const automationRunCheck: TaskHandler = async (_payload): Promise<TaskResult> => {
   try {
     const supabase = getSupabaseAdmin();
-    const now = new Date().toISOString();
 
     const { data: workflows, error: fetchError } = await supabase
       .from("automation_workflows")
@@ -1469,7 +1468,12 @@ export const automationRunCheck: TaskHandler = async (_payload): Promise<TaskRes
     }
 
     const scheduled = (
-      workflows as Array<{ id: string; trigger_type: string; name: string }>
+      workflows as Array<{
+        id: string;
+        organization_id: string;
+        trigger_type: string;
+        name: string;
+      }>
     ).filter((w) => w.trigger_type !== "manual");
 
     if (scheduled.length === 0) {
@@ -1477,22 +1481,53 @@ export const automationRunCheck: TaskHandler = async (_payload): Promise<TaskRes
       return { ok: true };
     }
 
+    // These workflows are executed by an operator (the catalog has no runner),
+    // so surface them as due and notify the org admins rather than claiming
+    // they ran.
     const ids = scheduled.map((w) => w.id);
     const { error: updateError } = await supabase
       .from("automation_workflows")
-      .update({
-        last_run_at: now,
-        last_run_status: "completed",
-      })
+      .update({ last_run_status: "due" })
       .in("id", ids);
 
     if (updateError) {
       return { ok: false, error: `Failed to update automation_workflows: ${updateError.message}` };
     }
 
+    const orgIds = [...new Set(scheduled.map((w) => w.organization_id))];
+    const adminsByOrg = await orgAdminIds(supabase, orgIds);
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    let notified = 0;
+    for (const orgId of orgIds) {
+      const dueNames = scheduled.filter((w) => w.organization_id === orgId).map((w) => w.name);
+      for (const userId of adminsByOrg.get(orgId) ?? []) {
+        const { data: recent } = await supabase
+          .from("notifications")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("module", "automation")
+          .eq("module_id", orgId)
+          .eq("action", "workflow-due")
+          .gte("created_at", weekAgo)
+          .maybeSingle();
+        if (recent) continue;
+
+        await supabase.from("notifications").insert({
+          user_id: userId,
+          organization_id: orgId,
+          title: "Scheduled automation due",
+          body: `${dueNames.length} scheduled workflow(s) are due to run: ${dueNames.slice(0, 3).join(", ")}${dueNames.length > 3 ? "…" : ""}.`,
+          module: "automation",
+          module_id: orgId,
+          action: "workflow-due",
+        });
+        notified++;
+      }
+    }
+
     logger.info(
-      { count: scheduled.length, names: scheduled.map((w) => w.name) },
-      "automation-run-check: executed scheduled workflows",
+      { count: scheduled.length, notified, names: scheduled.map((w) => w.name) },
+      "automation-run-check: scheduled workflows flagged as due",
     );
     return { ok: true };
   } catch (error) {
