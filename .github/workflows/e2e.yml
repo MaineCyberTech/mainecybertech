@@ -67,7 +67,19 @@ jobs:
         run: npm install -g supabase@2.107.0
 
       - name: Start Supabase
-        run: supabase start
+        # `supabase start` pulls ~13 images from Docker Hub; the shared runner
+        # intermittently hits "toomanyrequests: Rate exceeded", which is
+        # transient, so retry with backoff before failing the job.
+        run: |
+          for attempt in 1 2 3; do
+            if supabase start; then
+              exit 0
+            fi
+            echo "supabase start failed (attempt ${attempt}/3) - retrying in 20s"
+            sleep 20
+          done
+          echo "supabase start failed after 3 attempts"
+          exit 1
         env:
           SUPABASE_DB_HOST: localhost
           SUPABASE_DB_PORT: 5432
