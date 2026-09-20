@@ -1,5 +1,6 @@
 import { logger } from "../logger";
 import { env } from "../env";
+import { sendEmail } from "../email";
 import { getSupabaseAdmin } from "../services/supabase";
 import type { TablesInsert } from "@mct/sdk/database.types";
 import { assertSafeUrl } from "../lib/ssrf-guard";
@@ -592,30 +593,72 @@ export const phishingCampaignSend: TaskHandler = async (_payload): Promise<TaskR
 
     const { data: campaigns, error: fetchError } = await supabase
       .from("phishing_campaigns")
-      .select("id")
-      .eq("status", "active")
-      .lt("launched_at", sevenDaysAgo);
+      .select("id, campaign_name, organization_id, launched_at")
+      .eq("status", "active");
 
     if (fetchError) {
       return { ok: false, error: `Failed to fetch phishing_campaigns: ${fetchError.message}` };
     }
 
     if (!campaigns || campaigns.length === 0) {
-      logger.info("phishing-campaign-send: no active campaigns to complete");
+      logger.info("phishing-campaign-send: no active campaigns");
       return { ok: true };
     }
 
-    const ids = (campaigns as Array<{ id: string }>).map((c) => c.id);
-    const { error: updateError } = await supabase
-      .from("phishing_campaigns")
-      .update({ status: "completed" })
-      .in("id", ids);
+    // Send the simulation to pending targets of launched campaigns.
+    let sent = 0;
+    const toComplete: string[] = [];
+    for (const campaign of campaigns as Array<{
+      id: string;
+      campaign_name: string;
+      launched_at: string | null;
+    }>) {
+      if (!campaign.launched_at) continue;
 
-    if (updateError) {
-      return { ok: false, error: `Failed to update phishing_campaigns: ${updateError.message}` };
+      const { data: targets } = await supabase
+        .from("phishing_targets")
+        .select("id, email, name")
+        .eq("campaign_id", campaign.id)
+        .eq("status", "pending")
+        .limit(200);
+
+      for (const target of (targets ?? []) as Array<{
+        id: string;
+        email: string;
+        name: string | null;
+      }>) {
+        const delivered = await sendEmail({
+          to: target.email,
+          subject: `Security awareness: ${campaign.campaign_name}`,
+          text: `Hello ${target.name ?? "there"},\n\nThis is an internal security-awareness simulation run by your IT provider. No action is required.\n\nIf you receive a real message like this, verify the sender before clicking any links.`,
+          html: `<p>Hello ${target.name ?? "there"},</p><p>This is an internal security-awareness simulation run by your IT provider. No action is required.</p><p>If you receive a real message like this, verify the sender before clicking any links.</p>`,
+        });
+        if (!delivered) continue;
+
+        await supabase
+          .from("phishing_targets")
+          .update({ status: "sent", sent_at: new Date().toISOString() })
+          .eq("id", target.id);
+        sent++;
+      }
+
+      if (campaign.launched_at < sevenDaysAgo) toComplete.push(campaign.id);
     }
 
-    logger.info({ count: campaigns.length }, "phishing-campaign-send: completed");
+    if (toComplete.length > 0) {
+      const { error: updateError } = await supabase
+        .from("phishing_campaigns")
+        .update({ status: "completed" })
+        .in("id", toComplete);
+      if (updateError) {
+        return { ok: false, error: `Failed to update phishing_campaigns: ${updateError.message}` };
+      }
+    }
+
+    logger.info(
+      { campaigns: campaigns.length, sent, completed: toComplete.length },
+      "phishing-campaign-send: completed",
+    );
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

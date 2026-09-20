@@ -493,6 +493,82 @@ router.get("/phishing/:id/results", async (req, res, next) => {
   }
 });
 
+// Phishing simulation targets (module 37): the recipient list the worker sends to.
+router.get("/phishing/:id/targets", async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "edu-automation", "read");
+    const { data, error } = await supabase
+      .from("phishing_targets")
+      .select("*")
+      .eq("campaign_id", String(req.params.id))
+      .eq("organization_id", req.query.organization_id as string)
+      .order("created_at", { ascending: true });
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success({ items: data ?? [] }));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/phishing/:id/targets", async (req, res, next) => {
+  try {
+    const parsed = z
+      .object({ email: z.string().email(), name: z.string().max(200).optional().nullable() })
+      .parse(req.body);
+    const supabase = getScopedClient(req, "edu-automation", "write");
+    const organizationId = req.query.organization_id as string;
+
+    const { data: campaign, error: campaignError } = await supabase
+      .from("phishing_campaigns")
+      .select("id")
+      .eq("id", String(req.params.id))
+      .eq("organization_id", organizationId)
+      .single();
+    if (campaignError || !campaign) throw new AppError("NOT_FOUND", "Campaign not found", 404);
+
+    const { data, error } = await supabase
+      .from("phishing_targets")
+      .insert({
+        campaign_id: String(req.params.id),
+        organization_id: organizationId,
+        email: parsed.email,
+        name: parsed.name ?? null,
+      } as never)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    const { count } = await supabase
+      .from("phishing_targets")
+      .select("*", { count: "exact", head: true })
+      .eq("campaign_id", String(req.params.id));
+    await supabase
+      .from("phishing_campaigns")
+      .update({ target_count: count ?? 0 })
+      .eq("id", String(req.params.id));
+
+    res.status(201).json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete("/phishing/:id/targets/:targetId", async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "edu-automation", "write");
+    const { error } = await supabase
+      .from("phishing_targets")
+      .delete()
+      .eq("id", String(req.params.targetId))
+      .eq("campaign_id", String(req.params.id))
+      .eq("organization_id", req.query.organization_id as string);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+});
+
 const DANGEROUS_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /\binvoke-expression\b|\biex\b/gi, label: "Invoke-Expression / iex" },
   { pattern: /remove-item\b.*-recurse.*-force/gi, label: "Remove-Item -Recurse -Force" },

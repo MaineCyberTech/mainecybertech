@@ -3617,6 +3617,41 @@ export type Database = {
         Relationships: [
           { foreignKeyName: "phishing_campaigns_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
+      };      phishing_targets: {
+        Row: {
+          campaign_id: string;
+          created_at: string;
+          email: string;
+          id: string;
+          name: string | null;
+          organization_id: string;
+          sent_at: string | null;
+          status: string;
+        };
+        Insert: {
+          campaign_id: string;
+          email: string;
+          organization_id: string;
+          created_at?: string | null;
+          id?: string | null;
+          name?: string | null;
+          sent_at?: string | null;
+          status?: string | null;
+        };
+        Update: {
+          campaign_id?: string | null;
+          created_at?: string | null;
+          email?: string | null;
+          id?: string | null;
+          name?: string | null;
+          organization_id?: string | null;
+          sent_at?: string | null;
+          status?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "phishing_targets_campaign_id_fkey", columns: ["campaign_id"], isOneToOne: false, referencedRelation: "phishing_campaigns", referencedColumns: ["id"] },
+          { foreignKeyName: "phishing_targets_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
       };      port_maps: {
         Row: {
           connected_device: string | null;

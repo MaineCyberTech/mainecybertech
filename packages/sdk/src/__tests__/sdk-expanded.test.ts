@@ -1172,5 +1172,13 @@ describe("SDK modules — expanded coverage", () => {
       expect(url).toContain("/api/v1/business-os/snapshots");
       expect(url).toContain("limit=7");
     });
+
+    it("phishing.createTarget posts to the targets endpoint", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "t1" }));
+      await client.eduAutomation.phishing.createTarget("c1", "org-1", { email: "a@b.com" });
+      const url = String(mockFetch.mock.calls[0][0]);
+      expect(url).toContain("/api/v1/edu-automation/phishing/c1/targets");
+      expect(url).toContain("organization_id=org-1");
+    });
   });
 });

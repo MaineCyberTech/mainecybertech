@@ -241,6 +241,28 @@ describe("Edu Automation API", () => {
     expect(payload.generated_content).toContain("Updated the VPN client.");
   });
 
+  it("lists phishing targets", async () => {
+    const s = ma();
+    s.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+    const r = await request(app)
+      .get(`/api/v1/edu-automation/phishing/c-1/targets?organization_id=${org}`)
+      .set("Authorization", auth);
+    expect(r.status).toBe(200);
+    expect(r.body.data.items).toEqual([]);
+  });
+
+  it("adds a phishing target", async () => {
+    const s = ma();
+    s.from.mockReturnValue(
+      createMockBuilder({ data: { id: "t-1", email: "a@b.com" }, error: null }),
+    );
+    const r = await request(app)
+      .post(`/api/v1/edu-automation/phishing/c-1/targets?organization_id=${org}`)
+      .set("Authorization", auth)
+      .send({ email: "a@b.com" });
+    expect(r.status).toBe(201);
+  });
+
   it("generates an AI policy draft from its fields", async () => {
     const s = ma();
     const builder = createMockBuilder({

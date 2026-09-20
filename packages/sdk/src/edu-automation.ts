@@ -74,6 +74,23 @@ export class EduAutomationApi {
     remove: (id: string) => this.c.delete(`/api/v1/edu-automation/phishing/${id}`),
     launch: (id: string) => this.c.post(`/api/v1/edu-automation/phishing/${id}/launch`),
     results: (id: string) => this.c.get(`/api/v1/edu-automation/phishing/${id}/results`),
+    listTargets: (id: string, organizationId: string) =>
+      this.c.get(`/api/v1/edu-automation/phishing/${id}/targets`, {
+        organization_id: organizationId,
+      }),
+    createTarget: (
+      id: string,
+      organizationId: string,
+      d: { email: string; name?: string | null },
+    ) =>
+      this.c.post(
+        `/api/v1/edu-automation/phishing/${id}/targets?organization_id=${organizationId}`,
+        d,
+      ),
+    removeTarget: (id: string, targetId: string, organizationId: string) =>
+      this.c.delete(
+        `/api/v1/edu-automation/phishing/${id}/targets/${targetId}?organization_id=${organizationId}`,
+      ),
   };
   scorecards = {
     list: (p?: Record<string, string | number | undefined>) =>

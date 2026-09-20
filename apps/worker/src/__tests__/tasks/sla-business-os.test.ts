@@ -74,6 +74,7 @@ import {
   checkDomainDns,
   saasAuditScan,
   m365HardeningScan,
+  phishingCampaignSend,
 } from "../../tasks/module-tasks";
 
 describe("slaLogCheck", () => {
@@ -399,5 +400,22 @@ describe("m365HardeningScan", () => {
     expect(currentChain.update).toHaveBeenCalledWith(
       expect.objectContaining({ last_assessment_at: expect.any(String) }),
     );
+  });
+});
+
+describe("phishingCampaignSend", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    currentChain = createThenableChain({ data: [], error: null });
+  });
+
+  it("returns { ok: true } when there are no active campaigns", async () => {
+    expect(await phishingCampaignSend({})).toEqual({ ok: true });
+  });
+
+  it("returns { ok: false } when the campaign fetch fails", async () => {
+    currentChain._setResult({ data: null, error: { message: "Fetch failed" } });
+    const result = await phishingCampaignSend({});
+    expect(result.ok).toBe(false);
   });
 });
