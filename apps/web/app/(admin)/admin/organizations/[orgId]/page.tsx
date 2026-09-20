@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
@@ -29,7 +30,10 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
 
   let detail: OrganizationDetail;
   try {
-    detail = await api.organizations.getDetail(orgId);
+    // The SDK retries 429/502/503/504 but not 500; a transient 500 under
+    // Supabase contention would otherwise blank the page behind the
+    // "Organization not found." fallback.
+    detail = await withRetry(() => api.organizations.getDetail(orgId));
   } catch {
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
