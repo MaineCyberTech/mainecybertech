@@ -30,9 +30,10 @@ export default async function PortalRunbooksPage() {
       <p className="text-sm text-slate-400">{items.length} runbooks for your organization.</p>
       <div className="space-y-3">
         {items.map((item) => (
-          <div
+          <Link
             key={String(item.id)}
-            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+            href={`/portal/runbooks/${String(item.id)}`}
+            className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition-colors hover:border-emerald-600/40 hover:bg-cyber-base/80"
           >
             <p className="font-medium text-slate-50">{String(item.title)}</p>
             {item.category ? (
@@ -42,7 +43,7 @@ export default async function PortalRunbooksPage() {
             <p className="mt-1 text-xs text-slate-400">
               Created: {new Date(String(item.created_at)).toISOString().slice(0, 10)}
             </p>
-          </div>
+          </Link>
         ))}
         {items.length === 0 && <p className="text-sm text-slate-400">No runbooks found.</p>}
       </div>
