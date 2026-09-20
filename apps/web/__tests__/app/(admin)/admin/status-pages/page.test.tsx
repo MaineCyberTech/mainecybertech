@@ -6,7 +6,11 @@ let mocks: ReturnType<typeof setupAdminPageMocks>;
 const mockStatusPageComponentsList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    statusPage: { components: { list: mockStatusPageComponentsList } },
+    statusPage: {
+      components: { list: mockStatusPageComponentsList },
+      incidents: { list: jest.fn().mockResolvedValue({ items: [] }) },
+      maintenance: { list: jest.fn().mockResolvedValue({ items: [] }) },
+    },
   }),
 }));
 

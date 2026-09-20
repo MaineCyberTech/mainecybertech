@@ -6,7 +6,11 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
-import { createStatusComponent } from "@/lib/module-actions";
+import {
+  createStatusComponent,
+  createStatusIncident,
+  createStatusMaintenance,
+} from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status Pages - Admin - Maine CyberTech" };
 
@@ -38,12 +42,38 @@ export default async function StatusPagesPage() {
     status: string;
     created_at: string;
   }>;
+  let incidents = [] as Array<{
+    id: string;
+    title: string;
+    severity: string;
+    status: string;
+    started_at: string;
+  }>;
+  let maintenance = [] as Array<{
+    id: string;
+    title: string;
+    status: string;
+    scheduled_start: string;
+    scheduled_end: string;
+  }>;
 
   try {
     const r = (await api.statusPage.components.list({})) as any;
     items = r.items as typeof items;
   } catch (e) {
     console.error("Status Pages: failed to load data", e);
+  }
+  try {
+    const r = (await api.statusPage.incidents.list({})) as any;
+    incidents = r.items as typeof incidents;
+  } catch (e) {
+    console.error("Status Pages: failed to load incidents", e);
+  }
+  try {
+    const r = (await api.statusPage.maintenance.list({})) as any;
+    maintenance = r.items as typeof maintenance;
+  } catch (e) {
+    console.error("Status Pages: failed to load maintenance", e);
   }
 
   return (
@@ -56,22 +86,56 @@ export default async function StatusPagesPage() {
       description="Manage public status components, active incidents, and scheduled maintenance."
       actions={null}
     >
-      <CrudForm
-        fields={[
-          { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
-          { key: "name", label: "Name", required: true },
-          { key: "description", label: "Description" },
-          { key: "componentType", label: "Type" },
-          {
-            key: "status",
-            label: "Status",
-            type: "select",
-            options: ["operational", "degraded", "partial_outage", "major_outage", "maintenance"],
-          },
-        ]}
-        title="New Component"
-        action={createStatusComponent}
-      />
+      <div className="flex flex-wrap gap-3">
+        <CrudForm
+          fields={[
+            { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+            { key: "name", label: "Name", required: true },
+            { key: "description", label: "Description" },
+            { key: "componentType", label: "Type" },
+            {
+              key: "status",
+              label: "Status",
+              type: "select",
+              options: ["operational", "degraded", "partial_outage", "major_outage", "maintenance"],
+            },
+          ]}
+          title="New Component"
+          action={createStatusComponent}
+        />
+        <CrudForm
+          fields={[
+            { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+            { key: "title", label: "Title", required: true },
+            { key: "description", label: "Description", type: "textarea" },
+            {
+              key: "severity",
+              label: "Severity",
+              type: "select",
+              options: ["minor", "major", "critical", "maintenance"],
+            },
+            {
+              key: "status",
+              label: "Status",
+              type: "select",
+              options: ["investigating", "identified", "monitoring", "resolved"],
+            },
+          ]}
+          title="New Incident"
+          action={createStatusIncident}
+        />
+        <CrudForm
+          fields={[
+            { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
+            { key: "title", label: "Title", required: true },
+            { key: "description", label: "Description", type: "textarea" },
+            { key: "scheduledStart", label: "Starts", type: "date", required: true },
+            { key: "scheduledEnd", label: "Ends", type: "date", required: true },
+          ]}
+          title="New Maintenance"
+          action={createStatusMaintenance}
+        />
+      </div>
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Components</h2>
         <div className="mt-6 space-y-3">
@@ -108,6 +172,54 @@ export default async function StatusPagesPage() {
               actionHref="/admin/status-pages"
               actionLabel="Refresh"
             />
+          )}
+        </div>
+      </section>
+
+      <section className="cyber-panel">
+        <h2 className="cyber-heading text-lg">Active Incidents</h2>
+        <div className="mt-6 space-y-3">
+          {incidents.length > 0 ? (
+            incidents.map((inc) => (
+              <div key={inc.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-slate-50">{inc.title}</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {inc.severity} &bull; started{" "}
+                      {new Date(inc.started_at).toISOString().slice(0, 16).replace("T", " ")} UTC
+                    </p>
+                  </div>
+                  <ComponentStatusPill status={inc.status} />
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-slate-400">No incidents recorded.</p>
+          )}
+        </div>
+      </section>
+
+      <section className="cyber-panel">
+        <h2 className="cyber-heading text-lg">Scheduled Maintenance</h2>
+        <div className="mt-6 space-y-3">
+          {maintenance.length > 0 ? (
+            maintenance.map((m) => (
+              <div key={m.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-slate-50">{m.title}</p>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {new Date(m.scheduled_start).toISOString().slice(0, 16).replace("T", " ")} →{" "}
+                      {new Date(m.scheduled_end).toISOString().slice(0, 16).replace("T", " ")} UTC
+                    </p>
+                  </div>
+                  <ComponentStatusPill status={m.status} />
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-slate-400">No maintenance notices scheduled.</p>
           )}
         </div>
       </section>

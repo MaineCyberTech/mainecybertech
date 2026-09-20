@@ -1566,6 +1566,42 @@ export async function createStatusComponent(formData: FormData) {
   }
 }
 
+export async function createStatusIncident(formData: FormData) {
+  const api = getApiClient();
+  try {
+    await api.statusPage.incidents.create({
+      organizationId: String(formData.get("organizationId") || ""),
+      title: String(formData.get("title") || ""),
+      description: String(formData.get("description") || ""),
+      severity: String(formData.get("severity") || "minor"),
+      status: String(formData.get("status") || "investigating"),
+    });
+    revalidatePath("/admin/status-pages");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+export async function createStatusMaintenance(formData: FormData) {
+  const api = getApiClient();
+  try {
+    const start = String(formData.get("scheduledStart") || "");
+    const end = String(formData.get("scheduledEnd") || "");
+    await api.statusPage.maintenance.create({
+      organizationId: String(formData.get("organizationId") || ""),
+      title: String(formData.get("title") || ""),
+      description: String(formData.get("description") || ""),
+      scheduledStart: start ? new Date(start).toISOString() : "",
+      scheduledEnd: end ? new Date(end).toISOString() : "",
+    });
+    revalidatePath("/admin/status-pages");
+    return { ok: true };
+  } catch (e: unknown) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
 export async function createUptimeCheck(formData: FormData) {
   const api = getApiClient();
   try {
