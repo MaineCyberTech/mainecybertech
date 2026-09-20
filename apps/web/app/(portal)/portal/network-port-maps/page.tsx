@@ -2,7 +2,6 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
-import StatusPill from "@/components/StatusPill";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Network Port Maps - Portal - Maine CyberTech" };
@@ -36,18 +35,26 @@ export default async function PortalNetworkPortMapsPage() {
             className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
           >
             <div className="flex items-center justify-between">
-              <p className="font-medium text-slate-50">{String(a.name || a.device || "")}</p>
-              <StatusPill status={String(a.status || "unknown")} />
+              <p className="font-medium text-slate-50">
+                {String(a.switch_name || "Switch")}
+                {a.port_number != null ? ` : port ${String(a.port_number)}` : ""}
+              </p>
+              <span className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-slate-300">
+                {String(a.speed || "—")}
+              </span>
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              Ports: {String(a.port_count ?? a.total_ports ?? "N/A")} &bull; Protocol:{" "}
-              {String(a.protocol || "N/A")}
+              {a.vlan_id != null ? `VLAN ${String(a.vlan_id)}` : "No VLAN"}
+              {a.vlan_name ? ` (${String(a.vlan_name)})` : ""} &bull;{" "}
+              {a.poe_enabled ? "PoE" : "No PoE"}
+              {a.uplink ? " • Uplink" : ""}
             </p>
-            {(a.last_scanned as string | null) && (
-              <p className="mt-1 text-xs text-slate-400">
-                Last scanned: {new Date(String(a.last_scanned)).toISOString().slice(0, 10)}
-              </p>
-            )}
+            <p className="mt-1 text-xs text-slate-400">
+              Connected device: {String(a.connected_device || a.device_type || "—")}
+            </p>
+            {a.wall_jack_label ? (
+              <p className="mt-1 text-xs text-slate-400">Wall jack: {String(a.wall_jack_label)}</p>
+            ) : null}
           </div>
         ))}
         {items.length === 0 && (

@@ -58,6 +58,8 @@ export class SecuritySuiteApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<M365HardeningRecord>(`/api/v1/security-suite/m365-hardening/${id}`, d),
     remove: (id: string) => this.client.delete(`/api/v1/security-suite/m365-hardening/${id}`),
+    scan: (id: string) =>
+      this.client.post<M365HardeningRecord>(`/api/v1/security-suite/m365-hardening/${id}/scan`, {}),
   };
 
   incidents = {

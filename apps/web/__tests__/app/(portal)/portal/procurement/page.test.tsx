@@ -73,10 +73,11 @@ describe("ProcurementPage", () => {
       items: [
         {
           id: "1",
-          name: "Server Quote",
-          vendor: "Dell",
-          total_cost: 5000,
-          status: "pending",
+          product: "Server Quote",
+          vendor_name: "Dell",
+          quote_amount: 5000,
+          competitor_quote: 5400,
+          selected: true,
           created_at: "2026-01-01T00:00:00Z",
         },
       ],
@@ -85,5 +86,8 @@ describe("ProcurementPage", () => {
     const element = await Page();
     render(element);
     expect(screen.getByText("Server Quote")).toBeInTheDocument();
+    expect(screen.getByText(/Vendor: Dell/)).toBeInTheDocument();
+    expect(screen.getByText(/\$5,000/)).toBeInTheDocument();
+    expect(screen.getByText(/selected/)).toBeInTheDocument();
   });
 });

@@ -36,35 +36,32 @@ export default async function ProcurementPage() {
             key={String(item.id)}
             className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
           >
-            <p className="font-medium text-slate-50">
-              {String(item.title ?? item.name ?? "Untitled")}
-            </p>
-            {item.description != null && (
-              <p className="mt-1 text-xs text-slate-400">{String(item.description)}</p>
-            )}
+            <p className="font-medium text-slate-50">{String(item.product ?? "Untitled")}</p>
             <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
-              {item.vendor != null && <span>Vendor: {String(item.vendor)}</span>}
-              {item.total_cost != null && (
+              <span>Vendor: {String(item.vendor_name ?? "—")}</span>
+              <span>
+                Quote:{" "}
+                {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+                  Number(item.quote_amount ?? 0),
+                )}
+              </span>
+              {item.competitor_quote != null && (
                 <span>
-                  Total:{" "}
+                  Competitor:{" "}
                   {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-                    Number(item.total_cost),
+                    Number(item.competitor_quote),
                   )}
                 </span>
               )}
-              {item.status != null && (
-                <span
-                  className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                    String(item.status) === "approved"
-                      ? "bg-emerald-500/20 text-emerald-400"
-                      : String(item.status) === "pending"
-                        ? "bg-amber-500/20 text-amber-400"
-                        : "bg-slate-500/20 text-slate-400"
-                  }`}
-                >
-                  {String(item.status)}
-                </span>
-              )}
+              <span
+                className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                  item.selected
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : "bg-slate-500/20 text-slate-400"
+                }`}
+              >
+                {item.selected ? "selected" : "candidate"}
+              </span>
               {item.created_at != null && (
                 <span>Created: {new Date(String(item.created_at)).toISOString().slice(0, 10)}</span>
               )}

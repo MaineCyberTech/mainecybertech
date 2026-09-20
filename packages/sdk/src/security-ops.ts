@@ -57,7 +57,7 @@ export class SecurityOpsApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.client.patch<OffboardingRecord>(`/api/v1/security-ops/offboarding/${id}`, d),
     remove: (id: string) => this.client.delete(`/api/v1/security-ops/offboarding/${id}`),
-    completeStep: (id: string, d: { itemName: string; completed: boolean }) =>
+    completeStep: (id: string, d: { stepName: string; completed: boolean }) =>
       this.client.post<OffboardingRecord>(
         `/api/v1/security-ops/offboarding/${id}/complete-step`,
         d,

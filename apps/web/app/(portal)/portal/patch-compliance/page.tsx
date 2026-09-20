@@ -37,19 +37,24 @@ export default async function PortalPatchCompliancePage() {
           >
             <div className="flex items-center justify-between">
               <p className="font-medium text-slate-50">
-                {String(a.name || a.device_name || a.hostname || "")}
+                {String(a.device_group || "Device group")}
               </p>
-              <StatusPill status={String(a.compliance_status || a.status || "unknown")} />
+              <StatusPill status={String(a.status || "unknown")} />
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              Patches pending: {String(a.patches_pending ?? "N/A")} &bull; Critical:{" "}
-              {String(a.critical_patches ?? "N/A")}
+              Compliance: {a.compliance_pct != null ? `${String(a.compliance_pct)}%` : "N/A"} &bull;
+              Pending: {String(a.pending_patches ?? 0)} &bull; Critical:{" "}
+              {String(a.critical_patches ?? 0)}
             </p>
-            {(a.last_patched as string | null) && (
+            <p className="mt-1 text-xs text-slate-400">
+              Patched {String(a.patched_devices ?? 0)}/{String(a.total_devices ?? 0)} devices
+              {a.exception_count ? ` • ${String(a.exception_count)} exceptions` : ""}
+            </p>
+            {a.last_patch_date ? (
               <p className="mt-1 text-xs text-slate-400">
-                Last patched: {new Date(String(a.last_patched)).toISOString().slice(0, 10)}
+                Last patched: {new Date(String(a.last_patch_date)).toISOString().slice(0, 10)}
               </p>
-            )}
+            ) : null}
           </div>
         ))}
         {items.length === 0 && (

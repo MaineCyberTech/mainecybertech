@@ -1077,4 +1077,52 @@ describe("SDK modules — expanded coverage", () => {
       expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/analytics/summary");
     });
   });
+
+  describe("contract additions", () => {
+    it("m365.scan posts to the scan endpoint", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "m1" }));
+      await client.securitySuite.m365.scan("m1");
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/security-suite/m365-hardening/m1/scan");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+    });
+
+    it("isp.score posts monthlyCost + contractLength", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "i1" }));
+      await client.fieldServices.isp.score("i1", { monthlyCost: 250, contractLength: 12 });
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/field-services/isp/i1/score");
+      const body = String(mockFetch.mock.calls[0][1]?.body);
+      expect(body).toContain("monthlyCost");
+      expect(body).toContain("contractLength");
+    });
+
+    it("unifi.plan posts the sizing inputs", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "u1" }));
+      await client.fieldServices.unifi.plan("u1", {
+        squareFootage: 5000,
+        floors: 2,
+        userCount: 40,
+      });
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/field-services/unifi/u1/plan");
+      expect(String(mockFetch.mock.calls[0][1]?.body)).toContain("squareFootage");
+    });
+
+    it("sopLibrary.frameworkGaps sends organization_id", async () => {
+      mockFetch.mockResolvedValue(mockResponse([]));
+      await client.governance.sopLibrary.frameworkGaps({ organizationId: "org-1" });
+      const url = String(mockFetch.mock.calls[0][0]);
+      expect(url).toContain("/api/v1/governance/sop-library/framework-gaps");
+      expect(url).toContain("organization_id=org-1");
+    });
+
+    it("offboarding.completeStep sends stepName (API contract)", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "o1" }));
+      await client.securityOps.offboarding.completeStep("o1", {
+        stepName: "disable-account",
+        completed: true,
+      });
+      const body = String(mockFetch.mock.calls[0][1]?.body);
+      expect(body).toContain("stepName");
+      expect(body).not.toContain("itemName");
+    });
+  });
 });

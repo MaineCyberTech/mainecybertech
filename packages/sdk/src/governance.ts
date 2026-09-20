@@ -144,5 +144,10 @@ export class GovernanceApi {
         "/api/v1/governance/sop-library/compliance-map",
         qp({ organization_id: params?.organizationId }),
       ),
+    frameworkGaps: (params?: { organizationId: string }) =>
+      this.c.get(
+        "/api/v1/governance/sop-library/framework-gaps",
+        qp({ organization_id: params?.organizationId }),
+      ),
   };
 }

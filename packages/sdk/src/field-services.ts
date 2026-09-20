@@ -16,6 +16,8 @@ export class FieldServicesApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/field-services/isp/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/field-services/isp/${id}`),
+    score: (id: string, d: { monthlyCost: number; contractLength: number }) =>
+      this.c.post<unknown>(`/api/v1/field-services/isp/${id}/score`, d),
   };
   unifi = {
     list: (p?: Record<string, string | number | undefined>) =>
@@ -25,6 +27,8 @@ export class FieldServicesApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/field-services/unifi/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/field-services/unifi/${id}`),
+    plan: (id: string, d: { squareFootage: number; floors: number; userCount: number }) =>
+      this.c.post<unknown>(`/api/v1/field-services/unifi/${id}/plan`, d),
   };
   portMaps = {
     list: (p?: Record<string, string | number | undefined>) =>

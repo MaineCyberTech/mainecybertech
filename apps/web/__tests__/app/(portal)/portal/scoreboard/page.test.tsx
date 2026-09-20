@@ -67,19 +67,19 @@ describe("PortalScoreboardPage", () => {
       items: [
         {
           id: "s1",
-          name: "Q1 2026",
-          status: "assessed",
+          category: "Endpoint Hygiene",
+          badge: "Gold",
           score: 78,
-          category: "Overall",
-          assessed_at: new Date().toISOString(),
+          max_score: 100,
+          last_updated: new Date().toISOString(),
         },
         {
           id: "s2",
-          name: "Q2 2026",
-          status: "pending",
-          score: null,
-          category: "Overall",
-          assessed_at: null,
+          category: "MFA Adoption",
+          badge: null,
+          score: 40,
+          max_score: 100,
+          last_updated: null,
         },
       ],
     });
@@ -88,11 +88,11 @@ describe("PortalScoreboardPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByText("Q1 2026")).toBeInTheDocument();
-    expect(screen.getByText("Q2 2026")).toBeInTheDocument();
-    expect(screen.getByText(/Score: 78%/)).toBeInTheDocument();
-    expect(screen.getByText(/Score: N\/A/)).toBeInTheDocument();
-    expect(screen.getAllByText(/Category: Overall/)).toHaveLength(2);
+    expect(screen.getByText("Endpoint Hygiene")).toBeInTheDocument();
+    expect(screen.getByText("MFA Adoption")).toBeInTheDocument();
+    expect(screen.getByText("Gold")).toBeInTheDocument();
+    expect(screen.getByText(/Score: 78\/100 \(78%\)/)).toBeInTheDocument();
+    expect(screen.getByText(/Score: 40\/100 \(40%\)/)).toBeInTheDocument();
   });
 
   it("shows empty state", async () => {
@@ -105,18 +105,18 @@ describe("PortalScoreboardPage", () => {
     expect(screen.getByText("No scorecards available.")).toBeInTheDocument();
   });
 
-  it("renders status pills", async () => {
+  it("renders a progress bar and mascot-style encouragement", async () => {
     mockScorecardsList.mockResolvedValue({
-      items: [{ id: "s1", name: "Q1 2026", status: "assessed", score: 78, category: "Overall" }],
+      items: [{ id: "s1", category: "Overall", badge: "Gold", score: 95, max_score: 100 }],
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/scoreboard/page");
     const element = await Page();
     render(element);
 
-    const pills = screen.getAllByTestId("status-pill");
-    expect(pills).toHaveLength(1);
-    expect(pills[0]).toHaveTextContent("assessed");
+    const bar = screen.getByRole("progressbar");
+    expect(bar).toHaveAttribute("aria-valuenow", "95");
+    expect(screen.getByText(/cyber champion/i)).toBeInTheDocument();
   });
 
   it("shows access restricted when no org", async () => {

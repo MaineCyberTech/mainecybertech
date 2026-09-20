@@ -67,17 +67,24 @@ describe("PortalPatchCompliancePage", () => {
       items: [
         {
           id: "pc1",
-          device_name: "WORK-LT-001",
-          compliance_status: "compliant",
-          patches_pending: 0,
+          device_group: "Workstations",
+          status: "compliant",
+          compliance_pct: 100,
+          pending_patches: 0,
           critical_patches: 0,
+          patched_devices: 10,
+          total_devices: 10,
         },
         {
           id: "pc2",
-          device_name: "SRV-DB-01",
-          compliance_status: "non-compliant",
-          patches_pending: 12,
+          device_group: "Servers",
+          status: "non-compliant",
+          compliance_pct: 60,
+          pending_patches: 12,
           critical_patches: 3,
+          patched_devices: 6,
+          total_devices: 10,
+          last_patch_date: "2026-01-15T00:00:00Z",
         },
       ],
     });
@@ -86,10 +93,12 @@ describe("PortalPatchCompliancePage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByText("WORK-LT-001")).toBeInTheDocument();
-    expect(screen.getByText("SRV-DB-01")).toBeInTheDocument();
-    expect(screen.getAllByText(/Patches pending:/)).toHaveLength(2);
-    expect(screen.getAllByText(/Critical:/)).toHaveLength(2);
+    expect(screen.getByText("Workstations")).toBeInTheDocument();
+    expect(screen.getByText("Servers")).toBeInTheDocument();
+    expect(screen.getByText(/Compliance: 100%/)).toBeInTheDocument();
+    expect(screen.getByText(/Pending: 12/)).toBeInTheDocument();
+    expect(screen.getByText(/Critical: 3/)).toBeInTheDocument();
+    expect(screen.getByText(/Patched 6\/10 devices/)).toBeInTheDocument();
   });
 
   it("shows empty state", async () => {
@@ -107,8 +116,8 @@ describe("PortalPatchCompliancePage", () => {
       items: [
         {
           id: "pc1",
-          device_name: "WORK-LT-001",
-          compliance_status: "compliant",
+          device_group: "Workstations",
+          status: "compliant",
         },
       ],
     });

@@ -67,19 +67,23 @@ describe("PortalNetworkPortMapsPage", () => {
       items: [
         {
           id: "p1",
-          name: "Core Switch",
-          status: "active",
-          port_count: 48,
-          protocol: "TCP",
-          last_scanned: new Date().toISOString(),
+          switch_name: "Core Switch",
+          port_number: 1,
+          vlan_id: 10,
+          vlan_name: "Management",
+          speed: "1G",
+          poe_enabled: true,
+          uplink: false,
+          connected_device: "Firewall",
         },
         {
           id: "p2",
-          name: "Edge Router",
-          status: "active",
-          port_count: 24,
-          protocol: "UDP",
-          last_scanned: new Date().toISOString(),
+          switch_name: "Edge Switch",
+          port_number: 24,
+          vlan_id: 20,
+          speed: "10G",
+          poe_enabled: false,
+          uplink: true,
         },
       ],
     });
@@ -88,12 +92,11 @@ describe("PortalNetworkPortMapsPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByText("Core Switch")).toBeInTheDocument();
-    expect(screen.getByText("Edge Router")).toBeInTheDocument();
-    expect(screen.getByText(/Ports: 48/)).toBeInTheDocument();
-    expect(screen.getByText(/Ports: 24/)).toBeInTheDocument();
-    expect(screen.getByText(/Protocol: TCP/)).toBeInTheDocument();
-    expect(screen.getByText(/Protocol: UDP/)).toBeInTheDocument();
+    expect(screen.getByText(/Core Switch : port 1/)).toBeInTheDocument();
+    expect(screen.getByText(/Edge Switch : port 24/)).toBeInTheDocument();
+    expect(screen.getByText(/VLAN 10 \(Management\)/)).toBeInTheDocument();
+    expect(screen.getByText(/VLAN 20/)).toBeInTheDocument();
+    expect(screen.getByText(/Connected device: Firewall/)).toBeInTheDocument();
   });
 
   it("shows empty state", async () => {
@@ -106,18 +109,26 @@ describe("PortalNetworkPortMapsPage", () => {
     expect(screen.getByText("No port maps available.")).toBeInTheDocument();
   });
 
-  it("renders status pills", async () => {
+  it("flags PoE and uplink ports", async () => {
     mockPortMapsList.mockResolvedValue({
-      items: [{ id: "p1", name: "Core Switch", status: "active", port_count: 48, protocol: "TCP" }],
+      items: [
+        {
+          id: "p1",
+          switch_name: "Core Switch",
+          port_number: 5,
+          speed: "1G",
+          poe_enabled: true,
+          uplink: true,
+        },
+      ],
     });
 
     const { default: Page } = await import("@/app/(portal)/portal/network-port-maps/page");
     const element = await Page();
     render(element);
 
-    const pills = screen.getAllByTestId("status-pill");
-    expect(pills).toHaveLength(1);
-    expect(pills[0]).toHaveTextContent("active");
+    expect(screen.getByText(/PoE/)).toBeInTheDocument();
+    expect(screen.getByText(/Uplink/)).toBeInTheDocument();
   });
 
   it("shows access restricted when no org", async () => {
