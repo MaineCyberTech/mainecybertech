@@ -2,6 +2,7 @@ import {
   scheduledScans,
   initialScanDelayMs,
   offsetsAreDistinct,
+  isScanConfigured,
   SCAN_INTERVAL_MS,
   SCAN_INTERVAL_6H_MS,
   SCAN_INTERVAL_DAILY_MS,
@@ -27,9 +28,12 @@ describe("schedule-config", () => {
         "qbr-scheduled-generate",
         "retention",
         "orphan-cleanup",
+        "jira-sync",
+        "jsm-sync",
+        "m365-calendar-sync",
       ]),
     );
-    expect(scheduledScans.length).toBe(15);
+    expect(scheduledScans.length).toBe(18);
   });
 
   it("honors the stagger offset in the initial boot delay", () => {
@@ -52,5 +56,33 @@ describe("schedule-config", () => {
     expect(hourly.length).toBeGreaterThan(0);
     expect(sixHourly.length).toBeGreaterThan(0);
     expect(daily.length).toBeGreaterThan(0);
+  });
+
+  describe("isScanConfigured", () => {
+    it("treats a scan without env requirements as configured", () => {
+      expect(isScanConfigured({ name: "x", intervalMs: 1, offsetMin: 0 }, {})).toBe(true);
+    });
+
+    it("skips an integration scan until every required env var is set", () => {
+      const jira = scheduledScans.find((s) => s.name === "jira-sync")!;
+      expect(isScanConfigured(jira, {})).toBe(false);
+      expect(isScanConfigured(jira, { JIRA_BASE_URL: "https://x", JIRA_EMAIL: "a" })).toBe(false);
+      expect(
+        isScanConfigured(jira, {
+          JIRA_BASE_URL: "https://x",
+          JIRA_EMAIL: "a",
+          JIRA_API_TOKEN: "t",
+        }),
+      ).toBe(true);
+    });
+
+    it("gates each integration sync on its own env vars", () => {
+      const gated = scheduledScans.filter((s) => s.requiresEnv?.length);
+      expect(gated.map((s) => s.name).sort()).toEqual([
+        "jira-sync",
+        "jsm-sync",
+        "m365-calendar-sync",
+      ]);
+    });
   });
 });

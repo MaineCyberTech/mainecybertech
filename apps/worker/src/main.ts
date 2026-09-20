@@ -21,7 +21,7 @@ if (env.SENTRY_DSN) {
 import { registerAllTasks } from "./tasks";
 import { enqueueTask } from "./producer";
 import { markShuttingDown } from "./shutdown";
-import { scheduledScans, initialScanDelayMs } from "./schedule-config";
+import { scheduledScans, initialScanDelayMs, isScanConfigured } from "./schedule-config";
 registerAllTasks();
 
 // ============= Uncaught Error Handling =============
@@ -118,6 +118,13 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
   // Schedule the module scan tasks. Each runs on a staggered offset so the
   // scans don't all fire on the same tick.
   for (const scan of scheduledScans) {
+    if (!isScanConfigured(scan, process.env)) {
+      logger.info(
+        { scan: scan.name, requiresEnv: scan.requiresEnv },
+        "Skipping scheduled scan - integration not configured",
+      );
+      continue;
+    }
     const interval = setInterval(() => {
       logger.info(`Running scheduled ${scan.name}`);
       runScheduledTask(scan.name).catch((error) => {
