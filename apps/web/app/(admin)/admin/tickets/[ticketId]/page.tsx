@@ -4,6 +4,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import CommentBody from "@/components/CommentBody";
+import TicketCopilotPanel from "./TicketCopilotPanel";
 import type { Ticket, TicketComment, AuditLog } from "@mct/sdk";
 import {
   InlineStatusDropdown,
@@ -450,6 +451,8 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
           </div>
         </section>
       )}
+
+      <TicketCopilotPanel ticketId={ticketId} organizationId={ticket.organization_id} />
 
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
