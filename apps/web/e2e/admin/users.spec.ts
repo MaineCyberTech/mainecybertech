@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin } from "../fixtures";
 
 test.describe("admin users list", () => {
   test.beforeEach(async ({ page }) => {
@@ -24,7 +24,7 @@ test.describe("admin users list", () => {
 
   test("can navigate to user detail", async ({ page }) => {
     const userLink = page.locator("a[href*='/admin/users/']").first();
-    if (await userLink.isVisible()) {
+    if (await visibleWithin(userLink)) {
       await userLink.click();
       await expect(page).toHaveURL(/\/admin\/users/);
       await expect(page.getByRole("heading")).toBeVisible();
@@ -35,16 +35,18 @@ test.describe("admin users list", () => {
 test.describe("admin user detail", () => {
   test("shows not-found for unknown user", async ({ page }) => {
     await page.goto("/admin/users/does-not-exist");
-    await expect(page.getByText("User not found.", { exact: true }).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("User not found.", { exact: true }).first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("navigates back to users list", async ({ page }) => {
     await page.goto("/admin/users");
     const userLink = page.locator("a[href*='/admin/users/']").first();
-    if (await userLink.isVisible()) {
+    if (await visibleWithin(userLink)) {
       await userLink.click();
       const backLink = page.getByRole("link", { name: /back|users/i });
-      if (await backLink.isVisible()) {
+      if (await visibleWithin(backLink)) {
         await backLink.click();
         await expect(page).toHaveURL(/\/admin\/users$/);
       }

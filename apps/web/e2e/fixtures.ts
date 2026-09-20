@@ -1,4 +1,4 @@
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type Locator, type Page } from "@playwright/test";
 
 export const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
@@ -76,6 +76,24 @@ export async function gotoApp(
   await page.waitForLoadState("domcontentloaded");
   if (shell) {
     await expect(page.locator("header").first()).toBeVisible({ timeout: 20_000 });
+  }
+}
+
+/**
+ * Auto-wait for a locator to become visible, returning whether it did.
+ *
+ * Replaces `if (await locator.isVisible())`, which does not wait: on a
+ * slower render (CI API/Supabase contention) it returns false and the
+ * data-dependent branch is silently skipped, so the test "passes" without
+ * exercising anything. This waits up to `timeoutMs` for the element, which
+ * removes the race while still tolerating genuinely absent seed data.
+ */
+export async function visibleWithin(locator: Locator, timeoutMs = 5_000): Promise<boolean> {
+  try {
+    await locator.waitFor({ state: "visible", timeout: timeoutMs });
+    return true;
+  } catch {
+    return false;
   }
 }
 

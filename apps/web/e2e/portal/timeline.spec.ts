@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin } from "../fixtures";
 
 test.describe("portal timeline page", () => {
   test("renders timeline heading", async ({ page }) => {
@@ -31,7 +31,7 @@ test.describe("portal project task views", () => {
   test("project detail has view toggles", async ({ page }) => {
     await page.goto("/portal/projects");
     const projectLink = page.locator("a[href*='/portal/projects/']").first();
-    if (await projectLink.isVisible()) {
+    if (await visibleWithin(projectLink)) {
       await projectLink.click();
       await expect(
         page.getByRole("button", { name: /list|timeline|calendar/i }).first(),
@@ -45,12 +45,14 @@ test.describe("portal project task views", () => {
   test("can switch to timeline view", async ({ page }) => {
     await page.goto("/portal/projects");
     const projectLink = page.locator("a[href*='/portal/projects/']").first();
-    if (await projectLink.isVisible()) {
+    if (await visibleWithin(projectLink)) {
       await projectLink.click();
       const timelineBtn = page.getByRole("button", { name: /timeline/i });
-      if (await timelineBtn.isVisible()) {
+      if (await visibleWithin(timelineBtn)) {
         await timelineBtn.click();
-        await expect(page.getByText(/tasks with due dates/i).or(page.getByText(/no tasks/i))).toBeVisible();
+        await expect(
+          page.getByText(/tasks with due dates/i).or(page.getByText(/no tasks/i)),
+        ).toBeVisible();
       }
     }
   });
