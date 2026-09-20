@@ -49,9 +49,10 @@ export default async function PortalFindingsPage() {
       </p>
       <div className="space-y-3">
         {items.map((f) => (
-          <div
+          <Link
             key={String(f.id)}
-            className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+            href={`/portal/findings/${String(f.id)}`}
+            className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition-colors hover:border-emerald-600/40 hover:bg-cyber-base/80"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -67,7 +68,7 @@ export default async function PortalFindingsPage() {
               </div>
               <SeverityPill severity={String(f.severity)} />
             </div>
-          </div>
+          </Link>
         ))}
         {items.length === 0 && <p className="text-sm text-slate-400">No findings reported.</p>}
       </div>
