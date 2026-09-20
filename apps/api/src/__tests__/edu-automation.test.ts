@@ -240,4 +240,31 @@ describe("Edu Automation API", () => {
     expect(payload.generated_content).toContain("Reinstalled the VPN client");
     expect(payload.generated_content).toContain("Updated the VPN client.");
   });
+
+  it("generates an AI policy draft from its fields", async () => {
+    const s = ma();
+    const builder = createMockBuilder({
+      data: {
+        id: "ap-1",
+        title: "AI Use Policy",
+        approved_tools: ["Microsoft Copilot"],
+        data_handling_rules: "No client data.",
+        employee_guidance: "Ask first.",
+        status: "draft",
+      },
+      error: null,
+    });
+    s.from.mockReturnValue(builder);
+
+    const r = await request(app)
+      .post("/api/v1/edu-automation/ai-policy/ap-1/generate")
+      .set("Authorization", auth);
+
+    expect(r.status).toBe(200);
+    const payload = (builder.update as jest.Mock).mock.calls[0][0] as { content: string };
+    expect(payload.content).toContain("AI Use Policy");
+    expect(payload.content).toContain("Microsoft Copilot");
+    expect(payload.content).toContain("No client data.");
+    expect(payload.content).toContain("Ask first.");
+  });
 });

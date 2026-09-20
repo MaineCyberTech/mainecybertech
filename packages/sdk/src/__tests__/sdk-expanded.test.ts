@@ -1139,5 +1139,12 @@ describe("SDK modules — expanded coverage", () => {
       await client.governance.risks.reopen("r1");
       expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/governance/risks/r1/reopen");
     });
+
+    it("aiPolicy.generate posts to the generate endpoint", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ id: "ap1", status: "draft" }));
+      await client.eduAutomation.aiPolicy.generate("ap1");
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/edu-automation/ai-policy/ap1/generate");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+    });
   });
 });

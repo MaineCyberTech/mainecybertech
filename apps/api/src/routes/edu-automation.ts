@@ -303,6 +303,69 @@ router.post("/kb-generator/:id/generate", async (req, res, next) => {
     next(err);
   }
 });
+router.post("/ai-policy/:id/generate", async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "edu-automation", "write");
+    const orgId = req.query.organization_id as string;
+    const { data: current, error: fetchError } = await supabase
+      .from("ai_policies")
+      .select("*")
+      .eq("id", String(req.params.id))
+      .eq("organization_id", orgId)
+      .single();
+    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
+
+    const tools = (current.approved_tools as string[] | null) ?? [];
+    const lines = [
+      `# ${current.title || "AI Use Policy"}`,
+      "",
+      "## Purpose",
+      "",
+      "This policy sets out how staff may use artificial-intelligence tools with company and client data.",
+      "",
+      "## Approved tools",
+      "",
+      ...(tools.length ? tools.map((t) => `- ${t}`) : ["- No tools have been approved yet."]),
+      "",
+      "## Data handling rules",
+      "",
+      current.data_handling_rules?.trim() ||
+        "Do not enter confidential, personal, or client data into unapproved AI tools.",
+      "",
+      "## Employee guidance",
+      "",
+      current.employee_guidance?.trim() ||
+        "When in doubt, ask before pasting company or client information into an AI tool.",
+      "",
+      "## Review",
+      "",
+      "- Review approved tools quarterly",
+      "- Report suspected data exposure immediately",
+    ];
+    const content = lines.join("\n");
+
+    const { data, error } = await supabase
+      .from("ai_policies")
+      .update({ content, status: "draft" })
+      .eq("id", String(req.params.id))
+      .eq("organization_id", orgId)
+      .select()
+      .single();
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await logAuditEvent({
+      organizationId: orgId,
+      actorUserId: req.authUser!.userId,
+      action: "ai_policy.generated",
+      entityType: "ai_policies",
+      entityId: String(req.params.id),
+    });
+
+    res.json(success(data));
+  } catch (err) {
+    next(err);
+  }
+});
 router.get("/kb/search", async (req, res, next) => {
   try {
     const q = sanitizeSearchTerm(req.query.q);

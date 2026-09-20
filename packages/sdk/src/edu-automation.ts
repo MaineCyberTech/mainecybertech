@@ -44,6 +44,7 @@ export class EduAutomationApi {
     update: (id: string, d: Record<string, unknown>) =>
       this.c.patch(`/api/v1/edu-automation/ai-policy/${id}`, d),
     remove: (id: string) => this.c.delete(`/api/v1/edu-automation/ai-policy/${id}`),
+    generate: (id: string) => this.c.post(`/api/v1/edu-automation/ai-policy/${id}/generate`, {}),
   };
   kb = {
     list: (p?: Record<string, string | number | undefined>) =>
