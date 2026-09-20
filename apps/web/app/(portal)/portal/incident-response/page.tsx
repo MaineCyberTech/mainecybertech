@@ -32,7 +32,11 @@ export default async function PortalIncidentResponsePage() {
       </p>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((a) => (
-          <div key={a.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+          <Link
+            key={a.id}
+            href={`/portal/incident-response/${a.id}`}
+            className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition-colors hover:border-emerald-600/40 hover:bg-cyber-base/80"
+          >
             <div className="flex items-center justify-between">
               <p className="font-medium text-slate-50">{a.title}</p>
               <StatusPill status={a.status} />
@@ -45,7 +49,7 @@ export default async function PortalIncidentResponsePage() {
                 Detected: {new Date(a.detected_at).toISOString().slice(0, 10)}
               </p>
             )}
-          </div>
+          </Link>
         ))}
         {items.length === 0 && (
           <p className="col-span-2 text-sm text-slate-400">No incidents recorded.</p>
