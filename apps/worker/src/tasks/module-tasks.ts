@@ -346,11 +346,53 @@ export const licenseOptimizerCheck: TaskHandler = async (_payload): Promise<Task
       return sum + monthlyCost;
     }, 0);
 
+    // Notify org admins weekly about reclaimable seats.
+    const savingsByOrg = new Map<string, { count: number; savings: number }>();
+    for (const a of underutilized) {
+      const orgId = String(a.organization_id ?? "");
+      if (!orgId) continue;
+      const entry = savingsByOrg.get(orgId) ?? { count: 0, savings: 0 };
+      entry.count += 1;
+      entry.savings +=
+        (Number(a.cost_per_seat) || 0) * (Number(a.total_seats) - Number(a.used_seats));
+      savingsByOrg.set(orgId, entry);
+    }
+
+    const adminsByOrg = await orgAdminIds(supabase, [...savingsByOrg.keys()]);
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    let notified = 0;
+    for (const [orgId, entry] of savingsByOrg) {
+      for (const userId of adminsByOrg.get(orgId) ?? []) {
+        const { data: recent } = await supabase
+          .from("notifications")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("module", "license-optimizer")
+          .eq("module_id", orgId)
+          .eq("action", "reclaimable-seats")
+          .gte("created_at", weekAgo)
+          .maybeSingle();
+        if (recent) continue;
+
+        await supabase.from("notifications").insert({
+          user_id: userId,
+          organization_id: orgId,
+          title: "Reclaimable license seats",
+          body: `${entry.count} license allocation(s) are under 70% used - about $${Math.round(entry.savings)}/month in unused seats.`,
+          module: "license-optimizer",
+          module_id: orgId,
+          action: "reclaimable-seats",
+        });
+        notified++;
+      }
+    }
+
     logger.info(
       {
         underutilizedCount: underutilized.length,
         totalAllocations: allocations.length,
         potentialMonthlySavings: potentialSavings,
+        notified,
       },
       "license-optimizer-check: completed",
     );
@@ -1099,6 +1141,37 @@ export const endpointSecurityCheck: TaskHandler = async (_payload): Promise<Task
   }
 };
 
+/** Map each organisation to the user ids of its admin/owner members. */
+async function orgAdminIds(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  orgIds: string[],
+): Promise<Map<string, string[]>> {
+  const adminsByOrg = new Map<string, string[]>();
+  if (orgIds.length === 0) return adminsByOrg;
+
+  const { data: memberships } = await supabase
+    .from("memberships")
+    .select("user_id, organization_id, status, roles(key)")
+    .in("organization_id", orgIds);
+
+  const ADMIN_ROLE_HINTS = ["admin", "owner"];
+  for (const m of (memberships ?? []) as Array<{
+    user_id: string;
+    organization_id: string;
+    status: string;
+    roles: unknown;
+  }>) {
+    if (m.status !== "approved" && m.status !== "active") continue;
+    const role = Array.isArray(m.roles) ? m.roles[0] : m.roles;
+    const key = String((role as { key?: string } | null)?.key ?? "");
+    if (!ADMIN_ROLE_HINTS.some((h) => key.includes(h))) continue;
+    const list = adminsByOrg.get(m.organization_id) ?? [];
+    list.push(m.user_id);
+    adminsByOrg.set(m.organization_id, list);
+  }
+  return adminsByOrg;
+}
+
 export const saasAuditScan: TaskHandler = async (_payload): Promise<TaskResult> => {
   try {
     const supabase = getSupabaseAdmin();
@@ -1132,27 +1205,7 @@ export const saasAuditScan: TaskHandler = async (_payload): Promise<TaskResult> 
     const orgIds = [
       ...new Set((audits as Array<{ organization_id: string }>).map((a) => a.organization_id)),
     ];
-    const { data: memberships } = await supabase
-      .from("memberships")
-      .select("user_id, organization_id, status, roles(key)")
-      .in("organization_id", orgIds);
-
-    const ADMIN_ROLE_HINTS = ["admin", "owner"];
-    const adminsByOrg = new Map<string, string[]>();
-    for (const m of (memberships ?? []) as Array<{
-      user_id: string;
-      organization_id: string;
-      status: string;
-      roles: unknown;
-    }>) {
-      if (m.status !== "approved" && m.status !== "active") continue;
-      const role = Array.isArray(m.roles) ? m.roles[0] : m.roles;
-      const key = String((role as { key?: string } | null)?.key ?? "");
-      if (!ADMIN_ROLE_HINTS.some((h) => key.includes(h))) continue;
-      const list = adminsByOrg.get(m.organization_id) ?? [];
-      list.push(m.user_id);
-      adminsByOrg.set(m.organization_id, list);
-    }
+    const adminsByOrg = await orgAdminIds(supabase, orgIds);
 
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     let notified = 0;

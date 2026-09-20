@@ -75,6 +75,7 @@ import {
   saasAuditScan,
   m365HardeningScan,
   phishingCampaignSend,
+  licenseOptimizerCheck,
 } from "../../tasks/module-tasks";
 
 describe("slaLogCheck", () => {
@@ -416,6 +417,23 @@ describe("phishingCampaignSend", () => {
   it("returns { ok: false } when the campaign fetch fails", async () => {
     currentChain._setResult({ data: null, error: { message: "Fetch failed" } });
     const result = await phishingCampaignSend({});
+    expect(result.ok).toBe(false);
+  });
+});
+
+describe("licenseOptimizerCheck", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    currentChain = createThenableChain({ data: [], error: null });
+  });
+
+  it("returns { ok: true } when there are no allocations", async () => {
+    expect(await licenseOptimizerCheck({})).toEqual({ ok: true });
+  });
+
+  it("returns { ok: false } when the allocation fetch fails", async () => {
+    currentChain._setResult({ data: null, error: { message: "Fetch failed" } });
+    const result = await licenseOptimizerCheck({});
     expect(result.ok).toBe(false);
   });
 });
