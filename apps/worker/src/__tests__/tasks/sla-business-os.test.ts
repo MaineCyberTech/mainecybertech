@@ -40,11 +40,13 @@ function createThenableChain(initialResult: unknown) {
     "range",
     "limit",
     "single",
+    "maybeSingle",
   ];
   for (const m of chainedMethods) {
     chain[m] = jest.fn().mockReturnThis();
   }
   chain.single = jest.fn().mockResolvedValue({ data: null, error: null });
+  chain.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
   chain.then = (onFulfilled: (v: unknown) => unknown, onRejected: (e: unknown) => unknown) =>
     Promise.resolve(result).then(onFulfilled, onRejected);
   chain._setResult = (r: unknown) => {
@@ -156,5 +158,27 @@ describe("approvalOverdueCheck", () => {
     currentChain._setResult({ data: null, error: { message: "Fetch failed" } });
     const result = await approvalOverdueCheck({});
     expect(result.ok).toBe(false);
+  });
+
+  it("notifies the assignee for an overdue approval", async () => {
+    currentChain._setResult({
+      data: [
+        {
+          id: "ap-1",
+          organization_id: "org-1",
+          request_subject: "Approve firewall change",
+          due_at: "2020-01-01T00:00:00Z",
+          status: "pending",
+          assigned_to: "user-9",
+          requested_by: "user-1",
+        },
+      ],
+      error: null,
+    });
+    const result = await approvalOverdueCheck({});
+    expect(result).toEqual({ ok: true });
+    expect(currentChain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: "user-9", module: "approvals", action: "overdue" }),
+    );
   });
 });

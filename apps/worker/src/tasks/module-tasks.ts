@@ -958,7 +958,7 @@ export const approvalOverdueCheck: TaskHandler = async (_payload): Promise<TaskR
 
     const { data: approvals, error: fetchError } = await supabase
       .from("approval_requests")
-      .select("id, organization_id, request_subject, due_at, status")
+      .select("id, organization_id, request_subject, due_at, status, assigned_to, requested_by")
       .eq("status", "pending")
       .lt("due_at", now);
 
@@ -971,9 +971,45 @@ export const approvalOverdueCheck: TaskHandler = async (_payload): Promise<TaskR
       return { ok: true };
     }
 
+    // Notify the approver once per overdue approval (idempotent via an
+    // existing notifications row for the same approval + action).
+    let notified = 0;
+    for (const approval of approvals as Array<{
+      id: string;
+      organization_id: string;
+      request_subject: string;
+      assigned_to: string | null;
+      requested_by: string | null;
+    }>) {
+      const recipient = approval.assigned_to ?? approval.requested_by;
+      if (!recipient) continue;
+
+      const { data: existing } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("user_id", recipient)
+        .eq("module", "approvals")
+        .eq("module_id", approval.id)
+        .eq("action", "overdue")
+        .maybeSingle();
+      if (existing) continue;
+
+      await supabase.from("notifications").insert({
+        user_id: recipient,
+        organization_id: approval.organization_id,
+        title: "Approval overdue",
+        body: `"${approval.request_subject}" is past its due date.`,
+        module: "approvals",
+        module_id: approval.id,
+        action: "overdue",
+      });
+      notified++;
+    }
+
     logger.info(
       {
         count: approvals.length,
+        notified,
         overdue: (approvals as Array<{ request_subject: string }>).map((a) => a.request_subject),
       },
       "approval-overdue-check: overdue approvals found",
