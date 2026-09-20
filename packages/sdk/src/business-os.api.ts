@@ -20,4 +20,12 @@ export class BusinessOsApi {
   async orgHealth() {
     return this.client.get<unknown[]>("/api/v1/business-os/org-health");
   }
+
+  async snapshots(params?: { limit?: number }) {
+    const qp: Record<string, string | number | undefined> = {};
+    if (params?.limit) qp.limit = params.limit;
+    return this.client.get<{
+      items: Array<{ id: string; captured_at: string; metrics: Record<string, number> }>;
+    }>("/api/v1/business-os/snapshots", qp);
+  }
 }

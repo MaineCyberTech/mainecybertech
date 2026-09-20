@@ -14,8 +14,6 @@
  */
 import type { Express, Router } from "express";
 
-const PARAM_RE = /:([A-Za-z0-9_]+)/g;
-
 function staticPrefixFromRegexp(regexp: RegExp): string {
   // Express mount regexps look like: /^\/api\/v1\/tickets\/?(?=\/|$)/i
   // Extract the leading static path up to the first capture group or optional.
@@ -30,7 +28,15 @@ interface RawRoute {
   path: string;
 }
 
-function walk(stack: Array<{ regexp?: RegExp; route?: { path?: string; methods?: Record<string, boolean> }; handle?: { stack?: unknown[]; name?: string } }>, prefix: string, out: RawRoute[]) {
+function walk(
+  stack: Array<{
+    regexp?: RegExp;
+    route?: { path?: string; methods?: Record<string, boolean> };
+    handle?: { stack?: unknown[]; name?: string };
+  }>,
+  prefix: string,
+  out: RawRoute[],
+) {
   if (!stack) return;
   for (const layer of stack) {
     if (layer.route && layer.route.path) {
@@ -38,7 +44,10 @@ function walk(stack: Array<{ regexp?: RegExp; route?: { path?: string; methods?:
         (m) => m !== "_all" && m !== "head" && m !== "options",
       );
       for (const method of methods) {
-        out.push({ method: method.toUpperCase(), path: (prefix + layer.route.path).replace(/\/+/g, "/") });
+        out.push({
+          method: method.toUpperCase(),
+          path: (prefix + layer.route.path).replace(/\/+/g, "/"),
+        });
       }
     } else if (layer.handle && Array.isArray((layer.handle as { stack?: unknown[] }).stack)) {
       const subStack = (layer.handle as { stack: Array<{ regexp?: RegExp }> }).stack;
@@ -51,7 +60,13 @@ function walk(stack: Array<{ regexp?: RegExp; route?: { path?: string; methods?:
 
 export function extractRoutes(app: Express | Router): RawRoute[] {
   const out: RawRoute[] = [];
-  const router = (app as unknown as { _router?: { stack: Array<{ regexp?: RegExp; route?: unknown; handle?: { stack?: unknown[] } }> } })._router;
+  const router = (
+    app as unknown as {
+      _router?: {
+        stack: Array<{ regexp?: RegExp; route?: unknown; handle?: { stack?: unknown[] } }>;
+      };
+    }
+  )._router;
   if (!router || !router.stack) return out;
   walk(router.stack as never, "", out);
   // Normalize :param already handled; dedupe

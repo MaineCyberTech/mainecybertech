@@ -1164,5 +1164,13 @@ describe("SDK modules — expanded coverage", () => {
       const body = String(mockFetch.mock.calls[0][1]?.body);
       expect(body).toContain("dashboard");
     });
+
+    it("businessOs.snapshots fetches the snapshot history", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ items: [] }));
+      await client.businessOs.snapshots({ limit: 7 });
+      const url = String(mockFetch.mock.calls[0][0]);
+      expect(url).toContain("/api/v1/business-os/snapshots");
+      expect(url).toContain("limit=7");
+    });
   });
 });

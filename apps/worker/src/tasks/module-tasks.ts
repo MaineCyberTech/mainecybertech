@@ -949,6 +949,18 @@ export const businessOsSnapshot: TaskHandler = async (_payload): Promise<TaskRes
       },
       "business-os-snapshot: computed",
     );
+
+    await supabase.from("business_os_snapshots").insert({
+      captured_at: new Date().toISOString(),
+      metrics: {
+        organizations: (orgs ?? []).length,
+        approvedOrgs: approvedCount,
+        openTickets: openTickets ?? 0,
+        activeProjects: activeProjects ?? 0,
+        pendingApprovals: pendingApprovals ?? 0,
+      } as never,
+    });
+
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

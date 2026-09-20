@@ -63,6 +63,11 @@ export default async function BusinessOsPage() {
     openTickets: number;
     activeProjects: number;
   }>;
+  let snapshots = [] as Array<{
+    id: string;
+    captured_at: string;
+    metrics: Record<string, number>;
+  }>;
 
   try {
     const results = await Promise.allSettled([
@@ -70,6 +75,7 @@ export default async function BusinessOsPage() {
       api.dashboard.approvalsOverdue(),
       api.dashboard.recentActivity({ limit: 10 }),
       api.dashboard.orgHealth(),
+      api.businessOs?.snapshots?.({ limit: 14 }) ?? Promise.resolve({ items: [] }),
     ]);
     if (results[0].status === "fulfilled") summary = results[0].value;
     if (results[1].status === "fulfilled")
@@ -82,6 +88,8 @@ export default async function BusinessOsPage() {
         openTickets: number;
         activeProjects: number;
       }>;
+    if (results[4].status === "fulfilled")
+      snapshots = (results[4].value as { items: typeof snapshots }).items ?? [];
   } catch {
     // Gracefully degrade if business OS API is not yet available
   }
@@ -260,6 +268,37 @@ export default async function BusinessOsPage() {
               title="No organizations yet"
               description="Organizations will appear here when added."
             />
+          )}
+        </div>
+      </section>
+
+      <section className="cyber-panel mt-6">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="cyber-heading text-lg">Snapshot history</h2>
+          <span className="cyber-pill">{snapshots.length} snapshots</span>
+        </div>
+        <div className="mt-6 space-y-2">
+          {snapshots.length > 0 ? (
+            snapshots.map((s) => (
+              <div
+                key={s.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-cyber-base/60 px-4 py-3 text-sm"
+              >
+                <span className="text-slate-300" title={new Date(s.captured_at).toISOString()}>
+                  {rel(s.captured_at)}
+                </span>
+                <span className="flex flex-wrap gap-3 text-xs text-slate-400">
+                  <span>Orgs: {s.metrics.organizations ?? 0}</span>
+                  <span>Open tickets: {s.metrics.openTickets ?? 0}</span>
+                  <span>Active projects: {s.metrics.activeProjects ?? 0}</span>
+                  <span>Pending approvals: {s.metrics.pendingApprovals ?? 0}</span>
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-slate-400">
+              No snapshots yet. The worker records one each day.
+            </p>
           )}
         </div>
       </section>

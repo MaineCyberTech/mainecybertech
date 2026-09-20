@@ -19,7 +19,9 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
 }));
 
 jest.mock("../services/audit", () => ({
@@ -99,6 +101,25 @@ describe("business OS routes", () => {
         approvals: { pending: 0 },
         users: { total: 0 },
       });
+    });
+  });
+
+  describe("GET /snapshots", () => {
+    it("returns the snapshot history", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockReturnValue(
+        createMockBuilder({
+          data: [{ id: "s1", captured_at: "2026-09-01T00:00:00Z", metrics: { openTickets: 3 } }],
+          error: null,
+        }),
+      );
+
+      const res = await request(app)
+        .get("/api/v1/business-os/snapshots")
+        .set("Authorization", "Bearer token");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.items[0].metrics.openTickets).toBe(3);
     });
   });
 });

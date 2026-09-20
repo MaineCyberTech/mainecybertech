@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { responseCacheNoRenew } from "../middleware/cache";

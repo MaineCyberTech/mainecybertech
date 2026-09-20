@@ -190,4 +190,20 @@ router.get("/org-health", responseCache(60), async (req, res, next) => {
   }
 });
 
+router.get("/snapshots", responseCache(60), async (req, res, next) => {
+  try {
+    const limit = Math.min(90, Math.max(1, queryInt(req.query.limit, 30)));
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("business_os_snapshots")
+      .select("id, captured_at, metrics")
+      .order("captured_at", { ascending: false })
+      .limit(limit);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success({ items: data ?? [] }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

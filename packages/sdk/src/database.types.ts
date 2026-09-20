@@ -687,6 +687,24 @@ export type Database = {
         Relationships: [
           { foreignKeyName: "budget_roadmaps_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
+      };      business_os_snapshots: {
+        Row: {
+          captured_at: string;
+          id: string;
+          metrics: Json;
+        };
+        Insert: {
+          captured_at?: string | null;
+          id?: string | null;
+          metrics?: Json | null;
+        };
+        Update: {
+          captured_at?: string | null;
+          id?: string | null;
+          metrics?: Json | null;
+        };
+        Relationships: [
+        ];
       };      cab_agenda_items: {
         Row: {
           change_request_id: string;

@@ -119,6 +119,9 @@ describe("businessOsSnapshot", () => {
   it("returns { ok: true } when aggregates computed", async () => {
     const result = await businessOsSnapshot({});
     expect(result.ok).toBe(true);
+    expect(currentChain.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ metrics: expect.any(Object) }),
+    );
   });
 
   it("returns { ok: false } when organization fetch fails", async () => {
