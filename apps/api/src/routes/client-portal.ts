@@ -1,8 +1,10 @@
 import { Router } from "express";
+import { z } from "zod";
 import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
+import { requireAdmin } from "../middleware/admin";
 import { responseCacheNoRenew } from "../middleware/cache";
 
 const router: ReturnType<typeof Router> = Router();
@@ -51,9 +53,7 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
 
     const { data: memberships, error: membershipError } = await supabase
       .from("memberships")
-      .select(
-        "id, organization_id, role_id, status, organizations(id, name), roles(id, key, name)",
-      )
+      .select("id, organization_id, role_id, status, organizations(id, name), roles(id, key, name)")
       .eq("user_id", userId);
     if (membershipError) throw new AppError("DB_ERROR", membershipError.message, 500);
 
@@ -78,11 +78,26 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
       });
     }
 
+    // Per-tenant module provisioning overrides the subscription-derived set.
+    const { data: entitlements } = await supabase
+      .from("client_portal_entitlements")
+      .select("organization_id, module_key, enabled")
+      .in("organization_id", orgIds.length ? orgIds : ["__none__"]);
+
+    const entitlementsByOrg = new Map<string, string[]>();
+    for (const e of entitlements ?? []) {
+      if (!e.enabled) continue;
+      const list = entitlementsByOrg.get(e.organization_id) ?? [];
+      list.push(e.module_key);
+      entitlementsByOrg.set(e.organization_id, list);
+    }
+
     const membershipViews = rows.map((m) => {
       const org = Array.isArray(m.organizations) ? m.organizations[0] : m.organizations;
       const role = Array.isArray(m.roles) ? m.roles[0] : m.roles;
       const sub = subByOrg.get(m.organization_id) ?? null;
       const isActive = sub?.status === "active" || sub?.status === "trialing";
+      const provisioned = entitlementsByOrg.get(m.organization_id);
       return {
         organizationId: m.organization_id,
         organizationName: org?.name ?? null,
@@ -96,7 +111,7 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
               currentPeriodEnd: sub.currentPeriodEnd,
             }
           : null,
-        enabledModules: deriveEnabledModules(isActive),
+        enabledModules: provisioned?.length ? provisioned : deriveEnabledModules(isActive),
       };
     });
 
@@ -117,6 +132,61 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
     );
   } catch (error) {
     next(error);
+  }
+});
+
+// Admin: per-tenant module provisioning.
+router.get("/entitlements", requireAdmin, async (req, res, next) => {
+  try {
+    const organizationId = req.query.organization_id as string;
+    if (!organizationId) throw new AppError("VALIDATION", "organization_id required", 400);
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("client_portal_entitlements")
+      .select("module_key, enabled")
+      .eq("organization_id", organizationId)
+      .order("module_key");
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success({ items: data ?? [] }));
+  } catch (err) {
+    next(err);
+  }
+});
+
+const entitlementsSchema = z.object({
+  organizationId: z.string().uuid(),
+  modules: z
+    .array(z.object({ moduleKey: z.string().min(1).max(100), enabled: z.boolean() }))
+    .min(1),
+});
+
+router.put("/entitlements", requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = entitlementsSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const rows = parsed.modules.map((m) => ({
+      organization_id: parsed.organizationId,
+      module_key: m.moduleKey,
+      enabled: m.enabled,
+      updated_by: req.authUser!.userId,
+    }));
+    const { error } = await supabase
+      .from("client_portal_entitlements")
+      .upsert(rows as never, { onConflict: "organization_id,module_key" });
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await logAuditEvent({
+      organizationId: parsed.organizationId,
+      actorUserId: req.authUser!.userId,
+      action: "client_portal.entitlements_updated",
+      entityType: "client_portal_entitlements",
+      entityId: parsed.organizationId,
+      metadata: { count: rows.length },
+    });
+
+    res.json(success({ updated: rows.length }));
+  } catch (err) {
+    next(err);
   }
 });
 

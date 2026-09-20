@@ -28,6 +28,10 @@ jest.mock("../middleware/cache", () => ({
   responseCacheNoRenew: () => (_req: unknown, _res: unknown, next: () => void) => next(),
   invalidateCache: jest.fn(),
 }));
+// Admin gate is covered by middleware-admin.test.ts; stub it here.
+jest.mock("../middleware/admin", () => ({
+  requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 
 import { getSupabaseAdmin } from "../services/supabase";
 import clientPortalRouter from "../routes/client-portal";
@@ -36,6 +40,7 @@ const authToken = "Bearer test-token";
 
 function mockAuth() {
   (getSupabaseAdmin as jest.Mock).mockReturnValue({
+    from: mockFrom,
     auth: {
       getUser: jest.fn().mockResolvedValue({
         data: { user: { id: "user-1", email: "test@example.com" } },
@@ -136,5 +141,54 @@ describe("Client Portal API", () => {
       .set("Authorization", authToken);
 
     expect(res.status).toBe(500);
+  });
+
+  it("returns provisioned module entitlements", async () => {
+    mockAuth();
+    mockFrom.mockReturnValue(
+      createMockBuilder({ data: [{ module_key: "dashboard", enabled: true }], error: null }),
+    );
+    const res = await request(app)
+      .get("/api/v1/client-portal/entitlements?organization_id=org-1")
+      .set("Authorization", authToken);
+    expect(res.status).toBe(200);
+    expect(res.body.data.items[0].module_key).toBe("dashboard");
+  });
+
+  it("saves module entitlements", async () => {
+    mockAuth();
+    mockFrom.mockReturnValue(createMockBuilder({ data: null, error: null }));
+    const res = await request(app)
+      .put("/api/v1/client-portal/entitlements")
+      .set("Authorization", authToken)
+      .send({
+        organizationId: "00000000-0000-0000-0000-000000000001",
+        modules: [{ moduleKey: "dashboard", enabled: true }],
+      });
+    expect(res.status).toBe(200);
+    expect(res.body.data.updated).toBe(1);
+  });
+
+  it("uses provisioned modules over the subscription default in bootstrap", async () => {
+    mockAuth();
+    mockFrom.mockImplementation((table: string) => {
+      if (table === "profiles")
+        return createMockBuilder({ data: { full_name: "Test", email: "t@x.com" }, error: null });
+      if (table === "memberships") return createMockBuilder({ data: [membership], error: null });
+      if (table === "subscriptions") return createMockBuilder({ data: [], error: null });
+      if (table === "client_portal_entitlements")
+        return createMockBuilder({
+          data: [{ organization_id: "org-1", module_key: "dashboard", enabled: true }],
+          error: null,
+        });
+      return createMockBuilder({ data: null, error: null });
+    });
+
+    const res = await request(app)
+      .get("/api/v1/client-portal/bootstrap")
+      .set("Authorization", authToken);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.memberships[0].enabledModules).toEqual(["dashboard"]);
   });
 });

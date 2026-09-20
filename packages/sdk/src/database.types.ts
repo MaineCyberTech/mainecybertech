@@ -1047,6 +1047,37 @@ export type Database = {
         Relationships: [
           { foreignKeyName: "client_onboarding_command_center_records_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
+      };      client_portal_entitlements: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          module_key: string;
+          organization_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          module_key: string;
+          organization_id: string;
+          created_at?: string | null;
+          enabled?: boolean | null;
+          id?: string | null;
+          updated_at?: string | null;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          enabled?: boolean | null;
+          id?: string | null;
+          module_key?: string | null;
+          organization_id?: string | null;
+          updated_at?: string | null;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "client_portal_entitlements_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
       };      client_runbooks: {
         Row: {
           category: string | null;

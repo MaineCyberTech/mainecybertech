@@ -1146,5 +1146,23 @@ describe("SDK modules — expanded coverage", () => {
       expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/edu-automation/ai-policy/ap1/generate");
       expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
     });
+
+    it("clientPortal.getEntitlements sends organization_id", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ items: [] }));
+      await client.clientPortal.getEntitlements("org-1");
+      const url = String(mockFetch.mock.calls[0][0]);
+      expect(url).toContain("/api/v1/client-portal/entitlements");
+      expect(url).toContain("organization_id=org-1");
+    });
+
+    it("clientPortal.setEntitlements PUTs the module list", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ updated: 1 }));
+      await client.clientPortal.setEntitlements("org-1", [
+        { moduleKey: "dashboard", enabled: true },
+      ]);
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("PUT");
+      const body = String(mockFetch.mock.calls[0][1]?.body);
+      expect(body).toContain("dashboard");
+    });
   });
 });
