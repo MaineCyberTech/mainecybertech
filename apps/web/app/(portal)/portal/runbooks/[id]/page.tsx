@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
@@ -41,7 +42,7 @@ export default async function PortalRunbookDetailPage({ params }: Props) {
 
   let runbook: Runbook | null = null;
   try {
-    runbook = (await api.final.runbooks.get(id)) as unknown as Runbook;
+    runbook = (await withRetry(() => api.final.runbooks.get(id))) as unknown as Runbook;
   } catch {
     runbook = null;
   }

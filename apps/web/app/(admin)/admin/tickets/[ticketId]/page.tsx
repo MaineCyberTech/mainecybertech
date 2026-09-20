@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
@@ -180,7 +181,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
 
   let ticket: Ticket;
   try {
-    ticket = await api.tickets.get(ticketId);
+    ticket = await withRetry(() => api.tickets.get(ticketId));
   } catch {
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">

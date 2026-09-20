@@ -1,4 +1,5 @@
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -67,7 +68,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
   let proposal: ProposalDetail | null = null;
 
   try {
-    proposal = await api.proposals.get(id);
+    proposal = await withRetry(() => api.proposals.get(id));
   } catch {
     notFound();
   }

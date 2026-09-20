@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export default async function PortalNetworkDiagramDetailPage({ params }: Props) 
   let diagram: DiagramDetail | null = null;
 
   try {
-    diagram = (await api.networkDiagrams.get(id)) as unknown as DiagramDetail;
+    diagram = (await withRetry(() => api.networkDiagrams.get(id))) as unknown as DiagramDetail;
   } catch {
     diagram = null;
   }

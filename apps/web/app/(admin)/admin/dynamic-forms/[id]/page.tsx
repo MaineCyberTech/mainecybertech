@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
@@ -16,7 +17,10 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   let record: Record<string, unknown> | null = null;
   let submissions: Array<Record<string, unknown>> = [];
   try {
-    record = (await api.dynamicForms.get(id)) as unknown as Record<string, unknown>;
+    record = (await withRetry(() => api.dynamicForms.get(id))) as unknown as Record<
+      string,
+      unknown
+    >;
   } catch (error) {
     console.error("[[id]/page]", error);
   }

@@ -1,4 +1,5 @@
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { requirePermission } from "@/lib/auth/permissions";
 import Link from "next/link";
@@ -23,7 +24,7 @@ export default async function RoleDetailPage({ params }: Props) {
 
   let role: Role;
   try {
-    role = await api.roles.get(roleId);
+    role = await withRetry(() => api.roles.get(roleId));
   } catch {
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
@@ -73,7 +74,11 @@ export default async function RoleDetailPage({ params }: Props) {
           Click a cell to grant or revoke the permission for this role.
         </p>
         <div className="mt-6">
-          <RolePermissionsEditor roleId={roleId} roleKey={role.key} isSystem={role.is_system ?? false} />
+          <RolePermissionsEditor
+            roleId={roleId}
+            roleKey={role.key}
+            isSystem={role.is_system ?? false}
+          />
         </div>
       </section>
     </AdminPageShell>

@@ -1,4 +1,5 @@
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -34,7 +35,7 @@ export default async function QbrDetailPage(props: { params: Promise<{ id: strin
 
   let report: (QbrReport & { visibility?: string }) | null = null;
   try {
-    report = await api.qbr.get(id);
+    report = await withRetry(() => api.qbr.get(id));
   } catch {
     notFound();
   }

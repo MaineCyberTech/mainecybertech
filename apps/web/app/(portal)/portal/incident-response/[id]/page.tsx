@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
@@ -53,7 +54,9 @@ export default async function PortalIncidentDetailPage({ params }: Props) {
 
   let incident: IncidentDetail | null = null;
   try {
-    incident = (await api.securitySuite.incidents.get(id)) as unknown as IncidentDetail;
+    incident = (await withRetry(() =>
+      api.securitySuite.incidents.get(id),
+    )) as unknown as IncidentDetail;
   } catch {
     incident = null;
   }

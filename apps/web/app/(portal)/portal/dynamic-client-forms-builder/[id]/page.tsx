@@ -1,4 +1,5 @@
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -65,7 +66,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
   }> = [];
 
   try {
-    const formResult = await api.dynamicForms.get(id);
+    const formResult = await withRetry(() => api.dynamicForms.get(id));
     form = formResult as DynamicFormRecord;
   } catch {
     notFound();

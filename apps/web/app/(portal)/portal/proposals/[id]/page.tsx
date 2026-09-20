@@ -1,4 +1,5 @@
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -72,7 +73,7 @@ export default async function PortalProposalDetailPage({ params }: Props) {
 
   let proposal: ProposalDetail | null = null;
   try {
-    proposal = await api.proposals.get(id);
+    proposal = await withRetry(() => api.proposals.get(id));
   } catch {
     notFound();
   }

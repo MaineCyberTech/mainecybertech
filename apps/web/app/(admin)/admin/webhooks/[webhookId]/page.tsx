@@ -1,4 +1,5 @@
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -26,7 +27,7 @@ export default async function WebhookDetailPage({ params }: Props) {
     is_active: boolean;
   };
   try {
-    webhook = await api.webhooks.get(webhookId);
+    webhook = await withRetry(() => api.webhooks.get(webhookId));
   } catch {
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">

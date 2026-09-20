@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import StatusPill from "@/components/StatusPill";
@@ -29,7 +30,7 @@ export default async function PortalStagingDetailPage({ params }: PortalStagingD
   let item: StagingDetail | null = null;
 
   try {
-    item = (await api.staging.get(id)) as StagingDetail;
+    item = (await withRetry(() => api.staging.get(id))) as StagingDetail;
   } catch {
     /* graceful */
   }
@@ -43,7 +44,9 @@ export default async function PortalStagingDetailPage({ params }: PortalStagingD
           { label: item?.device_name ?? "Detail" },
         ]}
       />
-      <h1 className="text-2xl font-semibold text-slate-50">{item?.device_name ?? "Staging Detail"}</h1>
+      <h1 className="text-2xl font-semibold text-slate-50">
+        {item?.device_name ?? "Staging Detail"}
+      </h1>
       {item ? (
         <div className="space-y-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4">
           <div className="flex items-center justify-between">

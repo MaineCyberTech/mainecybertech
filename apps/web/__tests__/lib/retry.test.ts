@@ -30,6 +30,13 @@ describe("withRetry", () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
+  it("short-circuits on any 4xx (e.g. 404) without retrying", async () => {
+    const err = Object.assign(new Error("not found"), { status: 404 });
+    const fn = jest.fn().mockRejectedValue(err);
+    await expect(withRetry(fn, { baseDelayMs: 1 })).rejects.toBe(err);
+    expect(fn).toHaveBeenCalledTimes(1);
+  });
+
   it("gives up after the configured attempts and throws the last error", async () => {
     const err = Object.assign(new Error("still down"), { status: 500 });
     const fn = jest.fn().mockRejectedValue(err);

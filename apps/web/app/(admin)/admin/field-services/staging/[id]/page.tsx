@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
@@ -32,7 +33,7 @@ export default async function StagingDetailPage({ params }: StagingDetailProps) 
   let item: StagingDetail | null = null;
 
   try {
-    item = (await api.staging.get(id)) as StagingDetail;
+    item = (await withRetry(() => api.staging.get(id))) as StagingDetail;
   } catch {
     /* graceful */
   }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
@@ -48,7 +49,7 @@ export default async function PortalFindingDetailPage({ params }: Props) {
 
   let finding: FindingDetail | null = null;
   try {
-    finding = (await api.findings.get(id)) as unknown as FindingDetail;
+    finding = (await withRetry(() => api.findings.get(id))) as unknown as FindingDetail;
   } catch {
     finding = null;
   }

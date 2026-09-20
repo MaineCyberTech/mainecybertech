@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -175,7 +176,7 @@ export default async function PortalSupportDetailPage({ params }: Props) {
 
   let ticket: TicketLike;
   try {
-    ticket = await api.tickets.get(ticketId);
+    ticket = await withRetry(() => api.tickets.get(ticketId));
   } catch {
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">

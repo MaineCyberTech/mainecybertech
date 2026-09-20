@@ -6,8 +6,9 @@
  * layouts, causes the whole authenticated shell to fall into the error
  * boundary. This helper absorbs those blips for read-only calls.
  *
- * Auth failures (401/403) are rethrown immediately so callers can still
- * redirect to /login without waiting on retries.
+ * Auth failures (401/403) and other client errors (400/404/...) are rethrown
+ * immediately: retrying a request that is wrong by construction just delays
+ * the inevitable, and for 401/403 it keeps callers from redirecting to /login.
  */
 export interface RetryOptions {
   attempts?: number;
@@ -24,7 +25,7 @@ export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}
     } catch (err) {
       lastError = err;
       const status = (err as { status?: number })?.status;
-      if (status === 401 || status === 403) throw err;
+      if (typeof status === "number" && status >= 400 && status < 500) throw err;
       if (attempt < attempts - 1) {
         await new Promise((resolve) => setTimeout(resolve, baseDelayMs * (attempt + 1)));
       }
