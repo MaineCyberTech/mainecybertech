@@ -1044,4 +1044,29 @@ describe("SDK modules — expanded coverage", () => {
       expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/auth/mfa/factors/f1");
     });
   });
+
+  describe("AnalyticsApi", () => {
+    it("tracks a public storefront event", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ ok: true }));
+      const result = await client.analytics.track({ event: "page_view", page: "/store" });
+      expect(result).toEqual({ ok: true });
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/analytics/track");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+      expect(String(mockFetch.mock.calls[0][1]?.body)).toContain("page_view");
+    });
+
+    it("lists events", async () => {
+      mockFetch.mockResolvedValue(mockResponse([{ id: "e1", event: "click" }]));
+      const result = await client.analytics.list();
+      expect(result).toHaveLength(1);
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/analytics");
+    });
+
+    it("fetches the summary", async () => {
+      mockFetch.mockResolvedValue(mockResponse([{ event: "click", count: 3 }]));
+      const result = await client.analytics.summary();
+      expect(result[0].count).toBe(3);
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/analytics/summary");
+    });
+  });
 });

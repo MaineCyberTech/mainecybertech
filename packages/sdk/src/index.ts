@@ -49,10 +49,7 @@ import {
 } from "./proposals";
 import { FindingsApi, type Finding, type FindingDetail, type FindingStats } from "./findings";
 import { AssetsApi, type Asset, type AssetDetail, type AssetStats } from "./assets";
-import {
-  DeviceProfilesApi,
-  type DeviceProfile,
-} from "./device-profiles";
+import { DeviceProfilesApi, type DeviceProfile } from "./device-profiles";
 import {
   DomainMonitorsApi,
   type DomainMonitor,
@@ -138,6 +135,7 @@ import { DynamicFormsApi } from "./dynamic-client-forms-builder.api";
 import { BusinessOsApi } from "./business-os.api";
 import { LicenseOptimizerApi } from "./license-optimizer";
 import { DmarcCoachApi } from "./dmarc-coach";
+import { AnalyticsApi } from "./analytics";
 import { TrainingHubApi } from "./training-hub";
 import { InsuranceBinderApi } from "./insurance-binder";
 import { StatusPageApi } from "./status-page";
@@ -190,6 +188,8 @@ import {
 } from "./network-diagrams";
 
 export { ApiError } from "./client";
+export { AnalyticsApi } from "./analytics";
+export type { TrackAnalyticsEventInput, AnalyticsEvent, AnalyticsSummary } from "./analytics";
 export type { ClientOptions, RetryOptions } from "./client";
 export type * from "./types";
 export type {
@@ -346,6 +346,7 @@ export class MCTClient {
   public businessOs: BusinessOsApi;
   public licenseOptimizer: LicenseOptimizerApi;
   public dmarcCoach: DmarcCoachApi;
+  public analytics: AnalyticsApi;
   public trainingHub: TrainingHubApi;
   public insuranceBinder: InsuranceBinderApi;
   public statusPage: StatusPageApi;
@@ -402,6 +403,7 @@ export class MCTClient {
     this.businessOs = new BusinessOsApi(client);
     this.licenseOptimizer = new LicenseOptimizerApi(client);
     this.dmarcCoach = new DmarcCoachApi(client);
+    this.analytics = new AnalyticsApi(client);
     this.trainingHub = new TrainingHubApi(client);
     this.insuranceBinder = new InsuranceBinderApi(client);
     this.statusPage = new StatusPageApi(client);
@@ -422,4 +424,3 @@ export class MCTClient {
 }
 
 export type { Database } from "./database.types";
-
