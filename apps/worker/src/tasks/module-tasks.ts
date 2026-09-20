@@ -977,8 +977,69 @@ export const saasAuditScan: TaskHandler = async (_payload): Promise<TaskResult> 
       0,
     );
 
+    // Notify each organisation's admins once a week about renewals coming up.
+    const orgIds = [
+      ...new Set((audits as Array<{ organization_id: string }>).map((a) => a.organization_id)),
+    ];
+    const { data: memberships } = await supabase
+      .from("memberships")
+      .select("user_id, organization_id, status, roles(key)")
+      .in("organization_id", orgIds);
+
+    const ADMIN_ROLE_HINTS = ["admin", "owner"];
+    const adminsByOrg = new Map<string, string[]>();
+    for (const m of (memberships ?? []) as Array<{
+      user_id: string;
+      organization_id: string;
+      status: string;
+      roles: unknown;
+    }>) {
+      if (m.status !== "approved" && m.status !== "active") continue;
+      const role = Array.isArray(m.roles) ? m.roles[0] : m.roles;
+      const key = String((role as { key?: string } | null)?.key ?? "");
+      if (!ADMIN_ROLE_HINTS.some((h) => key.includes(h))) continue;
+      const list = adminsByOrg.get(m.organization_id) ?? [];
+      list.push(m.user_id);
+      adminsByOrg.set(m.organization_id, list);
+    }
+
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    let notified = 0;
+    for (const orgId of orgIds) {
+      const recipients = adminsByOrg.get(orgId) ?? [];
+      if (recipients.length === 0) continue;
+
+      const orgAudits = (audits as Array<{ organization_id: string; vendor_name: string }>).filter(
+        (a) => a.organization_id === orgId,
+      );
+
+      for (const userId of recipients) {
+        const { data: recent } = await supabase
+          .from("notifications")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("module", "saas-audit")
+          .eq("module_id", orgId)
+          .eq("action", "renewals-due")
+          .gte("created_at", weekAgo)
+          .maybeSingle();
+        if (recent) continue;
+
+        await supabase.from("notifications").insert({
+          user_id: userId,
+          organization_id: orgId,
+          title: "SaaS renewals due soon",
+          body: `${orgAudits.length} SaaS subscription(s) renew within 60 days.`,
+          module: "saas-audit",
+          module_id: orgId,
+          action: "renewals-due",
+        });
+        notified++;
+      }
+    }
+
     logger.info(
-      { count: audits.length, totalAnnualCost: totalAnnual },
+      { count: audits.length, totalAnnualCost: totalAnnual, notified },
       "saas-audit-scan: upcoming renewals found",
     );
     return { ok: true };

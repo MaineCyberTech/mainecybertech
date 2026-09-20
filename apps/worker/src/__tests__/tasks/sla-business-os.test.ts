@@ -72,6 +72,7 @@ import {
   qbrScheduledGenerate,
   auditPage,
   checkDomainDns,
+  saasAuditScan,
 } from "../../tasks/module-tasks";
 
 describe("slaLogCheck", () => {
@@ -354,5 +355,22 @@ describe("checkDomainDns", () => {
     expect(result.dmarc).toBe("missing");
     expect(result.dmarcPolicy).toBeNull();
     expect(result.ssl).toBeNull();
+  });
+});
+
+describe("saasAuditScan", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    currentChain = createThenableChain({ data: [], error: null });
+  });
+
+  it("returns { ok: true } when there are no upcoming renewals", async () => {
+    expect(await saasAuditScan({})).toEqual({ ok: true });
+  });
+
+  it("returns { ok: false } when the audit fetch fails", async () => {
+    currentChain._setResult({ data: null, error: { message: "Fetch failed" } });
+    const result = await saasAuditScan({});
+    expect(result.ok).toBe(false);
   });
 });
