@@ -69,6 +69,8 @@ import {
   automationRunCheck,
   approvalOverdueCheck,
   vendorContractRenewalCheck,
+  qbrScheduledGenerate,
+  auditPage,
 } from "../../tasks/module-tasks";
 
 describe("slaLogCheck", () => {
@@ -223,6 +225,76 @@ describe("vendorContractRenewalCheck", () => {
         module: "vendor-contracts",
         action: "renewal-due",
       }),
+    );
+  });
+});
+
+describe("qbrScheduledGenerate", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    currentChain = createThenableChain({ data: [], error: null });
+  });
+
+  it("returns { ok: true } when there are no pending drafts", async () => {
+    const result = await qbrScheduledGenerate({});
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("builds report_data for a due draft instead of only flipping status", async () => {
+    currentChain._setResult({
+      data: [
+        {
+          id: "q1",
+          organization_id: "org-1",
+          period_start: null,
+          period_end: "2020-01-01",
+          status: "draft",
+        },
+      ],
+      error: null,
+    });
+    const result = await qbrScheduledGenerate({});
+    expect(result).toEqual({ ok: true });
+
+    const payload = (currentChain.update as jest.Mock).mock.calls[0][0] as {
+      status: string;
+      report_data: Record<string, unknown>;
+    };
+    expect(payload.status).toBe("generated");
+    expect(payload.report_data).toHaveProperty("tickets");
+    expect(payload.report_data).toHaveProperty("securityPosture");
+  });
+});
+
+describe("auditPage", () => {
+  it("scores a well-formed page highly", () => {
+    const html = [
+      "<html><head>",
+      "<title>Managed IT Services in Maine</title>",
+      '<meta name="description" content="Practical IT support.">',
+      '<meta name="viewport" content="width=device-width">',
+      "</head><body>",
+      "<h1>Welcome</h1>",
+      '<img src="/a.png" alt="Team">',
+      "</body></html>",
+    ].join("");
+    const { score, issues } = auditPage(html, 400);
+    expect(score).toBe(100);
+    expect(issues).toEqual([]);
+  });
+
+  it("flags missing title, description, viewport, h1 and alt text", () => {
+    const { score, issues } = auditPage("<html><body><img src='/a.png'></body></html>", 3000);
+    expect(score).toBeLessThan(50);
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        "missing <title>",
+        "missing meta description",
+        "missing viewport meta",
+        "missing <h1>",
+        "1 image(s) missing alt text",
+        "slow response (>1.5s)",
+      ]),
     );
   });
 });

@@ -59,6 +59,53 @@ async function fetchSslExpiry(
   });
 }
 
+/**
+ * Deterministic on-page audit: a 0-100 heuristic over signals the worker can
+ * read itself (no headless Chrome). Not a Lighthouse score.
+ */
+export function auditPage(
+  html: string,
+  responseTimeMs: number,
+): { score: number; issues: string[] } {
+  const issues: string[] = [];
+  let score = 0;
+
+  const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? "";
+  if (title) score += 15;
+  else issues.push("missing <title>");
+  if (title.length >= 10 && title.length <= 60) score += 10;
+  else if (title) issues.push("title length outside 10-60 chars");
+
+  const metaDescription = /<meta[^>]+name=["']description["'][^>]*>/i.test(html);
+  if (metaDescription) score += 15;
+  else issues.push("missing meta description");
+
+  if (/<meta[^>]+name=["']viewport["']/i.test(html)) score += 10;
+  else issues.push("missing viewport meta");
+
+  const h1Count = (html.match(/<h1[\s>]/gi) ?? []).length;
+  if (h1Count === 1) score += 15;
+  else issues.push(h1Count === 0 ? "missing <h1>" : "multiple <h1> elements");
+
+  const imgTags = html.match(/<img[\s>][^>]*>/gi) ?? [];
+  if (imgTags.length === 0) {
+    score += 15;
+  } else {
+    const withAlt = imgTags.filter((t) => /\salt=["'][^"']+["']/i.test(t)).length;
+    const ratio = withAlt / imgTags.length;
+    score += Math.round(15 * ratio);
+    if (ratio < 1) issues.push(`${imgTags.length - withAlt} image(s) missing alt text`);
+  }
+
+  if (responseTimeMs > 0 && responseTimeMs <= 1500) score += 10;
+  else if (responseTimeMs > 1500) issues.push("slow response (>1.5s)");
+
+  if (html.length <= 200_000) score += 10;
+  else issues.push("large HTML payload");
+
+  return { score: Math.max(0, Math.min(100, score)), issues };
+}
+
 export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResult> => {
   try {
     const supabase = getSupabaseAdmin();
@@ -377,6 +424,8 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
       let statusCode = 0;
       let responseTimeMs = 0;
       let ssl: { expires: string; daysRemaining: number } | null = null;
+      let audit: { score: number; issues: string[] } | null = null;
+      let pageBytes = 0;
 
       if (!blocked) {
         try {
@@ -386,6 +435,11 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
           const response = await fetch(mon.url, { signal: controller.signal });
           responseTimeMs = Math.round(performance.now() - start);
           statusCode = response.status;
+          if (statusCode >= 200 && statusCode < 400) {
+            const html = await response.text();
+            pageBytes = html.length;
+            audit = auditPage(html, responseTimeMs);
+          }
           clearTimeout(timeout);
         } catch {
           statusCode = 0;
@@ -403,6 +457,9 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
           next_check_at: new Date(Date.now() + intervalMs).toISOString(),
           ssl_valid: ssl ? ssl.daysRemaining >= 0 : false,
           ssl_expires: ssl?.expires ?? null,
+          seo_score: audit?.score ?? null,
+          last_page_bytes: pageBytes || null,
+          seo_issues: (audit?.issues ?? []) as never,
         })
         .eq("id", mon.id);
       monitorsChecked++;
@@ -630,7 +687,7 @@ export const qbrScheduledGenerate: TaskHandler = async (_payload): Promise<TaskR
 
     const { data: reports, error: fetchError } = await supabase
       .from("qbr_reports")
-      .select("id, organization_id, title, period_end, status")
+      .select("id, organization_id, title, period_start, period_end, status")
       .eq("status", "draft")
       .lte("period_end", now);
 
@@ -643,17 +700,113 @@ export const qbrScheduledGenerate: TaskHandler = async (_payload): Promise<TaskR
       return { ok: true };
     }
 
-    const ids = (reports as Array<{ id: string }>).map((r) => r.id);
-    const { error: updateError } = await supabase
-      .from("qbr_reports")
-      .update({ status: "generated", generated_at: now })
-      .in("id", ids);
+    // Build the same report_data the manual POST /qbr/generate produces, so a
+    // scheduled report is actually populated rather than just flipped.
+    let generated = 0;
+    for (const report of reports as Array<{
+      id: string;
+      organization_id: string;
+      period_start: string | null;
+      period_end: string | null;
+    }>) {
+      const orgId = report.organization_id;
+      const [
+        { count: ticketCount },
+        { count: openTicketCount },
+        { data: projects },
+        { data: findings },
+        { data: assets },
+        { data: domainMonitors },
+      ] = await Promise.all([
+        supabase
+          .from("tickets")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", orgId),
+        supabase
+          .from("tickets")
+          .select("*", { count: "exact", head: true })
+          .eq("organization_id", orgId)
+          .not("status", "in", '("resolved","closed","completed","cancelled")'),
+        supabase
+          .from("projects")
+          .select("id, name, status, priority")
+          .eq("organization_id", orgId)
+          .order("updated_at", { ascending: false })
+          .limit(20),
+        supabase
+          .from("findings")
+          .select("id, title, severity, status")
+          .eq("organization_id", orgId)
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("assets")
+          .select("id, name, asset_type, status, warranty_expires")
+          .eq("organization_id", orgId)
+          .order("warranty_expires", { ascending: true })
+          .limit(100),
+        supabase
+          .from("domain_monitors")
+          .select("id, domain, ssl_valid, spf_status, dkim_status, dmarc_status")
+          .eq("organization_id", orgId),
+      ]);
 
-    if (updateError) {
-      return { ok: false, error: `Failed to update qbr_reports: ${updateError.message}` };
+      const assetList = assets ?? [];
+      const ninetyDays = new Date(Date.now() + 90 * 86_400_000);
+      const expiringWarranties = assetList.filter((a) => {
+        const we = a.warranty_expires;
+        return Boolean(we) && new Date(we as string) <= ninetyDays;
+      });
+      const monitoringAlerts = (domainMonitors ?? []).filter(
+        (d) =>
+          d.ssl_valid === false ||
+          d.spf_status === "missing" ||
+          d.dkim_status === "missing" ||
+          d.dmarc_status === "missing",
+      );
+
+      const findingSummary = { p0: 0, p1: 0, p2: 0, p3: 0, open: 0, resolved: 0 };
+      for (const f of findings ?? []) {
+        const sev = f.severity as keyof typeof findingSummary;
+        if (sev in findingSummary) findingSummary[sev]++;
+        if (f.status === "open" || f.status === "in_progress") findingSummary.open++;
+        if (f.status === "resolved" || f.status === "verified") findingSummary.resolved++;
+      }
+
+      const reportData = {
+        generatedAt: now,
+        period: { start: report.period_start, end: report.period_end },
+        tickets: { total: ticketCount ?? 0, open: openTicketCount ?? 0 },
+        projects: {
+          total: (projects ?? []).length,
+          active: (projects ?? []).filter((p) => p.status === "active").length,
+          recent: (projects ?? []).slice(0, 5),
+        },
+        findings: findingSummary,
+        assets: {
+          total: assetList.length,
+          expiringWarranties: expiringWarranties.length,
+          expiringItems: expiringWarranties.slice(0, 10).map((a) => ({
+            id: a.id,
+            name: a.name,
+            expires: a.warranty_expires,
+          })),
+        },
+        securityPosture: {
+          monitoredDomains: (domainMonitors ?? []).length,
+          alertCount: monitoringAlerts.length,
+          alerts: monitoringAlerts.slice(0, 10),
+        },
+      };
+
+      await supabase
+        .from("qbr_reports")
+        .update({ status: "generated", generated_at: now, report_data: reportData } as never)
+        .eq("id", report.id);
+      generated++;
     }
 
-    logger.info({ count: reports.length }, "qbr-scheduled-generate: completed");
+    logger.info({ count: reports.length, generated }, "qbr-scheduled-generate: completed");
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
