@@ -37,6 +37,12 @@ export default async function PortalStatusPagesPage() {
       <PortalSubnav current="status-pages" />
       <h1 className="text-2xl font-semibold text-slate-50">Status Page</h1>
       <p className="text-sm text-slate-400">Current operational status of all services.</p>
+      <Link
+        href={`/status/${orgId}`}
+        className="inline-block text-sm text-emerald-500 hover:text-emerald-400"
+      >
+        View public status page &rarr;
+      </Link>
       <div className="grid gap-4 md:grid-cols-2">
         {items.map((c) => (
           <div
