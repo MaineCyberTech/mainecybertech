@@ -34,7 +34,9 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
 }));
 
 jest.mock("../services/audit", () => ({
@@ -70,10 +72,7 @@ jest.mock("../middleware/org-access", () =>
   createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
 );
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/proposals", proposalsRouter);
@@ -188,11 +187,14 @@ describe("Proposal tenant isolation (QW-1)", () => {
 
   function mockProposal(orgId: string, extra: Record<string, unknown> = {}) {
     const supabase = mockAuth();
-    supabase.from.mockReturnValue(
-      createMockBuilder({
-        data: { id: PROPOSAL_ID, organization_id: orgId, version: 1, ...extra },
-        error: null,
-      } as MockResult),
+    const proposalBuilder = createMockBuilder({
+      data: { id: PROPOSAL_ID, organization_id: orgId, version: 1, ...extra },
+      error: null,
+    } as MockResult);
+    const emptyBuilder = createMockBuilder({ data: [], error: null, count: 0 });
+    // The route reads line items again to recompute proposal totals.
+    supabase.from.mockImplementation((table: string) =>
+      table === "proposal_line_items" ? emptyBuilder : proposalBuilder,
     );
     return supabase;
   }
@@ -285,6 +287,21 @@ describe("Proposal tenant isolation (QW-1)", () => {
       .set("Authorization", authToken)
       .send({ name: "Item 1", itemType: "labor" });
     expect(res.status).toBe(404);
+  });
+
+  it("PATCH /:id/items/:itemId recomputes the proposal totals", async () => {
+    const supabase = mockProposal(ORG_A);
+    const res = await request(app)
+      .patch(`/api/v1/proposals/${PROPOSAL_ID}/items/00000000-0000-0000-0000-0000000000i1`)
+      .set("Authorization", authToken)
+      .send({ quantity: 3, unitPrice: 100 });
+    expect(res.status).toBe(200);
+
+    const proposalsBuilder = supabase.from.mock.results
+      .map((r) => r.value)
+      .find((b: { update?: jest.Mock }) => b.update && b.update.mock.calls.length > 0);
+    const updatePayload = proposalsBuilder?.update.mock.calls[0][0];
+    expect(updatePayload).toHaveProperty("grand_total");
   });
 
   it("PATCH /:id/items/:itemId returns 404 when the proposal is in another org", async () => {

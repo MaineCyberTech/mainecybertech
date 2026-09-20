@@ -461,6 +461,52 @@ router.delete("/:id/phases/:phaseId", async (req, res, next) => {
   }
 });
 
+/**
+ * Recompute a proposal's stored totals from its line items.
+ *
+ * Totals were only computed at create time and when adding an item, so
+ * editing or deleting a line item left `grand_total`/category totals stale.
+ */
+async function recomputeProposalTotals(
+  supabase: ReturnType<typeof getScopedClient>,
+  proposalId: string,
+): Promise<void> {
+  const { data: items, error } = await supabase
+    .from("proposal_line_items")
+    .select("item_type, total_price")
+    .eq("proposal_id", proposalId);
+
+  if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+  let grandTotal = 0;
+  let totalLabor = 0;
+  let totalMaterials = 0;
+  let totalRecurring = 0;
+  let totalOneTime = 0;
+
+  for (const item of items ?? []) {
+    const amount = Number(item.total_price) || 0;
+    grandTotal += amount;
+    if (item.item_type === "labor") totalLabor += amount;
+    else if (item.item_type === "materials") totalMaterials += amount;
+    else if (item.item_type === "recurring") totalRecurring += amount;
+    else totalOneTime += amount;
+  }
+
+  const { error: updateError } = await supabase
+    .from("proposals")
+    .update({
+      grand_total: grandTotal,
+      total_labor: totalLabor,
+      total_materials: totalMaterials,
+      total_recurring: totalRecurring,
+      total_one_time: totalOneTime,
+    })
+    .eq("id", proposalId);
+
+  if (updateError) throw new AppError("DB_ERROR", updateError.message, 500);
+}
+
 router.post("/:id/items", async (req, res, next) => {
   try {
     const parsed = createLineItemSchema.parse(req.body);
@@ -497,6 +543,8 @@ router.post("/:id/items", async (req, res, next) => {
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await recomputeProposalTotals(supabase, String(req.params.id) as string);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -550,6 +598,8 @@ router.patch("/:id/items/:itemId", async (req, res, next) => {
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     if (!data) throw new AppError("NOT_FOUND", "Line item not found", 404);
 
+    await recomputeProposalTotals(supabase, String(req.params.id) as string);
+
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
       action: "proposal.item.updated",
@@ -581,6 +631,8 @@ router.delete("/:id/items/:itemId", async (req, res, next) => {
       .eq("proposal_id", String(req.params.id) as string);
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    await recomputeProposalTotals(supabase, String(req.params.id) as string);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
