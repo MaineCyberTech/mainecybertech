@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
+import PortalTriageClient from "./PortalTriageClient";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "AI Triage - Portal - Maine CyberTech" };
@@ -51,6 +52,8 @@ export default async function AiTriagePage() {
       <p className="text-sm text-slate-400">
         {items.length} triage record{items.length !== 1 ? "s" : ""} for your organization.
       </p>
+      <PortalTriageClient organizationId={orgId} />
+      <h2 className="text-lg font-medium text-slate-50">Recent triage records</h2>
       <div className="space-y-3">
         {items.map((item) => (
           <div
