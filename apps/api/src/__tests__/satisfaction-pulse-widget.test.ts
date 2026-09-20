@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
 import satisfactionPulseRouter from "../routes/satisfaction-pulse-widget";
-import { createTestApp, createMockBuilder, type MockResult  } from "./helpers";
+import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { invalidateCache } from "../middleware/cache";
 import { errorHandler } from "../middleware/error";
 
@@ -19,7 +19,9 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
 }));
 
 jest.mock("../services/audit", () => ({
@@ -39,10 +41,7 @@ jest.mock("../middleware/org-access", () => ({
   requireOrgAccessByParam: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/satisfaction-pulse", satisfactionPulseRouter);
@@ -166,6 +165,19 @@ describe("satisfaction-pulse-widget routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(200);
+    });
+
+    it("honors a camelCase organizationId filter (SDK contract)", async () => {
+      const result: MockResult = { data: [PULSE], error: null, count: 1 };
+      const { builder } = mockFrom(result);
+      const orgId = "00000000-0000-0000-0000-0000000000aa";
+
+      const res = await request(app)
+        .get(`/api/v1/satisfaction-pulse?organizationId=${orgId}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(builder.eq).toHaveBeenCalledWith("organization_id", orgId);
     });
 
     it("returns 401 without auth", async () => {

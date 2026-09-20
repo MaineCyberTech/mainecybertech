@@ -78,8 +78,10 @@ export class SatisfactionPulseApi {
     if (params.source) searchParams.set("source", params.source);
     searchParams.set("format", params.format ?? "csv");
 
-    const response = await this.client.get(
-      `/api/v1/satisfaction-pulse/export.csv?${searchParams.toString()}`,
+    // CSV is returned as a download, so this is a blob, not JSON. The route
+    // is `/export` (there is no `/export.csv`).
+    const response = await this.client.getBlob(
+      `/api/v1/satisfaction-pulse/export?${searchParams.toString()}`,
     );
     return response;
   }

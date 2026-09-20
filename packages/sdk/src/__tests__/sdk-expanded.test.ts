@@ -802,6 +802,14 @@ describe("SDK modules — expanded coverage", () => {
       const result = await client.satisfactionPulse.list({ organizationId: "org-1" });
       expect(result.items).toHaveLength(1);
     });
+
+    it("exports pulses from the /export route, not /export.csv", async () => {
+      mockFetch.mockResolvedValue(mockResponse(null, true, 200));
+      await client.satisfactionPulse.export({ format: "csv", organizationId: "org-1" });
+      const url = String(mockFetch.mock.calls[0][0]);
+      expect(url).toContain("/api/v1/satisfaction-pulse/export?");
+      expect(url).not.toContain("/export.csv");
+    });
   });
 
   describe("DynamicFormsApi", () => {

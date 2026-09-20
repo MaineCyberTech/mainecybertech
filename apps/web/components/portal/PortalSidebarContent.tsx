@@ -16,6 +16,7 @@ const GROUPS: Array<{ label: string; items: NavItem[] }> = [
       { key: "documents", href: "/portal/documents", label: "Documents", module: "documents" },
       { key: "support", href: "/portal/support", label: "Support", module: "tickets" },
       { key: "billing", href: "/portal/billing", label: "Billing", module: "billing" },
+      { key: "feedback", href: "/portal/feedback", label: "Feedback" },
       { key: "approvals", href: "/portal/approvals", label: "Approvals", module: "approvals" },
     ],
   },

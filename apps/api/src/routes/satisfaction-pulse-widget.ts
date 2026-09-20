@@ -39,7 +39,10 @@ router.use(requireAuth);
 router.use(requireOrgAccess);
 
 function getOrgId(req: Request): string {
-  return req.query.organization_id as string;
+  // The validator and SDK use camelCase `organizationId`; requireOrgAccess
+  // injects the snake_case `organization_id`. Accept both so the SDK org
+  // filter is honored instead of silently falling back to the active org.
+  return (req.query.organization_id ?? req.query.organizationId) as string;
 }
 
 function getUserId(req: Request): string {
