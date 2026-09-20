@@ -3,8 +3,61 @@ import { getSupabaseAdmin } from "../services/supabase";
 import type { TablesInsert } from "@mct/sdk/database.types";
 import { assertSafeUrl } from "../lib/ssrf-guard";
 import type { TaskHandler, TaskResult } from "../task-registry";
+import tls from "node:tls";
 
 type Row = Record<string, unknown>;
+
+/**
+ * Read the TLS peer certificate for an https URL and return its expiry.
+ * Returns null for non-https URLs, connection failures, or bad certs.
+ */
+async function fetchSslExpiry(
+  url: string,
+): Promise<{ expires: string; daysRemaining: number } | null> {
+  let host: string;
+  let port = 443;
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "https:") return null;
+    host = u.hostname;
+    if (u.port) port = Number(u.port);
+  } catch {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    const socket = tls.connect({ host, port, servername: host, timeout: 8000 }, () => {
+      try {
+        const cert = socket.getPeerCertificate();
+        if (!cert || !cert.valid_to) {
+          socket.destroy();
+          resolve(null);
+          return;
+        }
+        const expires = new Date(cert.valid_to);
+        if (Number.isNaN(expires.getTime())) {
+          socket.destroy();
+          resolve(null);
+          return;
+        }
+        const daysRemaining = Math.floor((expires.getTime() - Date.now()) / 86_400_000);
+        socket.destroy();
+        resolve({ expires: expires.toISOString(), daysRemaining });
+      } catch {
+        socket.destroy();
+        resolve(null);
+      }
+    });
+    socket.on("error", () => {
+      socket.destroy();
+      resolve(null);
+    });
+    socket.on("timeout", () => {
+      socket.destroy();
+      resolve(null);
+    });
+  });
+}
 
 export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResult> => {
   try {
@@ -87,16 +140,11 @@ export const backupDrCheck: TaskHandler = async (_payload): Promise<TaskResult> 
     }
 
     if (warningIds.length > 0) {
-      await supabase
-        .from("backup_status")
-        .update({ status: "warning" })
-        .in("id", warningIds);
+      await supabase.from("backup_status").update({ status: "warning" }).in("id", warningIds);
     }
 
     if (criticalIds.length > 0) {
-      await supabase.from("backup_status")
-        .update({ status: "critical" })
-        .in("id", criticalIds);
+      await supabase.from("backup_status").update({ status: "critical" }).in("id", criticalIds);
     }
 
     logger.info(
@@ -179,7 +227,8 @@ export const dmarcCoachCheck: TaskHandler = async (_payload): Promise<TaskResult
     }
 
     const ids = (analyses as Array<{ id: string }>).map((a) => a.id);
-    const { error: updateError } = await supabase.from("dmarc_analyses")
+    const { error: updateError } = await supabase
+      .from("dmarc_analyses")
       .update({ status: "stale" })
       .in("id", ids);
 
@@ -219,7 +268,8 @@ export const statusMaintenanceCheck: TaskHandler = async (_payload): Promise<Tas
     }
 
     const ids = (notices as Array<{ id: string }>).map((n) => n.id);
-    const { error: updateError } = await supabase.from("maintenance_notices")
+    const { error: updateError } = await supabase
+      .from("maintenance_notices")
       .update({ status: "upcoming" })
       .in("id", ids);
 
@@ -256,11 +306,14 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
 
     let performed = 0;
 
-    for (const check of checks as Array<{ id: string; url: string; check_interval_minutes: number; last_checked_at: string | null }>) {
+    for (const check of checks as Array<{
+      id: string;
+      url: string;
+      check_interval_minutes: number;
+      last_checked_at: string | null;
+    }>) {
       const intervalMs = (Number(check.check_interval_minutes) || 5) * 60 * 1000;
-      const lastChecked = check.last_checked_at
-        ? new Date(check.last_checked_at).getTime()
-        : 0;
+      const lastChecked = check.last_checked_at ? new Date(check.last_checked_at).getTime() : 0;
       const due = Date.now() - lastChecked >= intervalMs;
 
       if (!due) continue;
@@ -269,8 +322,9 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
       let statusCode = 0;
       let responseTimeMs = 0;
       let errorMsg: string | null = null;
+      let ssl: { expires: string; daysRemaining: number } | null = null;
 
-      // SSRF guard — uptime check URLs are user-supplied; never fetch
+      // SSRF guard �?" uptime check URLs are user-supplied; never fetch
       // private / loopback / link-local hosts or hostnames resolving to them.
       const blocked = await assertSafeUrl(check.url);
       if (blocked) {
@@ -287,6 +341,7 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
         } catch (err) {
           errorMsg = err instanceof Error ? err.message : String(err);
         }
+        ssl = await fetchSslExpiry(check.url);
       }
 
       await supabase.from("uptime_results").insert({
@@ -296,15 +351,65 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
         error_message: errorMsg,
         is_up: statusCode >= 200 && statusCode < 400,
         checked_at: now,
+        ssl_expiry_date: ssl?.expires ?? null,
+        ssl_days_remaining: ssl?.daysRemaining ?? null,
       });
 
-      await supabase.from("uptime_checks")
+      await supabase
+        .from("uptime_checks")
         .update({ last_checked_at: now, last_status_code: statusCode })
         .eq("id", check.id);
     }
 
+    // Website monitors (availability + SSL snapshot for the
+    // admin/portal "website monitors" views, which read this table).
+    const { data: monitors } = await supabase
+      .from("website_monitors")
+      .select("id, url, check_interval_hours, last_checked_at");
+
+    let monitorsChecked = 0;
+    for (const mon of monitors ?? []) {
+      const intervalMs = (Number(mon.check_interval_hours) || 24) * 60 * 60 * 1000;
+      const lastChecked = mon.last_checked_at ? new Date(mon.last_checked_at).getTime() : 0;
+      if (Date.now() - lastChecked < intervalMs) continue;
+
+      const blocked = await assertSafeUrl(mon.url);
+      let statusCode = 0;
+      let responseTimeMs = 0;
+      let ssl: { expires: string; daysRemaining: number } | null = null;
+
+      if (!blocked) {
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 10000);
+          const start = performance.now();
+          const response = await fetch(mon.url, { signal: controller.signal });
+          responseTimeMs = Math.round(performance.now() - start);
+          statusCode = response.status;
+          clearTimeout(timeout);
+        } catch {
+          statusCode = 0;
+        }
+        ssl = await fetchSslExpiry(mon.url);
+      }
+
+      const up = statusCode >= 200 && statusCode < 400;
+      await supabase
+        .from("website_monitors")
+        .update({
+          last_status: up ? "up" : "down",
+          last_response_ms: responseTimeMs,
+          last_checked_at: now,
+          next_check_at: new Date(Date.now() + intervalMs).toISOString(),
+          ssl_valid: ssl ? ssl.daysRemaining >= 0 : false,
+          ssl_expires: ssl?.expires ?? null,
+        })
+        .eq("id", mon.id);
+      monitorsChecked++;
+    }
+
     logger.info(
-      { checksPerformed: performed, totalConfigured: checks.length },
+      { checksPerformed: performed, totalConfigured: checks.length, monitorsChecked },
       "website-monitor-check: completed",
     );
     return { ok: true };
@@ -336,7 +441,8 @@ export const phishingCampaignSend: TaskHandler = async (_payload): Promise<TaskR
     }
 
     const ids = (campaigns as Array<{ id: string }>).map((c) => c.id);
-    const { error: updateError } = await supabase.from("phishing_campaigns")
+    const { error: updateError } = await supabase
+      .from("phishing_campaigns")
       .update({ status: "completed" })
       .in("id", ids);
 
@@ -375,7 +481,8 @@ export const domainMonitorCheck: TaskHandler = async (_payload): Promise<TaskRes
     }
 
     const ids = (records as Array<{ id: string }>).map((r) => r.id);
-    const { error: updateError } = await supabase.from("domain_monitors")
+    const { error: updateError } = await supabase
+      .from("domain_monitors")
       .update({ last_checked_at: now })
       .in("id", ids);
 
@@ -420,7 +527,9 @@ export const vendorContractRenewalCheck: TaskHandler = async (_payload): Promise
     logger.info(
       {
         count: contracts.length,
-        upcoming: (contracts as Array<{ vendor_name: string; service_name: string }>).map((c) => `${c.vendor_name}/${c.service_name}`),
+        upcoming: (contracts as Array<{ vendor_name: string; service_name: string }>).map(
+          (c) => `${c.vendor_name}/${c.service_name}`,
+        ),
       },
       "vendor-contract-renewal-check: upcoming renewals found",
     );
@@ -461,7 +570,8 @@ export const patchComplianceCheck: TaskHandler = async (_payload): Promise<TaskR
     }
 
     const ids = (records as Array<{ id: string }>).map((r) => r.id);
-    const { error: updateError } = await supabase.from("patch_compliance")
+    const { error: updateError } = await supabase
+      .from("patch_compliance")
       .update({ last_checked_at: now })
       .in("id", ids);
 
@@ -499,7 +609,8 @@ export const qbrScheduledGenerate: TaskHandler = async (_payload): Promise<TaskR
     }
 
     const ids = (reports as Array<{ id: string }>).map((r) => r.id);
-    const { error: updateError } = await supabase.from("qbr_reports")
+    const { error: updateError } = await supabase
+      .from("qbr_reports")
       .update({ status: "generated", generated_at: now })
       .in("id", ids);
 
@@ -545,7 +656,8 @@ export const endpointSecurityCheck: TaskHandler = async (_payload): Promise<Task
     }
 
     const ids = (records as Array<{ id: string }>).map((r) => r.id);
-    const { error: updateError } = await supabase.from("endpoint_security")
+    const { error: updateError } = await supabase
+      .from("endpoint_security")
       .update({ last_checked_at: now })
       .in("id", ids);
 
@@ -715,7 +827,13 @@ export const slaLogCheck: TaskHandler = async (_payload): Promise<TaskResult> =>
     const rows: TablesInsert<"sla_logs">[] = [];
     let created = 0;
 
-    for (const ticket of tickets as Array<{ id: string; organization_id: string; created_at: string; updated_at: string; status: string }>) {
+    for (const ticket of tickets as Array<{
+      id: string;
+      organization_id: string;
+      created_at: string;
+      updated_at: string;
+      status: string;
+    }>) {
       const createdMs = new Date(ticket.created_at).getTime();
       const orgId = ticket.organization_id;
 
@@ -799,9 +917,9 @@ export const automationRunCheck: TaskHandler = async (_payload): Promise<TaskRes
       return { ok: true };
     }
 
-    const scheduled = (workflows as Array<{ id: string; trigger_type: string; name: string }>).filter(
-      (w) => w.trigger_type !== "manual",
-    );
+    const scheduled = (
+      workflows as Array<{ id: string; trigger_type: string; name: string }>
+    ).filter((w) => w.trigger_type !== "manual");
 
     if (scheduled.length === 0) {
       logger.info("automation-run-check: no scheduled workflows due");
@@ -809,7 +927,8 @@ export const automationRunCheck: TaskHandler = async (_payload): Promise<TaskRes
     }
 
     const ids = scheduled.map((w) => w.id);
-    const { error: updateError } = await supabase.from("automation_workflows")
+    const { error: updateError } = await supabase
+      .from("automation_workflows")
       .update({
         last_run_at: now,
         last_run_status: "completed",
