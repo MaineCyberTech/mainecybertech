@@ -287,10 +287,5 @@ router.post("/staging/:id/checklist", async (req, res, next) => {
     next(err);
   }
 });
-crudRoute(
-  "staging",
-  "staging_checklists",
-  createStagingSchema as unknown as Record<string, unknown>,
-);
 
 export default router;

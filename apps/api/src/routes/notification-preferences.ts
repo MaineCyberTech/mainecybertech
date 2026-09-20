@@ -87,7 +87,7 @@ router.put("/", async (req, res, next) => {
       metadata: { organizationId, preferenceCount: preferences.length },
     });
 
-    res.json(success(results));
+    res.json(success({ updated: results.length }));
   } catch (error) {
     next(error);
   }

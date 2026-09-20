@@ -49,7 +49,7 @@ function ProductCard({ product }: ProductCardProps) {
       </div>
       <div className="mt-4 border-t border-white/5 pt-4">
         <a
-          href={`/store/products/${product.slug}`}
+          href={`/store/${product.slug}`}
           className="w-full text-center font-display text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:text-emerald-300"
         >
           View Details →
@@ -104,10 +104,10 @@ function CampaignCard({ campaign }: { campaign: SeasonalCampaign }) {
       <div className="flex items-center justify-between">
         <span className="text-xs text-slate-500">Seasonal Campaign</span>
         <Link
-          href={`/store/campaigns/${campaign.id}`}
+          href="/store"
           className="font-display text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:text-emerald-300"
         >
-          View Campaign →
+          Browse Store →
         </Link>
       </div>
     </div>
@@ -237,7 +237,7 @@ export default async function PortalStorePage() {
             Service Finder Quiz
           </Link>
           <Link
-            href="/store/contact"
+            href="/contact"
             className="inline-block rounded border-2 border-emerald-600 bg-transparent px-8 py-3 font-display text-xs font-bold uppercase tracking-widest text-emerald-400 transition hover:bg-emerald-600/10 hover:shadow-[0_0_25px_rgba(5,150,105,0.2)]"
           >
             Contact Sales

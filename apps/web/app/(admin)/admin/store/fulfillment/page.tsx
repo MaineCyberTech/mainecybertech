@@ -28,7 +28,9 @@ export default async function AdminStoreFulfillmentPage() {
       actions={
         <button
           type="button"
-          className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500"
+          disabled
+          title="Coming soon"
+          className="cursor-not-allowed rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-500"
         >
           Generate Checklist
         </button>
@@ -36,7 +38,7 @@ export default async function AdminStoreFulfillmentPage() {
     >
       {checklists.length === 0 ? (
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-6 text-center text-sm text-slate-400">
-          No fulfillment checklists yet. Click "Generate Checklist" to create one for a product.
+          No fulfillment checklists yet. Checklist generation is coming soon.
         </div>
       ) : (
         <div className="space-y-4">
