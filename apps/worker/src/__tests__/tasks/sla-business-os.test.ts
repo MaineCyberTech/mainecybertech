@@ -73,6 +73,7 @@ import {
   auditPage,
   checkDomainDns,
   saasAuditScan,
+  m365HardeningScan,
 } from "../../tasks/module-tasks";
 
 describe("slaLogCheck", () => {
@@ -372,5 +373,31 @@ describe("saasAuditScan", () => {
     currentChain._setResult({ data: null, error: { message: "Fetch failed" } });
     const result = await saasAuditScan({});
     expect(result.ok).toBe(false);
+  });
+});
+
+describe("m365HardeningScan", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    currentChain = createThenableChain({ data: [], error: null });
+  });
+
+  it("returns { ok: true } when no records are due", async () => {
+    expect(await m365HardeningScan({})).toEqual({ ok: true });
+  });
+
+  it("returns { ok: false } when the record fetch fails", async () => {
+    currentChain._setResult({ data: null, error: { message: "Fetch failed" } });
+    const result = await m365HardeningScan({});
+    expect(result.ok).toBe(false);
+  });
+
+  it("stamps the assessment when Microsoft Graph is not configured", async () => {
+    currentChain._setResult({ data: [{ id: "mh-1" }], error: null });
+    const result = await m365HardeningScan({});
+    expect(result).toEqual({ ok: true });
+    expect(currentChain.update).toHaveBeenCalledWith(
+      expect.objectContaining({ last_assessment_at: expect.any(String) }),
+    );
   });
 });

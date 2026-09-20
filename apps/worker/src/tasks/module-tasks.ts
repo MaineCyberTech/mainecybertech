@@ -1,4 +1,5 @@
 import { logger } from "../logger";
+import { env } from "../env";
 import { getSupabaseAdmin } from "../services/supabase";
 import type { TablesInsert } from "@mct/sdk/database.types";
 import { assertSafeUrl } from "../lib/ssrf-guard";
@@ -106,6 +107,44 @@ export function auditPage(
   return { score: Math.max(0, Math.min(100, score)), issues };
 }
 
+/** Acquire an app-only Microsoft Graph token, or null when not configured. */
+async function getGraphToken(): Promise<string | null> {
+  const tenantId = env.M365_TENANT_ID;
+  const clientId = env.M365_CLIENT_ID;
+  const clientSecret = env.M365_CLIENT_SECRET;
+  if (!tenantId || !clientId || !clientSecret) return null;
+
+  try {
+    const res = await fetch(`https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        scope: "https://graph.microsoft.com/.default",
+        grant_type: "client_credentials",
+      }),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { access_token?: string };
+    return json.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function graphGet<T>(token: string, path: string): Promise<T | null> {
+  try {
+    const res = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
+      headers: { Authorization: `Bearer ${token}`, ConsistencyLevel: "eventual" },
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResult> => {
   try {
     const supabase = getSupabaseAdmin();
@@ -128,11 +167,71 @@ export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResu
     const ids = (records as Array<{ id: string }>).map((r) => r.id);
     const thirtyDaysLater = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
+    // Without Graph credentials there is nothing to scan; stamp the
+    // assessment so the schedule keeps advancing.
+    const token = await getGraphToken();
+    if (!token) {
+      logger.info(
+        "m365-hardening-scan: Microsoft Graph not configured (M365_TENANT_ID/CLIENT_ID/CLIENT_SECRET); assessment only",
+      );
+      const { error: stampError } = await supabase
+        .from("m365_hardening")
+        .update({
+          last_assessment_at: now,
+          status: "healthy",
+          next_review_at: thirtyDaysLater,
+        })
+        .in("id", ids);
+      if (stampError) {
+        return {
+          ok: false,
+          error: `Failed to update m365_hardening records: ${stampError.message}`,
+        };
+      }
+      return { ok: true };
+    }
+
+    const [domains, users, guests, caPolicies, secDefaults] = await Promise.all([
+      graphGet<{ value?: Array<{ name?: string; isVerified?: boolean; isDefault?: boolean }> }>(
+        token,
+        "/domains",
+      ),
+      graphGet<{ "@odata.count"?: number }>(token, "/users?$count=true&$top=1"),
+      graphGet<{ "@odata.count"?: number }>(
+        token,
+        "/users?$filter=userType eq 'Guest'&$count=true&$top=1",
+      ),
+      graphGet<{ value?: unknown[] }>(token, "/identity/conditionalAccess/policies"),
+      graphGet<{ isEnabled?: boolean }>(
+        token,
+        "/policies/identitySecurityDefaultsEnforcementPolicy",
+      ),
+    ]);
+
+    const domainList = domains?.value ?? [];
+    const verified = domainList.filter((d) => d.isVerified !== false && d.name);
+    const tenantDomain = (verified.find((d) => d.isDefault) ?? verified[0])?.name ?? null;
+    const caConfigured = (caPolicies?.value ?? []).length > 0;
+    const securityDefaults = secDefaults?.isEnabled === true;
+    const mfaEnforced = securityDefaults || caConfigured;
+
+    const signals = [mfaEnforced, caConfigured, securityDefaults];
+    const overallScore = Math.round((signals.filter(Boolean).length / signals.length) * 100);
+
     const { error: updateError } = await supabase
       .from("m365_hardening")
       .update({
+        tenant_domain: tenantDomain,
+        guest_count: guests?.["@odata.count"] ?? 0,
+        conditional_access_configured: caConfigured,
+        mfa_enforced: mfaEnforced,
+        legacy_auth_blocked: securityDefaults,
+        overall_score: overallScore,
+        scan_status: "scanned",
+        last_scanned_at: now,
         last_assessment_at: now,
         status: "healthy",
+        next_scan_at: thirtyDaysLater,
         next_review_at: thirtyDaysLater,
       })
       .in("id", ids);
@@ -144,7 +243,16 @@ export const m365HardeningScan: TaskHandler = async (_payload): Promise<TaskResu
       };
     }
 
-    logger.info({ count: records.length }, "m365-hardening-scan: completed");
+    logger.info(
+      {
+        count: ids.length,
+        totalUsers: users?.["@odata.count"] ?? 0,
+        guests: guests?.["@odata.count"] ?? 0,
+        caConfigured,
+        securityDefaults,
+      },
+      "m365-hardening-scan: completed",
+    );
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
