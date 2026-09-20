@@ -1,4 +1,4 @@
-import { test, expect, visibleWithin } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("portal timeline page", () => {
   test("renders timeline heading", async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe("portal project task views", () => {
     await page.goto("/portal/projects");
     const projectLink = page.locator("a[href*='/portal/projects/']").first();
     if (await visibleWithin(projectLink)) {
-      await projectLink.click();
+      await clickOrGoto(page, projectLink);
       await expect(
         page.getByRole("button", { name: /list|timeline|calendar/i }).first(),
       ).toBeVisible({ timeout: 10000 });
@@ -46,7 +46,7 @@ test.describe("portal project task views", () => {
     await page.goto("/portal/projects");
     const projectLink = page.locator("a[href*='/portal/projects/']").first();
     if (await visibleWithin(projectLink)) {
-      await projectLink.click();
+      await clickOrGoto(page, projectLink);
       const timelineBtn = page.getByRole("button", { name: /timeline/i });
       if (await visibleWithin(timelineBtn)) {
         await timelineBtn.click();

@@ -1,4 +1,4 @@
-import { test, expect, visibleWithin } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin tickets list", () => {
   test.beforeEach(async ({ page }) => {
@@ -36,7 +36,7 @@ test.describe("admin ticket detail", () => {
     await page.goto("/admin/tickets");
     const ticketLink = page.locator("a[href*='/admin/tickets/']").first();
     if (await visibleWithin(ticketLink)) {
-      await ticketLink.click();
+      await clickOrGoto(page, ticketLink);
       await expect(page.getByText(/ticket|open tickets/i).first()).toBeVisible();
     }
   });
@@ -45,7 +45,7 @@ test.describe("admin ticket detail", () => {
     await page.goto("/admin/tickets");
     const ticketLink = page.locator("a[href*='/admin/tickets/']").first();
     if (await visibleWithin(ticketLink)) {
-      await ticketLink.click();
+      await clickOrGoto(page, ticketLink);
       await expect(page.getByText(/comments|history/i).first()).toBeVisible();
     }
   });

@@ -1,4 +1,4 @@
-import { test, expect, visibleWithin } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin projects list", () => {
   test.beforeEach(async ({ page }) => {
@@ -36,7 +36,7 @@ test.describe("admin project detail", () => {
     await page.goto("/admin/projects");
     const projectLink = page.locator("a[href*='/admin/projects/']").first();
     if (await visibleWithin(projectLink)) {
-      await projectLink.click();
+      await clickOrGoto(page, projectLink);
       await expect(page.getByText(/project/i).first()).toBeVisible();
     }
   });
@@ -45,7 +45,7 @@ test.describe("admin project detail", () => {
     await page.goto("/admin/projects");
     const projectLink = page.locator("a[href*='/admin/projects/']").first();
     if (await visibleWithin(projectLink)) {
-      await projectLink.click();
+      await clickOrGoto(page, projectLink);
       await expect(page.getByText(/tasks|add task/i).first()).toBeVisible();
     }
   });

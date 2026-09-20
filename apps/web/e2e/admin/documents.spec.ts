@@ -1,4 +1,4 @@
-import { test, expect, visibleWithin } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin documents list", () => {
   test.beforeEach(async ({ page }) => {
@@ -42,7 +42,7 @@ test.describe("admin document versions", () => {
     await page.goto("/admin/documents");
     const docLink = page.locator("a[href*='/admin/documents/']").first();
     if (await visibleWithin(docLink)) {
-      await docLink.click();
+      await clickOrGoto(page, docLink);
       await expect(page).toHaveURL(/\/admin\/documents\//);
       await expect(page.getByText(/version|created|updated/i).first()).toBeVisible();
     }

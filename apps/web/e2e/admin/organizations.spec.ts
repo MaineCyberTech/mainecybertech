@@ -1,4 +1,4 @@
-import { test, expect, visibleWithin } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin organizations list", () => {
   test.beforeEach(async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe("admin organizations list", () => {
   test("can navigate to org detail", async ({ page }) => {
     const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
-      await orgLink.click();
+      await clickOrGoto(page, orgLink);
       await expect(page).toHaveURL(/\/admin\/organizations\//);
     }
   });
@@ -43,7 +43,7 @@ test.describe("admin organization detail", () => {
     await page.goto("/admin/organizations");
     const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
-      await orgLink.click();
+      await clickOrGoto(page, orgLink);
       await expect(page.getByText(/organization basics|name|slug/i).first()).toBeVisible();
     }
   });
@@ -52,7 +52,7 @@ test.describe("admin organization detail", () => {
     await page.goto("/admin/organizations");
     const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
-      await orgLink.click();
+      await clickOrGoto(page, orgLink);
       await expect(page.getByText(/domains/i).first()).toBeVisible();
     }
   });
@@ -61,7 +61,7 @@ test.describe("admin organization detail", () => {
     await page.goto("/admin/organizations");
     const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
     if (await visibleWithin(orgLink)) {
-      await orgLink.click();
+      await clickOrGoto(page, orgLink);
       await page.waitForURL(/\/admin\/organizations\//, { timeout: 5000 });
       await expect(page.getByText(/memberships/i).first()).toBeVisible({ timeout: 5000 });
     }

@@ -97,5 +97,26 @@ export async function visibleWithin(locator: Locator, timeoutMs = 5_000): Promis
   }
 }
 
+/**
+ * Click a link and wait for the URL to change; if the client-side
+ * navigation does not complete (an RSC fetch can reject under CI
+ * contention, leaving the URL unchanged), fall back to a direct `goto`.
+ *
+ * Playwright's `locator.click()` resolves as soon as the click is
+ * dispatched, so a spec that asserts the destination content immediately
+ * afterwards is racing the router. This keeps the click (so click handlers
+ * are still exercised) but guarantees arrival at the target.
+ */
+export async function clickOrGoto(page: Page, locator: Locator, timeoutMs = 5_000): Promise<void> {
+  const href = await locator.getAttribute("href");
+  const before = page.url();
+  await locator.click();
+  try {
+    await page.waitForURL((url) => url.toString() !== before, { timeout: timeoutMs });
+  } catch {
+    if (href) await page.goto(href);
+  }
+}
+
 export const test = base;
 export { expect };

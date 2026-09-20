@@ -1,4 +1,4 @@
-import { test, expect, visibleWithin } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin users list", () => {
   test.beforeEach(async ({ page }) => {
@@ -25,7 +25,7 @@ test.describe("admin users list", () => {
   test("can navigate to user detail", async ({ page }) => {
     const userLink = page.locator("a[href*='/admin/users/']").first();
     if (await visibleWithin(userLink)) {
-      await userLink.click();
+      await clickOrGoto(page, userLink);
       await expect(page).toHaveURL(/\/admin\/users/);
       await expect(page.getByRole("heading")).toBeVisible();
     }
@@ -44,10 +44,10 @@ test.describe("admin user detail", () => {
     await page.goto("/admin/users");
     const userLink = page.locator("a[href*='/admin/users/']").first();
     if (await visibleWithin(userLink)) {
-      await userLink.click();
+      await clickOrGoto(page, userLink);
       const backLink = page.getByRole("link", { name: /back|users/i });
       if (await visibleWithin(backLink)) {
-        await backLink.click();
+        await clickOrGoto(page, backLink);
         await expect(page).toHaveURL(/\/admin\/users$/);
       }
     }

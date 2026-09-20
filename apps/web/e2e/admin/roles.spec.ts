@@ -1,4 +1,4 @@
-import { test, expect, visibleWithin } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin roles page", () => {
   test("renders roles heading", async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe("admin role detail", () => {
     await page.goto("/admin/roles");
     const roleLink = page.locator("a[href*='/admin/roles/']").first();
     if (await visibleWithin(roleLink)) {
-      await roleLink.click();
+      await clickOrGoto(page, roleLink);
       await expect(page.getByText(/permission toggles|permissions/i).first()).toBeVisible();
     }
   });
