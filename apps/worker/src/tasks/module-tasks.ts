@@ -523,31 +523,55 @@ export const domainMonitorCheck: TaskHandler = async (_payload): Promise<TaskRes
 
     const { data: records, error: fetchError } = await supabase
       .from("domain_monitors")
-      .select("id, domain, ssl_expires, spf_status, dkim_status, dmarc_status")
-      .or(
-        `ssl_expires.lte.${now.split("T")[0]},spf_status.eq.unknown,dkim_status.eq.unknown,dmarc_status.eq.unknown`,
-      );
+      .select("id, domain, nameservers")
+      .limit(200);
 
     if (fetchError) {
       return { ok: false, error: `Failed to fetch domain_monitors: ${fetchError.message}` };
     }
 
     if (!records || records.length === 0) {
-      logger.info("domain-monitor-check: no issues found");
+      logger.info("domain-monitor-check: no domains configured");
       return { ok: true };
     }
 
-    const ids = (records as Array<{ id: string }>).map((r) => r.id);
-    const { error: updateError } = await supabase
-      .from("domain_monitors")
-      .update({ last_checked_at: now })
-      .in("id", ids);
+    let checked = 0;
+    for (const record of records as Array<{
+      id: string;
+      domain: string;
+      nameservers: unknown;
+    }>) {
+      const domain = String(record.domain || "").trim();
+      if (!domain) continue;
 
-    if (updateError) {
-      return { ok: false, error: `Failed to update domain_monitors: ${updateError.message}` };
+      const result = await checkDomainDns(domain);
+      const storedNs = Array.isArray(record.nameservers)
+        ? (record.nameservers as string[]).map((n) => n.toLowerCase().replace(/\.$/, ""))
+        : [];
+      const resolvedNs = result.nameservers.map((n) => n.toLowerCase().replace(/\.$/, ""));
+      const nameserverMismatch =
+        storedNs.length > 0 &&
+        resolvedNs.length > 0 &&
+        !storedNs.every((n) => resolvedNs.includes(n));
+
+      await supabase
+        .from("domain_monitors")
+        .update({
+          spf_status: result.spf,
+          dkim_status: result.dkim,
+          dmarc_status: result.dmarc,
+          dmarc_policy: result.dmarcPolicy,
+          nameserver_mismatch: nameserverMismatch,
+          ssl_valid: result.ssl ? result.ssl.daysRemaining >= 0 : false,
+          ssl_expires: result.ssl?.expires ?? null,
+          last_checked_at: now,
+          next_check_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        })
+        .eq("id", record.id);
+      checked++;
     }
 
-    logger.info({ count: records.length, issues: ids.length }, "domain-monitor-check: completed");
+    logger.info({ count: records.length, checked }, "domain-monitor-check: completed");
     return { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -555,6 +579,68 @@ export const domainMonitorCheck: TaskHandler = async (_payload): Promise<TaskRes
     return { ok: false, error: msg };
   }
 };
+
+/** Resolve DNS records through Cloudflare's DNS-over-HTTPS JSON API. */
+async function resolveDns(name: string, type: string): Promise<string[]> {
+  try {
+    const res = await fetch(
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${type}`,
+      { headers: { Accept: "application/dns-json" } },
+    );
+    if (!res.ok) return [];
+    const json = (await res.json()) as { Answer?: Array<{ data: string }> };
+    return (json.Answer ?? []).map((a) => String(a.data).replace(/^"|"$/g, ""));
+  } catch {
+    return [];
+  }
+}
+
+const DKIM_SELECTORS = ["default", "google", "selector1", "selector2", "k1", "mail", "s1"];
+
+/** Check SPF, DKIM, DMARC, nameservers and SSL for a domain. */
+export async function checkDomainDns(
+  domain: string,
+  sslFn: (
+    url: string,
+  ) => Promise<{ expires: string; daysRemaining: number } | null> = fetchSslExpiry,
+): Promise<{
+  spf: string;
+  dkim: string;
+  dmarc: string;
+  dmarcPolicy: string | null;
+  nameservers: string[];
+  ssl: { expires: string; daysRemaining: number } | null;
+}> {
+  const txt = await resolveDns(domain, "TXT");
+  const spf = txt.some((t) => t.toLowerCase().startsWith("v=spf1")) ? "present" : "missing";
+
+  const dmarcTxt = await resolveDns(`_dmarc.${domain}`, "TXT");
+  const dmarcRecord = dmarcTxt.find((t) => t.toLowerCase().startsWith("v=dmarc1"));
+  const dmarcPolicy = dmarcRecord?.match(/p=([a-z]+)/i)?.[1]?.toLowerCase() ?? null;
+
+  let dkim = "missing";
+  for (const selector of DKIM_SELECTORS) {
+    const dkimTxt = await resolveDns(`${selector}._domainkey.${domain}`, "TXT");
+    if (
+      dkimTxt.some((t) => t.toLowerCase().includes("v=dkim1") || t.toLowerCase().includes("k=rsa"))
+    ) {
+      dkim = "present";
+      break;
+    }
+  }
+
+  const nameservers = await resolveDns(domain, "NS");
+  const ssl = await sslFn(`https://${domain}`);
+
+  return {
+    spf,
+    dkim,
+    dmarc: dmarcRecord ? "present" : "missing",
+    dmarcPolicy,
+    nameservers,
+    ssl,
+  };
+}
 
 export const vendorContractRenewalCheck: TaskHandler = async (_payload): Promise<TaskResult> => {
   try {

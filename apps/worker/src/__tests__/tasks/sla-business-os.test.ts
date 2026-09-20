@@ -71,6 +71,7 @@ import {
   vendorContractRenewalCheck,
   qbrScheduledGenerate,
   auditPage,
+  checkDomainDns,
 } from "../../tasks/module-tasks";
 
 describe("slaLogCheck", () => {
@@ -299,5 +300,59 @@ describe("auditPage", () => {
         "slow response (>1.5s)",
       ]),
     );
+  });
+});
+
+describe("checkDomainDns", () => {
+  const originalFetch = global.fetch;
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+  });
+
+  function dohResponse(records: string[]) {
+    return {
+      ok: true,
+      json: async () => ({ Answer: records.map((data) => ({ data: `"${data}"` })) }),
+    };
+  }
+
+  it("detects SPF, DKIM, DMARC policy, nameservers and SSL", async () => {
+    global.fetch = jest.fn(async (url: string) => {
+      const u = String(url);
+      if (u.includes("_dmarc.")) return dohResponse(["v=DMARC1; p=reject"]) as unknown as Response;
+      if (u.includes("_domainkey"))
+        return dohResponse(["v=DKIM1; k=rsa; p=abc"]) as unknown as Response;
+      if (u.includes("type=NS"))
+        return dohResponse(["ns1.example.com.", "ns2.example.com."]) as unknown as Response;
+      return dohResponse(["v=spf1 include:_spf.example.com ~all"]) as unknown as Response;
+    }) as unknown as typeof fetch;
+
+    const result = await checkDomainDns("example.com", async () => ({
+      expires: "2027-01-01T00:00:00Z",
+      daysRemaining: 100,
+    }));
+
+    expect(result.spf).toBe("present");
+    expect(result.dmarc).toBe("present");
+    expect(result.dmarcPolicy).toBe("reject");
+    expect(result.dkim).toBe("present");
+    expect(result.nameservers).toContain("ns1.example.com.");
+    expect(result.ssl?.daysRemaining).toBe(100);
+  });
+
+  it("reports missing records and no SSL", async () => {
+    global.fetch = jest.fn(async () => ({
+      ok: true,
+      json: async () => ({ Answer: [] }),
+    })) as unknown as typeof fetch;
+
+    const result = await checkDomainDns("example.com", async () => null);
+
+    expect(result.spf).toBe("missing");
+    expect(result.dkim).toBe("missing");
+    expect(result.dmarc).toBe("missing");
+    expect(result.dmarcPolicy).toBeNull();
+    expect(result.ssl).toBeNull();
   });
 });
