@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import ProjectTaskListV5 from "@/components/admin/ProjectTaskListV5";
+import ProjectTrackerPanels from "./ProjectTrackerPanels";
 import type { ProjectDetail, Profile, ProjectTask, ProjectTaskComment } from "@mct/sdk";
 
 type ExtendedTask = ProjectTask & {
@@ -191,6 +192,8 @@ export default async function AdminProjectDetailPage({ params }: Props) {
           markTaskCommentsReadAction={markProjectTaskCommentsRead}
         />
       </section>
+
+      <ProjectTrackerPanels projectId={project.id} />
     </AdminPageShell>
   );
 }
