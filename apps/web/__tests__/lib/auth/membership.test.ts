@@ -65,13 +65,22 @@ describe("getApprovedMembership", () => {
     });
   });
 
-  it("returns null when me() throws", async () => {
-    mockMe.mockRejectedValue(new Error("Unauthorized"));
+  it("returns null when me() fails with 401", async () => {
+    const { ApiError } = await import("@mct/sdk");
+    mockMe.mockRejectedValue(new ApiError("UNAUTHORIZED", "Unauthorized", 401));
 
     const { getApprovedMembership } = await import("@/lib/auth/membership");
     const result = await getApprovedMembership();
 
     expect(result).toBeNull();
+  });
+
+  it("rethrows a transient (500) failure from me() so error.tsx renders", async () => {
+    const { ApiError } = await import("@mct/sdk");
+    mockMe.mockRejectedValue(new ApiError("DB_ERROR", "DB down", 500));
+
+    const { getApprovedMembership } = await import("@/lib/auth/membership");
+    await expect(getApprovedMembership()).rejects.toThrow("DB down");
   });
 
   it("returns null when user has no userId", async () => {
@@ -93,17 +102,24 @@ describe("getApprovedMembership", () => {
     expect(result).toBeNull();
   });
 
-  it("returns null and logs error when memberships list throws", async () => {
-    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+  it("returns null when memberships list fails with 403", async () => {
+    const { ApiError } = await import("@mct/sdk");
     mockMe.mockResolvedValue({ userId: "user-1", email: "u@test.com" });
-    mockMembershipsList.mockRejectedValue(new Error("DB error"));
+    mockMembershipsList.mockRejectedValue(new ApiError("FORBIDDEN", "Forbidden", 403));
 
     const { getApprovedMembership } = await import("@/lib/auth/membership");
     const result = await getApprovedMembership();
 
     expect(result).toBeNull();
-    expect(consoleSpy).toHaveBeenCalled();
-    consoleSpy.mockRestore();
+  });
+
+  it("rethrows a transient (500) memberships failure", async () => {
+    const { ApiError } = await import("@mct/sdk");
+    mockMe.mockResolvedValue({ userId: "user-1", email: "u@test.com" });
+    mockMembershipsList.mockRejectedValue(new ApiError("DB_ERROR", "DB down", 500));
+
+    const { getApprovedMembership } = await import("@/lib/auth/membership");
+    await expect(getApprovedMembership()).rejects.toThrow("DB down");
   });
 
   it("uses active org cookie when set", async () => {

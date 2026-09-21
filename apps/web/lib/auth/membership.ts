@@ -1,5 +1,7 @@
+import { cache } from "react";
 import { getApiClient } from "@/lib/api";
 import { getActiveOrg } from "@/lib/org-actions";
+import { withRetry } from "@/lib/retry";
 import type { Membership, Organization } from "@mct/sdk";
 
 type ResolvedMembership = {
@@ -11,19 +13,31 @@ type ResolvedMembership = {
   isPlatformAdmin: boolean;
 };
 
-export async function getApprovedMembership(): Promise<ResolvedMembership | null> {
+/** True for auth failures (treated as "no membership") vs transient errors. */
+function isAuthError(err: unknown): boolean {
+  const status = (err as { status?: number })?.status;
+  return status === 401 || status === 403;
+}
+
+async function loadApprovedMembership(): Promise<ResolvedMembership | null> {
   const api = getApiClient();
   let user;
   try {
-    user = await api.users.me();
-  } catch {
-    return null;
+    // The SDK retries 429/502/503/504 but not 500, so absorb transient 500s.
+    user = await withRetry(() => api.users.me());
+  } catch (err) {
+    if (isAuthError(err)) return null;
+    // Transient failure: let the route-group error.tsx render instead of
+    // bouncing the user to /pending as if they had no membership.
+    throw err;
   }
 
   if (!user?.userId) return null;
 
   try {
-    const memberships = await api.memberships.list({ userId: user.userId, status: "approved" });
+    const memberships = await withRetry(() =>
+      api.memberships.list({ userId: user.userId, status: "approved" }),
+    );
     if (!memberships.length) return null;
 
     const activeOrgId = await getActiveOrg();
@@ -82,7 +96,13 @@ export async function getApprovedMembership(): Promise<ResolvedMembership | null
       isPlatformAdmin: membership.isPlatformAdmin === true || isPlatformAdmin,
     };
   } catch (err) {
-    console.error("membership lookup error", err);
-    return null;
+    if (isAuthError(err)) return null;
+    throw err;
   }
 }
+
+/**
+ * Memoized per request: the portal layout and each page call this, so
+ * without `cache()` every page render repeats the me()+memberships calls.
+ */
+export const getApprovedMembership = cache(loadApprovedMembership);
