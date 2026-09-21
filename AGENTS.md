@@ -383,6 +383,43 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 
 ## Completed Work
 
+### Full repo audit + remediation (2026-09-20 session)
+
+Evidence-based audit (API security, data layer, web, worker, CI/infra, docs)
+with every P0/P1 re-verified in source before fixing. Two reports were false
+positives: the Dockerfiles DO build (workspace `@mct/sdk` is type-only) and
+`terraform-do push` fails on the known `DO_API_TOKEN` 401, not on code.
+
+**Security:** tenant-isolation bypass closed (`?organization_id=A` + body
+`organizationId=B`); RLS approved-status regression re-fixed for
+`client_portal_entitlements`/`phishing_targets` (migration 5302418); Redis URL
+no longer logged; SSRF (`redirect:"manual"` + domain-monitor guard); test-login
+server gate; deploy forwards secrets via `envs:` (no remote-shell injection);
+tfvars written with `printf`; `rollback_sha` validated as hex.
+
+**Reliability:** webhook failures now set `next_retry_at` (were never retried);
+stripe-reconcile picks the active subscription deterministically and only
+suspends on terminal states; worker fetch timeouts; `orphan-cleanup` uses the
+service role; `jsm-sync` checks insert errors; `m365-calendar-sync` rewritten
+(app-only tokens cannot use `/me`); Redis scan lock so multi-replica does not
+duplicate scans; membership lookup distinguishes 401/403 from transient +
+`cache()`; `ModuleDetailPage` no longer masks 500s as "Record not found";
+`DataErrorNote` on admin lists that showed misleading zeros; inline form-action
+closures removed; document modals got dialog semantics; generator Row
+nullability now derives from NOT NULL (surfaced and fixed 12 API nullability
+bugs); TF state locking; deploy health gate (container health) before pruning;
+compose log rotation + fail-closed IMAGE_TAG + caddy healthcheck; FK indexes
+(5302419); `.dockerignore` excludes prompts/e2e; docs counts corrected.
+
+**Known remaining debt (catalogued, not fixed):** ~90 other admin/portal pages
+still convert a failed fetch into an empty/zero state (only assets, findings,
+domain monitors, license optimizer got `DataErrorNote`); ~57 older migrations
+use bare `CREATE POLICY` (non-idempotent) and `5302406`/`5302407` drop tables
+unguarded (already applied); several form labels lack `htmlFor`/`id`; E2E runs
+on both push and PR; Chromatic/`terraform fmt` use `continue-on-error`; the
+deploy aborts the prune on an unhealthy deploy but does not auto-redeploy the
+prior tag; worker `ping` is registered but never enqueued.
+
 ### Typed Supabase admin client + audited row drift (2026-09-18 session)
 
 - **`getSupabaseAdmin` / `getSupabaseAdminNoBreaker` / `getScopedClient` are
