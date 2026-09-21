@@ -427,6 +427,8 @@ jobs:
             cp /opt/mct-portal/repo/infra/digitalocean/prometheus.yml /opt/mct-portal/prometheus.yml
             cp /opt/mct-portal/repo/infra/digitalocean/prometheus.rules.yml /opt/mct-portal/prometheus.rules.yml
             cd /opt/mct-portal
+            # Remember what is currently running so a failed deploy can revert.
+            PREV_TAG=$(docker inspect --format '{{.Config.Image}}' mct-portal-api-1 2>/dev/null | sed 's/.*://')
             docker compose -p mct-portal down --remove-orphans || true
             docker rm -f mct-portal-caddy-1 2>/dev/null || true
             IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans
@@ -456,7 +458,12 @@ jobs:
             if [ "$healthy" != "1" ]; then
               echo "=== Caddy logs (last 30 lines) ==="
               docker compose -p mct-portal logs --tail=30 caddy 2>/dev/null || true
-              echo "ERROR: health checks failed; keeping the previous image for rollback" >&2
+              if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "${{ env.IMAGE_TAG }}" ]; then
+                echo "Attempting rollback to previously running tag $PREV_TAG" >&2
+                docker compose -p mct-portal down --remove-orphans || true
+                IMAGE_TAG="$PREV_TAG" GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans || true
+              fi
+              echo "ERROR: health checks failed after deploy" >&2
               exit 1
             fi
 
