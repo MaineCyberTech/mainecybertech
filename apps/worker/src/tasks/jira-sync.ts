@@ -32,16 +32,16 @@ const STATUS_MAP: Record<string, string> = {
   "In Progress": "in_progress",
   "Under Review": "in_review",
   "Code Review": "in_review",
-  "Done": "done",
-  "Blocked": "blocked",
+  Done: "done",
+  Blocked: "blocked",
 };
 
 const PRIORITY_MAP: Record<string, string> = {
-  "Highest": "urgent",
-  "High": "high",
-  "Medium": "normal",
-  "Low": "low",
-  "Lowest": "low",
+  Highest: "urgent",
+  High: "high",
+  Medium: "normal",
+  Low: "low",
+  Lowest: "low",
 };
 
 async function fetchJiraIssue(
@@ -54,7 +54,10 @@ async function fetchJiraIssue(
     try {
       const res = await fetch(
         `${baseUrl}/rest/api/3/issue/${issueKey}?fields=summary,status,description,issuetype,priority,assignee,labels,duedate,parent,resolution,customfield_10007,updated`,
-        { headers: { Authorization: authHeader, Accept: "application/json" } },
+        {
+          headers: { Authorization: authHeader, Accept: "application/json" },
+          signal: AbortSignal.timeout(15_000),
+        },
       );
       if (res.status === 429) {
         const retryAfter = parseInt(res.headers.get("retry-after") ?? "5", 10);
@@ -93,7 +96,9 @@ export const jiraSync: TaskHandler = async (payload): Promise<TaskResult> => {
 
     let query = supabase
       .from("project_tasks")
-      .select("id, project_id, title, description, status, external_jira_issue_key, priority, owner_id, due_at")
+      .select(
+        "id, project_id, title, description, status, external_jira_issue_key, priority, owner_id, due_at",
+      )
       .not("external_jira_issue_key", "is", null)
       .limit(batchSize);
 
@@ -112,7 +117,10 @@ export const jiraSync: TaskHandler = async (payload): Promise<TaskResult> => {
       if (!task.external_jira_issue_key) continue;
 
       const issue = await fetchJiraIssue(baseUrl, authHeader, task.external_jira_issue_key);
-      if (!issue) { errors++; continue; }
+      if (!issue) {
+        errors++;
+        continue;
+      }
 
       const newStatus = STATUS_MAP[issue.fields.status.name] ?? task.status;
       const newPriority = PRIORITY_MAP[issue.fields.priority?.name ?? ""] ?? task.priority;
@@ -125,16 +133,46 @@ export const jiraSync: TaskHandler = async (payload): Promise<TaskResult> => {
       };
       let needsUpdate = false;
 
-      if (newStatus !== task.status) { updateData.status = newStatus; needsUpdate = true; }
-      if (newPriority !== task.priority) { updateData.priority = newPriority; needsUpdate = true; }
-      if (newTitle !== task.title) { updateData.title = newTitle; needsUpdate = true; }
-      if (newDescription !== task.description) { updateData.description = newDescription; needsUpdate = true; }
-      if (newDueAt && newDueAt !== task.due_at) { updateData.due_at = newDueAt; needsUpdate = true; }
-      if (issue.fields.issuetype?.name) { updateData.issue_type = issue.fields.issuetype.name; needsUpdate = true; }
-      if (issue.fields.labels?.length) { updateData.labels = issue.fields.labels; needsUpdate = true; }
-      if (issue.fields.resolution?.name) { updateData.resolution = issue.fields.resolution.name; needsUpdate = true; }
-      if (issue.fields.parent?.key) { updateData.epic_key = issue.fields.parent.key; needsUpdate = true; }
-      if (issue.fields.customfield_10007) { updateData.sprint = issue.fields.customfield_10007; needsUpdate = true; }
+      if (newStatus !== task.status) {
+        updateData.status = newStatus;
+        needsUpdate = true;
+      }
+      if (newPriority !== task.priority) {
+        updateData.priority = newPriority;
+        needsUpdate = true;
+      }
+      if (newTitle !== task.title) {
+        updateData.title = newTitle;
+        needsUpdate = true;
+      }
+      if (newDescription !== task.description) {
+        updateData.description = newDescription;
+        needsUpdate = true;
+      }
+      if (newDueAt && newDueAt !== task.due_at) {
+        updateData.due_at = newDueAt;
+        needsUpdate = true;
+      }
+      if (issue.fields.issuetype?.name) {
+        updateData.issue_type = issue.fields.issuetype.name;
+        needsUpdate = true;
+      }
+      if (issue.fields.labels?.length) {
+        updateData.labels = issue.fields.labels;
+        needsUpdate = true;
+      }
+      if (issue.fields.resolution?.name) {
+        updateData.resolution = issue.fields.resolution.name;
+        needsUpdate = true;
+      }
+      if (issue.fields.parent?.key) {
+        updateData.epic_key = issue.fields.parent.key;
+        needsUpdate = true;
+      }
+      if (issue.fields.customfield_10007) {
+        updateData.sprint = issue.fields.customfield_10007;
+        needsUpdate = true;
+      }
 
       if (needsUpdate) {
         const { error: updateError } = await supabase
@@ -144,10 +182,20 @@ export const jiraSync: TaskHandler = async (payload): Promise<TaskResult> => {
 
         if (updateError) {
           errors++;
-          logger.warn({ taskId: task.id, error: updateError.message }, "Failed to update task from Jira");
+          logger.warn(
+            { taskId: task.id, error: updateError.message },
+            "Failed to update task from Jira",
+          );
         } else {
           updated++;
-          logger.info({ taskId: task.id, issueKey: task.external_jira_issue_key, fields: Object.keys(updateData) }, "Task synced from Jira");
+          logger.info(
+            {
+              taskId: task.id,
+              issueKey: task.external_jira_issue_key,
+              fields: Object.keys(updateData),
+            },
+            "Task synced from Jira",
+          );
         }
       }
 

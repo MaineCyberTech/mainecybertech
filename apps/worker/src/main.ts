@@ -45,15 +45,8 @@ async function runScheduledTask(type: string, payload: Record<string, unknown> =
 if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test") {
   startHealthServer(env.HEALTH_PORT);
 
-  // Schedule stripe-reconcile to run daily
-  const RECONCILE_INTERVAL_MS = 24 * 60 * 60 * 1000;
-  const reconcileInterval = setInterval(() => {
-    logger.info("Running scheduled stripe-reconcile");
-    runScheduledTask("stripe-reconcile").catch((error) => {
-      logger.error({ error }, "Scheduled stripe-reconcile failed");
-    });
-  }, RECONCILE_INTERVAL_MS);
-  reconcileInterval.unref();
+  // stripe-reconcile is scheduled via scheduledScans (env-gated on
+  // STRIPE_SECRET_KEY) so it does not log failures when Stripe is unset.
 
   // Schedule public-interaction-retention (90-day PII purge) to run daily
   const PUBLIC_INTERACTION_RETENTION_INTERVAL_MS = 24 * 60 * 60 * 1000;

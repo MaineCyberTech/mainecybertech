@@ -35,7 +35,10 @@ async function fetchStripeSubscription(
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(`${stripeUrl}/subscriptions/${subscriptionId}`, { headers });
+      const res = await fetch(`${stripeUrl}/subscriptions/${subscriptionId}`, {
+        headers,
+        signal: AbortSignal.timeout(15_000),
+      });
       if (res.status === 429) {
         const retryAfter = parseInt(res.headers.get("retry-after") ?? "5", 10);
         await new Promise((r) => setTimeout(r, retryAfter * 1000));

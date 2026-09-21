@@ -2,39 +2,51 @@ import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 import { z } from "zod";
 
-export const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
-  WORKER_CONCURRENCY: z.coerce.number().default(10),
-  WORKER_TIMEOUT: z.coerce.number().default(30000),
-  QUEUE_BACKEND: z.enum(["bullmq", "sqs", "inline"]).default("inline"),
-  REDIS_URL: z.string().url().optional(),
-  TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),
-  REDIS_PASSWORD: z.string().optional(),
-  SQS_QUEUE_URL: z.string().optional(),
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_ANON_KEY: z.string().min(1),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  STRIPE_SECRET_KEY: z.string().optional(),
-  JIRA_BASE_URL: z.string().optional(),
-  JIRA_EMAIL: z.string().optional(),
-  JIRA_API_TOKEN: z.string().optional(),
-  JSM_BASE_URL: z.string().optional(),
-  JSM_EMAIL: z.string().optional(),
-  JSM_API_TOKEN: z.string().optional(),
-  M365_TENANT_ID: z.string().optional(),
-  M365_CLIENT_ID: z.string().optional(),
-  M365_CLIENT_SECRET: z.string().optional(),
-  SMTP_HOST: z.string().optional(),
-  SMTP_PORT: z.coerce.number().optional(),
-  SMTP_USER: z.string().optional(),
-  SMTP_PASS: z.string().optional(),
-  EMAIL_FROM: z.string().optional(),
-  API_BASE_URL: z.string().url().optional(),
-  APP_BASE_URL: z.string().url().optional(),
-  SENTRY_DSN: z.string().optional(),
-  HEALTH_PORT: z.coerce.number().default(3001),
-});
+export const envSchema = z
+  .object({
+    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+    LOG_LEVEL: z.enum(["debug", "info", "warn", "error", "silent"]).default("info"),
+    WORKER_CONCURRENCY: z.coerce.number().int().positive().default(10),
+    WORKER_TIMEOUT: z.coerce.number().int().positive().default(30000),
+    QUEUE_BACKEND: z.enum(["bullmq", "sqs", "inline"]).default("inline"),
+    REDIS_URL: z.string().url().optional(),
+    TASK_QUEUE_ENABLED: z.enum(["true", "false"]).optional(),
+    REDIS_PASSWORD: z.string().optional(),
+    SQS_QUEUE_URL: z.string().optional(),
+    SUPABASE_URL: z.string().url(),
+    SUPABASE_ANON_KEY: z.string().min(1),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+    STRIPE_SECRET_KEY: z.string().optional(),
+    JIRA_BASE_URL: z.string().optional(),
+    JIRA_EMAIL: z.string().optional(),
+    JIRA_API_TOKEN: z.string().optional(),
+    JSM_BASE_URL: z.string().optional(),
+    JSM_EMAIL: z.string().optional(),
+    JSM_API_TOKEN: z.string().optional(),
+    M365_TENANT_ID: z.string().optional(),
+    M365_CLIENT_ID: z.string().optional(),
+    M365_CLIENT_SECRET: z.string().optional(),
+    SMTP_HOST: z.string().optional(),
+    SMTP_PORT: z.coerce.number().optional(),
+    SMTP_USER: z.string().optional(),
+    SMTP_PASS: z.string().optional(),
+    EMAIL_FROM: z.string().optional(),
+    API_BASE_URL: z.string().url().optional(),
+    APP_BASE_URL: z.string().url().optional(),
+    SENTRY_DSN: z.string().optional(),
+    HEALTH_PORT: z.coerce.number().int().positive().max(65535).default(3001),
+  })
+  .superRefine((val, ctx) => {
+    // Without Redis the BullMQ consumer warns and returns, and every timer is
+    // unref'd, so the process would exit leaving the queue unconsumed.
+    if (val.QUEUE_BACKEND === "bullmq" && !val.REDIS_URL) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["REDIS_URL"],
+        message: "REDIS_URL is required when QUEUE_BACKEND=bullmq",
+      });
+    }
+  });
 
 export type Env = z.infer<typeof envSchema>;
 

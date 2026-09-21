@@ -10,24 +10,27 @@ interface JsmSyncPayload {
 }
 
 const STATUS_MAP: Record<string, string> = {
-  "Open": "new",
+  Open: "new",
   "In Progress": "in_progress",
   "Waiting for Customer": "waiting_on_client",
   "Waiting for Support": "in_progress",
-  "Resolved": "resolved",
-  "Closed": "closed",
+  Resolved: "resolved",
+  Closed: "closed",
 };
 
 const PRIORITY_MAP: Record<string, string> = {
-  "Highest": "urgent",
-  "High": "high",
-  "Medium": "normal",
-  "Low": "low",
-  "Lowest": "low",
+  Highest: "urgent",
+  High: "high",
+  Medium: "normal",
+  Low: "low",
+  Lowest: "low",
 };
 
 export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
   const { organizationId, projectKey, fullSync } = payload as JsmSyncPayload;
+  if (!organizationId) {
+    return { ok: false, error: "organizationId is required" };
+  }
   const baseUrl = env.JSM_BASE_URL;
   const email = env.JSM_EMAIL;
   const apiToken = env.JSM_API_TOKEN;
@@ -47,13 +50,17 @@ export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
     );
 
     const authHeader = "Basic " + Buffer.from(`${email}:${apiToken}`).toString("base64");
-    const headers = { Authorization: authHeader, "Content-Type": "application/json", Accept: "application/json" };
+    const headers = {
+      Authorization: authHeader,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
 
     const daysBack = fullSync ? 30 : 7;
     const jql = `project = ${projectKey ?? "MCT"} AND created >= -${daysBack}d ORDER BY created DESC`;
     const res = await fetch(
       `${baseUrl}/rest/api/3/search?jql=${encodeURIComponent(jql)}&maxResults=100&fields=summary,status,issuetype,priority,labels,resolution,assignee,updated`,
-      { headers },
+      { headers, signal: AbortSignal.timeout(15_000) },
     );
 
     if (!res.ok) {
@@ -61,7 +68,7 @@ export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
       return { ok: false, error: `JSM API error ${res.status}: ${text}` };
     }
 
-    const data = await res.json() as {
+    const data = (await res.json()) as {
       issues: Array<{
         key: string;
         fields: {
@@ -80,6 +87,7 @@ export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
     let created = 0;
     let updated = 0;
     let skipped = 0;
+    let errors = 0;
 
     for (const issue of data.issues) {
       const { data: existing } = await supabase
@@ -99,10 +107,22 @@ export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
         };
         let needsUpdate = false;
 
-        if (newStatus !== existing.status) { updateData.status = newStatus; needsUpdate = true; }
-        if (newPriority !== existing.priority) { updateData.priority = newPriority; needsUpdate = true; }
-        if (newLabels.length) { updateData.labels = newLabels; needsUpdate = true; }
-        if (newResolution) { updateData.resolution = newResolution; needsUpdate = true; }
+        if (newStatus !== existing.status) {
+          updateData.status = newStatus;
+          needsUpdate = true;
+        }
+        if (newPriority !== existing.priority) {
+          updateData.priority = newPriority;
+          needsUpdate = true;
+        }
+        if (newLabels.length) {
+          updateData.labels = newLabels;
+          needsUpdate = true;
+        }
+        if (newResolution) {
+          updateData.resolution = newResolution;
+          needsUpdate = true;
+        }
 
         if (needsUpdate) {
           const { error: updateError } = await supabase
@@ -111,16 +131,22 @@ export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
             .eq("id", existing.id);
 
           if (updateError) {
-            logger.warn({ ticketId: existing.id, issueKey: issue.key, error: updateError.message }, "Failed to update ticket from JSM");
+            logger.warn(
+              { ticketId: existing.id, issueKey: issue.key, error: updateError.message },
+              "Failed to update ticket from JSM",
+            );
           } else {
             updated++;
-            logger.info({ issueKey: issue.key, fields: Object.keys(updateData) }, "Ticket synced from JSM");
+            logger.info(
+              { issueKey: issue.key, fields: Object.keys(updateData) },
+              "Ticket synced from JSM",
+            );
           }
         } else {
           skipped++;
         }
       } else {
-        await supabase.from("tickets").insert({
+        const { error: insertError } = await supabase.from("tickets").insert({
           organization_id: organizationId,
           title: issue.fields.summary,
           description: `Imported from JSM ${issue.key}`,
@@ -133,12 +159,21 @@ export const jsmSync: TaskHandler = async (payload): Promise<TaskResult> => {
           resolution: newResolution,
           jira_last_synced_at: new Date().toISOString(),
         });
+        if (insertError) {
+          // Do not report success for rows that were not written.
+          errors++;
+          logger.error({ error: insertError.message, key: issue.key }, "JSM ticket insert failed");
+          continue;
+        }
         created++;
       }
     }
 
-    logger.info({ created, updated, skipped, total: data.issues.length }, "JSM sync complete");
-    return { ok: true };
+    logger.info(
+      { created, updated, skipped, errors, total: data.issues.length },
+      "JSM sync complete",
+    );
+    return errors > 0 ? { ok: false, error: `${errors} ticket(s) failed to import` } : { ok: true };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     logger.error({ error: msg }, "JSM sync failed");

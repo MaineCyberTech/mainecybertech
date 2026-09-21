@@ -25,6 +25,12 @@ export interface ScheduledScan {
 }
 
 export const scheduledScans: ScheduledScan[] = [
+  {
+    name: "stripe-reconcile",
+    intervalMs: SCAN_INTERVAL_DAILY_MS,
+    offsetMin: 5,
+    requiresEnv: ["STRIPE_SECRET_KEY"],
+  },
   { name: "domain-monitor-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 3 },
   { name: "website-monitor-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 8 },
   { name: "vendor-contract-renewal-check", intervalMs: SCAN_INTERVAL_MS, offsetMin: 13 },
@@ -41,30 +47,17 @@ export const scheduledScans: ScheduledScan[] = [
   { name: "retention", intervalMs: SCAN_INTERVAL_DAILY_MS, offsetMin: 70 },
   { name: "orphan-cleanup", intervalMs: SCAN_INTERVAL_6H_MS, offsetMin: 76 },
   {
-    name: "jira-sync",
-    intervalMs: SCAN_INTERVAL_DAILY_MS,
-    offsetMin: 80,
-    requiresEnv: ["JIRA_BASE_URL", "JIRA_EMAIL", "JIRA_API_TOKEN"],
-  },
-  {
-    name: "jsm-sync",
-    intervalMs: SCAN_INTERVAL_DAILY_MS,
-    offsetMin: 85,
-    requiresEnv: ["JSM_BASE_URL", "JSM_EMAIL", "JSM_API_TOKEN"],
-  },
-  {
-    name: "m365-calendar-sync",
-    intervalMs: SCAN_INTERVAL_DAILY_MS,
-    offsetMin: 90,
-    requiresEnv: ["M365_TENANT_ID", "M365_CLIENT_ID", "M365_CLIENT_SECRET"],
-  },
-  {
     name: "scheduled-notifications",
     intervalMs: SCAN_INTERVAL_DAILY_MS,
     offsetMin: 95,
     payload: { type: "task-due" },
   },
 ];
+
+// NOTE: `jira-sync`, `jsm-sync` and `m365-calendar-sync` are registered but
+// intentionally NOT scheduled - they are per-tenant integrations that require
+// a target in their payload (projectId / organizationId), so they must be
+// enqueued explicitly rather than run unattended.
 
 /** True when the scan has no env requirements, or all of them are configured. */
 export function isScanConfigured(

@@ -1,17 +1,12 @@
 import { logger } from "../logger";
-import { wsTransport } from "../services/supabase";
+import { getSupabaseAdmin } from "../services/supabase";
 import type { TaskResult } from "../task-registry";
 
-export async function orphanCleanup(
-  _payload: Record<string, unknown>,
-): Promise<TaskResult> {
+export async function orphanCleanup(_payload: Record<string, unknown>): Promise<TaskResult> {
   try {
-    const { createClient } = await import("@supabase/supabase-js");
-    const { env } = await import("../env");
-
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
-      realtime: { transport: wsTransport },
-    });
+    // Storage list/remove need the service role: the anon key is subject to
+    // RLS and silently fails, so orphans would accumulate.
+    const supabase = getSupabaseAdmin();
     const buckets = ["documents", "avatars"];
 
     let totalRemoved = 0;
@@ -40,12 +35,13 @@ export async function orphanCleanup(
         const orphaned = paths.filter((p) => !referencedPaths.has(p));
 
         if (orphaned.length > 0) {
-          const { error: removeError } = await supabase.storage
-            .from(bucket)
-            .remove(orphaned);
+          const { error: removeError } = await supabase.storage.from(bucket).remove(orphaned);
 
           if (removeError) {
-            logger.error({ bucket, count: orphaned.length, error: removeError.message }, "Failed to remove orphaned files");
+            logger.error(
+              { bucket, count: orphaned.length, error: removeError.message },
+              "Failed to remove orphaned files",
+            );
           } else {
             logger.info({ bucket, count: orphaned.length }, "Removed orphaned storage files");
             totalRemoved += orphaned.length;
@@ -59,21 +55,20 @@ export async function orphanCleanup(
           .select("avatar_url")
           .not("avatar_url", "is", null);
 
-        const referencedUrls = new Set(
-          (profiles ?? []).map((p) => p.avatar_url?.split("/").pop()),
-        );
+        const referencedUrls = new Set((profiles ?? []).map((p) => p.avatar_url?.split("/").pop()));
         const orphaned = paths.filter((p) => {
           const key = p.split("/").pop();
           return key && !referencedUrls.has(key);
         });
 
         if (orphaned.length > 0) {
-          const { error: removeError } = await supabase.storage
-            .from(bucket)
-            .remove(orphaned);
+          const { error: removeError } = await supabase.storage.from(bucket).remove(orphaned);
 
           if (removeError) {
-            logger.error({ bucket, count: orphaned.length, error: removeError.message }, "Failed to remove orphaned avatars");
+            logger.error(
+              { bucket, count: orphaned.length, error: removeError.message },
+              "Failed to remove orphaned avatars",
+            );
           } else {
             logger.info({ bucket, count: orphaned.length }, "Removed orphaned avatars");
             totalRemoved += orphaned.length;

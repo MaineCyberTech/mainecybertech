@@ -28,13 +28,17 @@ describe("schedule-config", () => {
         "qbr-scheduled-generate",
         "retention",
         "orphan-cleanup",
-        "jira-sync",
-        "jsm-sync",
-        "m365-calendar-sync",
         "scheduled-notifications",
       ]),
     );
-    expect(scheduledScans.length).toBe(19);
+    expect(scheduledScans.length).toBe(17);
+  });
+
+  it("does not schedule the per-tenant integration syncs unattended", () => {
+    const names = scheduledScans.map((s) => s.name);
+    expect(names).not.toContain("jira-sync");
+    expect(names).not.toContain("jsm-sync");
+    expect(names).not.toContain("m365-calendar-sync");
   });
 
   it("honors the stagger offset in the initial boot delay", () => {
@@ -69,26 +73,11 @@ describe("schedule-config", () => {
       expect(isScanConfigured({ name: "x", intervalMs: 1, offsetMin: 0 }, {})).toBe(true);
     });
 
-    it("skips an integration scan until every required env var is set", () => {
-      const jira = scheduledScans.find((s) => s.name === "jira-sync")!;
-      expect(isScanConfigured(jira, {})).toBe(false);
-      expect(isScanConfigured(jira, { JIRA_BASE_URL: "https://x", JIRA_EMAIL: "a" })).toBe(false);
-      expect(
-        isScanConfigured(jira, {
-          JIRA_BASE_URL: "https://x",
-          JIRA_EMAIL: "a",
-          JIRA_API_TOKEN: "t",
-        }),
-      ).toBe(true);
-    });
-
-    it("gates each integration sync on its own env vars", () => {
-      const gated = scheduledScans.filter((s) => s.requiresEnv?.length);
-      expect(gated.map((s) => s.name).sort()).toEqual([
-        "jira-sync",
-        "jsm-sync",
-        "m365-calendar-sync",
-      ]);
+    it("skips a scan until every required env var is set", () => {
+      const scan = { name: "x", intervalMs: 1, offsetMin: 0, requiresEnv: ["A", "B"] };
+      expect(isScanConfigured(scan, {})).toBe(false);
+      expect(isScanConfigured(scan, { A: "1" })).toBe(false);
+      expect(isScanConfigured(scan, { A: "1", B: "2" })).toBe(true);
     });
   });
 });
