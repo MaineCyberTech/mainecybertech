@@ -14,6 +14,8 @@ import {
   getProductsByCategory,
 } from "../lib/store-catalog";
 import { toJson, type UpdateRow } from "../lib/db-types";
+import { scoreLead } from "../lib/lead-scoring";
+import { logger } from "../lib/logger";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -35,6 +37,7 @@ const quoteItemSchema = z.object({
   productId: z.string().optional(),
   name: z.string().optional(),
   priceRange: z.string().optional(),
+  categoryId: z.string().optional(),
 });
 
 const createQuoteSchema = z.object({
@@ -43,6 +46,11 @@ const createQuoteSchema = z.object({
   phone: z.string().max(50).optional(),
   notes: z.string().max(5000).default(""),
   items: z.array(z.union([z.string(), quoteItemSchema])).default([]),
+  // Optional lead-scoring signals the quote builder may supply.
+  userCount: z.number().int().min(0).max(1_000_000).optional(),
+  needsOnsite: z.boolean().optional(),
+  adminAccessAvailable: z.boolean().optional(),
+  requestedConsult: z.boolean().optional(),
 });
 
 // GET /api/v1/store/promotions - list active promotions (public)
@@ -221,11 +229,68 @@ router.post("/quotes", async (req, res, next) => {
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
+    // Persist the structured quote request and a scored lead (the
+    // `store_quote_requests` / `store_leads` tables were previously unwired).
+    // These are operational side-records: a failure must not break the
+    // customer's submission, so it is logged and recorded in the audit event.
+    let leadScore: number | null = null;
+    let leadBand: string | null = null;
+    try {
+      const { data: request, error: requestError } = await supabase
+        .from("store_quote_requests")
+        .insert({
+          status: "submitted",
+          customer: toJson({
+            name: parsed.name,
+            email: parsed.email,
+            phone: parsed.phone ?? null,
+          }),
+          items: toJson(parsed.items),
+          notes: parsed.notes,
+        })
+        .select()
+        .single();
+      if (requestError) throw requestError;
+
+      const scored = scoreLead({
+        items: parsed.items,
+        notes: parsed.notes,
+        userCount: parsed.userCount,
+        needsOnsite: parsed.needsOnsite,
+        adminAccessAvailable: parsed.adminAccessAvailable,
+        requestedConsult: parsed.requestedConsult,
+      });
+
+      const followUpDays = scored.band === "priority" || scored.band === "high" ? 1 : 2;
+      const { data: lead, error: leadError } = await supabase
+        .from("store_leads")
+        .insert({
+          quote_request_id: (request as { id: string }).id,
+          status: "new",
+          lead_score: scored.score,
+          lead_band: scored.band,
+          score_breakdown: toJson(scored.breakdown),
+          follow_up_due_at:
+            scored.band === "low"
+              ? null
+              : new Date(Date.now() + followUpDays * 24 * 60 * 60 * 1000).toISOString(),
+        })
+        .select()
+        .single();
+      if (leadError) throw leadError;
+
+      leadScore = scored.score;
+      leadBand = scored.band;
+      void lead;
+    } catch (sideError) {
+      logger.warn({ err: sideError }, "store.quote.lead_capture_failed");
+    }
+
     await logAuditEvent({
       action: "store.quote.submit",
       entityType: "store_quote",
       entityId: data.id,
-      metadata: { name: parsed.name, email: parsed.email },
+      metadata: { name: parsed.name, email: parsed.email, leadScore, leadBand },
     });
 
     res.status(201).json(success(data));
@@ -248,6 +313,38 @@ router.get("/quotes", requireAuth, requireAdmin, async (_req, res, next) => {
       .from("store_quotes")
       .select("*")
       .order("created_at", { ascending: false });
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data ?? []));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/store/quote-requests - list structured quote requests (admin)
+router.get("/quote-requests", requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("store_quote_requests")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data ?? []));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/store/leads - list scored leads (admin)
+router.get("/leads", requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("store_leads")
+      .select("*")
+      .order("lead_score", { ascending: false });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data ?? []));

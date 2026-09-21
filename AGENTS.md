@@ -36,12 +36,12 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-20 Verified)
 
-**3,078 tests, all passing. 356 suites.**
+**3,108 tests, all passing. 360 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,070         | 99     | Jest + supertest                  |
-| Web     | 1,624         | 246    | Jest + Testing Library            |
+| API     | 1,091         | 101    | Jest + supertest                  |
+| Web     | 1,633         | 248    | Jest + Testing Library            |
 | SDK     | 285           | 2      | Jest (mocked fetch)               |
 | Worker  | 99            | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -425,14 +425,18 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
 
 **Known remaining debt (second audit):**
 
-- **Webstore pack** (largest gap): the public storefront reads static
-  `apps/web/lib/catalog/data/*.json` while admin CRUD writes the DB
-  (`store_products`/`store_categories`) — **admin edits never reach the public
-  store**. Four tables are unwired (`store_leads`, `store_quote_requests`,
-  `store_visual_assets`, `store_proposal_drafts`); lead scoring,
-  intake→project and proposal generation are no-op stubs; prompt 17
-  (ethical-FOMO UX) is absent; ~12 store admin pages remain static reference
-  viewers; campaigns/import are non-persistent.
+- **Webstore pack** (largest gap): **public storefront now reads the DB-backed
+  catalog** (`apps/web/lib/catalog/catalog-source.ts`, server-only, DB-first with
+  the bundled JSON as an offline/empty-table fallback) so admin catalog edits
+  reach `/store`, `/store/[slug]`, `/store/category/[slug]`, `/store/quote`,
+  `/store/compare/[slug]`, the store sidebar and `/portal/store`. Quote
+  submissions now also persist `store_quote_requests` + a scored `store_leads`
+  row (`apps/api/src/lib/lead-scoring.ts`, admin `GET /store/quote-requests` and
+  `GET /store/leads`, SDK `listQuoteRequests`/`listLeads`). Still open:
+  `store_visual_assets` / `store_proposal_drafts` are unwired; there is no admin
+  UI for leads/quote-requests yet; intake→project and proposal generation remain
+  no-op stubs; prompt 17 (ethical-FOMO UX) is absent; ~12 store admin pages
+  remain static reference viewers; campaigns/import are non-persistent.
 - **repo-deep-dive pack**: its output contract expects artifacts under
   `docs/audits/{name}/{run}/` (absent — historical runs live in the pack dir);
   no SBOM/license workflow; no root `CHANGELOG.md`; no committed

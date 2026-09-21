@@ -152,6 +152,10 @@ import {
   type StoreQuote,
   type StoreQuoteItem,
   type SubmitStoreQuoteInput,
+  type StoreQuoteRequest,
+  type StoreLead,
+  type StoreLeadBand,
+  type StoreLeadScoreBreakdownEntry,
 } from "./store";
 import {
   ClientPortalApi,
@@ -278,6 +282,10 @@ export type {
   StoreQuote,
   StoreQuoteItem,
   SubmitStoreQuoteInput,
+  StoreQuoteRequest,
+  StoreLead,
+  StoreLeadBand,
+  StoreLeadScoreBreakdownEntry,
   KnowledgeBaseArticle,
   ComplianceFramework,
   ComplianceControl,

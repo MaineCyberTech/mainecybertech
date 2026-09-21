@@ -124,7 +124,45 @@ export type SubmitStoreQuoteInput = {
   phone?: string;
   notes?: string;
   items?: Array<string | StoreQuoteItem>;
+  /** Optional lead-scoring signals. */
+  userCount?: number;
+  needsOnsite?: boolean;
+  adminAccessAvailable?: boolean;
+  requestedConsult?: boolean;
 };
+
+export interface StoreQuoteRequest {
+  id: string;
+  status: string;
+  customer: Record<string, unknown>;
+  items: unknown[];
+  selected_promo_ids: string[];
+  recommended_bundle_ids: string[];
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type StoreLeadBand = "low" | "medium" | "high" | "priority";
+
+export interface StoreLeadScoreBreakdownEntry {
+  rule: string;
+  label: string;
+  points: number;
+}
+
+export interface StoreLead {
+  id: string;
+  quote_request_id: string | null;
+  status: string;
+  lead_score: number;
+  lead_band: StoreLeadBand;
+  score_breakdown: StoreLeadScoreBreakdownEntry[];
+  assigned_owner: string | null;
+  follow_up_due_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 export class StoreApi {
   constructor(private client: ApiClient) {}
@@ -209,5 +247,15 @@ export class StoreApi {
 
   listQuotes(): Promise<StoreQuote[]> {
     return this.client.get<StoreQuote[]>("/api/v1/store/quotes");
+  }
+
+  // --- Quote requests + scored leads (admin) ---
+
+  listQuoteRequests(): Promise<StoreQuoteRequest[]> {
+    return this.client.get<StoreQuoteRequest[]>("/api/v1/store/quote-requests");
+  }
+
+  listLeads(): Promise<StoreLead[]> {
+    return this.client.get<StoreLead[]>("/api/v1/store/leads");
   }
 }

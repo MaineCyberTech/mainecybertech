@@ -15,6 +15,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   `store_categories`) through the store API, with the bundled JSON retained as an
   offline/empty-table fallback — admin catalog edits are now visible on the
   public store. New server-only `apps/web/lib/catalog/catalog-source.ts`.
+- Quote submissions now also persist a structured `store_quote_requests` row and
+  a scored `store_leads` row (`apps/api/src/lib/lead-scoring.ts`), with admin
+  `GET /store/quote-requests` + `GET /store/leads` and matching SDK methods.
+  These two tables were previously unwired.
 - CycloneDX 1.5 SBOM generation: `scripts/generate-sbom.mjs` + `SBOM` workflow
   (artifact `sbom-cyclonedx`).
 - `docs/audits/` output contract and run directories
