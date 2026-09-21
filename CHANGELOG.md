@@ -19,6 +19,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   a scored `store_leads` row (`apps/api/src/lib/lead-scoring.ts`), with admin
   `GET /store/quote-requests` + `GET /store/leads` and matching SDK methods.
   These two tables were previously unwired.
+- Admins can generate and review proposal drafts from a quote request
+  (`store_proposal_drafts` via `apps/api/src/lib/proposal-generator.ts` +
+  `POST /store/quote-requests/:id/proposal`, `GET`/`PATCH /store/proposal-drafts`),
+  with new `/admin/store/quote-requests` and `/admin/store/leads` pages and
+  sidebar links.
 - CycloneDX 1.5 SBOM generation: `scripts/generate-sbom.mjs` + `SBOM` workflow
   (artifact `sbom-cyclonedx`).
 - `docs/audits/` output contract and run directories

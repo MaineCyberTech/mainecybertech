@@ -173,6 +173,18 @@ const GROUPS: Array<{ label: string; items: NavItem[] }> = [
       },
       { key: "store-quotes", href: "/admin/store/quotes", label: "Quotes", module: "store-quotes" },
       {
+        key: "store-quote-requests",
+        href: "/admin/store/quote-requests",
+        label: "Quote Requests",
+        module: "store",
+      },
+      {
+        key: "store-leads",
+        href: "/admin/store/leads",
+        label: "Leads",
+        module: "store",
+      },
+      {
         key: "store-campaigns",
         href: "/admin/store/campaigns",
         label: "Campaigns",

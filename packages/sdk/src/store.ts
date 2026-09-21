@@ -164,6 +164,29 @@ export interface StoreLead {
   updated_at: string;
 }
 
+export type StoreProposalDraftStatus =
+  | "draft_internal"
+  | "in_review"
+  | "approved"
+  | "sent"
+  | "archived";
+
+export interface StoreProposalDraft {
+  id: string;
+  quote_request_id: string | null;
+  status: StoreProposalDraftStatus | string;
+  sections: Record<string, unknown>;
+  generated_by: string | null;
+  reviewed_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type UpdateStoreProposalDraftInput = {
+  status?: StoreProposalDraftStatus;
+  sections?: Record<string, string[]>;
+};
+
 export class StoreApi {
   constructor(private client: ApiClient) {}
 
@@ -257,5 +280,25 @@ export class StoreApi {
 
   listLeads(): Promise<StoreLead[]> {
     return this.client.get<StoreLead[]>("/api/v1/store/leads");
+  }
+
+  // --- Proposal drafts (admin) ---
+
+  generateProposalDraft(quoteRequestId: string): Promise<StoreProposalDraft> {
+    return this.client.post<StoreProposalDraft>(
+      `/api/v1/store/quote-requests/${quoteRequestId}/proposal`,
+      {},
+    );
+  }
+
+  listProposalDrafts(): Promise<StoreProposalDraft[]> {
+    return this.client.get<StoreProposalDraft[]>("/api/v1/store/proposal-drafts");
+  }
+
+  updateProposalDraft(
+    id: string,
+    data: UpdateStoreProposalDraftInput,
+  ): Promise<StoreProposalDraft> {
+    return this.client.patch<StoreProposalDraft>(`/api/v1/store/proposal-drafts/${id}`, data);
   }
 }

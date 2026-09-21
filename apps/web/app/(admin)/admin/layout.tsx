@@ -74,6 +74,7 @@ const ADMIN_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string 
   "/admin/store/audit": { module: "store" },
   "/admin/store/nurture": { module: "store" },
   "/admin/store/leads": { module: "store" },
+  "/admin/store/quote-requests": { module: "store" },
   "/admin/api-keys": { module: "api-keys" },
   "/admin/webhooks": { module: "webhooks" },
   "/admin/ai": { module: "ai" },

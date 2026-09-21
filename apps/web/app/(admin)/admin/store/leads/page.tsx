@@ -2,7 +2,11 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import DataErrorNote from "@/components/admin/DataErrorNote";
+import EmptyState from "@/components/EmptyState";
+import { getApiClient } from "@/lib/api";
 import { getLeadScoringData } from "@/lib/catalog/v5-loaders";
+import type { StoreLead } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Lead Scoring - Store - Admin - Maine CyberTech" };
@@ -21,6 +25,14 @@ export default async function AdminStoreLeadsPage() {
   await requireAdminAccess();
   const data = getLeadScoringData();
 
+  let leads: StoreLead[] = [];
+  let loadFailed = false;
+  try {
+    leads = await getApiClient().store.listLeads();
+  } catch {
+    loadFailed = true;
+  }
+
   return (
     <AdminPageShell
       breadcrumbs={
@@ -34,8 +46,60 @@ export default async function AdminStoreLeadsPage() {
       }
       subnav={<AdminSubnav current="store-leads" />}
       title="Lead Scoring Engine"
-      description={`${data.rules.length} scoring rules, ${data.scoreBands.length} score bands`}
+      description={`${leads.length} scored lead${leads.length === 1 ? "" : "s"} · ${data.rules.length} scoring rules, ${data.scoreBands.length} score bands`}
     >
+      {loadFailed && <DataErrorNote what="store leads" />}
+
+      <section className="mb-8">
+        <h2 className="mb-3 text-sm font-semibold text-slate-200">Scored Leads</h2>
+        {leads.length === 0 ? (
+          <EmptyState
+            icon="🎯"
+            title="No scored leads yet"
+            description="Leads are created automatically when a quote is submitted from the public store."
+          />
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-white/10">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10 bg-cyber-base/60">
+                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Band</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-300">Score</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Status</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Signals</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-300">Follow up</th>
+                </tr>
+              </thead>
+              <tbody>
+                {leads.map((lead) => (
+                  <tr key={lead.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${bandColor(lead.lead_band)}`}
+                      >
+                        {lead.lead_band}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-emerald-400">
+                      {lead.lead_score}
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">{lead.status.replace(/_/g, " ")}</td>
+                    <td className="px-4 py-3 text-xs text-slate-400">
+                      {(lead.score_breakdown ?? []).map((b) => b.label).join(", ") || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-right text-xs text-slate-500">
+                      {lead.follow_up_due_at
+                        ? new Date(lead.follow_up_due_at).toLocaleDateString()
+                        : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-slate-200">Score Bands</h2>
         <div className="grid gap-3 sm:grid-cols-4">
@@ -106,10 +170,6 @@ export default async function AdminStoreLeadsPage() {
           ))}
         </div>
       </section>
-
-      <div className="mt-8 rounded-lg border border-white/10 bg-cyber-base/60 p-6 text-center text-sm text-slate-400">
-        Lead records will appear here once scoring is wired to incoming quotes and inquiries.
-      </div>
     </AdminPageShell>
   );
 }

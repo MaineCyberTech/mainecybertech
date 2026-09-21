@@ -156,6 +156,9 @@ import {
   type StoreLead,
   type StoreLeadBand,
   type StoreLeadScoreBreakdownEntry,
+  type StoreProposalDraft,
+  type StoreProposalDraftStatus,
+  type UpdateStoreProposalDraftInput,
 } from "./store";
 import {
   ClientPortalApi,
@@ -286,6 +289,9 @@ export type {
   StoreLead,
   StoreLeadBand,
   StoreLeadScoreBreakdownEntry,
+  StoreProposalDraft,
+  StoreProposalDraftStatus,
+  UpdateStoreProposalDraftInput,
   KnowledgeBaseArticle,
   ComplianceFramework,
   ComplianceControl,

@@ -36,12 +36,12 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-20 Verified)
 
-**3,108 tests, all passing. 360 suites.**
+**3,123 tests, all passing. 363 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,091         | 101    | Jest + supertest                  |
-| Web     | 1,633         | 248    | Jest + Testing Library            |
+| API     | 1,097         | 102    | Jest + supertest                  |
+| Web     | 1,642         | 250    | Jest + Testing Library            |
 | SDK     | 285           | 2      | Jest (mocked fetch)               |
 | Worker  | 99            | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -432,11 +432,13 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
   `/store/compare/[slug]`, the store sidebar and `/portal/store`. Quote
   submissions now also persist `store_quote_requests` + a scored `store_leads`
   row (`apps/api/src/lib/lead-scoring.ts`, admin `GET /store/quote-requests` and
-  `GET /store/leads`, SDK `listQuoteRequests`/`listLeads`). Still open:
-  `store_visual_assets` / `store_proposal_drafts` are unwired; there is no admin
-  UI for leads/quote-requests yet; intake→project and proposal generation remain
-  no-op stubs; prompt 17 (ethical-FOMO UX) is absent; ~12 store admin pages
-  remain static reference viewers; campaigns/import are non-persistent.
+  `GET /store/leads`, SDK `listQuoteRequests`/`listLeads`), and admins can
+  generate/review proposal drafts from a quote request (`store_proposal_drafts`
+  via `apps/api/src/lib/proposal-generator.ts`, `/admin/store/quote-requests`,
+  `/admin/store/leads`). Still open: `store_visual_assets` is unwired;
+  intake→project and the `proposals`-table handoff remain stubs; prompt 17
+  (ethical-FOMO UX) is absent; ~12 store admin pages remain static reference
+  viewers; campaigns/import are non-persistent.
 - **repo-deep-dive pack**: its output contract expects artifacts under
   `docs/audits/{name}/{run}/` (absent — historical runs live in the pack dir);
   no SBOM/license workflow; no root `CHANGELOG.md`; no committed

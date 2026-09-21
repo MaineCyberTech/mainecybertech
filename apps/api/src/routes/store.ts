@@ -15,6 +15,7 @@ import {
 } from "../lib/store-catalog";
 import { toJson, type UpdateRow } from "../lib/db-types";
 import { scoreLead } from "../lib/lead-scoring";
+import { buildProposalSections, PROPOSAL_GUARDRAILS } from "../lib/proposal-generator";
 import { logger } from "../lib/logger";
 
 const router: ReturnType<typeof Router> = Router();
@@ -51,6 +52,11 @@ const createQuoteSchema = z.object({
   needsOnsite: z.boolean().optional(),
   adminAccessAvailable: z.boolean().optional(),
   requestedConsult: z.boolean().optional(),
+});
+
+const updateProposalDraftSchema = z.object({
+  status: z.enum(["draft_internal", "in_review", "approved", "sent", "archived"]).optional(),
+  sections: z.record(z.string(), z.array(z.string())).optional(),
 });
 
 // GET /api/v1/store/promotions - list active promotions (public)
@@ -349,6 +355,111 @@ router.get("/leads", requireAuth, requireAdmin, async (_req, res, next) => {
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     res.json(success(data ?? []));
   } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/store/quote-requests/:id/proposal - generate a proposal draft (admin)
+router.post("/quote-requests/:id/proposal", requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+
+    const { data: request, error } = await supabase
+      .from("store_quote_requests")
+      .select("*")
+      .eq("id", String(req.params.id))
+      .maybeSingle();
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!request) throw new AppError("NOT_FOUND", "Quote request not found", 404);
+
+    const sections = buildProposalSections(request, await getProducts());
+
+    const { data, error: insertError } = await supabase
+      .from("store_proposal_drafts")
+      .insert({
+        quote_request_id: request.id,
+        status: "draft_internal",
+        sections: toJson({ ...sections, guardrails: PROPOSAL_GUARDRAILS }),
+        generated_by: req.authUser?.userId ?? null,
+      })
+      .select()
+      .single();
+
+    if (insertError) throw new AppError("DB_ERROR", insertError.message, 500);
+
+    await logAuditEvent({
+      actorUserId: req.authUser?.userId ?? null,
+      action: "store.proposal_draft.generate",
+      entityType: "store_proposal_draft",
+      entityId: data.id,
+      metadata: { quoteRequestId: request.id },
+    });
+
+    res.status(201).json(success(data));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/store/proposal-drafts - list proposal drafts (admin)
+router.get("/proposal-drafts", requireAuth, requireAdmin, async (_req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("store_proposal_drafts")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data ?? []));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PATCH /api/v1/store/proposal-drafts/:id - review/update a proposal draft (admin)
+router.patch("/proposal-drafts/:id", requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = updateProposalDraftSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+
+    const update: Record<string, unknown> = {};
+    if (parsed.status) update.status = parsed.status;
+    if (parsed.sections) update.sections = toJson(parsed.sections);
+    if (parsed.status && ["approved", "sent"].includes(parsed.status)) {
+      update.reviewed_by = req.authUser?.userId ?? null;
+    }
+    if (Object.keys(update).length === 0) {
+      throw new AppError("VALIDATION", "No updatable fields provided", 400);
+    }
+
+    const { data, error } = await supabase
+      .from("store_proposal_drafts")
+      .update(update as UpdateRow<"store_proposal_drafts">)
+      .eq("id", String(req.params.id))
+      .select()
+      .maybeSingle();
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!data) throw new AppError("NOT_FOUND", "Proposal draft not found", 404);
+
+    await logAuditEvent({
+      actorUserId: req.authUser?.userId ?? null,
+      action: "store.proposal_draft.update",
+      entityType: "store_proposal_draft",
+      entityId: data.id,
+      metadata: { status: parsed.status ?? null },
+    });
+
+    res.json(success(data));
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res
+        .status(400)
+        .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+      return;
+    }
     next(error);
   }
 });
