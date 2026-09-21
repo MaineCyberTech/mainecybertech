@@ -52,8 +52,7 @@ jobs:
           fi
 
       - name: Terraform fmt
-        run: terraform fmt -check
-        continue-on-error: true
+        run: terraform fmt -check -recursive
 
       - name: Create tfvars file
         id: tfvars

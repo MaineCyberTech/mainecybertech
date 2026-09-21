@@ -34,7 +34,7 @@ jobs:
           docker run -d --name test-pg \
             -e POSTGRES_PASSWORD=test \
             -e POSTGRES_DB=restore_test \
-            -p 5432:5432 \
+            -p 127.0.0.1:5432:5432 \
             postgres:16-alpine
           sleep 5
 

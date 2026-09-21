@@ -2,17 +2,8 @@
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main, develop]
-    paths:
-      - "apps/web/e2e/**"
-      - "apps/web/playwright.config.ts"
-      - "apps/web/app/**"
-      - "apps/web/components/**"
-      - "packages/**"
-      - "supabase/seeds/**"
-      - "supabase/migrations/**"
-      - ".github/workflows/e2e.yml"
+  # Push trigger removed: the PR run plus the prod deploy's `workflow_call`
+  # gate already cover changes, and a push trigger ran E2E 2-3x per change.
   pull_request:
     branches: [main, develop]
     paths:

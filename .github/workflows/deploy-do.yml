@@ -314,6 +314,12 @@ jobs:
           FIELD_ENCRYPTION_KEY: ${{ secrets.FIELD_ENCRYPTION_KEY }}
           RLS_READS_ENABLED: ${{ secrets.RLS_READS_ENABLED }}
           RLS_WRITES_ENABLED: ${{ secrets.RLS_WRITES_ENABLED }}
+          # Forwarded so the remote script never interpolates these into the
+          # command text (a branch name may contain shell metacharacters).
+          DEPLOY_REF: ${{ github.ref_name }}
+          REPO_SLUG: ${{ github.repository }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_ACTOR: ${{ github.actor }}
         with:
           host: ${{ needs.resolve-ip.outputs.droplet_ip }}
           username: root
@@ -322,7 +328,7 @@ jobs:
           # Secrets are forwarded as environment variables rather than being
           # interpolated into the remote script, so a value containing $,
           # backticks or quotes cannot execute on the droplet.
-          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED"
+          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
           script: |
             set -e
             timeout 60 cloud-init status --wait 2>/dev/null || true
@@ -334,12 +340,12 @@ jobs:
             fi
             if [ ! -d "/opt/mct-portal/repo" ] || [ ! -d "/opt/mct-portal/repo/.git" ]; then
               rm -rf /opt/mct-portal/repo
-              git clone https://github.com/${{ github.repository }}.git /opt/mct-portal/repo
+              git clone "https://github.com/$REPO_SLUG.git" /opt/mct-portal/repo
             fi
             cd /opt/mct-portal/repo
-            git fetch origin ${{ github.ref_name }}
-            git checkout -B ${{ github.ref_name }} origin/${{ github.ref_name }}
-            git reset --hard origin/${{ github.ref_name }}
+            git fetch origin "$DEPLOY_REF"
+            git checkout -B "$DEPLOY_REF" "origin/$DEPLOY_REF"
+            git reset --hard "origin/$DEPLOY_REF"
             mkdir -p /opt/mct-portal
             : > /opt/mct-portal/.env
             # printf '%s' does not re-expand values, so shell metacharacters in
@@ -392,7 +398,7 @@ jobs:
           envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY
           script: |
             set -e
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
             mkdir -p /opt/mct-portal/certs
             printf '%s\n' "$CF_ORIGIN_CERT" > /opt/mct-portal/certs/fullchain.pem
             printf '%s\n' "$CF_ORIGIN_KEY" > /opt/mct-portal/certs/privkey.pem
@@ -478,7 +484,16 @@ jobs:
         env:
           API_DOMAIN: ${{ needs.setup.outputs.api_domain }}
           APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
+          DROPLET_IP: ${{ needs.resolve-ip.outputs.droplet_ip }}
+          CI_SSH_PRIVATE_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
         run: |
+          # The worker port is not published, so it must be checked over SSH.
+          # Write the key so ssh can actually authenticate (without -i the
+          # check silently returned 000 and was treated as non-fatal).
+          KEY_FILE="$(mktemp)"
+          printf '%s\n' "$CI_SSH_PRIVATE_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          SSH="ssh -i $KEY_FILE -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@$DROPLET_IP"
           api_ok=""
           for i in $(seq 1 30); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null | tr -d '\r\n' || echo "000")
@@ -487,19 +502,20 @@ jobs:
           done
           if [ -z "$api_ok" ]; then
             echo "===== API CONTAINER LOGS START ====="
-            ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@${{ needs.resolve-ip.outputs.droplet_ip }} \
-              "docker ps -a --format '{{.Names}} {{.Status}}'; echo '---'; docker compose -p mct-portal logs --tail=50 api 2>/dev/null || docker logs mct-portal-api-1 --tail 50 2>/dev/null || echo 'no api container found'" || echo "SSH to droplet failed"
+            $SSH "docker ps -a --format '{{.Names}} {{.Status}}'; echo '---'; docker compose -p mct-portal logs --tail=50 api 2>/dev/null || docker logs mct-portal-api-1 --tail 50 2>/dev/null || echo 'no api container found'" || echo "SSH to droplet failed"
             echo "===== API CONTAINER LOGS END ====="
+            rm -f "$KEY_FILE"
             exit 1
           fi
           echo "Worker health check via SSH..."
-          wcode=$(ssh -o StrictHostKeyChecking=no root@${{ needs.resolve-ip.outputs.droplet_ip }} \
-            "curl -s -o /dev/null -w '%{http_code}' --connect-timeout 5 --max-time 10 http://localhost:3001/health 2>/dev/null | tr -d '\r\n' || echo 000" 2>/dev/null | tr -d '\r\n' || echo "000")
+          wcode=$($SSH \
+            "docker exec mct-portal-worker-1 wget -qO- http://localhost:3001/health >/dev/null 2>&1 && echo 200 || echo 000" 2>/dev/null | tr -d '\r\n' || echo "000")
           if [ "$wcode" = "200" ]; then
             echo "Worker healthy (HTTP 200)"
           else
             echo "Warning: Worker health check returned HTTP $wcode (non-fatal — worker is restart-loop tolerant)"
           fi
+          rm -f "$KEY_FILE"
           web_ok=""
           for i in $(seq 1 15); do
             CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null | tr -d '\r\n' || echo "000")
