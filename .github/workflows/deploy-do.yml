@@ -1,4 +1,4 @@
-﻿name: deploy-do
+name: deploy-do
 
 on:
   workflow_dispatch:
@@ -390,9 +390,6 @@ jobs:
 
       - name: Deploy containers
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
-        env:
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GHCR_ACTOR: ${{ github.actor }}
         with:
           host: ${{ needs.resolve-ip.outputs.droplet_ip }}
           username: root
@@ -482,6 +479,8 @@ jobs:
         env:
           CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
           CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_ACTOR: ${{ github.actor }}
 
       - name: Health check
         env:
