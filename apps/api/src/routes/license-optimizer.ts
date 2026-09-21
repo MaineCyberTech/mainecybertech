@@ -62,11 +62,11 @@ router.get("/reclaimable/license-list", async (req, res, next) => {
       .eq("status", "active");
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     const reclaimable = (data ?? []).filter(
-      (l: LicenseAllocationRow) => l.used_seats < l.total_seats * 0.7,
+      (l: LicenseAllocationRow) => (l.used_seats ?? 0) < l.total_seats * 0.7,
     );
     const totalSavings = reclaimable.reduce(
       (sum: number, l: LicenseAllocationRow) =>
-        sum + (l.total_seats - l.used_seats) * (l.cost_per_seat || 0),
+        sum + (l.total_seats - (l.used_seats ?? 0)) * (l.cost_per_seat || 0),
       0,
     );
     res.json(success({ reclaimable, potentialSavings: Math.round(totalSavings * 100) / 100 }));
@@ -95,7 +95,7 @@ router.get("/summary/data", async (req, res, next) => {
         ? Math.round(
             items.reduce(
               (sum: number, l: LicenseAllocationRow) =>
-                sum + (l.total_seats > 0 ? (l.used_seats / l.total_seats) * 100 : 0),
+                sum + (l.total_seats > 0 ? ((l.used_seats ?? 0) / l.total_seats) * 100 : 0),
               0,
             ) / items.length,
           )
@@ -103,8 +103,8 @@ router.get("/summary/data", async (req, res, next) => {
     const potentialSavings = items.reduce(
       (sum: number, l: LicenseAllocationRow) =>
         sum +
-        (l.used_seats < l.total_seats * 0.7
-          ? (l.total_seats - l.used_seats) * (l.cost_per_seat || 0)
+        ((l.used_seats ?? 0) < l.total_seats * 0.7
+          ? (l.total_seats - (l.used_seats ?? 0)) * (l.cost_per_seat || 0)
           : 0),
       0,
     );

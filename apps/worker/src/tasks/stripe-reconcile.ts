@@ -96,11 +96,15 @@ export const stripeReconcile: TaskHandler = async (payload): Promise<TaskResult>
     for (const customer of billingCustomers) {
       const { data: subscriptions } = await supabase
         .from("subscriptions")
-        .select("stripe_subscription_id, status")
+        .select("stripe_subscription_id, status, created_at")
         .eq("organization_id", customer.organization_id)
-        .limit(1);
+        .order("created_at", { ascending: false });
 
-      const sub = subscriptions?.[0];
+      // Prefer the active/trialing subscription. A nondeterministic `limit 1`
+      // could pick an old cancelled row and suspend a paying tenant.
+      const sub =
+        (subscriptions ?? []).find((s) => s.status === "active" || s.status === "trialing") ??
+        subscriptions?.[0];
       if (!sub?.stripe_subscription_id) continue;
 
       const stripeSub = await fetchStripeSubscription(stripeKey, sub.stripe_subscription_id);
@@ -110,9 +114,11 @@ export const stripeReconcile: TaskHandler = async (payload): Promise<TaskResult>
         continue;
       }
 
-      const isActive = stripeSub.status === "active" || stripeSub.status === "trialing";
+      // Only suspend on terminal states - `past_due` is still dunning and must
+      // not lock a tenant out.
+      const terminal = ["canceled", "unpaid", "incomplete_expired"].includes(stripeSub.status);
 
-      if (!isActive && !dryRun) {
+      if (terminal && !dryRun) {
         const { error: updateError } = await supabase
           .from("memberships")
           .update({ status: "suspended" })

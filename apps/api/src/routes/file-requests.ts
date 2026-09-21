@@ -85,7 +85,7 @@ router.get("/public/:token", async (req, res, next) => {
       throw new AppError("GONE", "This upload link is no longer active", 410);
     if (new Date(data.expires_at) < new Date())
       throw new AppError("EXPIRED", "This upload link has expired", 410);
-    if (data.upload_count >= data.max_files)
+    if (data.max_files != null && data.upload_count >= data.max_files)
       throw new AppError("FULL", "Upload limit reached", 410);
     res.json(
       success({
@@ -119,7 +119,7 @@ router.post("/public/:token/upload", upload.single("file"), async (req, res, nex
       throw new AppError("GONE", "This upload link is no longer active", 410);
     if (new Date(data.expires_at) < new Date())
       throw new AppError("EXPIRED", "This upload link has expired", 410);
-    if (data.upload_count >= data.max_files)
+    if (data.max_files != null && data.upload_count >= data.max_files)
       throw new AppError("FULL", "Upload limit reached", 410);
     if (data.max_file_size_mb && req.file.size > data.max_file_size_mb * 1024 * 1024) {
       throw new AppError("VALIDATION", `File exceeds the ${data.max_file_size_mb}MB limit`, 400);

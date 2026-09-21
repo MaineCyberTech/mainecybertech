@@ -151,6 +151,22 @@ async function resolveDefaultOrgId(
   };
 }
 
+/**
+ * Reject a request whose body targets a different organization than the one
+ * resolved for the request. `extractOrgId` prefers the query string, so a
+ * caller could scope the access check to org A (`?organization_id=A`) while
+ * the handler inserts `body.organizationId = B`. Platform admins (audited)
+ * are exempt.
+ */
+function assertBodyOrgMatches(req: Request): void {
+  const bodyOrgId =
+    typeof req.body?.organizationId === "string" ? req.body.organizationId : undefined;
+  if (!bodyOrgId || req.orgScope?.platformAdmin) return;
+  if (req.orgId && bodyOrgId !== req.orgId) {
+    throw new AppError("FORBIDDEN", "organizationId does not match your active organization", 403);
+  }
+}
+
 export async function requireOrgAccess(req: Request, _res: Response, next: NextFunction) {
   // Evaluated per-request, not at module load (see requirePermission note).
 
@@ -202,6 +218,8 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
       };
       req.orgId = defaultOrgId;
 
+      assertBodyOrgMatches(req);
+
       next();
       return;
     }
@@ -220,6 +238,8 @@ export async function requireOrgAccess(req: Request, _res: Response, next: NextF
       impersonation: decision.impersonation,
     };
     req.orgId = orgId;
+
+    assertBodyOrgMatches(req);
 
     next();
   } catch (error) {

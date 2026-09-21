@@ -532,7 +532,10 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 10000);
           const start = performance.now();
-          const response = await fetch(check.url, { signal: controller.signal });
+          const response = await fetch(check.url, {
+            signal: controller.signal,
+            redirect: "manual",
+          });
           responseTimeMs = Math.round(performance.now() - start);
           statusCode = response.status;
           clearTimeout(timeout);
@@ -583,7 +586,10 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 10000);
           const start = performance.now();
-          const response = await fetch(mon.url, { signal: controller.signal });
+          const response = await fetch(mon.url, {
+            signal: controller.signal,
+            redirect: "manual",
+          });
           responseTimeMs = Math.round(performance.now() - start);
           statusCode = response.status;
           if (statusCode >= 200 && statusCode < 400) {
@@ -737,7 +743,18 @@ export const domainMonitorCheck: TaskHandler = async (_payload): Promise<TaskRes
       const domain = String(record.domain || "").trim();
       if (!domain) continue;
 
-      const result = await checkDomainDns(domain);
+      // Domains are user-supplied; never connect to a private/loopback host.
+      const blocked = await assertSafeUrl(`https://${domain}`);
+      const result = blocked
+        ? {
+            spf: "unknown",
+            dkim: "unknown",
+            dmarc: "unknown",
+            dmarcPolicy: null,
+            nameservers: [] as string[],
+            ssl: null,
+          }
+        : await checkDomainDns(domain);
       const storedNs = Array.isArray(record.nameservers)
         ? (record.nameservers as string[]).map((n) => n.toLowerCase().replace(/\.$/, ""))
         : [];

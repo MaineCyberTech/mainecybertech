@@ -182,7 +182,7 @@ router.get("/licenses/savings", async (req, res, next) => {
     const totalSavings = items.reduce((sum, l) => sum + (l.reclaimable_savings ?? 0), 0);
     const totalCost = items.reduce((sum, l) => sum + (l.annual_cost ?? 0), 0);
     const unusedSeats = items.reduce(
-      (sum, l) => sum + Math.max(0, l.total_seats - l.assigned_seats),
+      (sum, l) => sum + Math.max(0, (l.total_seats ?? 0) - (l.assigned_seats ?? 0)),
       0,
     );
     res.json(

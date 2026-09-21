@@ -44,7 +44,14 @@ export async function runBullMQWorker(): Promise<void> {
     logger.error({ error: error.message }, "BullMQ worker error");
   });
 
-  logger.info({ concurrency, redisUrl: env.REDIS_URL }, "BullMQ worker started");
+  const redisHost = (() => {
+    try {
+      return new URL(env.REDIS_URL ?? "").host || "unknown";
+    } catch {
+      return "unknown";
+    }
+  })();
+  logger.info({ concurrency, redisHost }, "BullMQ worker started");
 
   await new Promise<void>((resolve) => {
     const shutdown = async () => {

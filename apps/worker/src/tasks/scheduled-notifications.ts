@@ -85,13 +85,26 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           const body = `"${task.title}"${isOverdue ? " is overdue" : " is due within 24 hours"}${projName ? ` in project ${projName}` : ""}.`;
           const link = `${appBaseUrl}/portal/projects/${task.project_id}`;
 
+          // Dedupe: the scan runs daily and a task can stay overdue for days,
+          // so do not re-notify/re-email the same task within a week.
+          const { data: existing } = await supabase
+            .from("notifications")
+            .select("id")
+            .eq("user_id", task.owner_id)
+            .eq("module", "projects")
+            .eq("module_id", task.id)
+            .eq("action", action)
+            .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+            .maybeSingle();
+          if (existing) continue;
+
           await createInAppNotification(
             supabase,
             task.owner_id,
             title,
             body,
             "projects",
-            task.project_id,
+            task.id,
             action,
           );
 

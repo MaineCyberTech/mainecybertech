@@ -254,7 +254,7 @@ export type Database = {
           created_by: string | null;
           id: string;
           ip_address: string | null;
-          lifecycle_score: number;
+          lifecycle_score: number | null;
           location: string | null;
           mac_address: string | null;
           maintenance_notes: string | null;
@@ -275,7 +275,7 @@ export type Database = {
           supported_until: string | null;
           updated_at: string;
           updated_by: string | null;
-          vendor_support_status: string;
+          vendor_support_status: string | null;
           version: number;
           visibility: string;
           warranty_expires: string | null;
@@ -402,15 +402,15 @@ export type Database = {
           created_by: string | null;
           description: string | null;
           id: string;
-          is_active: boolean;
+          is_active: boolean | null;
           last_result: string | null;
           last_run_at: string | null;
           last_run_status: string | null;
           name: string;
           organization_id: string;
-          run_count: number;
-          script_type: string;
-          trigger_type: string;
+          run_count: number | null;
+          script_type: string | null;
+          trigger_type: string | null;
           updated_at: string;
         };
         Insert: {
@@ -450,23 +450,23 @@ export type Database = {
         ];
       };      backup_status: {
         Row: {
-          backup_type: string;
+          backup_type: string | null;
           created_at: string;
           created_by: string | null;
-          encryption_enabled: boolean;
+          encryption_enabled: boolean | null;
           id: string;
           last_backup_at: string | null;
           last_backup_size_gb: number | null;
-          last_backup_status: string;
+          last_backup_status: string | null;
           next_scheduled_at: string | null;
           notes: string | null;
-          offsite_replicated: boolean;
+          offsite_replicated: boolean | null;
           organization_id: string;
           recovery_point_objective_hours: number | null;
           recovery_time_objective_hours: number | null;
           restore_test_result: string | null;
           restore_tested_at: string | null;
-          retention_days: number;
+          retention_days: number | null;
           status: string;
           system_name: string;
           updated_at: string;
@@ -640,7 +640,7 @@ export type Database = {
         ];
       };      budget_roadmaps: {
         Row: {
-          category: string;
+          category: string | null;
           created_at: string;
           created_by: string | null;
           estimated_cost: number | null;
@@ -649,7 +649,7 @@ export type Database = {
           item_name: string;
           notes: string | null;
           organization_id: string;
-          priority: string;
+          priority: string | null;
           quarter: number | null;
           status: string;
           updated_at: string;
@@ -771,7 +771,7 @@ export type Database = {
         ];
       };      camera_calculations: {
         Row: {
-          avg_bitrate_mbps: number;
+          avg_bitrate_mbps: number | null;
           bitrate_mbps: number;
           camera_count: number;
           created_at: string;
@@ -782,7 +782,7 @@ export type Database = {
           notes: string | null;
           organization_id: string;
           recommended_nvr: string | null;
-          resolution: string;
+          resolution: string | null;
           retention_days: number;
           site_name: string;
           status: string;
@@ -842,7 +842,7 @@ export type Database = {
           implemented_by: string | null;
           organization_id: string;
           requester_id: string | null;
-          risk_level: string;
+          risk_level: string | null;
           rollback_plan: string | null;
           status: string;
           submitted_at: string | null;
@@ -1109,7 +1109,7 @@ export type Database = {
           status: string;
           title: string;
           updated_at: string;
-          version: string;
+          version: string | null;
         };
         Insert: {
           organization_id: string;
@@ -1212,10 +1212,10 @@ export type Database = {
           control_id: string | null;
           created_at: string;
           created_by: string | null;
-          evidence_collected: boolean;
+          evidence_collected: boolean | null;
           framework: string;
           id: string;
-          is_compliant: boolean;
+          is_compliant: boolean | null;
           notes: string | null;
           organization_id: string;
           passed_questions: number | null;
@@ -1271,9 +1271,9 @@ export type Database = {
           form_fields: Json;
           form_name: string;
           id: string;
-          is_active: boolean;
+          is_active: boolean | null;
           organization_id: string;
-          submission_count: number;
+          submission_count: number | null;
           updated_at: string;
         };
         Insert: {
@@ -1310,9 +1310,9 @@ export type Database = {
           created_at: string;
           id: string;
           last_updated: string;
-          max_score: number;
+          max_score: number | null;
           organization_id: string;
-          score: number;
+          score: number | null;
           updated_at: string;
         };
         Insert: {
@@ -1380,19 +1380,19 @@ export type Database = {
       };      dmarc_analyses: {
         Row: {
           alignment_mode: string | null;
-          analyzed_at: string;
-          created_at: string;
+          analyzed_at: string | null;
+          created_at: string | null;
           created_by: string | null;
           dkim_record: string | null;
           dmarc_policy: string | null;
           dmarc_record: string | null;
           domain: string;
           id: string;
-          issues: Json;
+          issues: Json | null;
           organization_id: string;
           overall_grade: string | null;
           pct: number | null;
-          recommendations: Json;
+          recommendations: Json | null;
           spf_record: string | null;
           status: string;
         };
@@ -1437,22 +1437,22 @@ export type Database = {
         ];
       };      dmarc_assessments: {
         Row: {
-          bimi_configured: boolean;
+          bimi_configured: boolean | null;
           created_at: string;
           created_by: string | null;
-          dkim_configured: boolean;
+          dkim_configured: boolean | null;
           dkim_selector: string | null;
           dmarc_pct: number | null;
           dmarc_policy: string | null;
           dmarc_record: string | null;
-          dmarc_valid: boolean;
+          dmarc_valid: boolean | null;
           domain: string;
           id: string;
           last_checked_at: string | null;
           organization_id: string;
           recommendation_notes: string | null;
           spf_record: string | null;
-          spf_valid: boolean;
+          spf_valid: boolean | null;
           status: string;
           updated_at: string;
         };
@@ -1724,29 +1724,29 @@ export type Database = {
         ];
       };      domain_monitors: {
         Row: {
-          alerts_enabled: boolean;
-          check_interval_hours: number;
-          cloudflare_proxied: boolean;
+          alerts_enabled: boolean | null;
+          check_interval_hours: number | null;
+          cloudflare_proxied: boolean | null;
           created_at: string;
           created_by: string | null;
           display_name: string | null;
-          dkim_status: string;
+          dkim_status: string | null;
           dmarc_policy: string | null;
-          dmarc_status: string;
-          dns_provider: string;
+          dmarc_status: string | null;
+          dns_provider: string | null;
           domain: string;
           id: string;
           last_checked_at: string | null;
           metadata: Json;
-          nameserver_mismatch: boolean;
-          nameservers: Json;
+          nameserver_mismatch: boolean | null;
+          nameservers: Json | null;
           next_check_at: string | null;
           organization_id: string;
           owner_user_id: string | null;
-          spf_status: string;
+          spf_status: string | null;
           ssl_expires: string | null;
           ssl_issuer: string | null;
-          ssl_valid: boolean;
+          ssl_valid: boolean | null;
           status: string;
           updated_at: string;
           version: number;
@@ -1908,22 +1908,22 @@ export type Database = {
         ];
       };      endpoint_security: {
         Row: {
-          av_installed: number;
+          av_installed: number | null;
           coverage_pct: number | null;
           created_at: string;
           created_by: string | null;
           device_group: string;
-          disk_encrypted: number;
-          edr_deployed: number;
-          firewall_enabled: number;
+          disk_encrypted: number | null;
+          edr_deployed: number | null;
+          firewall_enabled: number | null;
           id: string;
           last_checked_at: string | null;
-          local_admin_removed: number;
-          mdm_enrolled: number;
+          local_admin_removed: number | null;
+          mdm_enrolled: number | null;
           notes: string | null;
           organization_id: string;
           status: string;
-          total_endpoints: number;
+          total_endpoints: number | null;
           updated_at: string;
         };
         Insert: {
@@ -1976,10 +1976,10 @@ export type Database = {
           description: string | null;
           expires_at: string;
           id: string;
-          max_file_size_mb: number;
-          max_files: number;
+          max_file_size_mb: number | null;
+          max_files: number | null;
           metadata: Json;
-          notify_on_upload: boolean;
+          notify_on_upload: boolean | null;
           organization_id: string;
           status: string;
           storage_path: string;
@@ -2122,22 +2122,22 @@ export type Database = {
       };      hardware_staging: {
         Row: {
           asset_tag: string | null;
-          configured: boolean;
+          configured: boolean | null;
           created_at: string;
           created_by: string | null;
           device_name: string;
           device_type: string;
           id: string;
-          imaged: boolean;
-          labeled: boolean;
+          imaged: boolean | null;
+          labeled: boolean | null;
           notes: string | null;
           organization_id: string;
-          qa_verified: boolean;
+          qa_verified: boolean | null;
           serial_number: string | null;
           staged_at: string | null;
           staged_by: string | null;
           status: string;
-          tested: boolean;
+          tested: boolean | null;
           updated_at: string;
         };
         Insert: {
@@ -2187,7 +2187,7 @@ export type Database = {
         Row: {
           asset_tag: string | null;
           assigned_to: string | null;
-          checklist: Json;
+          checklist: Json | null;
           created_at: string;
           device_name: string;
           id: string;
@@ -2235,7 +2235,7 @@ export type Database = {
           status: string;
           updated_at: string;
           verification_method: string;
-          verification_pass: boolean;
+          verification_pass: boolean | null;
           verified_at: string | null;
           verified_by: string | null;
         };
@@ -2394,12 +2394,12 @@ export type Database = {
           category: string;
           collected_at: string | null;
           coverage_area: string | null;
-          created_at: string;
+          created_at: string | null;
           created_by: string | null;
           description: string | null;
           document_reference: string | null;
           evidence_description: string;
-          evidence_status: string;
+          evidence_status: string | null;
           evidence_type: string;
           expiry_date: string | null;
           file_url: string | null;
@@ -2412,7 +2412,7 @@ export type Database = {
           renewal_date: string | null;
           status: string;
           title: string;
-          updated_at: string;
+          updated_at: string | null;
         };
         Insert: {
           category: string;
@@ -2527,7 +2527,7 @@ export type Database = {
           client_name: string;
           consolidation_score: number;
           contract_length_months: number;
-          contract_status: string;
+          contract_status: string | null;
           created_at: string;
           created_by: string | null;
           current_cost: number | null;
@@ -2536,14 +2536,14 @@ export type Database = {
           monthly_cost: number;
           notes: string | null;
           organization_id: string;
-          phone_lines: number;
+          phone_lines: number | null;
           recommendation: string | null;
           recommended_cost: number | null;
           recommended_provider: string | null;
           services: string | null;
           status: string;
           updated_at: string;
-          voip_ready: boolean;
+          voip_ready: boolean | null;
         };
         Insert: {
           client_name: string;
@@ -2657,13 +2657,13 @@ export type Database = {
           created_by: string | null;
           helpful_count: number;
           id: string;
-          is_published: boolean;
+          is_published: boolean | null;
           not_helpful_count: number;
           organization_id: string;
           tags: string[] | null;
           title: string;
           updated_at: string;
-          view_count: number;
+          view_count: number | null;
         };
         Insert: {
           organization_id: string;
@@ -2740,9 +2740,9 @@ export type Database = {
         ];
       };      license_allocations: {
         Row: {
-          billing_cycle: string;
+          billing_cycle: string | null;
           cost_per_seat: number | null;
-          created_at: string;
+          created_at: string | null;
           created_by: string | null;
           id: string;
           last_audit_date: string | null;
@@ -2750,10 +2750,10 @@ export type Database = {
           notes: string | null;
           organization_id: string;
           software_name: string;
-          status: string;
+          status: string | null;
           total_seats: number;
-          updated_at: string;
-          used_seats: number;
+          updated_at: string | null;
+          used_seats: number | null;
         };
         Insert: {
           organization_id: string;
@@ -2793,7 +2793,7 @@ export type Database = {
       };      license_tracking: {
         Row: {
           annual_cost: number | null;
-          assigned_seats: number;
+          assigned_seats: number | null;
           cost_per_seat: number | null;
           created_at: string;
           created_by: string | null;
@@ -2804,8 +2804,8 @@ export type Database = {
           reclaimable_savings: number | null;
           renewal_date: string | null;
           status: string;
-          total_seats: number;
-          unused_seats: number;
+          total_seats: number | null;
+          unused_seats: number | null;
           updated_at: string;
           vendor: string;
         };
@@ -2850,26 +2850,26 @@ export type Database = {
         ];
       };      m365_hardening: {
         Row: {
-          admin_count: number;
-          audit_logging_enabled: boolean;
-          conditional_access_configured: boolean;
+          admin_count: number | null;
+          audit_logging_enabled: boolean | null;
+          conditional_access_configured: boolean | null;
           created_at: string;
           created_by: string | null;
-          defender_configured: boolean;
-          dlp_configured: boolean;
-          guest_count: number;
+          defender_configured: boolean | null;
+          dlp_configured: boolean | null;
+          guest_count: number | null;
           id: string;
           last_assessment_at: string | null;
           last_scanned_at: string | null;
-          legacy_auth_blocked: boolean;
-          mfa_enforced: boolean;
+          legacy_auth_blocked: boolean | null;
+          mfa_enforced: boolean | null;
           next_review_at: string | null;
           next_scan_at: string | null;
           notes: string | null;
           organization_id: string;
           overall_score: number | null;
           scan_status: string | null;
-          shared_mailbox_count: number;
+          shared_mailbox_count: number | null;
           status: string;
           tenant_domain: string;
           updated_at: string;
@@ -2929,17 +2929,17 @@ export type Database = {
         ];
       };      maintenance_notices: {
         Row: {
-          affected_component_ids: string[];
-          created_at: string;
+          affected_component_ids: string[] | null;
+          created_at: string | null;
           created_by: string | null;
           description: string | null;
           id: string;
           organization_id: string;
           scheduled_end: string;
           scheduled_start: string;
-          status: string;
+          status: string | null;
           title: string;
-          updated_at: string;
+          updated_at: string | null;
         };
         Insert: {
           organization_id: string;
@@ -3219,8 +3219,8 @@ export type Database = {
         ];
       };      offboarding_checklists: {
         Row: {
-          access_reviewed: boolean;
-          account_disabled: boolean;
+          access_reviewed: boolean | null;
+          account_disabled: boolean | null;
           completed_at: string | null;
           completed_steps: string[];
           created_at: string;
@@ -3228,13 +3228,13 @@ export type Database = {
           department: string | null;
           employee_email: string | null;
           employee_name: string;
-          evidence_collected: boolean;
+          evidence_collected: boolean | null;
           id: string;
-          license_reclaimed: boolean;
-          mailbox_converted: boolean;
+          license_reclaimed: boolean | null;
+          mailbox_converted: boolean | null;
           notes: string | null;
           offboarding_date: string | null;
-          onedrive_transferred: boolean;
+          onedrive_transferred: boolean | null;
           organization_id: string;
           status: string;
           submitted_at: string | null;
@@ -3289,20 +3289,20 @@ export type Database = {
         ];
       };      onboarding_clients: {
         Row: {
-          backup_configured: boolean;
+          backup_configured: boolean | null;
           client_name: string;
           completed_at: string | null;
           created_at: string;
           created_by: string | null;
-          discovery_complete: boolean;
-          documentation_prepared: boolean;
-          handoff_complete: boolean;
+          discovery_complete: boolean | null;
+          documentation_prepared: boolean | null;
+          handoff_complete: boolean | null;
           id: string;
-          m365_setup_complete: boolean;
-          network_documented: boolean;
+          m365_setup_complete: boolean | null;
+          network_documented: boolean | null;
           notes: string | null;
           organization_id: string;
-          security_baseline_applied: boolean;
+          security_baseline_applied: boolean | null;
           started_at: string | null;
           status: string;
           updated_at: string;
@@ -3435,19 +3435,19 @@ export type Database = {
           compliance_pct: number | null;
           created_at: string;
           created_by: string | null;
-          critical_patches: number;
+          critical_patches: number | null;
           device_group: string;
-          exception_count: number;
+          exception_count: number | null;
           id: string;
           last_checked_at: string | null;
           last_patch_date: string | null;
           next_maintenance_window: string | null;
           notes: string | null;
           organization_id: string;
-          patched_devices: number;
-          pending_patches: number;
+          patched_devices: number | null;
+          pending_patches: number | null;
           status: string;
-          total_devices: number;
+          total_devices: number | null;
           updated_at: string;
         };
         Insert: {
@@ -3563,14 +3563,14 @@ export type Database = {
         Row: {
           campaign_name: string;
           click_count: number;
-          clicked_count: number;
+          clicked_count: number | null;
           created_at: string;
           created_by: string | null;
           ended_at: string | null;
           id: string;
           launched_at: string | null;
           notes: string | null;
-          opened_count: number;
+          opened_count: number | null;
           organization_id: string;
           reported_count: number;
           started_at: string | null;
@@ -3661,12 +3661,12 @@ export type Database = {
           id: string;
           notes: string | null;
           organization_id: string;
-          poe_enabled: boolean;
+          poe_enabled: boolean | null;
           port_number: number;
-          speed: string;
+          speed: string | null;
           switch_name: string;
           updated_at: string;
-          uplink: boolean;
+          uplink: boolean | null;
           vlan_id: number | null;
           vlan_name: string | null;
           wall_jack_label: string | null;
@@ -3740,7 +3740,7 @@ export type Database = {
         ];
       };      powershell_scripts: {
         Row: {
-          approval_required: boolean;
+          approval_required: boolean | null;
           approved_at: string | null;
           approved_by: string | null;
           created_at: string;
@@ -3748,7 +3748,7 @@ export type Database = {
           id: string;
           name: string;
           organization_id: string;
-          policy_checked: boolean;
+          policy_checked: boolean | null;
           policy_violations: string[];
           risk_level: string;
           script_content: string | null;
@@ -3805,7 +3805,7 @@ export type Database = {
           product: string;
           purchased_at: string | null;
           quote_amount: number | null;
-          selected: boolean;
+          selected: boolean | null;
           updated_at: string;
           vendor_name: string;
         };
@@ -3894,8 +3894,8 @@ export type Database = {
       };      project_dependencies: {
         Row: {
           blocked_by_project_id: string | null;
-          created_at: string;
-          dependency_type: string;
+          created_at: string | null;
+          dependency_type: string | null;
           depends_on_milestone_id: string | null;
           depends_on_task_id: string | null;
           id: string;
@@ -3927,7 +3927,7 @@ export type Database = {
       };      project_milestones: {
         Row: {
           completed_at: string | null;
-          created_at: string;
+          created_at: string | null;
           created_by: string | null;
           description: string | null;
           due_date: string | null;
@@ -3967,16 +3967,16 @@ export type Database = {
         ];
       };      project_phases: {
         Row: {
-          created_at: string;
+          created_at: string | null;
           description: string | null;
           end_date: string | null;
           id: string;
           name: string;
           project_id: string;
-          sort_order: number;
+          sort_order: number | null;
           start_date: string | null;
           status: string;
-          updated_at: string;
+          updated_at: string | null;
         };
         Insert: {
           name: string;
@@ -4289,11 +4289,11 @@ export type Database = {
           notes: string | null;
           phase_id: string | null;
           proposal_id: string;
-          quantity: number;
-          recurring_interval: string;
+          quantity: number | null;
+          recurring_interval: string | null;
           sort_order: number;
-          total_price: number;
-          unit_price: number;
+          total_price: number | null;
+          unit_price: number | null;
           updated_at: string;
         };
         Insert: {
@@ -4382,7 +4382,7 @@ export type Database = {
           created_by: string | null;
           description: string | null;
           expires_at: string | null;
-          grand_total: number;
+          grand_total: number | null;
           id: string;
           metadata: Json;
           organization_id: string;
@@ -4391,10 +4391,10 @@ export type Database = {
           sent_at: string | null;
           status: string;
           title: string;
-          total_labor: number;
-          total_materials: number;
-          total_one_time: number;
-          total_recurring: number;
+          total_labor: number | null;
+          total_materials: number | null;
+          total_one_time: number | null;
+          total_recurring: number | null;
           updated_at: string;
           updated_by: string | null;
           valid_until: string | null;
@@ -4466,7 +4466,7 @@ export type Database = {
           client_name: string | null;
           client_phone: string | null;
           company_name: string | null;
-          created_at: string;
+          created_at: string | null;
           employees: string | null;
           id: string;
           ip_address: string | null;
@@ -4474,7 +4474,7 @@ export type Database = {
           platform: string | null;
           referrer: string | null;
           services_requested: string | null;
-          status: string;
+          status: string | null;
           submitted_at: string | null;
           urgency: string | null;
           user_agent: string | null;
@@ -4590,7 +4590,7 @@ export type Database = {
           data_category: string;
           disposal_method: string | null;
           id: string;
-          is_regulated: boolean;
+          is_regulated: boolean | null;
           last_reviewed_at: string | null;
           next_review_at: string | null;
           notes: string | null;
@@ -4649,8 +4649,8 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           id: string;
-          impact: string;
-          likelihood: string;
+          impact: string | null;
+          likelihood: string | null;
           mitigating_controls: string | null;
           organization_id: string;
           owner_user_id: string | null;
@@ -4756,10 +4756,10 @@ export type Database = {
         Row: {
           annual_cost: number | null;
           cancellation_risk: string | null;
-          classification: string;
+          classification: string | null;
           created_at: string;
           created_by: string | null;
-          has_data_access: boolean;
+          has_data_access: boolean | null;
           id: string;
           monthly_cost: number | null;
           notes: string | null;
@@ -4920,14 +4920,14 @@ export type Database = {
           id: string;
           organization_id: string;
           question: string | null;
-          rating: number;
+          rating: number | null;
           responded_at: string | null;
           respondent_organization_id: string | null;
           respondent_user_id: string | null;
           scheduled_for: string | null;
           send_at: string | null;
           sent_at: string | null;
-          source: string;
+          source: string | null;
           source_entity_id: string | null;
           source_entity_type: string | null;
           status: string;
@@ -5057,23 +5057,23 @@ export type Database = {
         ];
       };      service_catalog: {
         Row: {
-          base_price: number;
-          billing_model: string;
+          base_price: number | null;
+          billing_model: string | null;
           bundle_id: string | null;
-          category: string;
+          category: string | null;
           created_at: string;
           created_by: string | null;
           description: string | null;
           id: string;
           included_units: number | null;
-          is_active: boolean;
-          is_bundled: boolean;
+          is_active: boolean | null;
+          is_bundled: boolean | null;
           metadata: Json;
           name: string;
           organization_id: string;
           overture_rate: number | null;
           status: string;
-          unit: string;
+          unit: string | null;
           updated_at: string;
           visibility: string;
         };
@@ -5127,7 +5127,7 @@ export type Database = {
         Row: {
           created_at: string;
           created_by: string | null;
-          external_sharing: string;
+          external_sharing: string | null;
           id: string;
           notes: string | null;
           organization_id: string;
@@ -5135,7 +5135,7 @@ export type Database = {
           sensitivity_label: string | null;
           site_name: string;
           status: string;
-          structure_type: string;
+          structure_type: string | null;
           team_name: string | null;
           updated_at: string;
         };
@@ -5218,25 +5218,25 @@ export type Database = {
           category: string | null;
           compliance_framework: string | null;
           content: string | null;
-          created_at: string;
+          created_at: string | null;
           created_by: string | null;
           description: string | null;
           document_url: string | null;
           framework: string[] | null;
-          framework_control_ids: string[];
+          framework_control_ids: string[] | null;
           id: string;
           last_reviewed_at: string | null;
           next_review_at: string | null;
           organization_id: string;
           owner_user_id: string | null;
-          review_cycle_days: number;
+          review_cycle_days: number | null;
           sop_category: string;
           sop_number: string | null;
           status: string;
-          tags: string[];
+          tags: string[] | null;
           title: string;
-          updated_at: string;
-          version: string;
+          updated_at: string | null;
+          version: string | null;
         };
         Insert: {
           organization_id: string;
@@ -5291,15 +5291,15 @@ export type Database = {
         ];
       };      status_components: {
         Row: {
-          component_type: string;
-          created_at: string;
+          component_type: string | null;
+          created_at: string | null;
           description: string | null;
-          display_order: number;
+          display_order: number | null;
           id: string;
           name: string;
           organization_id: string;
-          status: string;
-          updated_at: string;
+          status: string | null;
+          updated_at: string | null;
         };
         Insert: {
           name: string;
@@ -5328,18 +5328,18 @@ export type Database = {
         ];
       };      status_incidents: {
         Row: {
-          affected_component_ids: string[];
-          created_at: string;
+          affected_component_ids: string[] | null;
+          created_at: string | null;
           created_by: string | null;
           description: string | null;
           id: string;
           organization_id: string;
           resolved_at: string | null;
-          severity: string;
-          started_at: string;
-          status: string;
+          severity: string | null;
+          started_at: string | null;
+          status: string | null;
           title: string;
-          updated_at: string;
+          updated_at: string | null;
         };
         Insert: {
           organization_id: string;
@@ -5378,8 +5378,8 @@ export type Database = {
           created_by: string | null;
           description: string | null;
           id: string;
-          is_public: boolean;
-          is_resolved: boolean;
+          is_public: boolean | null;
+          is_resolved: boolean | null;
           organization_id: string;
           resolved_at: string | null;
           scheduled_end: string | null;
@@ -5429,11 +5429,11 @@ export type Database = {
           anonymous_id: string | null;
           campaign_id: string | null;
           category_id: string | null;
-          created_at: string;
+          created_at: string | null;
           event: string;
           id: string;
           ip_address: string | null;
-          metadata: Json;
+          metadata: Json | null;
           page: string | null;
           product_id: string | null;
           promo_id: string | null;
@@ -5621,10 +5621,10 @@ export type Database = {
         ];
       };      store_promotions: {
         Row: {
-          badge_text: string;
-          created_at: string;
-          detail_text: string;
-          eligibility_targets: string[];
+          badge_text: string | null;
+          created_at: string | null;
+          detail_text: string | null;
+          eligibility_targets: string[] | null;
           end_date: string | null;
           id: string;
           name: string;
@@ -5632,8 +5632,8 @@ export type Database = {
           promo_type: string;
           start_date: string | null;
           status: string;
-          terms: string;
-          updated_at: string;
+          terms: string | null;
+          updated_at: string | null;
         };
         Insert: {
           name: string;
@@ -5739,16 +5739,16 @@ export type Database = {
         ];
       };      store_quotes: {
         Row: {
-          created_at: string;
+          created_at: string | null;
           email: string;
           id: string;
-          items: Json;
+          items: Json | null;
           name: string;
-          notes: string;
+          notes: string | null;
           organization_id: string | null;
           phone: string | null;
           status: string;
-          updated_at: string;
+          updated_at: string | null;
         };
         Insert: {
           email: string;
@@ -5829,7 +5829,7 @@ export type Database = {
         Row: {
           amount_cents: number | null;
           created_at: string;
-          currency: string;
+          currency: string | null;
           current_period_end: string | null;
           current_period_start: string | null;
           id: string;
@@ -5884,7 +5884,7 @@ export type Database = {
           organization_id: string;
           participants: string | null;
           scenario: string;
-          scenario_type: string;
+          scenario_type: string | null;
           scheduled_date: string | null;
           status: string;
           title: string;
@@ -5966,7 +5966,7 @@ export type Database = {
         ];
       };      ticket_triage_drafts: {
         Row: {
-          confidence_score: number;
+          confidence_score: number | null;
           converted_ticket_id: string | null;
           created_at: string;
           created_by: string | null;
@@ -5980,7 +5980,7 @@ export type Database = {
           reviewed_by: string | null;
           status: string;
           suggested_category: string | null;
-          suggested_priority: string;
+          suggested_priority: string | null;
           suggested_subject: string | null;
           updated_at: string;
         };
@@ -6098,10 +6098,10 @@ export type Database = {
         ];
       };      time_entries: {
         Row: {
-          billable: boolean;
+          billable: boolean | null;
           created_at: string;
           description: string;
-          hours: number;
+          hours: number | null;
           id: string;
           organization_id: string;
           ticket_id: string | null;
@@ -6139,18 +6139,18 @@ export type Database = {
         ];
       };      training_courses: {
         Row: {
-          category: string;
-          created_at: string;
+          category: string | null;
+          created_at: string | null;
           created_by: string | null;
           description: string | null;
-          difficulty: string;
-          estimated_minutes: number;
+          difficulty: string | null;
+          estimated_minutes: number | null;
           id: string;
           organization_id: string;
-          passing_score: number;
-          status: string;
+          passing_score: number | null;
+          status: string | null;
           title: string;
-          updated_at: string;
+          updated_at: string | null;
         };
         Insert: {
           organization_id: string;
@@ -6187,10 +6187,10 @@ export type Database = {
         Row: {
           completed_at: string | null;
           course_id: string;
-          enrolled_at: string;
+          enrolled_at: string | null;
           id: string;
-          progress_percent: number;
-          status: string;
+          progress_percent: number | null;
+          status: string | null;
           user_id: string;
         };
         Insert: {
@@ -6218,10 +6218,10 @@ export type Database = {
         Row: {
           content: string | null;
           course_id: string;
-          created_at: string;
+          created_at: string | null;
           id: string;
-          lesson_type: string;
-          sort_order: number;
+          lesson_type: string | null;
+          sort_order: number | null;
           title: string;
         };
         Insert: {
@@ -6247,14 +6247,14 @@ export type Database = {
         ];
       };      training_modules: {
         Row: {
-          category: string;
-          completion_count: number;
+          category: string | null;
+          completion_count: number | null;
           created_at: string;
           created_by: string | null;
           description: string | null;
           duration_minutes: number | null;
           id: string;
-          is_required: boolean;
+          is_required: boolean | null;
           organization_id: string;
           status: string;
           title: string;
@@ -6293,10 +6293,10 @@ export type Database = {
         ];
       };      unifi_surveys: {
         Row: {
-          access_points: number;
+          access_points: number | null;
           ap_count: number;
-          cable_runs_estimated: number;
-          cameras: number;
+          cable_runs_estimated: number | null;
+          cameras: number | null;
           created_at: string;
           created_by: string | null;
           estimated_cost: number;
@@ -6304,14 +6304,14 @@ export type Database = {
           notes: string | null;
           nvr_estimated_storage_tb: number | null;
           organization_id: string;
-          outdoor_aps: number;
+          outdoor_aps: number | null;
           poe_budget_watts: number | null;
           site_address: string | null;
           site_name: string;
           status: string;
           survey_date: string | null;
           switch_count: number;
-          switches: number;
+          switches: number | null;
           updated_at: string;
         };
         Insert: {
@@ -6363,18 +6363,18 @@ export type Database = {
         ];
       };      uptime_checks: {
         Row: {
-          check_interval_minutes: number;
-          check_type: string;
-          created_at: string;
+          check_interval_minutes: number | null;
+          check_type: string | null;
+          created_at: string | null;
           created_by: string | null;
-          expected_status_code: number;
+          expected_status_code: number | null;
           id: string;
           last_checked_at: string | null;
           last_status_code: number | null;
           organization_id: string;
-          status: string;
-          timeout_seconds: number;
-          updated_at: string;
+          status: string | null;
+          timeout_seconds: number | null;
+          updated_at: string | null;
           url: string;
         };
         Insert: {
@@ -6413,7 +6413,7 @@ export type Database = {
       };      uptime_results: {
         Row: {
           check_id: string;
-          checked_at: string;
+          checked_at: string | null;
           error_message: string | null;
           id: string;
           is_up: boolean;
@@ -6485,7 +6485,7 @@ export type Database = {
           email: string | null;
           escalation_path: string | null;
           id: string;
-          is_primary: boolean;
+          is_primary: boolean | null;
           notes: string | null;
           organization_id: string;
           phone: string | null;
@@ -6536,10 +6536,10 @@ export type Database = {
         ];
       };      vendor_contracts: {
         Row: {
-          auto_renews: boolean;
-          billing_frequency: string;
+          auto_renews: boolean | null;
+          billing_frequency: string | null;
           contract_number: string | null;
-          contract_type: string;
+          contract_type: string | null;
           contract_value: number | null;
           created_at: string;
           created_by: string | null;
@@ -6550,7 +6550,7 @@ export type Database = {
           owner_user_id: string | null;
           primary_contact_id: string | null;
           renewal_date: string | null;
-          renewal_notice_days: number;
+          renewal_notice_days: number | null;
           service_name: string;
           start_date: string | null;
           status: string;
@@ -6747,8 +6747,8 @@ export type Database = {
         ];
       };      website_monitors: {
         Row: {
-          alerts_enabled: boolean;
-          check_interval_hours: number;
+          alerts_enabled: boolean | null;
+          check_interval_hours: number | null;
           created_at: string;
           created_by: string | null;
           display_name: string | null;
@@ -6756,14 +6756,14 @@ export type Database = {
           last_checked_at: string | null;
           last_page_bytes: number | null;
           last_response_ms: number | null;
-          last_status: string;
+          last_status: string | null;
           lighthouse_score: number | null;
           next_check_at: string | null;
           organization_id: string;
           seo_issues: Json;
           seo_score: number | null;
           ssl_expires: string | null;
-          ssl_valid: boolean;
+          ssl_valid: boolean | null;
           status: string;
           updated_at: string;
           url: string;

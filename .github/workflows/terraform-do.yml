@@ -63,16 +63,21 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           CLOUDFLARE_ZONE_ID_US: ${{ secrets.CLOUDFLARE_ZONE_ID_US }}
+          # prod needs >=2GB: the compose stack reserves ~1.4GB.
+          DROPLET_SIZE: ${{ steps.env.outputs.name == 'prod' && 's-2vcpu-2gb' || 's-1vcpu-512mb-10gb' }}
+          TF_ENV: ${{ steps.env.outputs.name }}
         run: |
-          cat > "${{ steps.env.outputs.name }}.tfvars" <<EOF
-          do_token              = "${DO_API_TOKEN}"
-          ssh_fingerprint       = "${DO_SSH_FINGERPRINT}"
-          cloudflare_api_token  = "${CLOUDFLARE_API_TOKEN}"
-          cloudflare_zone_id    = "${CLOUDFLARE_ZONE_ID}"
-          cloudflare_zone_id_us = "${CLOUDFLARE_ZONE_ID_US}"
-          droplet_size          = "s-1vcpu-512mb-10gb"
-          environment           = "${{ steps.env.outputs.name }}"
-          EOF
+          # printf '%s' never re-expands the value, so a secret containing
+          # $, backticks or quotes cannot corrupt the file or execute.
+          {
+            printf 'do_token              = "%s"\n' "$DO_API_TOKEN"
+            printf 'ssh_fingerprint       = "%s"\n' "$DO_SSH_FINGERPRINT"
+            printf 'cloudflare_api_token  = "%s"\n' "$CLOUDFLARE_API_TOKEN"
+            printf 'cloudflare_zone_id    = "%s"\n' "$CLOUDFLARE_ZONE_ID"
+            printf 'cloudflare_zone_id_us = "%s"\n' "$CLOUDFLARE_ZONE_ID_US"
+            printf 'droplet_size          = "%s"\n' "$DROPLET_SIZE"
+            printf 'environment           = "%s"\n' "$TF_ENV"
+          } > "$TF_ENV.tfvars"
 
       - name: Terraform Init
         env:

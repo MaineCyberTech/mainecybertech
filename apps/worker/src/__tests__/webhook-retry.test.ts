@@ -34,6 +34,7 @@ function createThenableChain(initialResult: unknown) {
     "not",
     "lt",
     "lte",
+    "or",
     "order",
     "range",
     "limit",

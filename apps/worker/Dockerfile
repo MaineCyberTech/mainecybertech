@@ -7,6 +7,9 @@ COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 # Copy worker app
 COPY apps/worker ./apps/worker
 
+# Workspace packages the app depends on (@mct/sdk, @mct/config).
+COPY packages ./packages
+
 # Enable pnpm and install dependencies
 RUN corepack enable && corepack prepare pnpm@10 --activate
 RUN pnpm install --frozen-lockfile --filter=./apps/worker

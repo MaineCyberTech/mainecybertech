@@ -148,9 +148,12 @@ function parseCreateTable(sql) {
         if (isGenerated) continue;
 
         let tsType = parseSqlType(colType);
-        // If nullable or has a default, it can be omitted on insert
+        // Row nullability is driven solely by NOT NULL: a column declared
+        // `type DEFAULT x` without NOT NULL can still hold NULL (e.g.
+        // `total_labor numeric default 0`), so it must be `T | null`. A
+        // default only makes the column omittable on insert.
         columns[colName] = {
-          row: !notNull && !hasDefault ? `${tsType} | null` : tsType,
+          row: !notNull ? `${tsType} | null` : tsType,
           insertOpt: !notNull || hasDefault,
         };
         const refMatch = trimmed.match(REF_RE);

@@ -19,7 +19,9 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
       // Generic inbound-webhook logs have no endpoint to retry against.
       .not("webhook_id", "is", null)
       .lt("retry_count", MAX_RETRIES)
-      .lte("next_retry_at", new Date().toISOString())
+      // Legacy failed rows have next_retry_at = null; include them so they are
+      // not stranded forever.
+      .or(`next_retry_at.is.null,next_retry_at.lte.${new Date().toISOString()}`)
       .order("next_retry_at", { ascending: true })
       .limit(BATCH_SIZE);
 
@@ -97,6 +99,9 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
           headers,
           body,
           signal: controller.signal,
+          // The SSRF guard validated the initial URL only; do not follow a
+          // redirect to an internal address.
+          redirect: "manual",
         });
         clearTimeout(timeout);
 

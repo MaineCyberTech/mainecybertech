@@ -272,11 +272,49 @@ jobs:
 
       - name: Setup droplet
         uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JSM_BASE_URL: ${{ secrets.JSM_BASE_URL }}
+          M365_TENANT_ID: ${{ secrets.M365_TENANT_ID }}
+          M365_CLIENT_ID: ${{ secrets.M365_CLIENT_ID }}
+          M365_CLIENT_SECRET: ${{ secrets.M365_CLIENT_SECRET }}
+          PUBLIC_TRAFFIC_WEBHOOK_URL: ${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }}
+          PUBLIC_LEAD_WEBHOOK_URL: ${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }}
+          JSM_DOMAIN: ${{ secrets.JSM_DOMAIN }}
+          JSM_EMAIL: ${{ secrets.JSM_EMAIL }}
+          JSM_API_TOKEN: ${{ secrets.JSM_API_TOKEN }}
+          JSM_SERVICEDESK_ID: ${{ secrets.JSM_SERVICEDESK_ID }}
+          JSM_REQUEST_TYPE_ID: ${{ secrets.JSM_REQUEST_TYPE_ID }}
+          APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
+          API_DOMAIN: ${{ needs.setup.outputs.api_domain }}
+          CORS_ORIGIN: ${{ needs.setup.outputs.cors_origin }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          FIELD_ENCRYPTION_KEY: ${{ secrets.FIELD_ENCRYPTION_KEY }}
+          RLS_READS_ENABLED: ${{ secrets.RLS_READS_ENABLED }}
+          RLS_WRITES_ENABLED: ${{ secrets.RLS_WRITES_ENABLED }}
         with:
           host: ${{ needs.resolve-ip.outputs.droplet_ip }}
           username: root
           key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
           command_timeout: 45m
+          # Secrets are forwarded as environment variables rather than being
+          # interpolated into the remote script, so a value containing $,
+          # backticks or quotes cannot execute on the droplet.
+          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED"
           script: |
             set -e
             timeout 60 cloud-init status --wait 2>/dev/null || true
@@ -296,42 +334,43 @@ jobs:
             git reset --hard origin/${{ github.ref_name }}
             mkdir -p /opt/mct-portal
             : > /opt/mct-portal/.env
-            for pair in \
-              "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" \
-              "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
-              "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" \
-              "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-              "STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}" \
-              "STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}" \
-              "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" \
-              "SMTP_HOST=${{ secrets.SMTP_HOST }}" \
-              "SMTP_PORT=${{ secrets.SMTP_PORT }}" \
-              "SMTP_USER=${{ secrets.SMTP_USER }}" \
-              "SMTP_PASS=${{ secrets.SMTP_PASS }}" \
-              "EMAIL_FROM=${{ secrets.EMAIL_FROM }}" \
-              "JIRA_BASE_URL=${{ secrets.JIRA_BASE_URL }}" \
-              "JIRA_EMAIL=${{ secrets.JIRA_EMAIL }}" \
-              "JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }}" \
-              "JSM_BASE_URL=${{ secrets.JSM_BASE_URL }}" \
-              "M365_TENANT_ID=${{ secrets.M365_TENANT_ID }}" \
-              "M365_CLIENT_ID=${{ secrets.M365_CLIENT_ID }}" \
-              "M365_CLIENT_SECRET=${{ secrets.M365_CLIENT_SECRET }}" \
-              "PUBLIC_TRAFFIC_WEBHOOK_URL=${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }}" \
-              "PUBLIC_LEAD_WEBHOOK_URL=${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }}" \
-              "JSM_DOMAIN=${{ secrets.JSM_DOMAIN }}" \
-              "JSM_EMAIL=${{ secrets.JSM_EMAIL }}" \
-              "JSM_API_TOKEN=${{ secrets.JSM_API_TOKEN }}" \
-              "JSM_SERVICEDESK_ID=${{ secrets.JSM_SERVICEDESK_ID }}" \
-              "JSM_REQUEST_TYPE_ID=${{ secrets.JSM_REQUEST_TYPE_ID }}" \
-              "APP_DOMAIN=${{ needs.setup.outputs.app_domain }}" \
-              "API_DOMAIN=${{ needs.setup.outputs.api_domain }}" \
-              "CORS_ORIGIN=${{ needs.setup.outputs.cors_origin }}" \
-              "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" \
-              "FIELD_ENCRYPTION_KEY=${{ secrets.FIELD_ENCRYPTION_KEY }}" \
-              "RLS_READS_ENABLED=${{ secrets.RLS_READS_ENABLED }}" \
-              "RLS_WRITES_ENABLED=${{ secrets.RLS_WRITES_ENABLED }}"; do
-              printf '%s\n' "$pair" >> /opt/mct-portal/.env
-            done
+            # printf '%s' does not re-expand values, so shell metacharacters in
+            # a secret are written literally.
+            {
+              printf 'SUPABASE_URL=%s\n' "$SUPABASE_URL"
+              printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
+              printf 'SUPABASE_ANON_KEY=%s\n' "$SUPABASE_ANON_KEY"
+              printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
+              printf 'STRIPE_SECRET_KEY=%s\n' "$STRIPE_SECRET_KEY"
+              printf 'STRIPE_WEBHOOK_SECRET=%s\n' "$STRIPE_WEBHOOK_SECRET"
+              printf 'SENTRY_DSN=%s\n' "$SENTRY_DSN"
+              printf 'SMTP_HOST=%s\n' "$SMTP_HOST"
+              printf 'SMTP_PORT=%s\n' "$SMTP_PORT"
+              printf 'SMTP_USER=%s\n' "$SMTP_USER"
+              printf 'SMTP_PASS=%s\n' "$SMTP_PASS"
+              printf 'EMAIL_FROM=%s\n' "$EMAIL_FROM"
+              printf 'JIRA_BASE_URL=%s\n' "$JIRA_BASE_URL"
+              printf 'JIRA_EMAIL=%s\n' "$JIRA_EMAIL"
+              printf 'JIRA_API_TOKEN=%s\n' "$JIRA_API_TOKEN"
+              printf 'JSM_BASE_URL=%s\n' "$JSM_BASE_URL"
+              printf 'M365_TENANT_ID=%s\n' "$M365_TENANT_ID"
+              printf 'M365_CLIENT_ID=%s\n' "$M365_CLIENT_ID"
+              printf 'M365_CLIENT_SECRET=%s\n' "$M365_CLIENT_SECRET"
+              printf 'PUBLIC_TRAFFIC_WEBHOOK_URL=%s\n' "$PUBLIC_TRAFFIC_WEBHOOK_URL"
+              printf 'PUBLIC_LEAD_WEBHOOK_URL=%s\n' "$PUBLIC_LEAD_WEBHOOK_URL"
+              printf 'JSM_DOMAIN=%s\n' "$JSM_DOMAIN"
+              printf 'JSM_EMAIL=%s\n' "$JSM_EMAIL"
+              printf 'JSM_API_TOKEN=%s\n' "$JSM_API_TOKEN"
+              printf 'JSM_SERVICEDESK_ID=%s\n' "$JSM_SERVICEDESK_ID"
+              printf 'JSM_REQUEST_TYPE_ID=%s\n' "$JSM_REQUEST_TYPE_ID"
+              printf 'APP_DOMAIN=%s\n' "$APP_DOMAIN"
+              printf 'API_DOMAIN=%s\n' "$API_DOMAIN"
+              printf 'CORS_ORIGIN=%s\n' "$CORS_ORIGIN"
+              printf 'REDIS_PASSWORD=%s\n' "$REDIS_PASSWORD"
+              printf 'FIELD_ENCRYPTION_KEY=%s\n' "$FIELD_ENCRYPTION_KEY"
+              printf 'RLS_READS_ENABLED=%s\n' "$RLS_READS_ENABLED"
+              printf 'RLS_WRITES_ENABLED=%s\n' "$RLS_WRITES_ENABLED"
+            } >> /opt/mct-portal/.env
             chmod 600 /opt/mct-portal/.env
             echo "Droplet ready"
 

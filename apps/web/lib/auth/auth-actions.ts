@@ -69,11 +69,25 @@ export type TestLoginResult = { ok: true; redirectTo: string } | { ok: false; er
  */
 export async function testLoginAction(email: string, password: string): Promise<TestLoginResult> {
   try {
-    const client = unauthClient();
-    const result = await client.auth.signIn(email, password);
     const cookieStore = await cookies();
     const headersList = await headers();
-    const host = headersList.get("host") || "";
+    const host = (headersList.get("host") || "").toLowerCase();
+
+    // Server-side gate: the UI check is client-only, so without this the
+    // action (bundled in the client chunk) could be invoked directly. Mirrors
+    // the client rule: env flag, localhost, or the dev droplet's .us domain.
+    const allowed =
+      process.env.NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED === "true" ||
+      host === "localhost" ||
+      host.startsWith("localhost:") ||
+      host.startsWith("127.0.0.1") ||
+      host.endsWith(".us");
+    if (!allowed) {
+      return { ok: false, error: "Test accounts are disabled." };
+    }
+
+    const client = unauthClient();
+    const result = await client.auth.signIn(email, password);
     cookieStore.set(SESSION_COOKIE, result.accessToken, getCookieOptions(host));
 
     let redirectTo = "/portal/dashboard";

@@ -70,7 +70,8 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
           request_body: { event, data },
           error: `Blocked URL: ${blocked}`,
         });
-        await supabase.from("webhook_endpoints")
+        await supabase
+          .from("webhook_endpoints")
           .update({
             last_failure_at: new Date().toISOString(),
             last_error: `Blocked URL: ${blocked}`,
@@ -92,6 +93,9 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
           headers,
           body,
           signal: controller.signal,
+          // Do not follow redirects: the SSRF guard validated the initial URL
+          // only, and a public host could 302 to an internal address.
+          redirect: "manual",
         });
         clearTimeout(timeout);
         responseStatus = res.status;
@@ -101,25 +105,27 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
       }
 
       const duration = Date.now() - start;
+      const failed = Boolean(error) || !(responseStatus >= 200 && responseStatus < 300);
 
       await supabase.from("webhook_deliveries").insert({
         webhook_id: endpoint.id,
         event,
-        status: error
-          ? "failed"
-          : responseStatus >= 200 && responseStatus < 300
-            ? "success"
-            : "failed",
+        status: failed ? "failed" : "success",
         request_body: { event, data },
         response_status: responseStatus || null,
         response_body: responseBody || null,
         error,
         duration_ms: duration,
+        // The retry task selects rows where next_retry_at <= now; without a
+        // value here failed deliveries are never retried or dead-lettered.
+        retry_count: 0,
+        next_retry_at: failed ? new Date(Date.now() + 5 * 60 * 1000).toISOString() : null,
       });
 
       if (error || responseStatus >= 400) {
         failCount++;
-        await supabase.from("webhook_endpoints")
+        await supabase
+          .from("webhook_endpoints")
           .update({
             last_failure_at: new Date().toISOString(),
             last_error: error || `HTTP ${responseStatus}`,
@@ -127,7 +133,8 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
           .eq("id", endpoint.id);
       } else {
         successCount++;
-        await supabase.from("webhook_endpoints")
+        await supabase
+          .from("webhook_endpoints")
           .update({ last_success_at: new Date().toISOString(), last_error: null })
           .eq("id", endpoint.id);
       }

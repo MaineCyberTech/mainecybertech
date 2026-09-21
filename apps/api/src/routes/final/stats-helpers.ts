@@ -8,8 +8,8 @@ type BackupItem = {
   status?: string | null;
   restore_test_result?: unknown;
   restore_tested_at?: unknown;
-  offsite_replicated?: boolean;
-  encryption_enabled?: boolean;
+  offsite_replicated?: boolean | null;
+  encryption_enabled?: boolean | null;
 };
 
 type BudgetItem = {
@@ -23,7 +23,7 @@ type QuoteItem = Record<string, unknown> & {
 
 type TimeEntry = {
   hours?: number | string | null;
-  billable?: boolean;
+  billable?: boolean | null;
   work_date?: string | null;
 };
 

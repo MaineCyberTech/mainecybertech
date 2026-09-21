@@ -211,6 +211,47 @@ describe("requireOrgAccess middleware", () => {
     });
   });
 
+  describe("body organization mismatch", () => {
+    it("rejects when the body org differs from the scoped query org", async () => {
+      mockSupabase({
+        membershipRow: { id: "m1", roles: { id: "r1", key: "client_user" } },
+      });
+      const next = jest.fn();
+
+      await requireOrgAccess(
+        mockReq({
+          userId: "user-1",
+          orgId: "00000000-0000-0000-0000-000000000001",
+          bodyOrgId: "00000000-0000-0000-0000-000000000002",
+        }),
+        mockRes(),
+        next,
+      );
+
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
+    });
+
+    it("allows a platform admin to target another org in the body", async () => {
+      mockSupabase({
+        membershipRow: null,
+        allMemberships: [{ id: "m2", roles: { id: "r1", key: "super_admin" } }],
+      });
+      const next = jest.fn();
+
+      await requireOrgAccess(
+        mockReq({
+          userId: "user-1",
+          orgId: "00000000-0000-0000-0000-000000000001",
+          bodyOrgId: "00000000-0000-0000-0000-000000000002",
+        }),
+        mockRes(),
+        next,
+      );
+
+      expect(next).toHaveBeenCalledWith();
+    });
+  });
+
   describe("without org ID (auto-assign primary)", () => {
     it("calls next() when user has a primary org", async () => {
       mockSupabase({
