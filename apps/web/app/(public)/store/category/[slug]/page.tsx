@@ -1,4 +1,4 @@
-import { getCategoryBySlug, getProductsByCategory, getCategories } from "@/lib/catalog/loader";
+import { loadCatalog, categoryBySlug, productsInCategory } from "@/lib/catalog/catalog-source";
 import StoreProductCard from "@/components/store/StoreProductCard";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -13,7 +13,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const catalog = await loadCatalog();
+  const category = categoryBySlug(catalog, slug);
   if (!category) return { title: "Category Not Found" };
   return buildMetadata({
     title: `${category.name} Services`,
@@ -24,11 +25,12 @@ export async function generateMetadata({
 
 export default async function CategoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const category = getCategoryBySlug(slug);
+  const catalog = await loadCatalog();
+  const category = categoryBySlug(catalog, slug);
   if (!category) notFound();
 
-  const products = getProductsByCategory(category.id);
-  const categories = getCategories();
+  const products = productsInCategory(catalog, category.id);
+  const categories = catalog.categories;
 
   return (
     <section className="min-h-screen px-4 pb-20 pt-32 sm:px-6 sm:pt-40">

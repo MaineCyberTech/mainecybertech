@@ -2,14 +2,25 @@
 
 import { useState } from "react";
 import { getAllProducts } from "@/lib/catalog/loader";
+import type { CatalogProduct } from "@/lib/catalog/types";
 
 interface IncludedItemsListProps {
   items: string[];
+  /**
+   * Catalog used to resolve "Everything in X, plus:" references. Passed by the
+   * public product page so the DB-backed catalog is used; falls back to the
+   * bundled JSON when omitted.
+   */
+  products?: CatalogProduct[];
 }
 
-function resolveNestedIncludes(productName: string, depth = 0, maxDepth = 5): string[] {
+function resolveNestedIncludes(
+  productName: string,
+  products: CatalogProduct[],
+  depth = 0,
+  maxDepth = 5,
+): string[] {
   if (depth >= maxDepth) return [];
-  const products = getAllProducts();
   const product = products.find((p) => p.name === productName);
   if (!product) return [];
 
@@ -17,7 +28,7 @@ function resolveNestedIncludes(productName: string, depth = 0, maxDepth = 5): st
   for (const item of product.whatIsIncluded) {
     const match = item.match(/^Everything in (.+?), plus:$/);
     if (match) {
-      const nested = resolveNestedIncludes(match[1], depth + 1, maxDepth);
+      const nested = resolveNestedIncludes(match[1], products, depth + 1, maxDepth);
       result.push(...nested);
     } else {
       result.push(item);
@@ -31,8 +42,9 @@ function extractReference(item: string): string | null {
   return match ? match[1] : null;
 }
 
-export default function IncludedItemsList({ items }: IncludedItemsListProps) {
+export default function IncludedItemsList({ items, products }: IncludedItemsListProps) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const catalog = products ?? getAllProducts();
 
   return (
     <ul className="space-y-2">
@@ -40,7 +52,7 @@ export default function IncludedItemsList({ items }: IncludedItemsListProps) {
         const refName = extractReference(item);
         if (refName) {
           const isOpen = expanded[refName] ?? false;
-          const nestedItems = resolveNestedIncludes(refName);
+          const nestedItems = resolveNestedIncludes(refName, catalog);
           return (
             <li key={i}>
               <button

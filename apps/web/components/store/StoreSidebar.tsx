@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getCategories } from "@/lib/catalog/loader";
+import type { Category } from "@/lib/catalog/types";
 
-export default function StoreSidebarContent() {
+export default function StoreSidebarContent({ categories }: { categories?: Category[] } = {}) {
   const pathname = usePathname();
-  const categories = getCategories();
+  const items = categories ?? getCategories();
 
   if (!pathname?.startsWith("/store")) return null;
 
@@ -26,7 +27,7 @@ export default function StoreSidebarContent() {
         Categories
       </h3>
       <div className="mb-4 space-y-0.5">
-        {categories.map((cat) => (
+        {items.map((cat) => (
           <Link
             key={cat.slug}
             href={`/store/category/${cat.slug}`}

@@ -263,7 +263,7 @@ SENTRY_DSN=
 
 ## Known Open Issues (2026-08-26 Verified)
 
-Sources: `COMPREHENSIVE_AUDIT_2026-08-26.md`, `prompts/hardening_prompt_pack/engine/deep_audit/global_findings.json`, `prompts/hardening_prompt_pack/engine/outputs/global_report.md`, `docs/P0_REMEDIATION_2026-08-05.md`. All findings verified against source code.
+Sources: `docs/audits/comprehensive-audit/2026-08-26/report.md`, `prompts/hardening_prompt_pack/engine/deep_audit/global_findings.json`, `prompts/hardening_prompt_pack/engine/outputs/global_report.md`, `docs/P0_REMEDIATION_2026-08-05.md`. All findings verified against source code.
 
 ### P0 — Must Fix Before Production
 
@@ -437,7 +437,7 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
   `docs/audits/{name}/{run}/` (absent — historical runs live in the pack dir);
   no SBOM/license workflow; no root `CHANGELOG.md`; no committed
   branch-protection config; stale root artifacts (`vercel.json`,
-  `COMPREHENSIVE_AUDIT_2026-08-26.md`).
+  `docs/audits/comprehensive-audit/2026-08-26/report.md`).
 - **Pack path drift**: the 60-module `implementation-matrix.csv` points at
   aspirational 1-file-per-module paths (58/60 api/web/sdk) that do not exist
   (modules are real, in consolidated routes); `hardening`/`portal-alignment`/

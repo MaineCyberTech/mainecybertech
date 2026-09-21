@@ -55,3 +55,7 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 **/env/*.tfvars
+
+# Generated SBOM artifacts (see .github/workflows/sbom.yml)
+sbom.cdx.json
+sbom.spdx.json

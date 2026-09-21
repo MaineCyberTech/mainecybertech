@@ -1,5 +1,5 @@
 import { getComparisonBySlug } from "@/lib/catalog/v5-loaders";
-import { getAllProducts } from "@/lib/catalog/loader";
+import { loadCatalog } from "@/lib/catalog/catalog-source";
 import type { CatalogProduct } from "@/lib/catalog/types";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -55,7 +55,11 @@ const sectionMap: Record<string, string> = {
   "Follow-up path": "recommendedUpsells",
 };
 
-function extractSectionValues(sectionName: string, product: CatalogProduct): string[] {
+function extractSectionValues(
+  sectionName: string,
+  product: CatalogProduct,
+  allProducts: CatalogProduct[],
+): string[] {
   switch (sectionMap[sectionName]) {
     case "bestFor":
       return product.bestFor;
@@ -68,7 +72,6 @@ function extractSectionValues(sectionName: string, product: CatalogProduct): str
     case "pricingModel":
       return [product.pricingModel.replace(/_/g, " ")];
     case "recommendedUpsells": {
-      const allProducts = getAllProducts();
       return product.recommendedUpsells.length > 0
         ? product.recommendedUpsells.map((id: string) => {
             const prod = allProducts.find((p: CatalogProduct) => p.id === id);
@@ -92,7 +95,7 @@ export default async function CompareDetailPage({ params }: { params: Promise<{ 
   const comparison = getComparisonBySlug(slug);
   if (!comparison) notFound();
 
-  const allProducts = getAllProducts();
+  const allProducts = (await loadCatalog()).products;
   const items: CatalogProduct[] = comparison.items
     .map((id: string) => allProducts.find((p: CatalogProduct) => p.id === id))
     .filter((p): p is CatalogProduct => p !== undefined);
@@ -149,7 +152,7 @@ export default async function CompareDetailPage({ params }: { params: Promise<{ 
                     {section}
                   </td>
                   {items.map((product) => {
-                    const values = extractSectionValues(section, product);
+                    const values = extractSectionValues(section, product, allProducts);
                     return (
                       <Cell key={product.id}>
                         {values.length > 0 ? (

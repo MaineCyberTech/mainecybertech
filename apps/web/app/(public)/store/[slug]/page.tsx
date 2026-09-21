@@ -1,4 +1,5 @@
-import { getCategories, getAllProducts, getProductsByCategory } from "@/lib/catalog/loader";
+import { getAllProducts } from "@/lib/catalog/loader";
+import { loadCatalog, productBySlug, productsInCategory } from "@/lib/catalog/catalog-source";
 import { getRecommendationsForProduct } from "@/lib/catalog/bundles";
 import StoreProductCard from "@/components/store/StoreProductCard";
 import FAQSection from "@/components/store/FAQSection";
@@ -24,7 +25,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getAllProducts().find((p) => p.slug === slug);
+  const catalog = await loadCatalog();
+  const product = productBySlug(catalog, slug);
   if (!product) return { title: "Service Not Found" };
 
   return buildMetadata({
@@ -55,14 +57,15 @@ function Badge({ children }: { children: React.ReactNode }) {
 
 export default async function StoreProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getAllProducts().find((p) => p.slug === slug);
+  const catalog = await loadCatalog();
+  const product = productBySlug(catalog, slug);
   if (!product) notFound();
 
   const recommendations = getRecommendationsForProduct(product.id);
-  const sameCategory = getProductsByCategory(product.categoryId).filter(
+  const sameCategory = productsInCategory(catalog, product.categoryId).filter(
     (p) => p.slug !== slug && p.display,
   );
-  const category = getCategories().find((c) => c.id === product.categoryId);
+  const category = catalog.categories.find((c) => c.id === product.categoryId);
 
   const intakePreview = product.intakeFields.slice(0, 4);
 
@@ -125,7 +128,7 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
 
           {product.whatIsIncluded.length > 0 && (
             <SectionCard title="What Is Included">
-              <IncludedItemsList items={product.whatIsIncluded} />
+              <IncludedItemsList items={product.whatIsIncluded} products={catalog.products} />
             </SectionCard>
           )}
 

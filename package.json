@@ -23,6 +23,7 @@
     "dev:autoenv": "powershell -ExecutionPolicy Bypass -File ./scripts/start_project_with_supabase_env.ps1 -UseNpx -Framework nextjs -EnvFile .env.local -Command \"npm run dev\"",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build -o docs/storybook-static",
+    "sbom": "node scripts/generate-sbom.mjs sbom.cdx.json",
     "chromatic": "chromatic --project-token=$CHROMATIC_PROJECT_TOKEN"
   },
   "devDependencies": {

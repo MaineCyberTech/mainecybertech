@@ -1,10 +1,11 @@
-import { getVisibleProducts, getActiveCampaigns } from "@/lib/catalog/loader";
+import { getActiveCampaigns } from "@/lib/catalog/loader";
+import { loadCatalog, visibleProducts } from "@/lib/catalog/catalog-source";
 import { getApiClient } from "@/lib/api";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import Link from "next/link";
 import type { StorePromotion } from "@mct/sdk";
-import type { SeasonalCampaign } from "@/lib/catalog/types";
+import type { CatalogProduct, SeasonalCampaign } from "@/lib/catalog/types";
 
 export const metadata = { title: "Store - Portal - Maine CyberTech" };
 
@@ -20,7 +21,7 @@ const categoryIcons: Record<string, string> = {
 };
 
 interface ProductCardProps {
-  product: ReturnType<typeof getVisibleProducts>[0];
+  product: CatalogProduct;
 }
 
 function ProductCard({ product }: ProductCardProps) {
@@ -124,7 +125,8 @@ async function fetchPromotions(): Promise<StorePromotion[]> {
 }
 
 export default async function PortalStorePage() {
-  const products = getVisibleProducts();
+  const catalog = await loadCatalog();
+  const products = visibleProducts(catalog);
   const campaigns = getActiveCampaigns();
   const promotions = await fetchPromotions();
 

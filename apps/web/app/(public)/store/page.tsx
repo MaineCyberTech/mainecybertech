@@ -1,10 +1,10 @@
+import { getCategoryOrder } from "@/lib/catalog/loader";
 import {
-  getCategories,
-  getFeaturedProducts,
-  getMonthlyPlans,
-  getEmergencyProducts,
-  getCategoryOrder,
-} from "@/lib/catalog/loader";
+  loadCatalog,
+  featuredProducts,
+  monthlyPlans as selectMonthlyPlans,
+  emergencyProducts,
+} from "@/lib/catalog/catalog-source";
 import StoreProductCard from "@/components/store/StoreProductCard";
 import StoreCategoryCard from "@/components/store/StoreCategoryCard";
 import CampaignBanner from "@/components/store/CampaignBanner";
@@ -22,12 +22,13 @@ export const metadata: Metadata = buildMetadata({
   path: "/store",
 });
 
-export default function StorePage() {
-  const categories = getCategories();
+export default async function StorePage() {
+  const catalog = await loadCatalog();
+  const categories = catalog.categories;
   const order = getCategoryOrder();
-  const featured = getFeaturedProducts();
-  const monthlyPlans = getMonthlyPlans();
-  const emergency = getEmergencyProducts();
+  const featured = featuredProducts(catalog);
+  const monthlyPlans = selectMonthlyPlans(catalog);
+  const emergency = emergencyProducts(catalog);
 
   const orderedCategories = order
     .map((slug) => categories.find((c) => c.slug === slug))
