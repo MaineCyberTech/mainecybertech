@@ -22,6 +22,7 @@ import { registerAllTasks } from "./tasks";
 import { enqueueTask } from "./producer";
 import { markShuttingDown } from "./shutdown";
 import { scheduledScans, initialScanDelayMs, isScanConfigured } from "./schedule-config";
+import { withScanLock } from "./lib/scan-lock";
 registerAllTasks();
 
 // ============= Uncaught Error Handling =============
@@ -33,12 +34,20 @@ process.on("uncaughtException", (error) => {
 });
 
 // ============= Scheduled Tasks =============
-async function runScheduledTask(type: string, payload: Record<string, unknown> = {}) {
-  const enqueued = await enqueueTask(type, payload);
-  if (!enqueued) {
-    logger.info({ type }, "Queue unavailable — running scheduled task directly");
-    await executeTask({ type, payload });
-  }
+async function runScheduledTask(
+  type: string,
+  payload: Record<string, unknown> = {},
+  lockTtlMs = 4 * 60 * 1000,
+) {
+  // Every replica owns its own timers; the lock makes exactly one of them
+  // enqueue/run each scan so notifications are not duplicated.
+  await withScanLock(type, lockTtlMs, async () => {
+    const enqueued = await enqueueTask(type, payload);
+    if (!enqueued) {
+      logger.info({ type }, "Queue unavailable - running scheduled task directly");
+      await executeTask({ type, payload });
+    }
+  });
 }
 
 // ============= Main =============
@@ -118,9 +127,10 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
       );
       continue;
     }
+    const scanLockTtl = Math.max(60_000, Math.min(scan.intervalMs - 60_000, 10 * 60 * 1000));
     const interval = setInterval(() => {
       logger.info(`Running scheduled ${scan.name}`);
-      runScheduledTask(scan.name, scan.payload).catch((error) => {
+      runScheduledTask(scan.name, scan.payload, scanLockTtl).catch((error) => {
         logger.error({ error }, `Scheduled ${scan.name} failed`);
       });
     }, scan.intervalMs);
@@ -130,7 +140,7 @@ if (process.env.JEST_WORKER_ID === undefined && process.env.NODE_ENV !== "test")
     // at boot and the remaining offsets were dead config.
     const initial = setTimeout(() => {
       logger.info(`Running initial ${scan.name}`);
-      runScheduledTask(scan.name, scan.payload).catch((error) => {
+      runScheduledTask(scan.name, scan.payload, scanLockTtl).catch((error) => {
         logger.error({ error }, `Initial ${scan.name} failed`);
       });
     }, initialScanDelayMs(scan));

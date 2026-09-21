@@ -13,6 +13,8 @@ jest.mock("@/lib/api", () => ({
   getApiClient: mockGetApiClient,
 }));
 
+jest.mock("next/cache", () => ({ revalidatePath: jest.fn() }));
+
 describe("bulkFolderAction", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -21,9 +23,7 @@ describe("bulkFolderAction", () => {
   it("moves documents to a folder", async () => {
     mockBulkFolder.mockResolvedValue(undefined);
 
-    const { bulkFolderAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkFolderAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
     formData.append("documentIds", "doc-1");
@@ -45,9 +45,7 @@ describe("bulkFolderAction", () => {
   });
 
   it("returns error when no document ids", async () => {
-    const { bulkFolderAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkFolderAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
 
@@ -61,9 +59,7 @@ describe("bulkFolderAction", () => {
   });
 
   it("returns error when no folder path", async () => {
-    const { bulkFolderAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkFolderAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
     formData.append("documentIds", "doc-1");
@@ -80,9 +76,7 @@ describe("bulkFolderAction", () => {
   it("returns error when API call fails", async () => {
     mockBulkFolder.mockRejectedValue(new Error("API failure"));
 
-    const { bulkFolderAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkFolderAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
     formData.append("documentIds", "doc-1");
@@ -99,9 +93,7 @@ describe("bulkFolderAction", () => {
   it("handles non-Error API failure", async () => {
     mockBulkFolder.mockRejectedValue("string error");
 
-    const { bulkFolderAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkFolderAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
     formData.append("documentIds", "doc-1");
@@ -124,9 +116,7 @@ describe("bulkMetadataAction", () => {
   it("applies description metadata", async () => {
     mockBulkMetadata.mockResolvedValue(undefined);
 
-    const { bulkMetadataAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkMetadataAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
     formData.append("documentIds", "doc-1");
@@ -155,9 +145,7 @@ describe("bulkMetadataAction", () => {
   it("applies folder path and visibility", async () => {
     mockBulkMetadata.mockResolvedValue(undefined);
 
-    const { bulkMetadataAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkMetadataAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
     formData.append("documentIds", "doc-1");
@@ -185,9 +173,7 @@ describe("bulkMetadataAction", () => {
   });
 
   it("rejects invalid visibility value", async () => {
-    const { bulkMetadataAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkMetadataAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
     formData.append("documentIds", "doc-1");
@@ -197,15 +183,11 @@ describe("bulkMetadataAction", () => {
     const result = await bulkMetadataAction(formData);
 
     expect(result.ok).toBe(true);
-    expect(mockBulkMetadata).toHaveBeenCalledWith(
-      expect.objectContaining({ visibility: null }),
-    );
+    expect(mockBulkMetadata).toHaveBeenCalledWith(expect.objectContaining({ visibility: null }));
   });
 
   it("returns error when no document ids", async () => {
-    const { bulkMetadataAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkMetadataAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
 
@@ -219,9 +201,7 @@ describe("bulkMetadataAction", () => {
   });
 
   it("returns error when no metadata fields are provided", async () => {
-    const { bulkMetadataAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkMetadataAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
     formData.append("documentIds", "doc-1");
@@ -236,9 +216,7 @@ describe("bulkMetadataAction", () => {
   it("handles API failure gracefully", async () => {
     mockBulkMetadata.mockRejectedValue(new Error("Timeout"));
 
-    const { bulkMetadataAction } = await import(
-      "@/app/(admin)/admin/documents/bulk-actions"
-    );
+    const { bulkMetadataAction } = await import("@/app/(admin)/admin/documents/bulk-actions");
 
     const formData = new FormData();
     formData.append("documentIds", "doc-1");

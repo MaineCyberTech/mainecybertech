@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { getApiClient } from "@/lib/api";
 
 export type DocumentVisibility = "private" | "org" | "public" | "internal";
@@ -28,6 +29,7 @@ export async function bulkFolderAction(formData: FormData): Promise<BulkActionRe
     if (!folderPath) return { ok: false, error: "Provide a folder path to apply." };
 
     await api.documents.bulkFolder({ documentIds: ids, folderPath });
+    revalidatePath("/admin/documents");
     return { ok: true, kind: "bulk_folder", ids, folderPath };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Unexpected error." };
@@ -51,12 +53,19 @@ export async function bulkMetadataAction(formData: FormData): Promise<BulkAction
     if (!description && !folderPath && !visibility) {
       return {
         ok: false,
-        error: "No non-empty bulk metadata fields were provided. Safe apply rules skipped blank values.",
+        error:
+          "No non-empty bulk metadata fields were provided. Safe apply rules skipped blank values.",
       };
     }
 
     await api.documents.bulkMetadata({ documentIds: ids, description, folderPath, visibility });
-    return { ok: true, kind: "bulk_metadata", ids, applied: { description, folderPath, visibility } };
+    revalidatePath("/admin/documents");
+    return {
+      ok: true,
+      kind: "bulk_metadata",
+      ids,
+      applied: { description, folderPath, visibility },
+    };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Unexpected error." };
   }
