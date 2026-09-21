@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
 import { createVendorContract } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendor Contracts - Admin - Maine CyberTech" };
@@ -32,15 +33,17 @@ export default async function VendorContractsPage() {
     renewal_date: string | null;
   }> = [];
 
+  let loadFailed = false;
   try {
     const [r, u] = await Promise.allSettled([
       api.vendors.contracts.list({}),
       api.vendors.contracts.renewals({}),
     ]);
     if (r.status === "fulfilled") contracts = r.value.items as typeof contracts;
+    else loadFailed = true;
     if (u.status === "fulfilled") upcoming = u.value.items as typeof upcoming;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -57,6 +60,7 @@ export default async function VendorContractsPage() {
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="vendor contracts" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

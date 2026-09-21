@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createRetention } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Data Retention - Governance - Admin" };
@@ -15,11 +16,12 @@ export default async function RetentionPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; data_category?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.governance.retention.list({});
     items = r.items as unknown as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function RetentionPage() {
       title="Data Retention"
       description="Data retention policies with retention periods, disposal methods, and regulation tracking."
     >
+      {loadFailed && <DataErrorNote what="retention" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

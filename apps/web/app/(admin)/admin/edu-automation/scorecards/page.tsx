@@ -8,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import ScorecardsEvaluateClient from "./ScorecardsEvaluateClient";
 import { createScorecard } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Cyber Scorecard - Edu & Automation - Admin" };
@@ -16,11 +17,12 @@ export default async function ScorecardPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; category?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.eduAutomation.scorecards.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -38,6 +40,7 @@ export default async function ScorecardPage() {
       title="Cyber Scorecard"
       description="Category-based cybersecurity scores with badges."
     >
+      {loadFailed && <DataErrorNote what="scorecards" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

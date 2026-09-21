@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createBudget } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Budget Roadmap - More Tools - Admin" };
@@ -15,11 +16,12 @@ export default async function BudgetPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; item_name?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.final.budgets.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function BudgetPage() {
       title="Budget Roadmap"
       description="Budget items with costs, fiscal years, and priorities."
     >
+      {loadFailed && <DataErrorNote what="budgets" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createRunbook } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Client Runbook - More Tools - Admin" };
@@ -15,11 +16,12 @@ export default async function RunbookPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; title?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.final.runbooks.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function RunbookPage() {
       title="Client Runbook"
       description="Client runbooks with categories and version tracking."
     >
+      {loadFailed && <DataErrorNote what="runbooks" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

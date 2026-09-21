@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createIsp } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "ISP Assessment - Field Services - Admin" };
@@ -15,11 +16,12 @@ export default async function IspPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; client_name?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.fieldServices.isp.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function IspPage() {
       title="ISP Assessment"
       description="Document ISP assessments with current provider, services, and notes."
     >
+      {loadFailed && <DataErrorNote what="isp" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

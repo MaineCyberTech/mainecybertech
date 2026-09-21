@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
 import { createFileRequest } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "File Requests - Admin - Maine CyberTech" };
@@ -26,11 +27,12 @@ export default async function FileRequestsPage() {
     created_at: string;
   }> = [];
 
+  let loadFailed = false;
   try {
     const r = await api.fileRequests.list({});
     requests = r.items as typeof requests;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const active = requests.filter((r) => r.status === "active").length;
@@ -49,6 +51,7 @@ export default async function FileRequestsPage() {
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="file requests" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

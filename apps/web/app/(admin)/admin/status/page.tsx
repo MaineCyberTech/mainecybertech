@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createStatusItem } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status Page - Admin" };
 
@@ -24,11 +25,12 @@ export default async function StatusPage() {
     is_public: boolean;
     is_resolved: boolean;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.batch.status.list({});
     items = r.items as unknown as typeof items;
   } catch {
-    /* */
+    loadFailed = true;
   }
 
   return (
@@ -41,6 +43,7 @@ export default async function StatusPage() {
       description="Publish maintenance windows and incident updates for client visibility."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="status" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

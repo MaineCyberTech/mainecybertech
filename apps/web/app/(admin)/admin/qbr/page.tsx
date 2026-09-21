@@ -6,6 +6,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import { StatusPill } from "@/components/admin/StatusPill";
 import Link from "next/link";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "QBR Reports - Admin - Maine CyberTech" };
@@ -22,11 +23,12 @@ export default async function QbrPage() {
     created_at: string;
   }> = [];
 
+  let loadFailed = false;
   try {
     const r = await api.qbr.list({});
     reports = r.items as typeof reports;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -43,6 +45,7 @@ export default async function QbrPage() {
         </Link>
       }
     >
+      {loadFailed && <DataErrorNote what="qbr" />}
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Reports</h2>
         <div className="mt-6 space-y-3">

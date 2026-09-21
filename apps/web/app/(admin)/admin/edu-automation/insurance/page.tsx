@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createInsurance } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Insurance Evidence - Edu & Automation - Admin" };
@@ -15,11 +16,12 @@ export default async function InsurancePage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; category?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.eduAutomation.insurance.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function InsurancePage() {
       title="Insurance Evidence"
       description="Track insurance evidence with status, document references, and renewal dates."
     >
+      {loadFailed && <DataErrorNote what="insurance" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

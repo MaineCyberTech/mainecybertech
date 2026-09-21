@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createPatchGroup } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Patch Compliance - Admin" };
 
@@ -23,15 +24,17 @@ export default async function PatchPage() {
     compliance_pct: number | null;
   }> = [];
   let stats = { totalDevices: 0, patchedDevices: 0, criticalPatches: 0, complianceRate: 0 };
+  let loadFailed = false;
   try {
     const [r, s] = await Promise.allSettled([
       api.securityOps.patchCompliance.list({}),
       api.securityOps.patchCompliance.stats({}),
     ]);
     if (r.status === "fulfilled") items = r.value.items as unknown as typeof items;
+    else loadFailed = true;
     if (s.status === "fulfilled") stats = s.value;
   } catch {
-    /* */
+    loadFailed = true;
   }
 
   return (
@@ -49,6 +52,7 @@ export default async function PatchPage() {
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="patch compliance" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

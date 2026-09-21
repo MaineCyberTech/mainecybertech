@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createForm } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Custom Form - More Tools - Admin" };
@@ -15,11 +16,12 @@ export default async function FormsPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; form_name?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.final.forms.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function FormsPage() {
       title="Custom Form"
       description="Build and manage custom forms with descriptions."
     >
+      {loadFailed && <DataErrorNote what="forms" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

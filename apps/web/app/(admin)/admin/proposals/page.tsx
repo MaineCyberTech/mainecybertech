@@ -6,6 +6,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import { StatusPill } from "@/components/admin/StatusPill";
 import Link from "next/link";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Proposals - Admin - Maine CyberTech" };
@@ -29,6 +30,7 @@ export default async function ProposalsPage() {
   let sentCount = 0;
   let approvedCount = 0;
 
+  let loadFailed = false;
   try {
     const result = await api.proposals.list({});
     proposals = result.items as typeof proposals;
@@ -36,7 +38,7 @@ export default async function ProposalsPage() {
     sentCount = result.items.filter((p: { status: string }) => p.status === "sent").length;
     approvedCount = result.items.filter((p: { status: string }) => p.status === "approved").length;
   } catch {
-    // Gracefully degrade if proposals API is not yet available
+    loadFailed = true;
   }
 
   return (
@@ -55,6 +57,7 @@ export default async function ProposalsPage() {
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="proposals" />}
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
           <h2 className="cyber-heading text-lg">Proposals</h2>

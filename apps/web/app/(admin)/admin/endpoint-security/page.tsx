@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createEndpoint } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Endpoint Security" };
 export default async function EndpointPage() {
@@ -21,11 +22,12 @@ export default async function EndpointPage() {
     mdm_enrolled: number;
     coverage_pct: number | null;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.securitySuite.endpoints.list({});
     items = r.items as unknown as typeof items;
   } catch {
-    /* */
+    loadFailed = true;
   }
   return (
     <AdminPageShell
@@ -37,6 +39,7 @@ export default async function EndpointPage() {
       description="Track endpoint protection, disk encryption, MDM, and EDR deployment across device groups."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="endpoint security" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

@@ -6,6 +6,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
 import { ApprovalRequest, AuditLog } from "@mct/sdk";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Business OS - Admin - Maine CyberTech" };
@@ -69,6 +70,7 @@ export default async function BusinessOsPage() {
     metrics: Record<string, number>;
   }>;
 
+  let loadFailed = false;
   try {
     const results = await Promise.allSettled([
       api.dashboard.businessOsSummary(),
@@ -91,7 +93,7 @@ export default async function BusinessOsPage() {
     if (results[4].status === "fulfilled")
       snapshots = (results[4].value as { items: typeof snapshots }).items ?? [];
   } catch {
-    // Gracefully degrade if business OS API is not yet available
+    loadFailed = true;
   }
 
   return (
@@ -103,6 +105,7 @@ export default async function BusinessOsPage() {
       title="Business OS Dashboard"
       description="Private operating dashboard for client health, approvals, projects, and platform metrics."
     >
+      {loadFailed && <DataErrorNote what="business os" />}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
         {statCard(
           "Organizations",

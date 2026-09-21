@@ -74,6 +74,7 @@ export default async function AssetsPage({ searchParams }: AssetsPageProps) {
       loadFailed = true;
     }
     if (s.status === "fulfilled") stats = s.value;
+    else loadFailed = true;
   } catch {
     loadFailed = true;
   }

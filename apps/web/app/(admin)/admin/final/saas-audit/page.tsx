@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createSaasAudit } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SaaS Audit - More Tools - Admin" };
@@ -15,11 +16,12 @@ export default async function SaasAuditPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; vendor_name?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.final.saasAudit.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function SaasAuditPage() {
       title="SaaS Audit"
       description="Audit SaaS subscriptions with vendors, services, and costs."
     >
+      {loadFailed && <DataErrorNote what="saas audit" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

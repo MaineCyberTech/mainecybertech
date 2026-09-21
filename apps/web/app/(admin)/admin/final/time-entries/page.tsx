@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createTimeEntry } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Time Entry - More Tools - Admin" };
@@ -15,11 +16,12 @@ export default async function TimeEntryPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; description?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.final.timeEntries.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function TimeEntryPage() {
       title="Time Entry"
       description="Track billable time with descriptions, hours, and work dates."
     >
+      {loadFailed && <DataErrorNote what="time entries" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

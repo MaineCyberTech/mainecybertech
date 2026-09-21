@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createSatisfaction } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Satisfaction Pulse - More Tools - Admin" };
@@ -15,11 +16,12 @@ export default async function SatisfactionPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; subject?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.final.satisfaction.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function SatisfactionPage() {
       title="Satisfaction Pulse"
       description="Client satisfaction surveys with ratings and feedback."
     >
+      {loadFailed && <DataErrorNote what="satisfaction" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

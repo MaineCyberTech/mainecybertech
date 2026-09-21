@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createOffboarding } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Offboarding - Admin" };
 
@@ -26,11 +27,12 @@ export default async function OffboardingPage() {
     evidence_collected: boolean;
     status: string;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.securityOps.offboarding.list({});
     items = r.items as unknown as typeof items;
   } catch {
-    /* */
+    loadFailed = true;
   }
 
   return (
@@ -43,6 +45,7 @@ export default async function OffboardingPage() {
       description="Guided offboarding with account disablement, mailbox handling, OneDrive transfer, license reclamation."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="offboarding" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

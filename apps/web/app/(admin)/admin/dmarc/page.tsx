@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createDmarc } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DMARC Coach - Admin" };
 
@@ -22,11 +23,12 @@ export default async function DmarcPage() {
     dmarc_policy: string | null;
     status: string;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.batch.dmarc.list({});
     items = r.items as typeof items;
   } catch {
-    /* */
+    loadFailed = true;
   }
 
   const ok = (v: boolean) =>
@@ -46,6 +48,7 @@ export default async function DmarcPage() {
       description="Guide clients through SPF, DKIM, and DMARC setup for email security."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="dmarc" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

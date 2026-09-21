@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createIdVerify } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Identity Verification" };
 export default async function IdVerifyPage() {
@@ -19,11 +20,12 @@ export default async function IdVerifyPage() {
     verification_pass: boolean;
     status: string;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.securitySuite.idVerify.list({});
     items = r.items as unknown as typeof items;
   } catch {
-    /* */
+    loadFailed = true;
   }
   return (
     <AdminPageShell
@@ -35,6 +37,7 @@ export default async function IdVerifyPage() {
       description="Verify requestor identity before privileged actions like MFA reset, password reset, or vendor changes."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="id verify" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

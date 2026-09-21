@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createAutomation } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Automation Workflow - Edu & Automation - Admin" };
@@ -15,11 +16,12 @@ export default async function AutomationPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; name?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.eduAutomation.automation.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function AutomationPage() {
       title="Automation Workflow"
       description="Script and trigger-based automation workflows."
     >
+      {loadFailed && <DataErrorNote what="automation" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

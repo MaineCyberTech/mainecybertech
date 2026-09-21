@@ -61,6 +61,7 @@ export default async function FindingsPage({ searchParams }: FindingsPageProps) 
       loadFailed = true;
     }
     if (statsResult.status === "fulfilled") stats = statsResult.value;
+    else loadFailed = true;
   } catch {
     loadFailed = true;
   }

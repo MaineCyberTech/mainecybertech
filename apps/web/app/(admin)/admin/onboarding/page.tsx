@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createOnboarding } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Onboarding - Admin" };
 
@@ -23,11 +24,12 @@ export default async function OnboardingPage() {
     support_handoff_status: string;
     created_at: string;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.clientOnboarding.list({ limit: 50, page: 1 });
     items = r.items as unknown as typeof items;
   } catch {
-    /* */
+    loadFailed = true;
   }
 
   return (
@@ -40,6 +42,7 @@ export default async function OnboardingPage() {
       description="Repeatable workspace for client discovery, M365 setup, network baseline, security baseline, and handoff."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="onboarding" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

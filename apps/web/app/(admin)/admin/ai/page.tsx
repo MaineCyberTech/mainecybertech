@@ -5,6 +5,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "AI Tools - Admin - Maine CyberTech" };
@@ -24,11 +25,12 @@ export default async function AiToolsPage() {
     created_at: string;
   }> = [];
 
+  let loadFailed = false;
   try {
     const r = await api.ai.triageList({});
     drafts = r.items as typeof drafts;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -45,6 +47,7 @@ export default async function AiToolsPage() {
         </Link>
       }
     >
+      {loadFailed && <DataErrorNote what="ai" />}
       <div className="grid gap-4 md:grid-cols-2">
         <section className="cyber-panel">
           <h2 className="cyber-heading text-lg">Ticket Triage</h2>

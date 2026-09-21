@@ -8,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import ProcurementCompareClient from "./ProcurementCompareClient";
 import { createProcurement } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Procurement - More Tools - Admin" };
@@ -16,11 +17,12 @@ export default async function ProcurementPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; vendor_name?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.final.procurement.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -38,6 +40,7 @@ export default async function ProcurementPage() {
       title="Procurement"
       description="Vendor quotes with competitor comparison and notes."
     >
+      {loadFailed && <DataErrorNote what="procurement" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createM365Assessment } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "M365 Hardening" };
 const chk = (v: boolean) => (v ? "✅" : "⬜");
@@ -22,11 +23,12 @@ export default async function M365Page() {
     overall_score: number | null;
     status: string;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.securitySuite.m365.list({});
     items = r.items as unknown as typeof items;
   } catch {
-    /* */
+    loadFailed = true;
   }
   return (
     <AdminPageShell
@@ -38,6 +40,7 @@ export default async function M365Page() {
       description="Guided Microsoft 365 security baseline: MFA, Conditional Access, legacy auth, Defender, DLP."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="m365 hardening" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createUnifi } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "UniFi Survey - Field Services - Admin" };
@@ -15,11 +16,12 @@ export default async function UnifiPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; site_name?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.fieldServices.unifi.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function UnifiPage() {
       title="UniFi Survey"
       description="Site surveys with APs, switches, cameras, cable runs, and PoE budget."
     >
+      {loadFailed && <DataErrorNote what="unifi" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

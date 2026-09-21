@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createLicense } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Licenses - Admin" };
 
@@ -24,15 +25,17 @@ export default async function LicensesPage() {
     reclaimable_savings: number | null;
   }> = [];
   let savings = { totalAnnualCost: 0, reclaimableSavings: 0, unusedSeats: 0 };
+  let loadFailed = false;
   try {
     const [r, s] = await Promise.allSettled([
       api.batch.licenses.list({}),
       api.batch.licenses.savings({}),
     ]);
     if (r.status === "fulfilled") items = r.value.items as typeof items;
+    else loadFailed = true;
     if (s.status === "fulfilled") savings = s.value;
   } catch {
-    /* */
+    loadFailed = true;
   }
 
   return (
@@ -50,6 +53,7 @@ export default async function LicensesPage() {
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="licenses" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

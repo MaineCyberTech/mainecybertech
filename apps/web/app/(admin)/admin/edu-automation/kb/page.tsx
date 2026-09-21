@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createKb } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Knowledge Base - Edu & Automation - Admin" };
@@ -15,11 +16,12 @@ export default async function KbPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; title?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.eduAutomation.kb.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function KbPage() {
       title="Knowledge Base"
       description="Searchable articles with titles, content, and categories."
     >
+      {loadFailed && <DataErrorNote what="kb" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

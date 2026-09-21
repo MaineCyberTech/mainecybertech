@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createSop } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SOP Library - Edu & Automation - Admin" };
@@ -15,11 +16,12 @@ export default async function SopPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; title?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.eduAutomation.sop.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function SopPage() {
       title="SOP Library"
       description="Standard operating procedures with numbering, versioning, and categories."
     >
+      {loadFailed && <DataErrorNote what="sop" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

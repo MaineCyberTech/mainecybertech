@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createBackup } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Backup DR - More Tools - Admin" };
@@ -15,11 +16,12 @@ export default async function BackupPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; system_name?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.final.backups.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function BackupPage() {
       title="Backup DR"
       description="Backup and disaster recovery planning with RPO, RTO, and retention."
     >
+      {loadFailed && <DataErrorNote what="backups" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

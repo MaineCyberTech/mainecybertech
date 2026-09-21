@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createPhishing } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Phishing Sim - Edu & Automation - Admin" };
@@ -15,11 +16,12 @@ export default async function PhishingPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; campaign_name?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.eduAutomation.phishing.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function PhishingPage() {
       title="Phishing Sim"
       description="Phishing simulation campaigns with target counts and notes."
     >
+      {loadFailed && <DataErrorNote what="phishing" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createChangeRequest } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Change Request - Governance - Admin" };
@@ -15,11 +16,12 @@ export default async function ChangeRequestPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; title?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.governance.changes.list({});
     items = r.items as unknown as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function ChangeRequestPage() {
       title="Change Request"
       description="Change advisory requests with risk levels, rollback plans, and verification steps."
     >
+      {loadFailed && <DataErrorNote what="change requests" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

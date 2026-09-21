@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createCompliance } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Compliance Readiness - Edu & Automation - Admin" };
@@ -15,11 +16,12 @@ export default async function CompliancePage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; framework?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.eduAutomation.compliance.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function CompliancePage() {
       title="Compliance Readiness"
       description="Framework-aligned controls with descriptions and readiness notes."
     >
+      {loadFailed && <DataErrorNote what="compliance" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

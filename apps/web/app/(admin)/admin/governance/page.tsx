@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import Link from "next/link";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Governance - Admin" };
 
@@ -39,6 +40,7 @@ export default async function GovernancePage() {
     scheduled_date: string | null;
   }> = [];
 
+  let loadFailed = false;
   try {
     const [c, r, rt, t] = await Promise.allSettled([
       api.governance.changes.list({}),
@@ -47,11 +49,12 @@ export default async function GovernancePage() {
       api.governance.tabletop.list({}),
     ]);
     if (c.status === "fulfilled") changes = c.value.items as unknown as typeof changes;
+    else loadFailed = true;
     if (r.status === "fulfilled") risks = r.value.items as unknown as typeof risks;
     if (rt.status === "fulfilled") retention = rt.value.items as unknown as typeof retention;
     if (t.status === "fulfilled") tabletop = t.value.items as unknown as typeof tabletop;
   } catch {
-    /* */
+    loadFailed = true;
   }
 
   return (
@@ -73,6 +76,7 @@ export default async function GovernancePage() {
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="governance" />}
       <div className="grid gap-4 md:grid-cols-2">
         <section className="cyber-panel">
           <h2 className="cyber-heading text-lg">Change Requests ({changes.length})</h2>

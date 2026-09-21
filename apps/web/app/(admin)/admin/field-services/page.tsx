@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import Link from "next/link";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Field Services - Admin" };
 
@@ -11,6 +12,7 @@ export default async function FieldServicesPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let counts: Record<string, number> = {};
+  let loadFailed = false;
   try {
     const [isp, unifi, ports, cameras, staging, diagrams] = await Promise.allSettled([
       api.fieldServices.isp.list({}),
@@ -24,7 +26,7 @@ export default async function FieldServicesPage() {
       counts[k] = v.status === "fulfilled" ? ((v.value as { total?: number }).total ?? 0) : 0;
     }
   } catch {
-    /* */
+    loadFailed = true;
   }
 
   return (
@@ -36,6 +38,7 @@ export default async function FieldServicesPage() {
       title="Field Services & Network Tools"
       description="ISP assessments, UniFi surveys, port maps, camera storage, hardware staging, and network diagrams."
     >
+      {loadFailed && <DataErrorNote what="field services" />}
       <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
         {[
           { key: "isp", label: "ISP", count: counts.isp || 0 },

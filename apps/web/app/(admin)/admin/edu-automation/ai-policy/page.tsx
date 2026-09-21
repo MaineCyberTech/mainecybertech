@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createAiPolicy } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "AI Policy - Edu & Automation - Admin" };
@@ -15,11 +16,12 @@ export default async function AiPolicyPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; title?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.eduAutomation.aiPolicy.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function AiPolicyPage() {
       title="AI Policy"
       description="AI usage policies with data handling rules and employee guidance."
     >
+      {loadFailed && <DataErrorNote what="ai policy" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

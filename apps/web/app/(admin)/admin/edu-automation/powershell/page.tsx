@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createPowerShell } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "PowerShell Script - Edu & Automation - Admin" };
@@ -15,11 +16,12 @@ export default async function PowerShellPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; name?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.eduAutomation.powershell.list({});
     items = (r as { items: typeof items }).items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function PowerShellPage() {
       title="PowerShell Script"
       description="Store and manage PowerShell scripts."
     >
+      {loadFailed && <DataErrorNote what="powershell" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

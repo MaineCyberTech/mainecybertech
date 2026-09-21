@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createBreakGlass } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Break Glass - Admin" };
 
@@ -22,11 +23,12 @@ export default async function BreakGlassPage() {
     next_rotation_at: string | null;
     status: string;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.securityOps.breakGlass.list({});
     items = r.items as unknown as typeof items;
   } catch {
-    /* */
+    loadFailed = true;
   }
 
   return (
@@ -39,6 +41,7 @@ export default async function BreakGlassPage() {
       description="Track break-glass accounts, custody, rotation, and testing without storing secrets."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="break glass" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

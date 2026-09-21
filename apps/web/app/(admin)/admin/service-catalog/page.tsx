@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createService } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Service Catalog - Admin - Maine CyberTech" };
 
@@ -24,11 +25,12 @@ export default async function ServiceCatalogPage() {
     is_bundled: boolean;
     is_active: boolean;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.serviceCatalog.list({});
     items = r.items as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const byCategory = new Map<string, typeof items>();
@@ -48,6 +50,7 @@ export default async function ServiceCatalogPage() {
       description="Define recurring services, pricing tiers, bundled packages, and billing models."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="service catalog" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

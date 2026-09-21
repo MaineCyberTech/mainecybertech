@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createRisk } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Risk Register - Governance - Admin" };
@@ -15,11 +16,12 @@ export default async function RiskRegisterPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<{ id: string; risk_description?: string }> = [];
+  let loadFailed = false;
   try {
     const r = await api.governance.risks.list({});
     items = r.items as unknown as typeof items;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -37,6 +39,7 @@ export default async function RiskRegisterPage() {
       title="Risk Register"
       description="Risk tracking with categories, likelihood, impact, and mitigating controls."
     >
+      {loadFailed && <DataErrorNote what="risks" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true },

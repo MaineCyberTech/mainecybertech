@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createWebsiteMonitor } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Website Monitor - Admin" };
 
@@ -22,11 +23,12 @@ export default async function WebsiteMonitorPage() {
     ssl_valid: boolean;
     lighthouse_score: number | null;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.batch.websiteMonitors.list({});
     items = r.items as typeof items;
   } catch {
-    /* */
+    loadFailed = true;
   }
 
   return (
@@ -39,6 +41,7 @@ export default async function WebsiteMonitorPage() {
       description="Track uptime, SSL expiry, and performance across client websites."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="website monitors" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
