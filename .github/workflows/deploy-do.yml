@@ -438,10 +438,14 @@ jobs:
 
             # Health gate: only prune the previous images once the new
             # containers are serving, so a failed deploy can still roll back.
-            probe() { curl -fsS --max-time 5 -o /dev/null "$1" 2>/dev/null || wget -qO- --timeout=5 "$1" >/dev/null 2>&1; }
+            # The app ports are not published to the host, so probe inside the
+            # containers (busybox wget is present in both images).
+            probe() {
+              docker exec "mct-portal-$1-1" wget -qO- "http://localhost:$2$3" >/dev/null 2>&1
+            }
             healthy=0
             for attempt in $(seq 1 12); do
-              if probe http://localhost:4000/health && probe http://localhost:3000/; then
+              if probe api 4000 /health && probe web 3000 /; then
                 healthy=1
                 echo "Health checks passed (attempt $attempt)"
                 break
