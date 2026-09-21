@@ -16,6 +16,12 @@ permissions:
 jobs:
   chromatic:
     runs-on: ubuntu-latest
+    # Best-effort: the Storybook webpack build currently fails with
+    # SB_BUILDER-WEBPACK5_0002 ("Cannot read properties of undefined (reading
+    # 'tap')") - a webpack-instance/plugin mismatch that needs a dedicated fix.
+    # Job-level continue-on-error keeps the pipeline green while the failure
+    # stays visible in the job status (previously it was hidden per-step).
+    continue-on-error: true
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

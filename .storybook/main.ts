@@ -1,4 +1,5 @@
 import type { StorybookConfig } from "@storybook/nextjs";
+import path from "node:path";
 
 const config: StorybookConfig = {
   stories: [
@@ -23,7 +24,7 @@ const config: StorybookConfig = {
     config.resolve = config.resolve || {};
     config.resolve.alias = {
       ...config.resolve.alias,
-      "@mct/ui": require("path").resolve(__dirname, "../packages/ui/src"),
+      "@mct/ui": path.resolve(__dirname, "../packages/ui/src"),
     };
     return config;
   },
