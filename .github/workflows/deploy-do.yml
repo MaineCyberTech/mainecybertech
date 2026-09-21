@@ -437,20 +437,20 @@ jobs:
             ss -tlnp 2>/dev/null | grep :443 || netstat -tlnp 2>/dev/null | grep :443 || echo "no listener"
 
             # Health gate: only prune the previous images once the new
-            # containers are serving, so a failed deploy can still roll back.
-            # The app ports are not published to the host, so probe inside the
-            # containers (busybox wget is present in both images).
-            probe() {
-              docker exec "mct-portal-$1-1" wget -qO- "http://localhost:$2$3" >/dev/null 2>&1
+            # containers report healthy, so a failed deploy can still roll
+            # back. Use the containers' own healthchecks (probing the app
+            # ports from the host does not work - they are not published).
+            container_health() {
+              docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
             }
             healthy=0
-            for attempt in $(seq 1 12); do
-              if probe api 4000 /health && probe web 3000 /; then
+            for attempt in $(seq 1 18); do
+              if [ "$(container_health api)" = "healthy" ] && [ "$(container_health web)" = "healthy" ]; then
                 healthy=1
                 echo "Health checks passed (attempt $attempt)"
                 break
               fi
-              echo "Waiting for services to become healthy (attempt $attempt/12)..."
+              echo "Waiting for services to become healthy (attempt $attempt/18)..."
               sleep 10
             done
             if [ "$healthy" != "1" ]; then
