@@ -60,7 +60,6 @@ export default async function PortalSupportPage() {
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Support" }]} />
       <PortalSubnav current="support" />
-      <h1 className="text-2xl font-semibold text-slate-50">Support</h1>
       <SupportCenterClient
         tickets={(tickets ?? []) as TicketRecord[]}
         createTicketAction={createTicketAction}
