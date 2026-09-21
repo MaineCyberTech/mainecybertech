@@ -40,6 +40,9 @@ jobs:
 
       - name: Restore backup to temp database
         run: |
+          # pipefail so a gunzip failure fails the step instead of being
+          # masked by psql's exit code.
+          set -euo pipefail
           gunzip -c /tmp/restore.sql.gz | psql "postgresql://postgres:test@localhost:5432/restore_test"
 
       - name: Verify database integrity

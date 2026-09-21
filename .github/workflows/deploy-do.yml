@@ -53,6 +53,14 @@ jobs:
       test_accounts_enabled: ${{ steps.env.outputs.test_accounts_enabled }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate rollback SHA
+        if: github.event.inputs.rollback_sha != ''
+        run: |
+          # The value is used unquoted in a remote root shell; only allow hex.
+          if ! printf '%s' "${{ github.event.inputs.rollback_sha }}" | grep -Eq '^[0-9a-f]{7,40}$'; then
+            echo "::error::rollback_sha must be 7-40 lowercase hex characters"
+            exit 1
+          fi
       - name: Determine environment
         id: env
         run: |
@@ -427,8 +435,27 @@ jobs:
             docker compose -p mct-portal ps --format 'table {{.Name}}\t{{.Status}}\t{{.Ports}}'
             echo "=== Port 443 listener ==="
             ss -tlnp 2>/dev/null | grep :443 || netstat -tlnp 2>/dev/null | grep :443 || echo "no listener"
-            echo "=== Caddy logs (last 10 lines) ==="
-            docker compose -p mct-portal logs --tail=10 caddy 2>/dev/null || docker logs mct-portal-caddy-1 --tail 10 2>/dev/null || echo "no caddy logs"
+
+            # Health gate: only prune the previous images once the new
+            # containers are serving, so a failed deploy can still roll back.
+            probe() { curl -fsS --max-time 5 -o /dev/null "$1" 2>/dev/null || wget -qO- --timeout=5 "$1" >/dev/null 2>&1; }
+            healthy=0
+            for attempt in $(seq 1 12); do
+              if probe http://localhost:4000/health && probe http://localhost:3000/; then
+                healthy=1
+                echo "Health checks passed (attempt $attempt)"
+                break
+              fi
+              echo "Waiting for services to become healthy (attempt $attempt/12)..."
+              sleep 10
+            done
+            if [ "$healthy" != "1" ]; then
+              echo "=== Caddy logs (last 30 lines) ==="
+              docker compose -p mct-portal logs --tail=30 caddy 2>/dev/null || true
+              echo "ERROR: health checks failed; keeping the previous image for rollback" >&2
+              exit 1
+            fi
+
             echo "=== Pruning old mct images (keep current tag) ==="
             docker images --format '{{.Repository}}:{{.Tag}}' | grep -E "mct-(api|worker|web)" | grep -v ":${{ env.IMAGE_TAG }}$" | xargs -r docker rmi -f 2>/dev/null || true
             docker image prune -f 2>/dev/null || true

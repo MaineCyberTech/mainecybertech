@@ -39,6 +39,12 @@ lib/
 tmp/
 temp/
 docs.tar.gz
+prompts/
+apps/web/e2e/
+.playwright-report/
+.playwright-results/
+**/*.spec.ts
+**/*.test.ts
 
 # Misc
 *.md

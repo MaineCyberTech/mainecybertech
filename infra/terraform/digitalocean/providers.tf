@@ -11,6 +11,9 @@ terraform {
     skip_metadata_api_check     = true
     skip_requesting_account_id  = true
     encrypt                     = true
+    # Prevent concurrent applies from corrupting state (a manual dispatch on
+    # another branch can run alongside the push-triggered workflow).
+    use_lockfile = true
   }
 
   required_providers {
