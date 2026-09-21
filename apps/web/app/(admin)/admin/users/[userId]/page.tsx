@@ -164,12 +164,15 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
                   <form action={updateMembership}>
                     <input type="hidden" name="membershipId" value={membership.id} />
-                     <input type="hidden" name="userId" value={profile?.id ?? ""} />
+                    <input type="hidden" name="userId" value={profile?.id ?? ""} />
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="cyber-label">Role</label>
+                        <label className="cyber-label" htmlFor={`role-${membership.id}`}>
+                          Role
+                        </label>
                         <select
+                          id={`role-${membership.id}`}
                           name="roleId"
                           defaultValue={membership.role_id}
                           className="cyber-input"
@@ -183,8 +186,11 @@ export default async function UserDetailPage({ params }: UserPageProps) {
                       </div>
 
                       <div>
-                        <label className="cyber-label">Status</label>
+                        <label className="cyber-label" htmlFor={`status-${membership.id}`}>
+                          Status
+                        </label>
                         <select
+                          id={`status-${membership.id}`}
                           name="status"
                           defaultValue={membership.status}
                           className="cyber-input"

@@ -386,8 +386,11 @@ export default async function PortalProjectDetailPage({ params }: Props) {
         >
           <input type="hidden" name="projectId" value={project.project.id} />
           <div>
-            <label className="cyber-label">Add Project Update</label>
+            <label className="cyber-label" htmlFor="body">
+              Add Project Update
+            </label>
             <textarea
+              id="body"
               name="body"
               rows={4}
               className="cyber-input"

@@ -347,8 +347,16 @@ export default function AdminProjectsClient({
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="cyber-label">Organization</label>
-                  <select name="organizationId" className="cyber-input" required defaultValue="">
+                  <label className="cyber-label" htmlFor="organizationId">
+                    Organization
+                  </label>
+                  <select
+                    id="organizationId"
+                    name="organizationId"
+                    className="cyber-input"
+                    required
+                    defaultValue=""
+                  >
                     <option value="">Select organization</option>
                     {allOrganizations.map((org) => (
                       <option key={org.id} value={org.id}>
@@ -358,8 +366,10 @@ export default function AdminProjectsClient({
                   </select>
                 </div>
                 <div>
-                  <label className="cyber-label">Status</label>
-                  <select name="status" defaultValue="planned" className="cyber-input">
+                  <label className="cyber-label" htmlFor="status">
+                    Status
+                  </label>
+                  <select id="status" name="status" defaultValue="planned" className="cyber-input">
                     <option value="planned">planned</option>
                     <option value="active">active</option>
                     <option value="blocked">blocked</option>
@@ -369,32 +379,55 @@ export default function AdminProjectsClient({
                   </select>
                 </div>
                 <div className="md:col-span-2">
-                  <label className="cyber-label">Project Name</label>
-                  <input name="name" className="cyber-input" required />
+                  <label className="cyber-label" htmlFor="name">
+                    Project Name
+                  </label>
+                  <input id="name" name="name" className="cyber-input" required />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="cyber-label">Description</label>
-                  <textarea name="description" rows={3} className="cyber-input" />
+                  <label className="cyber-label" htmlFor="description">
+                    Description
+                  </label>
+                  <textarea id="description" name="description" rows={3} className="cyber-input" />
                 </div>
                 <div>
-                  <label className="cyber-label">Priority</label>
-                  <input name="priority" defaultValue="normal" className="cyber-input" />
-                </div>
-                <div>
-                  <label className="cyber-label">Jira Project Key</label>
+                  <label className="cyber-label" htmlFor="priority">
+                    Priority
+                  </label>
                   <input
+                    id="priority"
+                    name="priority"
+                    defaultValue="normal"
+                    className="cyber-input"
+                  />
+                </div>
+                <div>
+                  <label className="cyber-label" htmlFor="externalJiraProjectKey">
+                    Jira Project Key
+                  </label>
+                  <input
+                    id="externalJiraProjectKey"
                     name="externalJiraProjectKey"
                     className="cyber-input font-mono text-xs"
                     placeholder="e.g. PROJ"
                   />
                 </div>
                 <div>
-                  <label className="cyber-label">Start Date</label>
-                  <input type="datetime-local" name="startsAt" className="cyber-input" />
+                  <label className="cyber-label" htmlFor="startsAt">
+                    Start Date
+                  </label>
+                  <input
+                    id="startsAt"
+                    type="datetime-local"
+                    name="startsAt"
+                    className="cyber-input"
+                  />
                 </div>
                 <div>
-                  <label className="cyber-label">Due Date</label>
-                  <input type="datetime-local" name="dueAt" className="cyber-input" />
+                  <label className="cyber-label" htmlFor="dueAt">
+                    Due Date
+                  </label>
+                  <input id="dueAt" type="datetime-local" name="dueAt" className="cyber-input" />
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3">

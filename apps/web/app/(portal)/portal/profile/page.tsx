@@ -44,6 +44,7 @@ export default async function ProfilePage() {
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Profile" }]} />
       <PortalSubnav current="dashboard" />
+      <h1 className="text-2xl font-semibold text-slate-50">Profile</h1>
       <ProfileClient initialData={initialData} />
     </div>
   );

@@ -120,7 +120,7 @@ export default async function PortalDashboardPage() {
       <section className="cyber-panel">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="cyber-heading text-2xl">Client Dashboard</h2>
+            <h1 className="cyber-heading text-2xl">Client Dashboard</h1>
             <p className="mt-3 text-slate-300">
               Organization: {organization?.name ?? "Loading..."}
             </p>

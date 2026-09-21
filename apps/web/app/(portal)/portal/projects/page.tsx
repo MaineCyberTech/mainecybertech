@@ -123,7 +123,7 @@ export default async function PortalProjectsPage() {
 
       <section className="cyber-panel">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="cyber-heading text-2xl">Projects</h2>
+          <h1 className="cyber-heading text-2xl">Projects</h1>
           <div className="cyber-pill">Total {projects.length}</div>
         </div>
 
