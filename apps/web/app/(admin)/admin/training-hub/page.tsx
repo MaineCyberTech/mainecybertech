@@ -8,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { createTrainingCourse } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Training Hub - Admin - Maine CyberTech" };
 
@@ -25,11 +26,13 @@ export default async function TrainingHubPage() {
     created_at: string;
   }>;
 
+  let loadFailed = false;
   try {
     const r = (await api.trainingHub.courses.list({})) as any;
     items = r.items as typeof items;
   } catch (e) {
     console.error("Training Hub: failed to load data", e);
+    loadFailed = true;
   }
 
   return (
@@ -42,6 +45,7 @@ export default async function TrainingHubPage() {
       description="Manage microlearning courses, lessons, and track client enrollment progress."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="training hub" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

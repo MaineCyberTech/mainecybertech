@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
 import { updateAsset, deleteAsset } from "@/lib/module-actions";
 import { revalidatePath } from "next/cache";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Asset Detail - Admin - Maine CyberTech" };
@@ -16,10 +17,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   await requireAdminAccess();
   const api = getApiClient();
   let record: Record<string, unknown> | null = null;
+  let loadFailed = false;
   try {
     record = (await withRetry(() => api.assets.get(id))) as unknown as Record<string, unknown>;
   } catch (error) {
     console.error("[[id]/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -36,6 +39,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
       subnav={<AdminSubnav current="assets" />}
       title={String(record?.name ?? "Record Detail")}
     >
+      {loadFailed && <DataErrorNote what="data" />}
       <RecordDetail
         id={id}
         record={record}

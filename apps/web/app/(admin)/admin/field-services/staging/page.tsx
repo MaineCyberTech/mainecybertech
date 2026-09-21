@@ -8,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import AdminPagination from "@/components/admin/AdminPagination";
 import { createStaging } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Hardware Staging - Field Services - Admin" };
@@ -16,7 +17,13 @@ const DEFAULT_LIMIT = 25;
 
 const statusPill = (s: string) => {
   const c =
-    s === "pending" ? "amber" : s === "in_progress" ? "sky" : s === "complete" ? "emerald" : "slate";
+    s === "pending"
+      ? "amber"
+      : s === "in_progress"
+        ? "sky"
+        : s === "complete"
+          ? "emerald"
+          : "slate";
   const m = {
     amber: "border-amber-500/25 bg-amber-500/10 text-amber-300",
     sky: "border-sky-500/25 bg-sky-500/10 text-sky-300",
@@ -42,7 +49,10 @@ export default async function StagingPage({ searchParams }: StagingPageProps) {
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
 
   let items: Array<{
     id: string;
@@ -53,12 +63,13 @@ export default async function StagingPage({ searchParams }: StagingPageProps) {
   }> = [];
   let total = 0;
 
+  let loadFailed = false;
   try {
     const r = await api.staging.list({ page, limit });
     items = r.items as typeof items;
     total = r.total ?? 0;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -79,12 +90,18 @@ export default async function StagingPage({ searchParams }: StagingPageProps) {
       title="Hardware Staging"
       description="Track device staging with type, serial, asset tag, and notes."
     >
+      {loadFailed && <DataErrorNote what="staging" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
           { key: "deviceName", label: "Device Name", required: true },
           { key: "assetTag", label: "Asset Tag" },
-          { key: "status", label: "Status", type: "select", options: ["pending", "in_progress", "complete"] },
+          {
+            key: "status",
+            label: "Status",
+            type: "select",
+            options: ["pending", "in_progress", "complete"],
+          },
         ]}
         title="New Device"
         action={createStaging}

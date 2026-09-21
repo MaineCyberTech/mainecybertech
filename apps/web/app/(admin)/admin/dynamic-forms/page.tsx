@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Dynamic Forms - Admin" };
@@ -13,11 +14,13 @@ export default async function DynamicFormsAdminPage() {
   await requireAdminAccess();
   const api = getApiClient();
   let items: Array<Record<string, unknown>> = [];
+  let loadFailed = false;
   try {
     const r = await api.dynamicForms.list({ limit: 100, page: 1 });
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[dynamic-forms/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -34,6 +37,7 @@ export default async function DynamicFormsAdminPage() {
         </Link>
       }
     >
+      {loadFailed && <DataErrorNote what="dynamic forms" />}
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
           {items.length > 0 ? (

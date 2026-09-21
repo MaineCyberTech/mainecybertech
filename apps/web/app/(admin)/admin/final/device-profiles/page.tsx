@@ -8,6 +8,7 @@ import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
 import AdminPagination from "@/components/admin/AdminPagination";
 import { createDeviceProfile } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Device Profiles - Admin - Maine CyberTech" };
@@ -24,7 +25,10 @@ export default async function DeviceProfilesPage({ searchParams }: DeviceProfile
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
 
   let profiles: Array<{
     id: string;
@@ -36,12 +40,13 @@ export default async function DeviceProfilesPage({ searchParams }: DeviceProfile
   }> = [];
   let total = 0;
 
+  let loadFailed = false;
   try {
     const r = await api.deviceProfiles.list({ page, limit });
     profiles = r.items as typeof profiles;
     total = r.total ?? 0;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -61,10 +66,9 @@ export default async function DeviceProfilesPage({ searchParams }: DeviceProfile
       subnav={<AdminSubnav current="final" />}
       title="Device Profiles"
       description="Standard device profiles with type, manufacturer, model, and specs."
-      actions={
-        <div className="cyber-pill">{total} Total</div>
-      }
+      actions={<div className="cyber-pill">{total} Total</div>}
     >
+      {loadFailed && <DataErrorNote what="device profiles" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

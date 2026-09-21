@@ -6,6 +6,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
 import { updateStatusItem, deleteStatusItem } from "@/lib/module-actions";
 import { revalidatePath } from "next/cache";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status Detail - Admin - Maine CyberTech" };
@@ -15,6 +16,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   await requireAdminAccess();
   const api = getApiClient();
   let record: Record<string, unknown> | null = null;
+  let loadFailed = false;
   try {
     const items = (await api.batch.status.list({})).items as unknown as Array<
       Record<string, unknown>
@@ -22,6 +24,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
     record = items.find((r) => r.id === id) ?? null;
   } catch (error) {
     console.error("[[id]/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -38,6 +41,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
       subnav={<AdminSubnav current="status" />}
       title={String(record?.title ?? "Record Detail")}
     >
+      {loadFailed && <DataErrorNote what="data" />}
       <RecordDetail
         id={id}
         record={record}

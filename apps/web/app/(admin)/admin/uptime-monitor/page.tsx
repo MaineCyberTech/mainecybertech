@@ -8,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { createUptimeCheck } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Uptime Monitor - Admin - Maine CyberTech" };
 
@@ -23,11 +24,13 @@ export default async function UptimeMonitorPage() {
     created_at: string;
   }>;
 
+  let loadFailed = false;
   try {
     const r = (await api.uptimeMonitor.listChecks({})) as any;
     items = r.items as typeof items;
   } catch (e) {
     console.error("Uptime Monitor: failed to load data", e);
+    loadFailed = true;
   }
 
   return (
@@ -40,6 +43,7 @@ export default async function UptimeMonitorPage() {
       description="Monitor website availability, response times, and SSL certificate expiry."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="uptime monitor" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

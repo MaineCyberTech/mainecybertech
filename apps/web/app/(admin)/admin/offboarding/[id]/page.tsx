@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
 import { updateOffboarding, deleteOffboarding } from "@/lib/module-actions";
 import { revalidatePath } from "next/cache";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Offboarding Detail - Admin - Maine CyberTech" };
@@ -16,6 +17,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   await requireAdminAccess();
   const api = getApiClient();
   let record: Record<string, unknown> | null = null;
+  let loadFailed = false;
   try {
     record = (await withRetry(() => api.securityOps.offboarding.get(id))) as unknown as Record<
       string,
@@ -23,6 +25,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
     >;
   } catch (error) {
     console.error("[[id]/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -39,6 +42,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
       subnav={<AdminSubnav current="offboarding" />}
       title={String(record?.employee_name ?? "Record Detail")}
     >
+      {loadFailed && <DataErrorNote what="data" />}
       <RecordDetail
         id={id}
         record={record}

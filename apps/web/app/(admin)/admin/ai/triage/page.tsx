@@ -5,6 +5,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import TriageAnalyzeClient from "@/components/admin/TriageAnalyzeClient";
 import { Organization } from "@mct/sdk";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "AI Triage - Admin - Maine CyberTech" };
@@ -14,11 +15,12 @@ export default async function TriagePage() {
   const api = getApiClient();
 
   let orgs: { id: string; name: string }[] = [];
+  let loadFailed = false;
   try {
     const list = await api.organizations.list({ limit: 100 });
     orgs = (list.items ?? []).map((o: Organization) => ({ id: o.id, name: o.name }));
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   return (
@@ -41,6 +43,7 @@ export default async function TriagePage() {
         </a>
       }
     >
+      {loadFailed && <DataErrorNote what="triage" />}
       <TriageAnalyzeClient organizations={orgs} />
     </AdminPageShell>
   );

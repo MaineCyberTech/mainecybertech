@@ -8,6 +8,7 @@ import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
 import AdminPagination from "@/components/admin/AdminPagination";
 import { createVendorContact } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendor Contacts - Admin - Maine CyberTech" };
@@ -24,7 +25,10 @@ export default async function VendorContactsPage({ searchParams }: VendorContact
 
   const sp = (await searchParams) ?? {};
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
 
   let contacts: Array<{
     id: string;
@@ -36,12 +40,13 @@ export default async function VendorContactsPage({ searchParams }: VendorContact
     is_primary: boolean;
   }> = [];
   let total = 0;
+  let loadFailed = false;
   try {
     const r = await api.vendors.contacts.list({ page, limit });
     contacts = r.items as typeof contacts;
     total = r.total ?? 0;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -56,6 +61,7 @@ export default async function VendorContactsPage({ searchParams }: VendorContact
       description="Centralized vendor contacts, support portals, account IDs, and escalation paths."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="vendor contacts" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

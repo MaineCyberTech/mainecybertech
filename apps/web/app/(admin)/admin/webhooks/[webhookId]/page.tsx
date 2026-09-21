@@ -6,6 +6,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import WebhookDetailClient from "./WebhookDetailClient";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 
@@ -47,10 +48,12 @@ export default async function WebhookDetailPage({ params }: Props) {
     }>;
     total: number;
   } = { items: [], total: 0 };
+  let loadFailed = false;
   try {
     deliveries = await api.webhooks.listDeliveries(webhookId, { limit: 20 });
   } catch (error) {
     console.error("[[webhookId]/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -72,6 +75,7 @@ export default async function WebhookDetailPage({ params }: Props) {
         </Link>
       }
     >
+      {loadFailed && <DataErrorNote what="data" />}
       <WebhookDetailClient
         webhook={webhook}
         deliveries={deliveries.items}

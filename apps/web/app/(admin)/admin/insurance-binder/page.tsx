@@ -8,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { createInsuranceEvidence } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Insurance Evidence Binder - Admin - Maine CyberTech" };
 
@@ -25,11 +26,13 @@ export default async function InsuranceBinderPage() {
     created_at: string;
   }>;
 
+  let loadFailed = false;
   try {
     const r = (await api.insuranceBinder.list({})) as any;
     items = r.items as typeof items;
   } catch (e) {
     console.error("Insurance Binder: failed to load data", e);
+    loadFailed = true;
   }
 
   return (
@@ -44,6 +47,7 @@ export default async function InsuranceBinderPage() {
       description="Organize and track evidence for cyber insurance audits across 8 coverage areas."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="insurance binder" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

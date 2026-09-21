@@ -6,6 +6,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import AdminPagination from "@/components/admin/AdminPagination";
 import DmarcAnalyzeForm from "./DmarcAnalyzeForm";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DMARC Coach - Admin - Maine CyberTech" };
 
@@ -43,7 +44,10 @@ export default async function DmarcCoachPage({ searchParams }: DmarcCoachPagePro
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
 
   let items = [] as Array<{
     id: string;
@@ -54,12 +58,14 @@ export default async function DmarcCoachPage({ searchParams }: DmarcCoachPagePro
   }>;
   let total = 0;
 
+  let loadFailed = false;
   try {
     const r = (await api.dmarcCoach.list({ page, limit })) as any;
     items = r.items as typeof items;
     total = r.total ?? 0;
   } catch (e) {
     console.error("DMARC Coach: failed to load data", e);
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -74,6 +80,7 @@ export default async function DmarcCoachPage({ searchParams }: DmarcCoachPagePro
       description="Analyze DMARC, SPF, and DKIM records with automated grading and remediation recommendations."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="dmarc coach" />}
       <DmarcAnalyzeForm />
       <section className="cyber-panel mt-6">
         <h2 className="cyber-heading text-lg">Analyzed Domains</h2>

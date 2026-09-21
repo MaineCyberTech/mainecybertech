@@ -8,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import AdminPagination from "@/components/admin/AdminPagination";
 import { createNetworkDiagram } from "@/lib/module-actions";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Network Diagrams - Field Services - Admin" };
@@ -45,21 +46,26 @@ export default async function NetworkDiagramsPage({ searchParams }: NetworkDiagr
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
 
   let diagrams: NetworkDiagram[] = [];
   let total = 0;
 
+  let loadFailed = false;
   try {
     const r = await api.networkDiagrams.list({ page, limit });
     diagrams = (r.items as unknown as NetworkDiagram[]) ?? [];
     total = r.total ?? 0;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
-  const buildHref = (p: number) => `/admin/field-services/network-diagrams?page=${p}&limit=${limit}`;
+  const buildHref = (p: number) =>
+    `/admin/field-services/network-diagrams?page=${p}&limit=${limit}`;
 
   return (
     <AdminPageShell
@@ -76,6 +82,7 @@ export default async function NetworkDiagramsPage({ searchParams }: NetworkDiagr
       title="Network Diagram"
       description="Topology planning with a structured node/edge diagram, notes, and metadata."
     >
+      {loadFailed && <DataErrorNote what="network diagrams" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
@@ -101,10 +108,7 @@ export default async function NetworkDiagramsPage({ searchParams }: NetworkDiagr
               const nodes = nodesOf(d);
               const edges = edgesOf(d);
               return (
-                <div
-                  key={d.id}
-                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-                >
+                <div key={d.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                   <Link
                     className="transition hover:text-emerald-400"
                     href={`/admin/field-services/network-diagrams/${d.id}`}
@@ -120,9 +124,7 @@ export default async function NetworkDiagramsPage({ searchParams }: NetworkDiagr
                   {nodes.length > 0 ? (
                     <ul className="mt-2 list-disc pl-5 text-xs text-slate-400">
                       {nodes.map((n, i) => (
-                        <li key={n?.id ?? i}>
-                          {String(n?.label ?? n?.id ?? `node-${i}`)}
-                        </li>
+                        <li key={n?.id ?? i}>{String(n?.label ?? n?.id ?? `node-${i}`)}</li>
                       ))}
                     </ul>
                   ) : null}
