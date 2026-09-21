@@ -84,7 +84,7 @@ The platform is designed to support:
 
 ### GitHub Secrets Required
 
-See [`docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`](./docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md) for the full list of 7 secrets and 8 variables needed for CI/CD workflows.
+See [`docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`](./docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md) for the full list of GitHub secrets and variables needed for CI/CD workflows.
 
 ## Quick Start (Development)
 

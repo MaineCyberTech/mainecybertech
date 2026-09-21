@@ -36,14 +36,14 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-20 Verified)
 
-**3,073 tests, all passing. 354 suites.**
+**3,078 tests, all passing. 356 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
 | API     | 1,070         | 99     | Jest + supertest                  |
-| Web     | 1,620         | 245    | Jest + Testing Library            |
+| Web     | 1,624         | 246    | Jest + Testing Library            |
 | SDK     | 285           | 2      | Jest (mocked fetch)               |
-| Worker  | 98            | 8      | Jest (env schema + task handlers) |
+| Worker  | 99            | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
 
 ### Known Debt (2026-08-29)
@@ -89,8 +89,8 @@ pnpm e2e                     # Playwright E2E
 | API SDK modules           | 60    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                         |
 | Worker task files         | 12    | Registered in `apps/worker/src/tasks/index.ts`                                                      |
 | Web pages                 | 316   | Admin 201, Portal 86, Public 27, Root 2                                                             |
-| Web components            | 92    | `apps/web/components/`                                                                              |
-| SQL migrations            | 118   | `supabase/migrations/` (latest: 5302419 FK indexes)                                                 |
+| Web components            | 93    | `apps/web/components/`                                                                              |
+| SQL migrations            | 119   | `supabase/migrations/` (latest: 5302420 RLS/impersonation fixes)                                    |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                              |
 | GitHub Actions workflows  | 13    | `.github/workflows/`                                                                                |
 | AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                        |
@@ -248,7 +248,7 @@ SENTRY_DSN=
 - **Permissions:** `usePermissions()` hook, `<HasPermission>` component, `requirePermission()` server helper
 - **Error boundaries:** `error.tsx` in each route group, `global-error.tsx` at root
 
-### Worker (145 lines)
+### Worker (155 lines)
 
 - **Consumer:** SQS-based (`runWorkerTasks` from `consumer-sqs.ts`)
 - **Task registration:** `registerTask(name, handler)` in `apps/worker/src/task-registry.ts`
@@ -382,6 +382,65 @@ Verified all 787 prompts across 6 packs against actual codebase. Summary:
 The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`). The cookie MUST have `httpOnly: false` so the SDK/JS can read it and set the `x-csrf-token` header. Setting `httpOnly: true` breaks the pattern and causes 403s on cross-origin mutations. The `SameSite: lax` + `Secure` flags provide adequate protection.
 
 ## Completed Work
+
+### Second full audit + remediation (2026-09-21 session)
+
+Re-audited all six prompt packs (`mct-portal-os-expanded-60-modules`,
+`portal-alignment`, `repo_audit`, `hardening`, plus the two previously
+un-audited: `mct-full-webstore-product-catalog-pack`, `repo-deep-dive`) and
+the code. Prior fixes were verified in source (all held); new issues fixed:
+
+- **P0** `requireOrgAccess` compared only the camelCase body key, so a
+  snake_case `organization_id` body slipped past the cross-org guard
+  (`edu-automation` scorecards/evaluate wrote the victim org with the service
+  role). Both spellings now checked.
+- **P1** API-side webhook fetches followed redirects after the SSRF check
+  (`lib/webhook-dispatcher.ts`, `routes/webhook-management.ts`) — now
+  `redirect:"manual"`.
+- **P2** `client_portal_entitlements` RLS allowed any approved member to write
+  entitlements the API gates to admins (migration `5302420`); same migration
+  drops `NOT NULL` on `impersonation_log.actor_user_id` (ON DELETE SET NULL
+  broke user deletion).
+- **P2** file-request uploads were 50MB/unsniffed; `validateUploadContent`
+  extracted to `lib/upload-validation.ts` and reused (25MB cap, `upsert:false`).
+- **P2 (worker)** timeouts on the last three fetches; `scheduled-notifications`
+  membership/ticket/custom branches dedupe on retry; PII (emails/UPN) removed
+  from worker logs; SSRF-blocked deliveries marked `dead_letter`.
+- **P2 (CI)** `github.ref_name`/`repository` are no longer interpolated into
+  the remote root shell (forwarded via `envs:` + quoted); the worker health
+  check now authenticates (`-i`) and uses `docker exec`; E2E push trigger
+  removed (duplicate runs); Chromatic no longer `continue-on-error`;
+  `terraform fmt -check -recursive` is blocking; db-restore binds `127.0.0.1`.
+- **Web** `DataErrorNote` extended to ~100 admin/portal pages (CRLF-tolerant
+  transform + inline-fallback and multi-catch shapes).
+- Docs counts re-measured (3,078 tests / 356 suites, 119 migrations, 93
+  components, worker 155 lines, 28 handlers).
+
+**Known remaining debt (second audit):**
+
+- **Webstore pack** (largest gap): the public storefront reads static
+  `apps/web/lib/catalog/data/*.json` while admin CRUD writes the DB
+  (`store_products`/`store_categories`) — **admin edits never reach the public
+  store**. Four tables are unwired (`store_leads`, `store_quote_requests`,
+  `store_visual_assets`, `store_proposal_drafts`); lead scoring,
+  intake→project and proposal generation are no-op stubs; prompt 17
+  (ethical-FOMO UX) is absent; ~12 store admin pages remain static reference
+  viewers; campaigns/import are non-persistent.
+- **repo-deep-dive pack**: its output contract expects artifacts under
+  `docs/audits/{name}/{run}/` (absent — historical runs live in the pack dir);
+  no SBOM/license workflow; no root `CHANGELOG.md`; no committed
+  branch-protection config; stale root artifacts (`vercel.json`,
+  `COMPREHENSIVE_AUDIT_2026-08-26.md`).
+- **Pack path drift**: the 60-module `implementation-matrix.csv` points at
+  aspirational 1-file-per-module paths (58/60 api/web/sdk) that do not exist
+  (modules are real, in consolidated routes); `hardening`/`portal-alignment`/
+  `repo_audit` prompts reference `apps/api/src/lib/auth.ts` and
+  `lib/supabase.ts` (actual: `middleware/auth.ts`, `services/supabase.ts`), and
+  the hardening/alignment CI runner workflows are not installed.
+- ~7 admin pages still swallow (`.catch` shapes the script could not safely
+  transform): approval-requests, cab, client-portal, compliance-readiness,
+  knowledge-base, store/{products,categories,promotions,quotes}.
+- `terraform-do push` still fails on the `DO_API_TOKEN` 401 (rotate the token).
 
 ### Full repo audit + remediation (2026-09-20 session)
 
@@ -623,7 +682,7 @@ prior tag; worker `ping` is registered but never enqueued.
 
 - 301 pages (196 admin, 77 portal, 26 public)
 - 55+ API route files (incl. `routes/final/` submodule split) covering ~90 module areas
-- 13 worker task handlers
+- 28 registered worker task handlers
 - RBAC with 13 roles, 90-module permission matrix
 - Multi-org switching (`X-Active-Org` header + cookie)
 - Marketing site integration (4 phases complete)
