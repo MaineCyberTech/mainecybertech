@@ -159,6 +159,10 @@ import {
   type StoreProposalDraft,
   type StoreProposalDraftStatus,
   type UpdateStoreProposalDraftInput,
+  type StoreVisualAsset,
+  type CreateStoreVisualAssetInput,
+  type UpdateStoreVisualAssetInput,
+  type ListStoreVisualAssetsParams,
 } from "./store";
 import {
   ClientPortalApi,
@@ -292,6 +296,10 @@ export type {
   StoreProposalDraft,
   StoreProposalDraftStatus,
   UpdateStoreProposalDraftInput,
+  StoreVisualAsset,
+  CreateStoreVisualAssetInput,
+  UpdateStoreVisualAssetInput,
+  ListStoreVisualAssetsParams,
   KnowledgeBaseArticle,
   ComplianceFramework,
   ComplianceControl,

@@ -187,6 +187,42 @@ export type UpdateStoreProposalDraftInput = {
   sections?: Record<string, string[]>;
 };
 
+export interface StoreVisualAsset {
+  id: string;
+  linkedEntityType: string;
+  linkedEntityId: string;
+  assetType: string;
+  iconName: string;
+  accentColor: string;
+  imageUrl: string;
+  altText: string;
+  decorative: boolean;
+  provenance: string;
+  licenseNotes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateStoreVisualAssetInput = {
+  linkedEntityType: string;
+  linkedEntityId: string;
+  assetType: string;
+  iconName?: string;
+  accentColor?: string;
+  imageUrl?: string;
+  altText?: string;
+  decorative?: boolean;
+  provenance?: string;
+  licenseNotes?: string;
+};
+
+export type UpdateStoreVisualAssetInput = Partial<CreateStoreVisualAssetInput>;
+
+export type ListStoreVisualAssetsParams = {
+  linkedEntityType?: string;
+  linkedEntityId?: string;
+};
+
 export class StoreApi {
   constructor(private client: ApiClient) {}
 
@@ -300,5 +336,29 @@ export class StoreApi {
     data: UpdateStoreProposalDraftInput,
   ): Promise<StoreProposalDraft> {
     return this.client.patch<StoreProposalDraft>(`/api/v1/store/proposal-drafts/${id}`, data);
+  }
+
+  // --- Visual assets (admin) ---
+
+  listVisualAssets(params: ListStoreVisualAssetsParams = {}): Promise<StoreVisualAsset[]> {
+    const searchParams = new URLSearchParams();
+    if (params.linkedEntityType) searchParams.set("linkedEntityType", params.linkedEntityType);
+    if (params.linkedEntityId) searchParams.set("linkedEntityId", params.linkedEntityId);
+    const query = searchParams.toString();
+    return this.client.get<StoreVisualAsset[]>(
+      `/api/v1/store/visual-assets${query ? `?${query}` : ""}`,
+    );
+  }
+
+  createVisualAsset(data: CreateStoreVisualAssetInput): Promise<StoreVisualAsset> {
+    return this.client.post<StoreVisualAsset>("/api/v1/store/visual-assets", data);
+  }
+
+  updateVisualAsset(id: string, data: UpdateStoreVisualAssetInput): Promise<StoreVisualAsset> {
+    return this.client.patch<StoreVisualAsset>(`/api/v1/store/visual-assets/${id}`, data);
+  }
+
+  deleteVisualAsset(id: string): Promise<void> {
+    return this.client.delete(`/api/v1/store/visual-assets/${id}`);
   }
 }

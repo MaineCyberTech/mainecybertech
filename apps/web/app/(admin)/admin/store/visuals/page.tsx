@@ -2,15 +2,31 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import DataErrorNote from "@/components/admin/DataErrorNote";
+import EmptyState from "@/components/EmptyState";
+import CrudForm from "@/components/admin/CrudForm";
+import { getApiClient } from "@/lib/api";
 import { getVisualServiceMap } from "@/lib/catalog/loader";
 import StoreIconTile from "@/components/store/StoreIconTile";
+import type { StoreVisualAsset } from "@mct/sdk";
+import type { Metadata } from "next";
+import { createVisualAssetAction } from "./actions";
+import DeleteVisualAssetButton from "./DeleteVisualAssetButton";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Visual Asset Manager - Admin - Maine CyberTech" };
+export const metadata: Metadata = { title: "Visual Asset Manager - Admin - Maine CyberTech" };
 
 export default async function AdminVisualsPage() {
   await requireAdminAccess();
   const visualMap = getVisualServiceMap();
+
+  let assets: StoreVisualAsset[] = [];
+  let loadFailed = false;
+  try {
+    assets = await getApiClient().store.listVisualAssets();
+  } catch {
+    loadFailed = true;
+  }
 
   return (
     <AdminPageShell
@@ -25,8 +41,96 @@ export default async function AdminVisualsPage() {
       }
       subnav={<AdminSubnav current="store-visuals" />}
       title="Visual Asset Manager"
-      description="Category visual map with icon previews. Edit by updating the JSON data file."
+      description={`${assets.length} linked visual asset${assets.length === 1 ? "" : "s"} · ${visualMap.categoryVisuals.length} category visuals in the design map`}
     >
+      {loadFailed && <DataErrorNote what="visual assets" />}
+
+      <section className="mt-6 space-y-4">
+        <h3 className="font-display text-lg font-bold uppercase tracking-wider text-slate-50">
+          Linked Visual Assets
+        </h3>
+
+        <CrudForm
+          title="New Visual Asset"
+          action={createVisualAssetAction}
+          fields={[
+            {
+              key: "linkedEntityType",
+              label: "Entity Type",
+              required: true,
+              placeholder: "category | product | bundle",
+            },
+            {
+              key: "linkedEntityId",
+              label: "Entity ID",
+              required: true,
+              placeholder: "cybersecurity",
+            },
+            { key: "assetType", label: "Asset Type", required: true, placeholder: "icon | image" },
+            { key: "iconName", label: "Icon Name" },
+            { key: "accentColor", label: "Accent Color" },
+            { key: "imageUrl", label: "Image URL" },
+            { key: "altText", label: "Alt Text" },
+            { key: "provenance", label: "Provenance" },
+            { key: "licenseNotes", label: "License Notes", type: "textarea" },
+          ]}
+        />
+
+        {assets.length === 0 ? (
+          <EmptyState
+            icon="🎨"
+            title="No linked visual assets"
+            description="Link icons and images to catalog entities so the storefront renders them consistently."
+          />
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-white/10">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10 bg-cyber-base/60">
+                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Entity</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Type</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-300">
+                    Icon / Accent
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Alt text</th>
+                  <th className="px-4 py-3 text-right font-semibold text-slate-300">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {assets.map((asset) => (
+                  <tr key={asset.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                    <td className="px-4 py-3">
+                      <span className="font-medium text-slate-50">{asset.linkedEntityId}</span>
+                      <span className="ml-2 font-mono text-[10px] text-slate-500">
+                        {asset.linkedEntityType}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-300">{asset.assetType}</td>
+                    <td className="px-4 py-3 text-slate-400">
+                      {asset.iconName || "—"}
+                      {asset.accentColor && (
+                        <span className="ml-2 inline-flex items-center gap-1 text-xs text-slate-500">
+                          <span
+                            aria-hidden="true"
+                            className="inline-block h-3 w-3 rounded-full border border-white/20"
+                            style={{ backgroundColor: asset.accentColor }}
+                          />
+                          {asset.accentColor}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-slate-400">{asset.altText || "—"}</td>
+                    <td className="px-4 py-3 text-right">
+                      <DeleteVisualAssetButton id={asset.id} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       <div className="mt-6 space-y-6">
         <div className="glass-card rounded-xl border border-white/10 p-6">
           <div className="mb-4">

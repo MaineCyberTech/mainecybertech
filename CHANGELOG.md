@@ -24,6 +24,9 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   `POST /store/quote-requests/:id/proposal`, `GET`/`PATCH /store/proposal-drafts`),
   with new `/admin/store/quote-requests` and `/admin/store/leads` pages and
   sidebar links.
+- `store_visual_assets` wired: admin CRUD API (`/store/visual-assets`), SDK
+  methods, and a DB-backed section on `/admin/store/visuals` alongside the
+  design-map reference.
 - CycloneDX 1.5 SBOM generation: `scripts/generate-sbom.mjs` + `SBOM` workflow
   (artifact `sbom-cyclonedx`).
 - `docs/audits/` output contract and run directories

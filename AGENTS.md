@@ -36,12 +36,12 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-20 Verified)
 
-**3,123 tests, all passing. 363 suites.**
+**3,134 tests, all passing. 365 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,097         | 102    | Jest + supertest                  |
-| Web     | 1,642         | 250    | Jest + Testing Library            |
+| API     | 1,104         | 103    | Jest + supertest                  |
+| Web     | 1,646         | 251    | Jest + Testing Library            |
 | SDK     | 285           | 2      | Jest (mocked fetch)               |
 | Worker  | 99            | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -435,10 +435,11 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
   `GET /store/leads`, SDK `listQuoteRequests`/`listLeads`), and admins can
   generate/review proposal drafts from a quote request (`store_proposal_drafts`
   via `apps/api/src/lib/proposal-generator.ts`, `/admin/store/quote-requests`,
-  `/admin/store/leads`). Still open: `store_visual_assets` is unwired;
-  intake→project and the `proposals`-table handoff remain stubs; prompt 17
-  (ethical-FOMO UX) is absent; ~12 store admin pages remain static reference
-  viewers; campaigns/import are non-persistent.
+  `/admin/store/leads`). `store_visual_assets` is now wired too (admin CRUD API +
+  SDK + the `/admin/store/visuals` page). Still open: intake→project and the
+  `proposals`-table handoff remain stubs; prompt 17 (ethical-FOMO UX) is absent;
+  ~12 store admin pages remain static reference viewers; campaigns/import are
+  non-persistent.
 - **repo-deep-dive pack**: its output contract expects artifacts under
   `docs/audits/{name}/{run}/` (absent — historical runs live in the pack dir);
   no SBOM/license workflow; no root `CHANGELOG.md`; no committed
