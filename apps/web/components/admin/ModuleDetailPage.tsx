@@ -8,7 +8,8 @@ import RecordDetail from "@/components/admin/RecordDetail";
 import WorkflowActionButtons from "@/components/admin/WorkflowActionButtons";
 import { getModuleConfig } from "@/lib/module-config";
 import { updateModuleRecord, deleteModuleRecord } from "@/lib/module-record-actions";
-import { redirect } from "next/navigation";
+import { withRetry } from "@/lib/retry";
+import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -38,11 +39,15 @@ export default async function ModuleDetailPage({
   if (!config) redirect("/admin");
 
   const api = getApiClient();
-  let record: Record<string, unknown> | null = null;
+  let record: Record<string, unknown>;
   try {
-    record = (await config.sdk(api).get(id)) as unknown as Record<string, unknown>;
-  } catch {
-    record = null;
+    // Retry transient 5xx/network blips; the SDK does not retry 500.
+    record = (await withRetry(() => config.sdk(api).get(id))) as unknown as Record<string, unknown>;
+  } catch (err) {
+    // A genuine 404 is a missing record; anything else must not be masked as
+    // "Record not found" - let the error boundary render it.
+    if ((err as { status?: number })?.status === 404) notFound();
+    throw err;
   }
 
   return (
@@ -59,7 +64,7 @@ export default async function ModuleDetailPage({
       subnav={<AdminSubnav current={subnavKey} />}
       title={String(record?.title ?? record?.name ?? record?.site_name ?? config.label)}
     >
-      {workflowActions.length > 0 && record && (
+      {workflowActions.length > 0 && (
         <WorkflowActionButtons id={id} actions={workflowActions} context={record} />
       )}
       <RecordDetail
