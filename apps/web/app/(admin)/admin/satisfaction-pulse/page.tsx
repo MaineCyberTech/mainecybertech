@@ -6,6 +6,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import SatisfactionPulseCreateForm from "./SatisfactionPulseCreateForm";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Satisfaction Pulse - Admin" };
@@ -16,11 +17,13 @@ export default async function SatisfactionPulseAdminPage() {
   let items: Array<Record<string, unknown>> = [];
   let templates: Array<Record<string, unknown>> = [];
   let schedules: Array<Record<string, unknown>> = [];
+  let loadFailed = false;
   try {
     const r = await api.satisfactionPulse.list({ limit: 100, page: 1 });
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[satisfaction-pulse/page]", error);
+    loadFailed = true;
   }
   try {
     templates = (await api.satisfactionPulse.listTemplates()) as unknown as typeof templates;
@@ -45,6 +48,7 @@ export default async function SatisfactionPulseAdminPage() {
       description="CSAT/NPS pulse surveys tied to tickets, projects, QBRs, onboarding milestones, and follow-ups."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="satisfaction pulse" />}
       <SatisfactionPulseCreateForm />
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">

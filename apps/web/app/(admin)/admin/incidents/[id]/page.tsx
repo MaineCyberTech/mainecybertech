@@ -8,6 +8,7 @@ import RecordDetail from "@/components/admin/RecordDetail";
 import LinkedRunbook from "@/components/runbooks/LinkedRunbook";
 import { updateIncident, deleteIncident } from "@/lib/module-actions";
 import { revalidatePath } from "next/cache";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Incident Detail - Admin - Maine CyberTech" };
@@ -17,6 +18,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   await requireAdminAccess();
   const api = getApiClient();
   let record: Record<string, unknown> | null = null;
+  let loadFailed = false;
   try {
     record = (await withRetry(() => api.securitySuite.incidents.get(id))) as unknown as Record<
       string,
@@ -24,6 +26,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
     >;
   } catch (error) {
     console.error("[[id]/page]", error);
+    loadFailed = true;
   }
 
   let linkedRunbook: {
@@ -57,6 +60,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
       subnav={<AdminSubnav current="incidents" />}
       title={String(record?.title ?? "Record Detail")}
     >
+      {loadFailed && <DataErrorNote what="data" />}
       <RecordDetail
         id={id}
         record={record}

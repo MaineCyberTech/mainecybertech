@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminSLAClient from "@/components/admin/AdminSLAClient";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SLA Tracking - Admin - Maine CyberTech" };
@@ -11,9 +12,13 @@ export const metadata = { title: "SLA Tracking - Admin - Maine CyberTech" };
 export default async function AdminSLAPage() {
   await requireAdminAccess();
   const api = getApiClient();
+  let loadFailed = false;
   const [organizationsResult, slaMetrics] = await Promise.all([
     api.organizations.list({ limit: 100 }),
-    api.sla.metrics({ days: 30 }).catch(() => null),
+    api.sla.metrics({ days: 30 }).catch(() => {
+      loadFailed = true;
+      return null;
+    }),
   ]);
   const organizations = organizationsResult.items ?? [];
 
@@ -26,6 +31,7 @@ export default async function AdminSLAPage() {
       title="SLA Tracking"
       description="Monitor service-level agreement metrics across organizations."
     >
+      {loadFailed && <DataErrorNote what="sla" />}
       <AdminSLAClient organizations={organizations} initialMetrics={slaMetrics} />
     </AdminPageShell>
   );

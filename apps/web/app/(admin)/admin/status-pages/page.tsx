@@ -6,6 +6,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import {
   createStatusComponent,
   createStatusIncident,
@@ -57,11 +58,13 @@ export default async function StatusPagesPage() {
     scheduled_end: string;
   }>;
 
+  let loadFailed = false;
   try {
     const r = (await api.statusPage.components.list({})) as any;
     items = r.items as typeof items;
   } catch (e) {
     console.error("Status Pages: failed to load data", e);
+    loadFailed = true;
   }
   try {
     const r = (await api.statusPage.incidents.list({})) as any;
@@ -86,6 +89,7 @@ export default async function StatusPagesPage() {
       description="Manage public status components, active incidents, and scheduled maintenance."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="status pages" />}
       <div className="flex flex-wrap gap-3">
         <CrudForm
           fields={[
