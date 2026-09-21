@@ -6,6 +6,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { createDomainMonitor } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
@@ -49,15 +50,18 @@ export default async function DomainMonitorsPage() {
     notProxied: 0,
   };
 
+  let loadFailed = false;
+
   try {
     const [r, s] = await Promise.allSettled([
       api.domainMonitors.list({}),
       api.domainMonitors.stats({}),
     ]);
     if (r.status === "fulfilled") monitors = r.value.items as typeof monitors;
+    else loadFailed = true;
     if (s.status === "fulfilled") stats = s.value;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const issues = [
@@ -84,6 +88,7 @@ export default async function DomainMonitorsPage() {
         )
       }
     >
+      {loadFailed && <DataErrorNote what="domain monitors" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

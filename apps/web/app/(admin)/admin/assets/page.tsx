@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
 import AdminPagination from "@/components/admin/AdminPagination";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { createAsset } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +43,10 @@ export default async function AssetsPage({ searchParams }: AssetsPageProps) {
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
 
   let assets: Array<{
     id: string;
@@ -56,6 +60,7 @@ export default async function AssetsPage({ searchParams }: AssetsPageProps) {
   }> = [];
   let stats = { byType: {} as Record<string, number>, total: 0, expiringWarranty: 0 };
   let total = 0;
+  let loadFailed = false;
 
   try {
     const [r, s] = await Promise.allSettled([
@@ -65,10 +70,12 @@ export default async function AssetsPage({ searchParams }: AssetsPageProps) {
     if (r.status === "fulfilled") {
       assets = r.value.items as typeof assets;
       total = r.value.total ?? 0;
+    } else {
+      loadFailed = true;
     }
     if (s.status === "fulfilled") stats = s.value;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -89,6 +96,7 @@ export default async function AssetsPage({ searchParams }: AssetsPageProps) {
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="assets" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

@@ -6,6 +6,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { StatusPill } from "@/components/admin/StatusPill";
 import { createLicenseAllocation } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
@@ -25,11 +26,14 @@ export default async function LicenseOptimizerPage() {
     created_at: string;
   }>;
 
+  let loadFailed = false;
+
   try {
     const r = (await api.licenseOptimizer.list({})) as any;
     items = r.items as typeof items;
   } catch (e) {
     console.error("License Optimizer: failed to load data", e);
+    loadFailed = true;
   }
 
   return (
@@ -42,6 +46,7 @@ export default async function LicenseOptimizerPage() {
       description="Track software license utilization, identify underused seats, and calculate potential savings."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="license allocations" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

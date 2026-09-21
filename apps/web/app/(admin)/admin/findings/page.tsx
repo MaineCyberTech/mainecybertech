@@ -9,6 +9,7 @@ import { SeverityPill } from "@/components/admin/SeverityPill";
 import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
 import AdminPagination from "@/components/admin/AdminPagination";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { createFinding } from "@/lib/module-actions";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +27,10 @@ export default async function FindingsPage({ searchParams }: FindingsPageProps) 
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
 
   let findings: Array<{
     id: string;
@@ -43,6 +47,7 @@ export default async function FindingsPage({ searchParams }: FindingsPageProps) 
     total: 0,
   };
   let total = 0;
+  let loadFailed = false;
 
   try {
     const [result, statsResult] = await Promise.allSettled([
@@ -52,10 +57,12 @@ export default async function FindingsPage({ searchParams }: FindingsPageProps) 
     if (result.status === "fulfilled") {
       findings = result.value.items as typeof findings;
       total = result.value.total ?? 0;
+    } else {
+      loadFailed = true;
     }
     if (statsResult.status === "fulfilled") stats = statsResult.value;
   } catch {
-    // Gracefully degrade
+    loadFailed = true;
   }
 
   return (
@@ -75,6 +82,7 @@ export default async function FindingsPage({ searchParams }: FindingsPageProps) 
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="findings" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },
