@@ -292,6 +292,7 @@ export default function AdminTicketCenterClient({
   bulkUpdateTicketsAction,
 }: Props) {
   const [openModal, setOpenModal] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const [search, setSearch] = useState("");
@@ -749,10 +750,17 @@ export default function AdminTicketCenterClient({
               </button>
             </div>
             <form
-              action={(formData) => {
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                setFormError(null);
                 startTransition(async () => {
                   const result = await createTicketAction(formData);
-                  if (result.ok) setOpenModal(false);
+                  if (result.ok) {
+                    setOpenModal(false);
+                  } else {
+                    setFormError(result.error ?? "Failed to create ticket.");
+                  }
                 });
               }}
               className="space-y-4 px-6 py-6"
@@ -842,6 +850,7 @@ export default function AdminTicketCenterClient({
                   {isPending ? "Creating..." : "Create Ticket"}
                 </button>
               </div>
+              {formError && <p className="text-sm text-red-400">{formError}</p>}
             </form>
           </div>
         </div>

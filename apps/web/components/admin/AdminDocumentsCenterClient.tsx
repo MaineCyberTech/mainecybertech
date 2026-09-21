@@ -245,8 +245,18 @@ function ConfirmModal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
-        <h3 className="font-display text-lg uppercase tracking-[0.12em] text-slate-50">{title}</h3>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-modal-title"
+        className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+      >
+        <h3
+          id="confirm-modal-title"
+          className="font-display text-lg uppercase tracking-[0.12em] text-slate-50"
+        >
+          {title}
+        </h3>
         <p className="mt-3 text-sm text-slate-300">{body}</p>
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" className="cyber-button-secondary" onClick={onClose}>
@@ -1930,10 +1940,18 @@ export default function AdminDocumentsCenterClient({
 
       {drawerDoc ? (
         <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/70 p-4 backdrop-blur-sm">
-          <div className="h-full w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="doc-drawer-title"
+            className="h-full w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
+          >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-cyber-card-deep/95 px-6 py-4 backdrop-blur">
               <div>
-                <h2 className="font-display text-xl uppercase tracking-[0.12em] text-slate-50">
+                <h2
+                  id="doc-drawer-title"
+                  className="font-display text-xl uppercase tracking-[0.12em] text-slate-50"
+                >
                   {docName(drawerDoc)}
                 </h2>
                 <p className="mt-1 text-sm text-slate-400">
