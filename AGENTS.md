@@ -10,14 +10,14 @@
 
 Turborepo monorepo: 3 apps + 3 packages.
 
-| Service | Entry                       | Port | Purpose                                         |
-| ------- | --------------------------- | ---- | ----------------------------------------------- |
-| API     | `apps/api/src/main.ts`      | 4000 | Express server, Supabase Admin for DB/auth      |
-| Web     | `apps/web/app/layout.tsx`   | 3000 | Next.js App Router, server components + actions |
-| Worker  | `apps/worker/src/main.ts`   | 3001 | BullMQ consumer (131 lines, 6 modules)          |
-| SDK     | `packages/sdk/src/index.ts` | —    | Typed API client factory (`MCTClient.create()`) |
-| UI      | `packages/ui`               | —    | `cn()` utility (clsx + tailwind-merge)          |
-| Config  | `packages/config`           | —    | Shared ESLint/TypeScript configs                |
+| Service | Entry                       | Port | Purpose                                               |
+| ------- | --------------------------- | ---- | ----------------------------------------------------- |
+| API     | `apps/api/src/main.ts`      | 4000 | Express server, Supabase Admin for DB/auth            |
+| Web     | `apps/web/app/layout.tsx`   | 3000 | Next.js App Router, server components + actions       |
+| Worker  | `apps/worker/src/main.ts`   | 3001 | Queue consumer (`consumer-sqs.ts`; BullMQ/SQS/inline) |
+| SDK     | `packages/sdk/src/index.ts` | —    | Typed API client factory (`MCTClient.create()`)       |
+| UI      | `packages/ui`               | —    | `cn()` utility (clsx + tailwind-merge)                |
+| Config  | `packages/config`           | —    | Shared ESLint/TypeScript configs                      |
 
 **Deploy:** DigitalOcean droplet. Caddy reverse proxy (TLS). Hosted Supabase (cloud.supabase.com). Redis 7 on droplet for BullMQ. Docker images on GHCR (`ghcr.io/mainecybertech/mct-{api,worker,web}`).
 
@@ -34,16 +34,16 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 **Security model:** Auth User → Profile → Membership → Role → Permission/Override → RLS → Storage
 
-## Test Status (2026-09-18 Verified)
+## Test Status (2026-09-20 Verified)
 
-**2,926 tests, all passing. 332 suites.**
+**3,073 tests, all passing. 354 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,018         | 93     | Jest + supertest                  |
-| Web     | 1,565         | 229    | Jest + Testing Library            |
-| SDK     | 269           | 2      | Jest (mocked fetch)               |
-| Worker  | 74            | 8      | Jest (env schema + task handlers) |
+| API     | 1,070         | 99     | Jest + supertest                  |
+| Web     | 1,620         | 245    | Jest + Testing Library            |
+| SDK     | 285           | 2      | Jest (mocked fetch)               |
+| Worker  | 98            | 8      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
 
 ### Known Debt (2026-08-29)
@@ -63,8 +63,8 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 - **Route params in tests:** `params: Promise.resolve({...})`, `searchParams: Promise.resolve({...})`
 - **Worker testability:** `envSchema`, `parseEnv`, `runWorkerTasks` exported for testing; mocks `pino` and `dotenv/config`
 - **API middleware layering (2026-08-26):** The P0-2 removal of `NODE_ENV=test`
-  auth bypasses means route-level suites stub the three middleware modules
-  (`org-access`, `permissions`, `require-active-subscription`) with pass-through
+  auth bypasses means route-level suites stub the middleware modules
+  (`org-access`, `permissions`) with pass-through
   `next()` — see the stub block at the top of any route `*.test.ts`. Enforcement
   is covered for real by `middleware-org-access.test.ts`,
   `middleware-permissions.test.ts`, `middleware-subscription.test.ts`,
@@ -83,18 +83,18 @@ pnpm e2e                     # Playwright E2E
 
 ## File Counts (2026-08-26 Verified)
 
-| Category                  | Count | Notes                                                                                                                        |
-| ------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------- |
-| API route files           | 62    | `apps/api/src/routes/*.ts` (70 incl. `routes/final/`)                                                                        |
-| API SDK modules           | 61    | `packages/sdk/src/`                                                                                                          |
-| Worker task files         | 13    | Registered in `apps/worker/src/main.ts`                                                                                      |
-| Web pages                 | 306   | Admin 197, Portal 81, Public 26, Root 2                                                                                      |
-| Web components            | 90    | `apps/web/components/`                                                                                                       |
-| SQL migrations            | 110   | `supabase/migrations/` (incl. 5302409 domain_monitors version, 5302410 webhook_id nullable, 5302411 satisfaction_pulse cols) |
-| Seed files                | 10    | `supabase/seeds/*.sql`                                                                                                       |
-| GitHub Actions workflows  | 13    | `.github/workflows/`                                                                                                         |
-| AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                 |
-| Build/dev/utility scripts | 33    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `seed-store.ts`, `generate-db-types.js`, etc.)                          |
+| Category                  | Count | Notes                                                                                               |
+| ------------------------- | ----- | --------------------------------------------------------------------------------------------------- |
+| API route files           | 62    | `apps/api/src/routes/*.ts` (70 incl. `routes/final/`)                                               |
+| API SDK modules           | 60    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                         |
+| Worker task files         | 12    | Registered in `apps/worker/src/tasks/index.ts`                                                      |
+| Web pages                 | 316   | Admin 201, Portal 86, Public 27, Root 2                                                             |
+| Web components            | 92    | `apps/web/components/`                                                                              |
+| SQL migrations            | 118   | `supabase/migrations/` (latest: 5302419 FK indexes)                                                 |
+| Seed files                | 9     | `supabase/seeds/*.sql`                                                                              |
+| GitHub Actions workflows  | 13    | `.github/workflows/`                                                                                |
+| AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                        |
+| Build/dev/utility scripts | 33    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `seed-store.ts`, `generate-db-types.js`, etc.) |
 
 ## Database Types (2026-08-26)
 
@@ -176,7 +176,7 @@ supabase db reset   # Apply migrations + seeds
 SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
-JWT_SECRET=<min-64-chars>
+JWT_SECRET=<min-32-chars>
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 SENTRY_DSN=
@@ -201,7 +201,6 @@ NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=false
 ```
 SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=
-JWT_SECRET=
 STRIPE_SECRET_KEY=
 REDIS_URL=redis://localhost:6379
 SENTRY_DSN=
@@ -233,7 +232,7 @@ SENTRY_DSN=
 
 ### API (Express)
 
-- **Auth:** `requireAuth` → `requireOrgAccess` → `requireAdmin` → `requirePermission(module, action)`
+- **Auth:** `requireAuth` → `requireAdmin` / `requireOrgAccess` → `requirePermission(module, action)` (routers mount them in this order)
 - **Validation:** Zod schemas on all ~27 mutation endpoints
 - **Caching:** `responseCache()` / `responseCacheNoRenew()` + `invalidateCache()` on mutations
 - **Rate limiting:** Per-user buckets, 600 req/15min
@@ -272,7 +271,7 @@ Sources: `COMPREHENSIVE_AUDIT_2026-08-26.md`, `prompts/hardening_prompt_pack/eng
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | **Stored XSS via `javascript:` URL** — `CommentBody.tsx` inserts raw URL into `href` with no scheme validation                               | Comprehensive             | `apps/web/components/CommentBody.tsx:22-24`                                                     | **FIXED** 2026-08-26                                                                                                                                                                                                |
 | 2   | **Auth bypass when `NODE_ENV=test`** — `requireOrgAccess` and `requirePermission` both return `next()` early, disabling all tenant isolation | Comprehensive + Hardening | `apps/api/src/middleware/org-access.ts:124-127`, `apps/api/src/middleware/permissions.ts:58-61` | **FIXED** 2026-08-26                                                                                                                                                                                                |
-| 3   | **Weak JWT secret validation** — `z.string().min(1)` accepts trivial secrets; local `.env` uses guessable string                             | Comprehensive             | `apps/api/src/lib/config/env.ts:12`, `apps/api/.env:7`                                          | **FIXED** 2026-08-26 (min 32)                                                                                                                                                                                       |
+| 3   | **Weak JWT secret validation** — `z.string().min(1)` accepts trivial secrets; local `.env` uses guessable string                             | Comprehensive             | `apps/api/src/config/env.ts:12`, `apps/api/.env:7`                                              | **FIXED** 2026-08-26 (min 32)                                                                                                                                                                                       |
 | 4   | **Users router missing `requireOrgAccess`** — any authenticated user can access any user's data across all tenants                           | Hardening (P0)            | `apps/api/src/routes/users.ts` (no requireOrgAccess on router)                                  | **FIXED** 2026-08-26                                                                                                                                                                                                |
 | 5   | **Rate-limit bypass via X-Forwarded-For** — `trust proxy: true` + skip on `127.0.0.1` = spoofable bypass                                     | Comprehensive             | `apps/api/src/middleware/rate-limit.ts:48-52`, `apps/api/src/app.ts:79`                         | **FIXED** 2026-08-26 (trust proxy = 1)                                                                                                                                                                              |
 | 6   | **Permissive RLS on `store_*` tables** — `FOR ALL USING (true)` allows anon key writes                                                       | Comprehensive             | `supabase/migrations/5302105_store_quotes.sql`                                                  | **FIXED** 2026-08-26 — migration 5302132                                                                                                                                                                            |
@@ -430,7 +429,7 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
     produced no report/traces. Fixed the artifact paths.
   - `playwright.config.ts`: `actionTimeout: 15s` + `navigationTimeout: 30s` so
     a hung action fails inside the 45s budget.
-  - `e2e/fixtures.ts`: `setActiveOrg` now derives the cookie URL from
+  - `apps/web/e2e/fixtures.ts`: `setActiveOrg` now derives the cookie URL from
     `E2E_BASE_URL` (was hardcoded `localhost:3000`); added `gotoApp()` which
     waits for the server-rendered shell so "bell not found" becomes a clear
     failure.
@@ -527,7 +526,6 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 - `apps/api/src/routes/profiles.ts` — was missing requireOrgAccess (P1)
 - `apps/api/src/middleware/org-access.ts` — NODE_ENV=test bypass removed
 - `apps/api/src/middleware/permissions.ts` — NODE_ENV=test bypass removed
-- `apps/api/src/middleware/require-active-subscription.ts` — NODE_ENV=test bypass removed
 
 ### Security Hardening (2026-08-26 session)
 
