@@ -46,6 +46,7 @@ CREATE INDEX IF NOT EXISTS idx_store_quotes_organization_id ON public.store_quot
 -- Keep public anon quote submission and service_role admin access.
 -- Add a member-scoped read: only org-specific quotes are visible to that org's
 -- members (NULL-org leads remain service_role-only, never exposed to regular users).
+DROP POLICY IF EXISTS "store_quotes_member_read" ON public.store_quotes;
 CREATE POLICY "store_quotes_member_read" ON public.store_quotes
   FOR SELECT TO authenticated
   USING (organization_id IS NOT NULL AND public.is_org_member(organization_id));

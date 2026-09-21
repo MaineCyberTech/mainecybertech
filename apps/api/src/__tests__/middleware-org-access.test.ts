@@ -39,13 +39,17 @@ function mockReq(
     userId?: string;
     orgId?: string;
     bodyOrgId?: string;
+    bodyOrgIdSnake?: string;
     paramsId?: string;
   } = {},
 ) {
+  const body: Record<string, string> = {};
+  if (opts.bodyOrgId) body.organizationId = opts.bodyOrgId;
+  if (opts.bodyOrgIdSnake) body.organization_id = opts.bodyOrgIdSnake;
   return {
     authUser: opts.userId ? { userId: opts.userId, email: "test@example.com" } : undefined,
     query: opts.orgId ? { organization_id: opts.orgId } : {},
-    body: opts.bodyOrgId ? { organizationId: opts.bodyOrgId } : {},
+    body,
     params: opts.paramsId ? { id: opts.paramsId } : {},
     headers: {},
     cookies: {},
@@ -223,6 +227,25 @@ describe("requireOrgAccess middleware", () => {
           userId: "user-1",
           orgId: "00000000-0000-0000-0000-000000000001",
           bodyOrgId: "00000000-0000-0000-0000-000000000002",
+        }),
+        mockRes(),
+        next,
+      );
+
+      expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 }));
+    });
+
+    it("rejects a snake_case body organization_id that differs", async () => {
+      mockSupabase({
+        membershipRow: { id: "m1", roles: { id: "r1", key: "client_user" } },
+      });
+      const next = jest.fn();
+
+      await requireOrgAccess(
+        mockReq({
+          userId: "user-1",
+          orgId: "00000000-0000-0000-0000-000000000001",
+          bodyOrgIdSnake: "00000000-0000-0000-0000-000000000002",
         }),
         mockRes(),
         next,

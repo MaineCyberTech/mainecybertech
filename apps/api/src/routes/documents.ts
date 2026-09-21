@@ -1,4 +1,4 @@
-import { Router } from "express";
+﻿import { Router } from "express";
 import multer from "multer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
@@ -11,6 +11,7 @@ import { requirePermission } from "../middleware/permissions";
 import { getEnv } from "../config/env";
 import { responseCacheNoRenew } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
+import { validateUploadContent } from "../lib/upload-validation";
 import {
   createDocumentSchema,
   updateDocumentSchema,
@@ -130,7 +131,7 @@ const upload = multer({
   },
 });
 // Storage bucket is pinned server-side. A request must never be able to target
-// an arbitrary bucket — otherwise a member could write into a public bucket
+// an arbitrary bucket â€” otherwise a member could write into a public bucket
 // (avatars/logos) or overwrite another org's objects. (FILE-P2-001)
 const DOCUMENTS_BUCKET = "documents";
 
@@ -138,81 +139,6 @@ const DOCUMENTS_BUCKET = "documents";
 // The client-supplied Content-Type is not trusted: the bytes are inspected so
 // markup/script content can never be stored with an innocent mimetype (stored
 // XSS), and declared image/PDF types must match their magic bytes.
-
-function looksLikeMarkup(buffer: Buffer): boolean {
-  const head = buffer.subarray(0, 512).toString("utf8").toLowerCase();
-  return (
-    head.startsWith("<!doctype") ||
-    head.startsWith("<html") ||
-    head.includes("<script") ||
-    head.includes("<svg") ||
-    head.startsWith("<?xml")
-  );
-}
-
-function sniffImageType(buffer: Buffer): "jpeg" | "png" | "gif" | "webp" | null {
-  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-    return "jpeg";
-  }
-  if (buffer.length >= 8 && buffer.toString("hex", 0, 8) === "89504e470d0a1a0a") return "png";
-  if (
-    buffer.length >= 6 &&
-    (buffer.toString("ascii", 0, 6) === "gif87a" || buffer.toString("ascii", 0, 6) === "gif89a")
-  ) {
-    return "gif";
-  }
-  if (
-    buffer.length >= 12 &&
-    buffer.toString("ascii", 0, 4) === "riff" &&
-    buffer.toString("ascii", 8, 12) === "webp"
-  ) {
-    return "webp";
-  }
-  return null;
-}
-
-function validateUploadContent(buffer: Buffer, declaredMime: string): void {
-  // Markup/script content is rejected for every declared type — this is the
-  // primary stored-XSS vector (an .svg/.html/.xml upload served inline).
-  if (looksLikeMarkup(buffer)) {
-    throw new AppError(
-      "VALIDATION",
-      "File content looks like HTML/SVG/script and is not allowed",
-      400,
-    );
-  }
-
-  if (declaredMime.startsWith("image/")) {
-    const sniffed = sniffImageType(buffer);
-    if (!sniffed) {
-      throw new AppError(
-        "VALIDATION",
-        `File content does not match declared image type ${declaredMime}`,
-        400,
-      );
-    }
-    const expected: Record<string, string> = {
-      "image/jpeg": "jpeg",
-      "image/png": "png",
-      "image/gif": "gif",
-      "image/webp": "webp",
-    };
-    if (expected[declaredMime] !== sniffed) {
-      throw new AppError(
-        "VALIDATION",
-        `File content (${sniffed}) does not match declared type ${declaredMime}`,
-        400,
-      );
-    }
-    return;
-  }
-
-  if (declaredMime === "application/pdf") {
-    if (!(buffer.length >= 5 && buffer.toString("ascii", 0, 5) === "%pdf-")) {
-      throw new AppError("VALIDATION", "File content is not a valid PDF", 400);
-    }
-  }
-}
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -387,7 +313,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
       );
     }
 
-    // Sniff the bytes — the declared mimetype is not trusted. (FILE-P1-001)
+    // Sniff the bytes â€” the declared mimetype is not trusted. (FILE-P1-001)
     validateUploadContent(file.buffer, file.mimetype);
 
     const organizationId = String(req.body.organizationId ?? "").trim();
@@ -401,7 +327,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
     }
 
     const supabase = getScopedClient(req, "documents", "write");
-    // Bucket is pinned server-side (FILE-P2-001) — never read from req.body.
+    // Bucket is pinned server-side (FILE-P2-001) â€” never read from req.body.
     const bucket = DOCUMENTS_BUCKET;
     const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
     const storagePath = `orgs/${organizationId}/${Date.now()}-${safeName}`;
@@ -427,7 +353,7 @@ router.post("/upload", upload.single("file"), async (req, res, next) => {
         .from("documents")
         .select("storage_bucket, storage_path, current_version")
         .eq("id", documentId);
-      // Version replacement must be scoped to the caller's org — otherwise a
+      // Version replacement must be scoped to the caller's org â€” otherwise a
       // caller in org A could replace (and delete the storage object of) a
       // document belonging to org B.
       if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
@@ -778,7 +704,7 @@ router.get("/:id/versions", async (req, res, next) => {
     const supabase = getScopedClient(req, "documents", "read");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    // Version rows carry no org column — verify the parent document belongs
+    // Version rows carry no org column â€” verify the parent document belongs
     // to the caller's org before exposing version metadata (storage paths).
     let docQuery = supabase.from("documents").select("id").eq("id", String(req.params.id));
     if (orgId) docQuery = docQuery.eq("organization_id", orgId);

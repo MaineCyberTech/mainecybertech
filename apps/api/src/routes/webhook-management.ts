@@ -279,6 +279,8 @@ router.post("/:id/test", requirePermission("webhooks", "manage"), async (req, re
         headers,
         body: JSON.stringify(payload),
         signal: controller.signal,
+        // Do not follow redirects: the SSRF guard validated the initial URL.
+        redirect: "manual",
       });
       clearTimeout(timeout);
       responseStatus = res.status;

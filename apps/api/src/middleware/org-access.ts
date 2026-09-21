@@ -159,8 +159,14 @@ async function resolveDefaultOrgId(
  * are exempt.
  */
 function assertBodyOrgMatches(req: Request): void {
+  // Accept both key spellings: handlers read either, and a snake_case-only
+  // body would otherwise slip past this guard.
   const bodyOrgId =
-    typeof req.body?.organizationId === "string" ? req.body.organizationId : undefined;
+    typeof req.body?.organizationId === "string"
+      ? req.body.organizationId
+      : typeof req.body?.organization_id === "string"
+        ? req.body.organization_id
+        : undefined;
   if (!bodyOrgId || req.orgScope?.platformAdmin) return;
   if (req.orgId && bodyOrgId !== req.orgId) {
     throw new AppError("FORBIDDEN", "organizationId does not match your active organization", 403);

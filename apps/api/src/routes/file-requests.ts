@@ -9,6 +9,7 @@ import { requireOrgAccess } from "../middleware/org-access";
 import { createFileRequestSchema, updateFileRequestSchema } from "../validators/file-requests";
 import { createNotification } from "../lib/notify";
 import { queryInt } from "../lib/query";
+import { validateUploadContent } from "../lib/upload-validation";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -55,7 +56,7 @@ const BLOCKED_EXTENSIONS = new Set([
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 25 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ext = "." + file.originalname.split(".").pop()?.toLowerCase();
     if (BLOCKED_EXTENSIONS.has(ext)) {
@@ -139,11 +140,14 @@ router.post("/public/:token/upload", upload.single("file"), async (req, res, nex
 
     const safeName = req.file.originalname.replace(/[^\w.\-]+/g, "_");
     const storagePath = `${data.storage_path}/${Date.now()}-${safeName}`;
+    // Byte-sniff the content: declared MIME is untrusted (markup/SVG rejected,
+    // images and PDFs must match their declared type).
+    validateUploadContent(req.file.buffer, req.file.mimetype);
     const { error: uploadError } = await supabase.storage
       .from("documents")
       .upload(storagePath, req.file.buffer, {
         contentType: req.file.mimetype || undefined,
-        upsert: true,
+        upsert: false,
       });
     if (uploadError) {
       throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);

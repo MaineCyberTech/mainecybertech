@@ -35,6 +35,9 @@ async function deliverWithRetry(
         headers,
         body,
         signal: controller.signal,
+        // The SSRF guard validated the initial URL only; do not follow a
+        // redirect to an internal address.
+        redirect: "manual",
       });
       clearTimeout(timeout);
 
