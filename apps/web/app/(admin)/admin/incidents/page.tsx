@@ -6,6 +6,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { createIncident } from "@/lib/module-actions";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Incidents" };
@@ -20,11 +21,12 @@ export default async function IncidentsPage() {
     status: string;
     detected_at: string | null;
   }> = [];
+  let loadFailed = false;
   try {
     const r = await api.securitySuite.incidents.list({});
     items = r.items as unknown as typeof items;
   } catch {
-    /* */
+    loadFailed = true;
   }
   const sev = (s: string) =>
     ({ low: "slate", medium: "amber", high: "amber", critical: "red" })[s] || "slate";
@@ -38,6 +40,7 @@ export default async function IncidentsPage() {
       description="Track incidents from detection through containment, eradication, and recovery."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="incidents" />}
       <CrudForm
         fields={[
           { key: "organizationId", label: "Org ID", required: true, placeholder: "Org UUID" },

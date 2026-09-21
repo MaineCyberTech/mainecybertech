@@ -8,6 +8,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminOrganizationsClient from "@/components/admin/AdminOrganizationsClient";
 import CreateOrganizationForm from "@/components/admin/CreateOrganizationForm";
 import AdminPagination from "@/components/admin/AdminPagination";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Organizations - Admin - Maine CyberTech" };
@@ -25,7 +26,10 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
   const status = sp.status;
   const ids = sp.ids?.split(",").filter(Boolean);
 
@@ -40,13 +44,14 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
     updated_at: string;
   }> = [];
   let total = 0;
+  let loadFailed = false;
 
   try {
     const r = await api.organizations.list({ page, limit, status, ids });
     organizations = r.items ?? [];
     total = r.total ?? 0;
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -76,6 +81,7 @@ export default async function OrganizationsPage({ searchParams }: OrganizationsP
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="organizations" />}
       <AdminOrganizationsClient organizations={organizations} />
       <AdminPagination
         currentPage={page}

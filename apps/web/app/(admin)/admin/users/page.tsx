@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import AdminUsersClient from "@/components/admin/AdminUsersClient";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { Organization, Role, UserCompound } from "@mct/sdk";
 import InviteUserForm from "@/components/admin/InviteUserForm";
 
@@ -16,12 +17,20 @@ export default async function UsersPage() {
   await requirePermission("users", "view");
   const api = getApiClient();
 
-  const compound = await api.users.getCompound().catch(() => [] as UserCompound[]);
+  let loadFailed = false;
+  const compound = await api.users.getCompound().catch(() => {
+    loadFailed = true;
+    return [] as UserCompound[];
+  });
 
   const memberships = compound.flatMap((c: UserCompound) => c.memberships ?? []);
   const profileMap = Object.fromEntries(compound.map((c: UserCompound) => [c.user.id, c.user]));
   const orgMap = Object.fromEntries([
-    ...new Map(compound.flatMap((c: UserCompound) => c.organizations ?? []).map((o: Organization) => [o.id, o])),
+    ...new Map(
+      compound
+        .flatMap((c: UserCompound) => c.organizations ?? [])
+        .map((o: Organization) => [o.id, o]),
+    ),
   ]);
   const roleMap = Object.fromEntries([
     ...new Map(compound.flatMap((c: UserCompound) => c.roles ?? []).map((r: Role) => [r.id, r])),
@@ -40,6 +49,7 @@ export default async function UsersPage() {
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="users" />}
       <AdminUsersClient
         memberships={memberships}
         profileMap={profileMap}
