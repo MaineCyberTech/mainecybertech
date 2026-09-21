@@ -69,6 +69,10 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
           status: "failed",
           request_body: { event, data },
           error: `Blocked URL: ${blocked}`,
+          // A blocked URL is a permanent failure: never retry, go straight to
+          // the dead-letter set so the retry task ignores it.
+          retry_count: 0,
+          dead_letter: true,
         });
         await supabase
           .from("webhook_endpoints")

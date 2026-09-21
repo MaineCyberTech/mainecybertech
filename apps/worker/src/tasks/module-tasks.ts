@@ -125,6 +125,7 @@ async function getGraphToken(): Promise<string | null> {
         scope: "https://graph.microsoft.com/.default",
         grant_type: "client_credentials",
       }),
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return null;
     const json = (await res.json()) as { access_token?: string };
@@ -138,6 +139,7 @@ async function graphGet<T>(token: string, path: string): Promise<T | null> {
   try {
     const res = await fetch(`https://graph.microsoft.com/v1.0${path}`, {
       headers: { Authorization: `Bearer ${token}`, ConsistencyLevel: "eventual" },
+      signal: AbortSignal.timeout(15_000),
     });
     if (!res.ok) return null;
     return (await res.json()) as T;
@@ -795,7 +797,7 @@ async function resolveDns(name: string, type: string): Promise<string[]> {
   try {
     const res = await fetch(
       `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${type}`,
-      { headers: { Accept: "application/dns-json" } },
+      { headers: { Accept: "application/dns-json" }, signal: AbortSignal.timeout(10_000) },
     );
     if (!res.ok) return [];
     const json = (await res.json()) as { Answer?: Array<{ data: string }> };

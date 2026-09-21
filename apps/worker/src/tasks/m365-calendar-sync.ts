@@ -30,7 +30,8 @@ export const m365CalendarSync: TaskHandler = async (payload): Promise<TaskResult
     };
   }
 
-  logger.info({ projectId, organizationId, userPrincipalName }, "Starting M365 calendar sync");
+  // Do not log the mailbox address (PII); the project id is enough to trace.
+  logger.info({ projectId, organizationId }, "Starting M365 calendar sync");
 
   try {
     const { createClient } = await import("@supabase/supabase-js");

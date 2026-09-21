@@ -37,6 +37,32 @@ async function createInAppNotification(
   }
 }
 
+/**
+ * True when the same notification was created very recently — guards against
+ * duplicate emails/notifications when a job is retried (BullMQ attempts/SQS
+ * redelivery). The window is short so genuine repeat events still notify.
+ */
+async function recentlyNotified(
+  supabase: SupabaseClient,
+  userId: string,
+  module: string,
+  moduleId: string | null,
+  action: string,
+  windowMinutes = 10,
+): Promise<boolean> {
+  const since = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+  let query = supabase
+    .from("notifications")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("module", module)
+    .eq("action", action)
+    .gte("created_at", since);
+  query = moduleId ? query.eq("module_id", moduleId) : query.is("module_id", null);
+  const { data } = await query.maybeSingle();
+  return Boolean(data);
+}
+
 export const scheduledNotifications: TaskHandler = async (payload): Promise<TaskResult> => {
   const p = payload as NotificationPayload;
 
@@ -137,6 +163,10 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
 
         if (!profile?.email) return { ok: false, error: "User profile not found" };
 
+        if (await recentlyNotified(supabase, p.targetUserId, "system", null, "created")) {
+          return { ok: true };
+        }
+
         await createInAppNotification(
           supabase,
           p.targetUserId,
@@ -147,7 +177,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           "created",
         );
 
-        logger.info({ email: profile.email }, "Membership approved notification sent");
+        logger.info({ userId: p.targetUserId }, "Membership approved notification sent");
         return { ok: true };
       }
 
@@ -161,6 +191,11 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           .single();
 
         if (!profile?.email) return { ok: false, error: "User profile not found" };
+
+        const ticketId = (p.metadata?.ticketId as string) ?? null;
+        if (await recentlyNotified(supabase, p.targetUserId, "tickets", ticketId, "updated")) {
+          return { ok: true };
+        }
 
         await createInAppNotification(
           supabase,
@@ -180,7 +215,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
         });
 
         logger.info(
-          { email: profile.email, title: p.title, emailSent },
+          { userId: p.targetUserId, title: p.title, emailSent },
           "Ticket responded notification sent",
         );
         return { ok: true };
@@ -197,6 +232,10 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           .single();
 
         if (!profile?.email) return { ok: false, error: "User profile not found" };
+
+        if (await recentlyNotified(supabase, p.targetUserId, "system", null, "created")) {
+          return { ok: true };
+        }
 
         await createInAppNotification(
           supabase,
@@ -216,7 +255,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
         });
 
         logger.info(
-          { email: profile.email, title: p.title, emailSent },
+          { userId: p.targetUserId, title: p.title, emailSent },
           "Custom notification sent",
         );
         return { ok: true };
