@@ -411,6 +411,13 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
   check now authenticates (`-i`) and uses `docker exec`; E2E push trigger
   removed (duplicate runs); Chromatic no longer `continue-on-error`;
   `terraform fmt -check -recursive` is blocking; db-restore binds `127.0.0.1`.
+  **Regression caught and fixed the same session:** the `GHCR_TOKEN`/`GHCR_ACTOR`
+  refactor left the "Deploy containers" step with a _duplicate_ `env:` key
+  (invalid YAML → GitHub aborted the run with "workflow file issue") and did
+  not forward the two vars into that step's `envs:`, so `docker login` saw an
+  empty username and every dev deploy failed (11cfdd0 → 4064626). A UTF-8 BOM
+  was also present in `deploy-do.yml`/`e2e.yml`; both are stripped. Verified by
+  a successful deploy: the droplet runs the new tag with all containers healthy.
 - **Web** `DataErrorNote` extended to ~100 admin/portal pages (CRLF-tolerant
   transform + inline-fallback and multi-catch shapes).
 - Docs counts re-measured (3,078 tests / 356 suites, 119 migrations, 93
