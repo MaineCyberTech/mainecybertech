@@ -16,6 +16,8 @@ import {
 import { toJson, type UpdateRow } from "../lib/db-types";
 import { scoreLead } from "../lib/lead-scoring";
 import { buildProposalSections, PROPOSAL_GUARDRAILS } from "../lib/proposal-generator";
+import { buildHandoffPlan } from "../lib/intake-handoff";
+import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { logger } from "../lib/logger";
 
 const router: ReturnType<typeof Router> = Router();
@@ -479,8 +481,146 @@ router.patch("/proposal-drafts/:id", requireAuth, requireAdmin, async (req, res,
   }
 });
 
-// --- Visual assets (admin) ---
+const convertQuoteRequestSchema = z.object({
+  organizationId: z.string().uuid(),
+  projectName: z.string().min(1).max(500).optional(),
+  priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
+  ownerId: z.string().uuid().optional().nullable(),
+  assignedOwnerId: z.string().uuid().optional().nullable(),
+});
 
+// POST /api/v1/store/quote-requests/:id/convert - intake -> project handoff (admin)
+router.post("/quote-requests/:id/convert", requireAuth, requireAdmin, async (req, res, next) => {
+  try {
+    const parsed = convertQuoteRequestSchema.parse(req.body);
+    const supabase = getSupabaseAdmin();
+    const actorUserId = req.authUser?.userId ?? null;
+    if (!actorUserId) throw new AppError("UNAUTHORIZED", "Authenticated user required", 401);
+
+    const { data: request, error } = await supabase
+      .from("store_quote_requests")
+      .select("*")
+      .eq("id", String(req.params.id))
+      .maybeSingle();
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!request) throw new AppError("NOT_FOUND", "Quote request not found", 404);
+    if (request.status === "converted_to_project") {
+      throw new AppError("CONFLICT", "Quote request has already been converted", 409);
+    }
+
+    const plan = buildHandoffPlan(request, {
+      organizationId: parsed.organizationId,
+      createdBy: actorUserId,
+      projectName: parsed.projectName,
+      priority: parsed.priority,
+      ownerId: parsed.ownerId ?? null,
+    });
+
+    const { data: project, error: projectError } = await supabase
+      .from("projects")
+      .insert(plan.project as never)
+      .select()
+      .single();
+    if (projectError) throw new AppError("DB_ERROR", projectError.message, 500);
+
+    const { data: tasks, error: taskError } = await supabase
+      .from("project_tasks")
+      .insert(
+        plan.taskTitles.map((title, index) => ({
+          organization_id: parsed.organizationId,
+          project_id: project.id,
+          created_by: actorUserId,
+          title,
+          status: "todo",
+          sort_order: index,
+        })) as never,
+      )
+      .select();
+    if (taskError) throw new AppError("DB_ERROR", taskError.message, 500);
+
+    const { data: ticket, error: ticketError } = await supabase
+      .from("tickets")
+      .insert({
+        organization_id: parsed.organizationId,
+        created_by: actorUserId,
+        title: plan.ticketTitle,
+        description: plan.ticketDescription,
+        priority: parsed.priority,
+        category: "store_intake",
+        source: "admin",
+        status: "new",
+        metadata: toJson({ quoteRequestId: request.id, projectId: project.id }),
+      } as never)
+      .select()
+      .single();
+    if (ticketError) throw new AppError("DB_ERROR", ticketError.message, 500);
+
+    // Bookkeeping: flip the source rows. The project already exists, so a
+    // failure here is logged rather than rolled back.
+    try {
+      await supabase
+        .from("store_quote_requests")
+        .update({ status: "converted_to_project" })
+        .eq("id", request.id);
+
+      const { data: leads } = await supabase
+        .from("store_leads")
+        .select("id")
+        .eq("quote_request_id", request.id);
+      const leadIds = (leads ?? []).map((lead) => lead.id);
+      if (leadIds.length > 0) {
+        await supabase
+          .from("store_leads")
+          .update({
+            status: "converted",
+            ...(parsed.assignedOwnerId ? { assigned_owner: parsed.assignedOwnerId } : {}),
+          })
+          .in("id", leadIds);
+      }
+    } catch (bookkeepingError) {
+      logger.warn({ err: bookkeepingError }, "store.quote_request.convert_bookkeeping_failed");
+    }
+
+    await logAuditEvent({
+      organizationId: parsed.organizationId,
+      actorUserId,
+      action: "store.quote_request.converted_to_project",
+      entityType: "project",
+      entityId: project.id,
+      metadata: {
+        quoteRequestId: request.id,
+        ticketId: ticket.id,
+        checklistTasks: plan.taskTitles.length,
+      },
+    });
+
+    void dispatchWebhook("project.created", parsed.organizationId, {
+      projectId: project.id,
+      name: plan.project.name,
+      status: plan.project.status,
+      source: "store_intake",
+    });
+
+    res.status(201).json(
+      success({
+        project,
+        ticketId: ticket.id,
+        checklistTaskCount: (tasks ?? []).length,
+      }),
+    );
+  } catch (error) {
+    if (error instanceof ZodError) {
+      res
+        .status(400)
+        .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+      return;
+    }
+    next(error);
+  }
+});
+
+// --- Visual assets (admin) ---
 interface VisualAssetRow {
   id: string;
   linked_entity_type: string;

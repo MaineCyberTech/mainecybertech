@@ -163,6 +163,8 @@ import {
   type CreateStoreVisualAssetInput,
   type UpdateStoreVisualAssetInput,
   type ListStoreVisualAssetsParams,
+  type ConvertQuoteRequestInput,
+  type ConvertQuoteRequestResult,
 } from "./store";
 import {
   ClientPortalApi,
@@ -300,6 +302,8 @@ export type {
   CreateStoreVisualAssetInput,
   UpdateStoreVisualAssetInput,
   ListStoreVisualAssetsParams,
+  ConvertQuoteRequestInput,
+  ConvertQuoteRequestResult,
   KnowledgeBaseArticle,
   ComplianceFramework,
   ComplianceControl,

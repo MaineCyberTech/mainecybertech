@@ -36,12 +36,12 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-20 Verified)
 
-**3,134 tests, all passing. 365 suites.**
+**3,150 tests, all passing. 368 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,104         | 103    | Jest + supertest                  |
-| Web     | 1,646         | 251    | Jest + Testing Library            |
+| API     | 1,115         | 105    | Jest + supertest                  |
+| Web     | 1,651         | 252    | Jest + Testing Library            |
 | SDK     | 285           | 2      | Jest (mocked fetch)               |
 | Worker  | 99            | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -436,10 +436,15 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
   generate/review proposal drafts from a quote request (`store_proposal_drafts`
   via `apps/api/src/lib/proposal-generator.ts`, `/admin/store/quote-requests`,
   `/admin/store/leads`). `store_visual_assets` is now wired too (admin CRUD API +
-  SDK + the `/admin/store/visuals` page). Still open: intake→project and the
-  `proposals`-table handoff remain stubs; prompt 17 (ethical-FOMO UX) is absent;
-  ~12 store admin pages remain static reference viewers; campaigns/import are
-  non-persistent.
+  SDK + the `/admin/store/visuals` page), and the **intake→project handoff is
+  live** (`POST /store/quote-requests/:id/convert` →
+  `apps/api/src/lib/intake-handoff.ts` creates the project + 9-task fulfilment
+  checklist + handoff ticket, flips the quote request to `converted_to_project`
+  and the lead to `converted`, audits and dispatches `project.created`; driven
+  from `/admin/store/operations`). Still open: the `proposals`-table handoff
+  (the separate `proposals` CRUD stack) is not yet linked from the store
+  handoff; prompt 17 (ethical-FOMO UX) is absent; ~12 store admin pages remain
+  static reference viewers; campaigns/import are non-persistent.
 - **repo-deep-dive pack**: its output contract expects artifacts under
   `docs/audits/{name}/{run}/` (absent — historical runs live in the pack dir);
   no SBOM/license workflow; no root `CHANGELOG.md`; no committed

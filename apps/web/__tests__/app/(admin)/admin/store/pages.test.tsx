@@ -100,15 +100,17 @@ describe("AdminStoreOperationsPage", () => {
   it("renders page with entity count", async () => {
     const Page = (await import("@/app/(admin)/admin/store/operations/page")).default;
     render(await Page());
-    expect(screen.getByRole("heading", { name: "Intake-to-Project Operations" })).toBeInTheDocument();
-    expect(screen.getByText(/entity types/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Intake-to-Project Operations" }),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText(/entity objects/i).length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders disabled convert button", async () => {
+  it("renders the entity objects and status map", async () => {
     const Page = (await import("@/app/(admin)/admin/store/operations/page")).default;
     render(await Page());
-    const btn = screen.getByRole("button", { name: /convert to project/i });
-    expect(btn).toBeDisabled();
+    expect(screen.getByText("organization")).toBeInTheDocument();
+    expect(screen.getByText(/status map/i)).toBeInTheDocument();
   });
 });
 

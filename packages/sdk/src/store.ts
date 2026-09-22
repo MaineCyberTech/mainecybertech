@@ -223,6 +223,20 @@ export type ListStoreVisualAssetsParams = {
   linkedEntityId?: string;
 };
 
+export type ConvertQuoteRequestInput = {
+  organizationId: string;
+  projectName?: string;
+  priority?: "low" | "normal" | "high" | "urgent";
+  ownerId?: string | null;
+  assignedOwnerId?: string | null;
+};
+
+export interface ConvertQuoteRequestResult {
+  project: { id: string; name: string; status: string } & Record<string, unknown>;
+  ticketId: string;
+  checklistTaskCount: number;
+}
+
 export class StoreApi {
   constructor(private client: ApiClient) {}
 
@@ -360,5 +374,17 @@ export class StoreApi {
 
   deleteVisualAsset(id: string): Promise<void> {
     return this.client.delete(`/api/v1/store/visual-assets/${id}`);
+  }
+
+  // --- Intake -> project handoff (admin) ---
+
+  convertQuoteRequest(
+    id: string,
+    data: ConvertQuoteRequestInput,
+  ): Promise<ConvertQuoteRequestResult> {
+    return this.client.post<ConvertQuoteRequestResult>(
+      `/api/v1/store/quote-requests/${id}/convert`,
+      data,
+    );
   }
 }

@@ -27,6 +27,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - `store_visual_assets` wired: admin CRUD API (`/store/visual-assets`), SDK
   methods, and a DB-backed section on `/admin/store/visuals` alongside the
   design-map reference.
+- Intake → project handoff: `POST /store/quote-requests/:id/convert` creates the
+  project, a 9-task fulfilment checklist and a handoff ticket, flips the quote
+  request/lead to converted, audits and dispatches `project.created`
+  (`apps/api/src/lib/intake-handoff.ts`). Driven from
+  `/admin/store/operations`, with SDK `convertQuoteRequest`.
 - CycloneDX 1.5 SBOM generation: `scripts/generate-sbom.mjs` + `SBOM` workflow
   (artifact `sbom-cyclonedx`).
 - `docs/audits/` output contract and run directories
