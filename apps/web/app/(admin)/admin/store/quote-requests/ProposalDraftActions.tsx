@@ -6,33 +6,50 @@ import { generateProposalDraftAction, updateProposalDraftStatusAction } from "./
 export function GenerateProposalDraftButton({ quoteRequestId }: { quoteRequestId: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  async function handleClick() {
+  async function handleClick(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setPending(true);
     setError("");
-    const formData = new FormData();
+    setNotice("");
+
+    const formData = new FormData(e.currentTarget);
     formData.set("quoteRequestId", quoteRequestId);
     const result = await generateProposalDraftAction(formData);
-    if (!result.ok) setError(result.error ?? "Failed to generate the proposal draft.");
+
+    if (!result.ok) {
+      setError(result.error ?? "Failed to generate the proposal draft.");
+    } else if (result.proposalId) {
+      setNotice("Draft created and linked to a proposal.");
+    }
     setPending(false);
   }
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={pending}
-        className="rounded border border-emerald-600/40 bg-emerald-600/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-400 transition hover:bg-emerald-600/20 disabled:opacity-50"
-      >
-        {pending ? "Generating…" : "Generate proposal draft"}
-      </button>
+    <form onSubmit={handleClick} className="flex flex-col items-end gap-1">
+      <div className="flex items-center gap-2">
+        <input
+          name="organizationId"
+          aria-label="Organization ID for linked proposal"
+          placeholder="Org ID (optional)"
+          className="w-40 rounded border border-white/10 bg-cyber-base/60 px-2 py-1 font-mono text-[10px] text-slate-200"
+        />
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded border border-emerald-600/40 bg-emerald-600/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-emerald-400 transition hover:bg-emerald-600/20 disabled:opacity-50"
+        >
+          {pending ? "Generating…" : "Generate proposal draft"}
+        </button>
+      </div>
       {error && (
-        <p role="alert" className="mt-1 text-xs text-amber-400">
+        <p role="alert" className="text-xs text-amber-400">
           {error}
         </p>
       )}
-    </div>
+      {notice && <p className="text-xs text-emerald-400">{notice}</p>}
+    </form>
   );
 }
 

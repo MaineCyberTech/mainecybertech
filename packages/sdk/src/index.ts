@@ -165,6 +165,7 @@ import {
   type ListStoreVisualAssetsParams,
   type ConvertQuoteRequestInput,
   type ConvertQuoteRequestResult,
+  type GenerateStoreProposalDraftInput,
 } from "./store";
 import {
   ClientPortalApi,
@@ -304,6 +305,7 @@ export type {
   ListStoreVisualAssetsParams,
   ConvertQuoteRequestInput,
   ConvertQuoteRequestResult,
+  GenerateStoreProposalDraftInput,
   KnowledgeBaseArticle,
   ComplianceFramework,
   ComplianceControl,

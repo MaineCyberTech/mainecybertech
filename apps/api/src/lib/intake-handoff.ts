@@ -79,6 +79,26 @@ function itemLabel(item: HandoffItem): string {
   return item.name || item.productId || "Service";
 }
 
+export { itemLabel as handoffItemLabel };
+
+/**
+ * Extracts a numeric amount from a catalog price range such as `"$1,200"`,
+ * `"From $500"` or `"$99/mo"`. Returns 0 when no amount is present.
+ */
+export function parseAmountFromPriceRange(priceRange?: string): number {
+  if (!priceRange) return 0;
+  const match = priceRange.replace(/,/g, "").match(/(\d+(?:\.\d+)?)/);
+  return match ? Number(match[1]) : 0;
+}
+
+/** Proposal title for the first-class `proposals` row created from a request. */
+export function buildProposalTitle(request: HandoffQuoteRequest): string {
+  const customer = asHandoffCustomer(request.customer);
+  return customer.name
+    ? `${customer.name} — proposal`
+    : `Store intake proposal ${request.id.slice(0, 8)}`;
+}
+
 export function buildHandoffPlan(
   request: HandoffQuoteRequest,
   options: HandoffOptions,

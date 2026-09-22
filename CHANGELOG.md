@@ -32,6 +32,18 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   request/lead to converted, audits and dispatches `project.created`
   (`apps/api/src/lib/intake-handoff.ts`). Driven from
   `/admin/store/operations`, with SDK `convertQuoteRequest`.
+- Store intake linked to the first-class proposals stack: generating a proposal
+  draft with an organization creates a `proposals` row plus a line item per
+  requested service and links it via `store_proposal_drafts.proposal_id`
+  (migration `5302421`), so store quotes enter the approvals/publish workflow.
+  The convert step carries `proposalId` onto the project metadata, and
+  `/admin/store/quote-requests` links through to `/admin/proposals/[id]`.
+
+### Fixed
+
+- Proposal creation lost the phase association for nested items — items declared
+  inside a phase were written with `phase_id: null`. They now link to the phase
+  they were declared under (`apps/api/src/routes/proposals.ts`).
 - CycloneDX 1.5 SBOM generation: `scripts/generate-sbom.mjs` + `SBOM` workflow
   (artifact `sbom-cyclonedx`).
 - `docs/audits/` output contract and run directories

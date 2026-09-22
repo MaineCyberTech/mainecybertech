@@ -29,7 +29,10 @@ jest.mock("../lib/logger", () => ({
 }));
 
 jest.mock("../middleware/auth", () => ({
-  requireAuth: (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireAuth: (req: { authUser?: { userId: string } }, _res: unknown, next: () => void) => {
+    req.authUser = { userId: "00000000-0000-0000-0000-0000000000aa" };
+    next();
+  },
 }));
 jest.mock("../middleware/admin", () => ({
   requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
@@ -120,6 +123,60 @@ describe("store proposal draft wiring", () => {
     expect(sections["Current situation"].join(" ")).toContain("We need a security review");
     expect(sections["Monthly care path"].join(" ")).toMatch(/already included/i);
     expect(sections.guardrails).toContain("Require human review before sending");
+  });
+
+  it("creates and links a first-class proposal when an organization is given", async () => {
+    const { inserts, updates } = setup({ rows: { store_quote_requests: quoteRequestRow } });
+
+    const res = await request(app)
+      .post("/api/v1/store/quote-requests/qr-1/proposal")
+      .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
+
+    expect(res.status).toBe(201);
+    expect(inserts.proposals).toMatchObject({
+      organization_id: "00000000-0000-0000-0000-000000000001",
+      title: "Jane Buyer — proposal",
+      status: "draft",
+      visibility: "internal",
+      created_by: "00000000-0000-0000-0000-0000000000aa",
+      metadata: { quoteRequestId: "qr-1", source: "store_intake" },
+    });
+
+    expect(inserts.proposal_line_items).toHaveLength(2);
+    expect(inserts.proposal_line_items[0]).toMatchObject({
+      proposal_id: "proposals-1",
+      name: "Password Security Checkup",
+      item_type: "one_time",
+      quantity: 1,
+      sort_order: 0,
+    });
+
+    expect(inserts.store_proposal_drafts).toMatchObject({ proposal_id: "proposals-1" });
+    expect(updates.proposals).toMatchObject({ grand_total: 0, total_one_time: 0 });
+  });
+
+  it("derives line-item amounts from the catalog price range", async () => {
+    const { inserts } = setup({
+      rows: {
+        store_quote_requests: {
+          ...quoteRequestRow,
+          items: [{ productId: "p-1", name: "Mailbox Migration", priceRange: "$1,200" }],
+        },
+      },
+    });
+
+    const res = await request(app)
+      .post("/api/v1/store/quote-requests/qr-1/proposal")
+      .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
+
+    expect(res.status).toBe(201);
+    expect(inserts.proposal_line_items[0]).toMatchObject({
+      unit_price: 1200,
+      total_price: 1200,
+      description: "Catalog price: $1,200",
+    });
+    expect(inserts.proposals.metadata).toMatchObject({ source: "store_intake" });
+    expect(inserts.store_proposal_drafts.proposal_id).toBe("proposals-1");
   });
 
   it("returns 404 when the quote request does not exist", async () => {

@@ -174,6 +174,7 @@ export type StoreProposalDraftStatus =
 export interface StoreProposalDraft {
   id: string;
   quote_request_id: string | null;
+  proposal_id: string | null;
   status: StoreProposalDraftStatus | string;
   sections: Record<string, unknown>;
   generated_by: string | null;
@@ -181,6 +182,14 @@ export interface StoreProposalDraft {
   created_at: string;
   updated_at: string;
 }
+
+export type GenerateStoreProposalDraftInput = {
+  /** When present, a first-class `proposals` row is created and linked. */
+  organizationId?: string;
+  visibility?: "internal" | "client_visible";
+  validUntil?: string | null;
+  ownerUserId?: string | null;
+};
 
 export type UpdateStoreProposalDraftInput = {
   status?: StoreProposalDraftStatus;
@@ -334,10 +343,13 @@ export class StoreApi {
 
   // --- Proposal drafts (admin) ---
 
-  generateProposalDraft(quoteRequestId: string): Promise<StoreProposalDraft> {
+  generateProposalDraft(
+    quoteRequestId: string,
+    data: GenerateStoreProposalDraftInput = {},
+  ): Promise<StoreProposalDraft> {
     return this.client.post<StoreProposalDraft>(
       `/api/v1/store/quote-requests/${quoteRequestId}/proposal`,
-      {},
+      data,
     );
   }
 

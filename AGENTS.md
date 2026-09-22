@@ -36,12 +36,12 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-20 Verified)
 
-**3,150 tests, all passing. 368 suites.**
+**3,163 tests, all passing. 369 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,115         | 105    | Jest + supertest                  |
-| Web     | 1,651         | 252    | Jest + Testing Library            |
+| API     | 1,127         | 106    | Jest + supertest                  |
+| Web     | 1,652         | 252    | Jest + Testing Library            |
 | SDK     | 285           | 2      | Jest (mocked fetch)               |
 | Worker  | 99            | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -90,7 +90,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 12    | Registered in `apps/worker/src/tasks/index.ts`                                                      |
 | Web pages                 | 316   | Admin 201, Portal 86, Public 27, Root 2                                                             |
 | Web components            | 93    | `apps/web/components/`                                                                              |
-| SQL migrations            | 119   | `supabase/migrations/` (latest: 5302420 RLS/impersonation fixes)                                    |
+| SQL migrations            | 120   | `supabase/migrations/` (latest: 5302421 store→proposal link)                                        |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                              |
 | GitHub Actions workflows  | 13    | `.github/workflows/`                                                                                |
 | AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                        |
@@ -441,10 +441,14 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
   `apps/api/src/lib/intake-handoff.ts` creates the project + 9-task fulfilment
   checklist + handoff ticket, flips the quote request to `converted_to_project`
   and the lead to `converted`, audits and dispatches `project.created`; driven
-  from `/admin/store/operations`). Still open: the `proposals`-table handoff
-  (the separate `proposals` CRUD stack) is not yet linked from the store
-  handoff; prompt 17 (ethical-FOMO UX) is absent; ~12 store admin pages remain
-  static reference viewers; campaigns/import are non-persistent.
+  from `/admin/store/operations`). The **`proposals`-table handoff is now linked**
+  too: generating a proposal draft with an organization creates a first-class
+  `proposals` row (a line item per requested service, totals computed) and
+  `store_proposal_drafts.proposal_id` (migration `5302421`) points at it, so the
+  store intake enters the approvals/publish workflow; the convert endpoint
+  carries `proposalId` onto the project metadata. Still open: prompt 17
+  (ethical-FOMO UX) is absent; ~12 store admin pages remain static reference
+  viewers; campaigns/import are non-persistent.
 - **repo-deep-dive pack**: its output contract expects artifacts under
   `docs/audits/{name}/{run}/` (absent — historical runs live in the pack dir);
   no SBOM/license workflow; no root `CHANGELOG.md`; no committed

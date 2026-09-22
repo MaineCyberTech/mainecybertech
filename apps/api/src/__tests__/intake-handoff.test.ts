@@ -1,5 +1,11 @@
 import { jest } from "@jest/globals";
-import { buildHandoffPlan, FULFILLMENT_CHECKLIST } from "../lib/intake-handoff";
+import {
+  buildHandoffPlan,
+  buildProposalTitle,
+  handoffItemLabel,
+  parseAmountFromPriceRange,
+  FULFILLMENT_CHECKLIST,
+} from "../lib/intake-handoff";
 
 const request = {
   id: "qr-1",
@@ -69,5 +75,42 @@ describe("buildHandoffPlan", () => {
 
     expect(plan.project.name).toBe("Store intake abcdef12");
     expect(plan.project.description).toContain("(no services selected)");
+  });
+});
+
+describe("parseAmountFromPriceRange", () => {
+  it.each([
+    ["$1,200", 1200],
+    ["From $500", 500],
+    ["$99/mo", 99],
+    ["$1,499.50", 1499.5],
+    ["Contact us", 0],
+    [undefined, 0],
+  ])("parses %s to %s", (input, expected) => {
+    expect(parseAmountFromPriceRange(input)).toBe(expected);
+  });
+});
+
+describe("buildProposalTitle", () => {
+  it("uses the customer name when available", () => {
+    expect(buildProposalTitle({ id: "qr-1", customer: { name: "Jane Buyer" } })).toBe(
+      "Jane Buyer — proposal",
+    );
+  });
+
+  it("falls back to the request id", () => {
+    expect(buildProposalTitle({ id: "abcdef1234567890", customer: {} })).toBe(
+      "Store intake proposal abcdef12",
+    );
+  });
+});
+
+describe("handoffItemLabel", () => {
+  it("prefers the name, then the product id", () => {
+    expect(handoffItemLabel({ name: "Password Checkup", productId: "p-1" })).toBe(
+      "Password Checkup",
+    );
+    expect(handoffItemLabel({ productId: "p-1" })).toBe("p-1");
+    expect(handoffItemLabel({})).toBe("Service");
   });
 });

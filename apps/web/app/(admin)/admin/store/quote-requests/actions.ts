@@ -8,6 +8,7 @@ export type ProposalDraftActionResult = {
   ok: boolean;
   error?: string;
   draftId?: string;
+  proposalId?: string | null;
 };
 
 export async function generateProposalDraftAction(
@@ -18,10 +19,17 @@ export async function generateProposalDraftAction(
     const quoteRequestId = String(formData.get("quoteRequestId") ?? "").trim();
     if (!quoteRequestId) return { ok: false, error: "Missing quote request id." };
 
-    const draft = await getApiClient().store.generateProposalDraft(quoteRequestId);
+    // Optional: link a first-class proposal (enters the approvals workflow).
+    const organizationId = String(formData.get("organizationId") ?? "").trim();
+
+    const draft = await getApiClient().store.generateProposalDraft(
+      quoteRequestId,
+      organizationId ? { organizationId } : {},
+    );
 
     revalidatePath("/admin/store/quote-requests");
-    return { ok: true, draftId: draft.id };
+    revalidatePath("/admin/proposals");
+    return { ok: true, draftId: draft.id, proposalId: draft.proposal_id ?? null };
   } catch (error) {
     return {
       ok: false,

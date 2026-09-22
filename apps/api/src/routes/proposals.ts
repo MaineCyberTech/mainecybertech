@@ -176,20 +176,28 @@ router.post("/", async (req, res, next) => {
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    for (const phase of parsed.phases) {
-      const { error: phaseError } = await supabase.from("proposal_phases").insert({
-        proposal_id: data.id,
-        title: phase.title,
-        description: phase.description ?? null,
-        assumptions: phase.assumptions ?? null,
-        notes: phase.notes ?? null,
-        sort_order: phase.sortOrder,
-      });
+    const phaseIds: Array<string | null> = [];
+    for (const [index, phase] of parsed.phases.entries()) {
+      const { data: phaseRow, error: phaseError } = await supabase
+        .from("proposal_phases")
+        .insert({
+          proposal_id: data.id,
+          title: phase.title,
+          description: phase.description ?? null,
+          assumptions: phase.assumptions ?? null,
+          notes: phase.notes ?? null,
+          sort_order: phase.sortOrder,
+        })
+        .select()
+        .single();
 
       if (phaseError) throw new AppError("DB_ERROR", phaseError.message, 500);
+      // Keep the phase id so nested items are linked to the phase they were
+      // declared under (previously every nested item was written phase_id: null).
+      phaseIds[index] = phaseRow?.id ?? null;
     }
 
-    for (const phase of parsed.phases) {
+    for (const [index, phase] of parsed.phases.entries()) {
       for (const item of phase.items) {
         const itemTotal = item.totalPrice > 0 ? item.totalPrice : item.quantity * item.unitPrice;
         grandTotal += itemTotal;
@@ -201,7 +209,7 @@ router.post("/", async (req, res, next) => {
 
         const { error: itemError } = await supabase.from("proposal_line_items").insert({
           proposal_id: data.id,
-          phase_id: null,
+          phase_id: phaseIds[index] ?? null,
           item_type: item.itemType,
           name: item.name,
           description: item.description ?? null,

@@ -2281,7 +2281,7 @@ export type Database = {
       };      impersonation_log: {
         Row: {
           actor_role_key: string;
-          actor_user_id: string;
+          actor_user_id: string | null;
           created_at: string;
           id: string;
           ip_address: string | null;
@@ -2293,7 +2293,7 @@ export type Database = {
         };
         Insert: {
           actor_role_key: string;
-          actor_user_id: string;
+          actor_user_id?: string | null;
           created_at?: string | null;
           id?: string | null;
           ip_address?: string | null;
@@ -5673,6 +5673,7 @@ export type Database = {
           created_at: string;
           generated_by: string | null;
           id: string;
+          proposal_id: string | null;
           quote_request_id: string | null;
           reviewed_by: string | null;
           sections: Json;
@@ -5683,6 +5684,7 @@ export type Database = {
           created_at?: string | null;
           generated_by?: string | null;
           id?: string | null;
+          proposal_id?: string | null;
           quote_request_id?: string | null;
           reviewed_by?: string | null;
           sections?: Json | null;
@@ -5693,6 +5695,7 @@ export type Database = {
           created_at?: string | null;
           generated_by?: string | null;
           id?: string | null;
+          proposal_id?: string | null;
           quote_request_id?: string | null;
           reviewed_by?: string | null;
           sections?: Json | null;
@@ -5700,6 +5703,7 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [
+          { foreignKeyName: "store_proposal_drafts_proposal_id_fkey", columns: ["proposal_id"], isOneToOne: false, referencedRelation: "proposals", referencedColumns: ["id"] },
         ];
       };      store_quote_requests: {
         Row: {

@@ -95,6 +95,29 @@ describe("AdminStoreQuoteRequestsPage", () => {
     expect(screen.getByLabelText(/proposal draft status/i)).toBeInTheDocument();
   });
 
+  it("links to the first-class proposal when one is attached", async () => {
+    mockListQuoteRequests.mockResolvedValue([quoteRequest]);
+    mockListProposalDrafts.mockResolvedValue([
+      {
+        id: "pd-12345678",
+        quote_request_id: "qr-1",
+        proposal_id: "proposal-9",
+        status: "draft_internal",
+        sections: {},
+        generated_by: null,
+        reviewed_by: null,
+        created_at: "2026-09-21T11:00:00.000Z",
+        updated_at: "2026-09-21T11:00:00.000Z",
+      },
+    ]);
+    const Page = (await import("@/app/(admin)/admin/store/quote-requests/page")).default;
+
+    render(await Page());
+
+    const link = screen.getByRole("link", { name: /open proposal/i });
+    expect(link).toHaveAttribute("href", "/admin/proposals/proposal-9");
+  });
+
   it("surfaces a load failure", async () => {
     mockListQuoteRequests.mockRejectedValue(new Error("API down"));
     mockListProposalDrafts.mockRejectedValue(new Error("API down"));

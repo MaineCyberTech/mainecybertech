@@ -16,7 +16,13 @@ import {
 import { toJson, type UpdateRow } from "../lib/db-types";
 import { scoreLead } from "../lib/lead-scoring";
 import { buildProposalSections, PROPOSAL_GUARDRAILS } from "../lib/proposal-generator";
-import { buildHandoffPlan } from "../lib/intake-handoff";
+import {
+  asHandoffItems,
+  buildHandoffPlan,
+  buildProposalTitle,
+  handoffItemLabel,
+  parseAmountFromPriceRange,
+} from "../lib/intake-handoff";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { logger } from "../lib/logger";
 
@@ -59,6 +65,14 @@ const createQuoteSchema = z.object({
 const updateProposalDraftSchema = z.object({
   status: z.enum(["draft_internal", "in_review", "approved", "sent", "archived"]).optional(),
   sections: z.record(z.string(), z.array(z.string())).optional(),
+});
+
+const generateProposalDraftSchema = z.object({
+  // When present, a first-class `proposals` row is created and linked.
+  organizationId: z.string().uuid().optional(),
+  visibility: z.enum(["internal", "client_visible"]).default("internal"),
+  validUntil: z.string().optional().nullable(),
+  ownerUserId: z.string().uuid().optional().nullable(),
 });
 
 const visualAssetSchema = z.object({
@@ -379,7 +393,9 @@ router.get("/leads", requireAuth, requireAdmin, async (_req, res, next) => {
 // POST /api/v1/store/quote-requests/:id/proposal - generate a proposal draft (admin)
 router.post("/quote-requests/:id/proposal", requireAuth, requireAdmin, async (req, res, next) => {
   try {
+    const parsed = generateProposalDraftSchema.parse(req.body ?? {});
     const supabase = getSupabaseAdmin();
+    const actorUserId = req.authUser?.userId ?? null;
 
     const { data: request, error } = await supabase
       .from("store_quote_requests")
@@ -392,13 +408,72 @@ router.post("/quote-requests/:id/proposal", requireAuth, requireAdmin, async (re
 
     const sections = buildProposalSections(request, await getProducts());
 
+    // When an organization is supplied, also create the first-class proposal
+    // (with a line item per requested service) so the handoff enters the
+    // proposals approval/publish workflow.
+    let linkedProposalId: string | null = null;
+    if (parsed.organizationId) {
+      if (!actorUserId) throw new AppError("UNAUTHORIZED", "Authenticated user required", 401);
+
+      const items = asHandoffItems(request.items);
+      const { data: proposal, error: proposalError } = await supabase
+        .from("proposals")
+        .insert({
+          organization_id: parsed.organizationId,
+          title: buildProposalTitle(request),
+          description: sections["Executive summary"].join("\n"),
+          status: "draft",
+          visibility: parsed.visibility,
+          valid_until: parsed.validUntil ?? null,
+          owner_user_id: parsed.ownerUserId ?? null,
+          created_by: actorUserId,
+          metadata: toJson({ quoteRequestId: request.id, source: "store_intake" }),
+        })
+        .select()
+        .single();
+      if (proposalError) throw new AppError("DB_ERROR", proposalError.message, 500);
+
+      const lineItems = items.map((item, index) => {
+        const amount = parseAmountFromPriceRange(item.priceRange);
+        return {
+          proposal_id: proposal.id,
+          sort_order: index,
+          item_type: "one_time",
+          name: handoffItemLabel(item),
+          description: item.priceRange ? `Catalog price: ${item.priceRange}` : null,
+          quantity: 1,
+          unit_price: amount,
+          total_price: amount,
+          is_optional: false,
+          is_recurring: false,
+          recurring_interval: "monthly",
+        };
+      });
+
+      if (lineItems.length > 0) {
+        const { error: lineItemError } = await supabase
+          .from("proposal_line_items")
+          .insert(lineItems as never);
+        if (lineItemError) throw new AppError("DB_ERROR", lineItemError.message, 500);
+
+        const total = lineItems.reduce((sum, item) => sum + item.total_price, 0);
+        await supabase
+          .from("proposals")
+          .update({ grand_total: total, total_one_time: total })
+          .eq("id", proposal.id);
+      }
+
+      linkedProposalId = proposal.id;
+    }
+
     const { data, error: insertError } = await supabase
       .from("store_proposal_drafts")
       .insert({
         quote_request_id: request.id,
+        proposal_id: linkedProposalId,
         status: "draft_internal",
         sections: toJson({ ...sections, guardrails: PROPOSAL_GUARDRAILS }),
-        generated_by: req.authUser?.userId ?? null,
+        generated_by: actorUserId,
       })
       .select()
       .single();
@@ -406,15 +481,21 @@ router.post("/quote-requests/:id/proposal", requireAuth, requireAdmin, async (re
     if (insertError) throw new AppError("DB_ERROR", insertError.message, 500);
 
     await logAuditEvent({
-      actorUserId: req.authUser?.userId ?? null,
+      actorUserId,
       action: "store.proposal_draft.generate",
       entityType: "store_proposal_draft",
       entityId: data.id,
-      metadata: { quoteRequestId: request.id },
+      metadata: { quoteRequestId: request.id, proposalId: linkedProposalId },
     });
 
     res.status(201).json(success(data));
   } catch (error) {
+    if (error instanceof ZodError) {
+      res
+        .status(400)
+        .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+      return;
+    }
     next(error);
   }
 });
@@ -517,6 +598,18 @@ router.post("/quote-requests/:id/convert", requireAuth, requireAdmin, async (req
       ownerId: parsed.ownerId ?? null,
     });
 
+    // Carry the linked first-class proposal (if one was generated) onto the
+    // project so delivery can see the approved commercial scope.
+    const { data: linkedDrafts } = await supabase
+      .from("store_proposal_drafts")
+      .select("proposal_id")
+      .eq("quote_request_id", request.id)
+      .not("proposal_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const linkedProposalId = linkedDrafts?.[0]?.proposal_id ?? null;
+    if (linkedProposalId) plan.project.metadata.proposalId = linkedProposalId;
+
     const { data: project, error: projectError } = await supabase
       .from("projects")
       .insert(plan.project as never)
@@ -592,6 +685,7 @@ router.post("/quote-requests/:id/convert", requireAuth, requireAdmin, async (req
         quoteRequestId: request.id,
         ticketId: ticket.id,
         checklistTasks: plan.taskTitles.length,
+        proposalId: linkedProposalId,
       },
     });
 

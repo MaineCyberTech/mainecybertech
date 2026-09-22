@@ -5,6 +5,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import DataErrorNote from "@/components/admin/DataErrorNote";
 import EmptyState from "@/components/EmptyState";
 import { getApiClient } from "@/lib/api";
+import Link from "next/link";
 import type { StoreProposalDraft, StoreQuoteRequest } from "@mct/sdk";
 import { GenerateProposalDraftButton, ProposalDraftStatusForm } from "./ProposalDraftActions";
 
@@ -118,7 +119,20 @@ export default async function AdminStoreQuoteRequestsPage() {
                         <span className="font-mono text-xs text-slate-400">
                           {draft.id.slice(0, 8)} · {new Date(draft.created_at).toLocaleString()}
                         </span>
-                        <ProposalDraftStatusForm draftId={draft.id} status={String(draft.status)} />
+                        <div className="flex items-center gap-3">
+                          {draft.proposal_id && (
+                            <Link
+                              href={`/admin/proposals/${draft.proposal_id}`}
+                              className="text-xs font-semibold text-emerald-400 transition hover:text-emerald-300"
+                            >
+                              Open proposal →
+                            </Link>
+                          )}
+                          <ProposalDraftStatusForm
+                            draftId={draft.id}
+                            status={String(draft.status)}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
