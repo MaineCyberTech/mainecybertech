@@ -64,7 +64,53 @@ function main() {
   );
   const products: RawProduct[] = JSON.parse(readFileSync(resolve(root, "products.json"), "utf8"));
 
-  return seed(categories, products);
+  // Seasonal campaigns live in the web catalog data (prompt 17); the admin
+  // manager and the public banner are DB-backed, so seed them here too.
+  const campaignRoot = resolve(__dirname, "..", "apps", "web", "lib", "catalog", "data");
+  const campaigns: RawCampaign[] = JSON.parse(
+    readFileSync(resolve(campaignRoot, "seasonal-campaigns.json"), "utf8"),
+  ).campaigns;
+
+  return seed(categories, products).then(() => seedCampaigns(campaigns));
+}
+
+interface RawCampaign {
+  id: string;
+  name: string;
+  audience?: string;
+  headline?: string;
+  recommendedProducts?: string[];
+  trustBadges?: string[];
+  promoEligibility?: string[];
+  visual?: { icon?: string; accent?: string };
+}
+
+async function seedCampaigns(campaigns: RawCampaign[]) {
+  if (campaigns.length === 0) return;
+
+  const rows = campaigns.map((campaign) => ({
+    slug: campaign.id.replace(/_/g, "-"),
+    name: campaign.name,
+    audience: campaign.audience ?? "",
+    headline: campaign.headline ?? "",
+    body: "",
+    icon: campaign.visual?.icon ?? "",
+    accent: campaign.visual?.accent ?? "",
+    recommended_product_ids: campaign.recommendedProducts ?? [],
+    trust_badges: campaign.trustBadges ?? [],
+    promo_eligibility: campaign.promoEligibility ?? [],
+    status: "active",
+    capacity_enabled: false,
+  }));
+
+  const { error } = await supabase
+    .from("store_campaigns")
+    .upsert(rows, { onConflict: "slug" });
+  if (error) {
+    console.error("Campaign upsert failed:", error.message);
+    process.exit(1);
+  }
+  console.log(`Seeded ${rows.length} campaigns`);
 }
 
 async function seed(categories: RawCategory[], products: RawProduct[]) {
