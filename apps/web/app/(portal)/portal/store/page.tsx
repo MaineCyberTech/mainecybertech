@@ -1,5 +1,4 @@
-import { getActiveCampaigns } from "@/lib/catalog/loader";
-import { loadCatalog, visibleProducts } from "@/lib/catalog/catalog-source";
+import { loadCatalog, loadActiveCampaigns, visibleProducts } from "@/lib/catalog/catalog-source";
 import { getApiClient } from "@/lib/api";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
@@ -127,7 +126,7 @@ async function fetchPromotions(): Promise<StorePromotion[]> {
 export default async function PortalStorePage() {
   const catalog = await loadCatalog();
   const products = visibleProducts(catalog);
-  const campaigns = getActiveCampaigns();
+  const campaigns = await loadActiveCampaigns();
   const promotions = await fetchPromotions();
 
   // Group products by category

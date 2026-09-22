@@ -1,4 +1,4 @@
-import { getActiveCampaigns } from "@/lib/catalog/loader";
+import { loadActiveCampaigns } from "@/lib/catalog/catalog-source";
 import StoreIconTile from "@/components/store/StoreIconTile";
 import Link from "next/link";
 
@@ -18,8 +18,8 @@ const badgeAccentMap: Record<string, string> = {
   cyan: "bg-cyan-600/10 text-cyan-400 border-cyan-600/20",
 };
 
-export default function CampaignBanner() {
-  const campaigns = getActiveCampaigns();
+export default async function CampaignBanner() {
+  const campaigns = await loadActiveCampaigns();
   const displayed = campaigns.slice(0, 2);
   if (displayed.length === 0) return null;
 
@@ -53,6 +53,14 @@ export default function CampaignBanner() {
                   </div>
                 </div>
                 <p className="mb-6 flex-1 leading-relaxed text-slate-300">{campaign.headline}</p>
+                {campaign.capacityNotice && (
+                  <p
+                    role="status"
+                    className="mb-4 w-fit rounded-full border border-amber-600/30 bg-amber-600/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-400"
+                  >
+                    {campaign.capacityNotice}
+                  </p>
+                )}
                 <div className="flex flex-wrap gap-2">
                   {campaign.trustBadges.map((badge) => (
                     <span

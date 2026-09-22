@@ -11,6 +11,19 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Added
 
+- **Prompt 17 — ethical FOMO conversion UX**: `store_campaigns` (migration
+  `5302422`) persists seasonal readiness campaigns with an opt-in
+  limited-capacity field; the public banner and admin manager are DB-backed and
+  the capacity message is computed server-side and only shown when an admin
+  enabled it with consistent numbers (`apps/api/src/lib/store-campaigns.ts`).
+  New public components: `QuickWinLadder` (with the required
+  "Start With a Quick Win" CTA), `TrustPanel`, `MiniPackageComparison`,
+  `StickyMobileCta` (mobile-only, dismissible, non-blocking), and A/B copy
+  variants (`lib/catalog/copy-variants.ts`). No fake scarcity, countdowns, or
+  fear-based copy.
+- Import/export is now backed by the live catalog: it exports the DB products and
+  categories (JSON/CSV) and upserts them through the store API
+  (`/admin/store/import-export`).
 - Public storefront now reads the DB-backed store catalog (`store_products` /
   `store_categories`) through the store API, with the bundled JSON retained as an
   offline/empty-table fallback — admin catalog edits are now visible on the

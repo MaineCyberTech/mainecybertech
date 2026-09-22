@@ -166,6 +166,10 @@ import {
   type ConvertQuoteRequestInput,
   type ConvertQuoteRequestResult,
   type GenerateStoreProposalDraftInput,
+  type StoreCampaign,
+  type StoreCampaignStatus,
+  type CreateStoreCampaignInput,
+  type UpdateStoreCampaignInput,
 } from "./store";
 import {
   ClientPortalApi,
@@ -306,6 +310,10 @@ export type {
   ConvertQuoteRequestInput,
   ConvertQuoteRequestResult,
   GenerateStoreProposalDraftInput,
+  StoreCampaign,
+  StoreCampaignStatus,
+  CreateStoreCampaignInput,
+  UpdateStoreCampaignInput,
   KnowledgeBaseArticle,
   ComplianceFramework,
   ComplianceControl,

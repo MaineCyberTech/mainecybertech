@@ -1,0 +1,30 @@
+{
+  "version": "2026-09-21.v1",
+  "notes": "A/B-test-ready copy only. No dark patterns, no fake scarcity, no fear-based security manipulation (see prompt 17 guardrails).",
+  "groups": [
+    {
+      "id": "quick_win_ladder_intro",
+      "active": true,
+      "variants": [
+        "Start small, then grow into a bundle or a monthly plan when it makes sense.",
+        "Pick one focused fix today; upgrade only when your situation calls for it."
+      ]
+    },
+    {
+      "id": "trust_panel_intro",
+      "active": true,
+      "variants": [
+        "What working with us looks like, before you commit to anything.",
+        "The practical details: scope, access, support, and what we leave out."
+      ]
+    },
+    {
+      "id": "store_quote_intro",
+      "active": true,
+      "variants": [
+        "Build a quote for the services you are considering. No commitment.",
+        "Select the services you want priced. You can change or cancel anything later."
+      ]
+    }
+  ]
+}

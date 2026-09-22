@@ -4,8 +4,9 @@ import { toCategoryView, toProductView } from "./store-view";
 import {
   getAllProducts as getStaticProducts,
   getCategories as getStaticCategories,
+  getActiveCampaigns as getStaticCampaigns,
 } from "./loader";
-import type { CatalogProduct, Category } from "./types";
+import type { CatalogProduct, Category, SeasonalCampaign } from "./types";
 
 export type CatalogSource = "db" | "static";
 
@@ -103,4 +104,34 @@ export function monthlyPlans(snapshot: CatalogSnapshot): CatalogProduct[] {
 
 export function emergencyProducts(snapshot: CatalogSnapshot): CatalogProduct[] {
   return productsInCategory(snapshot, "emergency-support");
+}
+
+/**
+ * Active seasonal campaigns, DB-backed with the bundled JSON as fallback.
+ * `capacityNotice` is computed server-side by the API and is only present when
+ * the messaging is truthful (prompt 17 guardrail).
+ */
+export async function loadActiveCampaigns(): Promise<SeasonalCampaign[]> {
+  try {
+    const campaigns = await getApiClient().store.listActiveCampaigns();
+    if (campaigns.length > 0) {
+      return campaigns.map((campaign) => ({
+        id: campaign.slug || campaign.id,
+        slug: campaign.slug,
+        name: campaign.name,
+        audience: campaign.audience,
+        headline: campaign.headline,
+        body: campaign.body,
+        recommendedProducts: campaign.recommendedProductIds ?? [],
+        trustBadges: campaign.trustBadges ?? [],
+        promoEligibility: campaign.promoEligibility ?? [],
+        visual: { icon: campaign.icon, accent: campaign.accent } as SeasonalCampaign["visual"],
+        capacityNotice: campaign.capacityNotice ?? null,
+      }));
+    }
+  } catch {
+    // fall through to the bundled JSON
+  }
+
+  return getStaticCampaigns().map((campaign) => ({ ...campaign, capacityNotice: null }));
 }

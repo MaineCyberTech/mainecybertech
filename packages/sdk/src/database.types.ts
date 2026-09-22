@@ -5475,6 +5475,79 @@ export type Database = {
         };
         Relationships: [
         ];
+      };      store_campaigns: {
+        Row: {
+          accent: string;
+          audience: string;
+          body: string;
+          capacity_enabled: boolean;
+          capacity_label: string;
+          capacity_remaining: number | null;
+          capacity_total: number | null;
+          created_at: string;
+          ends_at: string | null;
+          headline: string;
+          icon: string;
+          id: string;
+          name: string;
+          organization_id: string | null;
+          promo_eligibility: string[];
+          recommended_product_ids: string[];
+          slug: string;
+          starts_at: string | null;
+          status: string;
+          trust_badges: string[];
+          updated_at: string;
+        };
+        Insert: {
+          name: string;
+          slug: string;
+          accent?: string | null;
+          audience?: string | null;
+          body?: string | null;
+          capacity_enabled?: boolean | null;
+          capacity_label?: string | null;
+          capacity_remaining?: number | null;
+          capacity_total?: number | null;
+          created_at?: string | null;
+          ends_at?: string | null;
+          headline?: string | null;
+          icon?: string | null;
+          id?: string | null;
+          organization_id?: string | null;
+          promo_eligibility?: string[] | null;
+          recommended_product_ids?: string[] | null;
+          starts_at?: string | null;
+          status?: string | null;
+          trust_badges?: string[] | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          accent?: string | null;
+          audience?: string | null;
+          body?: string | null;
+          capacity_enabled?: boolean | null;
+          capacity_label?: string | null;
+          capacity_remaining?: number | null;
+          capacity_total?: number | null;
+          created_at?: string | null;
+          ends_at?: string | null;
+          headline?: string | null;
+          icon?: string | null;
+          id?: string | null;
+          name?: string | null;
+          organization_id?: string | null;
+          promo_eligibility?: string[] | null;
+          recommended_product_ids?: string[] | null;
+          slug?: string | null;
+          starts_at?: string | null;
+          status?: string | null;
+          trust_badges?: string[] | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "store_campaigns_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
       };      store_categories: {
         Row: {
           count: number;

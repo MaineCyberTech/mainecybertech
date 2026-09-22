@@ -1,10 +1,14 @@
-import { getCategoryOrder } from "@/lib/catalog/loader";
+import { getCategoryOrder, getPackageLadders } from "@/lib/catalog/loader";
 import {
   loadCatalog,
   featuredProducts,
   monthlyPlans as selectMonthlyPlans,
   emergencyProducts,
 } from "@/lib/catalog/catalog-source";
+import type { CatalogProduct } from "@/lib/catalog/types";
+import QuickWinLadder from "@/components/store/QuickWinLadder";
+import MiniPackageComparison from "@/components/store/MiniPackageComparison";
+import StickyMobileCta from "@/components/store/StickyMobileCta";
 import StoreProductCard from "@/components/store/StoreProductCard";
 import StoreCategoryCard from "@/components/store/StoreCategoryCard";
 import CampaignBanner from "@/components/store/CampaignBanner";
@@ -29,6 +33,23 @@ export default async function StorePage() {
   const featured = featuredProducts(catalog);
   const monthlyPlans = selectMonthlyPlans(catalog);
   const emergency = emergencyProducts(catalog);
+
+  // Prompt 17 quick-win ladder: only uses catalog entries that actually exist.
+  const bundlePick = catalog.products.find((p) => p.bundleEligible && p.display) ?? featured[1];
+
+  const productById = new Map(catalog.products.map((p) => [p.id, p]));
+  const ladder = getPackageLadders().find(
+    (entry) =>
+      [entry.good, entry.better, entry.best].filter((id) => productById.has(id)).length >= 2,
+  );
+  const tiers = ladder
+    ? (["good", "better", "best"] as const)
+        .map((key) => ({
+          label: key.charAt(0).toUpperCase() + key.slice(1),
+          product: productById.get(ladder[key]),
+        }))
+        .filter((tier): tier is { label: string; product: CatalogProduct } => Boolean(tier.product))
+    : [];
 
   const orderedCategories = order
     .map((slug) => categories.find((c) => c.slug === slug))
@@ -192,8 +213,18 @@ export default async function StorePage() {
             Microsoft 365 — from essential protection to full coverage.
           </p>
           <PackageLadderGrid />
+          {tiers.length >= 2 && (
+            <div className="mt-12">
+              <MiniPackageComparison
+                title={ladder ? `Good / Better / Best — ${ladder.category}` : "Compare Packages"}
+                tiers={tiers}
+              />
+            </div>
+          )}
         </div>
       </section>
+
+      <QuickWinLadder quickWin={featured[0]} bundle={bundlePick} monthlyPlan={monthlyPlans[0]} />
 
       {monthlyPlans.length > 0 && (
         <section id="monthly-plans" className="border-t border-white/5 px-4 py-24 sm:px-6 sm:py-32">
@@ -271,6 +302,8 @@ export default async function StorePage() {
           </Link>
         </div>
       </section>
+
+      <StickyMobileCta href="/store/quiz" label="Start With a Quick Win" />
     </>
   );
 }

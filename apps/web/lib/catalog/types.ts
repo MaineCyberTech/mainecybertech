@@ -184,6 +184,11 @@ export interface SeasonalCampaign {
   trustBadges: string[];
   promoEligibility: string[];
   visual: CampaignVisual;
+  /** DB-backed extras (absent for the bundled JSON fallback). */
+  slug?: string;
+  body?: string;
+  /** Server-computed truthful capacity message; null when not enabled. */
+  capacityNotice?: string | null;
 }
 
 export interface SeasonalCampaignsData {

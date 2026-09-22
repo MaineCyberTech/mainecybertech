@@ -3,19 +3,86 @@
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import { getAllProducts } from "@/lib/catalog/loader";
 import { useState, useRef } from "react";
+import type { Category } from "@/lib/catalog/types";
+import { importProductsAction, importCategoriesAction } from "./actions";
 
-type ValidationResult = {
-  valid: boolean;
+export interface ExportableProduct {
+  id: string;
+  slug: string;
+  name: string;
+  [key: string]: unknown;
+}
+
+type ImportOutcome = {
+  ok: boolean;
   message: string;
   details?: string[];
 };
 
-export default function ImportExportClient() {
+const PRODUCT_CSV_HEADERS = [
+  "id",
+  "slug",
+  "name",
+  "category",
+  "categoryId",
+  "type",
+  "display",
+  "status",
+  "priceRange",
+  "summary",
+];
+
+function download(filename: string, content: string, type: string) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function parseCsv(text: string): Record<string, string>[] {
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, "").toLowerCase());
+  return lines.slice(1).map((line) => {
+    const cells = line.split(",");
+    const row: Record<string, string> = {};
+    headers.forEach((header, index) => {
+      row[header] = (cells[index] ?? "").trim().replace(/^"|"$/g, "");
+    });
+    return row;
+  });
+}
+
+export default function ImportExportClient({
+  products,
+  categories,
+}: {
+  products: ExportableProduct[];
+  categories: Category[];
+}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [jsonResult, setJsonResult] = useState<ValidationResult | null>(null);
-  const [csvResult, setCsvResult] = useState<ValidationResult | null>(null);
+  const [jsonOutcome, setJsonOutcome] = useState<ImportOutcome | null>(null);
+  const [csvOutcome, setCsvOutcome] = useState<ImportOutcome | null>(null);
+  const [pending, setPending] = useState<"json" | "csv" | null>(null);
+
+  async function submitImport(kind: "json" | "csv", rows: unknown[]) {
+    setPending(kind);
+    const formData = new FormData();
+    formData.set("payload", JSON.stringify(rows));
+    const result = await importProductsAction(formData);
+    const message = result.ok
+      ? `Applied ${result.created ?? 0} new and ${result.updated ?? 0} updated product(s).`
+      : (result.error ??
+        `Applied ${result.created ?? 0} new and ${result.updated ?? 0} updated with issues.`);
+    const outcome = { ok: result.ok, message, details: result.failed };
+    if (kind === "json") setJsonOutcome(outcome);
+    else setCsvOutcome(outcome);
+    setPending(null);
+  }
 
   function handleJsonImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -24,31 +91,10 @@ export default function ImportExportClient() {
     reader.onload = (evt) => {
       try {
         const data = JSON.parse(evt.target?.result as string);
-        const arr = Array.isArray(data) ? data : [data];
-        const issues: string[] = [];
-        for (const item of arr) {
-          if (!item.id) issues.push(`Missing id: ${JSON.stringify(item).slice(0, 60)}`);
-          if (!item.name) issues.push(`Missing name: ${item.id ?? "unknown"}`);
-          if (!item.slug) issues.push(`Missing slug: ${item.id ?? "unknown"}`);
-          if (!item.categoryId) issues.push(`Missing categoryId: ${item.id ?? "unknown"}`);
-        }
-        if (issues.length === 0) {
-          setJsonResult({
-            valid: true,
-            message: `Valid JSON — ${arr.length} product(s) parsed successfully.`,
-          });
-        } else {
-          setJsonResult({
-            valid: false,
-            message: `${issues.length} validation issue(s) found.`,
-            details: issues,
-          });
-        }
+        const rows = Array.isArray(data) ? data : [data];
+        void submitImport("json", rows);
       } catch {
-        setJsonResult({
-          valid: false,
-          message: "Invalid JSON file. Please check the file format.",
-        });
+        setJsonOutcome({ ok: false, message: "Invalid JSON file. Please check the file format." });
       }
     };
     reader.readAsText(file);
@@ -59,31 +105,47 @@ export default function ImportExportClient() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const text = evt.target?.result as string;
-      const lines = text.split("\n").filter(Boolean);
-      if (lines.length < 2) {
-        setCsvResult({
-          valid: false,
+      const rows = parseCsv(String(evt.target?.result ?? ""));
+      if (rows.length === 0) {
+        setCsvOutcome({
+          ok: false,
           message: "CSV must have a header row and at least one data row.",
         });
         return;
       }
-      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-      const required = ["id", "name", "slug"];
-      const missing = required.filter((r) => !headers.includes(r));
+      const missing = ["id", "name", "slug"].filter((column) => !(column in rows[0]));
       if (missing.length > 0) {
-        setCsvResult({
-          valid: false,
-          message: `Missing required columns: ${missing.join(", ")}. Found: ${headers.join(", ")}`,
+        setCsvOutcome({
+          ok: false,
+          message: `Missing required columns: ${missing.join(", ")}. Found: ${Object.keys(rows[0]).join(", ")}`,
         });
         return;
       }
-      setCsvResult({
-        valid: true,
-        message: `CSV looks valid — ${lines.length - 1} data row(s) with ${headers.length} column(s).`,
-      });
+      void submitImport("csv", rows);
     };
     reader.readAsText(file);
+  }
+
+  function outcomeBlock(outcome: ImportOutcome | null) {
+    if (!outcome) return null;
+    return (
+      <div
+        className={`rounded px-3 py-2 text-xs ${
+          outcome.ok ? "bg-emerald-600/10 text-emerald-400" : "bg-red-600/10 text-red-400"
+        }`}
+      >
+        <p className="font-medium">
+          {outcome.ok ? "✓" : "✗"} {outcome.message}
+        </p>
+        {outcome.details && outcome.details.length > 0 && (
+          <ul className="mt-1 list-inside list-disc space-y-0.5">
+            {outcome.details.slice(0, 10).map((detail, index) => (
+              <li key={index}>{detail}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -99,73 +161,54 @@ export default function ImportExportClient() {
       }
       subnav={<AdminSubnav current="store-import" />}
       title="Import & Export Tools"
-      description="Export catalog data or import products via JSON/CSV."
+      description={`Backed by the live catalog — ${products.length} product(s), ${categories.length} category(ies).`}
     >
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5">
           <h3 className="mb-1 font-semibold text-slate-50">Export as JSON</h3>
           <p className="mb-4 text-sm text-slate-400">
-            Download the full product catalog as a JSON file.
+            Download the live product catalog as a JSON file.
           </p>
           <button
             type="button"
-            onClick={() => {
-              const products = getAllProducts();
-              const blob = new Blob([JSON.stringify(products, null, 2)], {
-                type: "application/json",
-              });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "products.json";
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
+            onClick={() =>
+              download("products.json", JSON.stringify(products, null, 2), "application/json")
+            }
             className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500"
           >
             Download products.json
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              download("categories.json", JSON.stringify(categories, null, 2), "application/json")
+            }
+            className="ml-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-200 transition hover:bg-white/10"
+          >
+            Download categories.json
           </button>
         </section>
 
         <section className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5">
           <h3 className="mb-1 font-semibold text-slate-50">Export as CSV</h3>
           <p className="mb-4 text-sm text-slate-400">
-            Export the catalog as CSV for spreadsheet analysis. Uses the same shared CSV helpers as
-            ticket/project exports.
+            Export the live catalog as CSV for spreadsheet analysis.
           </p>
           <button
             type="button"
             onClick={() => {
-              const products = getAllProducts();
-              const headers = [
-                "id",
-                "slug",
-                "name",
-                "category",
-                "categoryId",
-                "type",
-                "display",
-                "status",
-                "priceRange",
-                "summary",
-              ];
               const rows = products.map((p) =>
-                headers
-                  .map((h) =>
-                    JSON.stringify(
-                      String((p as unknown as Record<string, unknown>)[h] ?? ""),
-                    ).replace(/,/g, ";"),
-                  )
-                  .join(","),
+                PRODUCT_CSV_HEADERS.map((header) =>
+                  JSON.stringify(
+                    String((p as unknown as Record<string, unknown>)[header] ?? ""),
+                  ).replace(/,/g, ";"),
+                ).join(","),
               );
-              const csv = [headers.join(","), ...rows].join("\n");
-              const blob = new Blob([csv], { type: "text/csv" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = "products.csv";
-              a.click();
-              URL.revokeObjectURL(url);
+              download(
+                "products.csv",
+                [PRODUCT_CSV_HEADERS.join(","), ...rows].join("\n"),
+                "text/csv",
+              );
             }}
             className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-200 transition hover:bg-white/10"
           >
@@ -174,97 +217,122 @@ export default function ImportExportClient() {
         </section>
 
         <section className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5">
-          <h3 className="mb-1 font-semibold text-slate-50">Import from JSON</h3>
+          <h3 className="mb-1 font-semibold text-slate-50">Import products from JSON</h3>
           <p className="mb-4 text-sm text-slate-400">
-            Upload a JSON file to validate product data. Client-side validation checks required
-            fields.
+            Upload a JSON array of products. Existing ids are updated; new ids are created.
           </p>
           <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
-            <div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".json"
-                onChange={handleJsonImport}
-                aria-label="Import JSON file"
-                className="block w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-emerald-600/20 file:px-3 file:py-1 file:text-xs file:font-medium file:text-emerald-400"
-              />
-            </div>
-            {jsonResult ? (
-              <div
-                className={`rounded px-3 py-2 text-xs ${
-                  jsonResult.valid
-                    ? "bg-emerald-600/10 text-emerald-400"
-                    : "bg-red-600/10 text-red-400"
-                }`}
-              >
-                <p className="font-medium">
-                  {jsonResult.valid ? "✓" : "✗"} {jsonResult.message}
-                </p>
-                {jsonResult.details && jsonResult.details.length > 0 ? (
-                  <ul className="mt-1 list-inside list-disc space-y-0.5">
-                    {jsonResult.details.map((d, i) => (
-                      <li key={i}>{d}</li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ) : null}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleJsonImport}
+              aria-label="Import JSON file"
+              className="block w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-emerald-600/20 file:px-3 file:py-1 file:text-xs file:font-medium file:text-emerald-400"
+            />
+            {pending === "json" && <p className="text-xs text-slate-400">Applying…</p>}
+            {outcomeBlock(jsonOutcome)}
           </form>
         </section>
 
         <section className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5">
-          <h3 className="mb-1 font-semibold text-slate-50">Import from CSV</h3>
+          <h3 className="mb-1 font-semibold text-slate-50">Import products from CSV</h3>
           <p className="mb-4 text-sm text-slate-400">
-            Upload a CSV file with at least <code className="text-emerald-400">id</code>,{" "}
+            Upload a CSV with at least <code className="text-emerald-400">id</code>,{" "}
             <code className="text-emerald-400">name</code>, and{" "}
             <code className="text-emerald-400">slug</code> columns.
           </p>
           <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
-            <div>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleCsvImport}
-                aria-label="Import CSV file"
-                className="block w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-emerald-600/20 file:px-3 file:py-1 file:text-xs file:font-medium file:text-emerald-400"
-              />
-            </div>
-            {csvResult ? (
-              <div
-                className={`rounded px-3 py-2 text-xs ${
-                  csvResult.valid
-                    ? "bg-emerald-600/10 text-emerald-400"
-                    : "bg-red-600/10 text-red-400"
-                }`}
-              >
-                <p className="font-medium">
-                  {csvResult.valid ? "✓" : "✗"} {csvResult.message}
-                </p>
-              </div>
-            ) : null}
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleCsvImport}
+              aria-label="Import CSV file"
+              className="block w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-emerald-600/20 file:px-3 file:py-1 file:text-xs file:font-medium file:text-emerald-400"
+            />
+            {pending === "csv" && <p className="text-xs text-slate-400">Applying…</p>}
+            {outcomeBlock(csvOutcome)}
+          </form>
+        </section>
+
+        <section className="rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5 lg:col-span-2">
+          <h3 className="mb-1 font-semibold text-slate-50">Import categories from JSON</h3>
+          <p className="mb-4 text-sm text-slate-400">
+            Upload a JSON array of categories. Existing ids are updated; new ids are created.
+          </p>
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
+            <CategoryImport onApply={importCategoriesAction} />
           </form>
         </section>
       </div>
-
-      <section className="mt-8 rounded-xl border border-white/10 bg-gradient-to-br from-[#0A1118]/80 to-[#0D1622]/80 p-5">
-        <h3 className="mb-3 font-semibold text-slate-50">About Data Persistence</h3>
-        <div className="space-y-2 text-sm text-slate-400">
-          <p>
-            The catalog currently loads from static JSON files in{" "}
-            <code className="text-emerald-400">lib/catalog/data/</code>. Changes made via import are
-            validated client-side but <strong>not persisted</strong> to disk.
-          </p>
-          <p>
-            A future database-backed implementation will store products, categories, and bundle
-            rules in Supabase, with the import/export tools writing directly to the database.
-          </p>
-          <p className="text-xs text-slate-500">
-            See <code className="text-emerald-400">docs/API_ENDPOINT_INVENTORY.md</code> for planned
-            catalog API endpoints.
-          </p>
-        </div>
-      </section>
     </AdminPageShell>
+  );
+}
+
+function CategoryImport({
+  onApply,
+}: {
+  onApply: (formData: FormData) => Promise<{
+    ok: boolean;
+    error?: string;
+    created?: number;
+    updated?: number;
+    failed?: string[];
+  }>;
+}) {
+  const [outcome, setOutcome] = useState<ImportOutcome | null>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    let rows: unknown[];
+    try {
+      const parsed = JSON.parse(text);
+      rows = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      setOutcome({ ok: false, message: "Invalid JSON file." });
+      return;
+    }
+    const formData = new FormData();
+    formData.set("payload", JSON.stringify(rows));
+    const result = await onApply(formData);
+    setOutcome({
+      ok: result.ok,
+      message: result.ok
+        ? `Applied ${result.created ?? 0} new and ${result.updated ?? 0} updated category(ies).`
+        : (result.error ?? "Import completed with issues."),
+      details: result.failed,
+    });
+  }
+
+  return (
+    <>
+      <input
+        type="file"
+        accept=".json"
+        onChange={handleFile}
+        aria-label="Import categories JSON file"
+        className="block w-full rounded border border-white/10 bg-cyber-base/60 px-3 py-2 text-sm text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-emerald-600/20 file:px-3 file:py-1 file:text-xs file:font-medium file:text-emerald-400"
+      />
+      {outcome && (
+        <div
+          className={`rounded px-3 py-2 text-xs ${
+            outcome.ok ? "bg-emerald-600/10 text-emerald-400" : "bg-red-600/10 text-red-400"
+          }`}
+        >
+          <p className="font-medium">
+            {outcome.ok ? "✓" : "✗"} {outcome.message}
+          </p>
+          {outcome.details && outcome.details.length > 0 && (
+            <ul className="mt-1 list-inside list-disc space-y-0.5">
+              {outcome.details.slice(0, 10).map((detail, index) => (
+                <li key={index}>{detail}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </>
   );
 }

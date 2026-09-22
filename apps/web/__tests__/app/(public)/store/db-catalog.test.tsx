@@ -85,7 +85,7 @@ describe("public storefront reads the DB-backed catalog", () => {
 
     render(await StorePage());
 
-    expect(screen.getByText("DB Only Service")).toBeInTheDocument();
+    expect(screen.getAllByText("DB Only Service").length).toBeGreaterThan(0);
     expect(screen.queryByText("Quick Fixes")).not.toBeInTheDocument();
   });
 
@@ -102,6 +102,6 @@ describe("public storefront reads the DB-backed catalog", () => {
 
     render(await CategoryPage({ params: Promise.resolve({ slug: "db-category" }) }));
 
-    expect(screen.getByText("DB Only Service")).toBeInTheDocument();
+    expect(screen.getAllByText("DB Only Service").length).toBeGreaterThan(0);
   });
 });

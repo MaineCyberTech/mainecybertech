@@ -191,6 +191,60 @@ export type GenerateStoreProposalDraftInput = {
   ownerUserId?: string | null;
 };
 
+export type StoreCampaignStatus = "draft" | "active" | "paused" | "archived";
+
+export interface StoreCampaign {
+  id: string;
+  slug: string;
+  name: string;
+  audience: string;
+  headline: string;
+  body: string;
+  icon: string;
+  accent: string;
+  recommendedProductIds: string[];
+  trustBadges: string[];
+  promoEligibility: string[];
+  status: StoreCampaignStatus | string;
+  startsAt: string | null;
+  endsAt: string | null;
+  capacityEnabled: boolean;
+  capacityTotal: number | null;
+  capacityRemaining: number | null;
+  capacityLabel: string;
+  /**
+   * Server-computed capacity message. Only present when an admin enabled it and
+   * the stored numbers are consistent — never fabricated client-side.
+   */
+  capacityNotice: string | null;
+  organizationId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CreateStoreCampaignInput = {
+  slug: string;
+  name: string;
+  audience?: string;
+  headline?: string;
+  body?: string;
+  icon?: string;
+  accent?: string;
+  recommendedProductIds?: string[];
+  trustBadges?: string[];
+  promoEligibility?: string[];
+  status?: StoreCampaignStatus;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  capacityEnabled?: boolean;
+  capacityTotal?: number | null;
+  capacityRemaining?: number | null;
+  capacityLabel?: string;
+  organizationId?: string | null;
+};
+
+export type UpdateStoreCampaignInput = Partial<CreateStoreCampaignInput>;
+
 export type UpdateStoreProposalDraftInput = {
   status?: StoreProposalDraftStatus;
   sections?: Record<string, string[]>;
@@ -398,5 +452,27 @@ export class StoreApi {
       `/api/v1/store/quote-requests/${id}/convert`,
       data,
     );
+  }
+
+  // --- Seasonal campaigns (public read / admin CRUD) ---
+
+  listActiveCampaigns(): Promise<StoreCampaign[]> {
+    return this.client.get<StoreCampaign[]>("/api/v1/store/campaigns");
+  }
+
+  listCampaigns(): Promise<StoreCampaign[]> {
+    return this.client.get<StoreCampaign[]>("/api/v1/store/campaigns/admin");
+  }
+
+  createCampaign(data: CreateStoreCampaignInput): Promise<StoreCampaign> {
+    return this.client.post<StoreCampaign>("/api/v1/store/campaigns", data);
+  }
+
+  updateCampaign(id: string, data: UpdateStoreCampaignInput): Promise<StoreCampaign> {
+    return this.client.patch<StoreCampaign>(`/api/v1/store/campaigns/${id}`, data);
+  }
+
+  deleteCampaign(id: string): Promise<void> {
+    return this.client.delete(`/api/v1/store/campaigns/${id}`);
   }
 }

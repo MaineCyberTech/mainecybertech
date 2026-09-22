@@ -10,6 +10,8 @@ import type { Metadata } from "next";
 import { buildMetadata } from "@/lib/seo/metadata";
 import TrustBadgeList from "@/components/store/TrustBadgeList";
 import IntakeFormRenderer from "@/components/store/IntakeFormRenderer";
+import { TrustPanelFromProduct } from "@/components/store/TrustPanel";
+import StickyMobileCta from "@/components/store/StickyMobileCta";
 
 export const dynamic = "force-dynamic";
 
@@ -229,6 +231,10 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
             </div>
           </div>
         )}
+
+        <div className="mt-8">
+          <TrustPanelFromProduct product={product} />
+        </div>
       </div>
 
       {recommendations.length > 0 && (
@@ -276,6 +282,8 @@ export default async function StoreProductPage({ params }: { params: Promise<{ s
       <div className="mx-auto mt-24 max-w-3xl">
         <FAQSection productId={product.id} />
       </div>
+
+      <StickyMobileCta href={`/contact?service=${product.slug}`} label="Request This Service" />
     </section>
   );
 }
