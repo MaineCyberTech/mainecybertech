@@ -17,7 +17,14 @@ jobs:
       - name: Enable pnpm
         run: |
           corepack enable
-          corepack prepare pnpm@10 --activate
+          # corepack fetches pnpm from the npm registry; retry transient failures.
+          ok=""
+          for attempt in 1 2 3; do
+            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
+            echo "corepack prepare failed (attempt $attempt/3)" >&2
+            sleep 10
+          done
+          test -n "$ok"
       - name: Clear pnpm cache
         run: pnpm store prune
       - name: Install dependencies
@@ -48,7 +55,14 @@ jobs:
       - name: Enable pnpm
         run: |
           corepack enable
-          corepack prepare pnpm@10 --activate
+          # corepack fetches pnpm from the npm registry; retry transient failures.
+          ok=""
+          for attempt in 1 2 3; do
+            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
+            echo "corepack prepare failed (attempt $attempt/3)" >&2
+            sleep 10
+          done
+          test -n "$ok"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -70,7 +84,14 @@ jobs:
       - name: Enable pnpm
         run: |
           corepack enable
-          corepack prepare pnpm@10 --activate
+          # corepack fetches pnpm from the npm registry; retry transient failures.
+          ok=""
+          for attempt in 1 2 3; do
+            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
+            echo "corepack prepare failed (attempt $attempt/3)" >&2
+            sleep 10
+          done
+          test -n "$ok"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -92,7 +113,14 @@ jobs:
       - name: Enable pnpm
         run: |
           corepack enable
-          corepack prepare pnpm@10 --activate
+          # corepack fetches pnpm from the npm registry; retry transient failures.
+          ok=""
+          for attempt in 1 2 3; do
+            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
+            echo "corepack prepare failed (attempt $attempt/3)" >&2
+            sleep 10
+          done
+          test -n "$ok"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
