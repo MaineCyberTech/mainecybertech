@@ -2,6 +2,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { getApiClient } from "@/lib/api";
 import type { StoreQuote } from "@mct/sdk";
 
@@ -59,9 +60,11 @@ export default async function AdminStoreQuotesPage() {
   await requireAdminAccess();
 
   let quotes: Quote[] = [];
+  let loadFailed = false;
   try {
     quotes = (await getApiClient().store.listQuotes()).map(toQuote);
   } catch {
+    loadFailed = true;
     // API unavailable — show empty
   }
 
@@ -82,6 +85,7 @@ export default async function AdminStoreQuotesPage() {
       title="Quote Requests"
       description={`${quotes.length} request${quotes.length === 1 ? "" : "s"} received`}
     >
+      {loadFailed && <DataErrorNote what="store quotes" />}
       {quotes.length === 0 ? (
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-8 text-center text-sm text-slate-400">
           No quote requests yet.

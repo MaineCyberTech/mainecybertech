@@ -110,6 +110,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     // redirect: the middleware would bounce an authenticated user back to
     // /portal/dashboard (or /admin), producing an infinite redirect loop.
     const status = (err as { status?: number })?.status;
+    // A signed-in session that still needs its second factor is sent to the
+    // security step-up page rather than the login screen.
+    if ((err as { code?: string })?.code === "MFA_REQUIRED") {
+      redirect("/portal/profile/security?mfa=required");
+    }
     if (status === 401 || status === 403) {
       redirect("/login");
     }

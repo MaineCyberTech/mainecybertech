@@ -4,6 +4,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import ClientPortalEntitlementsForm from "./ClientPortalEntitlementsForm";
 
 export const dynamic = "force-dynamic";
@@ -13,6 +14,7 @@ type Props = { searchParams: Promise<{ organizationId?: string }> };
 
 export default async function AdminClientPortalPage({ searchParams }: Props) {
   await requireAdminAccess();
+  let loadFailed = false;
   const api = getApiClient();
   const { organizationId } = await searchParams;
 
@@ -24,6 +26,7 @@ export default async function AdminClientPortalPage({ searchParams }: Props) {
     organizations = r.items ?? [];
   } catch (error) {
     console.error("[admin/client-portal]", error);
+    loadFailed = true;
   }
 
   const orgId = organizationId ?? organizations[0]?.id ?? null;
@@ -38,6 +41,7 @@ export default async function AdminClientPortalPage({ searchParams }: Props) {
       description="Provision which portal modules each client organisation can use."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="admin data" />}
       {organizations.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           {organizations.map((org) => (

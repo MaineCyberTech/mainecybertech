@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import AdminListPage from "@/components/admin/AdminListPage";
 import AdminPagination from "@/components/admin/AdminPagination";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import EmptyState from "@/components/EmptyState";
 
 export const dynamic = "force-dynamic";
@@ -55,17 +56,20 @@ export default async function ApprovalRequestsAdminPage({
   let items: Array<Record<string, unknown>> = [];
   let total = 0;
   let stats: Record<string, number> = {};
+  let loadFailed = false;
   try {
     const r = await api.approvals.list({ page, limit, status, requestType, search });
     items = r.items as unknown as typeof items;
     total = r.total ?? 0;
   } catch (error) {
     console.error("[approval-requests/page]", error);
+    loadFailed = true;
   }
   try {
     stats = (await api.approvals.stats()) as unknown as Record<string, number>;
   } catch (error) {
     console.error("[approval-requests/page]", error);
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -81,6 +85,7 @@ export default async function ApprovalRequestsAdminPage({
 
   return (
     <>
+      {loadFailed && <DataErrorNote what="approval requests" />}
       <AdminListPage
         title="Approval Workflow Engine"
         description="Review, approve, or reject approval requests across all organizations (proposals, changes, budgets, procurement, client sign-offs)."

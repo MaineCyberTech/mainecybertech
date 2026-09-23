@@ -2,8 +2,10 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { getApiClient } from "@/lib/api";
 import { toCategoryView } from "@/lib/catalog/store-view";
+import type { StoreProduct } from "@mct/sdk";
 import CategoryForm from "./CategoryForm";
 import DeleteButton from "./DeleteButton";
 
@@ -13,23 +15,29 @@ export const metadata = { title: "Store Categories - Admin" };
 async function fetchCategories() {
   try {
     const categories = await getApiClient().store.listCategories();
-    return categories.map(toCategoryView);
+    return { items: categories.map(toCategoryView), failed: false };
   } catch {
-    return [];
+    return { items: [] as ReturnType<typeof toCategoryView>[], failed: true };
   }
 }
 
 async function fetchProducts() {
   try {
-    return await getApiClient().store.listProducts();
+    return { items: await getApiClient().store.listProducts(), failed: false };
   } catch {
-    return [];
+    return { items: [] as StoreProduct[], failed: true };
   }
 }
 
 export default async function StoreCategoriesPage() {
   await requireAdminAccess();
-  const [categories, products] = await Promise.all([fetchCategories(), fetchProducts()]);
+  const [categoriesResult, productsResult] = await Promise.all([
+    fetchCategories(),
+    fetchProducts(),
+  ]);
+  const categories = categoriesResult.items;
+  const products = productsResult.items;
+  const loadFailed = categoriesResult.failed || productsResult.failed;
   const productMap = new Map(products.map((p) => [p.id, p.name]));
 
   return (
@@ -57,6 +65,7 @@ export default async function StoreCategoriesPage() {
         </div>
       }
     >
+      {loadFailed && <DataErrorNote what="store categories" />}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {categories.map((cat) => {
           const catProducts = cat.productIds

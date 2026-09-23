@@ -4,6 +4,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import CrudForm from "@/components/admin/CrudForm";
 import { createComplianceFramework, createComplianceControl } from "@/lib/module-actions";
 
@@ -17,6 +18,7 @@ type Control = { id: string; title: string; status: string };
 
 export default async function AdminComplianceReadinessPage({ searchParams }: Props) {
   await requireAdminAccess();
+  let loadFailed = false;
   const api = getApiClient();
   const { organizationId } = await searchParams;
 
@@ -28,6 +30,7 @@ export default async function AdminComplianceReadinessPage({ searchParams }: Pro
     organizations = r.items ?? [];
   } catch (error) {
     console.error("[admin/compliance-readiness]", error);
+    loadFailed = true;
   }
 
   const orgId = organizationId ?? organizations[0]?.id ?? null;
@@ -43,12 +46,14 @@ export default async function AdminComplianceReadinessPage({ searchParams }: Pro
             controls = (await api.compliance.listControls(f.id, orgId)) as unknown as Control[];
           } catch (error) {
             console.error("[admin/compliance-readiness]", error);
+            loadFailed = true;
           }
           return { ...f, controls };
         }),
       );
     } catch (error) {
       console.error("[admin/compliance-readiness]", error);
+      loadFailed = true;
     }
   }
 
@@ -64,6 +69,7 @@ export default async function AdminComplianceReadinessPage({ searchParams }: Pro
       description="Frameworks and controls for client readiness tracking."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="admin data" />}
       {organizations.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           {organizations.map((org) => (

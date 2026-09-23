@@ -24,6 +24,12 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 - Import/export is now backed by the live catalog: it exports the DB products and
   categories (JSON/CSV) and upserts them through the store API
   (`/admin/store/import-export`).
+- MFA `aal2` enforcement behind `MFA_ENFORCEMENT_ENABLED`
+  (`apps/api/src/lib/mfa.ts`, wired into `requireAuth`): an `aal1` session with a
+  verified TOTP factor is rejected with `403 MFA_REQUIRED` on non-`/auth/*`
+  routes; the web layouts redirect to the security step-up page. The factor
+  lookup is cached 60s and fails open with a warning, and users without a factor
+  are never blocked.
 - Public storefront now reads the DB-backed store catalog (`store_products` /
   `store_categories`) through the store API, with the bundled JSON retained as an
   offline/empty-table fallback — admin catalog edits are now visible on the

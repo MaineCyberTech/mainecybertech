@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { getEnv } from "../config/env";
 import { AppError } from "../types";
 import { logger } from "../lib/logger";
+import { requiresSecondFactor } from "../lib/mfa";
 
 declare global {
   namespace Express {
@@ -77,6 +78,13 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
             userId: decoded.sub,
             email: decoded.email ?? "unknown",
           };
+          if (await requiresSecondFactor(token, decoded.sub, req.originalUrl)) {
+            throw new AppError(
+              "MFA_REQUIRED",
+              "Complete multi-factor authentication to continue",
+              403,
+            );
+          }
           next();
           return;
         } catch (err) {
@@ -123,6 +131,10 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
       userId: data.user.id,
       email: data.user.email ?? "unknown",
     };
+
+    if (await requiresSecondFactor(token, data.user.id, req.originalUrl)) {
+      throw new AppError("MFA_REQUIRED", "Complete multi-factor authentication to continue", 403);
+    }
 
     next();
   } catch (error) {

@@ -4,6 +4,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import CrudForm from "@/components/admin/CrudForm";
 import { createKbArticle } from "@/lib/module-actions";
 
@@ -22,6 +23,7 @@ type Article = {
 
 export default async function AdminKnowledgeBasePage({ searchParams }: Props) {
   await requireAdminAccess();
+  let loadFailed = false;
   const api = getApiClient();
   const { organizationId } = await searchParams;
 
@@ -33,6 +35,7 @@ export default async function AdminKnowledgeBasePage({ searchParams }: Props) {
     organizations = r.items ?? [];
   } catch (error) {
     console.error("[admin/knowledge-base]", error);
+    loadFailed = true;
   }
 
   const orgId = organizationId ?? organizations[0]?.id ?? null;
@@ -46,6 +49,7 @@ export default async function AdminKnowledgeBasePage({ searchParams }: Props) {
       articles = r.items ?? [];
     } catch (error) {
       console.error("[admin/knowledge-base]", error);
+      loadFailed = true;
     }
   }
 
@@ -59,6 +63,7 @@ export default async function AdminKnowledgeBasePage({ searchParams }: Props) {
       description="Client-facing self-service articles."
       actions={null}
     >
+      {loadFailed && <DataErrorNote what="admin data" />}
       {organizations.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           {organizations.map((org) => (

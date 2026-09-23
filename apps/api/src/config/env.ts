@@ -38,6 +38,10 @@ const envSchema = z.object({
   // Shared bearer token gating GET /metrics. When set, the endpoint 404s
   // without it; Prometheus must send `Authorization: Bearer <token>`.
   METRICS_TOKEN: z.string().optional(),
+  // Opt-in MFA (aal2) enforcement: when "true", an aal1 session that has a
+  // verified TOTP factor is rejected with 403 MFA_REQUIRED on non-auth routes.
+  // See lib/mfa.ts. Default off so enabling it can never lock users out.
+  MFA_ENFORCEMENT_ENABLED: z.enum(["true", "false"]).optional(),
   // Comma-separated module keys whose reads/writes use the user-scoped (RLS)
   // client instead of the service-role client. Empty = service-role (default).
   // Read directly from process.env by getScopedClient; documented here for

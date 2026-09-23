@@ -36,11 +36,11 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-20 Verified)
 
-**3,205 tests, all passing. 372 suites.**
+**3,221 tests, all passing. 374 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,147         | 107    | Jest + supertest                  |
+| API     | 1,163         | 108    | Jest + supertest                  |
 | Web     | 1,674         | 255    | Jest + Testing Library            |
 | SDK     | 285           | 2      | Jest (mocked fetch)               |
 | Worker  | 99            | 9      | Jest (env schema + task handlers) |
@@ -50,7 +50,7 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 - **`portal-knowledge-base` E2E failure — FIXED & validated:** the 3 KB E2E tests now pass in prod mode. Root cause was the inline server-action wrapper `<form action={async (fd) => await createArticle(fd)}>` breaking under Next's production build; fixed via `action={createArticle}` + `void` return + `items` guard (commit `688f9fa`).
 - **E2E has known run-to-run flakiness:** data-dependent tests (notification bell, project/user/document detail, admin-documents modal) fail intermittently due to CI API/Supabase contention — identical seeds, yet the same test passes in one shard and fails in another. This is **not** a product regression and **not** caused by the CORS `*`→`http://localhost:3000` change. The E2E gate is **prod-only** (`deploy-do.yml` `if: name == 'prod'`), so prod deploy is currently blocked by this flakiness while dev (`develop`) deploy is unaffected. **Partially hardened 2026-09-18** (`44900e3`): artifact paths, action/navigation timeouts, shell-wait helper, bounded `networkidle` before axe, and a `withRetry()` around the layout profile fetch (the SDK does not retry 500). **Hardened 2026-09-20** (`2865f7b`): the ~35 `if (await locator.isVisible())` data gates across 12 specs now go through `visibleWithin()` in `e2e/fixtures.ts` (auto-waits for `state:"visible"`, tolerates absent seed data) so a slow render skips the branch instead of failing it. The documents modals already carry `role="dialog"`/`aria-modal`/`aria-labelledby`. **Also hardened 2026-09-20** (`bc46bb9`): `e2e.yml` installed the CLI via `supabase/setup-cli` with `version: latest`, which resolves `releases/latest` through the GitHub API and intermittently failed the job before Playwright ran (`Failed to resolve latest Supabase CLI release: rate limit exceeded`). Now installs the pinned `supabase@2.107.0` from npm (matching `supabase-migrations.yml`/`package.json`).
-- **MFA/SSO (net-new):** TOTP **management** backend + SDK shipped 2026-09-18 (`334d65f`) and is non-enforcing. An opt-in enrollment UI (`/portal/profile/security`) shipped in `471b63e`. Remaining: (1) enable MFA on the hosted Supabase project; (2) an `aal2` check in `requireAuth` so an aal1 session cannot call the API once a factor is enrolled (enforcement deliberately deferred — currently opt-in only); (3) a login second-factor step; (4) SSO (SAML/OIDC) — own larger effort, needs a paid Supabase plan + per-org provider config.
+- **MFA/SSO (net-new):** TOTP **management** backend + SDK shipped 2026-09-18 (`334d65f`). An opt-in enrollment UI (`/portal/profile/security`) shipped in `471b63e`. **`aal2` enforcement now exists** behind `MFA_ENFORCEMENT_ENABLED` (`apps/api/src/lib/mfa.ts`, wired into `requireAuth`): once enabled, an `aal1` session that has a _verified_ factor is rejected with `403 MFA_REQUIRED` on non-`/auth/*` routes, the web layouts step the user up to `/portal/profile/security`, the factor lookup is cached 60s and fails open with a warning (a GoTrue blip cannot lock users out), and a user with no factor is never blocked. Remaining: (1) enable MFA on the hosted Supabase project + set the flag; (2) a first-class login second-factor step (today the security page handles the challenge); (3) SSO (SAML/OIDC) — own larger effort, needs a paid Supabase plan + per-org provider config.
 
 ### Test patterns
 
@@ -468,9 +468,11 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
   `repo_audit` prompts reference `apps/api/src/lib/auth.ts` and
   `lib/supabase.ts` (actual: `middleware/auth.ts`, `services/supabase.ts`), and
   the hardening/alignment CI runner workflows are not installed.
-- ~7 admin pages still swallow (`.catch` shapes the script could not safely
-  transform): approval-requests, cab, client-portal, compliance-readiness,
-  knowledge-base, store/{products,categories,promotions,quotes}.
+- ```7 admin pages still swallow~~ **FIXED 2026-09-21** — `approval-requests`,
+  `cab`, `client-portal`, `compliance-readiness`, `knowledge-base` and
+  `store/{products,categories,promotions,quotes}` now set a `loadFailed` flag and
+  render `DataErrorNote` instead of a misleading empty/zero state.
+  ```
 - `terraform-do push` still fails on the `DO_API_TOKEN` 401 (rotate the token).
 
 ### Full repo audit + remediation (2026-09-20 session)

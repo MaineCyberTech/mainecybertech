@@ -94,6 +94,10 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         // Transient API errors (429 rate limit, 5xx) must NOT redirect to
         // /login — the middleware would bounce an authenticated user back
         // to /portal/dashboard, producing an infinite redirect loop.
+        // A session that still owes its second factor steps up instead.
+        if ((err as { code?: string })?.code === "MFA_REQUIRED") {
+          redirect("/portal/profile/security?mfa=required");
+        }
         const status = (err as { status?: number })?.status;
         return status === 401 || status === 403 ? null : { error: true };
       }),

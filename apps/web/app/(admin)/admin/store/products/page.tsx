@@ -3,6 +3,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { getApiClient } from "@/lib/api";
 import { toProductView, toCategoryView } from "@/lib/catalog/store-view";
 import ProductForm from "./ProductForm";
@@ -35,18 +36,18 @@ function statusPill(status: string) {
 async function fetchProducts() {
   try {
     const products = await getApiClient().store.listProducts();
-    return products.map(toProductView);
+    return { items: products.map(toProductView), failed: false };
   } catch {
-    return [];
+    return { items: [] as ReturnType<typeof toProductView>[], failed: true };
   }
 }
 
 async function fetchCategories() {
   try {
     const categories = await getApiClient().store.listCategories();
-    return categories.map(toCategoryView);
+    return { items: categories.map(toCategoryView), failed: false };
   } catch {
-    return [];
+    return { items: [] as ReturnType<typeof toCategoryView>[], failed: true };
   }
 }
 
@@ -56,7 +57,13 @@ export default async function AdminStoreProductsPage(props: {
   await requireAdminAccess();
   const { q, category, status } = await props.searchParams;
 
-  const [allProducts, categories] = await Promise.all([fetchProducts(), fetchCategories()]);
+  const [productsResult, categoriesResult] = await Promise.all([
+    fetchProducts(),
+    fetchCategories(),
+  ]);
+  const allProducts = productsResult.items;
+  const categories = categoriesResult.items;
+  const loadFailed = productsResult.failed || categoriesResult.failed;
   const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
 
   let filtered = allProducts;
@@ -99,6 +106,7 @@ export default async function AdminStoreProductsPage(props: {
         </ProductForm>
       }
     >
+      {loadFailed && <DataErrorNote what="store products" />}
       <form
         method="GET"
         action="/admin/store/products"

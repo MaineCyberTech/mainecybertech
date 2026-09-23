@@ -2,6 +2,7 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { validatePromotion, type Promotion } from "@/lib/catalog/promotions";
 import { getApiClient } from "@/lib/api";
 import type { StorePromotion } from "@mct/sdk";
@@ -56,19 +57,21 @@ function toPromotion(p: StorePromotion): Promotion {
   };
 }
 
-async function fetchPromotions(): Promise<Promotion[]> {
+async function fetchPromotions(): Promise<{ items: Promotion[]; failed: boolean }> {
   try {
     const promotions = await getApiClient().store.listPromotions();
-    return promotions.map(toPromotion);
+    return { items: promotions.map(toPromotion), failed: false };
   } catch {
-    return [];
+    return { items: [], failed: true };
   }
 }
 
 export default async function AdminPromotionsPage() {
   await requireAdminAccess();
 
-  const promotions = await fetchPromotions();
+  const promotionsResult = await fetchPromotions();
+  const promotions = promotionsResult.items;
+  const loadFailed = promotionsResult.failed;
 
   return (
     <AdminPageShell
@@ -92,6 +95,7 @@ export default async function AdminPromotionsPage() {
         </PromoForm>
       }
     >
+      {loadFailed && <DataErrorNote what="store promotions" />}
       {/* Desktop table */}
       <div className="hidden overflow-x-auto rounded-lg border border-white/10 md:block">
         <table className="w-full text-sm">
