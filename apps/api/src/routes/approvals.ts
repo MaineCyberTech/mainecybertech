@@ -11,6 +11,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import {
@@ -179,7 +180,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("approvals", "create"), async (req, res, next) => {
   try {
     const parsed = createApprovalSchema.parse(req.body);
     const supabase = getScopedClient(req, "approvals", "write");
@@ -231,57 +232,64 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateApprovalSchema.parse(req.body);
-    const supabase = getScopedClient(req, "approvals", "write");
+router.patch(
+  "/:id",
+  requirePermission("approvals", "edit"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateApprovalSchema.parse(req.body);
+      const supabase = getScopedClient(req, "approvals", "write");
 
-    const current = await loadOwned(
-      req,
-      supabase as any,
-      "approval_requests",
-      String(req.params.id) as string,
-      "id, version, organization_id",
-    );
-    checkVersionMatch(current.version as number, req.ifMatchVersion);
+      const current = await loadOwned(
+        req,
+        supabase as any,
+        "approval_requests",
+        String(req.params.id) as string,
+        "id, version, organization_id",
+      );
+      checkVersionMatch(current.version as number, req.ifMatchVersion);
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.requestSubject !== undefined) updateData.request_subject = parsed.requestSubject;
-    if (parsed.requestBody !== undefined) updateData.request_body = parsed.requestBody;
-    if (parsed.requestMetadata !== undefined) updateData.request_metadata = parsed.requestMetadata;
-    if (parsed.priority !== undefined) updateData.priority = parsed.priority;
-    if (parsed.assignedTo !== undefined) updateData.assigned_to = parsed.assignedTo;
-    if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
-    if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
+      const updateData: Record<string, unknown> = {};
+      if (parsed.requestSubject !== undefined) updateData.request_subject = parsed.requestSubject;
+      if (parsed.requestBody !== undefined) updateData.request_body = parsed.requestBody;
+      if (parsed.requestMetadata !== undefined)
+        updateData.request_metadata = parsed.requestMetadata;
+      if (parsed.priority !== undefined) updateData.priority = parsed.priority;
+      if (parsed.assignedTo !== undefined) updateData.assigned_to = parsed.assignedTo;
+      if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
+      if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
 
-    updateData.version = (current.version as number) + 1;
+      updateData.version = (current.version as number) + 1;
 
-    const { data, error } = await supabase
-      .from("approval_requests")
-      .update(updateData as never)
-      .eq("id", String(req.params.id) as string)
-      .eq("version", current.version as number)
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("approval_requests")
+        .update(updateData as never)
+        .eq("id", String(req.params.id) as string)
+        .eq("version", current.version as number)
+        .select()
+        .single();
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("VERSION_CONFLICT", "Request was modified by another user", 409);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data)
+        throw new AppError("VERSION_CONFLICT", "Request was modified by another user", 409);
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "approval.updated",
-      entityType: "approval_request",
-      entityId: data.id,
-      metadata: parsed,
-    });
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "approval.updated",
+        entityType: "approval_request",
+        entityId: data.id,
+        metadata: parsed,
+      });
 
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("approvals", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "approvals", "write");
     await loadOwned(
@@ -311,7 +319,7 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/:id/approve", async (req, res, next) => {
+router.post("/:id/approve", requirePermission("approvals", "edit"), async (req, res, next) => {
   try {
     const parsed = approveRequestSchema.parse(req.body);
     const supabase = getScopedClient(req, "approvals", "write");
@@ -346,7 +354,7 @@ router.post("/:id/approve", async (req, res, next) => {
   }
 });
 
-router.post("/:id/reject", async (req, res, next) => {
+router.post("/:id/reject", requirePermission("approvals", "edit"), async (req, res, next) => {
   try {
     const parsed = rejectRequestSchema.parse(req.body);
     const supabase = getScopedClient(req, "approvals", "write");
@@ -381,7 +389,7 @@ router.post("/:id/reject", async (req, res, next) => {
   }
 });
 
-router.post("/:id/cancel", async (req, res, next) => {
+router.post("/:id/cancel", requirePermission("approvals", "edit"), async (req, res, next) => {
   try {
     const parsed = cancelRequestSchema.parse(req.body);
     const supabase = getScopedClient(req, "approvals", "write");
@@ -442,7 +450,7 @@ router.get("/:id/comments", async (req, res, next) => {
   }
 });
 
-router.post("/:id/comments", async (req, res, next) => {
+router.post("/:id/comments", requirePermission("approvals", "edit"), async (req, res, next) => {
   try {
     const parsed = addApprovalCommentSchema.parse(req.body);
     const supabase = getScopedClient(req, "approvals", "write");

@@ -197,81 +197,86 @@ router.post("/", requirePermission("tickets", "create"), async (req, res, next) 
   }
 });
 
-router.patch("/:id", requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateTicketSchema.parse(req.body);
-    const supabase = getScopedClient(req, "tickets", "write");
-    const orgId = req.query.organization_id as string | undefined;
+router.patch(
+  "/:id",
+  requirePermission("tickets", "edit"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateTicketSchema.parse(req.body);
+      const supabase = getScopedClient(req, "tickets", "write");
+      const orgId = req.query.organization_id as string | undefined;
 
-    let currentQuery = supabase.from("tickets").select("version").eq("id", String(req.params.id));
-    if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
-    const { data: current, error: fetchError } = await currentQuery.single();
+      let currentQuery = supabase.from("tickets").select("version").eq("id", String(req.params.id));
+      if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+      const { data: current, error: fetchError } = await currentQuery.single();
 
-    if (fetchError || !current) {
-      throw new AppError("NOT_FOUND", "Ticket not found", 404);
-    }
-
-    checkVersionMatch(current.version, req.ifMatchVersion);
-
-    const updateData: Record<string, unknown> = {};
-    if (parsed.title !== undefined) updateData.title = parsed.title;
-    if (parsed.description !== undefined) updateData.description = parsed.description;
-    if (parsed.status !== undefined) updateData.status = parsed.status;
-    if (parsed.priority !== undefined) updateData.priority = parsed.priority;
-    if (parsed.category !== undefined) updateData.category = parsed.category;
-    if (parsed.assignedTo !== undefined) updateData.assigned_to = parsed.assignedTo;
-    if (parsed.externalJsmIssueKey !== undefined)
-      updateData.external_jsm_issue_key = parsed.externalJsmIssueKey;
-    if (parsed.labels !== undefined) updateData.labels = parsed.labels;
-    if (parsed.resolution !== undefined) updateData.resolution = parsed.resolution;
-
-    updateData.version = current.version + 1;
-
-    let query = supabase
-      .from("tickets")
-      .update(updateData as never)
-      .eq("id", String(req.params.id))
-      .eq("version", current.version as number);
-    if (orgId) query = query.eq("organization_id", orgId);
-    const { data, error } = await query.select().single();
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("VERSION_CONFLICT", "Ticket was modified by another user", 409);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "ticket.update",
-      entityType: "ticket",
-      entityId: data.id,
-      metadata: { ...parsed, version: data.version },
-    });
-
-    if (parsed.assignedTo) {
-      const { data: assignee } = await supabase
-        .from("profiles")
-        .select("id, email, full_name")
-        .eq("id", parsed.assignedTo)
-        .single();
-
-      if (assignee) {
-        await notifyAndEmail({
-          userId: assignee.id,
-          organizationId: data.organization_id,
-          title: "Ticket Assigned to You",
-          body: `"${data.title}" has been assigned to you by ${req.authUser!.email}.`,
-          module: "tickets",
-          moduleId: data.id,
-          action: "assigned",
-          email: assignee.email ?? undefined,
-        });
+      if (fetchError || !current) {
+        throw new AppError("NOT_FOUND", "Ticket not found", 404);
       }
-    }
 
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      checkVersionMatch(current.version, req.ifMatchVersion);
+
+      const updateData: Record<string, unknown> = {};
+      if (parsed.title !== undefined) updateData.title = parsed.title;
+      if (parsed.description !== undefined) updateData.description = parsed.description;
+      if (parsed.status !== undefined) updateData.status = parsed.status;
+      if (parsed.priority !== undefined) updateData.priority = parsed.priority;
+      if (parsed.category !== undefined) updateData.category = parsed.category;
+      if (parsed.assignedTo !== undefined) updateData.assigned_to = parsed.assignedTo;
+      if (parsed.externalJsmIssueKey !== undefined)
+        updateData.external_jsm_issue_key = parsed.externalJsmIssueKey;
+      if (parsed.labels !== undefined) updateData.labels = parsed.labels;
+      if (parsed.resolution !== undefined) updateData.resolution = parsed.resolution;
+
+      updateData.version = current.version + 1;
+
+      let query = supabase
+        .from("tickets")
+        .update(updateData as never)
+        .eq("id", String(req.params.id))
+        .eq("version", current.version as number);
+      if (orgId) query = query.eq("organization_id", orgId);
+      const { data, error } = await query.select().single();
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("VERSION_CONFLICT", "Ticket was modified by another user", 409);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "ticket.update",
+        entityType: "ticket",
+        entityId: data.id,
+        metadata: { ...parsed, version: data.version },
+      });
+
+      if (parsed.assignedTo) {
+        const { data: assignee } = await supabase
+          .from("profiles")
+          .select("id, email, full_name")
+          .eq("id", parsed.assignedTo)
+          .single();
+
+        if (assignee) {
+          await notifyAndEmail({
+            userId: assignee.id,
+            organizationId: data.organization_id,
+            title: "Ticket Assigned to You",
+            body: `"${data.title}" has been assigned to you by ${req.authUser!.email}.`,
+            module: "tickets",
+            moduleId: data.id,
+            action: "assigned",
+            email: assignee.email ?? undefined,
+          });
+        }
+      }
+
+      res.json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/:id/comments", async (req, res, next) => {
   try {
@@ -298,7 +303,7 @@ router.get("/:id/comments", async (req, res, next) => {
   }
 });
 
-router.post("/:id/comments", async (req, res, next) => {
+router.post("/:id/comments", requirePermission("tickets", "edit"), async (req, res, next) => {
   try {
     const parsed = addTicketCommentSchema.parse(req.body);
     const supabase = getScopedClient(req, "tickets", "write");
@@ -369,88 +374,92 @@ router.post("/:id/comments", async (req, res, next) => {
   }
 });
 
-router.patch("/:id/comments/:commentId", async (req, res, next) => {
-  try {
-    const parsed = updateTicketCommentSchema.parse(req.body);
-    const supabase = getScopedClient(req, "tickets", "write");
+router.patch(
+  "/:id/comments/:commentId",
+  requirePermission("tickets", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = updateTicketCommentSchema.parse(req.body);
+      const supabase = getScopedClient(req, "tickets", "write");
 
-    const { data: existing, error: fetchError } = await supabase
-      .from("ticket_comments")
-      .select("id, author_id, organization_id, body, created_at")
-      .eq("id", String(req.params.commentId))
-      .eq("ticket_id", String(req.params.id))
-      .single();
+      const { data: existing, error: fetchError } = await supabase
+        .from("ticket_comments")
+        .select("id, author_id, organization_id, body, created_at")
+        .eq("id", String(req.params.commentId))
+        .eq("ticket_id", String(req.params.id))
+        .single();
 
-    if (fetchError || !existing) throw new AppError("NOT_FOUND", "Comment not found", 404);
+      if (fetchError || !existing) throw new AppError("NOT_FOUND", "Comment not found", 404);
 
-    // Tenant check: the comment's ticket must belong to the comment's org,
-    // and (when the caller is scoped to an org) that org must match.
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId && orgId !== existing.organization_id) {
-      throw new AppError("FORBIDDEN", "Not authorized for this comment", 403);
-    }
-
-    const { data: ticket } = await supabase
-      .from("tickets")
-      .select("id, organization_id")
-      .eq("id", String(req.params.id))
-      .single();
-    if (!ticket || ticket.organization_id !== existing.organization_id) {
-      throw new AppError("NOT_FOUND", "Comment not found", 404);
-    }
-
-    // Author check: only the comment author (or an admin of the comment's org)
-    // may edit it.
-    const isAuthor = existing.author_id === req.authUser!.userId;
-    if (!isAuthor) {
-      const { data: memberships } = await supabase
-        .from("memberships")
-        .select("roles!inner(id, key)")
-        .eq("user_id", req.authUser!.userId)
-        .eq("organization_id", existing.organization_id)
-        .eq("status", "approved");
-
-      const isOrgAdmin =
-        memberships?.some((row) => isPlatformAdminKey(roleKeyOf(row.roles))) ?? false;
-
-      if (!isOrgAdmin) {
-        throw new AppError("FORBIDDEN", "Only the comment author can edit this comment", 403);
+      // Tenant check: the comment's ticket must belong to the comment's org,
+      // and (when the caller is scoped to an org) that org must match.
+      const orgId = req.query.organization_id as string | undefined;
+      if (orgId && orgId !== existing.organization_id) {
+        throw new AppError("FORBIDDEN", "Not authorized for this comment", 403);
       }
+
+      const { data: ticket } = await supabase
+        .from("tickets")
+        .select("id, organization_id")
+        .eq("id", String(req.params.id))
+        .single();
+      if (!ticket || ticket.organization_id !== existing.organization_id) {
+        throw new AppError("NOT_FOUND", "Comment not found", 404);
+      }
+
+      // Author check: only the comment author (or an admin of the comment's org)
+      // may edit it.
+      const isAuthor = existing.author_id === req.authUser!.userId;
+      if (!isAuthor) {
+        const { data: memberships } = await supabase
+          .from("memberships")
+          .select("roles!inner(id, key)")
+          .eq("user_id", req.authUser!.userId)
+          .eq("organization_id", existing.organization_id)
+          .eq("status", "approved");
+
+        const isOrgAdmin =
+          memberships?.some((row) => isPlatformAdminKey(roleKeyOf(row.roles))) ?? false;
+
+        if (!isOrgAdmin) {
+          throw new AppError("FORBIDDEN", "Only the comment author can edit this comment", 403);
+        }
+      }
+
+      // 5-minute edit window check
+      const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
+      if (new Date(existing.created_at) < fiveMinAgo)
+        throw new AppError(
+          "FORBIDDEN",
+          "Comment can only be edited within 5 minutes of posting",
+          403,
+        );
+
+      const { data, error } = await supabase
+        .from("ticket_comments")
+        .update({ body: parsed.body, edited_at: new Date().toISOString() })
+        .eq("id", String(req.params.commentId))
+        .eq("organization_id", existing.organization_id)
+        .select()
+        .single();
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+      await logAuditEvent({
+        organizationId: existing.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "ticket.comment.update",
+        entityType: "ticket_comment",
+        entityId: existing.id,
+        metadata: { previousBody: existing.body },
+      });
+
+      res.json(success(data));
+    } catch (error) {
+      next(error);
     }
-
-    // 5-minute edit window check
-    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000);
-    if (new Date(existing.created_at) < fiveMinAgo)
-      throw new AppError(
-        "FORBIDDEN",
-        "Comment can only be edited within 5 minutes of posting",
-        403,
-      );
-
-    const { data, error } = await supabase
-      .from("ticket_comments")
-      .update({ body: parsed.body, edited_at: new Date().toISOString() })
-      .eq("id", String(req.params.commentId))
-      .eq("organization_id", existing.organization_id)
-      .select()
-      .single();
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-
-    await logAuditEvent({
-      organizationId: existing.organization_id,
-      actorUserId: req.authUser!.userId,
-      action: "ticket.comment.update",
-      entityType: "ticket_comment",
-      entityId: existing.id,
-      metadata: { previousBody: existing.body },
-    });
-
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
 
 router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, next) => {
   try {

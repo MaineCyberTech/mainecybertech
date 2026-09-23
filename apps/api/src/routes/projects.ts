@@ -500,58 +500,67 @@ router.post("/", requirePermission("projects", "create"), async (req, res, next)
   }
 });
 
-router.patch("/:id", requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateProjectSchema.parse(req.body);
-    const supabase = getScopedClient(req, "projects", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+router.patch(
+  "/:id",
+  requirePermission("projects", "edit"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateProjectSchema.parse(req.body);
+      const supabase = getScopedClient(req, "projects", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    let currentQuery = supabase.from("projects").select("version").eq("id", String(req.params.id));
-    if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
-    const { data: current, error: fetchError } = await currentQuery.single();
+      let currentQuery = supabase
+        .from("projects")
+        .select("version")
+        .eq("id", String(req.params.id));
+      if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+      const { data: current, error: fetchError } = await currentQuery.single();
 
-    if (fetchError || !current) {
-      throw new AppError("NOT_FOUND", "Project not found", 404);
+      if (fetchError || !current) {
+        throw new AppError("NOT_FOUND", "Project not found", 404);
+      }
+
+      checkVersionMatch(current.version, req.ifMatchVersion);
+
+      const updateData: Record<string, unknown> = {};
+      if (parsed.name !== undefined) updateData.name = parsed.name;
+      if (parsed.description !== undefined) updateData.description = parsed.description;
+      if (parsed.status !== undefined) updateData.status = parsed.status;
+      if (parsed.priority !== undefined) updateData.priority = parsed.priority;
+      if (parsed.startsAt !== undefined) updateData.starts_at = parsed.startsAt;
+      if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
+      if (parsed.externalJiraProjectKey !== undefined)
+        updateData.external_jira_project_key = parsed.externalJiraProjectKey;
+
+      updateData.version = current.version + 1;
+
+      let updateQuery = supabase
+        .from("projects")
+        .update(updateData as never)
+        .eq("id", String(req.params.id))
+        .eq("version", current.version as number);
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error } = await updateQuery.select().single();
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data)
+        throw new AppError("VERSION_CONFLICT", "Project was modified by another user", 409);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "project.update",
+        entityType: "project",
+        entityId: data.id,
+        metadata: parsed,
+      });
+
+      res.json(success(data));
+    } catch (error) {
+      next(error);
     }
-
-    checkVersionMatch(current.version, req.ifMatchVersion);
-
-    const updateData: Record<string, unknown> = {};
-    if (parsed.name !== undefined) updateData.name = parsed.name;
-    if (parsed.description !== undefined) updateData.description = parsed.description;
-    if (parsed.status !== undefined) updateData.status = parsed.status;
-    if (parsed.priority !== undefined) updateData.priority = parsed.priority;
-    if (parsed.startsAt !== undefined) updateData.starts_at = parsed.startsAt;
-    if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
-    if (parsed.externalJiraProjectKey !== undefined)
-      updateData.external_jira_project_key = parsed.externalJiraProjectKey;
-
-    updateData.version = current.version + 1;
-
-    let updateQuery = supabase
-      .from("projects")
-      .update(updateData as never)
-      .eq("id", String(req.params.id))
-      .eq("version", current.version as number);
-    if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
-    const { data, error } = await updateQuery.select().single();
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("VERSION_CONFLICT", "Project was modified by another user", 409);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "project.update",
-      entityType: "project",
-      entityId: data.id,
-      metadata: parsed,
-    });
-
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
 
 router.delete("/:id", requirePermission("projects", "delete"), async (req, res, next) => {
   try {
@@ -605,7 +614,7 @@ router.get("/:id/tasks", async (req, res, next) => {
   }
 });
 
-router.post("/:id/tasks", async (req, res, next) => {
+router.post("/:id/tasks", requirePermission("projects", "edit"), async (req, res, next) => {
   try {
     const parsed = createTaskSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");
@@ -654,105 +663,114 @@ router.post("/:id/tasks", async (req, res, next) => {
   }
 });
 
-router.patch("/:id/tasks/:taskId", requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateTaskSchema.parse(req.body);
-    const supabase = getScopedClient(req, "projects", "write");
-    await assertProjectInOrg(
-      String(req.params.id),
-      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
-    );
+router.patch(
+  "/:id/tasks/:taskId",
+  requirePermission("projects", "edit"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateTaskSchema.parse(req.body);
+      const supabase = getScopedClient(req, "projects", "write");
+      await assertProjectInOrg(
+        String(req.params.id),
+        (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+      );
 
-    const { data: currentTask, error: taskFetchError } = await supabase
-      .from("project_tasks")
-      .select("version")
-      .eq("id", String(req.params.taskId))
-      .single();
+      const { data: currentTask, error: taskFetchError } = await supabase
+        .from("project_tasks")
+        .select("version")
+        .eq("id", String(req.params.taskId))
+        .single();
 
-    if (taskFetchError || !currentTask) {
-      throw new AppError("NOT_FOUND", "Task not found", 404);
+      if (taskFetchError || !currentTask) {
+        throw new AppError("NOT_FOUND", "Task not found", 404);
+      }
+
+      checkVersionMatch(currentTask.version, req.ifMatchVersion);
+
+      const updateData: Record<string, unknown> = {};
+      if (parsed.title !== undefined) updateData.title = parsed.title;
+      if (parsed.description !== undefined) updateData.description = parsed.description;
+      if (parsed.details !== undefined) updateData.details = parsed.details;
+      if (parsed.status !== undefined) updateData.status = parsed.status;
+      if (parsed.sortOrder !== undefined) updateData.sort_order = parsed.sortOrder;
+      if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
+      if (parsed.approvalRequired !== undefined)
+        updateData.approval_required = parsed.approvalRequired;
+      if (parsed.ownerId !== undefined) updateData.owner_id = parsed.ownerId;
+      if (parsed.approvedBy !== undefined) updateData.approved_by = parsed.approvedBy;
+      if (parsed.approvedAt !== undefined) updateData.approved_at = parsed.approvedAt;
+      if (parsed.externalJiraIssueKey !== undefined)
+        updateData.external_jira_issue_key = parsed.externalJiraIssueKey;
+      if (parsed.issueType !== undefined) updateData.issue_type = parsed.issueType;
+      if (parsed.priority !== undefined) updateData.priority = parsed.priority;
+      if (parsed.labels !== undefined) updateData.labels = parsed.labels;
+      if (parsed.parentTaskId !== undefined) updateData.parent_task_id = parsed.parentTaskId;
+      if (parsed.epicKey !== undefined) updateData.epic_key = parsed.epicKey;
+      if (parsed.resolution !== undefined) updateData.resolution = parsed.resolution;
+      if (parsed.sprint !== undefined) updateData.sprint = parsed.sprint;
+
+      updateData.version = currentTask.version + 1;
+
+      const { data, error } = await supabase
+        .from("project_tasks")
+        .update(updateData as never)
+        .eq("version", currentTask.version)
+        .eq("id", String(req.params.taskId))
+        .eq("project_id", String(req.params.id))
+        .select()
+        .single();
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Task not found", 404);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "project.task.update",
+        entityType: "project_task",
+        entityId: data.id,
+        metadata: { projectId: String(req.params.id), ...parsed },
+      });
+
+      res.json(success(data));
+    } catch (error) {
+      next(error);
     }
+  },
+);
 
-    checkVersionMatch(currentTask.version, req.ifMatchVersion);
+router.delete(
+  "/:id/tasks/:taskId",
+  requirePermission("projects", "delete"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "projects", "write");
+      await assertProjectInOrg(
+        String(req.params.id),
+        (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
+      );
+      const { error } = await supabase
+        .from("project_tasks")
+        .delete()
+        .eq("id", String(req.params.taskId))
+        .eq("project_id", String(req.params.id));
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.title !== undefined) updateData.title = parsed.title;
-    if (parsed.description !== undefined) updateData.description = parsed.description;
-    if (parsed.details !== undefined) updateData.details = parsed.details;
-    if (parsed.status !== undefined) updateData.status = parsed.status;
-    if (parsed.sortOrder !== undefined) updateData.sort_order = parsed.sortOrder;
-    if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
-    if (parsed.approvalRequired !== undefined)
-      updateData.approval_required = parsed.approvalRequired;
-    if (parsed.ownerId !== undefined) updateData.owner_id = parsed.ownerId;
-    if (parsed.approvedBy !== undefined) updateData.approved_by = parsed.approvedBy;
-    if (parsed.approvedAt !== undefined) updateData.approved_at = parsed.approvedAt;
-    if (parsed.externalJiraIssueKey !== undefined)
-      updateData.external_jira_issue_key = parsed.externalJiraIssueKey;
-    if (parsed.issueType !== undefined) updateData.issue_type = parsed.issueType;
-    if (parsed.priority !== undefined) updateData.priority = parsed.priority;
-    if (parsed.labels !== undefined) updateData.labels = parsed.labels;
-    if (parsed.parentTaskId !== undefined) updateData.parent_task_id = parsed.parentTaskId;
-    if (parsed.epicKey !== undefined) updateData.epic_key = parsed.epicKey;
-    if (parsed.resolution !== undefined) updateData.resolution = parsed.resolution;
-    if (parsed.sprint !== undefined) updateData.sprint = parsed.sprint;
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    updateData.version = currentTask.version + 1;
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "project.task.delete",
+        entityType: "project_task",
+        entityId: String(req.params.taskId),
+        metadata: { projectId: String(req.params.id) },
+      });
 
-    const { data, error } = await supabase
-      .from("project_tasks")
-      .update(updateData as never)
-      .eq("version", currentTask.version)
-      .eq("id", String(req.params.taskId))
-      .eq("project_id", String(req.params.id))
-      .select()
-      .single();
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Task not found", 404);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "project.task.update",
-      entityType: "project_task",
-      entityId: data.id,
-      metadata: { projectId: String(req.params.id), ...parsed },
-    });
-
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/:id/tasks/:taskId", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "projects", "write");
-    await assertProjectInOrg(
-      String(req.params.id),
-      (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
-    );
-    const { error } = await supabase
-      .from("project_tasks")
-      .delete()
-      .eq("id", String(req.params.taskId))
-      .eq("project_id", String(req.params.id));
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "project.task.delete",
-      entityType: "project_task",
-      entityId: String(req.params.taskId),
-      metadata: { projectId: String(req.params.id) },
-    });
-
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/:id/tasks/comments", async (req, res, next) => {
   try {

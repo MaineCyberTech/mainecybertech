@@ -5,6 +5,7 @@ import { addTimelineEvent } from "../services/approvals";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { assertResourceOrg } from "../lib/tenant";
@@ -152,7 +153,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("assets", "create"), async (req, res, next) => {
   try {
     const parsed = createAssetSchema.parse(req.body);
     const supabase = getScopedClient(req, "assets", "write");
@@ -217,79 +218,84 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateAssetSchema.parse(req.body);
-    const supabase = getScopedClient(req, "assets", "write");
+router.patch(
+  "/:id",
+  requirePermission("assets", "edit"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateAssetSchema.parse(req.body);
+      const supabase = getScopedClient(req, "assets", "write");
 
-    const { data: current, error: fetchError } = await supabase
-      .from("assets")
-      .select("version, organization_id")
-      .eq("id", String(req.params.id))
-      .single();
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Asset not found", 404);
-    assertResourceOrg(req, (current as { organization_id?: string }).organization_id);
-    checkVersionMatch(current.version, req.ifMatchVersion);
+      const { data: current, error: fetchError } = await supabase
+        .from("assets")
+        .select("version, organization_id")
+        .eq("id", String(req.params.id))
+        .single();
+      if (fetchError || !current) throw new AppError("NOT_FOUND", "Asset not found", 404);
+      assertResourceOrg(req, (current as { organization_id?: string }).organization_id);
+      checkVersionMatch(current.version, req.ifMatchVersion);
 
-    const fieldMap: Record<string, string> = {
-      name: "name",
-      assetType: "asset_type",
-      make: "make",
-      model: "model",
-      serialNumber: "serial_number",
-      assetTag: "asset_tag",
-      qrLabel: "qr_label",
-      status: "status",
-      location: "location",
-      site: "site",
-      purchaseDate: "purchase_date",
-      purchasePrice: "purchase_price",
-      warrantyExpires: "warranty_expires",
-      replacementRecommended: "replacement_recommended",
-      lifecycleScore: "lifecycle_score",
-      assignedTo: "assigned_to",
-      maintenanceNotes: "maintenance_notes",
-      supportedUntil: "supported_until",
-      vendorSupportStatus: "vendor_support_status",
-      ipAddress: "ip_address",
-      macAddress: "mac_address",
-      operatingSystem: "operating_system",
-      contractReference: "contract_reference",
-      visibility: "visibility",
-      metadata: "metadata",
-    };
+      const fieldMap: Record<string, string> = {
+        name: "name",
+        assetType: "asset_type",
+        make: "make",
+        model: "model",
+        serialNumber: "serial_number",
+        assetTag: "asset_tag",
+        qrLabel: "qr_label",
+        status: "status",
+        location: "location",
+        site: "site",
+        purchaseDate: "purchase_date",
+        purchasePrice: "purchase_price",
+        warrantyExpires: "warranty_expires",
+        replacementRecommended: "replacement_recommended",
+        lifecycleScore: "lifecycle_score",
+        assignedTo: "assigned_to",
+        maintenanceNotes: "maintenance_notes",
+        supportedUntil: "supported_until",
+        vendorSupportStatus: "vendor_support_status",
+        ipAddress: "ip_address",
+        macAddress: "mac_address",
+        operatingSystem: "operating_system",
+        contractReference: "contract_reference",
+        visibility: "visibility",
+        metadata: "metadata",
+      };
 
-    const updateData: Record<string, unknown> = {};
-    for (const [key, col] of Object.entries(fieldMap)) {
-      if ((parsed as Record<string, unknown>)[key] !== undefined)
-        updateData[col] = (parsed as Record<string, unknown>)[key];
+      const updateData: Record<string, unknown> = {};
+      for (const [key, col] of Object.entries(fieldMap)) {
+        if ((parsed as Record<string, unknown>)[key] !== undefined)
+          updateData[col] = (parsed as Record<string, unknown>)[key];
+      }
+      updateData.version = current.version + 1;
+
+      const { data, error } = await supabase
+        .from("assets")
+        .update(updateData as never)
+        .eq("id", String(req.params.id))
+        .eq("version", current.version as number)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("VERSION_CONFLICT", "Asset was modified by another user", 409);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "asset.updated",
+        entityType: "asset",
+        entityId: data.id,
+        metadata: parsed,
+      });
+      res.json(success(data));
+    } catch (error) {
+      next(error);
     }
-    updateData.version = current.version + 1;
+  },
+);
 
-    const { data, error } = await supabase
-      .from("assets")
-      .update(updateData as never)
-      .eq("id", String(req.params.id))
-      .eq("version", current.version as number)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("VERSION_CONFLICT", "Asset was modified by another user", 409);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "asset.updated",
-      entityType: "asset",
-      entityId: data.id,
-      metadata: parsed,
-    });
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("assets", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "assets", "write");
     const { data: asset, error: fetchError } = await supabase

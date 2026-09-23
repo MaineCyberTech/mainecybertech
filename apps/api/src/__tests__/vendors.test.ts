@@ -1,6 +1,6 @@
 ﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
+import { createTestApp, createMockBuilder, tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -28,9 +28,16 @@ jest.mock("../config/env", () => ({
     JSM_REQUEST_TYPE_ID: "",
   }),
 }));
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
+jest.mock("../services/supabase", () => ({
+  getSupabaseAdmin: jest.fn(),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
+}));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 
 import { getSupabaseAdmin } from "../services/supabase";
 import vendorsRouter from "../routes/vendors";
@@ -61,7 +68,9 @@ describe("Vendors API", () => {
 
   it("lists contracts", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
+    supabase.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })),
+    );
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contracts")
       .set("Authorization", authToken);
@@ -70,7 +79,9 @@ describe("Vendors API", () => {
 
   it("lists contacts", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
+    supabase.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })),
+    );
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contacts")
       .set("Authorization", authToken);
@@ -221,7 +232,9 @@ describe("Vendors API", () => {
 
   it("filters contracts by status", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
+    supabase.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })),
+    );
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contracts")
       .query({ organization_id: testOrgId, status: "expiring" })
@@ -231,7 +244,9 @@ describe("Vendors API", () => {
 
   it("searches contracts by vendor name", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
+    supabase.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })),
+    );
     const res = await request(app)
       .get("/api/v1/vendors/vendor-contracts")
       .query({ organization_id: testOrgId, search: "Microsoft" })

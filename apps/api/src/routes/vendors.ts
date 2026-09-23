@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import {
   createVendorContractSchema,
   updateVendorContractSchema,
@@ -67,7 +68,7 @@ function crudEndpoints(
     }
   });
 
-  router.post(`/${resource}`, async (req, res, next) => {
+  router.post(`/${resource}`, requirePermission(resource, "create"), async (req, res, next) => {
     try {
       const parsed = createSchema.parse(req.body);
       const supabase = getScopedClient(req, "vendors", "write");
@@ -99,7 +100,7 @@ function crudEndpoints(
     }
   });
 
-  router.patch(`/${resource}/:id`, async (req, res, next) => {
+  router.patch(`/${resource}/:id`, requirePermission(resource, "edit"), async (req, res, next) => {
     try {
       const parsed = updateSchema.parse(req.body);
       const supabase = getScopedClient(req, "vendors", "write");
@@ -132,26 +133,30 @@ function crudEndpoints(
     }
   });
 
-  router.delete(`/${resource}/:id`, async (req, res, next) => {
-    try {
-      const supabase = getScopedClient(req, "vendors", "write");
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string);
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        actorUserId: req.authUser!.userId,
-        action: `${resource}.deleted`,
-        entityType: resource,
-        entityId: String(req.params.id),
-      });
-      res.status(204).send();
-    } catch (err) {
-      next(err);
-    }
-  });
+  router.delete(
+    `/${resource}/:id`,
+    requirePermission(resource, "delete"),
+    async (req, res, next) => {
+      try {
+        const supabase = getScopedClient(req, "vendors", "write");
+        const { error } = await supabase
+          .from(table)
+          .delete()
+          .eq("id", String(req.params.id))
+          .eq("organization_id", req.query.organization_id as string);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          actorUserId: req.authUser!.userId,
+          action: `${resource}.deleted`,
+          entityType: resource,
+          entityId: String(req.params.id),
+        });
+        res.status(204).send();
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
 }
 
 function snakeCase(str: string): string {

@@ -6,6 +6,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import {
@@ -149,7 +150,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("findings", "create"), async (req, res, next) => {
   try {
     const parsed = createFindingSchema.parse(req.body);
     const supabase = getScopedClient(req, "findings", "write");
@@ -204,69 +205,78 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateFindingSchema.parse(req.body);
-    const supabase = getScopedClient(req, "findings", "write");
+router.patch(
+  "/:id",
+  requirePermission("findings", "edit"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateFindingSchema.parse(req.body);
+      const supabase = getScopedClient(req, "findings", "write");
 
-    const current = await loadOwned(
-      req,
-      supabase as any,
-      "findings",
-      String(req.params.id) as string,
-      "id, version, organization_id",
-    );
-    checkVersionMatch(current.version as number, req.ifMatchVersion);
+      const current = await loadOwned(
+        req,
+        supabase as any,
+        "findings",
+        String(req.params.id) as string,
+        "id, version, organization_id",
+      );
+      checkVersionMatch(current.version as number, req.ifMatchVersion);
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.title !== undefined) updateData.title = parsed.title;
-    if (parsed.description !== undefined) updateData.description = parsed.description;
-    if (parsed.severity !== undefined) updateData.severity = parsed.severity;
-    if (parsed.status !== undefined) {
-      updateData.status = parsed.status;
-      if (parsed.status === "resolved") updateData.resolved_at = new Date().toISOString();
+      const updateData: Record<string, unknown> = {};
+      if (parsed.title !== undefined) updateData.title = parsed.title;
+      if (parsed.description !== undefined) updateData.description = parsed.description;
+      if (parsed.severity !== undefined) updateData.severity = parsed.severity;
+      if (parsed.status !== undefined) {
+        updateData.status = parsed.status;
+        if (parsed.status === "resolved") updateData.resolved_at = new Date().toISOString();
+      }
+      if (parsed.source !== undefined) updateData.source = parsed.source;
+      if (parsed.findingCategory !== undefined)
+        updateData.finding_category = parsed.findingCategory;
+      if (parsed.remediationPlan !== undefined)
+        updateData.remediation_plan = parsed.remediationPlan;
+      if (parsed.remediationDeadline !== undefined)
+        updateData.remediation_deadline = parsed.remediationDeadline;
+      if (parsed.verificationSteps !== undefined)
+        updateData.verification_steps = parsed.verificationSteps;
+      if (parsed.affectedSystems !== undefined)
+        updateData.affected_systems = parsed.affectedSystems;
+      if (parsed.controlsImpacted !== undefined)
+        updateData.controls_impacted = parsed.controlsImpacted;
+      if (parsed.assignedTo !== undefined) updateData.assigned_to = parsed.assignedTo;
+      if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
+      if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
+      updateData.version = (current.version as number) + 1;
+
+      const { data, error } = await supabase
+        .from("findings")
+        .update(updateData as never)
+        .eq("id", String(req.params.id) as string)
+        .eq("version", current.version as number)
+        .select()
+        .single();
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data)
+        throw new AppError("VERSION_CONFLICT", "Finding was modified by another user", 409);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "finding.updated",
+        entityType: "finding",
+        entityId: data.id,
+        metadata: parsed,
+      });
+
+      res.json(success(data));
+    } catch (error) {
+      next(error);
     }
-    if (parsed.source !== undefined) updateData.source = parsed.source;
-    if (parsed.findingCategory !== undefined) updateData.finding_category = parsed.findingCategory;
-    if (parsed.remediationPlan !== undefined) updateData.remediation_plan = parsed.remediationPlan;
-    if (parsed.remediationDeadline !== undefined)
-      updateData.remediation_deadline = parsed.remediationDeadline;
-    if (parsed.verificationSteps !== undefined)
-      updateData.verification_steps = parsed.verificationSteps;
-    if (parsed.affectedSystems !== undefined) updateData.affected_systems = parsed.affectedSystems;
-    if (parsed.controlsImpacted !== undefined)
-      updateData.controls_impacted = parsed.controlsImpacted;
-    if (parsed.assignedTo !== undefined) updateData.assigned_to = parsed.assignedTo;
-    if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
-    if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
-    updateData.version = (current.version as number) + 1;
+  },
+);
 
-    const { data, error } = await supabase
-      .from("findings")
-      .update(updateData as never)
-      .eq("id", String(req.params.id) as string)
-      .eq("version", current.version as number)
-      .select()
-      .single();
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("VERSION_CONFLICT", "Finding was modified by another user", 409);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "finding.updated",
-      entityType: "finding",
-      entityId: data.id,
-      metadata: parsed,
-    });
-
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("findings", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "findings", "write");
     await loadOwned(

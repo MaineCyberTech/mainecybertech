@@ -256,7 +256,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("documents", "create"), async (req, res, next) => {
   try {
     const parsed = createDocumentSchema.parse(req.body);
     const supabase = getScopedClient(req, "documents", "write");
@@ -298,218 +298,232 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.post("/upload", upload.single("file"), async (req, res, next) => {
-  try {
-    const file = req.file;
-    if (!file) {
-      throw new AppError("VALIDATION", "File is required", 400);
+router.post(
+  "/upload",
+  requirePermission("documents", "create"),
+  upload.single("file"),
+  async (req, res, next) => {
+    try {
+      const file = req.file;
+      if (!file) {
+        throw new AppError("VALIDATION", "File is required", 400);
+      }
+
+      if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        throw new AppError(
+          "VALIDATION",
+          `File type ${file.mimetype} is not allowed. Allowed types: PDF, Word, Excel, PowerPoint, text, CSV, images (JPEG/PNG/WebP/GIF), archives, JSON, RTF`,
+          400,
+        );
+      }
+
+      // Sniff the bytes â€” the declared mimetype is not trusted. (FILE-P1-001)
+      validateUploadContent(file.buffer, file.mimetype);
+
+      const organizationId = String(req.body.organizationId ?? "").trim();
+      const name = String(req.body.name ?? "").trim();
+      const description = String(req.body.description ?? "").trim() || null;
+      const visibility = String(req.body.visibility ?? "org").trim() || "org";
+      const folderPath = String(req.body.folderPath ?? "").trim() || null;
+
+      if (!organizationId || !name) {
+        throw new AppError("VALIDATION", "Organization ID and name are required", 400);
+      }
+
+      const supabase = getScopedClient(req, "documents", "write");
+      // Bucket is pinned server-side (FILE-P2-001) â€” never read from req.body.
+      const bucket = DOCUMENTS_BUCKET;
+      const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
+      const storagePath = `orgs/${organizationId}/${Date.now()}-${safeName}`;
+      // Each upload gets a unique path, so a non-atomic upsert is never needed
+      // and we fail closed on an unexpected collision instead of overwriting.
+      const { error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(storagePath, file.buffer, {
+          contentType: file.mimetype || undefined,
+          upsert: false,
+        });
+
+      if (uploadError) {
+        throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);
+      }
+
+      const documentId = String(req.body.documentId ?? "").trim() || null;
+
+      if (documentId) {
+        const currentVersion = Number(req.body.currentVersion ?? 1);
+        const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+        let currentQuery = supabase
+          .from("documents")
+          .select("storage_bucket, storage_path, current_version")
+          .eq("id", documentId);
+        // Version replacement must be scoped to the caller's org â€” otherwise a
+        // caller in org A could replace (and delete the storage object of) a
+        // document belonging to org B.
+        if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
+        const { data: current, error: fetchError } = await currentQuery.single();
+
+        if (fetchError) {
+          await supabase.storage.from(bucket).remove([storagePath]);
+          throw new AppError("NOT_FOUND", "Document not found", 404);
+        }
+
+        if (current.storage_bucket && current.storage_path) {
+          await supabase.storage.from(current.storage_bucket).remove([current.storage_path]);
+        }
+
+        const nextVersion = currentVersion + 1;
+
+        let updateQuery = supabase
+          .from("documents")
+          .update({
+            storage_bucket: bucket,
+            storage_path: storagePath,
+            mime_type: file.mimetype || null,
+            file_name: file.originalname || null,
+            file_size: file.size,
+            current_version: nextVersion,
+          })
+          .eq("id", documentId);
+        if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+        const { data, error: updateError } = await updateQuery.select().single();
+
+        if (updateError) {
+          await supabase.storage.from(bucket).remove([storagePath]);
+          throw new AppError("DB_ERROR", updateError.message, 500);
+        }
+
+        await supabase.from("document_versions").insert({
+          document_id: data.id,
+          version_number: nextVersion,
+          storage_path: storagePath,
+          uploaded_by: req.authUser!.userId,
+        });
+
+        await logAuditEvent({
+          organizationId,
+          actorUserId: req.authUser!.userId,
+          action: "document.update",
+          entityType: "document",
+          entityId: data.id,
+          metadata: { name, action: "file_replaced" },
+        });
+
+        res.json(success(data));
+      } else {
+        const { data, error } = await supabase
+          .from("documents")
+          .insert({
+            organization_id: organizationId,
+            name,
+            description,
+            visibility: visibility as never,
+            folder_path: folderPath,
+            storage_bucket: bucket,
+            storage_path: storagePath,
+            mime_type: file.mimetype || null,
+            file_name: file.originalname || null,
+            file_size: file.size,
+            uploaded_by: req.authUser!.userId,
+            current_version: 1,
+            metadata: {},
+          })
+          .select()
+          .single();
+
+        if (error) {
+          await supabase.storage.from(bucket).remove([storagePath]);
+          throw new AppError("DB_ERROR", error.message, 500);
+        }
+
+        await supabase.from("document_versions").insert({
+          document_id: data.id,
+          version_number: 1,
+          storage_path: storagePath,
+          uploaded_by: req.authUser!.userId,
+        });
+
+        await logAuditEvent({
+          organizationId,
+          actorUserId: req.authUser!.userId,
+          action: "document.create",
+          entityType: "document",
+          entityId: data.id,
+          metadata: { name },
+        });
+
+        res.status(201).json(success(data));
+      }
+    } catch (error) {
+      next(error);
     }
+  },
+);
 
-    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-      throw new AppError(
-        "VALIDATION",
-        `File type ${file.mimetype} is not allowed. Allowed types: PDF, Word, Excel, PowerPoint, text, CSV, images (JPEG/PNG/WebP/GIF), archives, JSON, RTF`,
-        400,
-      );
-    }
+router.patch(
+  "/:id",
+  requirePermission("documents", "edit"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateDocumentSchema.parse(req.body);
+      const supabase = getScopedClient(req, "documents", "write");
+      const orgId = req.query.organization_id as string | undefined;
 
-    // Sniff the bytes â€” the declared mimetype is not trusted. (FILE-P1-001)
-    validateUploadContent(file.buffer, file.mimetype);
-
-    const organizationId = String(req.body.organizationId ?? "").trim();
-    const name = String(req.body.name ?? "").trim();
-    const description = String(req.body.description ?? "").trim() || null;
-    const visibility = String(req.body.visibility ?? "org").trim() || "org";
-    const folderPath = String(req.body.folderPath ?? "").trim() || null;
-
-    if (!organizationId || !name) {
-      throw new AppError("VALIDATION", "Organization ID and name are required", 400);
-    }
-
-    const supabase = getScopedClient(req, "documents", "write");
-    // Bucket is pinned server-side (FILE-P2-001) â€” never read from req.body.
-    const bucket = DOCUMENTS_BUCKET;
-    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
-    const storagePath = `orgs/${organizationId}/${Date.now()}-${safeName}`;
-    // Each upload gets a unique path, so a non-atomic upsert is never needed
-    // and we fail closed on an unexpected collision instead of overwriting.
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(storagePath, file.buffer, {
-        contentType: file.mimetype || undefined,
-        upsert: false,
-      });
-
-    if (uploadError) {
-      throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);
-    }
-
-    const documentId = String(req.body.documentId ?? "").trim() || null;
-
-    if (documentId) {
-      const currentVersion = Number(req.body.currentVersion ?? 1);
-      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
       let currentQuery = supabase
         .from("documents")
-        .select("storage_bucket, storage_path, current_version")
-        .eq("id", documentId);
-      // Version replacement must be scoped to the caller's org â€” otherwise a
-      // caller in org A could replace (and delete the storage object of) a
-      // document belonging to org B.
+        .select("version")
+        .eq("id", String(req.params.id));
       if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
       const { data: current, error: fetchError } = await currentQuery.single();
 
-      if (fetchError) {
-        await supabase.storage.from(bucket).remove([storagePath]);
+      if (fetchError || !current) {
         throw new AppError("NOT_FOUND", "Document not found", 404);
       }
 
-      if (current.storage_bucket && current.storage_path) {
-        await supabase.storage.from(current.storage_bucket).remove([current.storage_path]);
-      }
+      checkVersionMatch(current.version, req.ifMatchVersion);
 
-      const nextVersion = currentVersion + 1;
+      const updateData: Record<string, unknown> = {};
+      if (parsed.name !== undefined) updateData.name = parsed.name;
+      if (parsed.description !== undefined) updateData.description = parsed.description;
+      if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
+      if (parsed.folderPath !== undefined) updateData.folder_path = parsed.folderPath;
+      if (parsed.storageBucket !== undefined) updateData.storage_bucket = parsed.storageBucket;
+      if (parsed.storagePath !== undefined) updateData.storage_path = parsed.storagePath;
+      if (parsed.mimeType !== undefined) updateData.mime_type = parsed.mimeType;
+      if (parsed.fileName !== undefined) updateData.file_name = parsed.fileName;
+      if (parsed.fileSize !== undefined) updateData.file_size = parsed.fileSize;
+      if (parsed.currentVersion !== undefined) updateData.current_version = parsed.currentVersion;
+      if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
 
-      let updateQuery = supabase
+      updateData.version = current.version + 1;
+
+      let query = supabase
         .from("documents")
-        .update({
-          storage_bucket: bucket,
-          storage_path: storagePath,
-          mime_type: file.mimetype || null,
-          file_name: file.originalname || null,
-          file_size: file.size,
-          current_version: nextVersion,
-        })
-        .eq("id", documentId);
-      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
-      const { data, error: updateError } = await updateQuery.select().single();
+        .update(updateData as never)
+        .eq("id", String(req.params.id))
+        .eq("version", current.version as number);
+      if (orgId) query = query.eq("organization_id", orgId);
+      const { data, error } = await query.select().single();
 
-      if (updateError) {
-        await supabase.storage.from(bucket).remove([storagePath]);
-        throw new AppError("DB_ERROR", updateError.message, 500);
-      }
-
-      await supabase.from("document_versions").insert({
-        document_id: data.id,
-        version_number: nextVersion,
-        storage_path: storagePath,
-        uploaded_by: req.authUser!.userId,
-      });
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data)
+        throw new AppError("VERSION_CONFLICT", "Document was modified by another user", 409);
 
       await logAuditEvent({
-        organizationId,
         actorUserId: req.authUser!.userId,
         action: "document.update",
         entityType: "document",
         entityId: data.id,
-        metadata: { name, action: "file_replaced" },
+        metadata: parsed,
       });
 
       res.json(success(data));
-    } else {
-      const { data, error } = await supabase
-        .from("documents")
-        .insert({
-          organization_id: organizationId,
-          name,
-          description,
-          visibility: visibility as never,
-          folder_path: folderPath,
-          storage_bucket: bucket,
-          storage_path: storagePath,
-          mime_type: file.mimetype || null,
-          file_name: file.originalname || null,
-          file_size: file.size,
-          uploaded_by: req.authUser!.userId,
-          current_version: 1,
-          metadata: {},
-        })
-        .select()
-        .single();
-
-      if (error) {
-        await supabase.storage.from(bucket).remove([storagePath]);
-        throw new AppError("DB_ERROR", error.message, 500);
-      }
-
-      await supabase.from("document_versions").insert({
-        document_id: data.id,
-        version_number: 1,
-        storage_path: storagePath,
-        uploaded_by: req.authUser!.userId,
-      });
-
-      await logAuditEvent({
-        organizationId,
-        actorUserId: req.authUser!.userId,
-        action: "document.create",
-        entityType: "document",
-        entityId: data.id,
-        metadata: { name },
-      });
-
-      res.status(201).json(success(data));
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.patch("/:id", requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateDocumentSchema.parse(req.body);
-    const supabase = getScopedClient(req, "documents", "write");
-    const orgId = req.query.organization_id as string | undefined;
-
-    let currentQuery = supabase.from("documents").select("version").eq("id", String(req.params.id));
-    if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
-    const { data: current, error: fetchError } = await currentQuery.single();
-
-    if (fetchError || !current) {
-      throw new AppError("NOT_FOUND", "Document not found", 404);
-    }
-
-    checkVersionMatch(current.version, req.ifMatchVersion);
-
-    const updateData: Record<string, unknown> = {};
-    if (parsed.name !== undefined) updateData.name = parsed.name;
-    if (parsed.description !== undefined) updateData.description = parsed.description;
-    if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
-    if (parsed.folderPath !== undefined) updateData.folder_path = parsed.folderPath;
-    if (parsed.storageBucket !== undefined) updateData.storage_bucket = parsed.storageBucket;
-    if (parsed.storagePath !== undefined) updateData.storage_path = parsed.storagePath;
-    if (parsed.mimeType !== undefined) updateData.mime_type = parsed.mimeType;
-    if (parsed.fileName !== undefined) updateData.file_name = parsed.fileName;
-    if (parsed.fileSize !== undefined) updateData.file_size = parsed.fileSize;
-    if (parsed.currentVersion !== undefined) updateData.current_version = parsed.currentVersion;
-    if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
-
-    updateData.version = current.version + 1;
-
-    let query = supabase
-      .from("documents")
-      .update(updateData as never)
-      .eq("id", String(req.params.id))
-      .eq("version", current.version as number);
-    if (orgId) query = query.eq("organization_id", orgId);
-    const { data, error } = await query.select().single();
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("VERSION_CONFLICT", "Document was modified by another user", 409);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "document.update",
-      entityType: "document",
-      entityId: data.id,
-      metadata: parsed,
-    });
-
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+  },
+);
 
 router.delete("/:id", requirePermission("documents", "delete"), async (req, res, next) => {
   try {
