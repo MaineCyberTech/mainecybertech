@@ -62,13 +62,15 @@ export function registerCatalogRoutes(router: Router) {
   // GET /api/v1/store/categories - list categories (public)
   router.get("/categories", async (req, res, next) => {
     try {
-      const cats = await getCategories();
-      const result = await Promise.all(
-        cats.map(async (c) => ({
-          ...c,
-          productCount: (await getProductsByCategory(c.slug)).length,
-        })),
-      );
+      // Fetch both collections once and count in memory (previously this was an
+      // N+1: one full product read per category).
+      const [cats, allProducts] = await Promise.all([getCategories(), getProducts()]);
+      const result = cats.map((c) => ({
+        ...c,
+        productCount: allProducts.filter(
+          (p) => p.categoryId === c.id || p.categoryId === c.slug || p.category === c.slug,
+        ).length,
+      }));
       res.json(success(result));
     } catch (err) {
       next(err);

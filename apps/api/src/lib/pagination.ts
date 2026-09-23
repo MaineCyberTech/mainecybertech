@@ -11,6 +11,13 @@ export interface PaginationInput {
   offset: number;
 }
 
+/**
+ * Upper bound for list endpoints that still return a plain array (the web
+ * admin/portal UIs consume those directly). Prevents an unbounded table read
+ * from exhausting API memory; full cursor pagination is a follow-up.
+ */
+export const LIST_HARD_CAP = 1000;
+
 export interface PaginationMeta {
   page: number;
   limit: number;

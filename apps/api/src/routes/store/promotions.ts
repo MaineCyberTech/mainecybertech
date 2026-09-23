@@ -6,6 +6,7 @@ import { requireAdmin } from "../../middleware/admin";
 import { AppError, success, failure } from "../../types";
 import { logAuditEvent } from "../../services/audit";
 import { type UpdateRow } from "../../lib/db-types";
+import { LIST_HARD_CAP } from "../../lib/pagination";
 
 /** Store promotions (public reads + admin CRUD). Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
 export function registerPromotionRoutes(router: Router) {
@@ -31,7 +32,8 @@ export function registerPromotionRoutes(router: Router) {
         .from("store_promotions")
         .select("*")
         .eq("status", "active")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(LIST_HARD_CAP);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.json(success(data ?? []));
@@ -48,7 +50,8 @@ export function registerPromotionRoutes(router: Router) {
         .from("store_promotions")
         .select("*")
         .eq("status", "active")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(LIST_HARD_CAP);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.json(success(data ?? []));
@@ -64,7 +67,8 @@ export function registerPromotionRoutes(router: Router) {
       const { data, error } = await supabase
         .from("store_promotions")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(LIST_HARD_CAP);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.json(success(data ?? []));

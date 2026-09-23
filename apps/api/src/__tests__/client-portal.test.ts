@@ -32,6 +32,10 @@ jest.mock("../middleware/cache", () => ({
 jest.mock("../middleware/admin", () => ({
   requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
+jest.mock("../middleware/org-access", () => ({
+  requireOrgAccess: (_req: unknown, _res: unknown, next: () => void) => next(),
+  assertOrgScopeMatches: jest.fn(),
+}));
 
 import { getSupabaseAdmin } from "../services/supabase";
 import clientPortalRouter from "../routes/client-portal";

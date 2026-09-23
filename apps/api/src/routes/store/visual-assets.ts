@@ -6,6 +6,7 @@ import { requireAdmin } from "../../middleware/admin";
 import { AppError, success, failure } from "../../types";
 import { logAuditEvent } from "../../services/audit";
 import { type UpdateRow } from "../../lib/db-types";
+import { LIST_HARD_CAP } from "../../lib/pagination";
 
 /** Store visual assets (admin CRUD). Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
 export function registerVisualAssetRoutes(router: Router) {
@@ -70,7 +71,9 @@ export function registerVisualAssetRoutes(router: Router) {
       if (req.query.linkedEntityId) {
         query = query.eq("linked_entity_id", String(req.query.linkedEntityId));
       }
-      const { data, error } = await query.order("created_at", { ascending: false });
+      const { data, error } = await query
+        .order("created_at", { ascending: false })
+        .limit(LIST_HARD_CAP);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.json(success(((data ?? []) as VisualAssetRow[]).map(rowToVisualAsset)));

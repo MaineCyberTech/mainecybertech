@@ -30,65 +30,65 @@ export interface CatalogCategory {
   count: number;
 }
 
-const jsonProducts: CatalogProduct[] = (productsData as unknown as Array<Record<string, unknown>>).map(
-  (p) => {
-    const str = (v: unknown, d = ""): string => (typeof v === "string" ? v : d);
-    const bool = (v: unknown, d = false): boolean => (typeof v === "boolean" ? v : d);
-    const arr = (v: unknown): string[] => (Array.isArray(v) ? (v as string[]) : []);
-    const {
-      id,
-      slug,
-      name,
-      categoryId,
-      category,
-      type,
-      display,
-      status,
-      priceRange,
-      pricingModel,
-      purchaseMode,
-      summary,
-      marketingHeadline,
-      marketingCopy,
-      tags,
-      ...rest
-    } = p;
-    return {
-      id: str(id),
-      slug: str(slug),
-      name: str(name),
-      categoryId: typeof categoryId === "string" ? categoryId : null,
-      category: str(category),
-      type: str(type, "service"),
-      display: bool(display, true),
-      status: str(status, "draft"),
-      priceRange: str(priceRange),
-      pricingModel: str(pricingModel),
-      purchaseMode: str(purchaseMode),
-      summary: str(summary),
-      marketingHeadline: str(marketingHeadline),
-      marketingCopy: str(marketingCopy),
-      tags: arr(tags),
-      attributes: rest,
-    };
-  },
-);
+const jsonProducts: CatalogProduct[] = (
+  productsData as unknown as Array<Record<string, unknown>>
+).map((p) => {
+  const str = (v: unknown, d = ""): string => (typeof v === "string" ? v : d);
+  const bool = (v: unknown, d = false): boolean => (typeof v === "boolean" ? v : d);
+  const arr = (v: unknown): string[] => (Array.isArray(v) ? (v as string[]) : []);
+  const {
+    id,
+    slug,
+    name,
+    categoryId,
+    category,
+    type,
+    display,
+    status,
+    priceRange,
+    pricingModel,
+    purchaseMode,
+    summary,
+    marketingHeadline,
+    marketingCopy,
+    tags,
+    ...rest
+  } = p;
+  return {
+    id: str(id),
+    slug: str(slug),
+    name: str(name),
+    categoryId: typeof categoryId === "string" ? categoryId : null,
+    category: str(category),
+    type: str(type, "service"),
+    display: bool(display, true),
+    status: str(status, "draft"),
+    priceRange: str(priceRange),
+    pricingModel: str(pricingModel),
+    purchaseMode: str(purchaseMode),
+    summary: str(summary),
+    marketingHeadline: str(marketingHeadline),
+    marketingCopy: str(marketingCopy),
+    tags: arr(tags),
+    attributes: rest,
+  };
+});
 
-const jsonCategories: CatalogCategory[] = (categoriesData as unknown as Array<Record<string, unknown>>).map(
-  (c) => {
-    const str = (v: unknown, d = ""): string => (typeof v === "string" ? v : d);
-    const arr = (v: unknown): string[] => (Array.isArray(v) ? (v as string[]) : []);
-    const num = (v: unknown, d = 0): number => (typeof v === "number" ? v : d);
-    return {
-      id: str(c.id),
-      name: str(c.name),
-      slug: str(c.slug),
-      description: str(c.description),
-      productIds: arr(c.productIds),
-      count: num(c.count, arr(c.productIds).length),
-    };
-  },
-);
+const jsonCategories: CatalogCategory[] = (
+  categoriesData as unknown as Array<Record<string, unknown>>
+).map((c) => {
+  const str = (v: unknown, d = ""): string => (typeof v === "string" ? v : d);
+  const arr = (v: unknown): string[] => (Array.isArray(v) ? (v as string[]) : []);
+  const num = (v: unknown, d = 0): number => (typeof v === "number" ? v : d);
+  return {
+    id: str(c.id),
+    name: str(c.name),
+    slug: str(c.slug),
+    description: str(c.description),
+    productIds: arr(c.productIds),
+    count: num(c.count, arr(c.productIds).length),
+  };
+});
 
 function rowToProduct(row: Record<string, unknown>): CatalogProduct {
   return {
@@ -191,7 +191,7 @@ export async function getCategoryBySlug(slug: string): Promise<CatalogCategory |
   return jsonCategories.find((c) => c.slug === slug) ?? null;
 }
 
-export async function getProductsByCategory(categoryId: string): Promise<CatalogProduct[]> {
+export async function getProductsByCategory(categoryKey: string): Promise<CatalogProduct[]> {
   const all = await getProducts();
-  return all.filter((p) => p.categoryId === categoryId);
+  return all.filter((p) => p.categoryId === categoryKey || p.category === categoryKey);
 }

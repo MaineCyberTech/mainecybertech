@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
+import { requireOrgAccess } from "../middleware/org-access";
 import { responseCacheNoRenew } from "../middleware/cache";
 
 const router: ReturnType<typeof Router> = Router();
@@ -136,7 +137,7 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
 });
 
 // Admin: per-tenant module provisioning.
-router.get("/entitlements", requireAdmin, async (req, res, next) => {
+router.get("/entitlements", requireAdmin, requireOrgAccess, async (req, res, next) => {
   try {
     const organizationId = req.query.organization_id as string;
     if (!organizationId) throw new AppError("VALIDATION", "organization_id required", 400);
@@ -160,7 +161,7 @@ const entitlementsSchema = z.object({
     .min(1),
 });
 
-router.put("/entitlements", requireAdmin, async (req, res, next) => {
+router.put("/entitlements", requireAdmin, requireOrgAccess, async (req, res, next) => {
   try {
     const parsed = entitlementsSchema.parse(req.body);
     const supabase = getSupabaseAdmin();

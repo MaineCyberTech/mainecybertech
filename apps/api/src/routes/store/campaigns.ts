@@ -3,9 +3,11 @@ import { z, ZodError } from "zod";
 import { getSupabaseAdmin } from "../../services/supabase";
 import { requireAuth } from "../../middleware/auth";
 import { requireAdmin } from "../../middleware/admin";
+import { requireOrgAccess, assertOrgScopeMatches } from "../../middleware/org-access";
 import { AppError, success, failure } from "../../types";
 import { logAuditEvent } from "../../services/audit";
 import { type UpdateRow } from "../../lib/db-types";
+import { LIST_HARD_CAP } from "../../lib/pagination";
 import { isCampaignActive, rowToCampaign, type CampaignRow } from "../../lib/store-campaigns";
 
 /** Seasonal campaigns + truthful capacity messaging (prompt 17). Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
@@ -116,7 +118,8 @@ export function registerCampaignRoutes(router: Router) {
         .from("store_campaigns")
         .select("*")
         .eq("status", "active")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(LIST_HARD_CAP);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
 
@@ -137,7 +140,8 @@ export function registerCampaignRoutes(router: Router) {
       const { data, error } = await supabase
         .from("store_campaigns")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(LIST_HARD_CAP);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.json(success(((data ?? []) as CampaignRow[]).map(rowToCampaign)));
@@ -147,7 +151,7 @@ export function registerCampaignRoutes(router: Router) {
   });
 
   // POST /api/v1/store/campaigns - create a campaign (admin)
-  router.post("/campaigns", requireAuth, requireAdmin, async (req, res, next) => {
+  router.post("/campaigns", requireAuth, requireAdmin, requireOrgAccess, async (req, res, next) => {
     try {
       const parsed = campaignSchema.parse(req.body);
       const supabase = getSupabaseAdmin();
@@ -181,89 +185,110 @@ export function registerCampaignRoutes(router: Router) {
   });
 
   // PATCH /api/v1/store/campaigns/:id - update a campaign (admin)
-  router.patch("/campaigns/:id", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const parsed = updateCampaignSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
+  router.patch(
+    "/campaigns/:id",
+    requireAuth,
+    requireAdmin,
+    requireOrgAccess,
+    async (req, res, next) => {
+      try {
+        const parsed = updateCampaignSchema.parse(req.body);
+        const supabase = getSupabaseAdmin();
 
-      const update: Record<string, unknown> = {};
-      if (parsed.slug !== undefined) update.slug = parsed.slug;
-      if (parsed.name !== undefined) update.name = parsed.name;
-      if (parsed.audience !== undefined) update.audience = parsed.audience;
-      if (parsed.headline !== undefined) update.headline = parsed.headline;
-      if (parsed.body !== undefined) update.body = parsed.body;
-      if (parsed.icon !== undefined) update.icon = parsed.icon;
-      if (parsed.accent !== undefined) update.accent = parsed.accent;
-      if (parsed.recommendedProductIds !== undefined) {
-        update.recommended_product_ids = parsed.recommendedProductIds;
+        const update: Record<string, unknown> = {};
+        if (parsed.slug !== undefined) update.slug = parsed.slug;
+        if (parsed.name !== undefined) update.name = parsed.name;
+        if (parsed.audience !== undefined) update.audience = parsed.audience;
+        if (parsed.headline !== undefined) update.headline = parsed.headline;
+        if (parsed.body !== undefined) update.body = parsed.body;
+        if (parsed.icon !== undefined) update.icon = parsed.icon;
+        if (parsed.accent !== undefined) update.accent = parsed.accent;
+        if (parsed.recommendedProductIds !== undefined) {
+          update.recommended_product_ids = parsed.recommendedProductIds;
+        }
+        if (parsed.trustBadges !== undefined) update.trust_badges = parsed.trustBadges;
+        if (parsed.promoEligibility !== undefined)
+          update.promo_eligibility = parsed.promoEligibility;
+        if (parsed.status !== undefined) update.status = parsed.status;
+        if (parsed.startsAt !== undefined) update.starts_at = parsed.startsAt;
+        if (parsed.endsAt !== undefined) update.ends_at = parsed.endsAt;
+        if (parsed.capacityEnabled !== undefined) update.capacity_enabled = parsed.capacityEnabled;
+        if (parsed.capacityTotal !== undefined) update.capacity_total = parsed.capacityTotal;
+        if (parsed.capacityRemaining !== undefined)
+          update.capacity_remaining = parsed.capacityRemaining;
+        if (parsed.capacityLabel !== undefined) update.capacity_label = parsed.capacityLabel;
+        if (parsed.organizationId !== undefined) update.organization_id = parsed.organizationId;
+
+        if (Object.keys(update).length === 0) {
+          throw new AppError("VALIDATION", "No updatable fields provided", 400);
+        }
+
+        const { data, error } = await supabase
+          .from("store_campaigns")
+          .update(update as UpdateRow<"store_campaigns">)
+          .eq("id", String(req.params.id))
+          .select()
+          .maybeSingle();
+
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        if (!data) throw new AppError("NOT_FOUND", "Campaign not found", 404);
+
+        await logAuditEvent({
+          actorUserId: req.authUser?.userId ?? null,
+          action: "store.campaign.update",
+          entityType: "store_campaign",
+          entityId: data.id,
+          metadata: { fields: Object.keys(update) },
+        });
+
+        res.json(success(rowToCampaign(data as CampaignRow)));
+      } catch (error) {
+        if (error instanceof ZodError) {
+          res
+            .status(400)
+            .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+          return;
+        }
+        next(error);
       }
-      if (parsed.trustBadges !== undefined) update.trust_badges = parsed.trustBadges;
-      if (parsed.promoEligibility !== undefined) update.promo_eligibility = parsed.promoEligibility;
-      if (parsed.status !== undefined) update.status = parsed.status;
-      if (parsed.startsAt !== undefined) update.starts_at = parsed.startsAt;
-      if (parsed.endsAt !== undefined) update.ends_at = parsed.endsAt;
-      if (parsed.capacityEnabled !== undefined) update.capacity_enabled = parsed.capacityEnabled;
-      if (parsed.capacityTotal !== undefined) update.capacity_total = parsed.capacityTotal;
-      if (parsed.capacityRemaining !== undefined)
-        update.capacity_remaining = parsed.capacityRemaining;
-      if (parsed.capacityLabel !== undefined) update.capacity_label = parsed.capacityLabel;
-      if (parsed.organizationId !== undefined) update.organization_id = parsed.organizationId;
-
-      if (Object.keys(update).length === 0) {
-        throw new AppError("VALIDATION", "No updatable fields provided", 400);
-      }
-
-      const { data, error } = await supabase
-        .from("store_campaigns")
-        .update(update as UpdateRow<"store_campaigns">)
-        .eq("id", String(req.params.id))
-        .select()
-        .maybeSingle();
-
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      if (!data) throw new AppError("NOT_FOUND", "Campaign not found", 404);
-
-      await logAuditEvent({
-        actorUserId: req.authUser?.userId ?? null,
-        action: "store.campaign.update",
-        entityType: "store_campaign",
-        entityId: data.id,
-        metadata: { fields: Object.keys(update) },
-      });
-
-      res.json(success(rowToCampaign(data as CampaignRow)));
-    } catch (error) {
-      if (error instanceof ZodError) {
-        res
-          .status(400)
-          .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
-        return;
-      }
-      next(error);
-    }
-  });
+    },
+  );
 
   // DELETE /api/v1/store/campaigns/:id - delete a campaign (admin)
-  router.delete("/campaigns/:id", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const { error } = await supabase
-        .from("store_campaigns")
-        .delete()
-        .eq("id", String(req.params.id));
+  router.delete(
+    "/campaigns/:id",
+    requireAuth,
+    requireAdmin,
+    requireOrgAccess,
+    async (req, res, next) => {
+      try {
+        const supabase = getSupabaseAdmin();
+        const { data: existing } = await supabase
+          .from("store_campaigns")
+          .select("organization_id")
+          .eq("id", String(req.params.id))
+          .maybeSingle();
+        if (existing?.organization_id) {
+          assertOrgScopeMatches(req, existing.organization_id);
+        }
+        const { error } = await supabase
+          .from("store_campaigns")
+          .delete()
+          .eq("id", String(req.params.id));
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-      await logAuditEvent({
-        actorUserId: req.authUser?.userId ?? null,
-        action: "store.campaign.delete",
-        entityType: "store_campaign",
-        entityId: String(req.params.id),
-      });
+        await logAuditEvent({
+          actorUserId: req.authUser?.userId ?? null,
+          action: "store.campaign.delete",
+          entityType: "store_campaign",
+          entityId: String(req.params.id),
+        });
 
-      res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  });
+        res.status(204).send();
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 }

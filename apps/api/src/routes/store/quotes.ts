@@ -3,10 +3,12 @@ import { z, ZodError } from "zod";
 import { getSupabaseAdmin } from "../../services/supabase";
 import { requireAuth } from "../../middleware/auth";
 import { requireAdmin } from "../../middleware/admin";
+import { requireOrgAccess } from "../../middleware/org-access";
 import { AppError, success, failure } from "../../types";
 import { logAuditEvent } from "../../services/audit";
 import { getProducts } from "../../lib/store-catalog";
 import { toJson, type UpdateRow } from "../../lib/db-types";
+import { LIST_HARD_CAP } from "../../lib/pagination";
 import { scoreLead } from "../../lib/lead-scoring";
 import { buildProposalSections, PROPOSAL_GUARDRAILS } from "../../lib/proposal-generator";
 import {
@@ -165,7 +167,8 @@ export function registerQuoteRoutes(router: Router) {
       const { data, error } = await supabase
         .from("store_quotes")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(LIST_HARD_CAP);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.json(success(data ?? []));
@@ -181,7 +184,8 @@ export function registerQuoteRoutes(router: Router) {
       const { data, error } = await supabase
         .from("store_quote_requests")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(LIST_HARD_CAP);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.json(success(data ?? []));
@@ -197,7 +201,8 @@ export function registerQuoteRoutes(router: Router) {
       const { data, error } = await supabase
         .from("store_leads")
         .select("*")
-        .order("lead_score", { ascending: false });
+        .order("lead_score", { ascending: false })
+        .limit(LIST_HARD_CAP);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.json(success(data ?? []));
@@ -207,114 +212,120 @@ export function registerQuoteRoutes(router: Router) {
   });
 
   // POST /api/v1/store/quote-requests/:id/proposal - generate a proposal draft (admin)
-  router.post("/quote-requests/:id/proposal", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const parsed = generateProposalDraftSchema.parse(req.body ?? {});
-      const supabase = getSupabaseAdmin();
-      const actorUserId = req.authUser?.userId ?? null;
+  router.post(
+    "/quote-requests/:id/proposal",
+    requireAuth,
+    requireAdmin,
+    requireOrgAccess,
+    async (req, res, next) => {
+      try {
+        const parsed = generateProposalDraftSchema.parse(req.body ?? {});
+        const supabase = getSupabaseAdmin();
+        const actorUserId = req.authUser?.userId ?? null;
 
-      const { data: request, error } = await supabase
-        .from("store_quote_requests")
-        .select("*")
-        .eq("id", String(req.params.id))
-        .maybeSingle();
+        const { data: request, error } = await supabase
+          .from("store_quote_requests")
+          .select("*")
+          .eq("id", String(req.params.id))
+          .maybeSingle();
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      if (!request) throw new AppError("NOT_FOUND", "Quote request not found", 404);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        if (!request) throw new AppError("NOT_FOUND", "Quote request not found", 404);
 
-      const sections = buildProposalSections(request, await getProducts());
+        const sections = buildProposalSections(request, await getProducts());
 
-      // When an organization is supplied, also create the first-class proposal
-      // (with a line item per requested service) so the handoff enters the
-      // proposals approval/publish workflow.
-      let linkedProposalId: string | null = null;
-      if (parsed.organizationId) {
-        if (!actorUserId) throw new AppError("UNAUTHORIZED", "Authenticated user required", 401);
+        // When an organization is supplied, also create the first-class proposal
+        // (with a line item per requested service) so the handoff enters the
+        // proposals approval/publish workflow.
+        let linkedProposalId: string | null = null;
+        if (parsed.organizationId) {
+          if (!actorUserId) throw new AppError("UNAUTHORIZED", "Authenticated user required", 401);
 
-        const items = asHandoffItems(request.items);
-        const { data: proposal, error: proposalError } = await supabase
-          .from("proposals")
+          const items = asHandoffItems(request.items);
+          const { data: proposal, error: proposalError } = await supabase
+            .from("proposals")
+            .insert({
+              organization_id: parsed.organizationId,
+              title: buildProposalTitle(request),
+              description: sections["Executive summary"].join("\n"),
+              status: "draft",
+              visibility: parsed.visibility,
+              valid_until: parsed.validUntil ?? null,
+              owner_user_id: parsed.ownerUserId ?? null,
+              created_by: actorUserId,
+              metadata: toJson({ quoteRequestId: request.id, source: "store_intake" }),
+            })
+            .select()
+            .single();
+          if (proposalError) throw new AppError("DB_ERROR", proposalError.message, 500);
+
+          const lineItems = items.map((item, index) => {
+            const amount = parseAmountFromPriceRange(item.priceRange);
+            return {
+              proposal_id: proposal.id,
+              sort_order: index,
+              item_type: "one_time",
+              name: handoffItemLabel(item),
+              description: item.priceRange ? `Catalog price: ${item.priceRange}` : null,
+              quantity: 1,
+              unit_price: amount,
+              total_price: amount,
+              is_optional: false,
+              is_recurring: false,
+              recurring_interval: "monthly",
+            };
+          });
+
+          if (lineItems.length > 0) {
+            const { error: lineItemError } = await supabase
+              .from("proposal_line_items")
+              .insert(lineItems as never);
+            if (lineItemError) throw new AppError("DB_ERROR", lineItemError.message, 500);
+
+            const total = lineItems.reduce((sum, item) => sum + item.total_price, 0);
+            await supabase
+              .from("proposals")
+              .update({ grand_total: total, total_one_time: total })
+              .eq("id", proposal.id);
+          }
+
+          linkedProposalId = proposal.id;
+        }
+
+        const { data, error: insertError } = await supabase
+          .from("store_proposal_drafts")
           .insert({
-            organization_id: parsed.organizationId,
-            title: buildProposalTitle(request),
-            description: sections["Executive summary"].join("\n"),
-            status: "draft",
-            visibility: parsed.visibility,
-            valid_until: parsed.validUntil ?? null,
-            owner_user_id: parsed.ownerUserId ?? null,
-            created_by: actorUserId,
-            metadata: toJson({ quoteRequestId: request.id, source: "store_intake" }),
+            quote_request_id: request.id,
+            proposal_id: linkedProposalId,
+            status: "draft_internal",
+            sections: toJson({ ...sections, guardrails: PROPOSAL_GUARDRAILS }),
+            generated_by: actorUserId,
           })
           .select()
           .single();
-        if (proposalError) throw new AppError("DB_ERROR", proposalError.message, 500);
 
-        const lineItems = items.map((item, index) => {
-          const amount = parseAmountFromPriceRange(item.priceRange);
-          return {
-            proposal_id: proposal.id,
-            sort_order: index,
-            item_type: "one_time",
-            name: handoffItemLabel(item),
-            description: item.priceRange ? `Catalog price: ${item.priceRange}` : null,
-            quantity: 1,
-            unit_price: amount,
-            total_price: amount,
-            is_optional: false,
-            is_recurring: false,
-            recurring_interval: "monthly",
-          };
+        if (insertError) throw new AppError("DB_ERROR", insertError.message, 500);
+
+        await logAuditEvent({
+          actorUserId,
+          action: "store.proposal_draft.generate",
+          entityType: "store_proposal_draft",
+          entityId: data.id,
+          metadata: { quoteRequestId: request.id, proposalId: linkedProposalId },
         });
 
-        if (lineItems.length > 0) {
-          const { error: lineItemError } = await supabase
-            .from("proposal_line_items")
-            .insert(lineItems as never);
-          if (lineItemError) throw new AppError("DB_ERROR", lineItemError.message, 500);
-
-          const total = lineItems.reduce((sum, item) => sum + item.total_price, 0);
-          await supabase
-            .from("proposals")
-            .update({ grand_total: total, total_one_time: total })
-            .eq("id", proposal.id);
+        res.status(201).json(success(data));
+      } catch (error) {
+        if (error instanceof ZodError) {
+          res
+            .status(400)
+            .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+          return;
         }
-
-        linkedProposalId = proposal.id;
+        next(error);
       }
-
-      const { data, error: insertError } = await supabase
-        .from("store_proposal_drafts")
-        .insert({
-          quote_request_id: request.id,
-          proposal_id: linkedProposalId,
-          status: "draft_internal",
-          sections: toJson({ ...sections, guardrails: PROPOSAL_GUARDRAILS }),
-          generated_by: actorUserId,
-        })
-        .select()
-        .single();
-
-      if (insertError) throw new AppError("DB_ERROR", insertError.message, 500);
-
-      await logAuditEvent({
-        actorUserId,
-        action: "store.proposal_draft.generate",
-        entityType: "store_proposal_draft",
-        entityId: data.id,
-        metadata: { quoteRequestId: request.id, proposalId: linkedProposalId },
-      });
-
-      res.status(201).json(success(data));
-    } catch (error) {
-      if (error instanceof ZodError) {
-        res
-          .status(400)
-          .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
-        return;
-      }
-      next(error);
-    }
-  });
+    },
+  );
 
   // GET /api/v1/store/proposal-drafts - list proposal drafts (admin)
   router.get("/proposal-drafts", requireAuth, requireAdmin, async (_req, res, next) => {
@@ -323,7 +334,8 @@ export function registerQuoteRoutes(router: Router) {
       const { data, error } = await supabase
         .from("store_proposal_drafts")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(LIST_HARD_CAP);
 
       if (error) throw new AppError("DB_ERROR", error.message, 500);
       res.json(success(data ?? []));
@@ -379,146 +391,152 @@ export function registerQuoteRoutes(router: Router) {
   });
 
   // POST /api/v1/store/quote-requests/:id/convert - intake -> project handoff (admin)
-  router.post("/quote-requests/:id/convert", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const parsed = convertQuoteRequestSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
-      const actorUserId = req.authUser?.userId ?? null;
-      if (!actorUserId) throw new AppError("UNAUTHORIZED", "Authenticated user required", 401);
-
-      const { data: request, error } = await supabase
-        .from("store_quote_requests")
-        .select("*")
-        .eq("id", String(req.params.id))
-        .maybeSingle();
-
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      if (!request) throw new AppError("NOT_FOUND", "Quote request not found", 404);
-      if (request.status === "converted_to_project") {
-        throw new AppError("CONFLICT", "Quote request has already been converted", 409);
-      }
-
-      const plan = buildHandoffPlan(request, {
-        organizationId: parsed.organizationId,
-        createdBy: actorUserId,
-        projectName: parsed.projectName,
-        priority: parsed.priority,
-        ownerId: parsed.ownerId ?? null,
-      });
-
-      // Carry the linked first-class proposal (if one was generated) onto the
-      // project so delivery can see the approved commercial scope.
-      const { data: linkedDrafts } = await supabase
-        .from("store_proposal_drafts")
-        .select("proposal_id")
-        .eq("quote_request_id", request.id)
-        .not("proposal_id", "is", null)
-        .order("created_at", { ascending: false })
-        .limit(1);
-      const linkedProposalId = linkedDrafts?.[0]?.proposal_id ?? null;
-      if (linkedProposalId) plan.project.metadata.proposalId = linkedProposalId;
-
-      const { data: project, error: projectError } = await supabase
-        .from("projects")
-        .insert(plan.project as never)
-        .select()
-        .single();
-      if (projectError) throw new AppError("DB_ERROR", projectError.message, 500);
-
-      const { data: tasks, error: taskError } = await supabase
-        .from("project_tasks")
-        .insert(
-          plan.taskTitles.map((title, index) => ({
-            organization_id: parsed.organizationId,
-            project_id: project.id,
-            created_by: actorUserId,
-            title,
-            status: "todo",
-            sort_order: index,
-          })) as never,
-        )
-        .select();
-      if (taskError) throw new AppError("DB_ERROR", taskError.message, 500);
-
-      const { data: ticket, error: ticketError } = await supabase
-        .from("tickets")
-        .insert({
-          organization_id: parsed.organizationId,
-          created_by: actorUserId,
-          title: plan.ticketTitle,
-          description: plan.ticketDescription,
-          priority: parsed.priority,
-          category: "store_intake",
-          source: "admin",
-          status: "new",
-          metadata: toJson({ quoteRequestId: request.id, projectId: project.id }),
-        } as never)
-        .select()
-        .single();
-      if (ticketError) throw new AppError("DB_ERROR", ticketError.message, 500);
-
-      // Bookkeeping: flip the source rows. The project already exists, so a
-      // failure here is logged rather than rolled back.
+  router.post(
+    "/quote-requests/:id/convert",
+    requireAuth,
+    requireAdmin,
+    requireOrgAccess,
+    async (req, res, next) => {
       try {
-        await supabase
+        const parsed = convertQuoteRequestSchema.parse(req.body);
+        const supabase = getSupabaseAdmin();
+        const actorUserId = req.authUser?.userId ?? null;
+        if (!actorUserId) throw new AppError("UNAUTHORIZED", "Authenticated user required", 401);
+
+        const { data: request, error } = await supabase
           .from("store_quote_requests")
-          .update({ status: "converted_to_project" })
-          .eq("id", request.id);
+          .select("*")
+          .eq("id", String(req.params.id))
+          .maybeSingle();
 
-        const { data: leads } = await supabase
-          .from("store_leads")
-          .select("id")
-          .eq("quote_request_id", request.id);
-        const leadIds = (leads ?? []).map((lead) => lead.id);
-        if (leadIds.length > 0) {
-          await supabase
-            .from("store_leads")
-            .update({
-              status: "converted",
-              ...(parsed.assignedOwnerId ? { assigned_owner: parsed.assignedOwnerId } : {}),
-            })
-            .in("id", leadIds);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        if (!request) throw new AppError("NOT_FOUND", "Quote request not found", 404);
+        if (request.status === "converted_to_project") {
+          throw new AppError("CONFLICT", "Quote request has already been converted", 409);
         }
-      } catch (bookkeepingError) {
-        logger.warn({ err: bookkeepingError }, "store.quote_request.convert_bookkeeping_failed");
+
+        const plan = buildHandoffPlan(request, {
+          organizationId: parsed.organizationId,
+          createdBy: actorUserId,
+          projectName: parsed.projectName,
+          priority: parsed.priority,
+          ownerId: parsed.ownerId ?? null,
+        });
+
+        // Carry the linked first-class proposal (if one was generated) onto the
+        // project so delivery can see the approved commercial scope.
+        const { data: linkedDrafts } = await supabase
+          .from("store_proposal_drafts")
+          .select("proposal_id")
+          .eq("quote_request_id", request.id)
+          .not("proposal_id", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        const linkedProposalId = linkedDrafts?.[0]?.proposal_id ?? null;
+        if (linkedProposalId) plan.project.metadata.proposalId = linkedProposalId;
+
+        const { data: project, error: projectError } = await supabase
+          .from("projects")
+          .insert(plan.project as never)
+          .select()
+          .single();
+        if (projectError) throw new AppError("DB_ERROR", projectError.message, 500);
+
+        const { data: tasks, error: taskError } = await supabase
+          .from("project_tasks")
+          .insert(
+            plan.taskTitles.map((title, index) => ({
+              organization_id: parsed.organizationId,
+              project_id: project.id,
+              created_by: actorUserId,
+              title,
+              status: "todo",
+              sort_order: index,
+            })) as never,
+          )
+          .select();
+        if (taskError) throw new AppError("DB_ERROR", taskError.message, 500);
+
+        const { data: ticket, error: ticketError } = await supabase
+          .from("tickets")
+          .insert({
+            organization_id: parsed.organizationId,
+            created_by: actorUserId,
+            title: plan.ticketTitle,
+            description: plan.ticketDescription,
+            priority: parsed.priority,
+            category: "store_intake",
+            source: "admin",
+            status: "new",
+            metadata: toJson({ quoteRequestId: request.id, projectId: project.id }),
+          } as never)
+          .select()
+          .single();
+        if (ticketError) throw new AppError("DB_ERROR", ticketError.message, 500);
+
+        // Bookkeeping: flip the source rows. The project already exists, so a
+        // failure here is logged rather than rolled back.
+        try {
+          await supabase
+            .from("store_quote_requests")
+            .update({ status: "converted_to_project" })
+            .eq("id", request.id);
+
+          const { data: leads } = await supabase
+            .from("store_leads")
+            .select("id")
+            .eq("quote_request_id", request.id);
+          const leadIds = (leads ?? []).map((lead) => lead.id);
+          if (leadIds.length > 0) {
+            await supabase
+              .from("store_leads")
+              .update({
+                status: "converted",
+                ...(parsed.assignedOwnerId ? { assigned_owner: parsed.assignedOwnerId } : {}),
+              })
+              .in("id", leadIds);
+          }
+        } catch (bookkeepingError) {
+          logger.warn({ err: bookkeepingError }, "store.quote_request.convert_bookkeeping_failed");
+        }
+
+        await logAuditEvent({
+          organizationId: parsed.organizationId,
+          actorUserId,
+          action: "store.quote_request.converted_to_project",
+          entityType: "project",
+          entityId: project.id,
+          metadata: {
+            quoteRequestId: request.id,
+            ticketId: ticket.id,
+            checklistTasks: plan.taskTitles.length,
+            proposalId: linkedProposalId,
+          },
+        });
+
+        void dispatchWebhook("project.created", parsed.organizationId, {
+          projectId: project.id,
+          name: plan.project.name,
+          status: plan.project.status,
+          source: "store_intake",
+        });
+
+        res.status(201).json(
+          success({
+            project,
+            ticketId: ticket.id,
+            checklistTaskCount: (tasks ?? []).length,
+          }),
+        );
+      } catch (error) {
+        if (error instanceof ZodError) {
+          res
+            .status(400)
+            .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+          return;
+        }
+        next(error);
       }
-
-      await logAuditEvent({
-        organizationId: parsed.organizationId,
-        actorUserId,
-        action: "store.quote_request.converted_to_project",
-        entityType: "project",
-        entityId: project.id,
-        metadata: {
-          quoteRequestId: request.id,
-          ticketId: ticket.id,
-          checklistTasks: plan.taskTitles.length,
-          proposalId: linkedProposalId,
-        },
-      });
-
-      void dispatchWebhook("project.created", parsed.organizationId, {
-        projectId: project.id,
-        name: plan.project.name,
-        status: plan.project.status,
-        source: "store_intake",
-      });
-
-      res.status(201).json(
-        success({
-          project,
-          ticketId: ticket.id,
-          checklistTaskCount: (tasks ?? []).length,
-        }),
-      );
-    } catch (error) {
-      if (error instanceof ZodError) {
-        res
-          .status(400)
-          .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
-        return;
-      }
-      next(error);
-    }
-  });
+    },
+  );
 }
