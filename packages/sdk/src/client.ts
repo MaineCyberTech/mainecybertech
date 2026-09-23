@@ -184,38 +184,84 @@ export class ApiClient {
   }
 
   async getBlob(path: string, params?: Record<string, string | number | undefined>): Promise<Blob> {
-    const token = await this.getToken();
+    const [token, activeOrgId] = await Promise.all([this.getToken(), this.getActiveOrgId()]);
     const url = `${this.baseUrl}${path}${buildQuery(params)}`;
     const headers: Record<string, string> = {};
     if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (activeOrgId) headers["X-Active-Org"] = activeOrgId;
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    let lastError: Error | null = null;
 
-    try {
-      const res = await fetch(url, {
-        method: "GET",
-        headers,
-        credentials: "include",
-        signal: controller.signal,
-      });
+    for (let attempt = 0; attempt <= this.retry.maxRetries; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
-      if (!res.ok) {
-        throw new ApiError("HTTP_ERROR", `HTTP ${res.status}`, res.status);
+      try {
+        const res = await fetch(url, {
+          method: "GET",
+          headers,
+          credentials: "include",
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          // Preserve the structured API error envelope when present.
+          let code = "HTTP_ERROR";
+          let message = `HTTP ${res.status}`;
+          let details: Record<string, unknown> | undefined;
+          try {
+            const json = (await res.json()) as {
+              error?: { code?: string; message?: string; details?: Record<string, unknown> };
+            };
+            if (json?.error) {
+              code = json.error.code ?? code;
+              message = json.error.message ?? message;
+              details = json.error.details;
+            }
+          } catch {
+            // Non-JSON error body — keep the generic message.
+          }
+
+          if (
+            attempt < this.retry.maxRetries &&
+            this.retry.retryableStatuses.includes(res.status)
+          ) {
+            await sleep(this.backoffDelay(attempt));
+            continue;
+          }
+
+          throw new ApiError(code, message, res.status, details);
+        }
+
+        return await res.blob();
+      } catch (error) {
+        if (error instanceof ApiError) throw error;
+        if (attempt < this.retry.maxRetries) {
+          lastError = error as Error;
+          await sleep(this.backoffDelay(attempt));
+          continue;
+        }
+        throw error;
+      } finally {
+        clearTimeout(timer);
       }
-
-      return res.blob();
-    } finally {
-      clearTimeout(timer);
     }
+
+    throw lastError ?? new Error("Max retries exceeded");
   }
 
   async postFormData<T>(path: string, formData: FormData): Promise<T> {
-    const token = await this.getToken();
+    const [token, activeOrgId] = await Promise.all([this.getToken(), this.getActiveOrgId()]);
     const url = `${this.baseUrl}${path}`;
 
     const headers: Record<string, string> = {};
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    } else {
+      const csrfToken = this.getCsrfToken();
+      if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
+    }
+    if (activeOrgId) headers["X-Active-Org"] = activeOrgId;
 
     return this.executeFetch<T>(url, {
       method: "POST",
