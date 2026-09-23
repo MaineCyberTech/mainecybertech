@@ -12,9 +12,7 @@ export interface TaskResult {
   error?: string;
 }
 
-export type TaskHandler = (
-  payload: Record<string, unknown>,
-) => Promise<TaskResult>;
+export type TaskHandler = (payload: Record<string, unknown>) => Promise<TaskResult>;
 
 const taskRegistry = new Map<string, TaskHandler>();
 
@@ -62,8 +60,11 @@ export async function executeTask(message: TaskMessage): Promise<TaskResult> {
 
     const errMsg = error instanceof Error ? error.message : String(error);
     logger.error({ type: message.type, error: errMsg }, "Task handler threw");
+    // Do not forward the raw payload to Sentry — scheduled-notification and
+    // ticket payloads can contain PII (titles, bodies, recipients). Keys are
+    // enough to triage which task failed without shipping user data.
     Sentry.captureException(error, {
-      extra: { taskType: message.type, payload: message.payload },
+      extra: { taskType: message.type, payloadKeys: Object.keys(message.payload ?? {}) },
     });
     return { ok: false, error: errMsg };
   }

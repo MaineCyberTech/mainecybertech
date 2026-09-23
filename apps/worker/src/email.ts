@@ -42,19 +42,16 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
         html,
       });
 
-      logger.info({ subject }, "Email sent");
+      logger.info("Email sent");
       return true;
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       if (attempt < MAX_ATTEMPTS) {
         const backoffMs = BASE_RETRY_MS * 2 ** (attempt - 1);
-        logger.warn(
-          { attempt, error: msg, subject },
-          `Email send failed — retrying in ${backoffMs}ms`,
-        );
+        logger.warn({ attempt, error: msg }, `Email send failed — retrying in ${backoffMs}ms`);
         await new Promise((resolve) => setTimeout(resolve, backoffMs));
       } else {
-        logger.error({ error: msg, subject }, "Failed to send email after all attempts");
+        logger.error({ error: msg }, "Failed to send email after all attempts");
       }
     }
   }

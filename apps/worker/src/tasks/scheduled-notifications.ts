@@ -91,15 +91,41 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
 
         let notified = 0;
         let emailed = 0;
+
+        // Batch the profile + dedupe lookups (previously 2 queries per task).
+        const ownerIds = Array.from(
+          new Set((tasks ?? []).map((t) => t.owner_id).filter((id): id is string => Boolean(id))),
+        );
+        const profileById = new Map<string, { email: string | null; full_name: string | null }>();
+        const alerted = new Set<string>();
+
+        if (ownerIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("id, email, full_name")
+            .in("id", ownerIds);
+          for (const profile of profiles ?? []) {
+            profileById.set(profile.id as string, {
+              email: (profile.email as string) ?? null,
+              full_name: (profile.full_name as string) ?? null,
+            });
+          }
+
+          const { data: existing } = await supabase
+            .from("notifications")
+            .select("user_id, module_id, action")
+            .eq("module", "projects")
+            .in("user_id", ownerIds)
+            .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+          for (const row of existing ?? []) {
+            alerted.add(`${row.user_id}|${row.module_id}|${row.action}`);
+          }
+        }
+
         for (const task of tasks ?? []) {
           if (!task.owner_id) continue;
 
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("email, full_name")
-            .eq("id", task.owner_id)
-            .single();
-
+          const profile = profileById.get(task.owner_id);
           if (!profile?.email) continue;
 
           const isOverdue = task.due_at && new Date(task.due_at) < new Date();
@@ -113,16 +139,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
 
           // Dedupe: the scan runs daily and a task can stay overdue for days,
           // so do not re-notify/re-email the same task within a week.
-          const { data: existing } = await supabase
-            .from("notifications")
-            .select("id")
-            .eq("user_id", task.owner_id)
-            .eq("module", "projects")
-            .eq("module_id", task.id)
-            .eq("action", action)
-            .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
-            .maybeSingle();
-          if (existing) continue;
+          if (alerted.has(`${task.owner_id}|${task.id}|${action}`)) continue;
 
           await createInAppNotification(
             supabase,
