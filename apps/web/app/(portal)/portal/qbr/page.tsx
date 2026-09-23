@@ -4,12 +4,14 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "QBR Reports - Portal - Maine CyberTech" };
 
 export default async function PortalQbrPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -18,6 +20,7 @@ export default async function PortalQbrPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[qbr/page]", error);
+    loadFailed = true;
   }
 
   function statusBadge(status: string) {
@@ -47,6 +50,7 @@ export default async function PortalQbrPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "QBR Reports" }]}
       />
       <PortalSubnav current="qbr" />
+      {loadFailed ? <DataErrorNote what="qbr" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">QBR Reports</h1>
       <p className="text-sm text-slate-400">{items.length} reports for your organization.</p>
       <div className="space-y-3">

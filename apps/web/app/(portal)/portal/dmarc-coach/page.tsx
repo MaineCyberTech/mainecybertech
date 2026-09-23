@@ -4,12 +4,14 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DMARC Coach - Portal - Maine CyberTech" };
 
 export default async function PortalDmarcCoachPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -18,6 +20,7 @@ export default async function PortalDmarcCoachPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[dmarc-coach/page]", error);
+    loadFailed = true;
   }
 
   const gradeColor = (grade: string) => {
@@ -34,6 +37,7 @@ export default async function PortalDmarcCoachPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "DMARC Coach" }]}
       />
       <PortalSubnav current="dmarc-coach" />
+      {loadFailed ? <DataErrorNote what="dmarc-coach" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">DMARC Coach</h1>
       <p className="text-sm text-slate-400">Review DNS security analysis for your domains.</p>
       <div className="grid gap-4 md:grid-cols-2">

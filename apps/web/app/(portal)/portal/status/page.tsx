@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status - Portal - Maine CyberTech" };
@@ -10,11 +11,13 @@ export const metadata = { title: "Status - Portal - Maine CyberTech" };
 export default async function PortalStatusPage() {
   const api = getApiClient();
   let items: Array<Record<string, unknown>> = [];
+  let loadFailed = false;
   try {
     const r = await api.batch.status.public();
     items = r as unknown as typeof items;
   } catch (error) {
     console.error("[status/page]", error);
+    loadFailed = true;
   }
 
   const sev = (s: string) =>
@@ -30,6 +33,7 @@ export default async function PortalStatusPage() {
       <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Status" }]} />
       <PortalSubnav current="status" />
       <h1 className="text-2xl font-semibold text-slate-50">Service Status</h1>
+      {loadFailed ? <DataErrorNote what="service status" /> : null}
       <div className="space-y-3">
         {items.map((s) => (
           <div
@@ -56,7 +60,7 @@ export default async function PortalStatusPage() {
             </div>
           </div>
         ))}
-        {items.length === 0 && (
+        {items.length === 0 && !loadFailed && (
           <div className="rounded-2xl border border-dashed border-white/10 bg-cyber-card-deep/70 px-6 py-12 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-2xl">
               &#10003;

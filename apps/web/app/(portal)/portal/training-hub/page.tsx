@@ -4,12 +4,14 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Training Hub - Portal - Maine CyberTech" };
 
 export default async function PortalTrainingHubPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -18,6 +20,7 @@ export default async function PortalTrainingHubPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[training-hub/page]", error);
+    loadFailed = true;
   }
 
   const difficultyColor = (level: string) => {
@@ -33,6 +36,7 @@ export default async function PortalTrainingHubPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Training Hub" }]}
       />
       <PortalSubnav current="training-hub" />
+      {loadFailed ? <DataErrorNote what="training-hub" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Training Hub</h1>
       <p className="text-sm text-slate-400">Browse available microlearning courses.</p>
       <div className="grid gap-4 md:grid-cols-2">

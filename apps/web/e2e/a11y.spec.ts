@@ -4,14 +4,23 @@ import AxeBuilder from "@axe-core/playwright";
 test.describe("accessibility scan", () => {
   const pages = [
     { path: "/login", name: "login" },
+    { path: "/signup", name: "signup" },
     { path: "/store", name: "public store" },
+    { path: "/case-studies", name: "case studies" },
+    { path: "/resources", name: "resources" },
+    { path: "/privacy", name: "privacy" },
+    { path: "/terms", name: "terms" },
+    { path: "/status", name: "status index" },
     { path: "/portal/dashboard", name: "portal dashboard" },
     { path: "/admin", name: "admin dashboard" },
     { path: "/portal/support", name: "portal tickets" },
     { path: "/portal/projects", name: "portal projects" },
     { path: "/portal/documents", name: "portal documents" },
+    { path: "/portal/profile", name: "portal profile" },
+    { path: "/portal/assets", name: "portal assets" },
     { path: "/admin/tickets", name: "admin tickets" },
     { path: "/admin/projects", name: "admin projects" },
+    { path: "/admin/users", name: "admin users" },
     { path: "/portal/findings", name: "portal findings" },
   ];
 

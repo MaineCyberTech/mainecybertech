@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
           "/forgot-password",
           "/api",
           "/pending",
+          "/test-accounts",
         ],
       },
     ],

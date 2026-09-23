@@ -7,6 +7,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import UserPermissionOverridesClient from "@/components/admin/UserPermissionOverridesClient";
+import SubmitButton from "@/components/SubmitButton";
 import { Membership, Organization, Role, UserDetail } from "@mct/sdk";
 
 export const metadata = { title: "User Details - Admin - Maine CyberTech" };
@@ -134,9 +135,9 @@ export default async function UserDetailPage({ params }: UserPageProps) {
           </div>
 
           <div className="mt-6">
-            <button type="submit" className="cyber-button">
+            <SubmitButton className="cyber-button" pendingText="Saving…">
               Save Profile
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </section>
@@ -224,9 +225,9 @@ export default async function UserDetailPage({ params }: UserPageProps) {
                     </div>
 
                     <div className="mt-6">
-                      <button type="submit" className="cyber-button-secondary">
+                      <SubmitButton className="cyber-button-secondary" pendingText="Saving…">
                         Save Membership
-                      </button>
+                      </SubmitButton>
                     </div>
                   </form>
                 </div>

@@ -76,6 +76,8 @@ describe("PortalStatusPage", () => {
     const { default: Page } = await import("@/app/(portal)/portal/status/page");
     const element = await Page();
     render(element);
-    expect(screen.getByText(/all systems operational/i)).toBeInTheDocument();
+    // A failed status fetch must NOT be reported as "all systems operational".
+    expect(screen.getByText(/could not load service status/i)).toBeInTheDocument();
+    expect(screen.queryByText(/all systems operational/i)).not.toBeInTheDocument();
   });
 });

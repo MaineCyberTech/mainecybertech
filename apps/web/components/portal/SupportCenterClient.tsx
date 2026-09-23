@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, useRef } from "react";
 import Link from "next/link";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 
 type TicketRecord = Record<string, any> & { id: string };
 
@@ -161,6 +162,8 @@ function TicketList({
 export default function SupportCenterClient({ tickets, createTicketAction }: Props) {
   const [showHistory, setShowHistory] = useState(false);
   const [openModal, setOpenModal] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, openModal);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -234,6 +237,7 @@ export default function SupportCenterClient({ tickets, createTicketAction }: Pro
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-support-ticket-title"
+            ref={modalRef}
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpenModal(false);
             }}

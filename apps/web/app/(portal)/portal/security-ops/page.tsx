@@ -4,6 +4,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Security Operations - Portal - Maine CyberTech" };
 
@@ -23,6 +24,7 @@ function Pill({ value }: { value: unknown }) {
 export default async function SecurityOpsPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -31,6 +33,7 @@ export default async function SecurityOpsPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[security-ops/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -39,6 +42,7 @@ export default async function SecurityOpsPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Security Operations" }]}
       />
       <PortalSubnav current="security-ops" />
+      {loadFailed ? <DataErrorNote what="security-ops" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Security Operations</h1>
       <p className="text-sm text-slate-400">
         {items.length} onboarding record{items.length !== 1 ? "s" : ""} for your organization.

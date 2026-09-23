@@ -5,12 +5,14 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import type { M365HardeningRecord } from "@mct/sdk";
 import StatusPill from "@/components/StatusPill";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "M365 Security - Portal - Maine CyberTech" };
 
 export default async function PortalM365HardeningPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: M365HardeningRecord[] = [];
@@ -19,6 +21,7 @@ export default async function PortalM365HardeningPage() {
     items = r.items as M365HardeningRecord[];
   } catch (error) {
     console.error("[m365-hardening/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -27,6 +30,7 @@ export default async function PortalM365HardeningPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "M365 Security" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">M365 Security</h1>
+      {loadFailed ? <DataErrorNote what="m365-hardening" /> : null}
       <p className="text-sm text-slate-400">
         {items.length} tenant hardening check{items.length !== 1 ? "s" : ""} for your organization.
       </p>

@@ -122,9 +122,15 @@ export default function ContactForm() {
           type="text"
           value={form.company}
           onChange={(e) => update("company", e.target.value)}
+          aria-invalid={!!errors.company}
+          aria-describedby={errors.company ? "contact-company-error" : undefined}
           className={inputCls("company")}
         />
-        {errors.company && <p className="mt-1 text-xs text-red-400">{errors.company}</p>}
+        {errors.company && (
+          <p id="contact-company-error" role="alert" className="mt-1 text-xs text-red-400">
+            {errors.company}
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -137,9 +143,15 @@ export default function ContactForm() {
             type="text"
             value={form.name}
             onChange={(e) => update("name", e.target.value)}
+            aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? "contact-name-error" : undefined}
             className={inputCls("name")}
           />
-          {errors.name && <p className="mt-1 text-xs text-red-400">{errors.name}</p>}
+          {errors.name && (
+            <p id="contact-name-error" role="alert" className="mt-1 text-xs text-red-400">
+              {errors.name}
+            </p>
+          )}
         </div>
         <div>
           <label htmlFor="contact-email" className={labelCls}>
@@ -150,9 +162,15 @@ export default function ContactForm() {
             type="email"
             value={form.email}
             onChange={(e) => update("email", e.target.value)}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "contact-email-error" : undefined}
             className={inputCls("email")}
           />
-          {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
+          {errors.email && (
+            <p id="contact-email-error" role="alert" className="mt-1 text-xs text-red-400">
+              {errors.email}
+            </p>
+          )}
         </div>
         <div>
           <label htmlFor="contact-phone" className={labelCls}>
@@ -163,9 +181,15 @@ export default function ContactForm() {
             type="tel"
             value={form.phone}
             onChange={(e) => update("phone", e.target.value)}
+            aria-invalid={!!errors.phone}
+            aria-describedby={errors.phone ? "contact-phone-error" : undefined}
             className={inputCls("phone")}
           />
-          {errors.phone && <p className="mt-1 text-xs text-red-400">{errors.phone}</p>}
+          {errors.phone && (
+            <p id="contact-phone-error" role="alert" className="mt-1 text-xs text-red-400">
+              {errors.phone}
+            </p>
+          )}
         </div>
       </div>
 
@@ -178,6 +202,8 @@ export default function ContactForm() {
             id="contact-services"
             value={form.services}
             onChange={(e) => update("services", e.target.value)}
+            aria-invalid={!!errors.services}
+            aria-describedby={errors.services ? "contact-services-error" : undefined}
             className={inputCls("services")}
           >
             <option value="" disabled>
@@ -191,7 +217,11 @@ export default function ContactForm() {
             <option value="IT Consulting / Virtual CIO">IT Consulting / Virtual CIO</option>
             <option value="Other / Unsure">Other / Unsure</option>
           </select>
-          {errors.services && <p className="mt-1 text-xs text-red-400">{errors.services}</p>}
+          {errors.services && (
+            <p id="contact-services-error" role="alert" className="mt-1 text-xs text-red-400">
+              {errors.services}
+            </p>
+          )}
         </div>
         <div>
           <label htmlFor="contact-employees" className={labelCls}>
@@ -201,6 +231,8 @@ export default function ContactForm() {
             id="contact-employees"
             value={form.employees}
             onChange={(e) => update("employees", e.target.value)}
+            aria-invalid={!!errors.employees}
+            aria-describedby={errors.employees ? "contact-employees-error" : undefined}
             className={inputCls("employees")}
           >
             <option value="" disabled>
@@ -211,7 +243,11 @@ export default function ContactForm() {
             <option value="51-200">51 - 200</option>
             <option value="200+">200+</option>
           </select>
-          {errors.employees && <p className="mt-1 text-xs text-red-400">{errors.employees}</p>}
+          {errors.employees && (
+            <p id="contact-employees-error" role="alert" className="mt-1 text-xs text-red-400">
+              {errors.employees}
+            </p>
+          )}
         </div>
         <div>
           <label htmlFor="contact-urgency" className={labelCls}>
@@ -221,6 +257,8 @@ export default function ContactForm() {
             id="contact-urgency"
             value={form.urgency}
             onChange={(e) => update("urgency", e.target.value)}
+            aria-invalid={!!errors.urgency}
+            aria-describedby={errors.urgency ? "contact-urgency-error" : undefined}
             className={inputCls("urgency")}
           >
             <option value="" disabled>
@@ -230,7 +268,11 @@ export default function ContactForm() {
             <option value="Medium - Planning Phase">Medium - Planning an upcoming project</option>
             <option value="High - Active Issue">High - Need immediate assistance</option>
           </select>
-          {errors.urgency && <p className="mt-1 text-xs text-red-400">{errors.urgency}</p>}
+          {errors.urgency && (
+            <p id="contact-urgency-error" role="alert" className="mt-1 text-xs text-red-400">
+              {errors.urgency}
+            </p>
+          )}
         </div>
       </div>
 
@@ -244,9 +286,15 @@ export default function ContactForm() {
           value={form.message}
           onChange={(e) => update("message", e.target.value)}
           placeholder="Briefly describe your current IT setup or the challenge you are facing..."
+          aria-invalid={!!errors.message}
+          aria-describedby={errors.message ? "contact-message-error" : undefined}
           className={inputCls("message")}
         />
-        {errors.message && <p className="mt-1 text-xs text-red-400">{errors.message}</p>}
+        {errors.message && (
+          <p id="contact-message-error" role="alert" className="mt-1 text-xs text-red-400">
+            {errors.message}
+          </p>
+        )}
       </div>
 
       {TURNSTILE_SITE_KEY && (
@@ -294,6 +342,7 @@ export default function ContactForm() {
 
       {status && (
         <div
+          role={status.type === "error" ? "alert" : "status"}
           className={`rounded border p-4 text-sm font-medium ${
             status.type === "success"
               ? "border-emerald-600/30 bg-emerald-600/10 text-emerald-500"

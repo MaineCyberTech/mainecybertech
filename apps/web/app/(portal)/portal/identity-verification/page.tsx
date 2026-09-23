@@ -5,12 +5,14 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import type { IdentityVerification } from "@mct/sdk";
 import StatusPill from "@/components/StatusPill";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Identity Verification - Portal - Maine CyberTech" };
 
 export default async function PortalIdentityVerificationPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: IdentityVerification[] = [];
@@ -19,6 +21,7 @@ export default async function PortalIdentityVerificationPage() {
     items = r.items as IdentityVerification[];
   } catch (error) {
     console.error("[identity-verification/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -27,6 +30,7 @@ export default async function PortalIdentityVerificationPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Identity Verification" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">Identity Verification</h1>
+      {loadFailed ? <DataErrorNote what="identity-verification" /> : null}
       <p className="text-sm text-slate-400">
         {items.length} verification request{items.length !== 1 ? "s" : ""} for your organization.
       </p>

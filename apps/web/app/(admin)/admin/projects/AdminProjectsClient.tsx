@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 import { Project } from "@mct/sdk";
 
 type Org = { id: string; name: string; slug: string };
@@ -64,6 +65,8 @@ export default function AdminProjectsClient({
   createProjectAction,
 }: Props) {
   const [openModal, setOpenModal] = useState(false);
+  const projectModalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(projectModalRef, openModal);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -304,6 +307,7 @@ export default function AdminProjectsClient({
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-project-title"
+            ref={projectModalRef}
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpenModal(false);
             }}

@@ -43,17 +43,20 @@ export default async function PublicStatusPage({ params }: Props) {
   const { orgId } = await params;
 
   let payload: StatusPayload = {};
+  let loadFailed = false;
   try {
     payload = (await getApiClient().statusPage.publicStatus(orgId)) as StatusPayload;
   } catch {
-    payload = {};
+    // Never render a false "all systems operational" when the status API is
+    // unreachable — that is the exact opposite of the intended signal.
+    loadFailed = true;
   }
 
   const components = payload.components ?? [];
   const incidents = payload.activeIncidents ?? [];
   const maintenance = payload.upcomingMaintenance ?? [];
   const allOperational =
-    incidents.length === 0 && components.every((c) => c.status === "operational");
+    !loadFailed && incidents.length === 0 && components.every((c) => c.status === "operational");
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
@@ -62,12 +65,18 @@ export default async function PublicStatusPage({ params }: Props) {
       </h1>
       <p
         className={`mt-4 inline-block rounded-lg border px-4 py-2 text-sm font-medium ${
-          allOperational
-            ? "border-emerald-600/30 bg-emerald-600/15 text-emerald-400"
-            : "border-amber-600/30 bg-amber-600/15 text-amber-300"
+          loadFailed
+            ? "border-slate-500/30 bg-slate-500/15 text-slate-300"
+            : allOperational
+              ? "border-emerald-600/30 bg-emerald-600/15 text-emerald-400"
+              : "border-amber-600/30 bg-amber-600/15 text-amber-300"
         }`}
       >
-        {allOperational ? "All systems operational" : "Active incidents or degraded services"}
+        {loadFailed
+          ? "Status unavailable — could not reach the status service"
+          : allOperational
+            ? "All systems operational"
+            : "Active incidents or degraded services"}
       </p>
 
       <section className="mt-10">

@@ -4,12 +4,14 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendor Contacts - Portal - Maine CyberTech" };
 
 export default async function PortalVendorContactsPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -18,6 +20,7 @@ export default async function PortalVendorContactsPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[vendor-contacts/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -26,6 +29,7 @@ export default async function PortalVendorContactsPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Vendor Contacts" }]}
       />
       <PortalSubnav current="vendor-contacts" />
+      {loadFailed ? <DataErrorNote what="vendor-contacts" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Vendor Contacts</h1>
       <p className="text-sm text-slate-400">{items.length} contacts for your organization.</p>
       <div className="space-y-3">

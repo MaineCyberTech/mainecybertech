@@ -4,12 +4,14 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "File Requests - Portal - Maine CyberTech" };
 
 export default async function PortalFileRequestsPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -18,6 +20,7 @@ export default async function PortalFileRequestsPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[file-requests/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -26,6 +29,7 @@ export default async function PortalFileRequestsPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "File Requests" }]}
       />
       <PortalSubnav current="file-requests" />
+      {loadFailed ? <DataErrorNote what="file-requests" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Secure File Requests</h1>
       <p className="text-sm text-slate-400">{items.length} file request links available.</p>
       <div className="space-y-3">

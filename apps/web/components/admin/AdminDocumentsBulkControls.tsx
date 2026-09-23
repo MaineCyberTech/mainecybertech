@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type {
   BulkActionResult,
   DocumentVisibility,
 } from "@/app/(admin)/admin/documents/bulk-actions";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 
 type Props = {
   selectedIds: string[];
@@ -39,6 +40,10 @@ export default function AdminDocumentsBulkControls({
   const [metaFolder, setMetaFolder] = useState("");
   const [metaVisibility, setMetaVisibility] = useState<DocumentVisibility | "">("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const folderModalRef = useRef<HTMLDivElement>(null);
+  const metadataModalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(folderModalRef, showFolderModal);
+  useFocusTrap(metadataModalRef, showMetadataModal);
 
   async function applyBulkFolder() {
     const nextFolder = folderValue.trim();
@@ -174,6 +179,7 @@ export default function AdminDocumentsBulkControls({
             role="dialog"
             aria-modal="true"
             aria-labelledby="bulk-folder-title"
+            ref={folderModalRef}
             onKeyDown={(e) => {
               if (e.key === "Escape") setShowFolderModal(false);
             }}
@@ -233,6 +239,7 @@ export default function AdminDocumentsBulkControls({
             role="dialog"
             aria-modal="true"
             aria-labelledby="bulk-meta-title"
+            ref={metadataModalRef}
             onKeyDown={(e) => {
               if (e.key === "Escape") setShowMetadataModal(false);
             }}

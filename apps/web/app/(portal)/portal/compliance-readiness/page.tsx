@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import StatusPill from "@/components/StatusPill";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Compliance Readiness - Portal - Maine CyberTech" };
@@ -33,6 +34,7 @@ export default async function PortalComplianceReadinessPage() {
 
   let frameworks: Framework[] = [];
   let controls: Control[] = [];
+  let loadFailed = false;
   try {
     if (orgId) {
       frameworks = await api.compliance.listFrameworks(orgId);
@@ -43,6 +45,7 @@ export default async function PortalComplianceReadinessPage() {
     }
   } catch (error) {
     console.error("[compliance-readiness/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -51,6 +54,7 @@ export default async function PortalComplianceReadinessPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Compliance Readiness" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">Compliance Readiness</h1>
+      {loadFailed ? <DataErrorNote what="compliance data" /> : null}
       {!orgId ? (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           <h3 className="font-semibold">No Organization Access</h3>

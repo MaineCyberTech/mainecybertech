@@ -4,6 +4,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Budget Roadmap - Portal - Maine CyberTech" };
 
@@ -12,6 +13,7 @@ const fmtCurrency = new Intl.NumberFormat("en-US", { style: "currency", currency
 export default async function PortalBudgetsPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -20,6 +22,7 @@ export default async function PortalBudgetsPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[budgets/page]", error);
+    loadFailed = true;
   }
 
   function priorityBadge(priority: string) {
@@ -49,6 +52,7 @@ export default async function PortalBudgetsPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Budget Roadmap" }]}
       />
       <PortalSubnav current="budgets" />
+      {loadFailed ? <DataErrorNote what="budgets" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Budget Roadmap</h1>
       <p className="text-sm text-slate-400">{items.length} budget items for your organization.</p>
       <div className="space-y-3">

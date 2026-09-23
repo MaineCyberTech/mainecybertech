@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import ServiceCard from "../../components/marketing/ServiceCard";
-import LocalBusinessJsonLd from "../../components/seo/LocalBusinessJsonLd";
 import BreadcrumbJsonLd from "../../components/seo/BreadcrumbJsonLd";
 import JsonLd from "../../components/seo/JsonLd";
 import { buildOrganizationSchema, buildWebsiteSchema } from "../../lib/seo/schema";
@@ -88,7 +87,6 @@ const services = [
 export default function HomePage() {
   return (
     <>
-      <LocalBusinessJsonLd />
       <JsonLd data={buildOrganizationSchema() as Record<string, unknown>} />
       <JsonLd data={buildWebsiteSchema() as Record<string, unknown>} />
       <BreadcrumbJsonLd items={[{ name: "Home", url: siteConfig.url }]} />

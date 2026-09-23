@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, useRef, type ReactNode } from "react";
 import type { Promotion } from "@/lib/catalog/promotions";
 import { createPromotionAction, updatePromotionAction } from "./actions";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 
 const PROMO_TYPES = [
   { id: "bundle_savings", label: "Bundle Savings" },
@@ -27,6 +28,8 @@ export default function PromoForm({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -60,6 +63,7 @@ export default function PromoForm({
             role="dialog"
             aria-modal="true"
             aria-labelledby="promo-form-title"
+            ref={dialogRef}
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpen(false);
             }}

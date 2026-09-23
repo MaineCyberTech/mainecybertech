@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import CabMeetingsClient from "@/components/cab/CabMeetingsClient";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Change Advisory Board - Portal - Maine CyberTech" };
@@ -33,11 +34,13 @@ export default async function PortalCabPage() {
 
   let meetings: Meeting[] = [];
   let pendingChanges: ChangeRequest[] = [];
+  let loadFailed = false;
   try {
     const r = await api.cab.list({ organizationId: orgId });
     meetings = r.items as unknown as Meeting[];
   } catch (error) {
     console.error("[cab/page]", error);
+    loadFailed = true;
   }
   try {
     const cr = await api.governance.changes.list({ organizationId: orgId, status: "pending" });
@@ -46,6 +49,7 @@ export default async function PortalCabPage() {
     );
   } catch (error) {
     console.error("[cab/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -54,6 +58,7 @@ export default async function PortalCabPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Change Advisory Board" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">Change Advisory Board</h1>
+      {loadFailed ? <DataErrorNote what="CAB data" /> : null}
       <p className="text-sm text-slate-400">
         {meetings.length} CAB meeting{meetings.length !== 1 ? "s" : ""} scheduled for your
         organization.

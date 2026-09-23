@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, useRef, type ReactNode } from "react";
 import type { Category } from "@/lib/catalog/types";
 import { createCategoryAction, updateCategoryAction } from "./actions";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 
 type Mode = "create" | "edit";
 
@@ -19,6 +20,8 @@ export default function CategoryForm({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
@@ -52,6 +55,7 @@ export default function CategoryForm({
             role="dialog"
             aria-modal="true"
             aria-labelledby="category-form-title"
+            ref={dialogRef}
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpen(false);
             }}

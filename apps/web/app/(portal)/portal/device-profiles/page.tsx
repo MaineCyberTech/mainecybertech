@@ -4,6 +4,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import AdminPagination from "@/components/admin/AdminPagination";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Device Profiles - Portal - Maine CyberTech" };
@@ -37,6 +38,7 @@ export default async function DeviceProfilesPage({ searchParams }: DeviceProfile
   }> = [];
   let total = 0;
 
+  let loadFailed = false;
   try {
     if (orgId) {
       const r = await api.deviceProfiles.list({ organizationId: orgId, page, limit });
@@ -45,6 +47,7 @@ export default async function DeviceProfilesPage({ searchParams }: DeviceProfile
     }
   } catch (error) {
     console.error("[device-profiles/page]", error);
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -57,6 +60,7 @@ export default async function DeviceProfilesPage({ searchParams }: DeviceProfile
       />
       <PortalSubnav current="device-profiles" />
       <h1 className="text-2xl font-semibold text-slate-50">Device Configuration Profiles</h1>
+      {loadFailed ? <DataErrorNote what="device profiles" /> : null}
       {!orgId ? (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           <h3 className="font-semibold">No Organization Access</h3>

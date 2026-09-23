@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status Page - Portal - Maine CyberTech" };
@@ -15,23 +16,27 @@ export default async function PortalStatusPagesPage() {
   let items: Array<Record<string, unknown>> = [];
   let incidents: Array<Record<string, unknown>> = [];
   let maintenance: Array<Record<string, unknown>> = [];
+  let loadFailed = false;
   try {
     const r = (await api.statusPage.components.list({ organizationId: orgId })) as any;
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[status-pages/page]", error);
+    loadFailed = true;
   }
   try {
     const r = (await api.statusPage.incidents.list({ organizationId: orgId })) as any;
     incidents = r.items as unknown as typeof incidents;
   } catch (error) {
     console.error("[status-pages/page]", error);
+    loadFailed = true;
   }
   try {
     const r = (await api.statusPage.maintenance.list({ organizationId: orgId })) as any;
     maintenance = r.items as unknown as typeof maintenance;
   } catch (error) {
     console.error("[status-pages/page]", error);
+    loadFailed = true;
   }
 
   const statusColor = (status: string) => {
@@ -50,6 +55,7 @@ export default async function PortalStatusPagesPage() {
       />
       <PortalSubnav current="status-pages" />
       <h1 className="text-2xl font-semibold text-slate-50">Status Page</h1>
+      {loadFailed ? <DataErrorNote what="status data" /> : null}
       <p className="text-sm text-slate-400">Current operational status of all services.</p>
       <Link
         href={`/status/${orgId}`}

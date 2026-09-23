@@ -3,12 +3,14 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Cyber Scoreboard - Portal - Maine CyberTech" };
 
 export default async function PortalScoreboardPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -17,6 +19,7 @@ export default async function PortalScoreboardPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[scoreboard/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -25,6 +28,7 @@ export default async function PortalScoreboardPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Cyber Scoreboard" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">Cyber Scoreboard</h1>
+      {loadFailed ? <DataErrorNote what="scoreboard" /> : null}
       <p className="text-sm text-slate-400">
         {items.length} scorecard{items.length !== 1 ? "s" : ""} for your organization.
       </p>

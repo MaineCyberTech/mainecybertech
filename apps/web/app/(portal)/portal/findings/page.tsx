@@ -6,12 +6,14 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import { SeverityPill } from "@/components/admin/SeverityPill";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Findings - Portal - Maine CyberTech" };
 
 export default async function PortalFindingsPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -20,6 +22,7 @@ export default async function PortalFindingsPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[findings/page]", error);
+    loadFailed = true;
   }
 
   let isAdmin = false;
@@ -36,6 +39,7 @@ export default async function PortalFindingsPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Findings" }]}
       />
       <PortalSubnav current="findings" />
+      {loadFailed ? <DataErrorNote what="findings" /> : null}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-slate-50">Findings &amp; Remediation</h1>
         {isAdmin ? (

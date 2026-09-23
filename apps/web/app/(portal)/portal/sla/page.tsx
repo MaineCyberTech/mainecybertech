@@ -4,12 +4,14 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SLA Metrics - Portal - Maine CyberTech" };
 
 export default async function SlaPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let summary: Record<string, unknown> = {};
@@ -20,6 +22,7 @@ export default async function SlaPage() {
     byMetric = ((r as Record<string, unknown>).byMetric as Array<Record<string, unknown>>) ?? [];
   } catch (error) {
     console.error("[sla/page]", error);
+    loadFailed = true;
   }
 
   const total = Number(summary.total ?? 0);
@@ -33,6 +36,7 @@ export default async function SlaPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "SLA Metrics" }]}
       />
       <PortalSubnav current="sla" />
+      {loadFailed ? <DataErrorNote what="sla" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">SLA Metrics</h1>
 
       <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">

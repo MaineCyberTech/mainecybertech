@@ -137,8 +137,16 @@ export default function InviteUserForm() {
             ))}
           </select>
         </div>
-        {error && <p className="text-xs text-red-400">{error}</p>}
-        {success && <p className="text-xs text-emerald-400">{success}</p>}
+        {error && (
+          <p role="alert" className="text-xs text-red-400">
+            {error}
+          </p>
+        )}
+        {success && (
+          <p role="status" className="text-xs text-emerald-400">
+            {success}
+          </p>
+        )}
         <button type="submit" disabled={loading} className="cyber-button w-full">
           {loading ? "Sending..." : "Send Invite"}
         </button>

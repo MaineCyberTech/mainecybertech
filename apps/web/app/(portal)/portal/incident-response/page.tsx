@@ -5,12 +5,14 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import type { IncidentRecord } from "@mct/sdk";
 import StatusPill from "@/components/StatusPill";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Incident Response - Portal - Maine CyberTech" };
 
 export default async function PortalIncidentResponsePage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: IncidentRecord[] = [];
@@ -19,6 +21,7 @@ export default async function PortalIncidentResponsePage() {
     items = r.items as IncidentRecord[];
   } catch (error) {
     console.error("[incident-response/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -27,6 +30,7 @@ export default async function PortalIncidentResponsePage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Incident Response" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">Incident Response</h1>
+      {loadFailed ? <DataErrorNote what="incident-response" /> : null}
       <p className="text-sm text-slate-400">
         {items.length} incident{items.length !== 1 ? "s" : ""} tracked for your organization.
       </p>

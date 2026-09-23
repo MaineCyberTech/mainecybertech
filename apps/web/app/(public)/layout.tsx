@@ -2,6 +2,7 @@ import Script from "next/script";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
 import MarketingHeader from "../../components/marketing/MarketingHeader";
+import MarketingFooter from "../../components/marketing/MarketingFooter";
 import ParticleBackground from "../../components/marketing/ParticleBackground";
 import LocalBusinessJsonLd from "../../components/seo/LocalBusinessJsonLd";
 import { siteConfig } from "../../lib/seo/site";
@@ -78,6 +79,7 @@ export default async function PublicLayout({ children }: { children: React.React
       <ParticleBackground />
       <MarketingHeader />
       <main id="main-content">{children}</main>
+      <MarketingFooter />
     </>
   );
 }

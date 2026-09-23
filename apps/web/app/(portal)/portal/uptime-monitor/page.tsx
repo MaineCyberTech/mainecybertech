@@ -4,12 +4,14 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Uptime Monitor - Portal - Maine CyberTech" };
 
 export default async function PortalUptimeMonitorPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -18,6 +20,7 @@ export default async function PortalUptimeMonitorPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[uptime-monitor/page]", error);
+    loadFailed = true;
   }
 
   const statusBadge = (s: string) => {
@@ -34,6 +37,7 @@ export default async function PortalUptimeMonitorPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Uptime Monitor" }]}
       />
       <PortalSubnav current="uptime-monitor" />
+      {loadFailed ? <DataErrorNote what="uptime-monitor" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Uptime Monitor</h1>
       <p className="text-sm text-slate-400">Check website availability and SSL status.</p>
       <div className="grid gap-4 md:grid-cols-2">

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import StoreSidebarContent from "@/components/store/StoreSidebar";
 import type { Category } from "@/lib/catalog/types";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 
 export default function StoreLayoutShell({
   categories,
@@ -13,6 +14,8 @@ export default function StoreLayoutShell({
   children: ReactNode;
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(drawerRef, drawerOpen);
 
   // Close drawer on route change
   useEffect(() => {
@@ -45,7 +48,16 @@ export default function StoreLayoutShell({
 
       {/* Mobile drawer overlay */}
       {drawerOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-50 lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Store menu"
+          ref={drawerRef}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setDrawerOpen(false);
+          }}
+        >
           <div className="fixed inset-0 bg-black/70" onClick={() => setDrawerOpen(false)} />
           <div className="relative flex h-full w-72 flex-col bg-slate-900 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">

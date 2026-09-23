@@ -4,12 +4,14 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import StatusPill from "@/components/StatusPill";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Tabletop Exercises - Portal - Maine CyberTech" };
 
 export default async function PortalTabletopPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -18,6 +20,7 @@ export default async function PortalTabletopPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[tabletop/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -26,6 +29,7 @@ export default async function PortalTabletopPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Tabletop Exercises" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">Tabletop Exercises</h1>
+      {loadFailed ? <DataErrorNote what="tabletop" /> : null}
       <p className="text-sm text-slate-400">
         {items.length} tabletop exercise{items.length !== 1 ? "s" : ""} for your organization.
       </p>

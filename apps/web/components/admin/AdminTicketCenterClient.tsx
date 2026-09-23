@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 
 const PAGE_SIZE = 25;
 
@@ -292,6 +293,8 @@ export default function AdminTicketCenterClient({
   bulkUpdateTicketsAction,
 }: Props) {
   const [openModal, setOpenModal] = useState(false);
+  const ticketModalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(ticketModalRef, openModal);
   const [formError, setFormError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -724,6 +727,7 @@ export default function AdminTicketCenterClient({
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-ticket-title"
+            ref={ticketModalRef}
             onKeyDown={(e) => {
               if (e.key === "Escape") setOpenModal(false);
             }}

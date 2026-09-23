@@ -4,6 +4,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Approvals - Portal - Maine CyberTech" };
 
@@ -42,6 +43,7 @@ function PriorityBadge({ priority }: { priority: string }) {
 export default async function ApprovalsPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -50,6 +52,7 @@ export default async function ApprovalsPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[approvals/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -58,6 +61,7 @@ export default async function ApprovalsPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Approvals" }]}
       />
       <PortalSubnav current="approvals" />
+      {loadFailed ? <DataErrorNote what="approvals" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Approvals</h1>
       <p className="text-sm text-slate-400">
         {items.length} approval request{items.length !== 1 ? "s" : ""} for your organization.

@@ -4,6 +4,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Service Catalog - Portal - Maine CyberTech" };
 
@@ -12,6 +13,7 @@ const fmtCurrency = new Intl.NumberFormat("en-US", { style: "currency", currency
 export default async function PortalServiceCatalogPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -20,6 +22,7 @@ export default async function PortalServiceCatalogPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[service-catalog/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -28,6 +31,7 @@ export default async function PortalServiceCatalogPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Service Catalog" }]}
       />
       <PortalSubnav current="service-catalog" />
+      {loadFailed ? <DataErrorNote what="service-catalog" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Service Catalog</h1>
       <p className="text-sm text-slate-400">{items.length} services for your organization.</p>
       <div className="space-y-3">

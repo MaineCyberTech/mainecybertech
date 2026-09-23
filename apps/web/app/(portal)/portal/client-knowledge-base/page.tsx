@@ -4,6 +4,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import { createArticle } from "./actions";
 import { logger } from "@/lib/logger";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Knowledge Base - Portal - Maine CyberTech" };
@@ -19,6 +20,7 @@ export default async function PortalKnowledgeBasePage() {
   const api = getApiClient();
   const orgId = membership?.organization_id as string | undefined;
   let items: Array<Record<string, unknown>> = [];
+  let loadFailed = false;
   try {
     if (orgId) {
       const r = await api.knowledgeBase.list({ organizationId: orgId });
@@ -26,6 +28,7 @@ export default async function PortalKnowledgeBasePage() {
     }
   } catch (error) {
     console.error("[client-knowledge-base/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -34,6 +37,7 @@ export default async function PortalKnowledgeBasePage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Knowledge Base" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">Knowledge Base</h1>
+      {loadFailed ? <DataErrorNote what="knowledge base articles" /> : null}
       {!membership?.organization_id ? (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           <h3 className="font-semibold">No Organization Access</h3>

@@ -35,34 +35,57 @@ export default function ParticleBackground() {
       }));
     }
 
-    function animate() {
+    function draw() {
       ctx!.clearRect(0, 0, w, h);
       for (const p of particles) {
-        p.x += p.dx;
-        p.y += p.dy;
-        if (p.x < 0 || p.x > w) p.dx = -p.dx;
-        if (p.y < 0 || p.y > h) p.dy = -p.dy;
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx!.fillStyle = "#059669";
         ctx!.fill();
       }
+    }
+
+    function animate() {
+      for (const p of particles) {
+        p.x += p.dx;
+        p.y += p.dy;
+        if (p.x < 0 || p.x > w) p.dx = -p.dx;
+        if (p.y < 0 || p.y > h) p.dy = -p.dy;
+      }
+      draw();
       animId = requestAnimationFrame(animate);
     }
 
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     init();
+    if (reduceMotion) {
+      // Respect the user's motion preference: render a single static frame.
+      draw();
+      window.addEventListener("resize", resize);
+      return () => {
+        window.removeEventListener("resize", resize);
+      };
+    }
+
     animate();
     window.addEventListener("resize", resize);
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animId);
+      } else {
+        animId = requestAnimationFrame(animate);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, []);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className="pointer-events-none fixed inset-0 -z-10 opacity-40"
-    />
-  );
+  return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 -z-10 opacity-40" />;
 }

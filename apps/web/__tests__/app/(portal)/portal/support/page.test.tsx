@@ -29,6 +29,12 @@ jest.mock("next/cache", () => ({
 
 jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
+  usePathname: () => "/portal/support",
+}));
+
+jest.mock("@/components/portal/PortalSubnav", () => ({
+  __esModule: true,
+  default: () => React.createElement("nav", null),
 }));
 
 jest.mock("@/components/portal/SupportCenterClient", () => {

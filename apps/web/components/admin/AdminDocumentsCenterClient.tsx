@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminDocumentsBulkControls from "@/components/admin/AdminDocumentsBulkControls";
 import EmptyState from "@/components/EmptyState";
+import { useFocusTrap } from "@/lib/use-focus-trap";
 import type {
   BulkActionResult,
   DocumentVisibility,
@@ -242,6 +243,8 @@ function ConfirmModal({
   onConfirm: () => void;
   onClose: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
@@ -249,6 +252,7 @@ function ConfirmModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
+        ref={dialogRef}
         className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
       >
         <h3
@@ -318,6 +322,8 @@ export default function AdminDocumentsCenterClient({
   const createFileRef = useRef<HTMLInputElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const [droppedFileName, setDroppedFileName] = useState("");
+  const createModalRef = useRef<HTMLDivElement | null>(null);
+  const drawerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => setLocalDocuments(documents), [documents]);
 
@@ -367,6 +373,9 @@ export default function AdminDocumentsCenterClient({
     () => localDocuments.find((doc) => doc.id === drawerId) ?? null,
     [localDocuments, drawerId],
   );
+
+  useFocusTrap(createModalRef, showCreateModal);
+  useFocusTrap(drawerRef, Boolean(drawerDoc));
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -1764,6 +1773,7 @@ export default function AdminDocumentsCenterClient({
             role="dialog"
             aria-modal="true"
             aria-labelledby="create-document-title"
+            ref={createModalRef}
             onKeyDown={(e) => {
               if (e.key === "Escape") setShowCreateModal(false);
             }}
@@ -1944,6 +1954,7 @@ export default function AdminDocumentsCenterClient({
             role="dialog"
             aria-modal="true"
             aria-labelledby="doc-drawer-title"
+            ref={drawerRef}
             className="h-full w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
           >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-cyber-card-deep/95 px-6 py-4 backdrop-blur">

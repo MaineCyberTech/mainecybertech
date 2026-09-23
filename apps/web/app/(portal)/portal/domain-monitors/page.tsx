@@ -4,6 +4,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Domain Monitors - Portal - Maine CyberTech" };
 
@@ -39,6 +40,7 @@ function StatusBadge({ status }: { status: string }) {
 export default async function DomainMonitorsPage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -47,6 +49,7 @@ export default async function DomainMonitorsPage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[domain-monitors/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -55,6 +58,7 @@ export default async function DomainMonitorsPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Domain Monitors" }]}
       />
       <PortalSubnav current="domain-monitors" />
+      {loadFailed ? <DataErrorNote what="domain-monitors" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">Domain Monitors</h1>
       <p className="text-sm text-slate-400">
         {items.length} monitor{items.length !== 1 ? "s" : ""} for your organization.

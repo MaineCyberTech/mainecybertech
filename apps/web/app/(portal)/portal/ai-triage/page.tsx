@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import PortalTriageClient from "./PortalTriageClient";
 
+import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "AI Triage - Portal - Maine CyberTech" };
 
@@ -32,6 +33,7 @@ function truncate(text: unknown, max: number): string {
 export default async function AiTriagePage() {
   const membership = await getApprovedMembership();
   if (!membership) return null;
+  let loadFailed = false;
   const api = getApiClient();
   const orgId = membership.organization_id as string;
   let items: Array<Record<string, unknown>> = [];
@@ -40,6 +42,7 @@ export default async function AiTriagePage() {
     items = r.items as unknown as typeof items;
   } catch (error) {
     console.error("[ai-triage/page]", error);
+    loadFailed = true;
   }
 
   return (
@@ -48,6 +51,7 @@ export default async function AiTriagePage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "AI Triage" }]}
       />
       <PortalSubnav current="ai-triage" />
+      {loadFailed ? <DataErrorNote what="ai-triage" /> : null}
       <h1 className="text-2xl font-semibold text-slate-50">AI Triage</h1>
       <p className="text-sm text-slate-400">
         {items.length} triage record{items.length !== 1 ? "s" : ""} for your organization.
