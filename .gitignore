@@ -59,3 +59,7 @@ override.tf.json
 # Generated SBOM artifacts (see .github/workflows/sbom.yml)
 sbom.cdx.json
 sbom.spdx.json
+
+# Repomix reviewer packs (generated; reproduce with the committed configs)
+repomix-*.xml
+session-*.diff
