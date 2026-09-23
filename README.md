@@ -40,11 +40,11 @@ The platform is designed to support:
 
 ### Production-ready now
 
-- frontend / web app with complete test coverage (1,620 tests)
-- API / backend with security middleware and OpenAPI docs (1,070 tests)
-- database / RLS foundation (118 migrations)
+- frontend / web app with complete test coverage (1,674 tests)
+- API / backend with security middleware and OpenAPI docs (1,163 tests)
+- database / RLS foundation (121 migrations)
 - SDK package with retry logic (285 tests)
-- worker framework with 28 registered task handlers (98 tests)
+- worker framework with 28 registered task handlers (99 tests)
 - Docker images for all services (web, api, worker)
 - E2E tests with Playwright (90 spec files)
 - CI/CD pipelines (test, lint, typecheck, build, deploy, E2E)
@@ -127,7 +127,7 @@ terraform apply -var-file=env/prod.tfvars
 ## Useful Commands
 
 ```bash
-pnpm test                    # All unit tests (3,073)
+pnpm test                    # All unit tests (3,221)
 pnpm e2e                     # E2E tests (90 spec files)
 pnpm --filter=api dev        # API dev server
 pnpm --filter=web dev        # Web dev server (auto-started by Playwright)
@@ -222,7 +222,7 @@ Auth User → Profile → Membership → Role → Permission / Override → RLS 
 
 ## Testing
 
-The monorepo includes **3,073 tests** across all packages. See [AGENTS.md](AGENTS.md) for the current breakdown.
+The monorepo includes **3,221 tests** across all packages. See [AGENTS.md](AGENTS.md) for the current breakdown.
 
 ### Running tests
 
@@ -307,21 +307,22 @@ Each service expects a `.env.local` file in its app directory:
 
 GitHub Actions workflows in `.github/workflows/`:
 
-| Workflow                  | Trigger                             | Purpose                                          |
-| ------------------------- | ----------------------------------- | ------------------------------------------------ |
-| `validate.yml`            | workflow_call                       | Reusable gate: test + lint + typecheck           |
-| `test.yml`                | push/PR main,develop                | Run all unit/integration tests                   |
-| `lint.yml`                | push/PR main,develop                | Lint check                                       |
-| `typecheck.yml`           | push/PR main,develop                | TypeScript type checking                         |
-| `e2e.yml`                 | push/PR main,develop, workflow_call | Build web, run Playwright E2E tests              |
-| `supabase-migrations.yml` | push main+develop, workflow_call    | Run Supabase DB migrations                       |
-| `deploy-do.yml`           | push main+develop                   | Build images, SSH deploy to DigitalOcean droplet |
-| `terraform-do.yml`        | push develop                        | Terraform plan/apply for DO infra                |
-| `build-push.yml`          | workflow_dispatch                   | Manual Docker image build + push to GHCR         |
-| `chromatic.yml`           | push/PR                             | Visual regression (Storybook)                    |
-| `db-backup.yml`           | schedule/manual                     | Database backup to Spaces                        |
-| `db-restore-test.yml`     | schedule/manual                     | Restore a backup into a throwaway DB             |
-| `dependency-review.yml`   | pull_request                        | Block PRs with vulnerable dependencies           |
+| Workflow                  | Trigger                          | Purpose                                          |
+| ------------------------- | -------------------------------- | ------------------------------------------------ |
+| `validate.yml`            | workflow_call                    | Reusable gate: test + lint + typecheck           |
+| `test.yml`                | push/PR main,develop             | Run all unit/integration tests                   |
+| `lint.yml`                | push/PR main,develop             | Lint check                                       |
+| `typecheck.yml`           | push/PR main,develop             | TypeScript type checking                         |
+| `e2e.yml`                 | PR main,develop, workflow_call   | Build web, run Playwright E2E tests              |
+| `supabase-migrations.yml` | push main+develop, workflow_call | Run Supabase DB migrations                       |
+| `deploy-do.yml`           | push main+develop                | Build images, SSH deploy to DigitalOcean droplet |
+| `terraform-do.yml`        | push/PR main,develop             | Terraform plan/apply for DO infra                |
+| `build-push.yml`          | workflow_dispatch                | Manual Docker image build + push to GHCR         |
+| `chromatic.yml`           | push/PR                          | Visual regression (Storybook)                    |
+| `db-backup.yml`           | schedule/manual                  | Database backup to Spaces                        |
+| `db-restore-test.yml`     | schedule/manual                  | Restore a backup into a throwaway DB             |
+| `dependency-review.yml`   | pull_request                     | Block PRs with vulnerable dependencies           |
+| `sbom.yml`                | push/PR/weekly                   | CycloneDX SBOM artifact                          |
 
 ## License
 
