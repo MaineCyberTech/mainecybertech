@@ -73,6 +73,11 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Changed
 
+- Split the ~1,480-line `apps/api/src/routes/store.ts` into
+  `routes/store/{promotions,quotes,campaigns,visual-assets,catalog}.ts` with a
+  thin aggregator (same `registerXxxRoutes(router)` pattern as `routes/final/`).
+  Registration order and all 34 route definitions are unchanged; the API suite
+  (1,163 tests) passes untouched.
 - Store storefront pages (`/store`, `/store/[slug]`, `/store/category/[slug]`,
   `/store/quote`, `/store/compare/[slug]`, `/portal/store`) are now async server
   components backed by the catalog source; the store sidebar receives categories
