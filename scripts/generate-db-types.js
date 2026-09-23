@@ -458,7 +458,9 @@ for (const tableName of sortedTables) {
     }
   }
 
-  output += `      ${tableName}: {
+  // NOTE: the leading newline matters — without it each table after the first
+  // is appended to the previous entry's closing `};` on the same line.
+  output += `\n      ${tableName}: {
         Row: {`;
   for (const col of sortedCols) {
     output += `\n          ${col}: ${columns[col].row};`;

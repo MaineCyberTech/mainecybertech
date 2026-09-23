@@ -63,3 +63,4 @@ sbom.spdx.json
 # Repomix reviewer packs (generated; reproduce with the committed configs)
 repomix-*.xml
 session-*.diff
+session-*.txt
