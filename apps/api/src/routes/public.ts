@@ -6,6 +6,7 @@ import { getEnv } from "../config/env";
 import { logAuditEvent } from "../services/audit";
 import { logger } from "../lib/logger";
 import { httpClients } from "../lib/http-client";
+import { isBotUserAgent, shouldSendVisitorAlert } from "../lib/bot-detection";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -47,21 +48,27 @@ router.get("/init", async (req, res, next) => {
     const platform = (req.headers["sec-ch-ua-platform"] as string) || "Unknown";
     const referrer = req.headers["referer"] || "Direct";
 
+    // Crawlers, preview bots, uptime monitors and scanners hit this public
+    // endpoint constantly; do not treat them as human visitors.
+    const isBot = isBotUserAgent(userAgent);
+
     let location = "Unknown";
-    try {
-      const cleanIp = ipAddress.replace("::ffff:", "");
-      const geoRes = await httpClients.geo.get(`http://ip-api.com/json/${cleanIp}`);
-      const geoData: {
-        status: string;
-        city?: string | null;
-        regionName?: string | null;
-        country?: string | null;
-      } = await geoRes.json();
-      if (geoData.status === "success") {
-        location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
+    if (!isBot) {
+      try {
+        const cleanIp = ipAddress.replace("::ffff:", "");
+        const geoRes = await httpClients.geo.get(`http://ip-api.com/json/${cleanIp}`);
+        const geoData: {
+          status: string;
+          city?: string | null;
+          regionName?: string | null;
+          country?: string | null;
+        } = await geoRes.json();
+        if (geoData.status === "success") {
+          location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
+        }
+      } catch {
+        // Geo lookup failure is non-critical
       }
-    } catch {
-      // Geo lookup failure is non-critical
     }
 
     const { error } = await supabase.from("public_interactions").insert({
@@ -71,12 +78,13 @@ router.get("/init", async (req, res, next) => {
       user_agent: userAgent,
       platform,
       referrer,
+      is_bot: isBot,
     });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     const env = getEnv();
-    if (env.PUBLIC_TRAFFIC_WEBHOOK_URL) {
+    if (env.PUBLIC_TRAFFIC_WEBHOOK_URL && !isBot && shouldSendVisitorAlert(ipAddress)) {
       const visitorCard = {
         type: "message",
         attachments: [
@@ -101,7 +109,7 @@ router.get("/init", async (req, res, next) => {
       httpClients.teams
         .post(env.PUBLIC_TRAFFIC_WEBHOOK_URL, visitorCard)
         .catch((err) => logger.error({ err }, "Failed to send traffic webhook"));
-    } else {
+    } else if (!env.PUBLIC_TRAFFIC_WEBHOOK_URL) {
       logger.warn("PUBLIC_TRAFFIC_WEBHOOK_URL not set — skipping visitor webhook");
     }
 
