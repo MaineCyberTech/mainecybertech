@@ -236,7 +236,7 @@ function projectSubRoute(
     }
   });
 
-  router.post(`/${resource}`, async (req, res, next) => {
+  router.post(`/${resource}`, requirePermission("projects", "create"), async (req, res, next) => {
     try {
       const parsed = createSchema.parse(req.body) as Record<string, unknown>;
       const supabase = getScopedClient(req, "projects", "write");
@@ -271,59 +271,67 @@ function projectSubRoute(
     }
   });
 
-  router.patch(`/${resource}/:id`, async (req, res, next) => {
-    try {
-      const parsed = updateSchema.parse(req.body) as Record<string, unknown>;
-      const supabase = getScopedClient(req, "projects", "write");
-      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+  router.patch(
+    `/${resource}/:id`,
+    requirePermission("projects", "edit"),
+    async (req, res, next) => {
+      try {
+        const parsed = updateSchema.parse(req.body) as Record<string, unknown>;
+        const supabase = getScopedClient(req, "projects", "write");
+        const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-      const { data: child, error: childError } = await supabase
-        .from(table)
-        .select("project_id")
-        .eq("id", String(req.params.id))
-        .single();
-      if (childError || !child) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
-      await assertProjectInOrg((child as { project_id: string }).project_id, orgId);
+        const { data: child, error: childError } = await supabase
+          .from(table)
+          .select("project_id")
+          .eq("id", String(req.params.id))
+          .single();
+        if (childError || !child) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
+        await assertProjectInOrg((child as { project_id: string }).project_id, orgId);
 
-      const fields: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(parsed)) {
-        if (v !== undefined) fields[camelToSnake(k)] = v;
+        const fields: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(parsed)) {
+          if (v !== undefined) fields[camelToSnake(k)] = v;
+        }
+        const { data, error } = await supabase
+          .from(table)
+          .update(fields as never)
+          .eq("id", String(req.params.id))
+          .select()
+          .single();
+
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        res.json(success(data));
+      } catch (err) {
+        next(err);
       }
-      const { data, error } = await supabase
-        .from(table)
-        .update(fields as never)
-        .eq("id", String(req.params.id))
-        .select()
-        .single();
+    },
+  );
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.json(success(data));
-    } catch (err) {
-      next(err);
-    }
-  });
+  router.delete(
+    `/${resource}/:id`,
+    requirePermission("projects", "delete"),
+    async (req, res, next) => {
+      try {
+        const supabase = getScopedClient(req, "projects", "write");
+        const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-  router.delete(`/${resource}/:id`, async (req, res, next) => {
-    try {
-      const supabase = getScopedClient(req, "projects", "write");
-      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+        const { data: child, error: childError } = await supabase
+          .from(table)
+          .select("project_id")
+          .eq("id", String(req.params.id))
+          .single();
+        if (childError || !child) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
+        await assertProjectInOrg((child as { project_id: string }).project_id, orgId);
 
-      const { data: child, error: childError } = await supabase
-        .from(table)
-        .select("project_id")
-        .eq("id", String(req.params.id))
-        .single();
-      if (childError || !child) throw new AppError("NOT_FOUND", `${resource} not found`, 404);
-      await assertProjectInOrg((child as { project_id: string }).project_id, orgId);
+        const { error } = await supabase.from(table).delete().eq("id", String(req.params.id));
 
-      const { error } = await supabase.from(table).delete().eq("id", String(req.params.id));
-
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.status(204).send();
-    } catch (err) {
-      next(err);
-    }
-  });
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        res.status(204).send();
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
 }
 
 projectSubRoute("phases", "project_phases", createPhaseSchema);
@@ -1072,7 +1080,7 @@ router.get("/:id/tasks/read-states", async (req, res, next) => {
   }
 });
 
-router.post("/:id/tasks/reorder", async (req, res, next) => {
+router.post("/:id/tasks/reorder", requirePermission("projects", "edit"), async (req, res, next) => {
   try {
     const parsed = reorderTasksSchema.parse(req.body);
     const supabase = getScopedClient(req, "projects", "write");

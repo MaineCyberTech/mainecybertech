@@ -1,10 +1,11 @@
-import { Router } from "express";
+import { Router, type RequestHandler } from "express";
 import { z } from "zod";
 import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import {
   createISPSchema,
   createUnifiSchema,
@@ -22,7 +23,20 @@ router.use(requireOrgAccess);
 function snake(s: string) {
   return s.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
 }
-function crudRoute(path: string, table: string, createSchema: Record<string, unknown>) {
+function crudRoute(
+  path: string,
+  table: string,
+  createSchema: Record<string, unknown>,
+  permissionModule?: string,
+) {
+  const passthrough: RequestHandler = (_req, _res, next) => next();
+  const createGuard = permissionModule
+    ? requirePermission(permissionModule, "create")
+    : passthrough;
+  const editGuard = permissionModule ? requirePermission(permissionModule, "edit") : passthrough;
+  const deleteGuard = permissionModule
+    ? requirePermission(permissionModule, "delete")
+    : passthrough;
   router.get(`/${path}`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "field-services", "read");
@@ -58,7 +72,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       next(e);
     }
   });
-  router.post(`/${path}`, async (req, res, next) => {
+  router.post(`/${path}`, createGuard, async (req, res, next) => {
     try {
       const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
         req.body,
@@ -87,7 +101,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       next(e);
     }
   });
-  router.patch(`/${path}/:id`, async (req, res, next) => {
+  router.patch(`/${path}/:id`, editGuard, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "field-services", "write");
       // Whitelist writes to fields the create schema declares (partial) so a
@@ -119,7 +133,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     }
   });
 
-  router.delete(`/${path}/:id`, async (req, res, next) => {
+  router.delete(`/${path}/:id`, deleteGuard, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "field-services", "write");
       const { error } = await sb
@@ -141,82 +155,105 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
   });
 }
 
-crudRoute("isp", "isp_assessments", createISPSchema as unknown as Record<string, unknown>);
+crudRoute(
+  "isp",
+  "isp_assessments",
+  createISPSchema as unknown as Record<string, unknown>,
+  "field-services",
+);
 
-router.post("/isp/:id/score", async (req, res, next) => {
-  try {
-    const parsed = z
-      .object({
-        monthlyCost: z.number().min(0),
-        contractLength: z.number().int().min(1),
-      })
-      .parse(req.body);
-    const supabase = getScopedClient(req, "field-services", "write");
-    const { data: current, error: fetchError } = await supabase
-      .from("isp_assessments")
-      .select("*")
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .single();
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
-    const consolidationScore = Math.max(
-      0,
-      Math.min(100, 100 - (parsed.monthlyCost * parsed.contractLength) / 100),
-    );
-    const recommendation =
-      consolidationScore > 70
-        ? "Renegotiate contract"
-        : consolidationScore > 40
-          ? "Explore alternative providers"
-          : "Current terms acceptable";
-    const { data, error } = await supabase
-      .from("isp_assessments")
-      .update({
-        monthly_cost: parsed.monthlyCost,
-        contract_length_months: parsed.contractLength,
-        consolidation_score: consolidationScore,
-        recommendation,
-      })
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  "/isp/:id/score",
+  requirePermission("field-services", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = z
+        .object({
+          monthlyCost: z.number().min(0),
+          contractLength: z.number().int().min(1),
+        })
+        .parse(req.body);
+      const supabase = getScopedClient(req, "field-services", "write");
+      const { data: current, error: fetchError } = await supabase
+        .from("isp_assessments")
+        .select("*")
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .single();
+      if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
+      const consolidationScore = Math.max(
+        0,
+        Math.min(100, 100 - (parsed.monthlyCost * parsed.contractLength) / 100),
+      );
+      const recommendation =
+        consolidationScore > 70
+          ? "Renegotiate contract"
+          : consolidationScore > 40
+            ? "Explore alternative providers"
+            : "Current terms acceptable";
+      const { data, error } = await supabase
+        .from("isp_assessments")
+        .update({
+          monthly_cost: parsed.monthlyCost,
+          contract_length_months: parsed.contractLength,
+          consolidation_score: consolidationScore,
+          recommendation,
+        })
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
-crudRoute("unifi", "unifi_surveys", createUnifiSchema as unknown as Record<string, unknown>);
+crudRoute(
+  "unifi",
+  "unifi_surveys",
+  createUnifiSchema as unknown as Record<string, unknown>,
+  "field-services",
+);
 
-router.post("/unifi/:id/plan", async (req, res, next) => {
-  try {
-    const parsed = z
-      .object({
-        squareFootage: z.number().int().min(100),
-        floors: z.number().int().min(1).max(10),
-        userCount: z.number().int().min(1),
-      })
-      .parse(req.body);
-    const supabase = getScopedClient(req, "field-services", "write");
-    const apCount = Math.max(1, Math.ceil((parsed.squareFootage / 2000) * parsed.floors));
-    const switchCount = Math.max(1, Math.ceil(apCount / 24));
-    const estimatedCost = apCount * 150 + switchCount * 500;
-    const { data, error } = await supabase
-      .from("unifi_surveys")
-      .update({ ap_count: apCount, switch_count: switchCount, estimated_cost: estimatedCost })
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success({ ...data, apCount, switchCount, estimatedCost }));
-  } catch (err) {
-    next(err);
-  }
-});
-crudRoute("port-maps", "port_maps", createPortMapSchema as unknown as Record<string, unknown>);
+router.post(
+  "/unifi/:id/plan",
+  requirePermission("field-services", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = z
+        .object({
+          squareFootage: z.number().int().min(100),
+          floors: z.number().int().min(1).max(10),
+          userCount: z.number().int().min(1),
+        })
+        .parse(req.body);
+      const supabase = getScopedClient(req, "field-services", "write");
+      const apCount = Math.max(1, Math.ceil((parsed.squareFootage / 2000) * parsed.floors));
+      const switchCount = Math.max(1, Math.ceil(apCount / 24));
+      const estimatedCost = apCount * 150 + switchCount * 500;
+      const { data, error } = await supabase
+        .from("unifi_surveys")
+        .update({ ap_count: apCount, switch_count: switchCount, estimated_cost: estimatedCost })
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.json(success({ ...data, apCount, switchCount, estimatedCost }));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+crudRoute(
+  "port-maps",
+  "port_maps",
+  createPortMapSchema as unknown as Record<string, unknown>,
+  "network-port-maps",
+);
 crudRoute(
   "camera-calc",
   "camera_calculations",
@@ -256,36 +293,51 @@ router.post("/camera-calc/calculate", async (req, res, next) => {
     next(err);
   }
 });
-crudRoute("staging", "hardware_staging", createStagingSchema as unknown as Record<string, unknown>);
+crudRoute(
+  "staging",
+  "hardware_staging",
+  createStagingSchema as unknown as Record<string, unknown>,
+  "hardware-staging",
+);
 
-router.post("/staging/:id/checklist", async (req, res, next) => {
-  try {
-    const parsed = z
-      .object({ itemName: z.string().min(1), completed: z.boolean() })
-      .parse(req.body);
-    // hardware_staging tracks checklist state as boolean columns
-    const CHECKLIST_COLUMNS = ["configured", "tested", "labeled", "imaged", "qa_verified"] as const;
-    if (!CHECKLIST_COLUMNS.includes(parsed.itemName as (typeof CHECKLIST_COLUMNS)[number])) {
-      throw new AppError(
-        "VALIDATION",
-        `itemName must be one of: ${CHECKLIST_COLUMNS.join(", ")}`,
-        400,
-      );
+router.post(
+  "/staging/:id/checklist",
+  requirePermission("hardware-staging", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = z
+        .object({ itemName: z.string().min(1), completed: z.boolean() })
+        .parse(req.body);
+      // hardware_staging tracks checklist state as boolean columns
+      const CHECKLIST_COLUMNS = [
+        "configured",
+        "tested",
+        "labeled",
+        "imaged",
+        "qa_verified",
+      ] as const;
+      if (!CHECKLIST_COLUMNS.includes(parsed.itemName as (typeof CHECKLIST_COLUMNS)[number])) {
+        throw new AppError(
+          "VALIDATION",
+          `itemName must be one of: ${CHECKLIST_COLUMNS.join(", ")}`,
+          400,
+        );
+      }
+      const supabase = getScopedClient(req, "field-services", "write");
+      const { data, error } = await supabase
+        .from("hardware_staging")
+        .update({ [parsed.itemName]: parsed.completed } as never)
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
+      res.json(success(data));
+    } catch (err) {
+      next(err);
     }
-    const supabase = getScopedClient(req, "field-services", "write");
-    const { data, error } = await supabase
-      .from("hardware_staging")
-      .update({ [parsed.itemName]: parsed.completed } as never)
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 
 export default router;

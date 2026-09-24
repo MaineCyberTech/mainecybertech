@@ -1,6 +1,6 @@
 ﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
+import { createTestApp, createMockBuilder, tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -28,9 +28,16 @@ jest.mock("../config/env", () => ({
     JSM_REQUEST_TYPE_ID: "",
   }),
 }));
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
+jest.mock("../services/supabase", () => ({
+  getSupabaseAdmin: jest.fn(),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
+}));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 import { getSupabaseAdmin } from "../services/supabase";
 import router from "../routes/field-services";
 
@@ -62,7 +69,9 @@ describe("Field Services API", () => {
   for (const p of paths) {
     it(`lists ${p}`, async () => {
       const s = ma();
-      s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
+      s.from.mockImplementation(
+        tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })),
+      );
       const r = await request(app).get(`/api/v1/field-services/${p}`).set("Authorization", auth);
       expect(r.status).toBe(200);
     });
@@ -70,9 +79,9 @@ describe("Field Services API", () => {
 
   it("creates isp assessment", async () => {
     const s = ma();
-    s.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({ data: { id: "i-1", clientName: "Test" }, error: null }),
-    ));
+    s.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: { id: "i-1", clientName: "Test" }, error: null })),
+    );
     const r = await request(app)
       .post("/api/v1/field-services/isp")
       .set("Authorization", auth)
@@ -82,9 +91,11 @@ describe("Field Services API", () => {
 
   it("updates isp assessment", async () => {
     const s = ma();
-    s.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({ data: { id: "i-1", clientName: "Updated" }, error: null }),
-    ));
+    s.from.mockImplementation(
+      tableAwareFrom(
+        createMockBuilder({ data: { id: "i-1", clientName: "Updated" }, error: null }),
+      ),
+    );
     const r = await request(app)
       .patch("/api/v1/field-services/isp/i-1")
       .set("Authorization", auth)
@@ -103,9 +114,9 @@ describe("Field Services API", () => {
 
   it("creates unifi survey", async () => {
     const s = ma();
-    s.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({ data: { id: "u-1", siteName: "Office" }, error: null }),
-    ));
+    s.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: { id: "u-1", siteName: "Office" }, error: null })),
+    );
     const r = await request(app)
       .post("/api/v1/field-services/unifi")
       .set("Authorization", auth)
@@ -115,9 +126,9 @@ describe("Field Services API", () => {
 
   it("gets a single record by id (crudRoute GET /:id)", async () => {
     const s = ma();
-    s.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({ data: { id: "i-1", clientName: "Test" }, error: null }),
-    ));
+    s.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: { id: "i-1", clientName: "Test" }, error: null })),
+    );
     const r = await request(app).get("/api/v1/field-services/isp/i-1").set("Authorization", auth);
     expect(r.status).toBe(200);
     expect(r.body.success).toBe(true);

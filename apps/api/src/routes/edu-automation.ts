@@ -30,7 +30,12 @@ router.use(requireOrgAccess);
 function snake(s: string) {
   return s.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
 }
-function crud(path: string, table: string, schema: z.ZodTypeAny) {
+function crud(
+  path: string,
+  table: string,
+  schema: z.ZodTypeAny,
+  permissionModule = "edu-automation",
+) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "edu-automation", "read");
@@ -71,7 +76,7 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
       next(e);
     }
   });
-  router.post(`/${path}`, async (req, res, next) => {
+  router.post(`/${path}`, requirePermission(permissionModule, "create"), async (req, res, next) => {
     try {
       const p = schema.parse(req.body) as Record<string, unknown>;
       const sb = getScopedClient(req, "edu-automation", "write");
@@ -98,58 +103,66 @@ function crud(path: string, table: string, schema: z.ZodTypeAny) {
       next(e);
     }
   });
-  router.patch(`/${path}/:id`, async (req, res, next) => {
-    try {
-      const sb = getScopedClient(req, "edu-automation", "write");
-      // Whitelist writes to fields the create schema declares (partial) so a
-      // caller cannot mass-assign organization_id / created_by / id.
-      const parsed = parsePartialUpdate(schema, req.body);
-      const f: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(parsed)) {
-        if (k === "organizationId") continue;
-        if (v !== undefined) f[snake(k)] = v;
+  router.patch(
+    `/${path}/:id`,
+    requirePermission(permissionModule, "edit"),
+    async (req, res, next) => {
+      try {
+        const sb = getScopedClient(req, "edu-automation", "write");
+        // Whitelist writes to fields the create schema declares (partial) so a
+        // caller cannot mass-assign organization_id / created_by / id.
+        const parsed = parsePartialUpdate(schema, req.body);
+        const f: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(parsed)) {
+          if (k === "organizationId") continue;
+          if (v !== undefined) f[snake(k)] = v;
+        }
+        const { data, error } = await sb
+          .from(table)
+          .update(f as never)
+          .eq("id", String(req.params.id))
+          .eq("organization_id", req.query.organization_id as string)
+          .select()
+          .single();
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
+        await logAuditEvent({
+          actorUserId: req.authUser!.userId,
+          action: `${path}.updated`,
+          entityType: path,
+          entityId: (data as { id: string } | null)?.id,
+        });
+        res.json(success(data));
+      } catch (e) {
+        next(e);
       }
-      const { data, error } = await sb
-        .from(table)
-        .update(f as never)
-        .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string)
-        .select()
-        .single();
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
-      await logAuditEvent({
-        actorUserId: req.authUser!.userId,
-        action: `${path}.updated`,
-        entityType: path,
-        entityId: (data as { id: string } | null)?.id,
-      });
-      res.json(success(data));
-    } catch (e) {
-      next(e);
-    }
-  });
+    },
+  );
 
-  router.delete(`/${path}/:id`, async (req, res, next) => {
-    try {
-      const sb = getScopedClient(req, "edu-automation", "write");
-      const { error } = await sb
-        .from(table)
-        .delete()
-        .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string);
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        actorUserId: req.authUser!.userId,
-        action: `${path}.deleted`,
-        entityType: path,
-        entityId: String(req.params.id),
-      });
-      res.status(204).send();
-    } catch (e) {
-      next(e);
-    }
-  });
+  router.delete(
+    `/${path}/:id`,
+    requirePermission(permissionModule, "delete"),
+    async (req, res, next) => {
+      try {
+        const sb = getScopedClient(req, "edu-automation", "write");
+        const { error } = await sb
+          .from(table)
+          .delete()
+          .eq("id", String(req.params.id))
+          .eq("organization_id", req.query.organization_id as string);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          actorUserId: req.authUser!.userId,
+          action: `${path}.deleted`,
+          entityType: path,
+          entityId: String(req.params.id),
+        });
+        res.status(204).send();
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
 }
 
 type ScorecardRow = {
@@ -159,213 +172,229 @@ type ScorecardRow = {
   badge: string | null;
 };
 
-type SchemaMap = Record<string, { schema: z.ZodTypeAny; table: string }>;
+type SchemaMap = Record<string, { schema: z.ZodTypeAny; table: string; module: string }>;
 const schemas: SchemaMap = {
-  sop: { schema: sop, table: "sop_library" },
-  compliance: { schema: compliance, table: "compliance_readiness" },
-  insurance: { schema: insurance, table: "insurance_evidence" },
-  "ai-policy": { schema: aiPolicy, table: "ai_policies" },
-  kb: { schema: kb, table: "knowledge_articles" },
-  training: { schema: training, table: "training_modules" },
-  phishing: { schema: phishing, table: "phishing_campaigns" },
-  scorecards: { schema: scorecard, table: "cyber_scorecards" },
-  automation: { schema: automation, table: "automation_workflows" },
-  powershell: { schema: ps, table: "powershell_scripts" },
-  "kb-generator": { schema: kbGen, table: "kb_article_generations" },
+  sop: { schema: sop, table: "sop_library", module: "sop-library" },
+  compliance: { schema: compliance, table: "compliance_readiness", module: "compliance-readiness" },
+  insurance: { schema: insurance, table: "insurance_evidence", module: "insurance-binder" },
+  "ai-policy": { schema: aiPolicy, table: "ai_policies", module: "edu-automation" },
+  kb: { schema: kb, table: "knowledge_articles", module: "client-knowledge-base" },
+  training: { schema: training, table: "training_modules", module: "training-hub" },
+  phishing: { schema: phishing, table: "phishing_campaigns", module: "phishing-simulations" },
+  scorecards: { schema: scorecard, table: "cyber_scorecards", module: "edu-automation" },
+  automation: { schema: automation, table: "automation_workflows", module: "automation" },
+  powershell: { schema: ps, table: "powershell_scripts", module: "edu-automation" },
+  "kb-generator": { schema: kbGen, table: "kb_article_generations", module: "edu-automation" },
 };
 
-router.post("/automation/:id/execute", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "edu-automation", "write");
-    const { data: current, error: fetchError } = await supabase
-      .from("automation_workflows")
-      .select("*")
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .single();
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
-    const { data, error } = await supabase
-      .from("automation_workflows")
-      .update({ last_run_status: "running", last_run_at: new Date().toISOString() })
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
-router.post("/automation/:id/complete", async (req, res, next) => {
-  try {
-    const parsed = z.object({ result: z.string(), success: z.boolean() }).parse(req.body);
-    const supabase = getScopedClient(req, "edu-automation", "write");
-    const { data, error } = await supabase
-      .from("automation_workflows")
-      .update({
-        last_run_status: parsed.success ? "success" : "failed",
-        last_result: parsed.result,
-        last_run_at: new Date().toISOString(),
-      })
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
-router.post("/kb-generator/:id/generate", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "edu-automation", "write");
-    const { data: current, error: fetchError } = await supabase
-      .from("kb_article_generations")
-      .select("*")
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .single();
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
-
-    // Derive the draft from the linked source ticket (description, internal
-    // comments, resolution) rather than emitting a fixed template.
-    const orgId = req.query.organization_id as string;
-    let ticket: {
-      title?: string;
-      description?: string | null;
-      resolution?: string | null;
-    } | null = null;
-    let comments: Array<{ body: string; is_internal: boolean }> = [];
-
-    if (current.source_ticket_id) {
-      const { data: t } = await supabase
-        .from("tickets")
-        .select("title, description, resolution")
-        .eq("id", current.source_ticket_id)
-        .eq("organization_id", orgId)
-        .maybeSingle();
-      ticket = t ?? null;
-
-      const { data: c } = await supabase
-        .from("ticket_comments")
-        .select("body, is_internal")
-        .eq("ticket_id", current.source_ticket_id)
-        .eq("organization_id", orgId)
-        .order("created_at", { ascending: true })
-        .limit(20);
-      comments = c ?? [];
+router.post(
+  "/automation/:id/execute",
+  requirePermission("automation", "edit"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "edu-automation", "write");
+      const { data: current, error: fetchError } = await supabase
+        .from("automation_workflows")
+        .select("*")
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .single();
+      if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
+      const { data, error } = await supabase
+        .from("automation_workflows")
+        .update({ last_run_status: "running", last_run_at: new Date().toISOString() })
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.json(success(data));
+    } catch (err) {
+      next(err);
     }
+  },
+);
+router.post(
+  "/automation/:id/complete",
+  requirePermission("automation", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = z.object({ result: z.string(), success: z.boolean() }).parse(req.body);
+      const supabase = getScopedClient(req, "edu-automation", "write");
+      const { data, error } = await supabase
+        .from("automation_workflows")
+        .update({
+          last_run_status: parsed.success ? "success" : "failed",
+          last_result: parsed.result,
+          last_run_at: new Date().toISOString(),
+        })
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+router.post(
+  "/kb-generator/:id/generate",
+  requirePermission("edu-automation", "edit"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "edu-automation", "write");
+      const { data: current, error: fetchError } = await supabase
+        .from("kb_article_generations")
+        .select("*")
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .single();
+      if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
 
-    const title = ticket?.title || current.source_title || "Generated Article";
-    const overview = ticket?.description?.trim() || "No source description was provided.";
-    const steps = comments
-      .filter((c) => c.is_internal)
-      .map((c) => c.body.trim())
-      .filter(Boolean);
-    const resolution = ticket?.resolution?.trim();
+      // Derive the draft from the linked source ticket (description, internal
+      // comments, resolution) rather than emitting a fixed template.
+      const orgId = req.query.organization_id as string;
+      let ticket: {
+        title?: string;
+        description?: string | null;
+        resolution?: string | null;
+      } | null = null;
+      let comments: Array<{ body: string; is_internal: boolean }> = [];
 
-    const lines = [
-      `# ${title}`,
-      "",
-      "## Overview",
-      "",
-      overview,
-      "",
-      "## Resolution steps",
-      "",
-      ...(steps.length
-        ? steps.map((s, i) => `${i + 1}. ${s}`)
-        : ["1. Document the steps taken to resolve this issue."]),
-      "",
-      ...(resolution ? ["## Outcome", "", resolution, ""] : []),
-      "## Review notes",
-      "",
-      "- Verify the steps against the current environment",
-      "- Remove any client-specific details before publishing",
-    ];
-    const generatedBody = lines.join("\n");
-    const { data, error } = await supabase
-      .from("kb_article_generations")
-      .update({
-        generated_content: generatedBody,
-        status: "generated",
-        reviewed_by: req.authUser!.userId,
-      })
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
-router.post("/ai-policy/:id/generate", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "edu-automation", "write");
-    const orgId = req.query.organization_id as string;
-    const { data: current, error: fetchError } = await supabase
-      .from("ai_policies")
-      .select("*")
-      .eq("id", String(req.params.id))
-      .eq("organization_id", orgId)
-      .single();
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
+      if (current.source_ticket_id) {
+        const { data: t } = await supabase
+          .from("tickets")
+          .select("title, description, resolution")
+          .eq("id", current.source_ticket_id)
+          .eq("organization_id", orgId)
+          .maybeSingle();
+        ticket = t ?? null;
 
-    const tools = (current.approved_tools as string[] | null) ?? [];
-    const lines = [
-      `# ${current.title || "AI Use Policy"}`,
-      "",
-      "## Purpose",
-      "",
-      "This policy sets out how staff may use artificial-intelligence tools with company and client data.",
-      "",
-      "## Approved tools",
-      "",
-      ...(tools.length ? tools.map((t) => `- ${t}`) : ["- No tools have been approved yet."]),
-      "",
-      "## Data handling rules",
-      "",
-      current.data_handling_rules?.trim() ||
-        "Do not enter confidential, personal, or client data into unapproved AI tools.",
-      "",
-      "## Employee guidance",
-      "",
-      current.employee_guidance?.trim() ||
-        "When in doubt, ask before pasting company or client information into an AI tool.",
-      "",
-      "## Review",
-      "",
-      "- Review approved tools quarterly",
-      "- Report suspected data exposure immediately",
-    ];
-    const content = lines.join("\n");
+        const { data: c } = await supabase
+          .from("ticket_comments")
+          .select("body, is_internal")
+          .eq("ticket_id", current.source_ticket_id)
+          .eq("organization_id", orgId)
+          .order("created_at", { ascending: true })
+          .limit(20);
+        comments = c ?? [];
+      }
 
-    const { data, error } = await supabase
-      .from("ai_policies")
-      .update({ content, status: "draft" })
-      .eq("id", String(req.params.id))
-      .eq("organization_id", orgId)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      const title = ticket?.title || current.source_title || "Generated Article";
+      const overview = ticket?.description?.trim() || "No source description was provided.";
+      const steps = comments
+        .filter((c) => c.is_internal)
+        .map((c) => c.body.trim())
+        .filter(Boolean);
+      const resolution = ticket?.resolution?.trim();
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: req.authUser!.userId,
-      action: "ai_policy.generated",
-      entityType: "ai_policies",
-      entityId: String(req.params.id),
-    });
+      const lines = [
+        `# ${title}`,
+        "",
+        "## Overview",
+        "",
+        overview,
+        "",
+        "## Resolution steps",
+        "",
+        ...(steps.length
+          ? steps.map((s, i) => `${i + 1}. ${s}`)
+          : ["1. Document the steps taken to resolve this issue."]),
+        "",
+        ...(resolution ? ["## Outcome", "", resolution, ""] : []),
+        "## Review notes",
+        "",
+        "- Verify the steps against the current environment",
+        "- Remove any client-specific details before publishing",
+      ];
+      const generatedBody = lines.join("\n");
+      const { data, error } = await supabase
+        .from("kb_article_generations")
+        .update({
+          generated_content: generatedBody,
+          status: "generated",
+          reviewed_by: req.authUser!.userId,
+        })
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+router.post(
+  "/ai-policy/:id/generate",
+  requirePermission("edu-automation", "edit"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "edu-automation", "write");
+      const orgId = req.query.organization_id as string;
+      const { data: current, error: fetchError } = await supabase
+        .from("ai_policies")
+        .select("*")
+        .eq("id", String(req.params.id))
+        .eq("organization_id", orgId)
+        .single();
+      if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
 
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+      const tools = (current.approved_tools as string[] | null) ?? [];
+      const lines = [
+        `# ${current.title || "AI Use Policy"}`,
+        "",
+        "## Purpose",
+        "",
+        "This policy sets out how staff may use artificial-intelligence tools with company and client data.",
+        "",
+        "## Approved tools",
+        "",
+        ...(tools.length ? tools.map((t) => `- ${t}`) : ["- No tools have been approved yet."]),
+        "",
+        "## Data handling rules",
+        "",
+        current.data_handling_rules?.trim() ||
+          "Do not enter confidential, personal, or client data into unapproved AI tools.",
+        "",
+        "## Employee guidance",
+        "",
+        current.employee_guidance?.trim() ||
+          "When in doubt, ask before pasting company or client information into an AI tool.",
+        "",
+        "## Review",
+        "",
+        "- Review approved tools quarterly",
+        "- Report suspected data exposure immediately",
+      ];
+      const content = lines.join("\n");
+
+      const { data, error } = await supabase
+        .from("ai_policies")
+        .update({ content, status: "draft" })
+        .eq("id", String(req.params.id))
+        .eq("organization_id", orgId)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: req.authUser!.userId,
+        action: "ai_policy.generated",
+        entityType: "ai_policies",
+        entityId: String(req.params.id),
+      });
+
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 router.get("/kb/search", async (req, res, next) => {
   try {
     const q = sanitizeSearchTerm(req.query.q);
@@ -384,59 +413,67 @@ router.get("/kb/search", async (req, res, next) => {
     next(err);
   }
 });
-router.post("/kb/:id/rate", async (req, res, next) => {
-  try {
-    const parsed = z.object({ helpful: z.boolean() }).parse(req.body);
-    const supabase = getScopedClient(req, "edu-automation", "write");
-    const { data: article, error: articleErr } = await supabase
-      .from("knowledge_articles")
-      .select("id")
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .single();
-    if (articleErr || !article) throw new AppError("NOT_FOUND", "Article not found", 404);
-    const field = parsed.helpful ? "helpful_count" : "not_helpful_count";
-    await supabase.rpc("increment_article_count", {
-      article_id: String(req.params.id),
-      field_name: field,
-    } as never);
-    res.json(success({ rated: true }));
-  } catch (err) {
-    next(err);
-  }
-});
-router.post("/compliance/score", async (req, res, next) => {
-  try {
-    const parsed = z
-      .object({
-        organizationId: z.string().min(1),
-        framework: z.string().min(1).max(100),
-        responses: z.array(z.object({ questionId: z.string(), passed: z.boolean() })).min(1),
-      })
-      .parse(req.body);
-    const supabase = getScopedClient(req, "edu-automation", "write");
-    const totalQuestions = parsed.responses.length;
-    const passed = parsed.responses.filter((r) => r.passed).length;
-    const score = Math.round((passed / totalQuestions) * 100);
-    const { data, error } = await supabase
-      .from("compliance_readiness")
-      .insert({
-        organization_id: parsed.organizationId,
-        framework: parsed.framework,
-        score,
-        total_questions: totalQuestions,
-        passed_questions: passed,
-        assessed_at: new Date().toISOString(),
-        created_by: req.authUser!.userId,
-      })
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.status(201).json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  "/kb/:id/rate",
+  requirePermission("client-knowledge-base", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = z.object({ helpful: z.boolean() }).parse(req.body);
+      const supabase = getScopedClient(req, "edu-automation", "write");
+      const { data: article, error: articleErr } = await supabase
+        .from("knowledge_articles")
+        .select("id")
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .single();
+      if (articleErr || !article) throw new AppError("NOT_FOUND", "Article not found", 404);
+      const field = parsed.helpful ? "helpful_count" : "not_helpful_count";
+      await supabase.rpc("increment_article_count", {
+        article_id: String(req.params.id),
+        field_name: field,
+      } as never);
+      res.json(success({ rated: true }));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+router.post(
+  "/compliance/score",
+  requirePermission("compliance-readiness", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = z
+        .object({
+          organizationId: z.string().min(1),
+          framework: z.string().min(1).max(100),
+          responses: z.array(z.object({ questionId: z.string(), passed: z.boolean() })).min(1),
+        })
+        .parse(req.body);
+      const supabase = getScopedClient(req, "edu-automation", "write");
+      const totalQuestions = parsed.responses.length;
+      const passed = parsed.responses.filter((r) => r.passed).length;
+      const score = Math.round((passed / totalQuestions) * 100);
+      const { data, error } = await supabase
+        .from("compliance_readiness")
+        .insert({
+          organization_id: parsed.organizationId,
+          framework: parsed.framework,
+          score,
+          total_questions: totalQuestions,
+          passed_questions: passed,
+          assessed_at: new Date().toISOString(),
+          created_by: req.authUser!.userId,
+        })
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.status(201).json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.post(
   "/phishing/:id/launch",
@@ -510,64 +547,72 @@ router.get("/phishing/:id/targets", async (req, res, next) => {
   }
 });
 
-router.post("/phishing/:id/targets", async (req, res, next) => {
-  try {
-    const parsed = z
-      .object({ email: z.string().email(), name: z.string().max(200).optional().nullable() })
-      .parse(req.body);
-    const supabase = getScopedClient(req, "edu-automation", "write");
-    const organizationId = req.query.organization_id as string;
+router.post(
+  "/phishing/:id/targets",
+  requirePermission("phishing-simulations", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = z
+        .object({ email: z.string().email(), name: z.string().max(200).optional().nullable() })
+        .parse(req.body);
+      const supabase = getScopedClient(req, "edu-automation", "write");
+      const organizationId = req.query.organization_id as string;
 
-    const { data: campaign, error: campaignError } = await supabase
-      .from("phishing_campaigns")
-      .select("id")
-      .eq("id", String(req.params.id))
-      .eq("organization_id", organizationId)
-      .single();
-    if (campaignError || !campaign) throw new AppError("NOT_FOUND", "Campaign not found", 404);
+      const { data: campaign, error: campaignError } = await supabase
+        .from("phishing_campaigns")
+        .select("id")
+        .eq("id", String(req.params.id))
+        .eq("organization_id", organizationId)
+        .single();
+      if (campaignError || !campaign) throw new AppError("NOT_FOUND", "Campaign not found", 404);
 
-    const { data, error } = await supabase
-      .from("phishing_targets")
-      .insert({
-        campaign_id: String(req.params.id),
-        organization_id: organizationId,
-        email: parsed.email,
-        name: parsed.name ?? null,
-      } as never)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      const { data, error } = await supabase
+        .from("phishing_targets")
+        .insert({
+          campaign_id: String(req.params.id),
+          organization_id: organizationId,
+          email: parsed.email,
+          name: parsed.name ?? null,
+        } as never)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    const { count } = await supabase
-      .from("phishing_targets")
-      .select("*", { count: "exact", head: true })
-      .eq("campaign_id", String(req.params.id));
-    await supabase
-      .from("phishing_campaigns")
-      .update({ target_count: count ?? 0 })
-      .eq("id", String(req.params.id));
+      const { count } = await supabase
+        .from("phishing_targets")
+        .select("*", { count: "exact", head: true })
+        .eq("campaign_id", String(req.params.id));
+      await supabase
+        .from("phishing_campaigns")
+        .update({ target_count: count ?? 0 })
+        .eq("id", String(req.params.id));
 
-    res.status(201).json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+      res.status(201).json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
-router.delete("/phishing/:id/targets/:targetId", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "edu-automation", "write");
-    const { error } = await supabase
-      .from("phishing_targets")
-      .delete()
-      .eq("id", String(req.params.targetId))
-      .eq("campaign_id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string);
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-});
+router.delete(
+  "/phishing/:id/targets/:targetId",
+  requirePermission("phishing-simulations", "delete"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "edu-automation", "write");
+      const { error } = await supabase
+        .from("phishing_targets")
+        .delete()
+        .eq("id", String(req.params.targetId))
+        .eq("campaign_id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 const DANGEROUS_PATTERNS: Array<{ pattern: RegExp; label: string }> = [
   { pattern: /\binvoke-expression\b|\biex\b/gi, label: "Invoke-Expression / iex" },
@@ -623,7 +668,7 @@ function psRoute(
     next: express.NextFunction,
   ) => Promise<void>,
 ) {
-  router.post(`/powershell/:id/${sub}`, handler);
+  router.post(`/powershell/:id/${sub}`, requirePermission("edu-automation", "edit"), handler);
 }
 
 psRoute("submit", async (req, res, next) => {
@@ -942,117 +987,121 @@ router.get("/scorecards/leaderboard", requireAdmin, async (_req, res, next) => {
   }
 });
 
-router.post("/scorecards/evaluate", async (req, res, next) => {
-  try {
-    const sb = getScopedClient(req, "edu-automation", "write");
-    const body = req.body as Record<string, unknown>;
-    const orgId = (body.organizationId ?? body.organization_id ?? req.query.organization_id) as
-      | string
-      | undefined;
-    if (!orgId) {
-      throw new AppError("VALIDATION", "organizationId is required", 400);
-    }
+router.post(
+  "/scorecards/evaluate",
+  requirePermission("edu-automation", "edit"),
+  async (req, res, next) => {
+    try {
+      const sb = getScopedClient(req, "edu-automation", "write");
+      const body = req.body as Record<string, unknown>;
+      const orgId = (body.organizationId ?? body.organization_id ?? req.query.organization_id) as
+        | string
+        | undefined;
+      if (!orgId) {
+        throw new AppError("VALIDATION", "organizationId is required", 400);
+      }
 
-    let query = sb.from("cyber_scorecards").select("id, category, score");
-    query = query.eq("organization_id", orgId as string);
-    const { data: scorecards, error: _error } = await query;
-    if (!scorecards || scorecards.length === 0) {
-      return res.json(success({ evaluated: 0, badgesAssigned: [] }));
-    }
+      let query = sb.from("cyber_scorecards").select("id, category, score");
+      query = query.eq("organization_id", orgId as string);
+      const { data: scorecards, error: _error } = await query;
+      if (!scorecards || scorecards.length === 0) {
+        return res.json(success({ evaluated: 0, badgesAssigned: [] }));
+      }
 
-    function badgeFor(score: number): string {
-      if (score >= 90) return "Gold";
-      if (score >= 70) return "Silver";
-      if (score >= 50) return "Bronze";
-      return "Needs Improvement";
-    }
+      function badgeFor(score: number): string {
+        if (score >= 90) return "Gold";
+        if (score >= 70) return "Silver";
+        if (score >= 50) return "Bronze";
+        return "Needs Improvement";
+      }
 
-    function pointsFor(badge: string): number {
-      if (badge === "Gold") return 100;
-      if (badge === "Silver") return 75;
-      if (badge === "Bronze") return 50;
-      return 10;
-    }
+      function pointsFor(badge: string): number {
+        if (badge === "Gold") return 100;
+        if (badge === "Silver") return 75;
+        if (badge === "Bronze") return 50;
+        return 10;
+      }
 
-    const badgesAssigned: Array<{
-      category: string;
-      badge: string;
-      score: number;
-      points: number;
-    }> = [];
+      const badgesAssigned: Array<{
+        category: string;
+        badge: string;
+        score: number;
+        points: number;
+      }> = [];
 
-    for (const sc of scorecards) {
-      const s = sc as Record<string, unknown>;
-      const badge = badgeFor((s.score as number) ?? 0);
-      const points = pointsFor(badge);
-      await sb
-        .from("cyber_scorecards")
-        .update({ badge, last_updated: new Date().toISOString() })
-        .eq("id", s.id as string)
-        .eq("organization_id", orgId as string);
-      await sb.from("score_history").insert({
-        organization_id: orgId,
-        category: s.category as string,
-        score: s.score as number,
-        recorded_at: new Date().toISOString(),
+      for (const sc of scorecards) {
+        const s = sc as Record<string, unknown>;
+        const badge = badgeFor((s.score as number) ?? 0);
+        const points = pointsFor(badge);
+        await sb
+          .from("cyber_scorecards")
+          .update({ badge, last_updated: new Date().toISOString() })
+          .eq("id", s.id as string)
+          .eq("organization_id", orgId as string);
+        await sb.from("score_history").insert({
+          organization_id: orgId,
+          category: s.category as string,
+          score: s.score as number,
+          recorded_at: new Date().toISOString(),
+        });
+        await sb.from("badges_earned").insert({
+          organization_id: orgId,
+          badge_name: badge,
+          category: s.category as string,
+          earned_at: new Date().toISOString(),
+          points,
+        });
+        badgesAssigned.push({
+          category: s.category as string,
+          badge,
+          score: (s.score as number) ?? 0,
+          points,
+        });
+      }
+
+      const overallAvg =
+        scorecards.reduce(
+          (sum: number, sc: Record<string, unknown>) => sum + ((sc.score as number) ?? 0),
+          0,
+        ) / scorecards.length;
+      if (overallAvg >= 80) {
+        await sb.from("badges_earned").insert({
+          organization_id: orgId,
+          badge_name: "Security Champion",
+          category: null,
+          earned_at: new Date().toISOString(),
+          points: 200,
+        });
+        badgesAssigned.push({
+          category: "Overall",
+          badge: "Security Champion",
+          score: Math.round(overallAvg),
+          points: 200,
+        });
+      }
+
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: req.authUser!.userId,
+        action: "scorecards.evaluated",
+        entityType: "scorecards",
       });
-      await sb.from("badges_earned").insert({
-        organization_id: orgId,
-        badge_name: badge,
-        category: s.category as string,
-        earned_at: new Date().toISOString(),
-        points,
-      });
-      badgesAssigned.push({
-        category: s.category as string,
-        badge,
-        score: (s.score as number) ?? 0,
-        points,
-      });
+
+      res.json(
+        success({
+          evaluated: scorecards.length,
+          badgesAssigned,
+          overallAvg: Math.round(overallAvg),
+        }),
+      );
+    } catch (e) {
+      next(e);
     }
+  },
+);
 
-    const overallAvg =
-      scorecards.reduce(
-        (sum: number, sc: Record<string, unknown>) => sum + ((sc.score as number) ?? 0),
-        0,
-      ) / scorecards.length;
-    if (overallAvg >= 80) {
-      await sb.from("badges_earned").insert({
-        organization_id: orgId,
-        badge_name: "Security Champion",
-        category: null,
-        earned_at: new Date().toISOString(),
-        points: 200,
-      });
-      badgesAssigned.push({
-        category: "Overall",
-        badge: "Security Champion",
-        score: Math.round(overallAvg),
-        points: 200,
-      });
-    }
-
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: req.authUser!.userId,
-      action: "scorecards.evaluated",
-      entityType: "scorecards",
-    });
-
-    res.json(
-      success({
-        evaluated: scorecards.length,
-        badgesAssigned,
-        overallAvg: Math.round(overallAvg),
-      }),
-    );
-  } catch (e) {
-    next(e);
-  }
-});
-
-for (const [path, { schema: s, table }] of Object.entries(schemas)) {
-  crud(path, table, s);
+for (const [path, { schema: s, table, module }] of Object.entries(schemas)) {
+  crud(path, table, s, module);
 }
 
 export default router;

@@ -305,7 +305,7 @@ router.delete("/:id", requirePermission("findings", "delete"), async (req, res, 
   }
 });
 
-router.post("/:id/verify", async (req, res, next) => {
+router.post("/:id/verify", requirePermission("findings", "edit"), async (req, res, next) => {
   try {
     verifyFindingSchema.parse(req.body);
     const supabase = getScopedClient(req, "findings", "write");
@@ -361,7 +361,7 @@ router.post("/:id/verify", async (req, res, next) => {
   }
 });
 
-router.post("/:id/resolve", async (req, res, next) => {
+router.post("/:id/resolve", requirePermission("findings", "edit"), async (req, res, next) => {
   try {
     const parsed = resolveFindingSchema.parse(req.body);
     const supabase = getScopedClient(req, "findings", "write");

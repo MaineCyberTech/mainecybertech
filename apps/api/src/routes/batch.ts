@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import {
   createLicenseSchema,
   createStatusItemSchema,
@@ -58,7 +59,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     }
   });
 
-  router.post(`/${path}`, async (req, res, next) => {
+  router.post(`/${path}`, requirePermission(path, "create"), async (req, res, next) => {
     try {
       const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
         req.body,
@@ -104,7 +105,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     }
   });
 
-  router.patch(`/${path}/:id`, async (req, res, next) => {
+  router.patch(`/${path}/:id`, requirePermission(path, "edit"), async (req, res, next) => {
     try {
       // Partial updates: accept any subset of the create schema's fields
       // (a full re-submit would break editing a single field).
@@ -139,7 +140,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     }
   });
 
-  router.delete(`/${path}/:id`, async (req, res, next) => {
+  router.delete(`/${path}/:id`, requirePermission(path, "delete"), async (req, res, next) => {
     try {
       const sb = getScopedClient(req, "batch", "write");
       const { error } = await sb
