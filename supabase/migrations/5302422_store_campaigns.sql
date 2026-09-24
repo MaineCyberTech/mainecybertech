@@ -36,12 +36,12 @@ create index if not exists store_campaigns_org_idx on public.store_campaigns (or
 alter table public.store_campaigns enable row level security;
 
 -- Public storefront reads active campaigns; tenant scope follows 5302408.
-DROP POLICY IF EXISTS "store_campaigns_public_read" ON public.store_campaigns;
+DROP POLICY IF EXISTS "store_campaigns_read" ON public.store_campaigns;
 CREATE POLICY "store_campaigns_read" ON public.store_campaigns
   FOR SELECT TO anon, authenticated
   USING (status = 'active' AND (organization_id IS NULL OR public.is_org_member(organization_id)));
 
-DROP POLICY IF EXISTS "store_campaigns_admin_write" ON public.store_campaigns;
+DROP POLICY IF EXISTS "store_campaigns_write" ON public.store_campaigns;
 CREATE POLICY "store_campaigns_write" ON public.store_campaigns
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
