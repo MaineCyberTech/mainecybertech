@@ -34,4 +34,4 @@ Rules:
 | comprehensive (manual) | 2026-08-26 | [`comprehensive-audit/2026-08-26/report.md`](./comprehensive-audit/2026-08-26/report.md) |
 
 The running summary of every audit and its remediation status lives in
-[`AGENTS.md`](../../AGENTS.md) under **Known Open Issues** and **Completed Work**.
+[`AGENTS.md`](../../AGENTS.md) under **Known Debt** and **Completed Work**.

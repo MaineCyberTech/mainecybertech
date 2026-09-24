@@ -1,19 +1,22 @@
 # Documentation Index
 
 > Canonical index for the Maine CyberTech Portal monorepo documentation.
-> Reconciled against the repo on 2026-08-01 — every link below targets a real file.
+> Reconciled against the repo on 2026-09-24 — every link below targets a real file.
 
 ## Quick Start
 
-| Document                                                         | Purpose                                                    |
-| ---------------------------------------------------------------- | ---------------------------------------------------------- |
-| [README.md](../README.md)                                        | Project overview, testing, Docker, CI/CD, design decisions |
-| [AGENTS.md](../AGENTS.md)                                        | Agent context: progress, constraints, test patterns        |
-| [CONTRIBUTING.md](../CONTRIBUTING.md)                            | Contribution workflow, conventions, PR expectations        |
-| [README.dev.md](../README.dev.md)                                | Developer setup guide, environment variables, testing      |
-| [ONBOARDING.md](ONBOARDING.md)                                   | Developer onboarding — architecture, workflow, patterns    |
-| [LOCAL_DEVELOPMENT_CHECKLIST.md](LOCAL_DEVELOPMENT_CHECKLIST.md) | 14-step local dev checklist                                |
-| [VSCODE_GIT_QUICKSTART.md](VSCODE_GIT_QUICKSTART.md)             | VS Code Git workflow guide                                 |
+| Document                                                         | Purpose                                                     |
+| ---------------------------------------------------------------- | ----------------------------------------------------------- |
+| [README.md](../README.md)                                        | Project overview, testing, Docker, CI/CD, design decisions  |
+| [AGENTS.md](../AGENTS.md)                                        | Agent context: progress, constraints, test patterns         |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)                            | Contribution workflow, conventions, PR expectations         |
+| [README.dev.md](../README.dev.md)                                | Developer setup guide, environment variables, testing       |
+| [ONBOARDING.md](ONBOARDING.md)                                   | Developer onboarding — architecture, workflow, patterns     |
+| [LOCAL_DEVELOPMENT_CHECKLIST.md](LOCAL_DEVELOPMENT_CHECKLIST.md) | 12-step local dev checklist                                 |
+| [VSCODE_GIT_QUICKSTART.md](VSCODE_GIT_QUICKSTART.md)             | VS Code Git workflow guide                                  |
+| [MFA.md](MFA.md)                                                 | MFA (TOTP) management + `aal2` enforcement                  |
+| [VISITOR_ALERTS.md](VISITOR_ALERTS.md)                           | Visitor alerts, bot filtering, robots/sitemap crawl policy  |
+| [WEB_UI_CONVENTIONS.md](WEB_UI_CONVENTIONS.md)                   | Web UI patterns (nav catalogs, error states, forms, modals) |
 
 ## Architecture & Design
 
@@ -43,7 +46,7 @@
 | Document                                                                     | Purpose                                             |
 | ---------------------------------------------------------------------------- | --------------------------------------------------- |
 | [README.dev.md](../README.dev.md)                                            | Developer setup, env vars, testing, architecture    |
-| [LOCAL_DEVELOPMENT_CHECKLIST.md](LOCAL_DEVELOPMENT_CHECKLIST.md)             | 14-step local dev checklist                         |
+| [LOCAL_DEVELOPMENT_CHECKLIST.md](LOCAL_DEVELOPMENT_CHECKLIST.md)             | 12-step local dev checklist                         |
 | [ENVIRONMENT_VARIABLES.md](ENVIRONMENT_VARIABLES.md)                         | All env vars across all services                    |
 | [SUPABASE_MIGRATION_WORKFLOW.md](SUPABASE_MIGRATION_WORKFLOW.md)             | Migration workflow, schema vs seed, common mistakes |
 | [SUPABASE_MIGRATION_CHEATSHEET.md](SUPABASE_MIGRATION_CHEATSHEET.md)         | Quick reference for Supabase migrations             |
@@ -95,6 +98,7 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 - [admin-utilities](modules/admin-utilities.md) — admin utilities (test email)
 - [ai-policy](modules/ai-policy.md) — AI usage policy
 - [ai-tools](modules/ai-tools.md) — AI tools
+- [analytics](modules/analytics.md) — analytics tracking & summaries
 - [api-documentation](modules/api-documentation.md) — Swagger UI + OpenAPI spec
 - [api-keys](modules/api-keys.md) — API key management
 - [approvals](modules/approvals.md) — approval workflows
@@ -105,6 +109,7 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 - [automation-workflows](modules/automation-workflows.md) — automation workflows
 - [backup-dr](modules/backup-dr.md) — backup & disaster recovery
 - [batch](modules/batch.md) — batch operations (licenses, status items, DMARC)
+- [billing](modules/billing.md) — Stripe billing, invoices, subscriptions
 - [bulk-invite](modules/bulk-invite.md) — bulk user invite (CSV import)
 - [business-os](modules/business-os.md) — business OS dashboard/summary
 - [camera-calculator](modules/camera-calculator.md) — camera coverage calculator
@@ -156,6 +161,7 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 - [sla-metrics](modules/sla-metrics.md) — SLA tracking (breach rates, metrics)
 - [sop-library](modules/sop-library.md) — SOP library
 - [status-page](modules/status-page.md) — public status pages
+- [store](modules/store.md) — storefront catalog, quotes, leads, campaigns
 - [tickets](modules/tickets.md) — support tickets (CRUD, comments, bulk update)
 - [training-hub](modules/training-hub.md) — training hub
 - [unifi-survey](modules/unifi-survey.md) — UniFi survey
@@ -171,6 +177,21 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 | -------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | [features/client-onboarding-command-center.md](features/client-onboarding-command-center.md) | Client onboarding command center feature spec |
 | [runbooks/client-onboarding-command-center.md](runbooks/client-onboarding-command-center.md) | Client onboarding command center runbook      |
+
+> `docs/features/` and `docs/runbooks/` each contain ~60 files (one per module);
+> only the command-center pair is listed here as the canonical example.
+
+## Additional References
+
+| Document                                                         | Purpose                                                      |
+| ---------------------------------------------------------------- | ------------------------------------------------------------ |
+| [database-types-api-adoption.md](database-types-api-adoption.md) | Supabase `Database` type adoption across the API (completed) |
+| [RLS-rollout.md](RLS-rollout.md)                                 | `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` rollout           |
+| [RLS-coverage-matrix.md](RLS-coverage-matrix.md)                 | Per-table RLS coverage                                       |
+| [MODULE_AUDIT.md](MODULE_AUDIT.md)                               | 60-module implementation audit                               |
+| [P0_REMEDIATION_2026-08-05.md](P0_REMEDIATION_2026-08-05.md)     | P0 remediation log                                           |
+| [audits/README.md](audits/README.md)                             | Audit output contract                                        |
+| [openapi.yaml](openapi.yaml)                                     | Generated OpenAPI spec (317 paths)                           |
 
 ## Marketing & SEO (`docs/seo/` — 10 files)
 

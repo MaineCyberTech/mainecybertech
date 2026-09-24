@@ -483,8 +483,9 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
 - **repo-deep-dive pack**: **resolved 2026-09-21** — the `docs/audits/`
   output contract + README are in place, `sbom.yml` (`scripts/generate-sbom.mjs`)
   emits a CycloneDX artifact, a root `CHANGELOG.md` exists, and
-  `.github/branch-protection/{develop,main}.json` is committed (apply with
-  `gh api` — not yet applied). `vercel.json` is retained (Vercel previews are
+  `.github/branch-protection/{develop,main}.json` is committed **and applied**
+  to `develop` + `main` (2026-09-24; `enforce_admins:false`, so admins can still
+  bypass). `vercel.json` is retained (Vercel previews are
   connected); the 2026-08-26 audit report was relocated under `docs/audits/`.
 - **Pack path drift**: the 60-module `implementation-matrix.csv` points at
   aspirational 1-file-per-module paths (58/60 api/web/sdk) that do not exist

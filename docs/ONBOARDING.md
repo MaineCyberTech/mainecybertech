@@ -1,7 +1,7 @@
 # Onboarding Guide — Maine CyberTech Portal
 
 > **Purpose:** Help new developers understand the architecture, development workflow, and key patterns in this monorepo.
-> **Prerequisites:** Node 18+, pnpm 10, Docker, Supabase CLI, VS Code
+> **Prerequisites:** Node 20+, pnpm 10, Docker, Supabase CLI, VS Code
 
 ---
 
@@ -10,7 +10,7 @@
 ```bash
 # Clone and install
 git clone https://github.com/MaineCyberTech/mainecybertech.git
-cd mainecybertech-portal
+cd mainecybertech
 pnpm install
 
 # Start Supabase locally (requires Docker)
@@ -47,12 +47,11 @@ mainecybertech-portal/
 │   └── terraform/
 │       └── digitalocean/  IaC (droplet, firewall, DNS)
 ├── supabase/
-│   ├── migrations/    12 SQL migration files
-│   ├── seeds/         5 seed files
-│   └── policies/      RLS policy snippets
-├── docs/              30+ documentation files
+│   ├── migrations/    124 SQL migration files
+│   └── seeds/         9 seed files
+├── docs/              300+ documentation files
 ├── scripts/           PowerShell + bash utilities
-└── .github/           CI/CD workflows (8 total)
+└── .github/           CI/CD workflows (14 total)
 ```
 
 ### Key Design Principles
@@ -298,15 +297,15 @@ Key helper functions (defined in migration `5302026`):
 
 ## 8. Key Documentation
 
-| Document                                       | What it covers                                        |
-| ---------------------------------------------- | ----------------------------------------------------- |
-| `AGENTS.md`                                    | Full architecture, test patterns, critical context    |
-| `docs/API_ENDPOINT_INVENTORY.md`               | All 86 API endpoints with auth/validation/cache/audit |
-| `docs/ENVIRONMENT_VARIABLES.md`                | All env vars across all services                      |
-| `docs/MEGA_AUDIT_2026-06-18.md`                | Comprehensive architecture & security audit           |
-| `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Operator manual                                       |
-| `docs/CODE_REVIEW_2026-06-16.md`               | 30 architecture recommendations                       |
-| `README.dev.md`                                | Developer setup guide                                 |
+| Document                                       | What it covers                                                                       |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `AGENTS.md`                                    | Full architecture, test patterns, critical context                                   |
+| `docs/API_ENDPOINT_INVENTORY.md`               | API endpoint inventory (see `docs/openapi.yaml` for the authoritative 317-path spec) |
+| `docs/ENVIRONMENT_VARIABLES.md`                | All env vars across all services                                                     |
+| `docs/MEGA_AUDIT_2026-06-18.md`                | Comprehensive architecture & security audit                                          |
+| `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Operator manual                                                                      |
+| `docs/CODE_REVIEW_2026-06-16.md`               | 30 architecture recommendations                                                      |
+| `README.dev.md`                                | Developer setup guide                                                                |
 
 ---
 
