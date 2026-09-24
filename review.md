@@ -42,12 +42,12 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-21 Verified)
 
-**3,221 tests, all passing. 374 suites.**
+**3,223 tests, all passing. 374 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
 | API     | 1,163         | 108    | Jest + supertest                  |
-| Web     | 1,674         | 255    | Jest + Testing Library            |
+| Web     | 1,676         | 255    | Jest + Testing Library            |
 | SDK     | 285           | 2      | Jest (mocked fetch)               |
 | Worker  | 99            | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -94,9 +94,9 @@ pnpm e2e                     # Playwright E2E
 | API route files           | 62    | `apps/api/src/routes/*.ts` (75 incl. `routes/final/` + `routes/store/`)                             |
 | API SDK modules           | 60    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                         |
 | Worker task files         | 12    | Registered in `apps/worker/src/tasks/index.ts`                                                      |
-| Web pages                 | 317   | Admin 201, Portal 87, Public 27, Root 2                                                             |
-| Web components            | 97    | `apps/web/components/`                                                                              |
-| SQL migrations            | 121   | `supabase/migrations/` (latest: 5302422 store campaigns)                                            |
+| Web pages                 | 318   | Admin 202, Portal 86, Public 28, Root 2                                                             |
+| Web components            | 99    | `apps/web/components/`                                                                              |
+| SQL migrations            | 122   | `supabase/migrations/` (latest: 5302423 store portal scope)                                         |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                              |
 | GitHub Actions workflows  | 14    | `.github/workflows/`                                                                                |
 | AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                        |
@@ -760,7 +760,7 @@ best-effort _job_; `terraform fmt -check -recursive` is blocking);
 
 ### Testing (snapshot — the header table holds the current numbers)
 
-- 2,734 unit tests across 225 suites (all green) _(now 3,221 / 374)_
+- 2,734 unit tests across 225 suites (all green) _(now 3,223 / 374)_
 - 90 Playwright E2E spec files
 - ESLint: 0 errors
 - TypeScript: clean
