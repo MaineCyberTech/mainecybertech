@@ -59,6 +59,19 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
           continue;
         }
 
+        // The API's inline dispatch path stores a PII-safe summary
+        // ({ event, receivedAt }) rather than the full payload. Replaying that
+        // would send a delivery with no `data`, so dead-letter it instead.
+        const stored = delivery.request_body as Record<string, unknown> | null;
+        if (!stored || !("data" in stored)) {
+          await supabase
+            .from("webhook_deliveries")
+            .update({ dead_letter: true, next_retry_at: null })
+            .eq("id", delivery.id);
+          deadLettered++;
+          continue;
+        }
+
         const body = JSON.stringify(delivery.request_body);
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
