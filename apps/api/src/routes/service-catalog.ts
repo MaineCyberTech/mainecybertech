@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { createServiceSchema, updateServiceSchema } from "../validators/service-catalog";
 import { queryInt } from "../lib/query";
 
@@ -49,7 +50,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("service-catalog", "create"), async (req, res, next) => {
   try {
     const parsed = createServiceSchema.parse(req.body);
     const supabase = getScopedClient(req, "service-catalog", "write");
@@ -88,7 +89,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("service-catalog", "edit"), async (req, res, next) => {
   try {
     const parsed = updateServiceSchema.parse(req.body);
     const supabase = getScopedClient(req, "service-catalog", "write");
@@ -133,7 +134,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("service-catalog", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "service-catalog", "write");
     const { error } = await supabase

@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import {
   createNetworkDiagramSchema,
@@ -71,7 +72,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("network-port-maps", "create"), async (req, res, next) => {
   try {
     const parsed = createNetworkDiagramSchema.parse(req.body);
     const supabase = getScopedClient(req, "network-diagrams", "write");
@@ -105,7 +106,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("network-port-maps", "edit"), async (req, res, next) => {
   try {
     const parsed = updateNetworkDiagramSchema.parse(req.body);
     const supabase = getScopedClient(req, "network-diagrams", "write");
@@ -141,7 +142,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("network-port-maps", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "network-diagrams", "write");
     await loadOwned(req, supabase as any, "network_diagrams", String(req.params.id as string));

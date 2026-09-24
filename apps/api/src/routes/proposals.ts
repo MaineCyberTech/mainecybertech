@@ -6,6 +6,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import {
@@ -142,7 +143,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("proposals", "create"), async (req, res, next) => {
   try {
     const parsed = createProposalSchema.parse(req.body);
     const supabase = getScopedClient(req, "proposals", "write");
@@ -274,56 +275,62 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateProposalSchema.parse(req.body);
-    const supabase = getScopedClient(req, "proposals", "write");
+router.patch(
+  "/:id",
+  requirePermission("proposals", "edit"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateProposalSchema.parse(req.body);
+      const supabase = getScopedClient(req, "proposals", "write");
 
-    const current = await loadOwned(
-      req,
-      supabase as any,
-      "proposals",
-      String(req.params.id) as string,
-      "id, version, organization_id",
-    );
-    checkVersionMatch(current.version as number, req.ifMatchVersion);
+      const current = await loadOwned(
+        req,
+        supabase as any,
+        "proposals",
+        String(req.params.id) as string,
+        "id, version, organization_id",
+      );
+      checkVersionMatch(current.version as number, req.ifMatchVersion);
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.title !== undefined) updateData.title = parsed.title;
-    if (parsed.description !== undefined) updateData.description = parsed.description;
-    if (parsed.status !== undefined) updateData.status = parsed.status;
-    if (parsed.validUntil !== undefined) updateData.valid_until = parsed.validUntil;
-    if (parsed.ownerUserId !== undefined) updateData.owner_user_id = parsed.ownerUserId;
-    if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
-    if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
-    updateData.version = (current.version as number) + 1;
+      const updateData: Record<string, unknown> = {};
+      if (parsed.title !== undefined) updateData.title = parsed.title;
+      if (parsed.description !== undefined) updateData.description = parsed.description;
+      if (parsed.status !== undefined) updateData.status = parsed.status;
+      if (parsed.validUntil !== undefined) updateData.valid_until = parsed.validUntil;
+      if (parsed.ownerUserId !== undefined) updateData.owner_user_id = parsed.ownerUserId;
+      if (parsed.visibility !== undefined) updateData.visibility = parsed.visibility;
+      if (parsed.metadata !== undefined) updateData.metadata = parsed.metadata;
+      updateData.version = (current.version as number) + 1;
 
-    const { data, error } = await supabase
-      .from("proposals")
-      .update(updateData as never)
-      .eq("id", String(req.params.id) as string)
-      .eq("version", current.version as number)
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("proposals")
+        .update(updateData as never)
+        .eq("id", String(req.params.id) as string)
+        .eq("version", current.version as number)
+        .select()
+        .single();
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("VERSION_CONFLICT", "Proposal was modified by another user", 409);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data)
+        throw new AppError("VERSION_CONFLICT", "Proposal was modified by another user", 409);
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "proposal.updated",
-      entityType: "proposal",
-      entityId: data.id,
-      metadata: parsed,
-    });
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "proposal.updated",
+        entityType: "proposal",
+        entityId: data.id,
+        metadata: parsed,
+      });
 
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("proposals", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "proposals", "write");
     await loadOwned(
@@ -352,7 +359,7 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/:id/phases", async (req, res, next) => {
+router.post("/:id/phases", requirePermission("proposals", "create"), async (req, res, next) => {
   try {
     const parsed = createPhaseSchema.parse(req.body);
     const supabase = getScopedClient(req, "proposals", "write");
@@ -393,81 +400,89 @@ router.post("/:id/phases", async (req, res, next) => {
   }
 });
 
-router.patch("/:id/phases/:phaseId", async (req, res, next) => {
-  try {
-    const parsed = updatePhaseSchema.parse(req.body);
-    const supabase = getScopedClient(req, "proposals", "write");
-    await loadOwned(
-      req,
-      supabase as any,
-      "proposals",
-      String(req.params.id) as string,
-      "id, organization_id",
-    );
+router.patch(
+  "/:id/phases/:phaseId",
+  requirePermission("proposals", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = updatePhaseSchema.parse(req.body);
+      const supabase = getScopedClient(req, "proposals", "write");
+      await loadOwned(
+        req,
+        supabase as any,
+        "proposals",
+        String(req.params.id) as string,
+        "id, organization_id",
+      );
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.title !== undefined) updateData.title = parsed.title;
-    if (parsed.description !== undefined) updateData.description = parsed.description;
-    if (parsed.assumptions !== undefined) updateData.assumptions = parsed.assumptions;
-    if (parsed.notes !== undefined) updateData.notes = parsed.notes;
-    if (parsed.sortOrder !== undefined) updateData.sort_order = parsed.sortOrder;
+      const updateData: Record<string, unknown> = {};
+      if (parsed.title !== undefined) updateData.title = parsed.title;
+      if (parsed.description !== undefined) updateData.description = parsed.description;
+      if (parsed.assumptions !== undefined) updateData.assumptions = parsed.assumptions;
+      if (parsed.notes !== undefined) updateData.notes = parsed.notes;
+      if (parsed.sortOrder !== undefined) updateData.sort_order = parsed.sortOrder;
 
-    const { data, error } = await supabase
-      .from("proposal_phases")
-      .update(updateData as never)
-      .eq("id", String(req.params.phaseId))
-      .eq("proposal_id", String(req.params.id) as string)
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("proposal_phases")
+        .update(updateData as never)
+        .eq("id", String(req.params.phaseId))
+        .eq("proposal_id", String(req.params.id) as string)
+        .select()
+        .single();
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Phase not found", 404);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Phase not found", 404);
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "proposal.phase.updated",
-      entityType: "proposal_phase",
-      entityId: data.id,
-      metadata: { proposalId: String(req.params.id) as string, ...parsed },
-    });
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "proposal.phase.updated",
+        entityType: "proposal_phase",
+        entityId: data.id,
+        metadata: { proposalId: String(req.params.id) as string, ...parsed },
+      });
 
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.delete("/:id/phases/:phaseId", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "proposals", "write");
-    await loadOwned(
-      req,
-      supabase as any,
-      "proposals",
-      String(req.params.id) as string,
-      "id, organization_id",
-    );
-    const { error } = await supabase
-      .from("proposal_phases")
-      .delete()
-      .eq("id", String(req.params.phaseId))
-      .eq("proposal_id", String(req.params.id) as string);
+router.delete(
+  "/:id/phases/:phaseId",
+  requirePermission("proposals", "delete"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "proposals", "write");
+      await loadOwned(
+        req,
+        supabase as any,
+        "proposals",
+        String(req.params.id) as string,
+        "id, organization_id",
+      );
+      const { error } = await supabase
+        .from("proposal_phases")
+        .delete()
+        .eq("id", String(req.params.phaseId))
+        .eq("proposal_id", String(req.params.id) as string);
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "proposal.phase.deleted",
-      entityType: "proposal_phase",
-      entityId: String(req.params.phaseId),
-      metadata: { proposalId: String(req.params.id) as string },
-    });
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "proposal.phase.deleted",
+        entityType: "proposal_phase",
+        entityId: String(req.params.phaseId),
+        metadata: { proposalId: String(req.params.id) as string },
+      });
 
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 /**
  * Recompute a proposal's stored totals from its line items.
@@ -515,7 +530,7 @@ async function recomputeProposalTotals(
   if (updateError) throw new AppError("DB_ERROR", updateError.message, 500);
 }
 
-router.post("/:id/items", async (req, res, next) => {
+router.post("/:id/items", requirePermission("proposals", "create"), async (req, res, next) => {
   try {
     const parsed = createLineItemSchema.parse(req.body);
     const supabase = getScopedClient(req, "proposals", "write");
@@ -568,170 +583,182 @@ router.post("/:id/items", async (req, res, next) => {
   }
 });
 
-router.patch("/:id/items/:itemId", async (req, res, next) => {
-  try {
-    const parsed = updateLineItemSchema.parse(req.body);
-    const supabase = getScopedClient(req, "proposals", "write");
-    await loadOwned(
-      req,
-      supabase as any,
-      "proposals",
-      String(req.params.id) as string,
-      "id, organization_id",
-    );
-
-    const updateData: Record<string, unknown> = {};
-    if (parsed.phaseId !== undefined) updateData.phase_id = parsed.phaseId;
-    if (parsed.itemType !== undefined) updateData.item_type = parsed.itemType;
-    if (parsed.name !== undefined) updateData.name = parsed.name;
-    if (parsed.description !== undefined) updateData.description = parsed.description;
-    if (parsed.quantity !== undefined) updateData.quantity = parsed.quantity;
-    if (parsed.unitPrice !== undefined) updateData.unit_price = parsed.unitPrice;
-    if (parsed.totalPrice !== undefined) updateData.total_price = parsed.totalPrice;
-    if (parsed.isOptional !== undefined) updateData.is_optional = parsed.isOptional;
-    if (parsed.isRecurring !== undefined) updateData.is_recurring = parsed.isRecurring;
-    if (parsed.recurringInterval !== undefined)
-      updateData.recurring_interval = parsed.recurringInterval;
-    if (parsed.notes !== undefined) updateData.notes = parsed.notes;
-    if (parsed.sortOrder !== undefined) updateData.sort_order = parsed.sortOrder;
-
-    const { data, error } = await supabase
-      .from("proposal_line_items")
-      .update(updateData as never)
-      .eq("id", String(req.params.itemId))
-      .eq("proposal_id", String(req.params.id) as string)
-      .select()
-      .single();
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Line item not found", 404);
-
-    await recomputeProposalTotals(supabase, String(req.params.id) as string);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "proposal.item.updated",
-      entityType: "proposal_line_item",
-      entityId: data.id,
-      metadata: { proposalId: String(req.params.id) as string, ...parsed },
-    });
-
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/:id/items/:itemId", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "proposals", "write");
-    await loadOwned(
-      req,
-      supabase as any,
-      "proposals",
-      String(req.params.id) as string,
-      "id, organization_id",
-    );
-    const { error } = await supabase
-      .from("proposal_line_items")
-      .delete()
-      .eq("id", String(req.params.itemId))
-      .eq("proposal_id", String(req.params.id) as string);
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-
-    await recomputeProposalTotals(supabase, String(req.params.id) as string);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "proposal.item.deleted",
-      entityType: "proposal_line_item",
-      entityId: String(req.params.itemId),
-      metadata: { proposalId: String(req.params.id) as string },
-    });
-
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post("/:id/submit-approval", async (req, res, next) => {
-  try {
-    submitForApprovalSchema.parse(req.body);
-    const supabase = getScopedClient(req, "proposals", "write");
-
-    const proposal = await loadOwned(
-      req,
-      supabase as any,
-      "proposals",
-      String(req.params.id) as string,
-      "id, organization_id, title, description, status, grand_total, version",
-    );
-
-    if ((proposal.status as string) !== "draft")
-      throw new AppError(
-        "INVALID_STATE",
-        "Only draft proposals can be submitted for approval",
-        400,
+router.patch(
+  "/:id/items/:itemId",
+  requirePermission("proposals", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = updateLineItemSchema.parse(req.body);
+      const supabase = getScopedClient(req, "proposals", "write");
+      await loadOwned(
+        req,
+        supabase as any,
+        "proposals",
+        String(req.params.id) as string,
+        "id, organization_id",
       );
 
-    const { data: approval, error: approvalError } = await supabase
-      .from("approval_requests")
-      .insert({
-        organization_id: proposal.organization_id as string,
-        request_type: "proposal_approval",
-        request_subject: `Proposal: ${proposal.title as string}`,
-        request_body: (proposal.description as string) ?? null,
-        request_metadata: toJson({ proposalId: proposal.id, grandTotal: proposal.grand_total }),
-        source_module: "proposals",
-        source_entity_type: "proposal",
-        source_entity_id: proposal.id as string,
-        priority: "high",
-        requested_by: req.authUser!.userId,
-      })
-      .select()
-      .single();
+      const updateData: Record<string, unknown> = {};
+      if (parsed.phaseId !== undefined) updateData.phase_id = parsed.phaseId;
+      if (parsed.itemType !== undefined) updateData.item_type = parsed.itemType;
+      if (parsed.name !== undefined) updateData.name = parsed.name;
+      if (parsed.description !== undefined) updateData.description = parsed.description;
+      if (parsed.quantity !== undefined) updateData.quantity = parsed.quantity;
+      if (parsed.unitPrice !== undefined) updateData.unit_price = parsed.unitPrice;
+      if (parsed.totalPrice !== undefined) updateData.total_price = parsed.totalPrice;
+      if (parsed.isOptional !== undefined) updateData.is_optional = parsed.isOptional;
+      if (parsed.isRecurring !== undefined) updateData.is_recurring = parsed.isRecurring;
+      if (parsed.recurringInterval !== undefined)
+        updateData.recurring_interval = parsed.recurringInterval;
+      if (parsed.notes !== undefined) updateData.notes = parsed.notes;
+      if (parsed.sortOrder !== undefined) updateData.sort_order = parsed.sortOrder;
 
-    if (approvalError) throw new AppError("DB_ERROR", approvalError.message, 500);
+      const { data, error } = await supabase
+        .from("proposal_line_items")
+        .update(updateData as never)
+        .eq("id", String(req.params.itemId))
+        .eq("proposal_id", String(req.params.id) as string)
+        .select()
+        .single();
 
-    await supabase
-      .from("proposals")
-      .update({
-        status: "sent",
-        sent_at: new Date().toISOString(),
-        approval_request_id: approval.id,
-        version: (proposal.version as number) + 1,
-      })
-      .eq("id", String(req.params.id) as string)
-      .eq("version", proposal.version as number);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Line item not found", 404);
 
-    await logAuditEvent({
-      organizationId: proposal.organization_id as string,
-      actorUserId: req.authUser!.userId,
-      action: "proposal.submitted_for_approval",
-      entityType: "proposal",
-      entityId: String(req.params.id) as string,
-      metadata: { approvalRequestId: approval.id },
-    });
+      await recomputeProposalTotals(supabase, String(req.params.id) as string);
 
-    await addTimelineEvent(
-      proposal.organization_id as string,
-      "proposals",
-      "proposal",
-      String(req.params.id) as string,
-      "submitted_for_approval",
-      {},
-      req.authUser!.userId,
-    );
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "proposal.item.updated",
+        entityType: "proposal_line_item",
+        entityId: data.id,
+        metadata: { proposalId: String(req.params.id) as string, ...parsed },
+      });
 
-    res.json(success({ approvalId: approval.id }));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.post("/:id/publish", async (req, res, next) => {
+router.delete(
+  "/:id/items/:itemId",
+  requirePermission("proposals", "delete"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "proposals", "write");
+      await loadOwned(
+        req,
+        supabase as any,
+        "proposals",
+        String(req.params.id) as string,
+        "id, organization_id",
+      );
+      const { error } = await supabase
+        .from("proposal_line_items")
+        .delete()
+        .eq("id", String(req.params.itemId))
+        .eq("proposal_id", String(req.params.id) as string);
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+      await recomputeProposalTotals(supabase, String(req.params.id) as string);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "proposal.item.deleted",
+        entityType: "proposal_line_item",
+        entityId: String(req.params.itemId),
+        metadata: { proposalId: String(req.params.id) as string },
+      });
+
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.post(
+  "/:id/submit-approval",
+  requirePermission("proposals", "edit"),
+  async (req, res, next) => {
+    try {
+      submitForApprovalSchema.parse(req.body);
+      const supabase = getScopedClient(req, "proposals", "write");
+
+      const proposal = await loadOwned(
+        req,
+        supabase as any,
+        "proposals",
+        String(req.params.id) as string,
+        "id, organization_id, title, description, status, grand_total, version",
+      );
+
+      if ((proposal.status as string) !== "draft")
+        throw new AppError(
+          "INVALID_STATE",
+          "Only draft proposals can be submitted for approval",
+          400,
+        );
+
+      const { data: approval, error: approvalError } = await supabase
+        .from("approval_requests")
+        .insert({
+          organization_id: proposal.organization_id as string,
+          request_type: "proposal_approval",
+          request_subject: `Proposal: ${proposal.title as string}`,
+          request_body: (proposal.description as string) ?? null,
+          request_metadata: toJson({ proposalId: proposal.id, grandTotal: proposal.grand_total }),
+          source_module: "proposals",
+          source_entity_type: "proposal",
+          source_entity_id: proposal.id as string,
+          priority: "high",
+          requested_by: req.authUser!.userId,
+        })
+        .select()
+        .single();
+
+      if (approvalError) throw new AppError("DB_ERROR", approvalError.message, 500);
+
+      await supabase
+        .from("proposals")
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          approval_request_id: approval.id,
+          version: (proposal.version as number) + 1,
+        })
+        .eq("id", String(req.params.id) as string)
+        .eq("version", proposal.version as number);
+
+      await logAuditEvent({
+        organizationId: proposal.organization_id as string,
+        actorUserId: req.authUser!.userId,
+        action: "proposal.submitted_for_approval",
+        entityType: "proposal",
+        entityId: String(req.params.id) as string,
+        metadata: { approvalRequestId: approval.id },
+      });
+
+      await addTimelineEvent(
+        proposal.organization_id as string,
+        "proposals",
+        "proposal",
+        String(req.params.id) as string,
+        "submitted_for_approval",
+        {},
+        req.authUser!.userId,
+      );
+
+      res.json(success({ approvalId: approval.id }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.post("/:id/publish", requirePermission("proposals", "edit"), async (req, res, next) => {
   try {
     const parsed = publishProposalSchema.parse(req.body);
     const supabase = getScopedClient(req, "proposals", "write");
@@ -819,7 +846,7 @@ router.get("/:id/comments", async (req, res, next) => {
   }
 });
 
-router.post("/:id/comments", async (req, res, next) => {
+router.post("/:id/comments", requirePermission("proposals", "create"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "proposals", "write");
     const proposal = await loadOwned(

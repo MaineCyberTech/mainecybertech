@@ -1,6 +1,6 @@
 ﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
+import { createTestApp, createMockBuilder, tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -28,9 +28,16 @@ jest.mock("../config/env", () => ({
     JSM_REQUEST_TYPE_ID: "",
   }),
 }));
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
+jest.mock("../services/supabase", () => ({
+  getSupabaseAdmin: jest.fn(),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
+}));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 
 import { getSupabaseAdmin } from "../services/supabase";
 import licenseOptimizerRouter from "../routes/license-optimizer";
@@ -61,7 +68,9 @@ describe("License Optimizer API", () => {
 
   it("lists licenses", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
+    supabase.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })),
+    );
     const res = await request(app)
       .get("/api/v1/license-optimizer")
       .query({ organization_id: testOrgId })
@@ -71,18 +80,20 @@ describe("License Optimizer API", () => {
 
   it("creates a license allocation", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({
-        data: {
-          id: "00000000-0000-0000-0000-000000000100",
-          software_name: "Microsoft 365",
-          license_type: "per_seat",
-          total_seats: 50,
-          used_seats: 30,
-        },
-        error: null,
-      }),
-    ));
+    supabase.from.mockImplementation(
+      tableAwareFrom(
+        createMockBuilder({
+          data: {
+            id: "00000000-0000-0000-0000-000000000100",
+            software_name: "Microsoft 365",
+            license_type: "per_seat",
+            total_seats: 50,
+            used_seats: 30,
+          },
+          error: null,
+        }),
+      ),
+    );
     const res = await request(app)
       .post("/api/v1/license-optimizer")
       .set("Authorization", authToken)
@@ -99,18 +110,20 @@ describe("License Optimizer API", () => {
 
   it("gets a single license", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({
-        data: {
-          id: "00000000-0000-0000-0000-000000000100",
-          software_name: "Microsoft 365",
-          total_seats: 50,
-          used_seats: 30,
-          status: "active",
-        },
-        error: null,
-      }),
-    ));
+    supabase.from.mockImplementation(
+      tableAwareFrom(
+        createMockBuilder({
+          data: {
+            id: "00000000-0000-0000-0000-000000000100",
+            software_name: "Microsoft 365",
+            total_seats: 50,
+            used_seats: 30,
+            status: "active",
+          },
+          error: null,
+        }),
+      ),
+    );
     const res = await request(app)
       .get("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000100")
       .set("Authorization", authToken);
@@ -120,17 +133,19 @@ describe("License Optimizer API", () => {
 
   it("updates a license allocation", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({
-        data: {
-          id: "00000000-0000-0000-0000-000000000100",
-          software_name: "Microsoft 365",
-          used_seats: 35,
-          status: "active",
-        },
-        error: null,
-      }),
-    ));
+    supabase.from.mockImplementation(
+      tableAwareFrom(
+        createMockBuilder({
+          data: {
+            id: "00000000-0000-0000-0000-000000000100",
+            software_name: "Microsoft 365",
+            used_seats: 35,
+            status: "active",
+          },
+          error: null,
+        }),
+      ),
+    );
     const res = await request(app)
       .patch("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000100")
       .set("Authorization", authToken)
@@ -150,29 +165,31 @@ describe("License Optimizer API", () => {
 
   it("returns reclaimable licenses", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({
-        data: [
-          {
-            id: "00000000-0000-0000-0000-000000000100",
-            software_name: "Zoom",
-            total_seats: 100,
-            used_seats: 30,
-            cost_per_seat: 15,
-            status: "active",
-          },
-          {
-            id: "00000000-0000-0000-0000-000000000101",
-            software_name: "Slack",
-            total_seats: 50,
-            used_seats: 50,
-            cost_per_seat: 8,
-            status: "active",
-          },
-        ],
-        error: null,
-      }),
-    ));
+    supabase.from.mockImplementation(
+      tableAwareFrom(
+        createMockBuilder({
+          data: [
+            {
+              id: "00000000-0000-0000-0000-000000000100",
+              software_name: "Zoom",
+              total_seats: 100,
+              used_seats: 30,
+              cost_per_seat: 15,
+              status: "active",
+            },
+            {
+              id: "00000000-0000-0000-0000-000000000101",
+              software_name: "Slack",
+              total_seats: 50,
+              used_seats: 50,
+              cost_per_seat: 8,
+              status: "active",
+            },
+          ],
+          error: null,
+        }),
+      ),
+    );
     const res = await request(app)
       .get("/api/v1/license-optimizer/reclaimable/license-list")
       .query({ organization_id: testOrgId })
@@ -184,29 +201,31 @@ describe("License Optimizer API", () => {
 
   it("returns summary data", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({
-        data: [
-          {
-            id: "00000000-0000-0000-0000-000000000100",
-            software_name: "M365",
-            total_seats: 100,
-            used_seats: 30,
-            cost_per_seat: 15,
-            status: "active",
-          },
-          {
-            id: "00000000-0000-0000-0000-000000000101",
-            software_name: "Zoom",
-            total_seats: 50,
-            used_seats: 50,
-            cost_per_seat: 12,
-            status: "active",
-          },
-        ],
-        error: null,
-      }),
-    ));
+    supabase.from.mockImplementation(
+      tableAwareFrom(
+        createMockBuilder({
+          data: [
+            {
+              id: "00000000-0000-0000-0000-000000000100",
+              software_name: "M365",
+              total_seats: 100,
+              used_seats: 30,
+              cost_per_seat: 15,
+              status: "active",
+            },
+            {
+              id: "00000000-0000-0000-0000-000000000101",
+              software_name: "Zoom",
+              total_seats: 50,
+              used_seats: 50,
+              cost_per_seat: 12,
+              status: "active",
+            },
+          ],
+          error: null,
+        }),
+      ),
+    );
     const res = await request(app)
       .get("/api/v1/license-optimizer/summary/data")
       .query({ organization_id: testOrgId })
@@ -223,9 +242,9 @@ describe("License Optimizer API", () => {
 
   it("returns 404 for non-existent license", async () => {
     const supabase = mockAuth();
-    supabase.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({ data: null, error: { message: "Not found" } }),
-    ));
+    supabase.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: null, error: { message: "Not found" } })),
+    );
     const res = await request(app)
       .get("/api/v1/license-optimizer/00000000-0000-0000-0000-000000000999")
       .set("Authorization", authToken);

@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
@@ -95,7 +96,7 @@ router.get("/courses", async (req, res, next) => {
   }
 });
 
-router.post("/courses", async (req, res, next) => {
+router.post("/courses", requirePermission("training-hub", "create"), async (req, res, next) => {
   try {
     const parsed = createCourseSchema.parse(req.body);
     const supabase = getScopedClient(req, "training-hub", "write");
@@ -145,7 +146,7 @@ router.get("/courses/:id", async (req, res, next) => {
   }
 });
 
-router.patch("/courses/:id", async (req, res, next) => {
+router.patch("/courses/:id", requirePermission("training-hub", "edit"), async (req, res, next) => {
   try {
     const parsed = updateCourseSchema.parse(req.body);
     const supabase = getScopedClient(req, "training-hub", "write");
@@ -181,88 +182,100 @@ router.patch("/courses/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/courses/:id", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "training-hub", "write");
-    const { error } = await supabase
-      .from("training_courses")
-      .delete()
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string);
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "training.course.deleted",
-      entityType: "training_course",
-      entityId: String(req.params.id),
-    });
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete(
+  "/courses/:id",
+  requirePermission("training-hub", "delete"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "training-hub", "write");
+      const { error } = await supabase
+        .from("training_courses")
+        .delete()
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "training.course.deleted",
+        entityType: "training_course",
+        entityId: String(req.params.id),
+      });
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 // ── Enrollment & Progress ────────────────────────────────────────────
 
-router.post("/courses/:id/enroll", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "training-hub", "write");
-    const userId = req.authUser!.userId;
-    const { data: course, error: courseError } = await supabase
-      .from("training_courses")
-      .select("id, organization_id")
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string)
-      .single();
-    if (courseError || !course) throw new AppError("NOT_FOUND", "Course not found", 404);
-    const { data, error } = await supabase
-      .from("training_enrollments")
-      .insert({
-        course_id: String(req.params.id),
-        user_id: userId,
-        status: "enrolled",
-        progress_percent: 0,
-      })
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    await logAuditEvent({
-      actorUserId: userId,
-      action: "training.enrollment.created",
-      entityType: "training_enrollment",
-      entityId: data.id,
-      metadata: { course_id: String(req.params.id) },
-    });
-    res.status(201).json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+router.post(
+  "/courses/:id/enroll",
+  requirePermission("training-hub", "edit"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "training-hub", "write");
+      const userId = req.authUser!.userId;
+      const { data: course, error: courseError } = await supabase
+        .from("training_courses")
+        .select("id, organization_id")
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .single();
+      if (courseError || !course) throw new AppError("NOT_FOUND", "Course not found", 404);
+      const { data, error } = await supabase
+        .from("training_enrollments")
+        .insert({
+          course_id: String(req.params.id),
+          user_id: userId,
+          status: "enrolled",
+          progress_percent: 0,
+        })
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      await logAuditEvent({
+        actorUserId: userId,
+        action: "training.enrollment.created",
+        entityType: "training_enrollment",
+        entityId: data.id,
+        metadata: { course_id: String(req.params.id) },
+      });
+      res.status(201).json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.post("/courses/:id/progress", async (req, res, next) => {
-  try {
-    const parsed = progressSchema.parse(req.body);
-    const supabase = getScopedClient(req, "training-hub", "write");
-    const userId = req.authUser!.userId;
-    const progress = parsed.progress;
-    const { data, error } = await supabase
-      .from("training_enrollments")
-      .update({
-        progress_percent: progress,
-        status: progress >= 100 ? "completed" : "in_progress",
-        completed_at: progress >= 100 ? new Date().toISOString() : null,
-      })
-      .eq("course_id", String(req.params.id))
-      .eq("user_id", userId)
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Enrollment not found", 404);
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+router.post(
+  "/courses/:id/progress",
+  requirePermission("training-hub", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = progressSchema.parse(req.body);
+      const supabase = getScopedClient(req, "training-hub", "write");
+      const userId = req.authUser!.userId;
+      const progress = parsed.progress;
+      const { data, error } = await supabase
+        .from("training_enrollments")
+        .update({
+          progress_percent: progress,
+          status: progress >= 100 ? "completed" : "in_progress",
+          completed_at: progress >= 100 ? new Date().toISOString() : null,
+        })
+        .eq("course_id", String(req.params.id))
+        .eq("user_id", userId)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Enrollment not found", 404);
+      res.json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 // ── Lessons CRUD ─────────────────────────────────────────────────────
 
@@ -288,7 +301,7 @@ router.get("/lessons", async (req, res, next) => {
   }
 });
 
-router.post("/lessons", async (req, res, next) => {
+router.post("/lessons", requirePermission("training-hub", "create"), async (req, res, next) => {
   try {
     const parsed = createLessonSchema.parse(req.body);
     const supabase = getScopedClient(req, "training-hub", "write");
@@ -340,7 +353,7 @@ router.get("/lessons/:id", async (req, res, next) => {
   }
 });
 
-router.patch("/lessons/:id", async (req, res, next) => {
+router.patch("/lessons/:id", requirePermission("training-hub", "edit"), async (req, res, next) => {
   try {
     const parsed = updateLessonSchema.parse(req.body);
     const supabase = getScopedClient(req, "training-hub", "write");
@@ -379,31 +392,35 @@ router.patch("/lessons/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/lessons/:id", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "training-hub", "write");
-    const { data: scoped, error: scopeError } = await supabase
-      .from("training_lessons")
-      .select("id")
-      .eq("id", String(req.params.id))
-      .eq("training_courses.organization_id", req.query.organization_id as string)
-      .single();
-    if (scopeError || !scoped) throw new AppError("NOT_FOUND", "Lesson not found", 404);
-    const { error } = await supabase
-      .from("training_lessons")
-      .delete()
-      .eq("id", String(req.params.id));
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "training.lesson.deleted",
-      entityType: "training_lesson",
-      entityId: String(req.params.id),
-    });
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete(
+  "/lessons/:id",
+  requirePermission("training-hub", "delete"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "training-hub", "write");
+      const { data: scoped, error: scopeError } = await supabase
+        .from("training_lessons")
+        .select("id")
+        .eq("id", String(req.params.id))
+        .eq("training_courses.organization_id", req.query.organization_id as string)
+        .single();
+      if (scopeError || !scoped) throw new AppError("NOT_FOUND", "Lesson not found", 404);
+      const { error } = await supabase
+        .from("training_lessons")
+        .delete()
+        .eq("id", String(req.params.id));
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "training.lesson.deleted",
+        entityType: "training_lesson",
+        entityId: String(req.params.id),
+      });
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 export default router;

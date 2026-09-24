@@ -5,6 +5,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import {
   listCabMeetingsQuerySchema,
   createCabMeetingSchema,
@@ -62,7 +63,7 @@ router.get("/meetings", async (req, res, next) => {
   }
 });
 
-router.post("/meetings", async (req, res, next) => {
+router.post("/meetings", requirePermission("governance", "create"), async (req, res, next) => {
   try {
     const parsed = createCabMeetingSchema.parse(req.body);
     const orgId = (req.query.organization_id as string | undefined) ?? parsed.organizationId;
@@ -118,46 +119,50 @@ router.get("/meetings/:id", async (req, res, next) => {
   }
 });
 
-router.post("/meetings/:id/agenda", async (req, res, next) => {
-  try {
-    const parsed = addCabAgendaItemSchema.parse(req.body);
-    const supabase = getScopedClient(req, "cab", "write");
-    const meeting = await loadOwned(
-      req,
-      supabase as any,
-      "cab_meetings",
-      String(req.params.id) as string,
-      "id, organization_id",
-    );
+router.post(
+  "/meetings/:id/agenda",
+  requirePermission("governance", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = addCabAgendaItemSchema.parse(req.body);
+      const supabase = getScopedClient(req, "cab", "write");
+      const meeting = await loadOwned(
+        req,
+        supabase as any,
+        "cab_meetings",
+        String(req.params.id) as string,
+        "id, organization_id",
+      );
 
-    const { data, error } = await supabase
-      .from("cab_agenda_items")
-      .insert({
-        meeting_id: String(req.params.id),
-        organization_id: meeting.organization_id as string,
-        change_request_id: parsed.changeRequestId,
-        decision: parsed.decision,
-        notes: parsed.notes ?? null,
-      })
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      const { data, error } = await supabase
+        .from("cab_agenda_items")
+        .insert({
+          meeting_id: String(req.params.id),
+          organization_id: meeting.organization_id as string,
+          change_request_id: parsed.changeRequestId,
+          decision: parsed.decision,
+          notes: parsed.notes ?? null,
+        })
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      organizationId: meeting.organization_id as string,
-      actorUserId: req.authUser!.userId,
-      action: "cab_agenda_item.created",
-      entityType: "cab_agenda_item",
-      entityId: data.id,
-    });
+      await logAuditEvent({
+        organizationId: meeting.organization_id as string,
+        actorUserId: req.authUser!.userId,
+        action: "cab_agenda_item.created",
+        entityType: "cab_agenda_item",
+        entityId: data.id,
+      });
 
-    res.status(201).json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(201).json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.patch("/agenda/:id", async (req, res, next) => {
+router.patch("/agenda/:id", requirePermission("governance", "edit"), async (req, res, next) => {
   try {
     const parsed = updateCabAgendaItemSchema.parse(req.body);
     const supabase = getScopedClient(req, "cab", "write");

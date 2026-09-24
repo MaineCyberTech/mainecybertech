@@ -5,6 +5,7 @@ import { AppError, success } from "../types";
 import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import {
   createFrameworkSchema,
   createControlSchema,
@@ -35,37 +36,41 @@ router.get("/frameworks", async (req, res, next) => {
   }
 });
 
-router.post("/frameworks", async (req, res, next) => {
-  try {
-    const parsed = createFrameworkSchema.parse(req.body);
-    const supabase = getScopedClient(req, "compliance", "write");
+router.post(
+  "/frameworks",
+  requirePermission("compliance-readiness", "create"),
+  async (req, res, next) => {
+    try {
+      const parsed = createFrameworkSchema.parse(req.body);
+      const supabase = getScopedClient(req, "compliance", "write");
 
-    const { data, error } = await supabase
-      .from("compliance_frameworks")
-      .insert({
-        organization_id: parsed.organizationId,
-        name: parsed.name,
-        description: parsed.description ?? null,
-      })
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("compliance_frameworks")
+        .insert({
+          organization_id: parsed.organizationId,
+          name: parsed.name,
+          description: parsed.description ?? null,
+        })
+        .select()
+        .single();
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      organizationId: parsed.organizationId,
-      actorUserId: req.authUser!.userId,
-      action: "compliance.framework.created",
-      entityType: "compliance_framework",
-      entityId: data.id,
-      metadata: { name: parsed.name },
-    });
+      await logAuditEvent({
+        organizationId: parsed.organizationId,
+        actorUserId: req.authUser!.userId,
+        action: "compliance.framework.created",
+        entityType: "compliance_framework",
+        entityId: data.id,
+        metadata: { name: parsed.name },
+      });
 
-    res.status(201).json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(201).json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/frameworks/:id/controls", async (req, res, next) => {
   try {
@@ -87,125 +92,137 @@ router.get("/frameworks/:id/controls", async (req, res, next) => {
   }
 });
 
-router.post("/frameworks/:id/controls", async (req, res, next) => {
-  try {
-    const parsed = createControlSchema.parse(req.body);
-    const supabase = getScopedClient(req, "compliance", "write");
+router.post(
+  "/frameworks/:id/controls",
+  requirePermission("compliance-readiness", "create"),
+  async (req, res, next) => {
+    try {
+      const parsed = createControlSchema.parse(req.body);
+      const supabase = getScopedClient(req, "compliance", "write");
 
-    const { data: framework, error: fwError } = await supabase
-      .from("compliance_frameworks")
-      .select("id")
-      .eq("id", String(req.params.id))
-      .eq("organization_id", parsed.organizationId)
-      .single();
-    if (fwError || !framework) throw new AppError("NOT_FOUND", "Framework not found", 404);
+      const { data: framework, error: fwError } = await supabase
+        .from("compliance_frameworks")
+        .select("id")
+        .eq("id", String(req.params.id))
+        .eq("organization_id", parsed.organizationId)
+        .single();
+      if (fwError || !framework) throw new AppError("NOT_FOUND", "Framework not found", 404);
 
-    const { data, error } = await supabase
-      .from("compliance_controls")
-      .insert({
-        framework_id: String(req.params.id),
-        organization_id: parsed.organizationId,
-        title: parsed.title,
-        status: parsed.status,
-        owner: parsed.owner ?? null,
-        due_at: parsed.dueAt ?? null,
-        notes: parsed.notes ?? null,
-      })
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("compliance_controls")
+        .insert({
+          framework_id: String(req.params.id),
+          organization_id: parsed.organizationId,
+          title: parsed.title,
+          status: parsed.status,
+          owner: parsed.owner ?? null,
+          due_at: parsed.dueAt ?? null,
+          notes: parsed.notes ?? null,
+        })
+        .select()
+        .single();
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      organizationId: parsed.organizationId,
-      actorUserId: req.authUser!.userId,
-      action: "compliance.control.created",
-      entityType: "compliance_control",
-      entityId: data.id,
-      metadata: { title: parsed.title },
-    });
+      await logAuditEvent({
+        organizationId: parsed.organizationId,
+        actorUserId: req.authUser!.userId,
+        action: "compliance.control.created",
+        entityType: "compliance_control",
+        entityId: data.id,
+        metadata: { title: parsed.title },
+      });
 
-    res.status(201).json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(201).json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.patch("/controls/:id", async (req, res, next) => {
-  try {
-    const parsed = updateControlSchema.parse(req.body);
-    const supabase = getScopedClient(req, "compliance", "write");
+router.patch(
+  "/controls/:id",
+  requirePermission("compliance-readiness", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = updateControlSchema.parse(req.body);
+      const supabase = getScopedClient(req, "compliance", "write");
 
-    const control = await loadOwned(
-      req,
-      supabase as any,
-      "compliance_controls",
-      String(req.params.id) as string,
-      "id, organization_id",
-    );
+      const control = await loadOwned(
+        req,
+        supabase as any,
+        "compliance_controls",
+        String(req.params.id) as string,
+        "id, organization_id",
+      );
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.title !== undefined) updateData.title = parsed.title;
-    if (parsed.status !== undefined) updateData.status = parsed.status;
-    if (parsed.owner !== undefined) updateData.owner = parsed.owner;
-    if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
-    if (parsed.notes !== undefined) updateData.notes = parsed.notes;
+      const updateData: Record<string, unknown> = {};
+      if (parsed.title !== undefined) updateData.title = parsed.title;
+      if (parsed.status !== undefined) updateData.status = parsed.status;
+      if (parsed.owner !== undefined) updateData.owner = parsed.owner;
+      if (parsed.dueAt !== undefined) updateData.due_at = parsed.dueAt;
+      if (parsed.notes !== undefined) updateData.notes = parsed.notes;
 
-    const { data, error } = await supabase
-      .from("compliance_controls")
-      .update(updateData as never)
-      .eq("id", String(req.params.id))
-      .eq("organization_id", control.organization_id as string)
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from("compliance_controls")
+        .update(updateData as never)
+        .eq("id", String(req.params.id))
+        .eq("organization_id", control.organization_id as string)
+        .select()
+        .single();
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      organizationId: control.organization_id as string,
-      actorUserId: req.authUser!.userId,
-      action: "compliance.control.updated",
-      entityType: "compliance_control",
-      entityId: data.id,
-      metadata: parsed,
-    });
+      await logAuditEvent({
+        organizationId: control.organization_id as string,
+        actorUserId: req.authUser!.userId,
+        action: "compliance.control.updated",
+        entityType: "compliance_control",
+        entityId: data.id,
+        metadata: parsed,
+      });
 
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(success(data));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.delete("/controls/:id", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "compliance", "write");
-    const control = await loadOwned(
-      req,
-      supabase as any,
-      "compliance_controls",
-      String(req.params.id) as string,
-      "id, organization_id",
-    );
-    const { error } = await supabase
-      .from("compliance_controls")
-      .delete()
-      .eq("id", String(req.params.id))
-      .eq("organization_id", control.organization_id as string);
+router.delete(
+  "/controls/:id",
+  requirePermission("compliance-readiness", "delete"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "compliance", "write");
+      const control = await loadOwned(
+        req,
+        supabase as any,
+        "compliance_controls",
+        String(req.params.id) as string,
+        "id, organization_id",
+      );
+      const { error } = await supabase
+        .from("compliance_controls")
+        .delete()
+        .eq("id", String(req.params.id))
+        .eq("organization_id", control.organization_id as string);
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      organizationId: control.organization_id as string,
-      actorUserId: req.authUser!.userId,
-      action: "compliance.control.deleted",
-      entityType: "compliance_control",
-      entityId: String(req.params.id),
-    });
+      await logAuditEvent({
+        organizationId: control.organization_id as string,
+        actorUserId: req.authUser!.userId,
+        action: "compliance.control.deleted",
+        entityType: "compliance_control",
+        entityId: String(req.params.id),
+      });
 
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 export default router;

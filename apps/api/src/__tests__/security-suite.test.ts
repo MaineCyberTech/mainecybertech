@@ -35,6 +35,9 @@ jest.mock("../services/supabase", () => ({
   ),
 }));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 jest.mock("../middleware/org-access", () =>
   createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
 );

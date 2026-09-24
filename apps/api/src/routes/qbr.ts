@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { createQbrReportSchema, updateQbrReportSchema } from "../validators/qbr";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
@@ -52,7 +53,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/generate", async (req, res, next) => {
+router.post("/generate", requirePermission("qbr", "edit"), async (req, res, next) => {
   try {
     const parsed = createQbrReportSchema.parse(req.body);
     const supabase = getScopedClient(req, "qbr", "write");
@@ -196,7 +197,7 @@ router.post("/generate", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("qbr", "edit"), async (req, res, next) => {
   try {
     const parsed = updateQbrReportSchema.parse(req.body);
     const supabase = getScopedClient(req, "qbr", "write");
@@ -232,7 +233,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("qbr", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "qbr", "write");
     const { error } = await supabase

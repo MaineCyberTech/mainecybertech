@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { responseCacheNoRenew } from "../middleware/cache";
 import {
   listSatisfactionPulseQuerySchema,
@@ -123,98 +124,114 @@ router.get(
   },
 );
 
-router.post("/", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const parsed = createSatisfactionPulseSchema.parse(req.body);
+router.post(
+  "/",
+  requirePermission("satisfaction-pulse", "create"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const parsed = createSatisfactionPulseSchema.parse(req.body);
 
-    const result = await createSatisfactionPulse(orgId, userId, parsed);
+      const result = await createSatisfactionPulse(orgId, userId, parsed);
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: userId,
-      action: "satisfaction_pulse.created",
-      entityType: "satisfaction_pulse",
-      entityId: result.data?.id,
-      metadata: { subject: parsed.subject },
-    });
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: userId,
+        action: "satisfaction_pulse.created",
+        entityType: "satisfaction_pulse",
+        entityId: result.data?.id,
+        metadata: { subject: parsed.subject },
+      });
 
-    res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const parsed = updateSatisfactionPulseSchema.parse(req.body);
+router.patch(
+  "/:id",
+  requirePermission("satisfaction-pulse", "edit"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const parsed = updateSatisfactionPulseSchema.parse(req.body);
 
-    const result = await updateSatisfactionPulse(orgId, userId, getParam(req, "id"), parsed);
+      const result = await updateSatisfactionPulse(orgId, userId, getParam(req, "id"), parsed);
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: userId,
-      action: "satisfaction_pulse.updated",
-      entityType: "satisfaction_pulse",
-      entityId: getParam(req, "id"),
-      metadata: parsed,
-    });
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: userId,
+        action: "satisfaction_pulse.updated",
+        entityType: "satisfaction_pulse",
+        entityId: getParam(req, "id"),
+        metadata: parsed,
+      });
 
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.post("/:id/respond", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const parsed = respondSatisfactionPulseSchema.parse(req.body);
+router.post(
+  "/:id/respond",
+  requirePermission("satisfaction-pulse", "create"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const parsed = respondSatisfactionPulseSchema.parse(req.body);
 
-    const result = await respondSatisfactionPulse(
-      orgId,
-      getParam(req, "id"),
-      parsed.rating,
-      parsed.feedback,
-    );
+      const result = await respondSatisfactionPulse(
+        orgId,
+        getParam(req, "id"),
+        parsed.rating,
+        parsed.feedback,
+      );
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: getUserId(req),
-      action: "satisfaction_pulse.responded",
-      entityType: "satisfaction_pulse",
-      entityId: getParam(req, "id"),
-      metadata: { rating: parsed.rating },
-    });
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: getUserId(req),
+        action: "satisfaction_pulse.responded",
+        entityType: "satisfaction_pulse",
+        entityId: getParam(req, "id"),
+        metadata: { rating: parsed.rating },
+      });
 
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const result = await deleteSatisfactionPulse(orgId, userId, getParam(req, "id"));
+router.delete(
+  "/:id",
+  requirePermission("satisfaction-pulse", "delete"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const result = await deleteSatisfactionPulse(orgId, userId, getParam(req, "id"));
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: userId,
-      action: "satisfaction_pulse.deleted",
-      entityType: "satisfaction_pulse",
-      entityId: getParam(req, "id"),
-    });
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: userId,
+        action: "satisfaction_pulse.deleted",
+        entityType: "satisfaction_pulse",
+        entityId: getParam(req, "id"),
+      });
 
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 // Template endpoints
 router.get(
@@ -245,71 +262,83 @@ router.get(
   },
 );
 
-router.post("/templates", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const parsed = templateSchema.parse(req.body);
+router.post(
+  "/templates",
+  requirePermission("satisfaction-pulse", "create"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const parsed = templateSchema.parse(req.body);
 
-    const result = await createTemplate(orgId, userId, parsed);
+      const result = await createTemplate(orgId, userId, parsed);
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: userId,
-      action: "satisfaction_pulse_template.created",
-      entityType: "satisfaction_pulse_template",
-      entityId: result.data?.id,
-      metadata: { name: parsed.name },
-    });
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: userId,
+        action: "satisfaction_pulse_template.created",
+        entityType: "satisfaction_pulse_template",
+        entityId: result.data?.id,
+        metadata: { name: parsed.name },
+      });
 
-    res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.patch("/templates/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const parsed = updateTemplateSchema.parse(req.body);
+router.patch(
+  "/templates/:id",
+  requirePermission("satisfaction-pulse", "edit"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const parsed = updateTemplateSchema.parse(req.body);
 
-    const result = await updateTemplate(orgId, userId, getParam(req, "id"), parsed);
+      const result = await updateTemplate(orgId, userId, getParam(req, "id"), parsed);
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: userId,
-      action: "satisfaction_pulse_template.updated",
-      entityType: "satisfaction_pulse_template",
-      entityId: getParam(req, "id"),
-      metadata: parsed,
-    });
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: userId,
+        action: "satisfaction_pulse_template.updated",
+        entityType: "satisfaction_pulse_template",
+        entityId: getParam(req, "id"),
+        metadata: parsed,
+      });
 
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.delete("/templates/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const result = await deleteTemplate(orgId, userId, getParam(req, "id"));
+router.delete(
+  "/templates/:id",
+  requirePermission("satisfaction-pulse", "delete"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const result = await deleteTemplate(orgId, userId, getParam(req, "id"));
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: userId,
-      action: "satisfaction_pulse_template.deleted",
-      entityType: "satisfaction_pulse_template",
-      entityId: getParam(req, "id"),
-    });
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: userId,
+        action: "satisfaction_pulse_template.deleted",
+        entityType: "satisfaction_pulse_template",
+        entityId: getParam(req, "id"),
+      });
 
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 // Schedule endpoints
 router.get(
@@ -326,70 +355,82 @@ router.get(
   },
 );
 
-router.post("/schedules", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const parsed = scheduleSchema.parse(req.body);
+router.post(
+  "/schedules",
+  requirePermission("satisfaction-pulse", "create"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const parsed = scheduleSchema.parse(req.body);
 
-    const result = await createSchedule(orgId, userId, parsed);
+      const result = await createSchedule(orgId, userId, parsed);
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: userId,
-      action: "satisfaction_pulse_schedule.created",
-      entityType: "satisfaction_pulse_schedule",
-      entityId: result.data?.id,
-      metadata: { name: parsed.name, triggerType: parsed.triggerType },
-    });
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: userId,
+        action: "satisfaction_pulse_schedule.created",
+        entityType: "satisfaction_pulse_schedule",
+        entityId: result.data?.id,
+        metadata: { name: parsed.name, triggerType: parsed.triggerType },
+      });
 
-    res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.patch("/schedules/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const parsed = updateScheduleSchema.parse(req.body);
+router.patch(
+  "/schedules/:id",
+  requirePermission("satisfaction-pulse", "edit"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const parsed = updateScheduleSchema.parse(req.body);
 
-    const result = await updateSchedule(orgId, userId, getParam(req, "id"), parsed);
+      const result = await updateSchedule(orgId, userId, getParam(req, "id"), parsed);
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: userId,
-      action: "satisfaction_pulse_schedule.updated",
-      entityType: "satisfaction_pulse_schedule",
-      entityId: getParam(req, "id"),
-      metadata: parsed,
-    });
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: userId,
+        action: "satisfaction_pulse_schedule.updated",
+        entityType: "satisfaction_pulse_schedule",
+        entityId: getParam(req, "id"),
+        metadata: parsed,
+      });
 
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.delete("/schedules/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const result = await deleteSchedule(orgId, userId, getParam(req, "id"));
+router.delete(
+  "/schedules/:id",
+  requirePermission("satisfaction-pulse", "delete"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const result = await deleteSchedule(orgId, userId, getParam(req, "id"));
 
-    await logAuditEvent({
-      organizationId: orgId,
-      actorUserId: userId,
-      action: "satisfaction_pulse_schedule.deleted",
-      entityType: "satisfaction_pulse_schedule",
-      entityId: getParam(req, "id"),
-    });
+      await logAuditEvent({
+        organizationId: orgId,
+        actorUserId: userId,
+        action: "satisfaction_pulse_schedule.deleted",
+        entityType: "satisfaction_pulse_schedule",
+        entityId: getParam(req, "id"),
+      });
 
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 export default router;

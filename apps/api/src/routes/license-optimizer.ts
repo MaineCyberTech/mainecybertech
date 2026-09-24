@@ -6,6 +6,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
@@ -136,7 +137,7 @@ router.get("/:id", async (req, res, next) => {
 });
 
 // Create
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("license-optimizer", "create"), async (req, res, next) => {
   try {
     const parsed = createSchema.parse(req.body);
     const supabase = getScopedClient(req, "license-optimizer", "write");
@@ -168,7 +169,7 @@ router.post("/", async (req, res, next) => {
 });
 
 // Update
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("license-optimizer", "edit"), async (req, res, next) => {
   try {
     const parsed = updateSchema.parse(req.body);
     const supabase = getScopedClient(req, "license-optimizer", "write");
@@ -191,7 +192,7 @@ router.patch("/:id", async (req, res, next) => {
 });
 
 // Delete
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("license-optimizer", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "license-optimizer", "write");
     const { error } = await supabase

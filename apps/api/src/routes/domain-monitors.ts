@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { loadOwned } from "../lib/tenant";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
@@ -164,7 +165,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("domain-monitors", "create"), async (req, res, next) => {
   try {
     const parsed = createDomainMonitorSchema.parse(req.body);
     const supabase = getScopedClient(req, "domain-monitors", "write");
@@ -204,66 +205,71 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", requireIfMatch, async (req, res, next) => {
-  try {
-    const parsed = updateDomainMonitorSchema.parse(req.body);
-    const supabase = getScopedClient(req, "domain-monitors", "write");
-    const current = await loadOwned(
-      req,
-      supabase as any,
-      "domain_monitors",
-      String(req.params.id as string),
-    );
-    const currentVersion = current.version as number;
+router.patch(
+  "/:id",
+  requirePermission("domain-monitors", "edit"),
+  requireIfMatch,
+  async (req, res, next) => {
+    try {
+      const parsed = updateDomainMonitorSchema.parse(req.body);
+      const supabase = getScopedClient(req, "domain-monitors", "write");
+      const current = await loadOwned(
+        req,
+        supabase as any,
+        "domain_monitors",
+        String(req.params.id as string),
+      );
+      const currentVersion = current.version as number;
 
-    checkVersionMatch(currentVersion, req.ifMatchVersion);
+      checkVersionMatch(currentVersion, req.ifMatchVersion);
 
-    const fieldMap: Record<string, string> = {
-      domain: "domain",
-      displayName: "display_name",
-      zoneId: "zone_id",
-      dnsProvider: "dns_provider",
-      cloudflareProxied: "cloudflare_proxied",
-      checkIntervalHours: "check_interval_hours",
-      alertsEnabled: "alerts_enabled",
-      status: "status",
-      visibility: "visibility",
-      metadata: "metadata",
-    };
+      const fieldMap: Record<string, string> = {
+        domain: "domain",
+        displayName: "display_name",
+        zoneId: "zone_id",
+        dnsProvider: "dns_provider",
+        cloudflareProxied: "cloudflare_proxied",
+        checkIntervalHours: "check_interval_hours",
+        alertsEnabled: "alerts_enabled",
+        status: "status",
+        visibility: "visibility",
+        metadata: "metadata",
+      };
 
-    const updateData: Record<string, unknown> = {};
-    for (const [k, col] of Object.entries(fieldMap)) {
-      if ((parsed as Record<string, unknown>)[k] !== undefined)
-        updateData[col] = (parsed as Record<string, unknown>)[k];
+      const updateData: Record<string, unknown> = {};
+      for (const [k, col] of Object.entries(fieldMap)) {
+        if ((parsed as Record<string, unknown>)[k] !== undefined)
+          updateData[col] = (parsed as Record<string, unknown>)[k];
+      }
+
+      updateData.version = currentVersion + 1;
+
+      const { data, error } = await supabase
+        .from("domain_monitors")
+        .update(updateData as never)
+        .eq("version", currentVersion)
+        .eq("id", String(req.params.id as string))
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data)
+        throw new AppError("VERSION_CONFLICT", "Domain monitor was modified by another user", 409);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "domain_monitor.updated",
+        entityType: "domain_monitor",
+        entityId: data.id,
+        metadata: parsed,
+      });
+      res.json(success(data));
+    } catch (error) {
+      next(error);
     }
+  },
+);
 
-    updateData.version = currentVersion + 1;
-
-    const { data, error } = await supabase
-      .from("domain_monitors")
-      .update(updateData as never)
-      .eq("version", currentVersion)
-      .eq("id", String(req.params.id as string))
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data)
-      throw new AppError("VERSION_CONFLICT", "Domain monitor was modified by another user", 409);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "domain_monitor.updated",
-      entityType: "domain_monitor",
-      entityId: data.id,
-      metadata: parsed,
-    });
-    res.json(success(data));
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("domain-monitors", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "domain-monitors", "write");
     await loadOwned(req, supabase as any, "domain_monitors", String(req.params.id as string));

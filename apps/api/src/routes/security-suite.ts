@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import {
   createM365Schema,
@@ -61,7 +62,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     }
   });
 
-  router.post(`/${path}`, async (req, res, next) => {
+  router.post(`/${path}`, requirePermission("security-suite", "create"), async (req, res, next) => {
     try {
       const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
         req.body,
@@ -91,71 +92,79 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     }
   });
 
-  router.patch(`/${path}/:id`, async (req, res, next) => {
-    try {
-      const sb = getScopedClient(req, "security-suite", "write");
-      const current = await loadOwned(
-        req,
-        sb as any,
-        table,
-        String(req.params.id),
-        "id, organization_id",
-      );
-      const fields: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
-        if (k === "organizationId") continue;
-        if (v !== undefined) fields[snake(k)] = v;
+  router.patch(
+    `/${path}/:id`,
+    requirePermission("security-suite", "edit"),
+    async (req, res, next) => {
+      try {
+        const sb = getScopedClient(req, "security-suite", "write");
+        const current = await loadOwned(
+          req,
+          sb as any,
+          table,
+          String(req.params.id),
+          "id, organization_id",
+        );
+        const fields: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
+          if (k === "organizationId") continue;
+          if (v !== undefined) fields[snake(k)] = v;
+        }
+        const { data, error } = await sb
+          .from(table)
+          .update(fields as never)
+          .eq("id", String(req.params.id))
+          .eq("organization_id", current.organization_id as string)
+          .select()
+          .single();
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
+        await logAuditEvent({
+          organizationId: current.organization_id as string,
+          actorUserId: req.authUser!.userId,
+          action: `${path}.updated`,
+          entityType: path,
+          entityId: (data as { id: string } | null)?.id,
+        });
+        res.json(success(data));
+      } catch (e) {
+        next(e);
       }
-      const { data, error } = await sb
-        .from(table)
-        .update(fields as never)
-        .eq("id", String(req.params.id))
-        .eq("organization_id", current.organization_id as string)
-        .select()
-        .single();
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
-      await logAuditEvent({
-        organizationId: current.organization_id as string,
-        actorUserId: req.authUser!.userId,
-        action: `${path}.updated`,
-        entityType: path,
-        entityId: (data as { id: string } | null)?.id,
-      });
-      res.json(success(data));
-    } catch (e) {
-      next(e);
-    }
-  });
+    },
+  );
 
-  router.delete(`/${path}/:id`, async (req, res, next) => {
-    try {
-      const sb = getScopedClient(req, "security-suite", "write");
-      const current = await loadOwned(
-        req,
-        sb as any,
-        table,
-        String(req.params.id),
-        "id, organization_id",
-      );
-      const { error } = await sb
-        .from(table)
-        .delete()
-        .eq("id", String(req.params.id))
-        .eq("organization_id", current.organization_id as string);
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        organizationId: current.organization_id as string,
-        actorUserId: req.authUser!.userId,
-        action: `${path}.deleted`,
-        entityType: path,
-        entityId: String(req.params.id),
-      });
-      res.status(204).send();
-    } catch (e) {
-      next(e);
-    }
-  });
+  router.delete(
+    `/${path}/:id`,
+    requirePermission("security-suite", "delete"),
+    async (req, res, next) => {
+      try {
+        const sb = getScopedClient(req, "security-suite", "write");
+        const current = await loadOwned(
+          req,
+          sb as any,
+          table,
+          String(req.params.id),
+          "id, organization_id",
+        );
+        const { error } = await sb
+          .from(table)
+          .delete()
+          .eq("id", String(req.params.id))
+          .eq("organization_id", current.organization_id as string);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          organizationId: current.organization_id as string,
+          actorUserId: req.authUser!.userId,
+          action: `${path}.deleted`,
+          entityType: path,
+          entityId: String(req.params.id),
+        });
+        res.status(204).send();
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
 }
 
 crudRoute(
@@ -173,30 +182,34 @@ crudRoute(
   "identity_verifications",
   createIdVerifySchema as unknown as Record<string, unknown>,
 );
-router.post("/identity-verification/:id/verify", async (req, res, next) => {
-  try {
-    const parsed = z
-      .object({ verificationPass: z.boolean(), notes: z.string().optional() })
-      .parse(req.body);
-    const supabase = getScopedClient(req, "security-suite", "write");
-    await loadOwned(req, supabase as any, "identity_verifications", String(req.params.id));
-    const { data, error } = await supabase
-      .from("identity_verifications")
-      .update({
-        verification_pass: parsed.verificationPass,
-        verified_at: new Date().toISOString(),
-        verified_by: req.authUser!.userId,
-        notes: parsed.notes,
-      })
-      .eq("id", String(req.params.id))
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  "/identity-verification/:id/verify",
+  requirePermission("identity-verification", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = z
+        .object({ verificationPass: z.boolean(), notes: z.string().optional() })
+        .parse(req.body);
+      const supabase = getScopedClient(req, "security-suite", "write");
+      await loadOwned(req, supabase as any, "identity_verifications", String(req.params.id));
+      const { data, error } = await supabase
+        .from("identity_verifications")
+        .update({
+          verification_pass: parsed.verificationPass,
+          verified_at: new Date().toISOString(),
+          verified_by: req.authUser!.userId,
+          notes: parsed.notes,
+        })
+        .eq("id", String(req.params.id))
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 router.get("/endpoint-security/coverage", async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "security-suite", "read");
@@ -257,32 +270,36 @@ crudRoute(
   createEndpointSchema as unknown as Record<string, unknown>,
 );
 
-router.post("/m365-hardening/:id/scan", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "security-suite", "write");
-    await loadOwned(req, supabase as any, "m365_hardening", String(req.params.id));
-    const { data: current, error: fetchError } = await supabase
-      .from("m365_hardening")
-      .select("*")
-      .eq("id", String(req.params.id))
-      .single();
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
-    const now = new Date().toISOString();
-    const { data, error } = await supabase
-      .from("m365_hardening")
-      .update({
-        last_scanned_at: now,
-        scan_status: "completed",
-        next_scan_at: new Date(Date.now() + 30 * 86400000).toISOString(),
-      })
-      .eq("id", String(req.params.id))
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.json(success({ ...data, scannedAt: now }));
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  "/m365-hardening/:id/scan",
+  requirePermission("m365-hardening", "edit"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "security-suite", "write");
+      await loadOwned(req, supabase as any, "m365_hardening", String(req.params.id));
+      const { data: current, error: fetchError } = await supabase
+        .from("m365_hardening")
+        .select("*")
+        .eq("id", String(req.params.id))
+        .single();
+      if (fetchError || !current) throw new AppError("NOT_FOUND", "Not found", 404);
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("m365_hardening")
+        .update({
+          last_scanned_at: now,
+          scan_status: "completed",
+          next_scan_at: new Date(Date.now() + 30 * 86400000).toISOString(),
+        })
+        .eq("id", String(req.params.id))
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.json(success({ ...data, scannedAt: now }));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export default router;

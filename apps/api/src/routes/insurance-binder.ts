@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
@@ -124,7 +125,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("insurance-binder", "create"), async (req, res, next) => {
   try {
     const parsed = createEvidenceSchema.parse(req.body);
     const supabase = getScopedClient(req, "insurance-binder", "write");
@@ -176,7 +177,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("insurance-binder", "edit"), async (req, res, next) => {
   try {
     const parsed = updateEvidenceSchema.parse(req.body);
     const supabase = getScopedClient(req, "insurance-binder", "write");
@@ -218,7 +219,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("insurance-binder", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "insurance-binder", "write");
     const { error } = await supabase

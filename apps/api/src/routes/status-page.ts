@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
@@ -126,73 +127,85 @@ function crudTable(
     }
   });
 
-  router.post(`/${resource}`, async (req, res, next) => {
-    try {
-      const parsed = createSchema.parse(req.body);
-      const supabase = getScopedClient(req, "status-page", "write");
-      const fields: Record<string, unknown> = {
-        organization_id: parsed.organizationId,
-        created_by: req.authUser!.userId,
-      };
-      for (const [k, v] of Object.entries(parsed)) {
-        if (k === "organizationId") continue;
-        if (v !== undefined && v !== null) fields[snakeCase(k)] = v;
+  router.post(
+    `/${resource}`,
+    requirePermission("status-pages", "create"),
+    async (req, res, next) => {
+      try {
+        const parsed = createSchema.parse(req.body);
+        const supabase = getScopedClient(req, "status-page", "write");
+        const fields: Record<string, unknown> = {
+          organization_id: parsed.organizationId,
+          created_by: req.authUser!.userId,
+        };
+        for (const [k, v] of Object.entries(parsed)) {
+          if (k === "organizationId") continue;
+          if (v !== undefined && v !== null) fields[snakeCase(k)] = v;
+        }
+        const { data, error } = await supabase
+          .from(table)
+          .insert(fields as never)
+          .select()
+          .single();
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          organizationId: parsed.organizationId,
+          actorUserId: req.authUser!.userId,
+          action: `${resource}.created`,
+          entityType: resource,
+          entityId: (data as { id: string } | null)?.id,
+        });
+        res.status(201).json(success(data));
+      } catch (err) {
+        next(err);
       }
-      const { data, error } = await supabase
-        .from(table)
-        .insert(fields as never)
-        .select()
-        .single();
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        organizationId: parsed.organizationId,
-        actorUserId: req.authUser!.userId,
-        action: `${resource}.created`,
-        entityType: resource,
-        entityId: (data as { id: string } | null)?.id,
-      });
-      res.status(201).json(success(data));
-    } catch (err) {
-      next(err);
-    }
-  });
+    },
+  );
 
-  router.patch(`/${resource}/:id`, async (req, res, next) => {
-    try {
-      const parsed = updateSchema.parse(req.body);
-      const supabase = getScopedClient(req, "status-page", "write");
-      const fields: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(parsed)) {
-        if (v !== undefined) fields[snakeCase(k)] = v;
+  router.patch(
+    `/${resource}/:id`,
+    requirePermission("status-pages", "edit"),
+    async (req, res, next) => {
+      try {
+        const parsed = updateSchema.parse(req.body);
+        const supabase = getScopedClient(req, "status-page", "write");
+        const fields: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(parsed)) {
+          if (v !== undefined) fields[snakeCase(k)] = v;
+        }
+        const { data, error } = await supabase
+          .from(table)
+          .update(fields as never)
+          .eq("id", String(req.params.id))
+          .eq("organization_id", req.query.organization_id as string)
+          .select()
+          .single();
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        res.json(success(data));
+      } catch (err) {
+        next(err);
       }
-      const { data, error } = await supabase
-        .from(table)
-        .update(fields as never)
-        .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string)
-        .select()
-        .single();
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.json(success(data));
-    } catch (err) {
-      next(err);
-    }
-  });
+    },
+  );
 
-  router.delete(`/${resource}/:id`, async (req, res, next) => {
-    try {
-      const supabase = getScopedClient(req, "status-page", "write");
-      const { error } = await supabase
-        .from(table)
-        .delete()
-        .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string);
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.status(204).send();
-    } catch (err) {
-      next(err);
-    }
-  });
+  router.delete(
+    `/${resource}/:id`,
+    requirePermission("status-pages", "delete"),
+    async (req, res, next) => {
+      try {
+        const supabase = getScopedClient(req, "status-page", "write");
+        const { error } = await supabase
+          .from(table)
+          .delete()
+          .eq("id", String(req.params.id))
+          .eq("organization_id", req.query.organization_id as string);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        res.status(204).send();
+      } catch (err) {
+        next(err);
+      }
+    },
+  );
 }
 
 crudTable("components", "status_components", compCreateSchema, compUpdateSchema);

@@ -1,6 +1,6 @@
 ﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
+import { createTestApp, createMockBuilder, tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -29,9 +29,16 @@ jest.mock("../config/env", () => ({
   }),
 }));
 
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
+jest.mock("../services/supabase", () => ({
+  getSupabaseAdmin: jest.fn(),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
+}));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 
 // Deterministic DNS for the SSRF guard (public hostnames resolve to a
 // public address; private literals are blocked synchronously without DNS).
@@ -49,7 +56,9 @@ const testOrgId = "00000000-0000-0000-0000-000000000001";
 
 function mockAuth() {
   const supabase = {
-    from: jest.fn().mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 }))),
+    from: jest
+      .fn()
+      .mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 }))),
     auth: {
       getUser: jest.fn().mockResolvedValue({
         data: { user: { id: "user-1", email: "test@example.com" } },
@@ -88,12 +97,14 @@ describe("Uptime Monitor API", () => {
   describe("POST /api/v1/uptime-monitor/checks", () => {
     it("creates a check", async () => {
       const supabase = mockAuth();
-      supabase.from.mockImplementation(tableAwareFrom(
-        createMockBuilder({
-          data: { id: "c1", url: "https://example.com", status: "active" },
-          error: null,
-        }),
-      ));
+      supabase.from.mockImplementation(
+        tableAwareFrom(
+          createMockBuilder({
+            data: { id: "c1", url: "https://example.com", status: "active" },
+            error: null,
+          }),
+        ),
+      );
       const res = await request(app)
         .post("/api/v1/uptime-monitor/checks")
         .set("Authorization", authToken)
@@ -137,9 +148,11 @@ describe("Uptime Monitor API", () => {
   describe("GET /api/v1/uptime-monitor/checks/:id", () => {
     it("returns a check", async () => {
       const supabase = mockAuth();
-      supabase.from.mockImplementation(tableAwareFrom(
-        createMockBuilder({ data: { id: "c1", url: "https://example.com" }, error: null }),
-      ));
+      supabase.from.mockImplementation(
+        tableAwareFrom(
+          createMockBuilder({ data: { id: "c1", url: "https://example.com" }, error: null }),
+        ),
+      );
       const res = await request(app)
         .get("/api/v1/uptime-monitor/checks/c1")
         .set("Authorization", authToken);
@@ -149,7 +162,9 @@ describe("Uptime Monitor API", () => {
 
     it("returns 404 for missing check", async () => {
       const supabase = mockAuth();
-      supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: null, error: null })));
+      supabase.from.mockImplementation(
+        tableAwareFrom(createMockBuilder({ data: null, error: null })),
+      );
       const res = await request(app)
         .get("/api/v1/uptime-monitor/checks/missing")
         .set("Authorization", authToken);
@@ -160,12 +175,14 @@ describe("Uptime Monitor API", () => {
   describe("PATCH /api/v1/uptime-monitor/checks/:id", () => {
     it("updates a check", async () => {
       const supabase = mockAuth();
-      supabase.from.mockImplementation(tableAwareFrom(
-        createMockBuilder({
-          data: { id: "c1", url: "https://example.com", status: "paused" },
-          error: null,
-        }),
-      ));
+      supabase.from.mockImplementation(
+        tableAwareFrom(
+          createMockBuilder({
+            data: { id: "c1", url: "https://example.com", status: "paused" },
+            error: null,
+          }),
+        ),
+      );
       const res = await request(app)
         .patch("/api/v1/uptime-monitor/checks/c1")
         .set("Authorization", authToken)
@@ -198,9 +215,9 @@ describe("Uptime Monitor API", () => {
   describe("GET /api/v1/uptime-monitor/checks/:id/results", () => {
     it("returns results for a check", async () => {
       const supabase = mockAuth();
-      supabase.from.mockImplementation(tableAwareFrom(
-        createMockBuilder({ data: [{ id: "r1", is_up: true }], error: null }),
-      ));
+      supabase.from.mockImplementation(
+        tableAwareFrom(createMockBuilder({ data: [{ id: "r1", is_up: true }], error: null })),
+      );
       const res = await request(app)
         .get("/api/v1/uptime-monitor/checks/c1/results")
         .set("Authorization", authToken);
@@ -212,9 +229,9 @@ describe("Uptime Monitor API", () => {
   describe("GET /api/v1/uptime-monitor/checks/:id/uptime", () => {
     it("returns uptime stats", async () => {
       const supabase = mockAuth();
-      supabase.from.mockImplementation(tableAwareFrom(
-        createMockBuilder({ data: { id: "c1" }, error: null, count: 100 }),
-      ));
+      supabase.from.mockImplementation(
+        tableAwareFrom(createMockBuilder({ data: { id: "c1" }, error: null, count: 100 })),
+      );
       const res = await request(app)
         .get("/api/v1/uptime-monitor/checks/c1/uptime")
         .set("Authorization", authToken);
@@ -228,7 +245,9 @@ describe("Uptime Monitor API", () => {
   describe("GET /api/v1/uptime-monitor/dashboard", () => {
     it("returns dashboard summary", async () => {
       const supabase = mockAuth();
-      supabase.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null })));
+      supabase.from.mockImplementation(
+        tableAwareFrom(createMockBuilder({ data: [], error: null })),
+      );
       const res = await request(app)
         .get(`/api/v1/uptime-monitor/dashboard?organization_id=${testOrgId}`)
         .set("Authorization", authToken);

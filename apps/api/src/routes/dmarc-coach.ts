@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
@@ -64,7 +65,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("dmarc-coach", "create"), async (req, res, next) => {
   try {
     const parsed = createSchema.parse(req.body);
     const supabase = getScopedClient(req, "dmarc-coach", "write");
@@ -95,7 +96,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("dmarc-coach", "edit"), async (req, res, next) => {
   try {
     const parsed = updateSchema.parse(req.body);
     const supabase = getScopedClient(req, "dmarc-coach", "write");
@@ -125,7 +126,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("dmarc-coach", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "dmarc-coach", "write");
     const { data, error } = await supabase
@@ -152,7 +153,7 @@ router.delete("/:id", async (req, res, next) => {
 });
 
 // Analyze endpoint
-router.post("/analyze", async (req, res, next) => {
+router.post("/analyze", requirePermission("dmarc-coach", "edit"), async (req, res, next) => {
   try {
     const parsed = createSchema.parse(req.body);
     const dmarc = parsed.dmarcRecord || "";

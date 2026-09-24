@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import {
   createOffboardingSchema,
   createBreakGlassSchema,
@@ -59,7 +60,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     }
   });
 
-  router.post(`/${path}`, async (req, res, next) => {
+  router.post(`/${path}`, requirePermission("security-ops", "create"), async (req, res, next) => {
     try {
       const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
         req.body,
@@ -89,55 +90,63 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     }
   });
 
-  router.patch(`/${path}/:id`, async (req, res, next) => {
-    try {
-      const sb = getScopedClient(req, "security-ops", "write");
-      const fields: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
-        if (k === "organizationId") continue;
-        if (v !== undefined) fields[snake(k)] = v;
+  router.patch(
+    `/${path}/:id`,
+    requirePermission("security-ops", "edit"),
+    async (req, res, next) => {
+      try {
+        const sb = getScopedClient(req, "security-ops", "write");
+        const fields: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
+          if (k === "organizationId") continue;
+          if (v !== undefined) fields[snake(k)] = v;
+        }
+        const { data, error } = await sb
+          .from(table)
+          .update(fields as never)
+          .eq("id", String(req.params.id))
+          .eq("organization_id", req.query.organization_id as string)
+          .select()
+          .single();
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
+        await logAuditEvent({
+          actorUserId: req.authUser!.userId,
+          action: `${path}.updated`,
+          entityType: path,
+          entityId: (data as { id: string } | null)?.id,
+        });
+        res.json(success(data));
+      } catch (e) {
+        next(e);
       }
-      const { data, error } = await sb
-        .from(table)
-        .update(fields as never)
-        .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string)
-        .select()
-        .single();
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
-      await logAuditEvent({
-        actorUserId: req.authUser!.userId,
-        action: `${path}.updated`,
-        entityType: path,
-        entityId: (data as { id: string } | null)?.id,
-      });
-      res.json(success(data));
-    } catch (e) {
-      next(e);
-    }
-  });
+    },
+  );
 
-  router.delete(`/${path}/:id`, async (req, res, next) => {
-    try {
-      const sb = getScopedClient(req, "security-ops", "write");
-      const { error } = await sb
-        .from(table)
-        .delete()
-        .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string);
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        actorUserId: req.authUser!.userId,
-        action: `${path}.deleted`,
-        entityType: path,
-        entityId: String(req.params.id),
-      });
-      res.status(204).send();
-    } catch (e) {
-      next(e);
-    }
-  });
+  router.delete(
+    `/${path}/:id`,
+    requirePermission("security-ops", "delete"),
+    async (req, res, next) => {
+      try {
+        const sb = getScopedClient(req, "security-ops", "write");
+        const { error } = await sb
+          .from(table)
+          .delete()
+          .eq("id", String(req.params.id))
+          .eq("organization_id", req.query.organization_id as string);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          actorUserId: req.authUser!.userId,
+          action: `${path}.deleted`,
+          entityType: path,
+          entityId: String(req.params.id),
+        });
+        res.status(204).send();
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
 }
 
 crudRoute(
@@ -146,44 +155,48 @@ crudRoute(
   createOffboardingSchema as unknown as Record<string, unknown>,
 );
 
-router.post("/offboarding/:id/complete-step", async (req, res, next) => {
-  try {
-    const parsed = z
-      .object({ stepName: z.string().min(1), completed: z.boolean() })
-      .parse(req.body);
-    const supabase = getScopedClient(req, "security-ops", "write");
-    const { data: current, error: fetchError } = await supabase
-      .from("offboarding_checklists")
-      .select("completed_steps")
-      .eq("id", String(req.params.id))
-      .single();
-    if (fetchError || !current) throw new AppError("NOT_FOUND", "Checklist not found", 404);
-    const steps = (current.completed_steps as string[]) || [];
-    const updatedSteps = parsed.completed
-      ? [...new Set([...steps, parsed.stepName])]
-      : steps.filter((s: string) => s !== parsed.stepName);
-    const { data, error } = await supabase
-      .from("offboarding_checklists")
-      .update({ completed_steps: updatedSteps })
-      .eq("id", String(req.params.id))
-      .select()
-      .single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (data) {
-      await logAuditEvent({
-        organizationId: data.organization_id,
-        actorUserId: req.authUser!.userId,
-        action: "offboarding.step_updated",
-        entityType: "offboarding_checklist",
-        entityId: data.id,
-        metadata: { step: parsed.stepName, completed: parsed.completed },
-      });
+router.post(
+  "/offboarding/:id/complete-step",
+  requirePermission("offboarding", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = z
+        .object({ stepName: z.string().min(1), completed: z.boolean() })
+        .parse(req.body);
+      const supabase = getScopedClient(req, "security-ops", "write");
+      const { data: current, error: fetchError } = await supabase
+        .from("offboarding_checklists")
+        .select("completed_steps")
+        .eq("id", String(req.params.id))
+        .single();
+      if (fetchError || !current) throw new AppError("NOT_FOUND", "Checklist not found", 404);
+      const steps = (current.completed_steps as string[]) || [];
+      const updatedSteps = parsed.completed
+        ? [...new Set([...steps, parsed.stepName])]
+        : steps.filter((s: string) => s !== parsed.stepName);
+      const { data, error } = await supabase
+        .from("offboarding_checklists")
+        .update({ completed_steps: updatedSteps })
+        .eq("id", String(req.params.id))
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (data) {
+        await logAuditEvent({
+          organizationId: data.organization_id,
+          actorUserId: req.authUser!.userId,
+          action: "offboarding.step_updated",
+          entityType: "offboarding_checklist",
+          entityId: data.id,
+          metadata: { step: parsed.stepName, completed: parsed.completed },
+        });
+      }
+      res.json(success(data));
+    } catch (err) {
+      next(err);
     }
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+  },
+);
 crudRoute(
   "break-glass",
   "break_glass_accounts",

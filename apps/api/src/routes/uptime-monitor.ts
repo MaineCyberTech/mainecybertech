@@ -5,6 +5,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
 import type { Tables } from "@mct/sdk/database.types";
 import { queryInt } from "../lib/query";
@@ -143,7 +144,7 @@ router.get("/checks/:id", async (req, res, next) => {
   }
 });
 
-router.post("/checks", async (req, res, next) => {
+router.post("/checks", requirePermission("uptime-monitor", "create"), async (req, res, next) => {
   try {
     const parsed = checkCreateSchema.parse(req.body);
     // SSRF guard — the worker fetches this URL; reject private / loopback /
@@ -182,7 +183,7 @@ router.post("/checks", async (req, res, next) => {
   }
 });
 
-router.patch("/checks/:id", async (req, res, next) => {
+router.patch("/checks/:id", requirePermission("uptime-monitor", "edit"), async (req, res, next) => {
   try {
     const parsed = checkUpdateSchema.parse(req.body);
     const supabase = getScopedClient(req, "uptime-monitor", "write");
@@ -216,20 +217,24 @@ router.patch("/checks/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/checks/:id", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "uptime-monitor", "write");
-    const { error } = await supabase
-      .from("uptime_checks")
-      .delete()
-      .eq("id", String(req.params.id))
-      .eq("organization_id", req.query.organization_id as string);
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-});
+router.delete(
+  "/checks/:id",
+  requirePermission("uptime-monitor", "delete"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "uptime-monitor", "write");
+      const { error } = await supabase
+        .from("uptime_checks")
+        .delete()
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      res.status(204).send();
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.get("/checks/:id/results", async (req, res, next) => {
   try {

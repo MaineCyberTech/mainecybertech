@@ -551,6 +551,7 @@ router.post(
   "/:id/logo",
   requireAuth,
   requireOrgAccessByParam,
+  requirePermission("organizations", "manage"),
   upload.single("logo"),
   async (req, res, next) => {
     try {

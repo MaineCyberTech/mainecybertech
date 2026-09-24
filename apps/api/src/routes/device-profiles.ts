@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import {
   createDeviceProfileSchema,
@@ -75,7 +76,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("device-profiles", "create"), async (req, res, next) => {
   try {
     const parsed = createDeviceProfileSchema.parse(req.body);
     const supabase = getScopedClient(req, "device-profiles", "write");
@@ -110,7 +111,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("device-profiles", "edit"), async (req, res, next) => {
   try {
     const parsed = updateDeviceProfileSchema.parse(req.body);
     const supabase = getScopedClient(req, "device-profiles", "write");
@@ -147,7 +148,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("device-profiles", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "device-profiles", "write");
     await loadOwned(req, supabase as any, "device_profiles", String(req.params.id as string));
