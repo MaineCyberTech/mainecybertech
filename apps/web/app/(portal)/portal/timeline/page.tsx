@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import ProjectTimelineView from "@/components/portal/ProjectTimelineView";
 import ProjectCalendarView from "@/components/portal/ProjectCalendarView";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { Project, ProjectTask } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
@@ -30,10 +31,12 @@ export default async function PortalTimelinePage() {
   }
 
   let projects: Project[] = [];
+  let loadFailed = false;
   try {
     projects =
       (await api.projects.list({ organizationId: membership.organization_id })).items ?? [];
   } catch {
+    loadFailed = true;
     projects = [];
   }
 
@@ -49,6 +52,7 @@ export default async function PortalTimelinePage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Timeline" }]}
       />
       <PortalSubnav current="projects" />
+      {loadFailed ? <DataErrorNote what="project timeline" /> : null}
 
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>

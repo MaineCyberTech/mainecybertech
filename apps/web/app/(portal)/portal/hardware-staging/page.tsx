@@ -4,6 +4,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import StatusPill from "@/components/StatusPill";
 import AdminPagination from "@/components/admin/AdminPagination";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Hardware Staging - Portal - Maine CyberTech" };
@@ -14,14 +15,19 @@ type PortalHardwareStagingProps = {
   searchParams: Promise<{ page?: string; limit?: string }>;
 };
 
-export default async function PortalHardwareStagingPage({ searchParams }: PortalHardwareStagingProps) {
+export default async function PortalHardwareStagingPage({
+  searchParams,
+}: PortalHardwareStagingProps) {
   const membership = await getApprovedMembership();
   const api = getApiClient();
   const orgId = membership?.organization_id as string | undefined;
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
-  const limit = Math.min(100, Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT));
+  const limit = Math.min(
+    100,
+    Math.max(1, parseInt(sp.limit ?? String(DEFAULT_LIMIT)) || DEFAULT_LIMIT),
+  );
 
   let items: Array<{
     id: string;
@@ -31,6 +37,7 @@ export default async function PortalHardwareStagingPage({ searchParams }: Portal
   }> = [];
   let total = 0;
 
+  let loadFailed = false;
   try {
     if (orgId) {
       const r = await api.staging.list({ organizationId: orgId, page, limit });
@@ -38,7 +45,7 @@ export default async function PortalHardwareStagingPage({ searchParams }: Portal
       total = r.total ?? 0;
     }
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -50,6 +57,7 @@ export default async function PortalHardwareStagingPage({ searchParams }: Portal
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Hardware Staging" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">Hardware Staging</h1>
+      {loadFailed ? <DataErrorNote what="hardware staging items" /> : null}
       {!orgId ? (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           <h3 className="font-semibold">No Organization Access</h3>
@@ -61,7 +69,8 @@ export default async function PortalHardwareStagingPage({ searchParams }: Portal
       ) : (
         <>
           <p className="text-sm text-slate-400">
-            {items.length} hardware staging item{items.length !== 1 ? "s" : ""} for your organization.
+            {items.length} hardware staging item{items.length !== 1 ? "s" : ""} for your
+            organization.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             {items.map((a) => (
@@ -92,7 +101,10 @@ export default async function PortalHardwareStagingPage({ searchParams }: Portal
             limit={limit}
           />
 
-          <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
+          <Link
+            href="/portal/dashboard"
+            className="text-sm text-emerald-500 hover:text-emerald-400"
+          >
             &larr; Dashboard
           </Link>
         </>

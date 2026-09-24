@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Proposals - Portal - Maine CyberTech" };
@@ -68,11 +69,12 @@ export default async function PortalProposalsPage() {
     valid_until: string | null;
   }> = [];
 
+  let loadFailed = false;
   try {
     const result = await api.proposals.list({ organizationId: membership.organization_id });
     proposals = result.items as typeof proposals;
   } catch {
-    // Gracefully degrade
+    loadFailed = true;
   }
 
   return (
@@ -80,6 +82,7 @@ export default async function PortalProposalsPage() {
       <Breadcrumbs items={[{ label: "Portal", href: "/portal" }, { label: "Proposals" }]} />
       <PortalSubnav current="proposals" />
       <h1 className="cyber-heading text-2xl">Proposals</h1>
+      {loadFailed ? <DataErrorNote what="proposals" /> : null}
       <p className="text-sm text-slate-400">{proposals.length} proposals available.</p>
 
       {proposals.length > 0 ? (

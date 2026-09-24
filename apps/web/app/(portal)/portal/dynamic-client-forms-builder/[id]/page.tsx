@@ -68,8 +68,9 @@ export default async function DynamicFormDetailPage({ params }: Props) {
   try {
     const formResult = await withRetry(() => api.dynamicForms.get(id));
     form = formResult as DynamicFormRecord;
-  } catch {
-    notFound();
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   if (!form) notFound();

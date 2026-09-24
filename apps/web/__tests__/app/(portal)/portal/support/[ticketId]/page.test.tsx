@@ -122,7 +122,7 @@ describe("PortalSupportDetailPage", () => {
   });
 
   it("shows ticket not found when API throws", async () => {
-    mockTicketsGet.mockRejectedValue(new Error("Not found"));
+    mockTicketsGet.mockRejectedValue(Object.assign(new Error("Not found"), { status: 404 }));
 
     const { default: PortalSupportDetailPage } =
       await import("@/app/(portal)/portal/support/[ticketId]/page");

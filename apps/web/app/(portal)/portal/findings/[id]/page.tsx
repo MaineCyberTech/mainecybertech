@@ -50,8 +50,9 @@ export default async function PortalFindingDetailPage({ params }: Props) {
   let finding: FindingDetail | null = null;
   try {
     finding = (await withRetry(() => api.findings.get(id))) as unknown as FindingDetail;
-  } catch {
-    finding = null;
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   if (!finding) notFound();

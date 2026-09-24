@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminPagination from "@/components/admin/AdminPagination";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Network Diagrams - Portal - Maine CyberTech" };
@@ -51,6 +52,7 @@ export default async function PortalNetworkDiagramsPage({
   let diagrams: NetworkDiagram[] = [];
   let total = 0;
 
+  let loadFailed = false;
   try {
     if (orgId) {
       const r = await api.networkDiagrams.list({ organizationId: orgId, page, limit });
@@ -58,7 +60,7 @@ export default async function PortalNetworkDiagramsPage({
       total = r.total ?? 0;
     }
   } catch {
-    /* graceful */
+    loadFailed = true;
   }
 
   const totalPages = Math.ceil(total / limit);
@@ -70,6 +72,7 @@ export default async function PortalNetworkDiagramsPage({
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Network Diagrams" }]}
       />
       <h1 className="text-2xl font-semibold text-slate-50">Network Diagrams</h1>
+      {loadFailed ? <DataErrorNote what="network diagrams" /> : null}
       {!orgId ? (
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
           <h3 className="font-semibold">No Organization Access</h3>

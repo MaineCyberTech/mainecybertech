@@ -93,7 +93,8 @@ export default async function PortalProjectDetailPage({ params }: Props) {
   let project: any;
   try {
     project = await api.projects.getDetail(projectId, membership.organization_id);
-  } catch {
+  } catch (error) {
+    if ((error as { status?: number })?.status !== 404) throw error;
     return (
       <div className="space-y-6">
         <Breadcrumbs

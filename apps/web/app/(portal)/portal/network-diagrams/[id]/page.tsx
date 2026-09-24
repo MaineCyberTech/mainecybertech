@@ -28,8 +28,9 @@ export default async function PortalNetworkDiagramDetailPage({ params }: Props) 
 
   try {
     diagram = (await withRetry(() => api.networkDiagrams.get(id))) as unknown as DiagramDetail;
-  } catch {
-    diagram = null;
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   if (!diagram) notFound();

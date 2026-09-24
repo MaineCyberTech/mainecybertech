@@ -3,6 +3,7 @@ import { logger } from "@/lib/logger";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import type { ClientPortalBootstrap, ClientPortalMembership } from "@mct/sdk";
 
 export const metadata = { title: "Client Portal - Overview - Maine CyberTech" };
@@ -18,9 +19,11 @@ export default async function ClientPortalOverviewPage() {
   const api = getApiClient();
 
   let bootstrap: ClientPortalBootstrap | null = null;
+  let loadFailed = false;
   try {
     bootstrap = await api.clientPortal.getBootstrap();
   } catch (err) {
+    loadFailed = true;
     logger.error({ err }, "Failed to load client portal bootstrap");
   }
 
@@ -30,12 +33,10 @@ export default async function ClientPortalOverviewPage() {
   return (
     <div className="space-y-6">
       <Breadcrumbs
-        items={[
-          { label: "Portal", href: "/portal/client-portal" },
-          { label: "Overview" },
-        ]}
+        items={[{ label: "Portal", href: "/portal/client-portal" }, { label: "Overview" }]}
       />
       <PortalSubnav current="client-portal" />
+      {loadFailed ? <DataErrorNote what="client portal data" /> : null}
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-2xl">Client Portal Overview</h2>
@@ -58,13 +59,13 @@ export default async function ClientPortalOverviewPage() {
           <section key={m.organizationId} className="cyber-panel">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <h3 className="cyber-heading text-lg">{m.organizationName ?? "Unknown Organization"}</h3>
+                <h3 className="cyber-heading text-lg">
+                  {m.organizationName ?? "Unknown Organization"}
+                </h3>
                 <p className="mt-2 text-sm text-slate-300">
                   Role: {m.roleName ?? m.roleKey ?? "—"} · Status: {m.status}
                 </p>
-                <p className="mt-1 text-xs text-slate-400">
-                  Subscription: {subscriptionLabel(m)}
-                </p>
+                <p className="mt-1 text-xs text-slate-400">Subscription: {subscriptionLabel(m)}</p>
               </div>
             </div>
 

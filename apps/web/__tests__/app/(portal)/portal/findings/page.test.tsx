@@ -130,7 +130,7 @@ describe("PortalFindingDetailPage", () => {
   });
 
   it("calls notFound when the finding cannot be loaded", async () => {
-    mockGet.mockRejectedValue(new Error("404"));
+    mockGet.mockRejectedValue(Object.assign(new Error("404"), { status: 404 }));
     await expect(renderDetail()).rejects.toThrow("NEXT_NOT_FOUND");
   });
 });

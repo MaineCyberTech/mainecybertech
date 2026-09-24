@@ -401,11 +401,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   },
 ];
 
-/** Flat lookup of nav items by their stable `key`. */
-export const ADMIN_NAV_BY_KEY: Record<string, AdminNavItem> = Object.fromEntries(
-  ADMIN_NAV_GROUPS.flatMap((g) => g.items).map((item) => [item.key, item]),
-);
-
 /** Find the group that contains the item with `key`. */
 export function adminGroupForKey(key: string): AdminNavGroup | undefined {
   return ADMIN_NAV_GROUPS.find((g) => g.items.some((i) => i.key === key));

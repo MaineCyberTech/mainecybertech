@@ -90,7 +90,7 @@ describe("PortalRunbookDetailPage", () => {
   });
 
   it("calls notFound when the runbook cannot be loaded", async () => {
-    mockGet.mockRejectedValue(new Error("404"));
+    mockGet.mockRejectedValue(Object.assign(new Error("404"), { status: 404 }));
     await expect(renderPage()).rejects.toThrow("NEXT_NOT_FOUND");
   });
 

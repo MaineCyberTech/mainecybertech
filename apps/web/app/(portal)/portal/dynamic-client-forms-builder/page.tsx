@@ -3,6 +3,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const metadata = { title: "Dynamic Forms - Portal - Maine CyberTech" };
 export const dynamic = "force-dynamic";
@@ -81,11 +82,12 @@ export default async function DynamicFormsListPage() {
     created_at: string;
   }> = [];
 
+  let loadFailed = false;
   try {
     const result = await api.dynamicForms.list({ organizationId: orgId, limit: 50, page: 1 });
     forms = result?.items ?? [];
   } catch {
-    // Gracefully handle errors
+    loadFailed = true;
   }
 
   return (
@@ -103,6 +105,8 @@ export default async function DynamicFormsListPage() {
           New Form
         </Link>
       </div>
+
+      {loadFailed ? <DataErrorNote what="forms" /> : null}
 
       {forms.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

@@ -74,8 +74,9 @@ export default async function PortalProposalDetailPage({ params }: Props) {
   let proposal: ProposalDetail | null = null;
   try {
     proposal = await withRetry(() => api.proposals.get(id));
-  } catch {
-    notFound();
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   const phases = proposal.phases ?? [];

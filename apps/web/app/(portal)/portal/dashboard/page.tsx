@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import EmptyState from "@/components/EmptyState";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import { AuditLog, Document, Organization, Project, Ticket } from "@mct/sdk";
 
 export const metadata = { title: "Dashboard - Portal - Maine CyberTech" };
@@ -82,23 +83,31 @@ export default async function PortalDashboardPage() {
   let tickets: DashboardTicket[] = [];
   let documents: Document[] = [];
   let recentActivity: AuditLog[] = [];
+  let loadFailed = false;
 
   try {
     const [orgResult, projectsResult, ticketsResult, documentsResult, auditResult] =
       await Promise.all([
-        api.organizations.get(membership.organization_id).catch(() => null),
-        api.projects
-          .list({ organizationId: membership.organization_id })
-          .catch(() => ({ items: [] })),
-        api.tickets
-          .list({ organizationId: membership.organization_id })
-          .catch(() => ({ items: [] })),
-        api.documents
-          .list({ organizationId: membership.organization_id })
-          .catch(() => ({ items: [] })),
-        api.audit
-          .list({ organizationId: membership.organization_id, limit: 10 })
-          .catch(() => ({ items: [] })),
+        api.organizations.get(membership.organization_id).catch(() => {
+          loadFailed = true;
+          return null;
+        }),
+        api.projects.list({ organizationId: membership.organization_id }).catch(() => {
+          loadFailed = true;
+          return { items: [] };
+        }),
+        api.tickets.list({ organizationId: membership.organization_id }).catch(() => {
+          loadFailed = true;
+          return { items: [] };
+        }),
+        api.documents.list({ organizationId: membership.organization_id }).catch(() => {
+          loadFailed = true;
+          return { items: [] };
+        }),
+        api.audit.list({ organizationId: membership.organization_id, limit: 10 }).catch(() => {
+          loadFailed = true;
+          return { items: [] };
+        }),
       ]);
 
     organization = orgResult;
@@ -107,6 +116,7 @@ export default async function PortalDashboardPage() {
     documents = (documentsResult.items ?? []).slice(0, 5);
     recentActivity = auditResult.items ?? [];
   } catch (err) {
+    loadFailed = true;
     logger.error({ err }, "Failed to load dashboard data");
   }
 
@@ -116,6 +126,7 @@ export default async function PortalDashboardPage() {
         items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Dashboard" }]}
       />
       <PortalSubnav current="dashboard" />
+      {loadFailed ? <DataErrorNote what="dashboard data" /> : null}
 
       <section className="cyber-panel">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

@@ -43,8 +43,9 @@ export default async function PortalRunbookDetailPage({ params }: Props) {
   let runbook: Runbook | null = null;
   try {
     runbook = (await withRetry(() => api.final.runbooks.get(id))) as unknown as Runbook;
-  } catch {
-    runbook = null;
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   if (!runbook) notFound();

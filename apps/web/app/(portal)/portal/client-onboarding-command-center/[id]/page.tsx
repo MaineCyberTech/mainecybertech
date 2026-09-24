@@ -204,12 +204,17 @@ export default async function ClientOnboardingDetailPage({ params }: Props) {
 
     if (recordResult.status === "fulfilled" && recordResult.value) {
       record = recordResult.value;
+    } else if (recordResult.status === "rejected") {
+      // A real 404 becomes notFound(); anything else (500/403) must surface.
+      const reason = recordResult.reason as { status?: number } | undefined;
+      if (reason?.status !== 404) throw reason;
     }
     if (checklistResult.status === "fulfilled" && checklistResult.value) {
       checklistItems = checklistResult.value;
     }
-  } catch {
-    // Gracefully handle errors
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   if (!record) {

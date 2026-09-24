@@ -177,7 +177,8 @@ export default async function PortalSupportDetailPage({ params }: Props) {
   let ticket: TicketLike;
   try {
     ticket = await withRetry(() => api.tickets.get(ticketId));
-  } catch {
+  } catch (error) {
+    if ((error as { status?: number })?.status !== 404) throw error;
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
         Ticket not found.

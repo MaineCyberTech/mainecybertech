@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
@@ -31,8 +32,9 @@ export default async function PortalStagingDetailPage({ params }: PortalStagingD
 
   try {
     item = (await withRetry(() => api.staging.get(id))) as StagingDetail;
-  } catch {
-    /* graceful */
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   return (

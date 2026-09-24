@@ -59,8 +59,9 @@ export default async function PortalIncidentDetailPage({ params }: Props) {
     incident = (await withRetry(() =>
       api.securitySuite.incidents.get(id),
     )) as unknown as IncidentDetail;
-  } catch {
-    incident = null;
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   if (!incident) notFound();
