@@ -40,7 +40,7 @@ The platform is designed to support:
 
 ### Production-ready now
 
-- frontend / web app with complete test coverage (1,681 tests)
+- frontend / web app with complete test coverage (1,683 tests)
 - API / backend with security middleware and OpenAPI docs (1,184 tests)
 - database / RLS foundation (124 migrations)
 - SDK package with retry logic (289 tests)
@@ -127,7 +127,7 @@ terraform apply -var-file=env/prod.tfvars
 ## Useful Commands
 
 ```bash
-pnpm test                    # All unit tests (3,253)
+pnpm test                    # All unit tests (3,255)
 pnpm e2e                     # E2E tests (90 spec files)
 pnpm --filter=api dev        # API dev server
 pnpm --filter=web dev        # Web dev server (auto-started by Playwright)
@@ -222,7 +222,7 @@ Auth User → Profile → Membership → Role → Permission / Override → RLS 
 
 ## Testing
 
-The monorepo includes **3,253 tests** across all packages. See [AGENTS.md](AGENTS.md) for the current breakdown.
+The monorepo includes **3,255 tests** across all packages. See [AGENTS.md](AGENTS.md) for the current breakdown.
 
 ### Running tests
 

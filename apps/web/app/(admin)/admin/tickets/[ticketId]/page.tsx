@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
@@ -257,9 +258,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
           </Link>
           {deleted ? (
             <form action={restoreTicketAction.bind(null, ticketId) as unknown as () => void}>
-              <button type="submit" className="cyber-button-secondary">
-                Restore Ticket
-              </button>
+              <SubmitButton className="cyber-button-secondary">Restore Ticket</SubmitButton>
             </form>
           ) : (
             <Link
@@ -399,9 +398,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
               />
             </div>
             <div>
-              <button type="submit" className="cyber-button">
-                Save Changes
-              </button>
+              <SubmitButton className="cyber-button">Save Changes</SubmitButton>
             </div>
           </form>
         </section>
@@ -540,9 +537,9 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                           defaultValue={commentBody(comment)}
                           required
                         />
-                        <button type="submit" className="cyber-button-secondary text-xs">
+                        <SubmitButton className="cyber-button-secondary text-xs">
                           Save Edit
-                        </button>
+                        </SubmitButton>
                       </form>
                     ) : (
                       <CommentBody
@@ -591,9 +588,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
               />
               Internal only
             </label>
-            <button type="submit" className="cyber-button-secondary">
-              Post Comment
-            </button>
+            <SubmitButton className="cyber-button-secondary">Post Comment</SubmitButton>
           </div>
         </form>
       </section>

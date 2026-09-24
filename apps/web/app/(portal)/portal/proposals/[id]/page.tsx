@@ -1,4 +1,5 @@
 import { getApiClient } from "@/lib/api";
+import SubmitButton from "@/components/SubmitButton";
 import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
@@ -285,9 +286,7 @@ export default async function PortalProposalDetailPage({ params }: Props) {
           <form action={submitProposalAction as unknown as (fd: FormData) => void}>
             <input type="hidden" name="proposalId" value={id} />
             <input type="hidden" name="organizationId" value={orgId} />
-            <button type="submit" className="cyber-button">
-              Approve Proposal
-            </button>
+            <SubmitButton className="cyber-button">Approve Proposal</SubmitButton>
           </form>
         )}
         <Link href="/portal/proposals" className="cyber-button-secondary">

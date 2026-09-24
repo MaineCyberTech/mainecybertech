@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
@@ -135,9 +136,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
           </div>
 
           <div>
-            <button type="submit" className="cyber-button">
-              Save Organization
-            </button>
+            <SubmitButton className="cyber-button">Save Organization</SubmitButton>
           </div>
         </form>
       </section>
@@ -177,9 +176,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
                       <option value="false">Manual approval</option>
                     </select>
 
-                    <button type="submit" className="cyber-button-secondary">
-                      Save Domain
-                    </button>
+                    <SubmitButton className="cyber-button-secondary">Save Domain</SubmitButton>
                   </form>
                 </div>
               </div>
@@ -212,9 +209,7 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
               <option value="true">Auto-approve</option>
             </select>
 
-            <button type="submit" className="cyber-button">
-              Add Domain
-            </button>
+            <SubmitButton className="cyber-button">Add Domain</SubmitButton>
           </div>
         </form>
       </section>

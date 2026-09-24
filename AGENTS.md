@@ -36,12 +36,12 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-21 Verified)
 
-**3,253 tests, all passing. 378 suites.**
+**3,255 tests, all passing. 378 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
 | API     | 1,184         | 109    | Jest + supertest                  |
-| Web     | 1,681         | 257    | Jest + Testing Library            |
+| Web     | 1,683         | 257    | Jest + Testing Library            |
 | SDK     | 289           | 3      | Jest (mocked fetch)               |
 | Worker  | 99            | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -757,7 +757,7 @@ best-effort _job_; `terraform fmt -check -recursive` is blocking);
 
 ### Testing (snapshot — the header table holds the current numbers)
 
-- 2,734 unit tests across 225 suites (all green) _(now 3,253 / 378)_
+- 2,734 unit tests across 225 suites (all green) _(now 3,255 / 378)_
 - 90 Playwright E2E spec files
 - ESLint: 0 errors
 - TypeScript: clean

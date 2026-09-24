@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubmitButton from "@/components/SubmitButton";
 import AvatarPill from "@/components/admin/AvatarPill";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
@@ -221,9 +222,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                   <form action={approvePortalProjectTask as unknown as (fd: FormData) => void}>
                     <input type="hidden" name="projectId" value={project.project.id} />
                     <input type="hidden" name="taskId" value={task.id} />
-                    <button type="submit" className="cyber-button-secondary">
-                      Approve Task
-                    </button>
+                    <SubmitButton className="cyber-button-secondary">Approve Task</SubmitButton>
                   </form>
                 ) : null}
                 <div className="rounded-lg border border-white/10 bg-cyber-base/40 p-4">
@@ -271,9 +270,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
                       placeholder="Add a comment..."
                       required
                     />
-                    <button type="submit" className="cyber-button-secondary">
-                      Add Comment
-                    </button>
+                    <SubmitButton className="cyber-button-secondary">Add Comment</SubmitButton>
                   </form>
                 </div>
               </div>
@@ -400,9 +397,7 @@ export default async function PortalProjectDetailPage({ params }: Props) {
             />
           </div>
           <div>
-            <button type="submit" className="cyber-button-secondary">
-              Post Update
-            </button>
+            <SubmitButton className="cyber-button-secondary">Post Update</SubmitButton>
           </div>
         </form>
       </section>

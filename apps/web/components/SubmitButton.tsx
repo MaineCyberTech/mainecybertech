@@ -1,24 +1,23 @@
 "use client";
 
 import { useFormStatus } from "react-dom";
-import type { ReactNode } from "react";
+import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 /**
  * Submit button for native `action={serverAction}` forms. Reads the pending
  * state from `useFormStatus` so server-action forms get a busy/disabled state
- * without hand-rolling `useState` in every component.
+ * without hand-rolling `useState` in every component. Extra button props
+ * (name/value/aria-label/data-*) are forwarded.
  */
 export default function SubmitButton({
   children,
   pendingText = "Saving…",
   className,
-  title,
-}: {
-  children: ReactNode;
-  pendingText?: string;
-  className?: string;
-  title?: string;
-}) {
+  ...rest
+}: { children: ReactNode; pendingText?: string } & Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "type" | "disabled"
+>) {
   const { pending } = useFormStatus();
 
   return (
@@ -26,9 +25,9 @@ export default function SubmitButton({
       type="submit"
       disabled={pending}
       aria-busy={pending}
-      title={title}
+      {...rest}
       className={
-        className ? `${className} disabled:cursor-not-allowed disabled:opacity-60` : undefined
+        className ? `${className} disabled:cursor-not-allowed disabled:opacity-60` : className
       }
     >
       {pending ? pendingText : children}

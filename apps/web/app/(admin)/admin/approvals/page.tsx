@@ -1,4 +1,5 @@
 import { getApiClient } from "@/lib/api";
+import SubmitButton from "@/components/SubmitButton";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import type { Organization, Profile } from "@mct/sdk";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -69,16 +70,12 @@ export default async function ApprovalQueuePage() {
                   <div className="flex flex-wrap gap-3">
                     <form action={approveOrganization}>
                       <input type="hidden" name="organizationId" value={org.id} />
-                      <button type="submit" className="cyber-button">
-                        Approve Org
-                      </button>
+                      <SubmitButton className="cyber-button">Approve Org</SubmitButton>
                     </form>
 
                     <form action={rejectOrganization}>
                       <input type="hidden" name="organizationId" value={org.id} />
-                      <button type="submit" className="cyber-button-secondary">
-                        Reject Org
-                      </button>
+                      <SubmitButton className="cyber-button-secondary">Reject Org</SubmitButton>
                     </form>
                   </div>
                 </div>
@@ -118,16 +115,12 @@ export default async function ApprovalQueuePage() {
                     <div className="flex flex-wrap gap-3">
                       <form action={approveMembership}>
                         <input type="hidden" name="membershipId" value={membership.id} />
-                        <button type="submit" className="cyber-button">
-                          Approve User
-                        </button>
+                        <SubmitButton className="cyber-button">Approve User</SubmitButton>
                       </form>
 
                       <form action={rejectMembership}>
                         <input type="hidden" name="membershipId" value={membership.id} />
-                        <button type="submit" className="cyber-button-secondary">
-                          Reject User
-                        </button>
+                        <SubmitButton className="cyber-button-secondary">Reject User</SubmitButton>
                       </form>
                     </div>
                   </div>
