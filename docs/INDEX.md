@@ -53,16 +53,16 @@
 
 ## API & Integration
 
-| Document                                                       | Purpose                                                                                                                                                        |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [API_ENDPOINT_INVENTORY.md](API_ENDPOINT_INVENTORY.md)         | Complete API endpoint inventory                                                                                                                                |
-| [openapi.yaml](openapi.yaml)                                   | OpenAPI 3.0 spec — **generated** from `apps/api/src/openapi/spec.ts` (do not hand-edit; regenerate with `pnpm --filter=api generate:openapi` or see `spec.ts`) |
-| [API_ERROR_HANDLING.md](API_ERROR_HANDLING.md)                 | API error handling patterns and standards                                                                                                                      |
-| [API_RATE_LIMITING.md](API_RATE_LIMITING.md)                   | Rate limit configuration and behavior (300/15min)                                                                                                              |
-| [API_VERSIONING.md](API_VERSIONING.md)                         | API versioning strategy                                                                                                                                        |
-| [JIRA_JSM_INTEGRATION.md](JIRA_JSM_INTEGRATION.md)             | Jira/JSM sync, webhooks, schema, status maps, worker tasks                                                                                                     |
-| [BILLING.md](BILLING.md)                                       | Stripe billing, invoices, subscriptions, payments, webhooks                                                                                                    |
-| [MARKETING_SITE_INTEGRATION.md](MARKETING_SITE_INTEGRATION.md) | Marketing site domain route — public API, frontend, domain config                                                                                              |
+| Document                                                       | Purpose                                                                                                                                                                             |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [API_ENDPOINT_INVENTORY.md](API_ENDPOINT_INVENTORY.md)         | Complete API endpoint inventory                                                                                                                                                     |
+| [openapi.yaml](openapi.yaml)                                   | OpenAPI 3.0 spec — **generated** from `apps/api/src/openapi/generate.ts` (calls `buildSpec()` in `spec.ts`); do not hand-edit, regenerate with `pnpm --filter=api generate:openapi` |
+| [API_ERROR_HANDLING.md](API_ERROR_HANDLING.md)                 | API error handling patterns and standards                                                                                                                                           |
+| [API_RATE_LIMITING.md](API_RATE_LIMITING.md)                   | Rate limit configuration and behavior (300/15min)                                                                                                                                   |
+| [API_VERSIONING.md](API_VERSIONING.md)                         | API versioning strategy                                                                                                                                                             |
+| [JIRA_JSM_INTEGRATION.md](JIRA_JSM_INTEGRATION.md)             | Jira/JSM sync, webhooks, schema, status maps, worker tasks                                                                                                                          |
+| [BILLING.md](BILLING.md)                                       | Stripe billing, invoices, subscriptions, payments, webhooks                                                                                                                         |
+| [MARKETING_SITE_INTEGRATION.md](MARKETING_SITE_INTEGRATION.md) | Marketing site domain route — public API, frontend, domain config                                                                                                                   |
 
 ## Security & Compliance
 

@@ -2,18 +2,18 @@
 
 ## Overview
 
-The MCT API uses rate limiting to prevent abuse and ensure fair usage. There are two rate limiters configured:
+The MCT API uses rate limiting to prevent abuse and ensure fair usage. There is a global IP limiter (`app.ts`) plus four `express-rate-limit` instances in `apps/api/src/middleware/rate-limit.ts` (`rateLimitByUser`, `rateLimitAuth`, `rateLimitEmail`, `rateLimitMetrics`).
 
 ## Rate Limiters
 
 ### 1. Global IP-based Rate Limiter
 
-| Setting      | Value         |
-| ------------ | ------------- |
-| Window       | 15 minutes    |
-| Max requests | 300 per IP    |
-| Scope        | All endpoints |
-| Skip         | `/health`     |
+| Setting      | Value                                   |
+| ------------ | --------------------------------------- |
+| Window       | 15 minutes                              |
+| Max requests | 300 per IP                              |
+| Scope        | All endpoints                           |
+| Skip         | `/health`, loopback (`127.0.0.1`/`::1`) |
 
 This limiter applies to all requests based on the client's IP address.
 
