@@ -70,6 +70,41 @@ jobs:
       - name: Run tests with coverage
         run: pnpm test:coverage
 
+      - name: Validate OpenAPI spec
+        # Keeps the deploy gate in parity with test.yml: the generated spec must
+        # parse and its paths must resolve.
+        run: pnpm --filter=api exec tsx src/scripts/validate-openapi.ts
+
+  # Secret scanning — same patterns as the pre-commit hook (scripts/scan-secrets.sh).
+  # Runs as part of the deploy gate so a leaked credential cannot ship even if
+  # PR-only checks were bypassed.
+  secrets-scan:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Scan diff for secrets
+        run: |
+          set -e
+          PATTERNS='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|ghu_[0-9a-zA-Z]{36}|github_pat_[0-9a-zA-Z_]{22,}|sk_(live|test)_[0-9a-zA-Z]{16,}|xox[baprs]-[0-9a-zA-Z-]{10,}|-----BEGIN [A-Za-z ]*PRIVATE KEY-----|eyJhbGciOi[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{20,}\.[A-Za-z0-9._-]{20,}'
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE="$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD~1)"
+          fi
+          DIFF=$(git diff -U0 "$BASE" HEAD 2>/dev/null || git diff -U0 HEAD~1 HEAD)
+          MATCHES=$(printf '%s' "$DIFF" | grep -E "^\+" | grep -v 'PATTERNS=' | grep -v 'secrets\.' | grep -vE "^\+\s*#" | grep -cE "$PATTERNS" || true)
+          echo "Secret-pattern matches in diff: $MATCHES"
+          if [ "$MATCHES" -gt 0 ]; then
+            printf '%s' "$DIFF" | grep -nE "^\+.*($PATTERNS)" | grep -v 'PATTERNS=' | grep -v 'secrets\.' || true
+            echo "::error::Secret pattern detected in diff — remove or replace secret values."
+            exit 1
+          fi
+
   lint:
     runs-on: ubuntu-latest
     steps:
