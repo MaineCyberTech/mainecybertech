@@ -99,6 +99,11 @@ const ADMIN_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string 
   "/admin/approval-requests": { module: "approvals" },
   "/admin/dynamic-forms": { module: "dynamic-forms" },
   "/admin/satisfaction-pulse": { module: "satisfaction-pulse" },
+  "/admin/client-portal": { module: "dashboard" },
+  "/admin/compliance-readiness": { module: "compliance-readiness" },
+  "/admin/knowledge-base": { module: "client-knowledge-base" },
+  "/admin/cab": { module: "governance" },
+  "/admin/settings": { module: "settings" },
 };
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

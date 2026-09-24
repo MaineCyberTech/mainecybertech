@@ -159,7 +159,7 @@ export default function ImportExportClient({
           ]}
         />
       }
-      subnav={<AdminSubnav current="store-import" />}
+      subnav={<AdminSubnav current="store-import-export" />}
       title="Import & Export Tools"
       description={`Backed by the live catalog — ${products.length} product(s), ${categories.length} category(ies).`}
     >

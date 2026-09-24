@@ -55,8 +55,14 @@ export default async function PublicStatusPage({ params }: Props) {
   const components = payload.components ?? [];
   const incidents = payload.activeIncidents ?? [];
   const maintenance = payload.upcomingMaintenance ?? [];
+  // An empty payload must not read as "all systems operational" — a valid org
+  // with no components and an unknown org id are indistinguishable at the API.
+  const hasData = components.length > 0 || incidents.length > 0;
   const allOperational =
-    !loadFailed && incidents.length === 0 && components.every((c) => c.status === "operational");
+    !loadFailed &&
+    hasData &&
+    incidents.length === 0 &&
+    components.every((c) => c.status === "operational");
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
@@ -69,14 +75,18 @@ export default async function PublicStatusPage({ params }: Props) {
             ? "border-slate-500/30 bg-slate-500/15 text-slate-300"
             : allOperational
               ? "border-emerald-600/30 bg-emerald-600/15 text-emerald-400"
-              : "border-amber-600/30 bg-amber-600/15 text-amber-300"
+              : hasData
+                ? "border-amber-600/30 bg-amber-600/15 text-amber-300"
+                : "border-slate-500/30 bg-slate-500/15 text-slate-300"
         }`}
       >
         {loadFailed
           ? "Status unavailable — could not reach the status service"
           : allOperational
             ? "All systems operational"
-            : "Active incidents or degraded services"}
+            : hasData
+              ? "Active incidents or degraded services"
+              : "No status data reported for this organization"}
       </p>
 
       <section className="mt-10">

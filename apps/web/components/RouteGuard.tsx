@@ -27,9 +27,11 @@ export default function RouteGuard({
   const pathname = usePathname();
   const { can, loading } = usePermissions();
 
-  const required = Object.entries(rules).find(([prefix]) =>
-    prefix === "/" ? pathname === homeHref : pathname.startsWith(prefix),
-  );
+  // Longest matching prefix wins, so `/admin/status-pages` is not shadowed by
+  // an earlier `/admin/status` rule (both are valid prefixes of the path).
+  const required = Object.entries(rules)
+    .filter(([prefix]) => (prefix === "/" ? pathname === homeHref : pathname.startsWith(prefix)))
+    .sort((a, b) => b[0].length - a[0].length)[0];
 
   const allowed = !required || loading || can(required[1].module, required[1].action ?? "view");
 

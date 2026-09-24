@@ -14,7 +14,7 @@ export default async function AdminHealthPage() {
       breadcrumbs={
         <Breadcrumbs items={[{ label: "Admin", href: "/admin" }, { label: "Health" }]} />
       }
-      subnav={<AdminSubnav current="home" />}
+      subnav={<AdminSubnav current="health" />}
       title="Service Health"
       description="Real-time status of API, database, and worker services."
     >

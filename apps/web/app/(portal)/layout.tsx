@@ -58,7 +58,6 @@ const PORTAL_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string
   "/portal/endpoint-security": { module: "endpoint-security" },
   "/portal/m365-hardening": { module: "m365-hardening" },
   "/portal/offboarding": { module: "offboarding" },
-  "/portal/onboarding": { module: "onboarding" },
   "/portal/client-onboarding-command-center": { module: "client-onboarding-command-center" },
   "/portal/dynamic-client-forms-builder": { module: "dynamic-forms" },
   "/portal/identity-verification": { module: "identity-verification" },

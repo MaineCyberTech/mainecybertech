@@ -294,7 +294,6 @@ export const PORTAL_NAV_GROUPS: PortalNavGroup[] = [
         label: "Device Profiles",
         module: "device-profiles",
       },
-      { key: "onboarding", href: "/portal/onboarding", label: "Onboarding", module: "onboarding" },
       {
         key: "offboarding",
         href: "/portal/offboarding",

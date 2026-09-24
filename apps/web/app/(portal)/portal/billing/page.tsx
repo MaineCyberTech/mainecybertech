@@ -3,6 +3,7 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import BillingPageClient from "./BillingPageClient";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +27,22 @@ export default async function PortalBillingPage() {
     );
   }
 
+  let loadFailed = false;
   const [summary, subscriptions, invoices, customer] = await Promise.all([
-    api.billing.summary({ organizationId: membership.organization_id }).catch(() => null),
-    api.billing.listSubscriptions({ organizationId: membership.organization_id }).catch(() => []),
+    api.billing.summary({ organizationId: membership.organization_id }).catch(() => {
+      loadFailed = true;
+      return null;
+    }),
+    api.billing.listSubscriptions({ organizationId: membership.organization_id }).catch(() => {
+      loadFailed = true;
+      return [];
+    }),
     api.billing
       .listInvoices({ organizationId: membership.organization_id, limit: 50 })
-      .catch(() => null),
+      .catch(() => {
+        loadFailed = true;
+        return null;
+      }),
     api.billing
       .getBillingCustomer({ organizationId: membership.organization_id })
       .catch(() => null),
@@ -41,6 +52,7 @@ export default async function PortalBillingPage() {
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: "Portal", href: "/portal/dashboard" }, { label: "Billing" }]} />
       <PortalSubnav current="billing" />
+      {loadFailed ? <DataErrorNote what="billing data" /> : null}
 
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>

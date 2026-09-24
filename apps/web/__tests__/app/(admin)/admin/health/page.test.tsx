@@ -55,6 +55,6 @@ describe("AdminHealthPage", () => {
     const Page = (await import("@/app/(admin)/admin/health/page")).default;
     render(await Page());
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
-    expect(screen.getByTestId("subnav")).toHaveTextContent("home");
+    expect(screen.getByTestId("subnav")).toHaveTextContent("health");
   });
 });
