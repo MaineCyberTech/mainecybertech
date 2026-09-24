@@ -30,6 +30,16 @@ function snake(s: string) {
   return s.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
 }
 
+/** Columns a PATCH body must never be able to overwrite via mass assignment. */
+const PROTECTED_UPDATE_FIELDS = new Set([
+  "id",
+  "organization_id",
+  "created_by",
+  "created_at",
+  "updated_at",
+  "version",
+]);
+
 function crudRoute(path: string, table: string, createSchema: Record<string, unknown>) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
@@ -104,8 +114,9 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
       );
       const fields: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
-        if (k === "organizationId") continue;
-        if (v !== undefined) fields[snake(k)] = v;
+        const column = snake(k);
+        if (k === "organizationId" || PROTECTED_UPDATE_FIELDS.has(column)) continue;
+        if (v !== undefined) fields[column] = v;
       }
       const { data, error } = await sb
         .from(table)

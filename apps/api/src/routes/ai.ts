@@ -355,17 +355,29 @@ router.post("/copilot/:ticketId/reply-draft", async (req, res, next) => {
     const parsed = copilotReplyDraftSchema.parse(req.body);
     const supabase = getScopedClient(req, "ai", "write");
 
-    const { data: ticket, error: ticketError } = await supabase
-      .from("tickets")
-      .select("id, title, description, status, priority")
-      .eq("id", String(req.params.ticketId))
-      .single();
-    if (ticketError || !ticket) throw new AppError("NOT_FOUND", "Ticket not found", 404);
+    // Scope to the caller's org (summarize uses loadOwned too). Without this,
+    // when `ai` is not in RLS_WRITES_ENABLED the service-role client could read
+    // another tenant's ticket.
+    const ticket = (await loadOwned(
+      req,
+      supabase as any,
+      "tickets",
+      String(req.params.ticketId),
+      "id, title, description, status, priority, organization_id",
+    )) as {
+      id: string;
+      title: string;
+      description: string;
+      status: string;
+      priority: string;
+      organization_id: string;
+    };
 
     const { data: comments } = await supabase
       .from("ticket_comments")
       .select("body")
       .eq("ticket_id", String(req.params.ticketId))
+      .eq("organization_id", ticket.organization_id)
       .order("created_at", { ascending: false })
       .limit(3);
 

@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import multer from "multer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import crypto from "node:crypto";
@@ -563,7 +563,7 @@ router.delete("/:id", requirePermission("documents", "delete"), async (req, res,
   }
 });
 
-router.post("/:id/signed-url", async (req, res, next) => {
+router.post("/:id/signed-url", requirePermission("documents", "create"), async (req, res, next) => {
   try {
     const orgId = req.query.organization_id as string | undefined;
     const supabase = getScopedClient(req, "documents", "write");
@@ -611,7 +611,7 @@ async function resolveOwnedDocumentIds(
   return (data ?? []).map((d: { id: string }) => d.id);
 }
 
-router.post("/bulk/folder", async (req, res, next) => {
+router.post("/bulk/folder", requirePermission("documents", "create"), async (req, res, next) => {
   try {
     const parsed = bulkFolderSchema.parse(req.body);
     const supabase = getScopedClient(req, "documents", "write");
@@ -657,7 +657,7 @@ router.post("/bulk/folder", async (req, res, next) => {
   }
 });
 
-router.post("/bulk/metadata", async (req, res, next) => {
+router.post("/bulk/metadata", requirePermission("documents", "create"), async (req, res, next) => {
   try {
     const parsed = bulkMetadataSchema.parse(req.body);
     const supabase = getScopedClient(req, "documents", "write");
@@ -767,7 +767,7 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
   }
 });
 
-router.post("/:id/shares", async (req, res, next) => {
+router.post("/:id/shares", requirePermission("documents", "create"), async (req, res, next) => {
   try {
     const parsed = createShareSchema.parse(req.body);
     const supabase = getScopedClient(req, "documents", "write");
@@ -861,106 +861,114 @@ router.get("/:id/shares", async (req, res, next) => {
   }
 });
 
-router.patch("/:id/shares/:shareId", async (req, res, next) => {
-  try {
-    const parsed = updateShareSchema.parse(req.body);
-    const supabase = getScopedClient(req, "documents", "write");
+router.patch(
+  "/:id/shares/:shareId",
+  requirePermission("documents", "edit"),
+  async (req, res, next) => {
+    try {
+      const parsed = updateShareSchema.parse(req.body);
+      const supabase = getScopedClient(req, "documents", "write");
 
-    const { data: share, error: shareError } = await supabase
-      .from("document_shares")
-      .select("id, document_id, organization_id")
-      .eq("id", String(req.params.shareId))
-      .single();
+      const { data: share, error: shareError } = await supabase
+        .from("document_shares")
+        .select("id, document_id, organization_id")
+        .eq("id", String(req.params.shareId))
+        .single();
 
-    if (shareError || !share) throw new AppError("NOT_FOUND", "Share not found", 404);
+      if (shareError || !share) throw new AppError("NOT_FOUND", "Share not found", 404);
 
-    const hasAccess = await supabase
-      .from("memberships")
-      .select("id")
-      .eq("user_id", req.authUser!.userId)
-      .eq("organization_id", share.organization_id)
-      .eq("status", "approved")
-      .maybeSingle()
-      .then(({ data }) => !!data);
+      const hasAccess = await supabase
+        .from("memberships")
+        .select("id")
+        .eq("user_id", req.authUser!.userId)
+        .eq("organization_id", share.organization_id)
+        .eq("status", "approved")
+        .maybeSingle()
+        .then(({ data }) => !!data);
 
-    if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
+      if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
 
-    const updateData: Record<string, unknown> = {};
-    if (parsed.expiresAt !== undefined) updateData.expires_at = parsed.expiresAt;
-    if (parsed.maxAccess !== undefined) updateData.max_access = parsed.maxAccess;
-    if (parsed.revoked) updateData.revoked_at = new Date().toISOString();
+      const updateData: Record<string, unknown> = {};
+      if (parsed.expiresAt !== undefined) updateData.expires_at = parsed.expiresAt;
+      if (parsed.maxAccess !== undefined) updateData.max_access = parsed.maxAccess;
+      if (parsed.revoked) updateData.revoked_at = new Date().toISOString();
 
-    if (Object.keys(updateData).length === 0) {
-      throw new AppError("VALIDATION", "No fields to update", 400);
+      if (Object.keys(updateData).length === 0) {
+        throw new AppError("VALIDATION", "No fields to update", 400);
+      }
+
+      const { error } = await supabase
+        .from("document_shares")
+        .update(updateData as never)
+        .eq("id", String(req.params.shareId));
+
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "document.share.update",
+        entityType: "document",
+        entityId: share.document_id,
+        metadata: {
+          shareId: String(req.params.shareId),
+          changes: Object.keys(updateData),
+        },
+      });
+
+      res.json(success({ updated: true }));
+    } catch (error) {
+      next(error);
     }
+  },
+);
 
-    const { error } = await supabase
-      .from("document_shares")
-      .update(updateData as never)
-      .eq("id", String(req.params.shareId));
+router.delete(
+  "/:id/shares/:shareId",
+  requirePermission("documents", "delete"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "documents", "write");
 
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+      const { data: share, error: shareError } = await supabase
+        .from("document_shares")
+        .select("id, document_id, organization_id")
+        .eq("id", String(req.params.shareId))
+        .single();
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "document.share.update",
-      entityType: "document",
-      entityId: share.document_id,
-      metadata: {
-        shareId: String(req.params.shareId),
-        changes: Object.keys(updateData),
-      },
-    });
+      if (shareError || !share) throw new AppError("NOT_FOUND", "Share not found", 404);
 
-    res.json(success({ updated: true }));
-  } catch (error) {
-    next(error);
-  }
-});
+      const hasAccess = await supabase
+        .from("memberships")
+        .select("id")
+        .eq("user_id", req.authUser!.userId)
+        .eq("organization_id", share.organization_id)
+        .eq("status", "approved")
+        .maybeSingle()
+        .then(({ data }) => !!data);
 
-router.delete("/:id/shares/:shareId", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "documents", "write");
+      if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
 
-    const { data: share, error: shareError } = await supabase
-      .from("document_shares")
-      .select("id, document_id, organization_id")
-      .eq("id", String(req.params.shareId))
-      .single();
+      const { error } = await supabase
+        .from("document_shares")
+        .delete()
+        .eq("id", String(req.params.shareId));
 
-    if (shareError || !share) throw new AppError("NOT_FOUND", "Share not found", 404);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    const hasAccess = await supabase
-      .from("memberships")
-      .select("id")
-      .eq("user_id", req.authUser!.userId)
-      .eq("organization_id", share.organization_id)
-      .eq("status", "approved")
-      .maybeSingle()
-      .then(({ data }) => !!data);
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "document.share.delete",
+        entityType: "document",
+        entityId: share.document_id,
+        metadata: { shareId: String(req.params.shareId) },
+      });
 
-    if (!hasAccess) throw new AppError("FORBIDDEN", "Not authorized", 403);
-
-    const { error } = await supabase
-      .from("document_shares")
-      .delete()
-      .eq("id", String(req.params.shareId));
-
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "document.share.delete",
-      entityType: "document",
-      entityId: share.document_id,
-      metadata: { shareId: String(req.params.shareId) },
-    });
-
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 export default router;
 

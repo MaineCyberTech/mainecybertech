@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import { createStagingSchema, updateStagingSchema } from "../validators/staging";
 import { queryInt } from "../lib/query";
@@ -64,7 +65,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("hardware-staging", "create"), async (req, res, next) => {
   try {
     const parsed = createStagingSchema.parse(req.body);
     const supabase = getScopedClient(req, "staging", "write");
@@ -99,7 +100,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("hardware-staging", "edit"), async (req, res, next) => {
   try {
     const parsed = updateStagingSchema.parse(req.body);
     const supabase = getScopedClient(req, "staging", "write");
@@ -140,7 +141,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("hardware-staging", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "staging", "write");
     await loadOwned(

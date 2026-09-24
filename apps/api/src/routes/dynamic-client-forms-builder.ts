@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { responseCacheNoRenew } from "../middleware/cache";
 import {
   listDynamicFormsQuerySchema,
@@ -87,86 +88,106 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-router.post("/", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const parsed = createDynamicFormSchema.parse(req.body);
-    const result = await createDynamicForm(orgId, userId, {
-      title: parsed.title,
-      description: parsed.description,
-      formType: parsed.formType,
-      fields: parsed.fields as unknown as DynamicForm["fields"],
-      settings: parsed.settings,
-      closesAt: parsed.closesAt,
-    });
-    res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+router.post(
+  "/",
+  requirePermission("dynamic-forms", "create"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const parsed = createDynamicFormSchema.parse(req.body);
+      const result = await createDynamicForm(orgId, userId, {
+        title: parsed.title,
+        description: parsed.description,
+        formType: parsed.formType,
+        fields: parsed.fields as unknown as DynamicForm["fields"],
+        settings: parsed.settings,
+        closesAt: parsed.closesAt,
+      });
+      res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const id = getParam(req, "id");
-    const parsed = updateDynamicFormSchema.parse(req.body);
-    const result = await updateDynamicForm(orgId, userId, id, {
-      title: parsed.title,
-      description: parsed.description,
-      formType: parsed.formType,
-      status: parsed.status,
-      fields: parsed.fields as unknown as DynamicForm["fields"],
-      settings: parsed.settings,
-      closesAt: parsed.closesAt,
-    });
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+router.patch(
+  "/:id",
+  requirePermission("dynamic-forms", "edit"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const id = getParam(req, "id");
+      const parsed = updateDynamicFormSchema.parse(req.body);
+      const result = await updateDynamicForm(orgId, userId, id, {
+        title: parsed.title,
+        description: parsed.description,
+        formType: parsed.formType,
+        status: parsed.status,
+        fields: parsed.fields as unknown as DynamicForm["fields"],
+        settings: parsed.settings,
+        closesAt: parsed.closesAt,
+      });
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const id = getParam(req, "id");
-    const result = await deleteDynamicForm(orgId, userId, id);
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete(
+  "/:id",
+  requirePermission("dynamic-forms", "delete"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const id = getParam(req, "id");
+      const result = await deleteDynamicForm(orgId, userId, id);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.post("/:id/publish", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const id = getParam(req, "id");
-    const parsed = publishDynamicFormSchema.parse(req.body ?? {});
-    const result = await publishDynamicForm(orgId, userId, id, parsed.closesAt ?? null);
-    res.json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+router.post(
+  "/:id/publish",
+  requirePermission("dynamic-forms", "edit"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const id = getParam(req, "id");
+      const parsed = publishDynamicFormSchema.parse(req.body ?? {});
+      const result = await publishDynamicForm(orgId, userId, id, parsed.closesAt ?? null);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.post("/:id/submit", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const parsed = submitDynamicFormSchema.parse({ ...req.body, formId: getParam(req, "id") });
-    const result = await submitDynamicForm(
-      orgId,
-      parsed.formId,
-      parsed.respondentEmail ?? null,
-      parsed.answers,
-    );
-    res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+router.post(
+  "/:id/submit",
+  requirePermission("dynamic-forms", "edit"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const parsed = submitDynamicFormSchema.parse({ ...req.body, formId: getParam(req, "id") });
+      const result = await submitDynamicForm(
+        orgId,
+        parsed.formId,
+        parsed.respondentEmail ?? null,
+        parsed.answers,
+      );
+      res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/:id/submissions", async (req: Request, res: Response, next: NextFunction) => {
   try {

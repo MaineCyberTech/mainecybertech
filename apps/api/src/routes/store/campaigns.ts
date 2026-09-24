@@ -118,6 +118,9 @@ export function registerCampaignRoutes(router: Router) {
         .from("store_campaigns")
         .select("*")
         .eq("status", "active")
+        // Tenant-scoped campaigns are private to their org (see RLS in
+        // migration 5302422); the public storefront only shows global ones.
+        .is("organization_id", null)
         .order("created_at", { ascending: false })
         .limit(LIST_HARD_CAP);
 

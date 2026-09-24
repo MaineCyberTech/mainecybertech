@@ -6,6 +6,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { createFileRequestSchema, updateFileRequestSchema } from "../validators/file-requests";
 import { createNotification } from "../lib/notify";
 import { queryInt } from "../lib/query";
@@ -105,88 +106,93 @@ router.get("/public/:token", async (req, res, next) => {
   }
 });
 
-router.post("/public/:token/upload", upload.single("file"), async (req, res, next) => {
-  try {
-    if (!req.file) throw new AppError("VALIDATION", "No file provided", 400);
+router.post(
+  "/public/:token/upload",
+  requirePermission("file-requests", "create"),
+  upload.single("file"),
+  async (req, res, next) => {
+    try {
+      if (!req.file) throw new AppError("VALIDATION", "No file provided", 400);
 
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("file_requests")
-      .select("*")
-      .eq("token", String(req.params.token))
-      .single();
-    if (error || !data) throw new AppError("NOT_FOUND", "File request not found or expired", 404);
-    if (data.status !== "active")
-      throw new AppError("GONE", "This upload link is no longer active", 410);
-    if (new Date(data.expires_at) < new Date())
-      throw new AppError("EXPIRED", "This upload link has expired", 410);
-    if (data.max_files != null && data.upload_count >= data.max_files)
-      throw new AppError("FULL", "Upload limit reached", 410);
-    if (data.max_file_size_mb && req.file.size > data.max_file_size_mb * 1024 * 1024) {
-      throw new AppError("VALIDATION", `File exceeds the ${data.max_file_size_mb}MB limit`, 400);
-    }
-    if (
-      data.allowed_mime_types &&
-      Array.isArray(data.allowed_mime_types) &&
-      data.allowed_mime_types.length > 0 &&
-      !data.allowed_mime_types.includes(req.file.mimetype)
-    ) {
-      throw new AppError(
-        "VALIDATION",
-        `File type ${req.file.mimetype} is not allowed for this request`,
-        400,
-      );
-    }
+      const supabase = getSupabaseAdmin();
+      const { data, error } = await supabase
+        .from("file_requests")
+        .select("*")
+        .eq("token", String(req.params.token))
+        .single();
+      if (error || !data) throw new AppError("NOT_FOUND", "File request not found or expired", 404);
+      if (data.status !== "active")
+        throw new AppError("GONE", "This upload link is no longer active", 410);
+      if (new Date(data.expires_at) < new Date())
+        throw new AppError("EXPIRED", "This upload link has expired", 410);
+      if (data.max_files != null && data.upload_count >= data.max_files)
+        throw new AppError("FULL", "Upload limit reached", 410);
+      if (data.max_file_size_mb && req.file.size > data.max_file_size_mb * 1024 * 1024) {
+        throw new AppError("VALIDATION", `File exceeds the ${data.max_file_size_mb}MB limit`, 400);
+      }
+      if (
+        data.allowed_mime_types &&
+        Array.isArray(data.allowed_mime_types) &&
+        data.allowed_mime_types.length > 0 &&
+        !data.allowed_mime_types.includes(req.file.mimetype)
+      ) {
+        throw new AppError(
+          "VALIDATION",
+          `File type ${req.file.mimetype} is not allowed for this request`,
+          400,
+        );
+      }
 
-    const safeName = req.file.originalname.replace(/[^\w.\-]+/g, "_");
-    const storagePath = `${data.storage_path}/${Date.now()}-${safeName}`;
-    // Byte-sniff the content: declared MIME is untrusted (markup/SVG rejected,
-    // images and PDFs must match their declared type).
-    validateUploadContent(req.file.buffer, req.file.mimetype);
-    const { error: uploadError } = await supabase.storage
-      .from("documents")
-      .upload(storagePath, req.file.buffer, {
-        contentType: req.file.mimetype || undefined,
-        upsert: false,
-      });
-    if (uploadError) {
-      throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);
-    }
+      const safeName = req.file.originalname.replace(/[^\w.\-]+/g, "_");
+      const storagePath = `${data.storage_path}/${Date.now()}-${safeName}`;
+      // Byte-sniff the content: declared MIME is untrusted (markup/SVG rejected,
+      // images and PDFs must match their declared type).
+      validateUploadContent(req.file.buffer, req.file.mimetype);
+      const { error: uploadError } = await supabase.storage
+        .from("documents")
+        .upload(storagePath, req.file.buffer, {
+          contentType: req.file.mimetype || undefined,
+          upsert: false,
+        });
+      if (uploadError) {
+        throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);
+      }
 
-    const { data: updated, error: updateError } = await supabase
-      .from("file_requests")
-      .update({ upload_count: data.upload_count + 1 })
-      .eq("id", data.id)
-      .select()
-      .single();
-    if (updateError) throw new AppError("DB_ERROR", updateError.message, 500);
+      const { data: updated, error: updateError } = await supabase
+        .from("file_requests")
+        .update({ upload_count: data.upload_count + 1 })
+        .eq("id", data.id)
+        .select()
+        .single();
+      if (updateError) throw new AppError("DB_ERROR", updateError.message, 500);
 
-    await logAuditEvent({
-      organizationId: data.organization_id,
-      actorUserId: data.created_by,
-      action: "file_request.uploaded",
-      entityType: "file_request",
-      entityId: data.id,
-      metadata: { fileName: safeName, sizeBytes: req.file.size },
-    });
-
-    if (data.notify_on_upload && data.created_by) {
-      await createNotification({
-        userId: data.created_by,
+      await logAuditEvent({
         organizationId: data.organization_id,
-        title: "File uploaded",
-        body: `A file was uploaded to "${data.title}".`,
-        module: "documents",
-        moduleId: data.id,
-        action: "uploaded",
+        actorUserId: data.created_by,
+        action: "file_request.uploaded",
+        entityType: "file_request",
+        entityId: data.id,
+        metadata: { fileName: safeName, sizeBytes: req.file.size },
       });
-    }
 
-    res.json(success({ uploaded: true, fileName: safeName, uploadCount: updated.upload_count }));
-  } catch (error) {
-    next(error);
-  }
-});
+      if (data.notify_on_upload && data.created_by) {
+        await createNotification({
+          userId: data.created_by,
+          organizationId: data.organization_id,
+          title: "File uploaded",
+          body: `A file was uploaded to "${data.title}".`,
+          module: "documents",
+          moduleId: data.id,
+          action: "uploaded",
+        });
+      }
+
+      res.json(success({ uploaded: true, fileName: safeName, uploadCount: updated.upload_count }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.use(requireAuth);
 router.use(requireOrgAccess);
@@ -237,7 +243,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("file-requests", "create"), async (req, res, next) => {
   try {
     const parsed = createFileRequestSchema.parse(req.body);
     const supabase = getScopedClient(req, "file-requests", "write");
@@ -281,7 +287,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("file-requests", "edit"), async (req, res, next) => {
   try {
     const parsed = updateFileRequestSchema.parse(req.body);
     const supabase = getScopedClient(req, "file-requests", "write");
@@ -316,7 +322,7 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", requirePermission("file-requests", "delete"), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "file-requests", "write");
     const { error } = await supabase

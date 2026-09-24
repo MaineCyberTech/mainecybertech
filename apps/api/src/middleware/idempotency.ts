@@ -1,4 +1,5 @@
 import { type Request, type Response, type NextFunction } from "express";
+import crypto from "crypto";
 import {
   claimIdempotencyKey,
   checkIdempotencyKey,
@@ -29,7 +30,14 @@ export function idempotencyMiddleware(req: Request, res: Response, next: NextFun
     return res.status(400).json({ error: "Idempotency-Key header too long (max 256 chars)" });
   }
 
-  const key = `${req.method}:${req.baseUrl ?? ""}${req.path}:${header}`;
+  // Scope the key to the caller as well as the route. The middleware runs
+  // before route auth, so derive the owner from the bearer token (or IP for
+  // cookie/IP-authenticated calls) to prevent cross-user key collisions and
+  // replay of another user's stored response.
+  const owner = req.headers.authorization
+    ? `t:${crypto.createHash("sha256").update(String(req.headers.authorization)).digest("hex").slice(0, 16)}`
+    : `ip:${req.ip ?? "unknown"}`;
+  const key = `${owner}:${req.method}:${req.baseUrl ?? ""}${req.path}:${header}`;
 
   void (async () => {
     let claimed: boolean;

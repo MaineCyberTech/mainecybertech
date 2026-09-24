@@ -31,8 +31,8 @@ const check = checkIdempotencyKey as jest.Mock;
 const store = storeIdempotencyKey as jest.Mock;
 const del = deleteIdempotencyKey as jest.Mock;
 
-// Keys are scoped by method + route + header value.
-const scoped = (name: string) => `POST:/test:${name}`;
+// Keys are scoped by caller (bearer token or IP) + method + route + header.
+const scopedSuffix = (name: string) => new RegExp(`:POST:/test:${name}$`.replace(/[/]/g, "\\/"));
 
 function createApp() {
   const app = express();
@@ -66,10 +66,13 @@ describe("idempotencyMiddleware", () => {
       .send({ data: "hello" });
 
     expect(res.status).toBe(200);
-    expect(claim).toHaveBeenCalledWith(scoped("unique-key-123"), "processing");
+    expect(claim).toHaveBeenCalledWith(
+      expect.stringMatching(scopedSuffix("unique-key-123")),
+      "processing",
+    );
     expect(store).toHaveBeenCalledTimes(1);
     const [storedKey, storedValue] = store.mock.calls[0] as [string, string];
-    expect(storedKey).toBe(scoped("unique-key-123"));
+    expect(storedKey).toMatch(scopedSuffix("unique-key-123"));
     expect(JSON.parse(storedValue)).toEqual({
       kind: "json",
       status: 200,
@@ -145,6 +148,25 @@ describe("idempotencyMiddleware", () => {
 
     expect(res.status).toBe(500);
     expect(store).not.toHaveBeenCalled();
-    expect(del).toHaveBeenCalledWith("POST:/fail:fail-key");
+    expect(del).toHaveBeenCalledWith(expect.stringMatching(/:\/fail:fail-key$/));
+  });
+
+  it("scopes the key by caller so distinct auth tokens do not collide", async () => {
+    claim.mockResolvedValue(true);
+    await request(createApp())
+      .post("/test")
+      .set("idempotency-key", "same-key")
+      .set("Authorization", "Bearer token-a")
+      .send({});
+    await request(createApp())
+      .post("/test")
+      .set("idempotency-key", "same-key")
+      .set("Authorization", "Bearer token-b")
+      .send({});
+
+    const firstKey = claim.mock.calls[0]?.[0];
+    const secondKey = claim.mock.calls[1]?.[0];
+    expect(firstKey).not.toBe(secondKey);
+    expect(String(firstKey)).toMatch(/:POST:\/test:same-key$/);
   });
 });

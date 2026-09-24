@@ -4,34 +4,36 @@ import { createTestApp, createMockBuilder, createOrgAccessStub } from "./helpers
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
-  getEnv: jest
-    .fn()
-    .mockReturnValue({
-      NODE_ENV: "test",
-      SUPABASE_URL: "https://test.supabase.co",
-      SUPABASE_ANON_KEY: "test-anon-key",
-      SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
-      CORS_ORIGIN: "*",
-      LOG_LEVEL: "silent",
-      JWT_SECRET: "test-jwt-secret",
-      APP_BASE_URL: "http://localhost:3000",
-      API_PORT: 4000,
-      SMTP_HOST: "",
-      EMAIL_FROM: "noreply@test.local",
-      SENTRY_DSN: "",
-      STRIPE_SECRET_KEY: "",
-      STRIPE_WEBHOOK_SECRET: "",
-      PUBLIC_TRAFFIC_WEBHOOK_URL: "",
-      PUBLIC_LEAD_WEBHOOK_URL: "",
-      JSM_DOMAIN: "",
-      JSM_EMAIL: "",
-      JSM_API_TOKEN: "",
-      JSM_SERVICEDESK_ID: "",
-      JSM_REQUEST_TYPE_ID: "",
-    }),
+  getEnv: jest.fn().mockReturnValue({
+    NODE_ENV: "test",
+    SUPABASE_URL: "https://test.supabase.co",
+    SUPABASE_ANON_KEY: "test-anon-key",
+    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
+    CORS_ORIGIN: "*",
+    LOG_LEVEL: "silent",
+    JWT_SECRET: "test-jwt-secret",
+    APP_BASE_URL: "http://localhost:3000",
+    API_PORT: 4000,
+    SMTP_HOST: "",
+    EMAIL_FROM: "noreply@test.local",
+    SENTRY_DSN: "",
+    STRIPE_SECRET_KEY: "",
+    STRIPE_WEBHOOK_SECRET: "",
+    PUBLIC_TRAFFIC_WEBHOOK_URL: "",
+    PUBLIC_LEAD_WEBHOOK_URL: "",
+    JSM_DOMAIN: "",
+    JSM_EMAIL: "",
+    JSM_API_TOKEN: "",
+    JSM_SERVICEDESK_ID: "",
+    JSM_REQUEST_TYPE_ID: "",
+  }),
 }));
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
+jest.mock("../services/supabase", () => ({
+  getSupabaseAdmin: jest.fn(),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
+}));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 
 import { getSupabaseAdmin } from "../services/supabase";
@@ -44,12 +46,10 @@ function mockAuth() {
   const supabase = {
     from: jest.fn(),
     auth: {
-      getUser: jest
-        .fn()
-        .mockResolvedValue({
-          data: { user: { id: "user-1", email: "test@example.com" } },
-          error: null,
-        }),
+      getUser: jest.fn().mockResolvedValue({
+        data: { user: { id: "user-1", email: "test@example.com" } },
+        error: null,
+      }),
     },
   };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
@@ -65,10 +65,7 @@ jest.mock("../middleware/org-access", () =>
   createOrgAccessStub("00000000-0000-0000-0000-000000000001"),
 );
 jest.mock("../middleware/permissions", () => ({
-  requirePermission:
-    () =>
-    (_req: unknown, _res: unknown, next: () => void) =>
-      next(),
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 const app = createTestApp();
 app.use("/api/v1/ai", aiRouter);
@@ -171,7 +168,13 @@ describe("AI API", () => {
       const supabase = mockAuth();
       supabase.from.mockReturnValue(
         createMockBuilder({
-          data: { id: "tk-1", subject: "Need help", status: "open" },
+          data: {
+            id: "tk-1",
+            subject: "Need help",
+            title: "Need help",
+            status: "open",
+            organization_id: testOrgId,
+          },
           error: null,
         }),
       );

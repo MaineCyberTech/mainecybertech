@@ -455,7 +455,7 @@ crudRoute(
   "retention_policies",
   createRetentionSchema as unknown as Record<string, unknown>,
   undefined,
-  "data-retention",
+  "retention",
 );
 crudRoute(
   "tabletop",
