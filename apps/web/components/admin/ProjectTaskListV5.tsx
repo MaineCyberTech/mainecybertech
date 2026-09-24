@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition, type FormEvent } from "react";
 import AvatarPill from "@/components/admin/AvatarPill";
 import ConfirmIntentButton from "@/components/admin/ConfirmIntentButton";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import CommentBody from "@/components/CommentBody";
 
 type Owner = { id: string; full_name?: string | null; email?: string | null };
@@ -500,6 +501,7 @@ function AdminTaskCard({
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingCommentBody, setEditingCommentBody] = useState("");
   const [editingCommentInternal, setEditingCommentInternal] = useState(false);
+  const [pendingDeleteComment, setPendingDeleteComment] = useState<string | null>(null);
   const unreadCount = Math.max(0, taskState.unread_count ?? 0);
 
   async function persistCommentsRead() {
@@ -666,8 +668,10 @@ function AdminTaskCard({
   }
 
   async function handleDeleteComment(commentId: string) {
-    const confirmed = window.confirm("Delete this comment? This action cannot be undone.");
-    if (!confirmed) return;
+    setPendingDeleteComment(commentId);
+  }
+
+  async function performDeleteComment(commentId: string) {
     const snapshot = taskState;
     const optimisticTask = {
       ...taskState,
@@ -1026,6 +1030,20 @@ function AdminTaskCard({
           </form>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={pendingDeleteComment !== null}
+        title="Delete this comment?"
+        body="This action cannot be undone."
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => {
+          const commentId = pendingDeleteComment;
+          setPendingDeleteComment(null);
+          if (commentId) void performDeleteComment(commentId);
+        }}
+        onClose={() => setPendingDeleteComment(null)}
+      />
     </details>
   );
 }

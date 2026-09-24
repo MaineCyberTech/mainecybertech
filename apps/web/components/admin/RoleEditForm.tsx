@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { getClientApi } from "@/lib/client-api";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 type Props = {
   roleId: string;
@@ -18,6 +19,7 @@ export default function RoleEditForm({ roleId, initialName, initialDescription, 
   const [description, setDescription] = useState(initialDescription ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
@@ -36,8 +38,8 @@ export default function RoleEditForm({ roleId, initialName, initialDescription, 
     }
   }
 
-  async function handleDelete() {
-    if (!window.confirm(`Delete role "${initialName}"? This cannot be undone.`)) return;
+  async function performDelete() {
+    setConfirmOpen(false);
     setLoading(true);
     setError(null);
     try {
@@ -63,13 +65,22 @@ export default function RoleEditForm({ roleId, initialName, initialDescription, 
         {!isSystem ? (
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => setConfirmOpen(true)}
             disabled={loading}
             className="rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
           >
             {loading ? "Deleting..." : "Delete"}
           </button>
         ) : null}
+        <ConfirmDialog
+          open={confirmOpen}
+          title={`Delete role "${initialName}"?`}
+          body="This cannot be undone."
+          confirmLabel="Delete"
+          danger
+          onConfirm={performDelete}
+          onClose={() => setConfirmOpen(false)}
+        />
       </div>
     );
   }

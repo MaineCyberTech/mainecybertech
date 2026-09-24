@@ -54,7 +54,8 @@ type Props = {
 type ConfirmState =
   | null
   | { type: "bulkDelete" }
-  | { type: "bulkVisibility"; visibility: VisibilityValue };
+  | { type: "bulkVisibility"; visibility: VisibilityValue }
+  | { type: "deleteDocument"; doc: DocumentRecord };
 
 const VISIBILITY_OPTIONS: VisibilityValue[] = ["private", "org", "internal", "public"];
 const UI_PREFS_KEY = "admin-documents-ui-prefs-v2233";
@@ -792,11 +793,12 @@ export default function AdminDocumentsCenterClient({
     });
   }
 
+  function requestDeleteDocument(doc: DocumentRecord) {
+    setConfirmState({ type: "deleteDocument", doc });
+  }
+
   async function deleteDocument(doc: DocumentRecord) {
-    const confirmed = window.confirm(
-      `Delete ${docName(doc)}? This removes the record and attempts storage cleanup.`,
-    );
-    if (!confirmed) return;
+    setConfirmState(null);
     const snapshot = { ...doc };
     removeDocuments([doc.id]);
     const formData = new FormData();
@@ -1091,6 +1093,24 @@ export default function AdminDocumentsCenterClient({
         confirmLabel="Apply visibility"
         onConfirm={() => {
           void confirmBulkAction();
+        }}
+        onClose={() => setConfirmState(null)}
+      />
+
+      <ConfirmModal
+        open={confirmState?.type === "deleteDocument"}
+        title="Delete document"
+        body={
+          confirmState?.type === "deleteDocument"
+            ? `Delete ${docName(confirmState.doc)}? This removes the record and attempts storage cleanup.`
+            : ""
+        }
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => {
+          if (confirmState?.type === "deleteDocument") {
+            void deleteDocument(confirmState.doc);
+          }
         }}
         onClose={() => setConfirmState(null)}
       />
@@ -1526,7 +1546,7 @@ export default function AdminDocumentsCenterClient({
                             type="button"
                             className="rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
                             onClick={() => {
-                              void deleteDocument(document);
+                              requestDeleteDocument(document);
                             }}
                           >
                             Delete
@@ -1719,7 +1739,7 @@ export default function AdminDocumentsCenterClient({
                           type="button"
                           className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
                           onClick={() => {
-                            void deleteDocument(document);
+                            requestDeleteDocument(document);
                           }}
                         >
                           Delete
@@ -2247,7 +2267,7 @@ export default function AdminDocumentsCenterClient({
                         type="button"
                         className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
                         onClick={() => {
-                          void deleteDocument(drawerDoc);
+                          requestDeleteDocument(drawerDoc);
                         }}
                         disabled={busyId === `delete:${drawerDoc.id}`}
                       >

@@ -54,6 +54,11 @@ everything else so the error boundary handles 5xx.
 dialog and restores focus on close. Every `role="dialog"` should use it, plus an
 `aria-labelledby`/`aria-label` and Escape-to-close.
 
+`apps/web/components/admin/ConfirmDialog.tsx` is the standard confirmation
+dialog (focus-trapped, Escape-to-close, labelled). Use it instead of
+`window.confirm`; for submit buttons use `ConfirmIntentButton`, which opens the
+dialog and re-submits the form with the button as submitter on confirm.
+
 ## Consistency
 
 - Admin pages use `AdminPageShell` (breadcrumbs/subnav/title/actions); 35 detail

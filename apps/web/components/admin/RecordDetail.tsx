@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 type Field = {
   key: string;
@@ -50,12 +51,18 @@ export default function RecordDetail({
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const handleDelete = () => {
-    if (!deleteAction || !window.confirm("Delete this record? This cannot be undone.")) return;
+    if (!deleteAction) return;
+    setConfirmOpen(true);
+  };
+
+  const performDelete = () => {
+    setConfirmOpen(false);
     setError("");
     startTransition(async () => {
-      const result = await deleteAction(id);
+      const result = await deleteAction!(id);
       if (result.ok) {
         onDelete?.();
       } else {
@@ -219,6 +226,16 @@ export default function RecordDetail({
           );
         })}
       </dl>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete this record?"
+        body="This cannot be undone."
+        confirmLabel="Delete"
+        danger
+        onConfirm={performDelete}
+        onClose={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

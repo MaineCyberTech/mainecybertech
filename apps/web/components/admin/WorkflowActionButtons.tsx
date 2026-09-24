@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { getClientApi } from "@/lib/client-api";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 type Action = {
   label: string;
@@ -27,9 +28,9 @@ export default function WorkflowActionButtons({
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [confirmAction, setConfirmAction] = useState<Action | null>(null);
 
-  const run = (action: Action) => {
-    if (action.confirm && !window.confirm(action.confirm)) return;
+  const execute = (action: Action) => {
     setError(null);
     setPendingAction(action.label);
     startTransition(async () => {
@@ -43,6 +44,14 @@ export default function WorkflowActionButtons({
         setError("Action failed. Please try again.");
       }
     });
+  };
+
+  const run = (action: Action) => {
+    if (action.confirm) {
+      setConfirmAction(action);
+      return;
+    }
+    execute(action);
   };
 
   if (actions.length === 0) return null;
@@ -64,6 +73,20 @@ export default function WorkflowActionButtons({
         ))}
       </div>
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
+
+      <ConfirmDialog
+        open={confirmAction !== null}
+        title={confirmAction?.confirm ?? "Confirm action"}
+        body="This action cannot be undone."
+        confirmLabel={confirmAction?.label ?? "Confirm"}
+        danger
+        onConfirm={() => {
+          const action = confirmAction;
+          setConfirmAction(null);
+          if (action) execute(action);
+        }}
+        onClose={() => setConfirmAction(null)}
+      />
     </div>
   );
 }
