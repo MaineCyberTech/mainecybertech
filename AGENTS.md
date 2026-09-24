@@ -36,12 +36,12 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-21 Verified)
 
-**3,255 tests, all passing. 378 suites.**
+**3,262 tests, all passing. 380 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,184         | 109    | Jest + supertest                  |
-| Web     | 1,683         | 257    | Jest + Testing Library            |
+| API     | 1,186         | 109    | Jest + supertest                  |
+| Web     | 1,688         | 259    | Jest + Testing Library            |
 | SDK     | 289           | 3      | Jest (mocked fetch)               |
 | Worker  | 99            | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -51,6 +51,8 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 - **`portal-knowledge-base` E2E failure — FIXED & validated:** the 3 KB E2E tests now pass in prod mode. Root cause was the inline server-action wrapper `<form action={async (fd) => await createArticle(fd)}>` breaking under Next's production build; fixed via `action={createArticle}` + `void` return + `items` guard (commit `688f9fa`).
 - **E2E has known run-to-run flakiness:** data-dependent tests (notification bell, project/user/document detail, admin-documents modal) fail intermittently due to CI API/Supabase contention — identical seeds, yet the same test passes in one shard and fails in another. This is **not** a product regression and **not** caused by the CORS `*`→`http://localhost:3000` change. The E2E gate is **prod-only** (`deploy-do.yml` `if: name == 'prod'`), so only a `main` deploy would be exposed to it. As of 2026-09-21 there are **no `main`-branch `deploy-do` runs at all** (prod has not been deployed through this pipeline since E2E was made a prod-only gate), and E2E is currently green on PRs — so "prod deploy is blocked" is not observable. Dev (`develop`) deploy is unaffected and green. **Partially hardened 2026-09-18** (`44900e3`): artifact paths, action/navigation timeouts, shell-wait helper, bounded `networkidle` before axe, and a `withRetry()` around the layout profile fetch (the SDK does not retry 500). **Hardened 2026-09-20** (`2865f7b`): the ~35 `if (await locator.isVisible())` data gates across 12 specs now go through `visibleWithin()` in `e2e/fixtures.ts` (auto-waits for `state:"visible"`, tolerates absent seed data) so a slow render skips the branch instead of failing it. The documents modals already carry `role="dialog"`/`aria-modal`/`aria-labelledby`. **Also hardened 2026-09-20** (`bc46bb9`): `e2e.yml` installed the CLI via `supabase/setup-cli` with `version: latest`, which resolves `releases/latest` through the GitHub API and intermittently failed the job before Playwright ran (`Failed to resolve latest Supabase CLI release: rate limit exceeded`). Now installs the pinned `supabase@2.107.0` from npm (matching `supabase-migrations.yml`/`package.json`).
 - **MFA/SSO (net-new):** TOTP **management** backend + SDK shipped 2026-09-18 (`334d65f`). An opt-in enrollment UI (`/portal/profile/security`) shipped in `471b63e`. **`aal2` enforcement now exists** behind `MFA_ENFORCEMENT_ENABLED` (`apps/api/src/lib/mfa.ts`, wired into `requireAuth`): once enabled, an `aal1` session that has a _verified_ factor is rejected with `403 MFA_REQUIRED` on non-`/auth/*` routes, the web layouts step the user up to `/portal/profile/security`, the factor lookup is cached 60s and fails open with a warning (a GoTrue blip cannot lock users out), and a user with no factor is never blocked. Remaining: (1) enable MFA on the hosted Supabase project + set the flag; (2) a first-class login second-factor step (today the security page handles the challenge); (3) SSO (SAML/OIDC) — own larger effort, needs a paid Supabase plan + per-org provider config.
+- **Toast consolidation (open):** three ad-hoc toast implementations remain — `pushToast` (`AdminDocumentsCenterClient`, `ProjectTaskListV5`), `addToast` (`RolePermissionsEditor`, `UserPermissionOverridesClient`, `PortalDocumentsCenterClient`), and the `onToast` prop (`AdminDocumentsBulkControls`). Intended fix is one `ToastProvider`/`useToast()`; see `docs/WEB_UI_CONVENTIONS.md`.
+- **Axe automation breadth (open):** `apps/web/e2e/a11y.spec.ts` scans 19 of 318 pages and filters to `critical`/`serious` only (no WCAG 2.2 tags). Expanding it should be done where the E2E stack runs so new rules can be triaged rather than failing the prod gate blind.
 
 ### Test patterns
 
@@ -757,7 +759,7 @@ best-effort _job_; `terraform fmt -check -recursive` is blocking);
 
 ### Testing (snapshot — the header table holds the current numbers)
 
-- 2,734 unit tests across 225 suites (all green) _(now 3,255 / 378)_
+- 2,734 unit tests across 225 suites (all green) _(now 3,262 / 380)_
 - 90 Playwright E2E spec files
 - ESLint: 0 errors
 - TypeScript: clean
