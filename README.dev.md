@@ -41,7 +41,7 @@ This repo should use a simple and safe branch model:
 
 - app hostname: `app.mainecybertech.us`
 - API hostname: `api.mainecybertech.us`
-- Terraform root: `infra/terraform`
+- Terraform root: `infra/terraform/digitalocean`
 - backend config: `env/backend.dev.hcl`
 - var file: `env/dev.tfvars`
 - expected deployment branch: `develop`
@@ -50,7 +50,7 @@ This repo should use a simple and safe branch model:
 
 - app hostname: `app.mainecybertech.com`
 - API hostname: `api.mainecybertech.com`
-- Terraform root: `infra/terraform`
+- Terraform root: `infra/terraform/digitalocean`
 - backend config: `env/backend.prod.hcl`
 - var file: `env/prod.tfvars`
 - expected deployment branch: `main`
@@ -233,7 +233,7 @@ It is useful because it lets you:
 
 ## Environment file setup
 
-Your final infrastructure model uses Terraform rooted at `infra/terraform`, with separate files for testing/dev and production. That environment split was already established in the Terraform bundles you generated earlier, with:
+Your final infrastructure model uses Terraform rooted at `infra/terraform/digitalocean`, with separate files for testing/dev and production. That environment split was already established in the Terraform bundles you generated earlier, with:
 
 - `env/backend.dev.hcl`
 - `env/backend.prod.hcl`
@@ -242,7 +242,7 @@ Your final infrastructure model uses Terraform rooted at `infra/terraform`, with
 
 ### Expected environment files
 
-Inside `infra/terraform/env/`, you should have:
+Inside `infra/terraform/digitalocean/env/`, you should have:
 
 ```text
 env/
@@ -297,7 +297,7 @@ If your local scripts include a dev server, run that from the repo root or `apps
 If you modify infrastructure, validate locally before opening a PR:
 
 ```bash
-cd infra/terraform
+cd infra/terraform/digitalocean
 terraform fmt -recursive
 terraform validate
 ```
@@ -307,7 +307,7 @@ terraform validate
 #### Dev / testing
 
 ```bash
-cd infra/terraform
+cd infra/terraform/digitalocean
 terraform init -backend-config=env/backend.dev.hcl
 terraform plan -var-file=env/dev.tfvars
 terraform apply -var-file=env/dev.tfvars
@@ -316,7 +316,7 @@ terraform apply -var-file=env/dev.tfvars
 #### Production
 
 ```bash
-cd infra/terraform
+cd infra/terraform/digitalocean
 terraform init -backend-config=env/backend.prod.hcl
 terraform plan -var-file=env/prod.tfvars
 terraform apply -var-file=env/prod.tfvars
@@ -354,7 +354,7 @@ pnpm test
 If your changes affect infrastructure:
 
 ```bash
-cd infra/terraform
+cd infra/terraform/digitalocean
 terraform fmt -recursive
 terraform validate
 ```

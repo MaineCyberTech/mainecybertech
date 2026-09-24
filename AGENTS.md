@@ -36,12 +36,12 @@ Browser → loginAction() → Supabase Auth REST/PKCE
 
 ## Test Status (2026-09-21 Verified)
 
-**3,249 tests, all passing. 376 suites.**
+**3,252 tests, all passing. 378 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,183         | 109    | Jest + supertest                  |
-| Web     | 1,678         | 255    | Jest + Testing Library            |
+| API     | 1,184         | 109    | Jest + supertest                  |
+| Web     | 1,680         | 257    | Jest + Testing Library            |
 | SDK     | 289           | 3      | Jest (mocked fetch)               |
 | Worker  | 99            | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
@@ -90,7 +90,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 12    | Registered in `apps/worker/src/tasks/index.ts`                                                      |
 | Web pages                 | 318   | Admin 202, Portal 86, Public 28, Root 2                                                             |
 | Web components            | 99    | `apps/web/components/`                                                                              |
-| SQL migrations            | 123   | `supabase/migrations/` (latest: 5302425 public interactions is_bot)                                 |
+| SQL migrations            | 124   | `supabase/migrations/` (latest: 5302425 public interactions is_bot)                                 |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                              |
 | GitHub Actions workflows  | 14    | `.github/workflows/`                                                                                |
 | AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                        |
@@ -197,13 +197,15 @@ CORS_ORIGIN=https://app.mainecybertech.com,https://www.mainecybertech.com
 
 ```
 NEXT_PUBLIC_API_URL=http://localhost:4000
-NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=
 NEXT_PUBLIC_SENTRY_DSN=
 NEXT_PUBLIC_GA_ID=
 NEXT_PUBLIC_TAWKTO_ID=
 NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=false
 ```
+
+> The web app talks to Supabase only through the API — it does **not** need
+> `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
 ### Worker (`.env.local`)
 
@@ -219,24 +221,24 @@ SENTRY_DSN=
 
 **14 GitHub Actions workflows** in `.github/workflows/`:
 
-| Workflow                | Trigger         | Purpose                                                 |
-| ----------------------- | --------------- | ------------------------------------------------------- |
-| test.yml                | push/PR         | Run unit tests                                          |
-| lint.yml                | push/PR         | ESLint                                                  |
-| typecheck.yml           | push/PR         | TypeScript typecheck                                    |
-| supabase-migrations.yml | workflow_call   | Apply Supabase migrations                               |
-| e2e.yml                 | PR/manual/call  | Playwright E2E tests                                    |
-| deploy-do.yml           | push to develop | Build images, SSH deploy to droplet                     |
-| terraform-do.yml        | push to develop | Terraform plan/apply for DO infra                       |
-| validate.yml            | push to develop | Pre-deploy gate (tests + lint + typecheck + migrations) |
-| build-push.yml          | workflow_call   | Build/push GHCR images (called by deploy-do)            |
-| chromatic.yml           | push/PR         | Visual regression (Storybook)                           |
-| db-backup.yml           | schedule/manual | Database backup to Spaces                               |
-| db-restore-test.yml     | schedule/manual | Restore a backup into a throwaway DB and validate       |
-| dependency-review.yml   | pull_request    | Block PRs introducing vulnerable dependencies           |
-| sbom.yml                | push/PR/weekly  | CycloneDX SBOM artifact (`scripts/generate-sbom.mjs`)   |
+| Workflow                | Trigger            | Purpose                                                           |
+| ----------------------- | ------------------ | ----------------------------------------------------------------- |
+| test.yml                | push/PR            | Unit tests + coverage, OpenAPI validate, Trivy, secrets scan      |
+| lint.yml                | push/PR            | ESLint                                                            |
+| typecheck.yml           | push/PR            | TypeScript typecheck                                              |
+| supabase-migrations.yml | push main+dev/call | Apply Supabase migrations                                         |
+| e2e.yml                 | PR/manual/call     | Playwright E2E tests                                              |
+| deploy-do.yml           | push main+dev      | Build images, SSH deploy to droplet                               |
+| terraform-do.yml        | push/PR main+dev   | Terraform plan/apply for DO infra                                 |
+| validate.yml            | workflow_call      | Deploy gate (audit + test + lint + typecheck + prompt-provenance) |
+| build-push.yml          | dispatch           | Build/push GHCR images (manual)                                   |
+| chromatic.yml           | push/PR            | Visual regression (Storybook)                                     |
+| db-backup.yml           | schedule/manual    | Database backup to Spaces                                         |
+| db-restore-test.yml     | schedule/manual    | Restore a backup into a throwaway DB and validate                 |
+| dependency-review.yml   | pull_request       | Block PRs introducing vulnerable dependencies                     |
+| sbom.yml                | push/PR/weekly     | CycloneDX SBOM artifact (`scripts/generate-sbom.mjs`)             |
 
-**Deploy pipeline:** validate → supabase-migrations → build images → SSH deploy to droplet (Caddy auto-restarts).
+**Deploy pipeline:** `setup` → (`build api/worker/web` ∥ `validate`) → (`e2e-gate` + `migrate-gate`, **prod-only**) → `deploy` via SSH (Caddy auto-restarts).
 
 ## Code Patterns
 
@@ -754,7 +756,7 @@ best-effort _job_; `terraform fmt -check -recursive` is blocking);
 
 ### Testing (snapshot — the header table holds the current numbers)
 
-- 2,734 unit tests across 225 suites (all green) _(now 3,249 / 376)_
+- 2,734 unit tests across 225 suites (all green) _(now 3,252 / 378)_
 - 90 Playwright E2E spec files
 - ESLint: 0 errors
 - TypeScript: clean
