@@ -4557,6 +4557,7 @@ export type Database = {
           employees: string | null;
           id: string;
           ip_address: string | null;
+          is_bot: boolean;
           location: string | null;
           platform: string | null;
           referrer: string | null;
@@ -4576,6 +4577,7 @@ export type Database = {
           employees?: string | null;
           id?: string | null;
           ip_address?: string | null;
+          is_bot?: boolean | null;
           location?: string | null;
           platform?: string | null;
           referrer?: string | null;
@@ -4595,6 +4597,7 @@ export type Database = {
           employees?: string | null;
           id?: string | null;
           ip_address?: string | null;
+          is_bot?: boolean | null;
           location?: string | null;
           platform?: string | null;
           referrer?: string | null;
