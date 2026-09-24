@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "@/lib/seo/site";
-import { blogSeoBacklog } from "@/lib/seo/blog";
+import { blogPosts } from "@/lib/seo/blog-posts";
 
 /**
  * Sitemap is intentionally limited to the homepage and the blog, matching the
@@ -25,7 +25,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  const blogRoutes: MetadataRoute.Sitemap = blogSeoBacklog.map((post) => ({
+  const blogRoutes: MetadataRoute.Sitemap = blogPosts.map((post) => ({
     url: `${siteConfig.url}/blog/${post.slug}`,
     lastModified: now,
     changeFrequency: "monthly",

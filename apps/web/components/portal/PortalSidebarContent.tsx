@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { usePermissions, type ServerPermissionData } from "@/lib/use-permissions";
 
 import { PORTAL_NAV_GROUPS as GROUPS } from "@/lib/navigation/portal-nav";
@@ -14,17 +14,22 @@ export default function PortalSidebarContent({
   mobile?: boolean;
   permissions?: ServerPermissionData | null;
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const groupButtons = useRef<Record<string, HTMLButtonElement | null>>({});
   const groupLinks = useRef<Record<string, HTMLAnchorElement | null>>({});
   const { can, loading } = usePermissions(permissions);
 
-  const isActive = (href: string) => {
-    if (href === "/portal/dashboard")
-      return pathname === "/portal/dashboard" || pathname === "/portal";
-    return pathname.startsWith(href);
-  };
+  // Longest matching href wins (see AdminSidebarContent) so nested routes do
+  // not mark their parent as active as well.
+  const activeHref = useMemo(() => {
+    const hrefs = GROUPS.flatMap((group) => group.items.map((item) => item.href));
+    const matches = hrefs.filter((h) => pathname === h || pathname.startsWith(`${h}/`));
+    const best = matches.sort((a, b) => b.length - a.length)[0] ?? null;
+    return best ?? (pathname === "/portal" ? "/portal/dashboard" : null);
+  }, [pathname]);
+
+  const isActive = (href: string) => href === activeHref;
 
   const visibleGroups = loading
     ? []

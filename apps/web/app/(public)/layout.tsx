@@ -17,9 +17,10 @@ export const metadata: Metadata = {
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  alternates: {
-    canonical: siteConfig.url,
-  },
+  // No `alternates.canonical` here: a layout-level canonical is inherited by
+  // every child, which made pages that only set a title (contact, privacy,
+  // terms, status, upload) declare themselves duplicates of the homepage.
+  // Pages set their own canonical via buildMetadata().
   openGraph: {
     type: "website",
     siteName: siteConfig.name,

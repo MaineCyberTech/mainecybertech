@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 import { portalGroupForKey } from "@/lib/navigation/portal-nav";
 import { usePermissions } from "@/lib/use-permissions";
 
@@ -11,19 +12,23 @@ import { usePermissions } from "@/lib/use-permissions";
  * was a no-op (`return null`) that ~20 pages passed as a prop.
  */
 export default function PortalSubnav({ current }: { current: string }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const { can, loading } = usePermissions();
   const group = portalGroupForKey(current);
+
+  const activeHref = useMemo(() => {
+    const hrefs = group ? group.items.map((item) => item.href) : [];
+    const matches = hrefs.filter((h) => pathname === h || pathname.startsWith(`${h}/`));
+    const best = matches.sort((a, b) => b.length - a.length)[0] ?? null;
+    return best ?? (pathname === "/portal" ? "/portal/dashboard" : null);
+  }, [group, pathname]);
 
   if (loading || !group) return null;
 
   const items = group.items.filter((item) => !item.module || can(item.module, "view"));
   if (items.length < 2) return null;
 
-  const isActive = (href: string) =>
-    href === "/portal/dashboard"
-      ? pathname === "/portal/dashboard" || pathname === "/portal"
-      : pathname.startsWith(href);
+  const isActive = (href: string) => href === activeHref;
 
   return (
     <nav aria-label={`${group.label} section`} className="mb-4 overflow-x-auto">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { usePermissions, type ServerPermissionData } from "@/lib/use-permissions";
 
 import { ADMIN_NAV_GROUPS as GROUPS } from "@/lib/navigation/admin-nav";
@@ -14,16 +14,21 @@ export default function AdminSidebarContent({
   mobile?: boolean;
   permissions?: ServerPermissionData | null;
 }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const groupButtons = useRef<Record<string, HTMLButtonElement | null>>({});
   const groupLinks = useRef<Record<string, HTMLAnchorElement | null>>({});
   const { can, loading } = usePermissions(permissions);
 
-  const isActive = (href: string) => {
-    if (href === "/admin") return pathname === "/admin";
-    return pathname.startsWith(href);
-  };
+  // Longest matching href wins, so `/admin/store/products` does not also mark
+  // `/admin/store` active (which produced duplicate aria-current="page").
+  const activeHref = useMemo(() => {
+    const hrefs = GROUPS.flatMap((group) => group.items.map((item) => item.href));
+    const matches = hrefs.filter((h) => pathname === h || pathname.startsWith(`${h}/`));
+    return matches.sort((a, b) => b.length - a.length)[0] ?? null;
+  }, [pathname]);
+
+  const isActive = (href: string) => href === activeHref;
 
   const visibleGroups = loading
     ? []

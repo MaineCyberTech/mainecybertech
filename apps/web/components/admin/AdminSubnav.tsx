@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useMemo } from "react";
 import { adminGroupForKey } from "@/lib/navigation/admin-nav";
 import { usePermissions } from "@/lib/use-permissions";
 
@@ -11,17 +12,24 @@ import { usePermissions } from "@/lib/use-permissions";
  * was a no-op (`return null`) that ~100 pages passed as a prop.
  */
 export default function AdminSubnav({ current }: { current: string }) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "";
   const { can, loading } = usePermissions();
   const group = adminGroupForKey(current);
+
+  // Longest matching href in the group wins, so a nested route does not also
+  // mark the section root active.
+  const activeHref = useMemo(() => {
+    const hrefs = group ? group.items.map((item) => item.href) : [];
+    const matches = hrefs.filter((h) => pathname === h || pathname.startsWith(`${h}/`));
+    return matches.sort((a, b) => b.length - a.length)[0] ?? null;
+  }, [group, pathname]);
 
   if (loading || !group) return null;
 
   const items = group.items.filter((item) => !item.module || can(item.module, "view"));
   if (items.length < 2) return null;
 
-  const isActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+  const isActive = (href: string) => href === activeHref;
 
   return (
     <nav aria-label={`${group.label} section`} className="mb-4 overflow-x-auto">

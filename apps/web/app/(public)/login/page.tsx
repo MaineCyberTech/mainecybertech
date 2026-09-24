@@ -87,7 +87,10 @@ export default function LoginPage() {
             </div>
 
             {errorMsg ? (
-              <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+              <div
+                role="alert"
+                className="rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300"
+              >
                 {errorMsg}
               </div>
             ) : null}
@@ -105,9 +108,9 @@ export default function LoginPage() {
 
           <p className="mt-6 text-sm text-slate-400">
             Need an account?{" "}
-            <a href="/signup" className="text-emerald-400 hover:text-emerald-300">
+            <Link href="/signup" className="text-emerald-400 hover:text-emerald-300">
               Sign up
-            </a>
+            </Link>
           </p>
 
           {isTestAccountsEnabled() ? (
