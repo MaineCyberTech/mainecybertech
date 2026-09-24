@@ -7,6 +7,7 @@ import { getEnv } from "./config/env";
 import { errorHandler } from "./middleware/error";
 import { notFoundHandler } from "./middleware/not-found";
 import { requestId, requestLogger } from "./middleware/request-id";
+import { logger } from "./lib/logger";
 import { rateLimitByUser, rateLimitMetrics } from "./middleware/rate-limit";
 import { inputSanitizer } from "./middleware/security";
 import { securityHeaders } from "./middleware/security-headers";
@@ -166,7 +167,8 @@ export function createApp(): Express {
       res.set("Content-Type", register.contentType);
       res.end(await register.metrics());
     } catch (ex) {
-      res.status(500).end(ex instanceof Error ? ex.message : String(ex));
+      logger.error({ err: ex }, "Failed to render metrics");
+      res.status(500).end("metrics unavailable");
     }
   });
   app.use("/api/v1", docsRouter);

@@ -516,7 +516,11 @@ router.post("/bulk", requireAdmin, async (req, res, next) => {
 
     if (error) {
       if (error.message.includes("Version conflict")) {
-        throw new AppError("VERSION_CONFLICT", error.message, 409);
+        throw new AppError(
+          "VERSION_CONFLICT",
+          "This ticket was modified by someone else. Reload and try again.",
+          409,
+        );
       }
       throw new AppError("DB_ERROR", error.message, 500);
     }

@@ -108,10 +108,6 @@ const KNOWN_UNSCOPED = new Set<string>([
   // Public, token-authenticated share endpoint: intentionally NOT org-scoped
   // (access is gated by the share token, not the caller's tenant).
   "documents: GET /shares/:token",
-  // REAL FINDING (caught by this guard): projects DELETE /:id reads
-  // organization_id but deletes by id only — cross-tenant IDOR. Tracked for
-  // remediation; listed here so the suite stays green until fixed.
-  "projects: DELETE /:id",
 ]);
 
 function extractPaths(firstArg: string): string[] {
@@ -157,9 +153,8 @@ describe("tenant-scoping guard (QW-3)", () => {
         const method = methodMatch ? methodMatch[1]!.toUpperCase() : "?";
 
         // First argument of the route call.
-        const firstArgMatch = /router\.(?:get|post|put|patch|delete|all)\(\s*([\s\S]*?)(?:,|\)\s*=>)/.exec(
-          block,
-        );
+        const firstArgMatch =
+          /router\.(?:get|post|put|patch|delete|all)\(\s*([\s\S]*?)(?:,|\)\s*=>)/.exec(block);
         if (!firstArgMatch) continue;
         const paths = extractPaths(firstArgMatch[1]!);
         const hasParam = paths.some((p) => p.includes(":"));
@@ -185,8 +180,10 @@ describe("tenant-scoping guard (QW-3)", () => {
     if (violations.length > 0) {
       // Surface the exact offenders so a new IDOR is immediately diagnosable.
       // eslint-disable-next-line no-console
-      console.error("Unscoped :param handlers (add ownership check or to KNOWN_UNSCOPED):\n" +
-        violations.map((v) => "  - " + v).join("\n"));
+      console.error(
+        "Unscoped :param handlers (add ownership check or to KNOWN_UNSCOPED):\n" +
+          violations.map((v) => "  - " + v).join("\n"),
+      );
     }
 
     expect(violations).toEqual([]);
