@@ -43,7 +43,7 @@ function statusBadge(status: string) {
 
 function fieldTypeBadge(type: string) {
   return (
-    <span className="inline-flex items-center rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-400">
+    <span className="inline-flex items-center rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-slate-400">
       {type}
     </span>
   );
@@ -135,7 +135,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
                     >
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-slate-50">{field.label}</span>
-                        {field.required && <span className="text-[10px] text-red-400">*</span>}
+                        {field.required && <span className="text-[11px] text-red-400">*</span>}
                         {fieldTypeBadge(field.type)}
                       </div>
                       {field.placeholder && (
@@ -151,7 +151,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
                           {field.options.map((opt) => (
                             <span
                               key={opt}
-                              className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400"
+                              className="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400"
                             >
                               {opt}
                             </span>

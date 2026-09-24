@@ -269,7 +269,7 @@ export default function AdminProjectsClient({
                       <span className={projectStatusClass(project.status)}>{project.status}</span>
                       <span className={priorityClass(project.priority)}>{project.priority}</span>
                       {project.external_jira_project_key ? (
-                        <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[10px] text-blue-300">
+                        <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[11px] text-blue-300">
                           {project.external_jira_project_key}
                         </span>
                       ) : null}

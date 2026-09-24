@@ -73,7 +73,7 @@ export default async function StoreBundlesPage() {
                     {rule.whenTagsInclude.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-500"
+                        className="rounded bg-white/5 px-1.5 py-0.5 text-[11px] text-slate-500"
                       >
                         {tag}
                       </span>

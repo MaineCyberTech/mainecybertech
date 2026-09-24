@@ -75,7 +75,7 @@ export default async function AdminStoreLeadsPage() {
                   <tr key={lead.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${bandColor(lead.lead_band)}`}
+                        className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${bandColor(lead.lead_band)}`}
                       >
                         {lead.lead_band}
                       </span>

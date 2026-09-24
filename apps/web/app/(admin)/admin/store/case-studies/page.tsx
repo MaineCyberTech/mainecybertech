@@ -50,7 +50,7 @@ export default async function AdminStoreCaseStudiesPage() {
               <div className="flex items-start justify-between gap-2">
                 <p className="text-sm font-medium text-slate-50">{cs.title}</p>
                 <span
-                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${
+                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${
                     cs.approved
                       ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
                       : "border-amber-500/25 bg-amber-500/10 text-amber-400"

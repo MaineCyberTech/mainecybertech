@@ -93,7 +93,7 @@ export default function CrudForm({
               name={f.key}
               required={f.required}
               placeholder={f.placeholder}
-              className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+              className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 placeholder-slate-500 focus:border-emerald-500/50"
               rows={3}
             />
           ) : f.type === "select" && f.options ? (
@@ -101,7 +101,7 @@ export default function CrudForm({
               id={`crud-${f.key}`}
               name={f.key}
               required={f.required}
-              className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+              className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
             >
               {f.options.map((o) => (
                 <option key={o} value={o}>
@@ -123,7 +123,7 @@ export default function CrudForm({
               name={f.key}
               required={f.required}
               placeholder={f.placeholder}
-              className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+              className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 placeholder-slate-500 focus:border-emerald-500/50"
             />
           )}
         </div>

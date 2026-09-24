@@ -71,7 +71,7 @@ export default async function AdminStoreDependenciesPage() {
                   {rule.productId}
                 </span>
                 <span
-                  className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${severityBadge(rule.severity)}`}
+                  className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${severityBadge(rule.severity)}`}
                 >
                   {rule.severity}
                 </span>

@@ -44,7 +44,7 @@ export default async function AdminStoreLaddersPage() {
                 return (
                   <div key={tier} className="rounded-lg border border-white/10 bg-slate-900/60 p-3">
                     <span
-                      className={`inline-block rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                      className={`inline-block rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
                         tier === "Good"
                           ? "bg-slate-600/20 text-slate-400"
                           : tier === "Better"

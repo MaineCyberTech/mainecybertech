@@ -16,6 +16,7 @@ export default function NewFormPage() {
         ]}
       />
       <PortalSubnav current="dynamic-client-forms-builder" />
+      <h1 className="cyber-heading text-2xl">New Form</h1>
       <FormCreateForm />
     </div>
   );

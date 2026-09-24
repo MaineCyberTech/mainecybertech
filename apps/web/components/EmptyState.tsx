@@ -127,7 +127,7 @@ export default function EmptyState({
       >
         <Icon className="h-7 w-7 text-slate-400" strokeWidth={1.5} />
       </div>
-      <h3 className="font-display text-base font-semibold text-slate-50">{title}</h3>
+      <h2 className="font-display text-base font-semibold text-slate-50">{title}</h2>
       {description ? (
         <p className="mx-auto mt-2 max-w-md text-sm text-slate-400">{description}</p>
       ) : null}

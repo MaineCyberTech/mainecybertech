@@ -68,9 +68,9 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-slate-50">{String(field.label)}</span>
                         {field.required === true && (
-                          <span className="text-[10px] text-red-400">*</span>
+                          <span className="text-[11px] text-red-400">*</span>
                         )}
-                        <span className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-400">
+                        <span className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 text-[11px] text-slate-400">
                           {String(field.type)}
                         </span>
                       </div>

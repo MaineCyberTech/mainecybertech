@@ -60,7 +60,7 @@ export default async function IdVerifyPage() {
                     <p className="font-medium text-slate-50">{v.requestor_name}</p>
                   </Link>
                   <span
-                    className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${v.verification_pass ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-red-500/25 bg-red-500/10 text-red-300"}`}
+                    className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${v.verification_pass ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-red-500/25 bg-red-500/10 text-red-300"}`}
                   >
                     {v.verification_pass ? "PASSED" : "FAILED"}
                   </span>

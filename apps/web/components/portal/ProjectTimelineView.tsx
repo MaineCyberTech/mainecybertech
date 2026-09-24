@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
@@ -144,7 +144,7 @@ export default function ProjectTimelineView({
 
       <div className="overflow-x-auto">
         <div className="min-w-[600px]">
-          <div className="flex border-b border-white/10 pb-1 text-[10px] text-slate-400">
+          <div className="flex border-b border-white/10 pb-1 text-[11px] text-slate-400">
             <div className="w-48 shrink-0 px-2 font-semibold uppercase tracking-wider">Task</div>
             {dayHeaders.map((h, i) => (
               <div
@@ -196,7 +196,7 @@ export default function ProjectTimelineView({
                       style={{ left: `${row.left}px` }}
                     >
                       <div
-                        className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium text-white ${STATUS_COLORS[row.task.status] ?? "bg-slate-500"}`}
+                        className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium text-white ${STATUS_COLORS[row.task.status] ?? "bg-slate-500"}`}
                         style={{
                           minWidth: `${Math.max(DAY_WIDTH, Math.min(DAY_WIDTH * 3, dayCount * DAY_WIDTH - row.left))}px`,
                         }}

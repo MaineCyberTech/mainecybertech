@@ -211,7 +211,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
           />
         </svg>
         {unread > 0 ? (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
             {unread > 99 ? "99+" : unread}
           </span>
         ) : null}
@@ -254,7 +254,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
                     >
                       <p className="text-sm font-medium text-slate-200">{n.title}</p>
                       <p className="mt-0.5 line-clamp-2 text-xs text-slate-400">{n.body}</p>
-                      <p className="mt-1 text-[10px] text-slate-600">
+                      <p className="mt-1 text-[11px] text-slate-600">
                         {new Date(n.created_at).toLocaleString()}
                       </p>
                     </Link>
@@ -301,13 +301,13 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
 
           <div className="border-t border-white/10 px-4 py-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
                 Email Preferences
               </span>
               <Link
                 href={`${basePath}/notifications/preferences`}
                 onClick={() => setOpen(false)}
-                className="text-[10px] text-emerald-500 hover:text-emerald-400"
+                className="text-[11px] text-emerald-500 hover:text-emerald-400"
               >
                 Full Settings
               </Link>

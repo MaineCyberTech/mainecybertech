@@ -283,7 +283,7 @@ export default async function PortalDashboardPage() {
                 key={event.id}
                 className="flex items-start gap-4 rounded-lg border border-white/10 bg-cyber-base/60 p-4"
               >
-                <span className="mt-0.5 shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">
+                <span className="mt-0.5 shrink-0 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
                   {event.entity_type}
                 </span>
                 <div className="min-w-0 flex-1">

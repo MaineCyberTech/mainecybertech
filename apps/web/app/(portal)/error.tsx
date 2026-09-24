@@ -13,10 +13,7 @@ export default function PortalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    clientLogger.errorWithContext(
-      { area: "portal", digest: error.digest },
-      error,
-    );
+    clientLogger.errorWithContext({ area: "portal", digest: error.digest }, error);
   }, [error]);
 
   return (
@@ -36,9 +33,7 @@ export default function PortalError({
           />
         </svg>
       </div>
-      <h2 className="text-xl font-semibold text-slate-100">
-        Something went wrong
-      </h2>
+      <h1 className="text-xl font-semibold text-slate-100">Something went wrong</h1>
       <p className="mt-2 text-sm text-slate-400">
         We encountered an unexpected error loading this page. Please try again.
       </p>

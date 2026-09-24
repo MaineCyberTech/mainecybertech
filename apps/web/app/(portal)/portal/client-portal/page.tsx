@@ -39,7 +39,7 @@ export default async function ClientPortalOverviewPage() {
       {loadFailed ? <DataErrorNote what="client portal data" /> : null}
 
       <section className="cyber-panel">
-        <h2 className="cyber-heading text-2xl">Client Portal Overview</h2>
+        <h1 className="cyber-heading text-2xl">Client Portal Overview</h1>
         <p className="mt-3 text-slate-300">
           {profile?.fullName ? `Welcome, ${profile.fullName}.` : "Welcome to your client portal."}
           {profile?.email ? ` (${profile.email})` : ""}

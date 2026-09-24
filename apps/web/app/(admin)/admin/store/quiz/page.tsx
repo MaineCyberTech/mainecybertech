@@ -69,15 +69,15 @@ export default async function AdminQuizPage() {
                   <h4 className="mt-1 font-semibold text-slate-50">{q.label}</h4>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <span className="rounded bg-white/5 px-2 py-0.5 text-[10px] font-medium uppercase text-slate-500">
+                  <span className="rounded bg-white/5 px-2 py-0.5 text-[11px] font-medium uppercase text-slate-500">
                     {q.type}
                   </span>
                   {q.required ? (
-                    <span className="rounded bg-amber-600/10 px-2 py-0.5 text-[10px] font-medium text-amber-400">
+                    <span className="rounded bg-amber-600/10 px-2 py-0.5 text-[11px] font-medium text-amber-400">
                       Required
                     </span>
                   ) : (
-                    <span className="rounded bg-slate-600/10 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                    <span className="rounded bg-slate-600/10 px-2 py-0.5 text-[11px] font-medium text-slate-500">
                       Optional
                     </span>
                   )}

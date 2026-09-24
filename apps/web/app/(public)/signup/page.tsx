@@ -98,7 +98,10 @@ export default function SignupPage() {
             </div>
 
             {errorMsg ? (
-              <div className="rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+              <div
+                role="alert"
+                className="rounded-md border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300"
+              >
                 {errorMsg}
               </div>
             ) : null}

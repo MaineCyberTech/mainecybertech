@@ -112,12 +112,12 @@ export default async function AdminCampaignsPage() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-medium text-slate-50">{campaign.name}</p>
-                  <p className="mt-1 font-mono text-[10px] text-slate-500">{campaign.slug}</p>
+                  <p className="mt-1 font-mono text-[11px] text-slate-500">{campaign.slug}</p>
                   <p className="mt-1 text-xs text-slate-400">{campaign.audience}</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${statusPill(String(campaign.status))}`}
+                    className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(String(campaign.status))}`}
                   >
                     {String(campaign.status)}
                   </span>

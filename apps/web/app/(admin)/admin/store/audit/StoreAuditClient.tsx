@@ -151,7 +151,7 @@ export default function StoreAuditClient() {
                           </span>
                           <span className="flex-1">{iss.message}</span>
                           {iss.field ? (
-                            <span className="shrink-0 font-mono text-[10px] text-slate-600">
+                            <span className="shrink-0 font-mono text-[11px] text-slate-600">
                               {iss.field}
                             </span>
                           ) : null}

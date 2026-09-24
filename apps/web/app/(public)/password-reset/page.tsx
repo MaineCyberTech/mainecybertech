@@ -58,7 +58,10 @@ export default function PasswordResetPage() {
               <p className="mt-3 text-sm text-slate-400">Enter your email and new password.</p>
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 {error && (
-                  <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300">
+                  <div
+                    role="alert"
+                    className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-300"
+                  >
                     {error}
                   </div>
                 )}

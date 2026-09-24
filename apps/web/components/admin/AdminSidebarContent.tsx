@@ -153,7 +153,7 @@ export default function AdminSidebarContent({
                   onKeyDown={(e) => handleFlyoutKeyDown(e, group.label)}
                   className="absolute left-full top-0 z-30 ml-2 w-52 rounded-lg border border-white/10 bg-slate-900 p-2 shadow-2xl backdrop-blur-sm"
                 >
-                  <p className="mb-1.5 px-3 pt-1 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                  <p className="mb-1.5 px-3 pt-1 text-[11px] font-bold uppercase tracking-widest text-slate-500">
                     {group.label}
                   </p>
                   {group.items.map((item, itemIndex) => (

@@ -174,7 +174,7 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
-                    className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${ACTION_COLORS[n.action] ?? "border-white/10 text-slate-400"}`}
+                    className={`rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${ACTION_COLORS[n.action] ?? "border-white/10 text-slate-400"}`}
                   >
                     {ACTION_LABELS[n.action] ?? n.action}
                   </span>

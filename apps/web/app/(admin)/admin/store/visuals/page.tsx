@@ -101,7 +101,7 @@ export default async function AdminVisualsPage() {
                   <tr key={asset.id} className="border-b border-white/5 hover:bg-white/[0.02]">
                     <td className="px-4 py-3">
                       <span className="font-medium text-slate-50">{asset.linkedEntityId}</span>
-                      <span className="ml-2 font-mono text-[10px] text-slate-500">
+                      <span className="ml-2 font-mono text-[11px] text-slate-500">
                         {asset.linkedEntityType}
                       </span>
                     </td>
@@ -173,7 +173,7 @@ export default async function AdminVisualsPage() {
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold text-slate-50">{cv.category}</h4>
-                  <span className="font-mono text-[10px] text-slate-500">{cv.icon}</span>
+                  <span className="font-mono text-[11px] text-slate-500">{cv.icon}</span>
                 </div>
               </div>
               <p className="text-xs leading-relaxed text-slate-400">{cv.imagePrompt}</p>

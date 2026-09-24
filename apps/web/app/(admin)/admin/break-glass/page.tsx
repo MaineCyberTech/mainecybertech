@@ -76,7 +76,7 @@ export default async function BreakGlassPage() {
                     </p>
                   </div>
                   <span
-                    className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${a.status === "active" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-white/10 bg-white/5 text-slate-300"}`}
+                    className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase ${a.status === "active" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-white/10 bg-white/5 text-slate-300"}`}
                   >
                     {a.status}
                   </span>

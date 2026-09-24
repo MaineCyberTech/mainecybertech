@@ -36,7 +36,7 @@ export default function ScorecardsEvaluateClient({ organizationId }: { organizat
           value={orgId}
           onChange={(e) => setOrgId(e.target.value)}
           placeholder="Org UUID (blank = all orgs)"
-          className="w-72 rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-72 rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
         />
         <button
           type="button"

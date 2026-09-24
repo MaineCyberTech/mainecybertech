@@ -43,7 +43,7 @@ export default async function AdminStoreTestimonialsPage() {
                   <p className="mt-1 text-xs text-slate-500">— {t.author}</p>
                 </div>
                 <span
-                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${
+                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${
                     t.approved
                       ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
                       : "border-amber-500/25 bg-amber-500/10 text-amber-400"

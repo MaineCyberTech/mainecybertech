@@ -66,7 +66,7 @@ export default function CreateRoleForm() {
             className="cyber-input w-full"
             placeholder="e.g. security_analyst"
           />
-          <p className="mt-1 text-[10px] text-slate-500">
+          <p className="mt-1 text-[11px] text-slate-500">
             Lowercase letters, numbers, underscores, dashes.
           </p>
         </div>

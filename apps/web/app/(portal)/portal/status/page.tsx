@@ -53,7 +53,7 @@ export default async function PortalStatusPage() {
                 )}
               </div>
               <span
-                className={`inline-flex min-h-6 items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${sev(String(s.severity))}`}
+                className={`inline-flex min-h-6 items-center rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${sev(String(s.severity))}`}
               >
                 {String(s.severity)}
               </span>

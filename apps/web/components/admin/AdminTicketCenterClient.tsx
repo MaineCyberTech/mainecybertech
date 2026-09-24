@@ -223,7 +223,7 @@ function TicketCard({
               />
               <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
               {ticket.external_jsm_issue_key ? (
-                <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[10px] text-blue-300">
+                <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[11px] text-blue-300">
                   {ticket.external_jsm_issue_key}
                 </span>
               ) : null}

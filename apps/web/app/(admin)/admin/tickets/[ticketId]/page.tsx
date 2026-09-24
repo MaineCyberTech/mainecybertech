@@ -225,7 +225,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="text-xs text-slate-400">Ticket ID: {ticket.id}</span>
             {ticket.external_jsm_issue_key ? (
-              <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[10px] text-blue-300">
+              <span className="rounded border border-blue-500/20 bg-blue-500/10 px-1.5 py-0.5 font-mono text-[11px] text-blue-300">
                 {ticket.external_jsm_issue_key}
               </span>
             ) : null}
@@ -492,7 +492,7 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                           {commentAuthor(comment)}
                         </p>
                         {commentInternal(comment) ? (
-                          <span className="inline-flex min-h-7 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] font-semibold uppercase leading-none tracking-[0.12em] text-amber-300">
+                          <span className="inline-flex min-h-7 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[11px] font-semibold uppercase leading-none tracking-[0.12em] text-amber-300">
                             Internal
                           </span>
                         ) : null}

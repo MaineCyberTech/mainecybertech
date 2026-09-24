@@ -4,7 +4,13 @@ import { useState, useTransition } from "react";
 import { submitFormAction } from "../../actions";
 import { DynamicFormField } from "@mct/sdk";
 
-export default function FormFillForm({ formId, fields }: { formId: string; fields: DynamicFormField[] }) {
+export default function FormFillForm({
+  formId,
+  fields,
+}: {
+  formId: string;
+  fields: DynamicFormField[];
+}) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
@@ -50,14 +56,14 @@ export default function FormFillForm({ formId, fields }: { formId: string; field
                 name={`f_${key}`}
                 required={required}
                 rows={3}
-                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
               />
             ) : type === "select" ? (
               <select
                 id={`f_${key}`}
                 name={`f_${key}`}
                 required={required}
-                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
               >
                 <option value="">Select...</option>
                 {(field.options ?? []).map((opt: string) => (
@@ -72,7 +78,7 @@ export default function FormFillForm({ formId, fields }: { formId: string; field
                 name={`f_${key}`}
                 type={type === "number" ? "number" : "text"}
                 required={required}
-                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+                className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
               />
             )}
           </div>
@@ -86,7 +92,7 @@ export default function FormFillForm({ formId, fields }: { formId: string; field
           id="f-email"
           name="respondentEmail"
           type="email"
-          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
         />
       </div>
       {error && <p className="text-sm text-red-300">{error}</p>}

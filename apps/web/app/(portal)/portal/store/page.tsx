@@ -27,7 +27,7 @@ function ProductCard({ product }: ProductCardProps) {
   return (
     <article className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm transition hover:border-emerald-600/30 hover:shadow-[0_0_20px_rgba(5,150,105,0.1)]">
       <div className="mb-4">
-        <span className="inline-flex rounded-full border border-emerald-600/20 bg-emerald-600/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+        <span className="inline-flex rounded-full border border-emerald-600/20 bg-emerald-600/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
           {categoryIcons[product.category] ?? "▸"} {product.category}
         </span>
       </div>
@@ -38,7 +38,7 @@ function ProductCard({ product }: ProductCardProps) {
           {product.priceRange}
         </span>
         <span
-          className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+          className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider ${
             product.status === "active"
               ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
               : "border-slate-600/20 bg-slate-600/10 text-slate-400"
@@ -68,11 +68,11 @@ function PromotionCard({ promotion }: { promotion: StorePromotion }) {
         <div className="flex-1">
           <div className="mb-2 flex items-center gap-2">
             {promotion.badge_text && (
-              <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#0A1118]">
+              <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#0A1118]">
                 {promotion.badge_text}
               </span>
             )}
-            <span className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+            <span className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
               {promotion.promo_type.replace(/_/g, " ")}
             </span>
           </div>
@@ -93,7 +93,7 @@ function CampaignCard({ campaign }: { campaign: SeasonalCampaign }) {
   return (
     <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-6 backdrop-blur-sm">
       <div className="mb-4">
-        <span className="inline-flex rounded-full border border-emerald-600/20 bg-emerald-600/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+        <span className="inline-flex rounded-full border border-emerald-600/20 bg-emerald-600/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
           {campaign.audience}
         </span>
       </div>

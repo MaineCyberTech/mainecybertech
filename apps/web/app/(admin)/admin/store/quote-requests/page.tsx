@@ -95,7 +95,7 @@ export default async function AdminStoreQuoteRequestsPage() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">
                       {request.status.replace(/_/g, " ")}
                     </span>
                     <GenerateProposalDraftButton quoteRequestId={request.id} />

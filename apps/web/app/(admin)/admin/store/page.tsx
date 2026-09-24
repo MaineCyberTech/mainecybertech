@@ -86,7 +86,7 @@ export default async function AdminStorePage() {
                       : "border-amber-500/20 bg-amber-500/5 text-amber-300"
                   }`}
                 >
-                  <span className="mr-2 inline-block rounded bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase">
+                  <span className="mr-2 inline-block rounded bg-white/10 px-2 py-0.5 text-[11px] font-semibold uppercase">
                     {issue.type}
                   </span>
                   {issue.message}

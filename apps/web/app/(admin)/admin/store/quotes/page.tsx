@@ -117,7 +117,7 @@ export default async function AdminStoreQuotesPage() {
                     <td className="px-4 py-3 text-slate-400">{q.items.length}</td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${statusPill(q.status)}`}
+                        className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(q.status)}`}
                       >
                         {statusLabel(q.status)}
                       </span>
@@ -138,7 +138,7 @@ export default async function AdminStoreQuotesPage() {
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-medium text-slate-50">{q.name}</p>
                   <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${statusPill(q.status)}`}
+                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(q.status)}`}
                   >
                     {statusLabel(q.status)}
                   </span>

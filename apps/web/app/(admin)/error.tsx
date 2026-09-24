@@ -13,10 +13,7 @@ export default function AdminError({
   reset: () => void;
 }) {
   useEffect(() => {
-    clientLogger.errorWithContext(
-      { area: "admin", digest: error.digest },
-      error,
-    );
+    clientLogger.errorWithContext({ area: "admin", digest: error.digest }, error);
   }, [error]);
 
   return (
@@ -36,9 +33,7 @@ export default function AdminError({
           />
         </svg>
       </div>
-      <h2 className="text-xl font-semibold text-slate-100">
-        Something went wrong
-      </h2>
+      <h1 className="text-xl font-semibold text-slate-100">Something went wrong</h1>
       <p className="mt-2 text-sm text-slate-400">
         An unexpected error occurred in the admin panel. Please try again.
       </p>

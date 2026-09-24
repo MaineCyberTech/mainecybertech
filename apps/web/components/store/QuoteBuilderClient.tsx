@@ -261,7 +261,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                           {getPromoEligibility(item)!.map((badge) => (
                             <span
                               key={badge}
-                              className="inline-flex rounded-full border border-emerald-600/20 bg-emerald-600/5 px-2 py-0.5 text-[10px] text-emerald-400"
+                              className="inline-flex rounded-full border border-emerald-600/20 bg-emerald-600/5 px-2 py-0.5 text-[11px] text-emerald-400"
                             >
                               {badge}
                             </span>
@@ -270,7 +270,7 @@ export default function QuoteBuilderClient({ products }: QuoteBuilderClientProps
                       )}
 
                       {isConsultRequired(item.purchaseMode) && (
-                        <p className="mt-2 text-[10px] text-amber-400">
+                        <p className="mt-2 text-[11px] text-amber-400">
                           Consult required — final pricing depends on scope.
                         </p>
                       )}

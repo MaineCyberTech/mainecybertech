@@ -57,7 +57,7 @@ export default async function AdminStoreNurturePage() {
             <div className="space-y-1">
               {seq.steps.map((step, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] text-slate-500">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/5 text-[11px] text-slate-500">
                     {i + 1}
                   </span>
                   <span className="text-slate-300">{step.subject}</span>

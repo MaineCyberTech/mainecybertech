@@ -130,11 +130,11 @@ function FragmentRow({
             onClick={onToggle}
             aria-expanded={!isCollapsed}
             aria-controls={`matrix-group-${group}`}
-            className="flex w-full items-center justify-between px-4 py-2 text-left text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 transition hover:bg-white/[0.04]"
+            className="flex w-full items-center justify-between px-4 py-2 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-500 transition hover:bg-white/[0.04]"
           >
             <span>
               {label}
-              <span className="ml-2 text-[9px] font-semibold normal-case tracking-normal text-slate-500">
+              <span className="ml-2 text-[11px] font-semibold normal-case tracking-normal text-slate-500">
                 {moduleCount} modules
               </span>
             </span>

@@ -111,7 +111,7 @@ export default async function AdminHomePage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Organizations
             </p>
             <p className="font-display text-lg text-slate-50 sm:text-xl">{orgs.length}</p>
@@ -122,7 +122,7 @@ export default async function AdminHomePage() {
         </div>
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Tickets
             </p>
             <p className="font-display text-lg text-slate-50 sm:text-xl">
@@ -135,7 +135,7 @@ export default async function AdminHomePage() {
         </div>
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Documents
             </p>
             <p className="font-display text-lg text-slate-50 sm:text-xl">
@@ -148,7 +148,7 @@ export default async function AdminHomePage() {
         </div>
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Projects
             </p>
             <p className="font-display text-lg text-slate-50 sm:text-xl">
@@ -161,7 +161,7 @@ export default async function AdminHomePage() {
         </div>
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
+            <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400 sm:text-xs">
               Pending Approvals
             </p>
             <p className="font-display text-lg text-slate-50 sm:text-xl">

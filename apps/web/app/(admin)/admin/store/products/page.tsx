@@ -132,14 +132,14 @@ export default async function AdminStoreProductsPage(props: {
             defaultValue={q ?? ""}
             placeholder="Search products..."
             aria-label="Search products"
-            className="w-full rounded-lg border border-white/10 bg-cyber-base py-2 pl-10 pr-3 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+            className="w-full rounded-lg border border-white/10 bg-cyber-base py-2 pl-10 pr-3 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
           />
         </div>
         <select
           name="category"
           defaultValue={category ?? ""}
           aria-label="Filter by category"
-          className="rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+          className="rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
         >
           <option value="">All categories</option>
           {categories.map((c) => (
@@ -152,7 +152,7 @@ export default async function AdminStoreProductsPage(props: {
           name="status"
           defaultValue={status ?? ""}
           aria-label="Filter by status"
-          className="rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+          className="rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
         >
           <option value="">All statuses</option>
           {Array.from(new Set(allProducts.map((p) => p.status))).map((s) => (
@@ -202,14 +202,14 @@ export default async function AdminStoreProductsPage(props: {
                 <td className="px-4 py-3 text-emerald-400">{p.priceRange}</td>
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
+                    className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
                   >
                     {p.status}
                   </span>
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${riskColor(p.riskLevel)}`}
+                    className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${riskColor(p.riskLevel)}`}
                   >
                     {p.riskLevel}
                   </span>
@@ -255,7 +255,7 @@ export default async function AdminStoreProductsPage(props: {
             <div className="flex items-start justify-between gap-2">
               <p className="font-medium text-slate-50">{p.name}</p>
               <span
-                className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
+                className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
               >
                 {p.status}
               </span>
@@ -266,7 +266,7 @@ export default async function AdminStoreProductsPage(props: {
               <span className="text-slate-600">|</span>
               <span className="text-emerald-400">{p.priceRange}</span>
               <span
-                className={`rounded-full border px-1.5 py-0.5 text-[9px] font-semibold uppercase ${riskColor(p.riskLevel)}`}
+                className={`rounded-full border px-1.5 py-0.5 text-[11px] font-semibold uppercase ${riskColor(p.riskLevel)}`}
               >
                 {p.riskLevel}
               </span>

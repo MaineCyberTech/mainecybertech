@@ -71,7 +71,7 @@ export default async function IncidentsPage() {
                     <p className="font-medium text-slate-50">{i.title}</p>
                   </Link>
                   <span
-                    className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] border-${sev(i.severity)}-500/25 bg-${sev(i.severity)}-500/10 text-${sev(i.severity)}-300`}
+                    className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] border-${sev(i.severity)}-500/25 bg-${sev(i.severity)}-500/10 text-${sev(i.severity)}-300`}
                   >
                     {i.status}
                   </span>

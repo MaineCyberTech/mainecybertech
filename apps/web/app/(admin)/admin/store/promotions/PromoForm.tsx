@@ -104,7 +104,7 @@ export default function PromoForm({
                   name="name"
                   required
                   defaultValue={promotion?.name ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 
@@ -120,7 +120,7 @@ export default function PromoForm({
                     id="promo-badgeText"
                     name="badgeText"
                     defaultValue={promotion?.badgeText ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                   />
                 </div>
                 <div>
@@ -134,7 +134,7 @@ export default function PromoForm({
                     id="promo-promoType"
                     name="promoType"
                     defaultValue={promotion?.promoType ?? "bundle_savings"}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
                   >
                     {PROMO_TYPES.map((t) => (
                       <option key={t.id} value={t.id}>
@@ -157,7 +157,7 @@ export default function PromoForm({
                   name="detailText"
                   rows={2}
                   defaultValue={promotion?.detailText ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 
@@ -174,7 +174,7 @@ export default function PromoForm({
                   rows={2}
                   required
                   defaultValue={promotion?.terms ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 
@@ -190,7 +190,7 @@ export default function PromoForm({
                     id="promo-status"
                     name="status"
                     defaultValue={promotion?.status ?? "paused"}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
                   >
                     <option value="active">Active</option>
                     <option value="paused">Paused</option>
@@ -214,7 +214,7 @@ export default function PromoForm({
                     type="date"
                     name="startDate"
                     defaultValue={promotion?.startDate ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
                   />
                 </div>
                 <div>
@@ -229,7 +229,7 @@ export default function PromoForm({
                     type="date"
                     name="endDate"
                     defaultValue={promotion?.endDate ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
                   />
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function PromoForm({
                   required
                   defaultValue={(promotion?.eligibilityTargets ?? []).join(", ")}
                   placeholder="all or prod-1, prod-2, cat-3"
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 

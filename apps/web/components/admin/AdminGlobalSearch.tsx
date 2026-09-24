@@ -73,7 +73,7 @@ export default function AdminGlobalSearch() {
     };
     return (
       <span
-        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-[0.12em] ${colors[color]}`}
+        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase leading-none tracking-[0.12em] ${colors[color]}`}
       >
         {text}
       </span>
@@ -113,7 +113,7 @@ export default function AdminGlobalSearch() {
         >
           {results.users.length > 0 ? (
             <div className="p-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">
                 Users
               </p>
               {results.users.map((u) => (
@@ -137,7 +137,7 @@ export default function AdminGlobalSearch() {
 
           {results.organizations.length > 0 ? (
             <div className="border-t border-white/5 p-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">
                 Organizations
               </p>
               {results.organizations.map((o) => (
@@ -156,7 +156,7 @@ export default function AdminGlobalSearch() {
 
           {results.tickets.length > 0 ? (
             <div className="border-t border-white/5 p-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">
                 Tickets
               </p>
               {results.tickets.map((t) => (
@@ -178,7 +178,7 @@ export default function AdminGlobalSearch() {
 
           {results.projects.length > 0 ? (
             <div className="border-t border-white/5 p-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">
                 Projects
               </p>
               {results.projects.map((p) => (

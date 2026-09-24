@@ -36,7 +36,7 @@ export default function TicketReplyForm({ ticketId }: { ticketId: string }) {
         required
         rows={3}
         placeholder="Share an update or ask a question..."
-        className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+        className="w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
       />
       {error && <p className="mt-2 text-xs text-red-300">{error}</p>}
       <button

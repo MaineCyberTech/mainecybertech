@@ -16,6 +16,7 @@ export default function NewOnboardingPage() {
         ]}
       />
       <PortalSubnav current="client-onboarding-command-center" />
+      <h1 className="cyber-heading text-2xl">New Onboarding</h1>
       <OnboardingCreateForm />
     </div>
   );

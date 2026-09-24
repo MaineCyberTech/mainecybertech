@@ -246,7 +246,7 @@ export default function AdminBillingClient({
                     </td>
                     <td className="px-3 py-3">
                       <span
-                        className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${statusColor(inv.status)}`}
+                        className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${statusColor(inv.status)}`}
                       >
                         {inv.status}
                       </span>
@@ -317,7 +317,7 @@ export default function AdminBillingClient({
                     </td>
                     <td className="px-3 py-3">
                       <span
-                        className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${statusColor(p.status)}`}
+                        className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${statusColor(p.status)}`}
                       >
                         {p.status}
                       </span>
@@ -350,7 +350,7 @@ export default function AdminBillingClient({
                 </div>
                 <div className="flex items-center gap-3">
                   <span
-                    className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${statusColor(sub.status)}`}
+                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider ${statusColor(sub.status)}`}
                   >
                     {sub.status}
                   </span>

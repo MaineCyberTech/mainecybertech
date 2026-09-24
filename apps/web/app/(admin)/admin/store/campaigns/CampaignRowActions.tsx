@@ -84,7 +84,7 @@ export function DeleteCampaignButton({ id }: { id: string }) {
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] text-amber-400">Confirm?</span>
+      <span className="text-[11px] text-amber-400">Confirm?</span>
       <button
         type="button"
         onClick={handleDelete}
@@ -103,7 +103,7 @@ export function DeleteCampaignButton({ id }: { id: string }) {
       >
         Cancel
       </button>
-      {error && <span className="text-[10px] text-red-400">{error}</span>}
+      {error && <span className="text-[11px] text-red-400">{error}</span>}
     </div>
   );
 }

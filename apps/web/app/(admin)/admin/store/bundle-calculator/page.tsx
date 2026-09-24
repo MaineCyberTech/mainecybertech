@@ -95,7 +95,7 @@ export default async function AdminStoreBundleCalculatorPage() {
                 </div>
               )}
               {panel.disclaimer && (
-                <p className="text-[10px] italic text-slate-600">{panel.disclaimer}</p>
+                <p className="text-[11px] italic text-slate-600">{panel.disclaimer}</p>
               )}
             </div>
           ))}

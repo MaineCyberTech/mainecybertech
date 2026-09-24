@@ -205,11 +205,11 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
               onClick={() => toggleGroup(group)}
               aria-expanded={!isCollapsed}
               aria-controls={`role-group-${group}`}
-              className="flex w-full items-center justify-between rounded-t-lg bg-white/[0.03] px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-300 transition hover:bg-white/[0.06]"
+              className="flex w-full items-center justify-between rounded-t-lg bg-white/[0.03] px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-300 transition hover:bg-white/[0.06]"
             >
               <span>
                 {groupLabel(group)}
-                <span className="ml-2 text-[9px] font-semibold normal-case tracking-normal text-slate-500">
+                <span className="ml-2 text-[11px] font-semibold normal-case tracking-normal text-slate-500">
                   {groupedModules.get(group)!.length} modules
                 </span>
               </span>

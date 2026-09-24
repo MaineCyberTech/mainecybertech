@@ -34,7 +34,7 @@ export default function StoreSidebarContent({ categories }: { categories?: Categ
             className={`flex items-center justify-between rounded px-3 py-1.5 text-sm transition ${currentCategory === cat.slug ? "bg-emerald-600/20 text-emerald-400" : "text-slate-300 hover:bg-white/5"}`}
           >
             <span>{cat.name}</span>
-            <span className="text-[10px] text-slate-500">{cat.count}</span>
+            <span className="text-[11px] text-slate-500">{cat.count}</span>
           </Link>
         ))}
       </div>

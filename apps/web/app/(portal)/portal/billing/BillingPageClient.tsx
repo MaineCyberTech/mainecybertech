@@ -247,7 +247,7 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
                     </td>
                     <td className="px-3 py-3">
                       <span
-                        className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${statusColor(inv.status)}`}
+                        className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider ${statusColor(inv.status)}`}
                       >
                         {inv.status}
                       </span>
@@ -300,7 +300,7 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
                 </div>
                 <div className="flex items-center gap-3">
                   <span
-                    className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${statusColor(sub.status)}`}
+                    className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider ${statusColor(sub.status)}`}
                   >
                     {sub.status}
                   </span>

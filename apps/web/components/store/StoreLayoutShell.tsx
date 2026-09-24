@@ -42,7 +42,7 @@ export default function StoreLayoutShell({
               d="M4 6h16M4 12h16M4 18h16"
             />
           </svg>
-          <span className="text-[8px] tracking-[0.15em] [writing-mode:vertical-rl]">Menu</span>
+          <span className="text-[11px] tracking-[0.15em] [writing-mode:vertical-rl]">Menu</span>
         </button>
       </div>
 

@@ -66,7 +66,7 @@ export default function PortalGlobalSearch() {
     };
     return (
       <span
-        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-[0.12em] ${colors[color]}`}
+        className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase leading-none tracking-[0.12em] ${colors[color]}`}
       >
         {text}
       </span>
@@ -106,7 +106,7 @@ export default function PortalGlobalSearch() {
         >
           {results.tickets.length > 0 ? (
             <div className="p-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">
                 Tickets
               </p>
               {results.tickets.map((t) => (
@@ -128,7 +128,7 @@ export default function PortalGlobalSearch() {
 
           {results.projects.length > 0 ? (
             <div className="border-t border-white/5 p-3">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-400">
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">
                 Projects
               </p>
               {results.projects.map((p) => (

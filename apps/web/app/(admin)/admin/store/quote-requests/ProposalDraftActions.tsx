@@ -33,7 +33,7 @@ export function GenerateProposalDraftButton({ quoteRequestId }: { quoteRequestId
           name="organizationId"
           aria-label="Organization ID for linked proposal"
           placeholder="Org ID (optional)"
-          className="w-40 rounded border border-white/10 bg-cyber-base/60 px-2 py-1 font-mono text-[10px] text-slate-200"
+          className="w-40 rounded border border-white/10 bg-cyber-base/60 px-2 py-1 font-mono text-[11px] text-slate-200"
         />
         <button
           type="submit"

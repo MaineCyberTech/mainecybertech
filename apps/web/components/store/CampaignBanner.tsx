@@ -56,7 +56,7 @@ export default async function CampaignBanner() {
                 {campaign.capacityNotice && (
                   <p
                     role="status"
-                    className="mb-4 w-fit rounded-full border border-amber-600/30 bg-amber-600/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-amber-400"
+                    className="mb-4 w-fit rounded-full border border-amber-600/30 bg-amber-600/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-400"
                   >
                     {campaign.capacityNotice}
                   </p>
@@ -65,7 +65,7 @@ export default async function CampaignBanner() {
                   {campaign.trustBadges.map((badge) => (
                     <span
                       key={badge}
-                      className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-wider ${badgeStyle}`}
+                      className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-wider ${badgeStyle}`}
                     >
                       {badge.replace(/_/g, " ")}
                     </span>
@@ -73,7 +73,7 @@ export default async function CampaignBanner() {
                   {campaign.promoEligibility.map((promo) => (
                     <span
                       key={promo}
-                      className="rounded-full border border-purple-600/20 bg-purple-600/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-purple-400"
+                      className="rounded-full border border-purple-600/20 bg-purple-600/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-purple-400"
                     >
                       {promo.replace(/_/g, " ")}
                     </span>

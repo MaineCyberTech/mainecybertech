@@ -87,7 +87,7 @@ export default function ApprovalWorkflowActions({
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={2}
-          className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50 focus:outline-none"
+          className="mt-1 w-full rounded-md border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-50 focus:border-emerald-500/50"
         />
       </label>
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}

@@ -75,7 +75,7 @@ export default async function AdminRolesPage() {
                 </span>
                 <span className="cyber-pill text-xs">{role.key}</span>
                 {role.is_system ? (
-                  <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-blue-300">
+                  <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-blue-300">
                     System
                   </span>
                 ) : null}

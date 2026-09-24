@@ -121,7 +121,7 @@ function phaseCard({
                 >
                   {item.label}
                   {item.is_required && (
-                    <span className="ml-2 text-[10px] text-red-400">(required)</span>
+                    <span className="ml-2 text-[11px] text-red-400">(required)</span>
                   )}
                 </p>
                 {item.notes && <p className="mt-1 text-xs text-slate-400">{item.notes}</p>}

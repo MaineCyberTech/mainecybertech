@@ -193,11 +193,11 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
                       onClick={() => toggleGroup(group)}
                       aria-expanded={!isCollapsed}
                       aria-controls={`override-group-${group}`}
-                      className="flex w-full items-center justify-between bg-white/[0.02] px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500 transition hover:bg-white/[0.04]"
+                      className="flex w-full items-center justify-between bg-white/[0.02] px-3 py-2 text-left text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-500 transition hover:bg-white/[0.04]"
                     >
                       <span>
                         {groupLabel}
-                        <span className="ml-2 text-[9px] font-semibold normal-case tracking-normal text-slate-500">
+                        <span className="ml-2 text-[11px] font-semibold normal-case tracking-normal text-slate-500">
                           {groupedModules.get(group)!.length} modules
                         </span>
                       </span>

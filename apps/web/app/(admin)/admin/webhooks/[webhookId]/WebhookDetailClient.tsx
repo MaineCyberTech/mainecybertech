@@ -226,7 +226,7 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
                     <td className="px-3 py-3 font-mono text-xs text-slate-200">{d.event}</td>
                     <td className="px-3 py-3">
                       <span
-                        className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
+                        className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${
                           d.status === "success"
                             ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
                             : "border-red-500/20 bg-red-500/10 text-red-300"

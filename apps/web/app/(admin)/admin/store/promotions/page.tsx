@@ -120,7 +120,7 @@ export default async function AdminPromotionsPage() {
                     <div>
                       <p className="font-medium text-slate-50">{p.name}</p>
                       {errors.length > 0 && (
-                        <p className="mt-0.5 text-[10px] text-amber-400">⚠ {errors.join("; ")}</p>
+                        <p className="mt-0.5 text-[11px] text-amber-400">⚠ {errors.join("; ")}</p>
                       )}
                     </div>
                   </td>
@@ -132,7 +132,7 @@ export default async function AdminPromotionsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <span
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
                     >
                       {p.status}
                     </span>
@@ -180,13 +180,13 @@ export default async function AdminPromotionsPage() {
               <div className="flex items-start justify-between gap-2">
                 <p className="font-medium text-slate-50">{p.name}</p>
                 <span
-                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
+                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
                 >
                   {p.status}
                 </span>
               </div>
               {result.errors.length > 0 && (
-                <p className="mt-1 text-[10px] text-amber-400">⚠ {result.errors.join("; ")}</p>
+                <p className="mt-1 text-[11px] text-amber-400">⚠ {result.errors.join("; ")}</p>
               )}
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-400">
                 <span>{promoTypeLabels[p.promoType] || p.promoType}</span>
@@ -202,7 +202,7 @@ export default async function AdminPromotionsPage() {
               </div>
               {p.badgeText && (
                 <div className="mt-2">
-                  <span className="inline-block rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] text-slate-400">
+                  <span className="inline-block rounded border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] text-slate-400">
                     {p.badgeText}
                   </span>
                 </div>

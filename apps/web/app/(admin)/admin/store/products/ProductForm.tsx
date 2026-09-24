@@ -120,7 +120,7 @@ export default function ProductForm({
                     name="name"
                     required
                     defaultValue={product?.name ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                   />
                 </div>
                 <div>
@@ -135,7 +135,7 @@ export default function ProductForm({
                     name="slug"
                     required
                     defaultValue={product?.slug ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                   />
                 </div>
               </div>
@@ -152,7 +152,7 @@ export default function ProductForm({
                     id="prod-categoryId"
                     name="categoryId"
                     defaultValue={product?.categoryId ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                   />
                 </div>
                 <div>
@@ -166,7 +166,7 @@ export default function ProductForm({
                     id="prod-category"
                     name="category"
                     defaultValue={product?.category ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                   />
                 </div>
               </div>
@@ -183,7 +183,7 @@ export default function ProductForm({
                     id="prod-type"
                     name="type"
                     defaultValue={product?.type ?? "service"}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
                   />
                 </div>
                 <div>
@@ -197,7 +197,7 @@ export default function ProductForm({
                     id="prod-status"
                     name="status"
                     defaultValue={product?.status ?? "draft"}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
                   />
                 </div>
                 <div>
@@ -211,7 +211,7 @@ export default function ProductForm({
                     id="prod-priceRange"
                     name="priceRange"
                     defaultValue={product?.priceRange ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                   />
                 </div>
               </div>
@@ -228,7 +228,7 @@ export default function ProductForm({
                     id="prod-pricingModel"
                     name="pricingModel"
                     defaultValue={product?.pricingModel ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
                   >
                     <option value="">—</option>
                     {PRICING_MODELS.map((m) => (
@@ -249,7 +249,7 @@ export default function ProductForm({
                     id="prod-purchaseMode"
                     name="purchaseMode"
                     defaultValue={product?.purchaseMode ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
                   >
                     <option value="">—</option>
                     {PURCHASE_MODES.map((m) => (
@@ -273,7 +273,7 @@ export default function ProductForm({
                   name="summary"
                   rows={2}
                   defaultValue={product?.summary ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 
@@ -289,7 +289,7 @@ export default function ProductForm({
                     id="prod-marketingHeadline"
                     name="marketingHeadline"
                     defaultValue={product?.marketingHeadline ?? ""}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                   />
                 </div>
                 <div>
@@ -303,7 +303,7 @@ export default function ProductForm({
                     id="prod-tags"
                     name="tags"
                     defaultValue={(product?.tags ?? []).join(", ")}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                   />
                 </div>
               </div>
@@ -320,7 +320,7 @@ export default function ProductForm({
                   name="marketingCopy"
                   rows={3}
                   defaultValue={product?.marketingCopy ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 
@@ -336,7 +336,7 @@ export default function ProductForm({
                     id="prod-riskLevel"
                     name="riskLevel"
                     defaultValue={product?.riskLevel ?? "normal"}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
                   >
                     {RISK_LEVELS.map((r) => (
                       <option key={r} value={r}>
@@ -356,7 +356,7 @@ export default function ProductForm({
                     id="prod-deliveryEffort"
                     name="deliveryEffort"
                     defaultValue={product?.deliveryEffort ?? "standard"}
-                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50 focus:outline-none"
+                    className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 focus:border-emerald-500/50"
                   >
                     {DELIVERY_EFFORTS.map((d) => (
                       <option key={d} value={d}>
@@ -399,7 +399,7 @@ export default function ProductForm({
                   name="attributes"
                   rows={3}
                   placeholder='{"intakeFields": [], "fulfillmentWorkflow": []}'
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 font-mono text-xs text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 font-mono text-xs text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 

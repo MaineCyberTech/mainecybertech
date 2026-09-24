@@ -551,7 +551,7 @@ export default function TestAccountsPage() {
                   <div className="truncate text-sm font-medium text-slate-100">{account.name}</div>
                   {account.status ? (
                     <span
-                      className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                      className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
                         account.status === "pending"
                           ? "bg-amber-500/15 text-amber-400"
                           : "bg-red-500/15 text-red-400"
@@ -564,12 +564,12 @@ export default function TestAccountsPage() {
                 <div className="truncate text-xs text-slate-400">{account.role}</div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-1">
                   <span
-                    className="inline-block rounded px-1.5 py-0.5 text-[10px] font-medium text-white"
+                    className="inline-block rounded px-1.5 py-0.5 text-[11px] font-medium text-white"
                     style={{ backgroundColor: account.badgeColor }}
                   >
                     {account.badge}
                   </span>
-                  <span className="inline-block rounded bg-white/5 px-1.5 py-0.5 text-[10px] text-slate-300">
+                  <span className="inline-block rounded bg-white/5 px-1.5 py-0.5 text-[11px] text-slate-300">
                     {account.org}
                   </span>
                 </div>

@@ -96,7 +96,7 @@ export default function CategoryForm({
                   name="name"
                   required
                   defaultValue={category?.name ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 
@@ -112,7 +112,7 @@ export default function CategoryForm({
                   name="slug"
                   required
                   defaultValue={category?.slug ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 
@@ -128,7 +128,7 @@ export default function CategoryForm({
                   name="description"
                   rows={3}
                   defaultValue={category?.description ?? ""}
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 
@@ -144,7 +144,7 @@ export default function CategoryForm({
                   name="productIds"
                   defaultValue={(category?.productIds ?? []).join(", ")}
                   placeholder="prod-1, prod-2"
-                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50 focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:border-emerald-500/50"
                 />
               </div>
 

@@ -99,7 +99,7 @@ export default async function PublicStatusPage({ params }: Props) {
               <li key={c.id} className="flex items-center justify-between gap-4 px-4 py-3">
                 <span className="text-sm text-slate-200">{c.name}</span>
                 <span
-                  className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${statusClass(c.status)}`}
+                  className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${statusClass(c.status)}`}
                 >
                   {c.status.replace(/_/g, " ")}
                 </span>

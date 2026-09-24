@@ -14,12 +14,13 @@ export default function EmailTestClient() {
     setResult(null);
     try {
       const clientApi = getClientApi();
-      await (clientApi as unknown as { client: { post: (url: string, data: unknown) => Promise<unknown> } }).client.post(
-        "/api/v1/admin/test-email",
-        {
-          to: email,
-        },
-      );
+      await (
+        clientApi as unknown as {
+          client: { post: (url: string, data: unknown) => Promise<unknown> };
+        }
+      ).client.post("/api/v1/admin/test-email", {
+        to: email,
+      });
       setResult({ ok: true, message: "Test email sent successfully!" });
     } catch (err: unknown) {
       setResult({
@@ -41,7 +42,7 @@ export default function EmailTestClient() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="admin@example.com"
           required
-          className="w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          className="w-full rounded-lg border border-white/10 bg-cyber-base px-3 py-2 text-sm text-slate-200 placeholder-slate-500 focus:ring-2 focus:ring-emerald-500"
         />
       </div>
       <button
