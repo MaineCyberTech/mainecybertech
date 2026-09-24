@@ -41,6 +41,13 @@ function extractOrgId(req: Request): string | null {
   const cookieOrg = (req.cookies as Record<string, string> | undefined)?.["mct_active_org"];
   if (typeof cookieOrg === "string" && cookieOrg.length > 0) return cookieOrg;
 
+  // Fall back to the org resolved by upstream middleware (e.g.
+  // requireOrgAccessByParam sets req.orgId from the `:id` param but does not
+  // touch the query). Without this, permission resolution would union grants
+  // across every org the user belongs to.
+  const scopedOrg = (req as Request & { orgId?: string | null }).orgId;
+  if (typeof scopedOrg === "string" && scopedOrg.length > 0) return scopedOrg;
+
   return null;
 }
 

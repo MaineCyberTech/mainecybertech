@@ -60,7 +60,7 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     }
   });
 
-  router.post(`/${path}`, requirePermission("security-ops", "create"), async (req, res, next) => {
+  router.post(`/${path}`, requirePermission(path, "create"), async (req, res, next) => {
     try {
       const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
         req.body,
@@ -90,63 +90,55 @@ function crudRoute(path: string, table: string, createSchema: Record<string, unk
     }
   });
 
-  router.patch(
-    `/${path}/:id`,
-    requirePermission("security-ops", "edit"),
-    async (req, res, next) => {
-      try {
-        const sb = getScopedClient(req, "security-ops", "write");
-        const fields: Record<string, unknown> = {};
-        for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
-          if (k === "organizationId") continue;
-          if (v !== undefined) fields[snake(k)] = v;
-        }
-        const { data, error } = await sb
-          .from(table)
-          .update(fields as never)
-          .eq("id", String(req.params.id))
-          .eq("organization_id", req.query.organization_id as string)
-          .select()
-          .single();
-        if (error) throw new AppError("DB_ERROR", error.message, 500);
-        if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
-        await logAuditEvent({
-          actorUserId: req.authUser!.userId,
-          action: `${path}.updated`,
-          entityType: path,
-          entityId: (data as { id: string } | null)?.id,
-        });
-        res.json(success(data));
-      } catch (e) {
-        next(e);
+  router.patch(`/${path}/:id`, requirePermission(path, "edit"), async (req, res, next) => {
+    try {
+      const sb = getScopedClient(req, "security-ops", "write");
+      const fields: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(req.body as Record<string, unknown>)) {
+        if (k === "organizationId") continue;
+        if (v !== undefined) fields[snake(k)] = v;
       }
-    },
-  );
+      const { data, error } = await sb
+        .from(table)
+        .update(fields as never)
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string)
+        .select()
+        .single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: `${path}.updated`,
+        entityType: path,
+        entityId: (data as { id: string } | null)?.id,
+      });
+      res.json(success(data));
+    } catch (e) {
+      next(e);
+    }
+  });
 
-  router.delete(
-    `/${path}/:id`,
-    requirePermission("security-ops", "delete"),
-    async (req, res, next) => {
-      try {
-        const sb = getScopedClient(req, "security-ops", "write");
-        const { error } = await sb
-          .from(table)
-          .delete()
-          .eq("id", String(req.params.id))
-          .eq("organization_id", req.query.organization_id as string);
-        if (error) throw new AppError("DB_ERROR", error.message, 500);
-        await logAuditEvent({
-          actorUserId: req.authUser!.userId,
-          action: `${path}.deleted`,
-          entityType: path,
-          entityId: String(req.params.id),
-        });
-        res.status(204).send();
-      } catch (e) {
-        next(e);
-      }
-    },
-  );
+  router.delete(`/${path}/:id`, requirePermission(path, "delete"), async (req, res, next) => {
+    try {
+      const sb = getScopedClient(req, "security-ops", "write");
+      const { error } = await sb
+        .from(table)
+        .delete()
+        .eq("id", String(req.params.id))
+        .eq("organization_id", req.query.organization_id as string);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: `${path}.deleted`,
+        entityType: path,
+        entityId: String(req.params.id),
+      });
+      res.status(204).send();
+    } catch (e) {
+      next(e);
+    }
+  });
 }
 
 crudRoute(

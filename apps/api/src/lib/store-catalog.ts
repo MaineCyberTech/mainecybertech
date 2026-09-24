@@ -191,7 +191,15 @@ export async function getCategoryBySlug(slug: string): Promise<CatalogCategory |
   return jsonCategories.find((c) => c.slug === slug) ?? null;
 }
 
-export async function getProductsByCategory(categoryKey: string): Promise<CatalogProduct[]> {
+export async function getProductsByCategory(category: {
+  id: string;
+  slug: string;
+}): Promise<CatalogProduct[]> {
   const all = await getProducts();
-  return all.filter((p) => p.categoryId === categoryKey || p.category === categoryKey);
+  return all.filter(
+    (p) =>
+      p.categoryId === category.id ||
+      p.categoryId === category.slug ||
+      p.category === category.slug,
+  );
 }

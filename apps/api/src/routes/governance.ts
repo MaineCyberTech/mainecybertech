@@ -38,6 +38,7 @@ function crudRoute(
   table: string,
   createSchema: Record<string, unknown>,
   updateSchema?: Record<string, unknown>,
+  permissionModule: string = path,
 ) {
   router.get(`/${path}`, async (req, res, next) => {
     try {
@@ -74,7 +75,7 @@ function crudRoute(
       next(e);
     }
   });
-  router.post(`/${path}`, async (req, res, next) => {
+  router.post(`/${path}`, requirePermission(permissionModule, "create"), async (req, res, next) => {
     try {
       const parsed = (createSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
         req.body,
@@ -103,62 +104,70 @@ function crudRoute(
       next(e);
     }
   });
-  router.patch(`/${path}/:id`, async (req, res, next) => {
-    try {
-      const sb = getScopedClient(req, "governance", "write");
-      // Prefer a dedicated update schema; otherwise derive a partial whitelist
-      // from the create schema so raw keys cannot be mass-assigned.
-      const body: Record<string, unknown> = updateSchema
-        ? ((updateSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
-            req.body,
-          ) as Record<string, unknown>)
-        : parsePartialUpdate(createSchema, req.body);
-      const fields: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(body)) {
-        if (k === "organizationId") continue;
-        if (v !== undefined) fields[snake(k)] = v;
+  router.patch(
+    `/${path}/:id`,
+    requirePermission(permissionModule, "edit"),
+    async (req, res, next) => {
+      try {
+        const sb = getScopedClient(req, "governance", "write");
+        // Prefer a dedicated update schema; otherwise derive a partial whitelist
+        // from the create schema so raw keys cannot be mass-assigned.
+        const body: Record<string, unknown> = updateSchema
+          ? ((updateSchema as { parse: (b: unknown) => Record<string, unknown> }).parse(
+              req.body,
+            ) as Record<string, unknown>)
+          : parsePartialUpdate(createSchema, req.body);
+        const fields: Record<string, unknown> = {};
+        for (const [k, v] of Object.entries(body)) {
+          if (k === "organizationId") continue;
+          if (v !== undefined) fields[snake(k)] = v;
+        }
+        const { data, error } = await sb
+          .from(table)
+          .update(fields as never)
+          .eq("id", String(req.params.id))
+          .eq("organization_id", req.query.organization_id as string)
+          .select()
+          .single();
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
+        await logAuditEvent({
+          actorUserId: req.authUser!.userId,
+          action: `${path}.updated`,
+          entityType: path,
+          entityId: (data as { id: string } | null)?.id,
+        });
+        res.json(success(data));
+      } catch (e) {
+        next(e);
       }
-      const { data, error } = await sb
-        .from(table)
-        .update(fields as never)
-        .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string)
-        .select()
-        .single();
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      if (!data) throw new AppError("NOT_FOUND", "Not found", 404);
-      await logAuditEvent({
-        actorUserId: req.authUser!.userId,
-        action: `${path}.updated`,
-        entityType: path,
-        entityId: (data as { id: string } | null)?.id,
-      });
-      res.json(success(data));
-    } catch (e) {
-      next(e);
-    }
-  });
+    },
+  );
 
-  router.delete(`/${path}/:id`, async (req, res, next) => {
-    try {
-      const sb = getScopedClient(req, "governance", "write");
-      const { error } = await sb
-        .from(table)
-        .delete()
-        .eq("id", String(req.params.id))
-        .eq("organization_id", req.query.organization_id as string);
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        actorUserId: req.authUser!.userId,
-        action: `${path}.deleted`,
-        entityType: path,
-        entityId: String(req.params.id),
-      });
-      res.status(204).send();
-    } catch (e) {
-      next(e);
-    }
-  });
+  router.delete(
+    `/${path}/:id`,
+    requirePermission(permissionModule, "delete"),
+    async (req, res, next) => {
+      try {
+        const sb = getScopedClient(req, "governance", "write");
+        const { error } = await sb
+          .from(table)
+          .delete()
+          .eq("id", String(req.params.id))
+          .eq("organization_id", req.query.organization_id as string);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          actorUserId: req.authUser!.userId,
+          action: `${path}.deleted`,
+          entityType: path,
+          entityId: String(req.params.id),
+        });
+        res.status(204).send();
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
 }
 
 crudRoute(
@@ -317,6 +326,7 @@ crudRoute(
   "risk_register",
   createRiskSchema as unknown as Record<string, unknown>,
   updateRiskSchema as unknown as Record<string, unknown>,
+  "risk-register",
 );
 
 router.post(
@@ -444,6 +454,8 @@ crudRoute(
   "retention",
   "retention_policies",
   createRetentionSchema as unknown as Record<string, unknown>,
+  undefined,
+  "data-retention",
 );
 crudRoute(
   "tabletop",

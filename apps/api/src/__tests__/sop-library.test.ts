@@ -1,6 +1,6 @@
 ﻿import { jest } from "@jest/globals";
 import request from "supertest";
-import { createTestApp, createMockBuilder , tableAwareFrom } from "./helpers";
+import { createTestApp, createMockBuilder, tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
 jest.mock("../config/env", () => ({
@@ -28,9 +28,16 @@ jest.mock("../config/env", () => ({
     JSM_REQUEST_TYPE_ID: "",
   }),
 }));
-jest.mock("../services/supabase", () => ({ getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()) }));
+jest.mock("../services/supabase", () => ({
+  getSupabaseAdmin: jest.fn(),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
+}));
 jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+}));
 import { getSupabaseAdmin } from "../services/supabase";
 import router from "../routes/governance";
 
@@ -59,19 +66,23 @@ describe("SOP Library API", () => {
 
   it("lists sop-library entries", async () => {
     const s = ma();
-    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })));
+    s.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: [], error: null, count: 0 })),
+    );
     const r = await request(app).get("/api/v1/governance/sop-library").set("Authorization", auth);
     expect(r.status).toBe(200);
   });
 
   it("creates an sop-library entry", async () => {
     const s = ma();
-    s.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({
-        data: { id: "sop-1", title: "Data Handling SOP", sop_category: "general" },
-        error: null,
-      }),
-    ));
+    s.from.mockImplementation(
+      tableAwareFrom(
+        createMockBuilder({
+          data: { id: "sop-1", title: "Data Handling SOP", sop_category: "general" },
+          error: null,
+        }),
+      ),
+    );
     const r = await request(app)
       .post("/api/v1/governance/sop-library")
       .set("Authorization", auth)
@@ -87,12 +98,14 @@ describe("SOP Library API", () => {
 
   it("gets a single sop-library entry", async () => {
     const s = ma();
-    s.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({
-        data: { id: "sop-1", title: "Data Handling SOP" },
-        error: null,
-      }),
-    ));
+    s.from.mockImplementation(
+      tableAwareFrom(
+        createMockBuilder({
+          data: { id: "sop-1", title: "Data Handling SOP" },
+          error: null,
+        }),
+      ),
+    );
     const r = await request(app)
       .get("/api/v1/governance/sop-library/sop-1")
       .set("Authorization", auth);
@@ -101,12 +114,14 @@ describe("SOP Library API", () => {
 
   it("updates an sop-library entry", async () => {
     const s = ma();
-    s.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({
-        data: { id: "sop-1", title: "Updated Data Handling SOP" },
-        error: null,
-      }),
-    ));
+    s.from.mockImplementation(
+      tableAwareFrom(
+        createMockBuilder({
+          data: { id: "sop-1", title: "Updated Data Handling SOP" },
+          error: null,
+        }),
+      ),
+    );
     const r = await request(app)
       .patch("/api/v1/governance/sop-library/sop-1")
       .set("Authorization", auth)
@@ -125,20 +140,26 @@ describe("SOP Library API", () => {
 
   it("returns compliance map", async () => {
     const s = ma();
-    s.from.mockImplementation(tableAwareFrom(
-      createMockBuilder({
-        data: [
-          {
-            compliance_framework: "NIST 800-53",
-            framework_control_ids: ["AC-1", "AC-2"],
-            status: "active",
-          },
-          { compliance_framework: "NIST 800-53", framework_control_ids: ["AC-1"], status: "draft" },
-          { compliance_framework: null, framework_control_ids: [], status: "active" },
-        ],
-        error: null,
-      }),
-    ));
+    s.from.mockImplementation(
+      tableAwareFrom(
+        createMockBuilder({
+          data: [
+            {
+              compliance_framework: "NIST 800-53",
+              framework_control_ids: ["AC-1", "AC-2"],
+              status: "active",
+            },
+            {
+              compliance_framework: "NIST 800-53",
+              framework_control_ids: ["AC-1"],
+              status: "draft",
+            },
+            { compliance_framework: null, framework_control_ids: [], status: "active" },
+          ],
+          error: null,
+        }),
+      ),
+    );
     const r = await request(app)
       .get("/api/v1/governance/sop-library/compliance-map?organization_id=org-1")
       .set("Authorization", auth);
@@ -154,7 +175,9 @@ describe("SOP Library API", () => {
 
   it("returns 404 for missing sop entry", async () => {
     const s = ma();
-    s.from.mockImplementation(tableAwareFrom(createMockBuilder({ data: null, error: { message: "Not found" } })));
+    s.from.mockImplementation(
+      tableAwareFrom(createMockBuilder({ data: null, error: { message: "Not found" } })),
+    );
     const r = await request(app)
       .get("/api/v1/governance/sop-library/missing-id")
       .set("Authorization", auth);

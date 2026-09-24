@@ -18,11 +18,16 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
+  getScopedClient: jest.fn((_req, _moduleKey, _kind) =>
+    require("../services/supabase").getSupabaseAdmin(),
+  ),
 }));
 
 jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
+}));
+jest.mock("../middleware/permissions", () => ({
+  requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
@@ -35,10 +40,12 @@ function mockAuth(isAdmin = false) {
     error: null,
   });
   if (isAdmin) {
-    supabase.from.mockReturnValue(createMockBuilder({
-      data: [{ roles: { id: "role-1", key: "admin" } }],
-      error: null,
-    }));
+    supabase.from.mockReturnValue(
+      createMockBuilder({
+        data: [{ roles: { id: "role-1", key: "admin" } }],
+        error: null,
+      }),
+    );
   }
   return supabase;
 }
@@ -57,8 +64,10 @@ describe("roles routes", () => {
   describe("GET /", () => {
     it("returns a list of roles", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from
-        .mockReturnValueOnce(createMockBuilder({ data: [{ roles: { id: "role-1", key: "admin" } }], error: null }))
+      (getSupabaseAdmin as jest.Mock)()
+        .from.mockReturnValueOnce(
+          createMockBuilder({ data: [{ roles: { id: "role-1", key: "admin" } }], error: null }),
+        )
         .mockReturnValue(createMockBuilder({ data: [ROLE], error: null }));
 
       const res = await request(app).get("/api/v1/roles").set("Authorization", "Bearer token-123");
@@ -70,8 +79,10 @@ describe("roles routes", () => {
 
     it("filters by ids", async () => {
       mockAuth();
-      (getSupabaseAdmin as jest.Mock)().from
-        .mockReturnValueOnce(createMockBuilder({ data: [{ roles: { id: "role-1", key: "admin" } }], error: null }))
+      (getSupabaseAdmin as jest.Mock)()
+        .from.mockReturnValueOnce(
+          createMockBuilder({ data: [{ roles: { id: "role-1", key: "admin" } }], error: null }),
+        )
         .mockReturnValue(createMockBuilder({ data: [ROLE], error: null }));
 
       const res = await request(app)

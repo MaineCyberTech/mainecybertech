@@ -195,6 +195,17 @@ export function registerCampaignRoutes(router: Router) {
         const parsed = updateCampaignSchema.parse(req.body);
         const supabase = getSupabaseAdmin();
 
+        // Scope the write to the caller's active org (platform admins are
+        // exempt but their cross-tenant access is audited by requireOrgAccess).
+        const { data: existing } = await supabase
+          .from("store_campaigns")
+          .select("organization_id")
+          .eq("id", String(req.params.id))
+          .maybeSingle();
+        if (existing?.organization_id) {
+          assertOrgScopeMatches(req, existing.organization_id);
+        }
+
         const update: Record<string, unknown> = {};
         if (parsed.slug !== undefined) update.slug = parsed.slug;
         if (parsed.name !== undefined) update.name = parsed.name;

@@ -85,7 +85,7 @@ export function registerCatalogRoutes(router: Router) {
         res.status(404).json(failure("NOT_FOUND", "Category not found", 404));
         return;
       }
-      const products = await getProductsByCategory(category.slug);
+      const products = await getProductsByCategory(category);
       res.json(success({ ...category, products }));
     } catch (err) {
       next(err);
