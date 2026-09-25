@@ -2,12 +2,13 @@ import crypto from "crypto";
 import rateLimit from "express-rate-limit";
 
 /**
- * Derives a stable per-user rate-limit key from a Bearer token.
- * HS256 JWTs all share the same constant header (base64 of alg/typ) — keying
- * off `auth.slice(7, 27)` bucket every authenticated user into one global
- * counter, so a single user could DoS the whole API. Prefer the decoded `sub`
- * claim; fall back to a full-token hash (stable across requests, unique per
- * token); last resort is the client IP.
+ * Derives a rate-limit key from a Bearer token.
+ *
+ * The token is **not verified** here (auth middleware runs later), so its
+ * claims cannot be trusted — decoding `sub` let a caller rotate forged values
+ * for unlimited buckets. Key by a SHA-256 hash of the whole token instead
+ * (stable for the token's lifetime), and treat the global IP limiter as the
+ * authoritative ceiling. Falls back to the client IP when there is no token.
  */
 export function userRateLimitKeyGenerator(
   authorization: string | string[] | undefined,
@@ -18,20 +19,6 @@ export function userRateLimitKeyGenerator(
   if (header?.startsWith("Bearer ")) {
     const token = header.slice(7);
     if (!token) return `ip:${clientIp}`;
-    try {
-      const payload = token.split(".")[1];
-      if (payload) {
-        const json = Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString(
-          "utf8",
-        );
-        const parsed = JSON.parse(json) as { sub?: unknown };
-        if (typeof parsed.sub === "string" && parsed.sub.length > 0) {
-          return `user:${parsed.sub}`;
-        }
-      }
-    } catch {
-      // fall through to token hash
-    }
     return `user:${crypto.createHash("sha256").update(token).digest("hex").slice(0, 32)}`;
   }
   return `ip:${clientIp}`;

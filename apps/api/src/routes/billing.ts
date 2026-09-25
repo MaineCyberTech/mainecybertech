@@ -303,6 +303,11 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
   }
 });
 
+// NOTE: intentionally available to any member of the resolved org (customer
+// self-service billing portal). `billing:manage` is not required because the
+// catalog does not grant it to client roles, and the portal is the customer's
+// only way to update payment methods / cancel. Tighten here if billing
+// contacts become a distinct permission.
 router.post("/create-portal-session", async (req, res, next) => {
   try {
     const env = getEnv();

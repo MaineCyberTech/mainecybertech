@@ -827,6 +827,15 @@ router.post("/:id/tasks/:taskId/comments", async (req, res, next) => {
       String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
+    // Bind the task to the path project so a comment cannot be attached to a
+    // task from another project/tenant.
+    const { data: task } = await supabase
+      .from("project_tasks")
+      .select("id")
+      .eq("id", String(req.params.taskId))
+      .eq("project_id", String(req.params.id))
+      .maybeSingle();
+    if (!task) throw new AppError("NOT_FOUND", "Task not found", 404);
 
     const { data, error } = await supabase
       .from("project_task_comments")
@@ -988,6 +997,13 @@ router.patch("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =>
       String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
+    const { data: task } = await supabase
+      .from("project_tasks")
+      .select("id")
+      .eq("id", String(req.params.taskId))
+      .eq("project_id", String(req.params.id))
+      .maybeSingle();
+    if (!task) throw new AppError("NOT_FOUND", "Task not found", 404);
 
     const updateData: Record<string, unknown> = {};
     if (parsed.body !== undefined) updateData.body = parsed.body;
@@ -1025,6 +1041,13 @@ router.delete("/:id/tasks/:taskId/comments/:commentId", async (req, res, next) =
       String(req.params.id),
       (req.query.organization_id ?? req.body?.organizationId) as string | undefined,
     );
+    const { data: task } = await supabase
+      .from("project_tasks")
+      .select("id")
+      .eq("id", String(req.params.taskId))
+      .eq("project_id", String(req.params.id))
+      .maybeSingle();
+    if (!task) throw new AppError("NOT_FOUND", "Task not found", 404);
     const { error } = await supabase
       .from("project_task_comments")
       .delete()

@@ -15,6 +15,16 @@ type NotifyOptions = {
   emailOverride?: boolean;
 };
 
+/** Escape user-controlled content before interpolating it into email HTML. */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function createNotification(opts: NotifyOptions) {
   try {
     const supabase = getSupabaseAdmin();
@@ -59,7 +69,7 @@ export async function notifyAndEmail(opts: NotifyOptions & { email?: string; ema
     text: `${opts.body}\n\nView: ${baseUrl}${modulePath}`,
     html:
       opts.emailHtml ??
-      `<p>${opts.body.replace(/\n/g, "<br/>")}</p>${modulePath ? `<p><a href="${baseUrl}${modulePath}">View details</a></p>` : ""}`,
+      `<p>${escapeHtml(opts.body).replace(/\n/g, "<br/>")}</p>${modulePath ? `<p><a href="${baseUrl}${modulePath}">View details</a></p>` : ""}`,
   };
 
   // Route email through the worker queue when available (retries + backoff);

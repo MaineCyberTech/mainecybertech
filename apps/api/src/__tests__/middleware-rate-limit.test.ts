@@ -53,18 +53,23 @@ describe("rateLimitByUser", () => {
 });
 
 describe("userRateLimitKeyGenerator", () => {
-  it("keys by JWT sub claim (stable per user)", () => {
+  it("keys by a hash of the full token (claims are unverified at this point)", () => {
     const tokenA = makeJwt("user-1");
     const tokenB = makeJwt("user-2");
-    expect(userRateLimitKeyGenerator(`Bearer ${tokenA}`, "1.2.3.4")).toBe("user:user-1");
-    expect(userRateLimitKeyGenerator(`Bearer ${tokenB}`, "1.2.3.4")).toBe("user:user-2");
+    const keyA = userRateLimitKeyGenerator(`Bearer ${tokenA}`, "1.2.3.4");
+    expect(keyA).toMatch(/^user:[0-9a-f]{32}$/);
+    expect(keyA).not.toBe(userRateLimitKeyGenerator(`Bearer ${tokenB}`, "1.2.3.4"));
+    // A forged token with a different signature gets a different bucket too,
+    // so rotating unverified `sub` values does not mint unlimited buckets.
+    expect(keyA).not.toBe(
+      userRateLimitKeyGenerator(`Bearer ${makeJwt("user-1", { jti: "x" })}`, "1.2.3.4"),
+    );
   });
 
-  it("produces the SAME key for the same user on different requests", () => {
-    const tokenA = makeJwt("user-1");
-    const tokenB = makeJwt("user-1");
-    const keyA = userRateLimitKeyGenerator(`Bearer ${tokenA}`, "1.2.3.4");
-    const keyB = userRateLimitKeyGenerator(`Bearer ${tokenB}`, "1.2.3.4");
+  it("produces the SAME key for the same token across requests", () => {
+    const token = makeJwt("user-1");
+    const keyA = userRateLimitKeyGenerator(`Bearer ${token}`, "1.2.3.4");
+    const keyB = userRateLimitKeyGenerator(`Bearer ${token}`, "1.2.3.4");
     expect(keyA).toBe(keyB);
   });
 
