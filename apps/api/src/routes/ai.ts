@@ -4,6 +4,7 @@ import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { loadOwned } from "../lib/tenant";
 import { triageInputSchema, convertTriageSchema, copilotReplyDraftSchema } from "../validators/ai";
 import { queryInt } from "../lib/query";
@@ -206,7 +207,8 @@ router.post("/triage/analyze", async (req, res, next) => {
   }
 });
 
-router.post("/triage/convert", async (req, res, next) => {
+// Creating a ticket from a triage draft must respect the ticket permission.
+router.post("/triage/convert", requirePermission("tickets", "create"), async (req, res, next) => {
   try {
     const parsed = convertTriageSchema.parse(req.body);
     const supabase = getScopedClient(req, "ai", "write");

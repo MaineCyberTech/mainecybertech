@@ -5,6 +5,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import {
   createKnowledgeBaseSchema,
   listKnowledgeBaseQuerySchema,
@@ -64,7 +65,7 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", requirePermission("client-knowledge-base", "create"), async (req, res, next) => {
   try {
     const parsed = createKnowledgeBaseSchema.parse(req.body);
     const supabase = getScopedClient(req, "knowledge-base", "write");
@@ -99,7 +100,7 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+router.patch("/:id", requirePermission("client-knowledge-base", "edit"), async (req, res, next) => {
   try {
     const parsed = updateKnowledgeBaseSchema.parse(req.body);
     const supabase = getScopedClient(req, "knowledge-base", "write");
@@ -149,34 +150,38 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "knowledge-base", "write");
-    const article = await loadOwned(
-      req,
-      supabase as any,
-      "knowledge_base_articles",
-      String(req.params.id) as string,
-      "id, organization_id",
-    );
-    const { error } = await supabase
-      .from("knowledge_base_articles")
-      .delete()
-      .eq("id", String(req.params.id))
-      .eq("organization_id", article.organization_id as string);
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
+router.delete(
+  "/:id",
+  requirePermission("client-knowledge-base", "delete"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "knowledge-base", "write");
+      const article = await loadOwned(
+        req,
+        supabase as any,
+        "knowledge_base_articles",
+        String(req.params.id) as string,
+        "id, organization_id",
+      );
+      const { error } = await supabase
+        .from("knowledge_base_articles")
+        .delete()
+        .eq("id", String(req.params.id))
+        .eq("organization_id", article.organization_id as string);
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-    await logAuditEvent({
-      actorUserId: req.authUser!.userId,
-      action: "knowledge_base_article.deleted",
-      entityType: "knowledge_base_article",
-      entityId: String(req.params.id),
-    });
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "knowledge_base_article.deleted",
+        entityType: "knowledge_base_article",
+        entityId: String(req.params.id),
+      });
 
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 export default router;
