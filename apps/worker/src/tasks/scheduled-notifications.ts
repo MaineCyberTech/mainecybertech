@@ -14,6 +14,16 @@ interface NotificationPayload {
   metadata?: Record<string, unknown>;
 }
 
+/** Escape user-controlled content before interpolating it into email HTML. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 async function createInAppNotification(
   supabase: SupabaseClient,
   userId: string,
@@ -155,7 +165,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
             to: profile.email,
             subject: `[Maine CyberTech] ${title}: ${task.title}`,
             text: `Hello ${profile.full_name ?? "there"},\n\n${body}\n\nView your project: ${link}`,
-            html: `<p>Hello ${profile.full_name ?? "there"},</p><p>${body}</p><p><a href="${link}">View project</a></p>`,
+            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(body)}</p><p><a href="${link}">View project</a></p>`,
           });
           if (emailSent) emailed++;
 
@@ -228,7 +238,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           to: profile.email,
           subject: `[Maine CyberTech] ${p.title ?? "Ticket Update"}`,
           text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? "A ticket has been updated."}\n\nView: ${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}`,
-          html: `<p>Hello ${profile.full_name ?? "there"},</p><p>${p.body ?? "A ticket has been updated."}</p><p><a href="${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}">View ticket</a></p>`,
+          html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(p.body ?? "A ticket has been updated.")}</p><p><a href="${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}">View ticket</a></p>`,
         });
 
         logger.info(
@@ -268,7 +278,7 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           to: profile.email,
           subject: `[Maine CyberTech] ${p.title}`,
           text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? ""}`,
-          html: `<p>Hello ${profile.full_name ?? "there"},</p><p>${p.body ?? ""}</p>`,
+          html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(p.body ?? "")}</p>`,
         });
 
         logger.info(
