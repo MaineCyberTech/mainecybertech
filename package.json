@@ -24,6 +24,7 @@
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build -o docs/storybook-static",
     "sbom": "node scripts/generate-sbom.mjs sbom.cdx.json",
+    "review:sync": "node scripts/sync-review-md.mjs",
     "chromatic": "chromatic --project-token=$CHROMATIC_PROJECT_TOKEN"
   },
   "devDependencies": {

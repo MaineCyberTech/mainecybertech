@@ -174,3 +174,6 @@ jobs:
         # Supply-chain guard for the 787 files under prompts/ (P2-1) — a change
         # to any file breaks the tree hashes and fails the deploy gate.
         run: node scripts/verify-prompts.js verify
+
+      - name: Verify review.md mirror is in sync
+        run: node scripts/sync-review-md.mjs --check
