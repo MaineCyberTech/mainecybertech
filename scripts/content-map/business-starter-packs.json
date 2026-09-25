@@ -1,0 +1,991 @@
+{
+  "small_business_it_starter_pack": {
+    "marketingCopy": "New businesses and newly-teched-up small companies often have technology that was set up piecemeal - a router here, a laptop there, no plan behind any of it. The Small Business IT Starter Pack is a comprehensive technology foundation: core setup, security, backup, and documentation to get a small business running on solid IT. We establish your IT foundation properly - the right setup, protected against the basics, with data backed up and systems documented. This is the starter package for a small business that wants to begin with technology done right.",
+    "bestFor": [
+      "New small businesses setting up technology",
+      "Established businesses with piecemeal tech that needs a foundation",
+      "Organizations that want setup, security, and backup together",
+      "Businesses that want documentation from the start"
+    ],
+    "whatIsIncluded": [
+      "Core technology setup",
+      "Essential security configuration",
+      "Backup setup",
+      "System documentation",
+      "Standard user accounts and access setup",
+      "Getting-started guidance"
+    ],
+    "customerOutcomes": [
+      "A solid technology foundation from day one",
+      "Setup, security, and backup handled together",
+      "Systems documented for the future",
+      "A small business starting with IT done right"
+    ]
+  },
+  "new_business_technology_setup": {
+    "marketingCopy": "Starting a business means making dozens of technology decisions - email, internet, devices, security, backups - and getting them wrong costs time and money later. New Business Technology Setup is comprehensive technology setup for a new business: devices, internet, email, security, and backup brought together into a working foundation. We handle the essential technology stack for your new business - the devices, connectivity, communication, and protection you need to open the doors. This is the package that turns a pile of tech decisions into a working business setup.",
+    "bestFor": [
+      "New businesses launching their technology stack",
+      "Entrepreneurs who want decisions made for them",
+      "Startups that need devices, email, and security set up",
+      "New businesses that want to avoid costly mistakes"
+    ],
+    "whatIsIncluded": [
+      "Device selection and setup",
+      "Internet and network setup",
+      "Business email configuration",
+      "Security setup",
+      "Backup configuration",
+      "Launch readiness guidance"
+    ],
+    "customerOutcomes": [
+      "A complete technology stack ready at launch",
+      "Device, email, network, and security decisions handled",
+      "A working foundation without costly mistakes",
+      "A new business ready to operate"
+    ]
+  },
+  "business_owner_peace_of_mind_pack": {
+    "marketingCopy": "Most business owners lie awake about the same technology fears: data loss, security breach, and the unknown state of their own systems. The Business Owner Peace of Mind Pack is a package addressing those fears: a security assessment, backup setup, quick-fix support, and the documentation that gives owners confidence. We look at your environment, protect your data, and give you a clear picture of where your technology stands. This is the package for owners who want to replace worry with confidence about their technology.",
+    "bestFor": [
+      "Business owners worried about data loss and security",
+      "Organizations that don't know the state of their systems",
+      "Companies that want assessment, protection, and support together",
+      "Owners who want confidence instead of worry"
+    ],
+    "whatIsIncluded": [
+      "Security assessment",
+      "Backup setup and verification",
+      "Quick-fix support",
+      "System state documentation",
+      "Owner-focused recommendations",
+      "Peace of mind summary"
+    ],
+    "customerOutcomes": [
+      "Confidence about the state of your systems",
+      "Backups protecting your data",
+      "A clear security picture",
+      "Support when something goes wrong"
+    ]
+  },
+  "local_business_online_presence_pack": {
+    "marketingCopy": "For local businesses, customers decide in minutes - and they base that decision on what they find online. The Local Business Online Presence Pack builds your online presence: website setup, Google Business Profile, basic local SEO, and online reviews strategy. We establish the online foundation that helps local customers find, trust, and choose your business. This is the package for a local business that wants to be found and chosen online.",
+    "bestFor": [
+      "Local businesses with little or weak online presence",
+      "Organizations that want website and profile setup together",
+      "Companies that want local SEO and reviews basics",
+      "Local businesses that want to be found online"
+    ],
+    "whatIsIncluded": [
+      "Website setup (per scope)",
+      "Google Business Profile setup",
+      "Basic local SEO",
+      "Review strategy and setup",
+      "Online presence guidance",
+      "Visibility recommendations"
+    ],
+    "customerOutcomes": [
+      "A website and profile local customers find",
+      "A foundation for local search visibility",
+      "Reviews strategy in place",
+      "A stronger online presence for local customers"
+    ]
+  },
+  "new_client_foundation": {
+    "marketingCopy": "The first week with a new IT client sets the tone for everything after - and a messy handoff creates problems for years. New Client Foundation is a structured onboarding package for new managed IT clients: environment assessment, system documentation, access reviews, and priorities defined. We assess your environment, document your systems, review access, and define the priority improvements. This is the package that starts a client relationship on a foundation of understanding and documentation.",
+    "bestFor": [
+      "New managed IT clients beginning a relationship",
+      "Organizations taking on a new IT provider",
+      "Companies that want their environment assessed and documented",
+      "Businesses that want priorities defined early"
+    ],
+    "whatIsIncluded": [
+      "Environment assessment",
+      "System and asset documentation",
+      "Access review",
+      "Priority improvement plan",
+      "Baseline of current state",
+      "Onboarding report"
+    ],
+    "customerOutcomes": [
+      "A documented foundation of your environment",
+      "Priorities defined and understood",
+      "Access reviewed and cleaned",
+      "A strong start to the managed relationship"
+    ]
+  },
+  "new_business_it_setup": {
+    "marketingCopy": "A new business needs technology that works from day one - not a patchwork assembled under time pressure. New Business IT Setup is a complete technology setup for starting a business: hardware, internet, email, security, and backup configured as a cohesive foundation. We set up the technology your new business runs on - the essentials configured properly and securely. This is the package for entrepreneurs who want to start their business on technology that works.",
+    "bestFor": [
+      "New businesses in their startup phase",
+      "Entrepreneurs setting up their first technology stack",
+      "Organizations that want hardware and connectivity configured",
+      "New businesses that want a secure start"
+    ],
+    "whatIsIncluded": [
+      "Hardware selection and setup",
+      "Internet and connectivity",
+      "Business email setup",
+      "Security configuration",
+      "Backup setup",
+      "Startup guidance"
+    ],
+    "customerOutcomes": [
+      "Technology that works from day one",
+      "Hardware, email, and security configured",
+      "A secure startup foundation",
+      "A new business operating on solid IT"
+    ]
+  },
+  "new_employee_setup_bundle": {
+    "marketingCopy": "Every new hire needs a device, accounts, and access - and the setup process is a repeatable chore that shouldn't be improvised each time. The New Employee Setup Bundle standardizes onboarding: a configured device, core accounts, security setup, and documentation for repeatable onboarding. We prepare your new employee's technology - device configured, accounts created, security applied, and access set - with a documented process that scales. This is the package for getting new employees productive and secure from day one.",
+    "bestFor": [
+      "Businesses onboarding new employees regularly",
+      "Organizations that want standardized device setup",
+      "Companies that want accounts and security ready before day one",
+      "Businesses that want onboarding documented and repeatable"
+    ],
+    "whatIsIncluded": [
+      "Device configuration",
+      "Core account setup",
+      "Security configuration",
+      "Access provisioning",
+      "Onboarding documentation",
+      "Day-one readiness"
+    ],
+    "customerOutcomes": [
+      "New employees productive and secure from day one",
+      "Standardized, repeatable onboarding",
+      "No more improvised setup each hire",
+      "A documented process that scales"
+    ]
+  },
+  "employee_exit_lockdown_bundle": {
+    "marketingCopy": "When an employee leaves - whether amicably or not - accounts, access, and data decisions need handling promptly, and delay invites risk. The Employee Exit Lockdown Bundle is an offboarding package: access removal, device retrieval, credential changes, and documentation to protect your business when an employee departs. We lock down departed employee access, secure devices and credentials, and protect your data - with documented procedures. This is the package for offboarding that protects your business.",
+    "bestFor": [
+      "Businesses with employee departures",
+      "Organizations that want access removed promptly",
+      "Companies that want devices and credentials secured",
+      "Businesses that want documented offboarding"
+    ],
+    "whatIsIncluded": [
+      "Access and account removal",
+      "Device retrieval coordination",
+      "Credential changes where needed",
+      "Data preservation review",
+      "Exit security review",
+      "Offboarding documentation"
+    ],
+    "customerOutcomes": [
+      "Departing access locked down promptly",
+      "Devices and credentials secured",
+      "Data protected through the transition",
+      "Offboarding handled consistently"
+    ]
+  },
+  "office_move_it_planning": {
+    "marketingCopy": "An office move is a high-risk moment for technology - network drops misplaced, providers misordered, equipment damaged or disconnected wrong. Office Move IT Planning is structured planning for relocating your technology: pre-move documentation, network planning, vendor coordination, and move-day coordination. We plan the technology side of your move - mapping your needs, coordinating providers, and preparing for move day. This is the package for moving offices without breaking your technology.",
+    "bestFor": [
+      "Businesses planning an office move",
+      "Organizations that want technology planned for relocation",
+      "Companies that want vendor and network coordination",
+      "Businesses that want move-day technology coordination"
+    ],
+    "whatIsIncluded": [
+      "Pre-move technology documentation",
+      "Network and layout planning",
+      "Vendor coordination",
+      "Move-day coordination",
+      "Post-move verification plan",
+      "Move readiness checklist"
+    ],
+    "customerOutcomes": [
+      "Technology relocated without disruption",
+      "Network and vendors planned ahead",
+      "Move-day coordination handled",
+      "A move that doesn't break your IT"
+    ]
+  },
+  "vendor_transition_package": {
+    "marketingCopy": "Changing IT vendors is risky - the old provider walks away with knowledge, access, and configurations, and the new one starts from scratch. The Vendor Transition Package is structured transition support: system access, documentation, migration, and a clean handoff when changing IT providers. We manage the transition from your previous provider - securing access, documenting your environment, and migrating your support to us cleanly. This is the package for changing IT vendors without losing your technology foundation.",
+    "bestFor": [
+      "Businesses changing IT providers",
+      "Organizations that want access secured in transition",
+      "Companies that want documentation and migration managed",
+      "Businesses that want a clean provider handoff"
+    ],
+    "whatIsIncluded": [
+      "Access and credential recovery",
+      "Environment documentation",
+      "Support transition coordination",
+      "Migration of critical services",
+      "Clean handoff management",
+      "Post-transition verification"
+    ],
+    "customerOutcomes": [
+      "A clean transition between providers",
+      "Access and knowledge secured",
+      "Documentation in your hands",
+      "A provider change without losing your foundation"
+    ]
+  },
+  "it_documentation_rebuild": {
+    "marketingCopy": "Many businesses run on undocumented technology - and when the person who set it up leaves or the system breaks, knowledge walks out the door. IT Documentation Rebuild is a project to reconstruct missing IT documentation: networks, servers, passwords (secured), and procedures rebuilt from the current environment. We document your actual technology - what exists, how it's configured, where the passwords live (stored securely), and what to do when things break. This is the package for businesses that need their IT knowledge captured before it's lost.",
+    "bestFor": [
+      "Businesses with missing or outdated IT documentation",
+      "Organizations that relied on one person's knowledge",
+      "Companies that need networks and systems documented",
+      "Businesses that want procedures written down"
+    ],
+    "whatIsIncluded": [
+      "Network documentation",
+      "Server and system documentation",
+      "Secure credential inventory",
+      "Procedure documentation",
+      "Inventory of devices and services",
+      "Documentation handoff"
+    ],
+    "customerOutcomes": [
+      "Your IT documented and knowledge secured",
+      "No more dependence on one person's memory",
+      "Networks, systems, and procedures written down",
+      "A foundation for future IT management"
+    ]
+  },
+  "asset_inventory_buildout": {
+    "marketingCopy": "You can't manage, secure, insure, or budget for technology you don't know you have - yet many businesses have no accurate inventory of their own devices. Asset Inventory Buildout is a project to build a complete asset inventory: hardware, software, licenses, and warranty info compiled into a usable asset register. We catalog your technology - every device, every license, every contract - into a clear, useful inventory. This is the package for businesses that need to know exactly what technology they have.",
+    "bestFor": [
+      "Businesses without an accurate asset list",
+      "Organizations that need hardware and software tracked",
+      "Companies that want license and warranty visibility",
+      "Businesses that want an asset register for management"
+    ],
+    "whatIsIncluded": [
+      "Hardware inventory",
+      "Software and license inventory",
+      "Warranty and contract tracking",
+      "Asset register buildout",
+      "Ownership and location tracking",
+      "Inventory handoff"
+    ],
+    "customerOutcomes": [
+      "A complete inventory of your technology",
+      "Hardware, software, and licenses tracked",
+      "Visibility for insurance, budget, and management",
+      "A usable asset register"
+    ]
+  },
+  "it_roadmap_session": {
+    "marketingCopy": "Most small businesses react to technology problems instead of planning ahead - because nobody has laid out a path. The IT Roadmap Session is a focused planning session producing a technology roadmap: current state review, priorities, and a phased plan for your technology. We review where your technology stands, identify what matters most, and lay out a phased roadmap for improvements. This is the package for businesses that want to move from reacting to planning.",
+    "bestFor": [
+      "Businesses that want to plan technology ahead",
+      "Organizations that want current state review and priorities",
+      "Companies that want a phased roadmap",
+      "Businesses ready to stop reacting to IT problems"
+    ],
+    "whatIsIncluded": [
+      "Current state technology review",
+      "Priority identification",
+      "Phased roadmap development",
+      "Budget considerations",
+      "Discussion with an expert",
+      "Roadmap document"
+    ],
+    "customerOutcomes": [
+      "A clear technology roadmap",
+      "Priorities identified and ordered",
+      "A phased plan instead of reaction",
+      "Clarity on where technology should go"
+    ]
+  },
+  "quarterly_business_review": {
+    "marketingCopy": "Technology quietly drifts - storage fills, access accumulates, backups lapse - and annual reviews miss too much. The Quarterly Business Review is a recurring business technology review: goals, systems, projects, and priorities reviewed together each quarter. We meet with your business regularly to review goals, assess systems, track projects, and set priorities. This is the package for businesses that want technology aligned with business direction through the year, not just once.",
+    "bestFor": [
+      "Businesses that want recurring technology alignment",
+      "Organizations that want quarterly review and goal tracking",
+      "Companies that want projects and priorities managed together",
+      "Businesses that want technology tied to business direction"
+    ],
+    "whatIsIncluded": [
+      "Quarterly review sessions",
+      "Business goals and technology alignment",
+      "System health review",
+      "Project and priority tracking",
+      "Recommendations and follow-ups",
+      "Quarterly summary"
+    ],
+    "customerOutcomes": [
+      "Technology aligned with business direction quarterly",
+      "Projects and priorities tracked together",
+      "Drift caught before it becomes a problem",
+      "An ongoing strategic technology relationship"
+    ]
+  },
+  "phone_system_readiness_review": {
+    "marketingCopy": "Phone systems quietly age - hardware becomes end-of-life, features go unused, costs creep up - and businesses find out when phones fail. The Phone System Readiness Review is an assessment of your current phone setup: reliability, features, costs, and readiness for a modern system. We evaluate your phone system's health, usage, and costs, and assess readiness for upgrade. This is the package for businesses that want to understand their phone system before it forces a decision.",
+    "bestFor": [
+      "Businesses with aging phone systems",
+      "Organizations that want reliability and cost assessed",
+      "Companies considering a phone system upgrade",
+      "Businesses that want phone readiness clarity"
+    ],
+    "whatIsIncluded": [
+      "Current phone system assessment",
+      "Reliability and feature review",
+      "Cost analysis",
+      "Readiness for modern systems",
+      "Recommendations",
+      "Readiness report"
+    ],
+    "customerOutcomes": [
+      "Clarity on your phone system's condition",
+      "Reliability, features, and costs understood",
+      "Upgrade readiness assessed",
+      "Informed decisions instead of forced ones"
+    ]
+  },
+  "voip_vendor_selection_help": {
+    "marketingCopy": "Choosing a VoIP provider means weighing features, cost, reliability, and support - and a wrong choice locks you into years of frustration. VoIP Vendor Selection Help is guidance in choosing the right VoIP provider: requirements analysis, vendor comparison, and selection support. We clarify your needs, compare providers against them, and help you choose the right one. This is the package for businesses that want to choose a VoIP provider with confidence.",
+    "bestFor": [
+      "Businesses shopping for a VoIP provider",
+      "Organizations that want requirements clarified first",
+      "Companies that want an objective vendor comparison",
+      "Businesses that want help choosing without bias"
+    ],
+    "whatIsIncluded": [
+      "Requirements analysis",
+      "Vendor comparison",
+      "Feature and cost evaluation",
+      "Selection support",
+      "Independent guidance",
+      "Recommendation report"
+    ],
+    "customerOutcomes": [
+      "A VoIP provider chosen with confidence",
+      "Requirements matched to options",
+      "An objective, unbiased comparison",
+      "Avoidance of a costly wrong choice"
+    ]
+  },
+  "voip_cutover_support": {
+    "marketingCopy": "The moment of switching phone systems - porting numbers, configuring phones, training staff - is where phone transitions succeed or fail. VoIP Cutover Support is hands-on support through the transition to a VoIP system: porting coordination, configuration, testing, and training for a smooth cutover. We manage the cutover - coordinating number porting, configuring the system, testing everything, and getting staff comfortable. This is the package for moving to VoIP without a bumpy transition.",
+    "bestFor": [
+      "Businesses switching to a VoIP system",
+      "Organizations that want porting and configuration managed",
+      "Companies that want cutover testing and training",
+      "Businesses that want a smooth phone transition"
+    ],
+    "whatIsIncluded": [
+      "Number porting coordination",
+      "System configuration",
+      "Device setup",
+      "Cutover testing",
+      "Staff training",
+      "Post-cutover support"
+    ],
+    "customerOutcomes": [
+      "A smooth VoIP cutover",
+      "Numbers ported and systems tested",
+      "Staff trained and ready",
+      "Phone transition without disruption"
+    ]
+  },
+  "auto_attendant_setup": {
+    "marketingCopy": "A phone system that sends every call to voicemail or a confused receptionist makes a business look disorganized - while a well-built auto attendant sounds professional around the clock. Auto Attendant Setup is setup of a professional phone tree: menus, routing, business hours, and voicemail designed to direct callers efficiently. We design and configure your auto attendant - the menus, hours, and routing that greet callers professionally. This is the package for businesses that want callers directed to the right person fast.",
+    "bestFor": [
+      "Businesses with calls going to voicemail too often",
+      "Organizations that want professional call greeting",
+      "Companies that want call routing and business hours set up",
+      "Businesses that want callers directed efficiently"
+    ],
+    "whatIsIncluded": [
+      "Auto attendant design",
+      "Menu and routing configuration",
+      "Business hours setup",
+      "Voicemail configuration",
+      "Greeting recording",
+      "Testing and training"
+    ],
+    "customerOutcomes": [
+      "Callers directed to the right person fast",
+      "A professional impression around the clock",
+      "Fewer missed or misdirected calls",
+      "An efficient phone experience for callers"
+    ]
+  },
+  "business_voicemail_setup": {
+    "marketingCopy": "Poorly set up voicemail - full boxes, unprofessional greetings, missed messages - loses calls and looks unprofessional. Business Voicemail Setup is professional voicemail configuration: greetings, mailbox setup, notifications, and forwarding so you never miss messages. We configure your business voicemail properly - professional greetings, working mailboxes, notifications, and clear handling. This is the package for businesses that want voicemail that works as a professional tool.",
+    "bestFor": [
+      "Businesses with voicemail that isn't working well",
+      "Organizations that want professional greetings",
+      "Companies that want notifications and forwarding configured",
+      "Businesses that want to stop missing messages"
+    ],
+    "whatIsIncluded": [
+      "Voicemail greeting setup",
+      "Mailbox configuration",
+      "Notification setup",
+      "Forwarding configuration",
+      "Message handling guidance",
+      "Testing and training"
+    ],
+    "customerOutcomes": [
+      "Voicemail that works professionally",
+      "No more full boxes or missed messages",
+      "Messages reaching you reliably",
+      "A professional impression when you can't answer"
+    ]
+  },
+  "phone_number_port_coordination": {
+    "marketingCopy": "Porting your phone number is the step that scares businesses most - done wrong, you lose a number customers have called for years. Phone Number Port Coordination is management of the number porting process: carrier coordination, timing, and verification so your numbers move safely. We coordinate the port end to end - working with carriers, managing timing, and verifying everything works after. This is the package for businesses moving phone numbers without losing them.",
+    "bestFor": [
+      "Businesses porting numbers to a new provider",
+      "Organizations that want carrier coordination handled",
+      "Companies that want timing and verification managed",
+      "Businesses that must not lose their number"
+    ],
+    "whatIsIncluded": [
+      "Porting coordination",
+      "Carrier communication",
+      "Port timing management",
+      "Verification after port",
+      "Issue resolution during port",
+      "Post-port testing"
+    ],
+    "customerOutcomes": [
+      "Your phone numbers moved safely",
+      "Carrier coordination handled for you",
+      "Verification that everything works",
+      "Porting without losing your number"
+    ]
+  },
+  "teams_phone_readiness_check": {
+    "marketingCopy": "Microsoft Teams Phone can replace a traditional phone system - but readiness depends on licensing, bandwidth, and configuration you may not have checked. The Teams Phone Readiness Check is an assessment of readiness for Teams Phone: licensing, bandwidth, devices, and configuration evaluated for a smooth rollout. We evaluate whether your environment can support Teams Phone well - and what's needed to get there. This is the package for businesses considering Teams Phone without a leap of faith.",
+    "bestFor": [
+      "Businesses considering Microsoft Teams Phone",
+      "Organizations that want licensing and bandwidth assessed",
+      "Companies that want device readiness verified",
+      "Businesses that want to avoid a failed rollout"
+    ],
+    "whatIsIncluded": [
+      "Licensing assessment",
+      "Bandwidth evaluation",
+      "Device readiness check",
+      "Configuration review",
+      "Readiness recommendations",
+      "Rollout guidance"
+    ],
+    "customerOutcomes": [
+      "Clarity on Teams Phone readiness",
+      "Licensing and bandwidth verified",
+      "A smooth rollout path",
+      "No failed phone transition"
+    ]
+  },
+  "small_business_phone_refresh": {
+    "marketingCopy": "Many small businesses run their phones on old hardware, outdated systems, or consumer plans that lack the features a business needs. The Small Business Phone Refresh is a modernization of your phone setup: an assessment, system selection, and setup of a phone system that fits a small business. We modernize your phone system - assessing what you have, choosing what fits, and getting it set up. This is the package for small businesses ready for a phone system that actually fits them.",
+    "bestFor": [
+      "Small businesses with old or unsuitable phone systems",
+      "Organizations ready to modernize communication",
+      "Companies that want assessment and selection together",
+      "Businesses that want a phone system that fits"
+    ],
+    "whatIsIncluded": [
+      "Current system assessment",
+      "Phone system selection",
+      "Modern system setup",
+      "Phone configuration",
+      "Training",
+      "Post-setup support"
+    ],
+    "customerOutcomes": [
+      "A modern phone system that fits your business",
+      "Communications upgraded and working",
+      "A system chosen to meet your needs",
+      "Small business phones done right"
+    ]
+  },
+  "church_technology_health_check": {
+    "marketingCopy": "Churches often run technology on volunteer time and goodwill - systems that work today but have no one responsible, no documentation, and no plan. The Church Technology Health Check is an assessment of a church's technology: sound, livestream, network, and security reviewed with prioritized recommendations. We review your church's technology - the systems that support worship, ministry, and operations - and give you clear priorities. This is the package for churches that want their technology understood and guided.",
+    "bestFor": [
+      "Churches with volunteer-run technology",
+      "Congregations that want systems assessed",
+      "Churches that want priorities for sound, streaming, and security",
+      "Faith communities ready for technology guidance"
+    ],
+    "whatIsIncluded": [
+      "Sound system review",
+      "Livestream setup review",
+      "Network assessment",
+      "Security review",
+      "Prioritized recommendations",
+      "Health check report"
+    ],
+    "customerOutcomes": [
+      "A clear picture of church technology",
+      "Prioritized improvements for sound, streaming, and security",
+      "Guidance for volunteers and leadership",
+      "Confidence in the technology supporting ministry"
+    ]
+  },
+  "livestream_setup_support": {
+    "marketingCopy": "Livestreaming services and events expands your reach - but poorly set up streaming looks unprofessional and frustrates viewers. Livestream Setup Support is setup of livestreaming for churches and organizations: camera, encoder, platform, and audio configured for a reliable stream. We configure your livestream - camera, encoder, platform, and audio - so your service or event reaches viewers reliably and clearly. This is the package for streaming your services without the guesswork.",
+    "bestFor": [
+      "Churches and organizations new to livestreaming",
+      "Organizations that want camera and encoder setup",
+      "Companies that want reliable platform configuration",
+      "Groups that want to reach people beyond the room"
+    ],
+    "whatIsIncluded": [
+      "Camera configuration",
+      "Encoder setup",
+      "Streaming platform configuration",
+      "Audio setup",
+      "Test streaming",
+      "Operator training"
+    ],
+    "customerOutcomes": [
+      "Reliable, professional livestreams",
+      "Camera, encoder, and audio configured",
+      "Staff and volunteers trained to stream",
+      "Services and events reaching a wider audience"
+    ]
+  },
+  "guest_wi_fi_for_churches": {
+    "marketingCopy": "Churches want to welcome visitors - but open Wi-Fi invites risk, while locked-down Wi-Fi frustrates guests and staff. Guest Wi-Fi for Churches is setup of secure, separate guest Wi-Fi: isolated networks, filtering, and access controls for church environments. We configure guest Wi-Fi that's safe - separated from your internal network, with appropriate controls for a public-facing space. This is the package for churches that want welcoming Wi-Fi without the risk.",
+    "bestFor": [
+      "Churches that want welcoming guest Wi-Fi",
+      "Congregations concerned about network security",
+      "Churches with sensitive internal systems",
+      "Organizations that want guest access controlled"
+    ],
+    "whatIsIncluded": [
+      "Guest network design",
+      "Secure network separation",
+      "Content filtering",
+      "Access controls",
+      "Documentation",
+      "Testing"
+    ],
+    "customerOutcomes": [
+      "Welcoming Wi-Fi for visitors",
+      "Internal systems protected by separation",
+      "Appropriate controls for public access",
+      "A safe network for church operations"
+    ]
+  },
+  "volunteer_account_cleanup": {
+    "marketingCopy": "Volunteers come and go, and their accounts, access, and files linger - building a trail of stale access that churches rarely audit. Volunteer Account Cleanup is a review and cleanup of volunteer access: identifying stale accounts, removing unneeded access, and documenting what remains. We audit volunteer accounts and access - removing what's stale, securing what remains, and documenting the state. This is the package for organizations that want volunteer access managed, not accumulating.",
+    "bestFor": [
+      "Churches and nonprofits with volunteer access",
+      "Organizations with years of accumulated accounts",
+      "Companies that want stale access removed",
+      "Groups that want access documented and controlled"
+    ],
+    "whatIsIncluded": [
+      "Account inventory",
+      "Stale account identification",
+      "Access removal",
+      "Permission cleanup",
+      "Access documentation",
+      "Going-forward guidance"
+    ],
+    "customerOutcomes": [
+      "Volunteer access cleaned and documented",
+      "Stale accounts and access removed",
+      "A safer, more controlled environment",
+      "A documented starting point for access"
+    ]
+  },
+  "church_it_foundation": {
+    "marketingCopy": "Churches often have technology that just grew - donated computers, unofficial setups, no plan and no protection. The Church IT Foundation is a technology foundation for churches: essential setup, network security, backup, and documentation suited to a church's needs and budget. We build the essential technology foundation - setup that works, network secured, data backed up, and systems documented. This is the package for churches ready to move from improvised to intentional technology.",
+    "bestFor": [
+      "Churches running on improvised technology",
+      "Congregations that need essential IT setup",
+      "Churches that want security and backup basics",
+      "Organizations ready for intentional technology"
+    ],
+    "whatIsIncluded": [
+      "Essential technology setup",
+      "Network security configuration",
+      "Backup setup",
+      "System documentation",
+      "Budget-conscious recommendations",
+      "Foundation handoff"
+    ],
+    "customerOutcomes": [
+      "A solid technology foundation for ministry",
+      "Network secured and data backed up",
+      "Systems documented beyond one volunteer's memory",
+      "Intentional technology, not improvised"
+    ]
+  },
+  "marina_connectivity_pack": {
+    "marketingCopy": "Marinas need Wi-Fi and connectivity across water, docks, and weather - a coverage challenge unlike any office. The Marina Connectivity Pack is a connectivity package for marinas: Wi-Fi coverage planning, access point installation, and ongoing connectivity management for the marina environment. We design and deploy connectivity that reaches where marinas need it - docks, slips, and common areas - and manage it after. This is the package for marinas that want reliable connectivity across the waterfront.",
+    "bestFor": [
+      "Marinas that need dock and slip Wi-Fi coverage",
+      "Organizations with outdoor connectivity challenges",
+      "Marinas that want access points installed and managed",
+      "Businesses that want ongoing marina connectivity support"
+    ],
+    "whatIsIncluded": [
+      "Coverage planning",
+      "Access point installation",
+      "Connectivity configuration",
+      "Outdoor-hardened equipment selection",
+      "Ongoing management",
+      "Coverage verification"
+    ],
+    "customerOutcomes": [
+      "Reliable Wi-Fi across docks and common areas",
+      "Connectivity designed for the outdoor environment",
+      "Access points installed and managed",
+      "Satisfied boaters and staff with working connectivity"
+    ]
+  },
+  "outdoor_wi_fi_planning_for_marinas": {
+    "marketingCopy": "Outdoor Wi-Fi at a marina is a design problem - water, weather, distance, and interference all work against coverage. Outdoor Wi-Fi Planning for Marinas is a planning service for marina Wi-Fi: site assessment, coverage design, and equipment recommendations for outdoor environments. We assess your marina's unique challenges and design a Wi-Fi plan that actually works outdoors. This is the package for marinas that want a coverage plan before buying equipment.",
+    "bestFor": [
+      "Marinas planning outdoor Wi-Fi",
+      "Organizations with difficult outdoor coverage areas",
+      "Marinas that want site assessment and design",
+      "Businesses that want to avoid wasted equipment purchases"
+    ],
+    "whatIsIncluded": [
+      "Site assessment",
+      "Coverage design",
+      "Equipment recommendations",
+      "Outdoor environment planning",
+      "Interference considerations",
+      "Design documentation"
+    ],
+    "customerOutcomes": [
+      "A Wi-Fi plan designed for the marina environment",
+      "Coverage that accounts for water, weather, and distance",
+      "Equipment chosen to actually work outdoors",
+      "Confidence before spending on hardware"
+    ]
+  },
+  "security_camera_planning_for_marinas": {
+    "marketingCopy": "Marinas face unique security needs - remote property, expensive boats and gear, harsh weather, and large outdoor areas to watch. Security Camera Planning for Marinas is security camera planning for marinas: site assessment, camera placement, and system design for marine environments. We plan a camera system designed for the marina - placement that covers the important areas, equipment that survives the environment. This is the package for marinas that want a security system that fits the waterfront.",
+    "bestFor": [
+      "Marinas that want security camera coverage",
+      "Organizations protecting boats, docks, and equipment",
+      "Marinas that want placement and design planned",
+      "Businesses that want weather-hardened camera systems"
+    ],
+    "whatIsIncluded": [
+      "Site assessment",
+      "Camera placement planning",
+      "System design",
+      "Marine-environment equipment selection",
+      "Coverage priorities",
+      "Planning documentation"
+    ],
+    "customerOutcomes": [
+      "A camera plan designed for the marina",
+      "Placement that covers the areas that matter",
+      "Equipment chosen for the marine environment",
+      "A security system that fits the waterfront"
+    ]
+  },
+  "gate_and_sign_connectivity_review": {
+    "marketingCopy": "Gate access and digital signage depend on connectivity - and when the connection fails, gates won't open, signs go blank, and operations stall. The Gate and Sign Connectivity Review is a review of connectivity for gates and digital signs: connection reliability, failover, and equipment readiness assessed. We assess how your gates and signs connect - reliability, backup paths, and equipment health - and recommend improvements. This is the package for facilities that can't afford gates and signs going offline.",
+    "bestFor": [
+      "Facilities with gate access and digital signage",
+      "Organizations that need connectivity verified",
+      "Companies that want failover and reliability assessed",
+      "Businesses that can't afford gates or signs offline"
+    ],
+    "whatIsIncluded": [
+      "Connectivity assessment",
+      "Failover review",
+      "Equipment readiness check",
+      "Reliability evaluation",
+      "Recommendations",
+      "Review report"
+    ],
+    "customerOutcomes": [
+      "Gates and signs connectivity verified",
+      "Failover planned for outages",
+      "Equipment health understood",
+      "Fewer gate and sign outages"
+    ]
+  },
+  "seasonal_business_it_readiness": {
+    "marketingCopy": "Seasonal businesses compress a year of activity into weeks - and their technology has to be ready exactly when demand peaks, not after. Seasonal Business IT Readiness is a pre-season technology preparation package: systems reviewed, capacity checked, and contingencies in place for peak season. We prepare your technology for your busy season - reviewing systems, checking capacity, and putting contingencies in place. This is the package for seasonal businesses that need to be ready when the rush hits.",
+    "bestFor": [
+      "Seasonal businesses preparing for peak season",
+      "Organizations that need systems and capacity checked",
+      "Companies that want contingencies in place",
+      "Businesses that can't afford downtime during the rush"
+    ],
+    "whatIsIncluded": [
+      "Pre-season system review",
+      "Capacity and performance checks",
+      "Backup verification",
+      "Contingency planning",
+      "Priority issues fixed before season",
+      "Season readiness report"
+    ],
+    "customerOutcomes": [
+      "Technology ready when the season peaks",
+      "Systems and capacity verified ahead",
+      "Contingencies in place",
+      "A smooth, uninterrupted busy season"
+    ]
+  },
+  "wellness_office_security_pack": {
+    "marketingCopy": "Wellness offices handle sensitive client information that demands privacy - from booking systems to client records to payment data. The Wellness Office Security Pack is security setup for wellness practices: client data protection, secure Wi-Fi, and privacy-oriented configuration. We secure the technology that protects your clients' information - data, network, and devices configured with privacy first. This is the package for wellness offices that must protect client trust.",
+    "bestFor": [
+      "Wellness practices handling sensitive client data",
+      "Offices that need client data protection",
+      "Organizations that want secure Wi-Fi and configuration",
+      "Practices that must maintain client trust"
+    ],
+    "whatIsIncluded": [
+      "Client data protection setup",
+      "Secure Wi-Fi configuration",
+      "Device security",
+      "Privacy-oriented configuration",
+      "Access controls",
+      "Security guidance"
+    ],
+    "customerOutcomes": [
+      "Client information protected",
+      "A secure network for your office",
+      "Privacy configured into your systems",
+      "Client trust maintained"
+    ]
+  },
+  "patient_wi_fi_separation": {
+    "marketingCopy": "Wellness offices and clinics need guest Wi-Fi for patients - but an unseparated network exposes their own systems and other patients' data to risk. Patient Wi-Fi Separation is setup of separate patient and staff Wi-Fi: network isolation that keeps guest traffic off internal systems. We configure separated networks - patients on their own network, staff and systems protected on another. This is the package for clinics and offices that want to offer patient Wi-Fi safely.",
+    "bestFor": [
+      "Clinics and wellness offices offering patient Wi-Fi",
+      "Organizations with sensitive internal systems",
+      "Companies that need network isolation",
+      "Offices that want guest access without risk"
+    ],
+    "whatIsIncluded": [
+      "Network design for separation",
+      "Guest network setup",
+      "Staff network protection",
+      "Access controls",
+      "Documentation",
+      "Testing"
+    ],
+    "customerOutcomes": [
+      "Patient Wi-Fi offered safely",
+      "Guest traffic kept off internal systems",
+      "Staff and patient networks properly separated",
+      "Compliant, secure network setup"
+    ]
+  },
+  "contractor_digital_office": {
+    "marketingCopy": "Contractors work from sites, trucks, and homes - and their technology needs to work where the job is, not just at a desk. The Contractor Digital Office is a digital setup for contractors: cloud files, job photos, mobile devices, and communication configured for field work. We set up the digital tools contractors need - files in the cloud, photos organized, devices configured, communication working. This is the package for contractors who want their office to travel with them.",
+    "bestFor": [
+      "Contractors working from sites and vehicles",
+      "Organizations that need field-friendly technology",
+      "Companies that want cloud files and mobile devices set up",
+      "Businesses that want to run their office from anywhere"
+    ],
+    "whatIsIncluded": [
+      "Cloud file setup",
+      "Job photo organization",
+      "Mobile device configuration",
+      "Communication setup",
+      "Field-friendly access",
+      "Documentation and training"
+    ],
+    "customerOutcomes": [
+      "An office that works from any job site",
+      "Cloud files and photos accessible in the field",
+      "Mobile devices configured for work",
+      "A digital office that travels with you"
+    ]
+  },
+  "field_laptop_setup": {
+    "marketingCopy": "Field laptops take a beating - sites, vehicles, weather - and need setup that keeps them working, secure, and recoverable away from the office. Field Laptop Setup is setup of rugged and durable laptops for field use: hardware, security, connectivity, and recovery configured for demanding environments. We configure your field laptops for the job - secured, connected, and recoverable when things go wrong. This is the package for businesses whose laptops work in the field, not the office.",
+    "bestFor": [
+      "Businesses with laptops used in the field",
+      "Organizations that need durable device setup",
+      "Companies that want field laptops secured and recoverable",
+      "Businesses that need connectivity away from the office"
+    ],
+    "whatIsIncluded": [
+      "Hardware selection and setup",
+      "Security configuration",
+      "Mobile connectivity setup",
+      "Backup and recovery configuration",
+      "Offline capability setup",
+      "Field use training"
+    ],
+    "customerOutcomes": [
+      "Field laptops that survive the job",
+      "Devices secured and recoverable",
+      "Connectivity working away from the office",
+      "Work continuing in demanding environments"
+    ]
+  },
+  "cloud_file_setup_for_job_photos": {
+    "marketingCopy": "Job photos and documentation are proof, records, and marketing - but scattered on phones and camera cards, they're lost or unsearchable. Cloud File Setup for Job Photos is setup of cloud storage for job photos: organization, backup, and access configured so photos are captured, stored, and findable. We set up a cloud system for your job photos - organized, backed up, and accessible to the right people. This is the package for businesses that need photos managed, not lost.",
+    "bestFor": [
+      "Contractors and field businesses that take job photos",
+      "Organizations that need photos organized and backed up",
+      "Companies that want photo access controlled",
+      "Businesses that keep losing important photos"
+    ],
+    "whatIsIncluded": [
+      "Cloud storage setup",
+      "Photo organization structure",
+      "Automatic backup",
+      "Access controls",
+      "Mobile capture setup",
+      "Training and documentation"
+    ],
+    "customerOutcomes": [
+      "Job photos organized and backed up",
+      "Photos findable when needed",
+      "Access controlled to the right people",
+      "No more lost or scattered job records"
+    ]
+  },
+  "mobile_device_security_setup": {
+    "marketingCopy": "Phones and tablets now carry the keys to business - email, files, two-factor codes - yet many businesses leave mobile devices with almost no security controls. Mobile Device Security Setup is security configuration for mobile devices: passcodes, encryption, remote wipe, and app controls set up to protect business data. We secure your mobile devices - the basics enforced, devices encrypted, and a path to wipe a lost device. This is the package for businesses that want their mobile fleet protected.",
+    "bestFor": [
+      "Businesses with phones and tablets holding business data",
+      "Organizations that want mobile security basics enforced",
+      "Companies that want remote wipe capability",
+      "Businesses that need app and access controls"
+    ],
+    "whatIsIncluded": [
+      "Passcode and lock policy",
+      "Device encryption",
+      "Remote wipe setup",
+      "App and access controls",
+      "Email and data separation",
+      "Security training"
+    ],
+    "customerOutcomes": [
+      "Mobile devices secured against loss and theft",
+      "Business data protected on personal devices",
+      "Remote wipe capability in place",
+      "A secure mobile fleet"
+    ]
+  },
+  "blueberry_business_starter": {
+    "marketingCopy": "Maine blueberry farms run a real business alongside the harvest - and the technology that supports orders, customers, and operations deserves the same attention as the crop. The Blueberry Business Starter is a technology starter for blueberry farms and agricultural businesses: online sales, customer records, and operations technology set up for the season. We set up the technology that supports your farm business - sales channels, customer records, and operations running smoothly. This is the package for Maine agricultural businesses ready for a modern foundation.",
+    "bestFor": [
+      "Blueberry farms and agricultural businesses",
+      "Organizations that want online sales set up",
+      "Farms that need customer and operations technology",
+      "Agricultural businesses ready for a modern foundation"
+    ],
+    "whatIsIncluded": [
+      "Online sales setup",
+      "Customer record management",
+      "Operations technology setup",
+      "Communication setup",
+      "Season-focused configuration",
+      "Getting-started guidance"
+    ],
+    "customerOutcomes": [
+      "Technology supporting the farm business",
+      "Online sales and customer records in place",
+      "Operations running smoothly through the season",
+      "A modern foundation for an agricultural business"
+    ]
+  },
+  "pine_tree_protection_pack": {
+    "marketingCopy": "From tree farms to lumber operations, Maine's forest industry depends on reliable equipment, records, and increasingly, connected technology. The Pine Tree Protection Pack is a security and backup package for forestry and outdoor businesses: devices protected, data backed up, and operations secured against field risks. We protect the technology your operation depends on - devices secured, data backed up, and systems resilient in demanding conditions. This is the package for forest industry businesses that can't afford to lose data or systems.",
+    "bestFor": [
+      "Forestry, tree farm, and lumber businesses",
+      "Organizations with demanding outdoor environments",
+      "Companies that need devices and data protected",
+      "Businesses that can't afford field IT loss"
+    ],
+    "whatIsIncluded": [
+      "Device security",
+      "Backup setup",
+      "Data protection configuration",
+      "Field risk mitigation",
+      "Recovery planning",
+      "Security guidance"
+    ],
+    "customerOutcomes": [
+      "Devices and data protected in the field",
+      "Backups securing critical records",
+      "Operations resilient in demanding conditions",
+      "Confidence that field IT won't be lost"
+    ]
+  },
+  "harbor_wi_fi_bundle": {
+    "marketingCopy": "For Maine harbor communities and waterfront businesses, connectivity for boats, docks, and visiting vessels is as important as any utility. The Harbor Wi-Fi Bundle is a connectivity package for harbors and waterfronts: coverage planning, access point deployment, and management for the harbor environment. We deliver Wi-Fi that reaches the water - coverage designed for docks and vessels, deployed, and managed. This is the package for harbors that want connectivity as part of the harbor experience.",
+    "bestFor": [
+      "Harbors and waterfront communities",
+      "Organizations serving visiting boats and vessels",
+      "Marinas and docks that want Wi-Fi coverage",
+      "Waterfronts that want connectivity managed"
+    ],
+    "whatIsIncluded": [
+      "Coverage planning for the waterfront",
+      "Access point deployment",
+      "Outdoor connectivity configuration",
+      "Dock and vessel coverage design",
+      "Ongoing management",
+      "Coverage verification"
+    ],
+    "customerOutcomes": [
+      "Wi-Fi that reaches boats and docks",
+      "Connectivity as part of the harbor experience",
+      "Outdoor access points deployed and managed",
+      "Satisfied boaters and waterfront businesses"
+    ]
+  },
+  "anchor_backup_plan": {
+    "marketingCopy": "For waterfront and seasonal businesses, data protection is the anchor that holds - but many operate without verified backups they can actually restore. The Anchor Backup Plan is a backup setup package for waterfront and seasonal businesses: data backed up, restore tested, and business-critical records protected. We set up and verify your backups - data protected, restoration tested, and critical records recoverable. This is the package for seasonal and waterfront businesses that want their data secured before the season starts.",
+    "bestFor": [
+      "Waterfront and seasonal businesses",
+      "Organizations that need backups set up and tested",
+      "Companies that want business records recoverable",
+      "Businesses that want data protected before the season"
+    ],
+    "whatIsIncluded": [
+      "Backup setup",
+      "Restore testing",
+      "Critical data identification",
+      "Backup monitoring",
+      "Season-focused protection",
+      "Backup documentation"
+    ],
+    "customerOutcomes": [
+      "Backups set up and verified",
+      "Restores tested, not just assumed",
+      "Critical records protected",
+      "Data secured before the season begins"
+    ]
+  },
+  "north_star_cyber_plan": {
+    "marketingCopy": "For Maine businesses that want their security pointed in the right direction, a guided, comprehensive plan beats reacting to each scare as it comes. The North Star Cyber Plan is a foundational cyber plan for Maine businesses: an assessment, security basics, backup, and a roadmap to strengthen security. We assess where you stand, implement the security basics, protect your data, and lay out a path forward. This is the package for Maine businesses ready to guide their security by a clear direction.",
+    "bestFor": [
+      "Maine businesses wanting a guided security plan",
+      "Organizations that need assessment and security basics",
+      "Companies that want backup and a roadmap",
+      "Businesses ready to stop reacting to security scares"
+    ],
+    "whatIsIncluded": [
+      "Security assessment",
+      "Security basics implementation",
+      "Backup setup",
+      "Security roadmap",
+      "Priority recommendations",
+      "Plan documentation"
+    ],
+    "customerOutcomes": [
+      "A clear direction for your security",
+      "Security basics implemented",
+      "Data protected and backups verified",
+      "A roadmap to keep strengthening security"
+    ]
+  }
+}

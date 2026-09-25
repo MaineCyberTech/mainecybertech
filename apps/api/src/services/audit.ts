@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "./supabase";
 import { logger } from "../lib/logger";
+import { toJson } from "../lib/db-types";
 
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 100;
@@ -30,8 +31,23 @@ export async function logAuditEvent(input: AuditEventInput) {
     metadata: input.metadata ?? {},
   };
 
+  const piiFields = ["full_name", "email", "phone", "password", "token", "secret"];
+  if (data.metadata && typeof data.metadata === "object") {
+    const sanitized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data.metadata as Record<string, unknown>)) {
+      if (piiFields.some((f) => key.toLowerCase().includes(f.toLowerCase()))) {
+        sanitized[key] = "[REDACTED]";
+      } else {
+        sanitized[key] = value;
+      }
+    }
+    data.metadata = sanitized;
+  }
+
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    const { error } = await supabase.from("audit_logs").insert(data);
+    const { error } = await supabase
+      .from("audit_logs")
+      .insert({ ...data, metadata: toJson(data.metadata) });
 
     if (!error) return;
 

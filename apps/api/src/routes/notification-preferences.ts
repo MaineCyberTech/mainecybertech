@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { getSupabaseAdmin } from "../services/supabase";
+import { getScopedClient } from "../services/supabase";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { AppError, success } from "../types";
@@ -10,18 +10,12 @@ const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
 
-const MODULES = [
-  "tickets",
-  "projects",
-  "documents",
-  "billing",
-  "system",
-] as const;
+const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
 const CHANNELS = ["email", "sms", "in_app"] as const;
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notification-preferences", "read");
     const orgId = req.query.organization_id as string | undefined;
 
     let query = supabase
@@ -63,7 +57,7 @@ router.put("/", async (req, res, next) => {
       })
       .parse(req.body);
 
-    const supabase = getSupabaseAdmin();
+    const supabase = getScopedClient(req, "notification-preferences", "write");
 
     const results = [];
     for (const pref of preferences) {
@@ -71,7 +65,7 @@ router.put("/", async (req, res, next) => {
         .from("notification_preferences")
         .upsert(
           {
-            organization_id: organizationId ?? null,
+            organization_id: organizationId as string,
             user_id: req.authUser!.userId,
             module_key: pref.moduleKey,
             channel: pref.channel,
@@ -93,7 +87,7 @@ router.put("/", async (req, res, next) => {
       metadata: { organizationId, preferenceCount: preferences.length },
     });
 
-    res.json(success(results));
+    res.json(success({ updated: results.length }));
   } catch (error) {
     next(error);
   }

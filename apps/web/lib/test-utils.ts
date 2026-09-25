@@ -52,8 +52,7 @@ export function createMockBuilder<T = any>() {
       chain.upsert(...args);
       return builder;
     },
-    then: (resolve: (value: T) => T) =>
-      Promise.resolve(resolve({} as T)),
+    then: (resolve: (value: T) => T) => Promise.resolve(resolve({} as T)),
   };
 
   return builder;
@@ -66,6 +65,12 @@ export function createMockBuilder<T = any>() {
 export function setupAdminPageMocks() {
   return {
     requireAdminAccess: jest.fn().mockResolvedValue(undefined),
+    requirePermission: jest.fn().mockResolvedValue({
+      isSuperAdmin: false,
+      permissions: [],
+      keys: [],
+      roles: [],
+    }),
     apiClient: {
       organizations: { list: jest.fn(), get: jest.fn() },
       tickets: { list: jest.fn(), get: jest.fn() },

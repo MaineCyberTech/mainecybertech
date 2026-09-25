@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin } from "../fixtures";
 
 test.describe("portal billing page", () => {
   test("renders billing heading", async ({ page }) => {
@@ -19,7 +19,7 @@ test.describe("portal billing page", () => {
   test("has sync button", async ({ page }) => {
     await page.goto("/portal/billing");
     const syncBtn = page.getByRole("button", { name: /sync|stripe/i });
-    if (await syncBtn.isVisible()) {
+    if (await visibleWithin(syncBtn)) {
       await expect(syncBtn).toBeEnabled();
     }
   });

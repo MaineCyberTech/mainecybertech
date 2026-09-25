@@ -1,9 +1,57 @@
-
 name: hardening-runner
-on: [push, pull_request]
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+    paths:
+      - "prompts/hardening_prompt_pack/**"
+      - "apps/api/**"
+      - "apps/web/**"
+      - "apps/worker/**"
+      - "supabase/migrations/**"
+      - "packages/**"
+      - ".github/workflows/hardening_runner.yml"
+
+permissions:
+  contents: read
+  actions: write
+
 jobs:
-  run:
+  audit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: python runner/run_all.py
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run hardening audit
+        run: python prompts/hardening_prompt_pack/runner/run_all.py
+
+      - name: Run deep adversarial audit
+        run: python prompts/hardening_prompt_pack/runner/deep_adversarial_audit.py
+
+      - name: Upload findings
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardening-findings-${{ github.sha }}
+          path: |
+            prompts/hardening_prompt_pack/engine/outputs/
+            prompts/hardening_prompt_pack/engine/deep_audit/
+          retention-days: 30
+
+      - name: Check for P0 blockers
+        id: check-p0
+        run: |
+          SCORE_FILE="prompts/hardening_prompt_pack/engine/outputs/system_risk_score.json"
+          if [ -f "$SCORE_FILE" ]; then
+            P0=$(python -c "import json; print(json.load(open('$SCORE_FILE')).get('p0', 0))")
+            if [ "$P0" -gt 0 ]; then
+              echo "P0 count is $P0 — gating"
+              echo "blocked=true" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          fi
+          echo "No P0 blockers"
+          echo "blocked=false" >> $GITHUB_OUTPUT

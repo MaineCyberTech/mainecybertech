@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin ticket flows", () => {
   test("can view ticket list and navigate to detail", async ({ page }) => {
@@ -6,15 +6,17 @@ test.describe("admin ticket flows", () => {
     await expect(page.getByRole("heading", { name: "Tickets", exact: true }).first()).toBeVisible();
 
     const ticketLink = page.locator("a[href*='/admin/tickets/']").first();
-    if (await ticketLink.isVisible()) {
-      await ticketLink.click();
+    if (await visibleWithin(ticketLink)) {
+      await clickOrGoto(page, ticketLink);
       await expect(page).toHaveURL(/\/admin\/tickets/);
     }
   });
 
   test("shows not-found for unknown ticket", async ({ page }) => {
     await page.goto("/admin/tickets/does-not-exist");
-    await expect(page.getByText(/not found/i)).toBeVisible();
+    await expect(page.getByText("Ticket not found.", { exact: true }).first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 });
 
@@ -24,15 +26,17 @@ test.describe("admin user flows", () => {
     await expect(page.getByRole("heading", { name: /users/i })).toBeVisible();
 
     const userLink = page.locator("a[href*='/admin/users/']").first();
-    if (await userLink.isVisible()) {
-      await userLink.click();
+    if (await visibleWithin(userLink)) {
+      await clickOrGoto(page, userLink);
       await expect(page).toHaveURL(/\/admin\/users/);
     }
   });
 
   test("shows not-found for unknown user", async ({ page }) => {
     await page.goto("/admin/users/does-not-exist");
-    await expect(page.getByText(/not found/i)).toBeVisible();
+    await expect(page.getByText("User not found.", { exact: true }).first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 });
 
@@ -41,18 +45,18 @@ test.describe("admin organization flows", () => {
     await page.goto("/admin/organizations");
     await expect(page.getByRole("heading", { name: /organizations/i })).toBeVisible();
 
-    const orgLink = page.locator("a[href*='/admin/organizations/']").first();
-    if (await orgLink.isVisible()) {
-      await orgLink.click();
+    const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
+    if (await visibleWithin(orgLink)) {
+      await clickOrGoto(page, orgLink);
       await expect(page).toHaveURL(/\/admin\/organizations\//);
     }
   });
 
   test("org detail shows basics form", async ({ page }) => {
     await page.goto("/admin/organizations");
-    const orgLink = page.locator("a[href*='/admin/organizations/']").first();
-    if (await orgLink.isVisible()) {
-      await orgLink.click();
+    const orgLink = page.locator("a[href*='/admin/organizations/']:not([href$='/new'])").first();
+    if (await visibleWithin(orgLink)) {
+      await clickOrGoto(page, orgLink);
       await expect(page.getByText(/organization basics|name/i).first()).toBeVisible();
       await expect(page.getByText(/domains/i).first()).toBeVisible();
       await expect(page.getByText(/memberships/i).first()).toBeVisible();
@@ -66,8 +70,8 @@ test.describe("admin project flows", () => {
     await expect(page.getByRole("heading", { name: /projects/i })).toBeVisible();
 
     const projectLink = page.locator("a[href*='/admin/projects/']").first();
-    if (await projectLink.isVisible()) {
-      await projectLink.click();
+    if (await visibleWithin(projectLink)) {
+      await clickOrGoto(page, projectLink);
       await expect(page.getByText(/project/i).first()).toBeVisible();
     }
   });
@@ -75,8 +79,8 @@ test.describe("admin project flows", () => {
   test("project detail shows task list section", async ({ page }) => {
     await page.goto("/admin/projects");
     const projectLink = page.locator("a[href*='/admin/projects/']").first();
-    if (await projectLink.isVisible()) {
-      await projectLink.click();
+    if (await visibleWithin(projectLink)) {
+      await clickOrGoto(page, projectLink);
       await expect(page.getByText(/task/i).first()).toBeVisible();
     }
   });
@@ -129,11 +133,11 @@ test.describe("cross-navigation flows", () => {
   test("can navigate from user detail back to users list", async ({ page }) => {
     await page.goto("/admin/users");
     const userLink = page.locator("a[href*='/admin/users/']").first();
-    if (await userLink.isVisible()) {
-      await userLink.click();
+    if (await visibleWithin(userLink)) {
+      await clickOrGoto(page, userLink);
       const backLink = page.getByRole("link", { name: /back|users/i });
-      if (await backLink.isVisible()) {
-        await backLink.click();
+      if (await visibleWithin(backLink)) {
+        await clickOrGoto(page, backLink);
         await expect(page).toHaveURL(/\/admin\/users$/);
       }
     }

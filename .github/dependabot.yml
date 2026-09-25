@@ -24,9 +24,32 @@ updates:
         patterns:
           - "@aws-sdk/*"
     open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+    versioning-strategy: increase
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
+    labels:
+      - "ci"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "docker"
+
+  - package-ecosystem: "terraform"
+    directory: "/infra/terraform/digitalocean"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "infra"

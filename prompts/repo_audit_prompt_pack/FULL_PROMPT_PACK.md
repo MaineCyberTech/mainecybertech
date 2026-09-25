@@ -50,6 +50,16 @@ Never recommend broad rewrites without justification.
 Never force symmetry if the current repo is already better.
 Never break working contracts without explicitly warning about it.
 
+## Pre-Flight Validation
+
+Before beginning any phase, verify:
+
+- Both repo paths exist and are accessible
+- The reference repo (`C:\temp\chat`) matches the expected project
+- The current working repo is the correct target for comparison
+
+If either path is invalid or the repos appear misidentified, halt and report the discrepancy before proceeding.
+
 ## Optional Ultra-Strict Wrapper
 
 Do not give generic recommendations.
@@ -123,6 +133,14 @@ Do not be generic.
 Reference exact folders/files/modules whenever available.
 If something cannot be verified, label it as a hypothesis.
 
+### Self-Review
+
+Before concluding Phase 1, review your output and flag:
+
+- Any claim not directly verifiable from the file tree
+- Any area you skipped due to size/complexity that warrants deeper inspection
+- Any structural issue you felt compelled to mention despite the "no recommendations yet" rule
+
 ---
 
 # Phase 2 — Feature / Module / Folder Mapping
@@ -167,6 +185,7 @@ Focus on:
 - scripts/tooling
 - tests
 - infra/config/docs
+- database / schema patterns (migration strategies, RLS policies, seed data, table design)
 
 ### Required output format
 
@@ -180,8 +199,16 @@ Focus on:
 8. Areas That Cannot Yet Be Mapped Reliably
 
 Do NOT recommend major changes yet.
-The purpose is to build a highly accurate “this corresponds to that” map.
+The purpose is to build a highly accurate "this corresponds to that" map.
 Be explicit and detailed.
+
+### Self-Review
+
+Before concluding Phase 2, review your output and flag:
+
+- Any mapping based on folder name similarity rather than actual implementation inspection
+- Any area where you're uncertain about the equivalence
+- Any feature that exists in one repo but you couldn't find its counterpart (or confirm its absence) in the other
 
 ---
 
@@ -254,6 +281,14 @@ Be opinionated, but justify every recommendation.
 No hand-wavy statements.
 No generic advice without exact context.
 
+### Self-Review
+
+Before concluding Phase 3, review your output and flag:
+
+- Any "copy as-is" recommendation where you haven't verified the source pattern actually works in isolation
+- Any recommendation based on assumptions rather than direct code inspection
+- Any assessment where you lack sufficient context to make a confident classification
+
 ---
 
 # Phase 4 — Risk, Stability, and “Do Not Break” Analysis
@@ -287,6 +322,29 @@ For every major potential improvement area, assess:
 - whether deployment behavior could change
 - whether auth, routing, data, or API contracts could be impacted
 
+### Security Posture Comparison
+
+In addition to stability risk, assess the **security posture gap** between the two repos. Compare across:
+
+- **Auth flows** — JWT strategy (local verify vs Supabase getUser), session management, cookie flags (HttpOnly/Secure/SameSite), PKCE exchange
+- **Secrets management** — how API keys, tokens, and secrets are stored, injected, and validated (env schemas, .env.example hygiene, CI secret passing)
+- **HTTP security headers** — CSP, HSTS, X-Frame-Options, X-Content-Type-Options presence and strictness
+- **Input validation** — Zod schema coverage (what % of mutation endpoints are validated), sanitization patterns
+- **Rate limiting** — per-endpoint vs global, auth endpoint throttling, configurable limits
+- **Dependency vulnerabilities** — compare dependency counts, known vulnerable packages, supply chain risk (lockfile, Dependabot/Renovate config)
+- **Database access** — RLS policy coverage, service role key usage patterns, tenant isolation enforcement (requireOrgAccess vs inline checks)
+- **Audit logging** — coverage across mutation endpoints, PII exposure in logs, retention strategy
+- **Error handling** — stack traces in responses, structured vs ad-hoc error formats, sentry/pino integration
+
+For each dimension, classify as:
+
+- current repo is **stronger**
+- reference repo is **stronger**
+- **equivalent**
+- **unknown** (needs deeper inspection)
+
+### Risk Guardrails
+
 Pay special attention to:
 
 - auth flows
@@ -315,6 +373,14 @@ Pay special attention to:
 Be conservative and explicit.
 Do not understate risk.
 If a change sounds nice but is operationally dangerous, say so clearly.
+
+### Self-Review
+
+Before concluding Phase 4, review your output and flag:
+
+- Any risk assessment where you lack evidence to estimate blast radius or migration complexity
+- Any security dimension you didn't assess due to insufficient visibility into the codebase
+- Any "low risk" label that depends on assumptions about test coverage or deployment practices
 
 ---
 
@@ -378,6 +444,14 @@ For each roadmap item include:
 Be practical, not theoretical.
 Make this usable as a real engineering plan.
 
+### Self-Review
+
+Before concluding Phase 5, review your output and flag:
+
+- Any roadmap item that depends on unverified assumptions about the reference pattern
+- Any phase with too many items (may indicate insufficient prioritization)
+- Any item where the rollback approach is unclear or unstated
+
 ---
 
 # Phase 6 — File-by-File / Area-by-Area Change Plan
@@ -428,6 +502,14 @@ Each item should be concrete and implementation-oriented.
 If exact filenames are visible, use them.
 If not, reference the most specific path/module area you can verify.
 
+### Self-Review
+
+Before concluding Phase 6, review your output and flag:
+
+- Any file reference you haven't directly verified exists in the repo
+- Any change recommendation where the diff between source and target isn't clear
+- Any area where you recommend structural changes without sufficient test coverage
+
 ---
 
 # Phase 7 — Patch Set Design / Execution Plan
@@ -470,7 +552,7 @@ For each patch set define:
 
 Also create:
 
-1. Top 25 prioritized recommendations
+1. Top N prioritized recommendations (aim for ~20-25, let findings dictate the count; do not pad or truncate)
 2. Quick wins
 3. Needs-tests-first list
 4. Copy-from-reference list
@@ -480,6 +562,14 @@ Also create:
 
 Do not produce code yet unless explicitly asked.
 This phase is for disciplined implementation planning.
+
+### Self-Review
+
+Before concluding Phase 7, review your output and flag:
+
+- Any patch set where dependencies between files create hidden merge conflicts
+- Any "quick win" that has unstated prerequisites or test gaps
+- Any recommendation where the rollback approach is impractical or unspecified
 
 ---
 
@@ -537,3 +627,11 @@ Tone:
 - conservative about regressions
 
 This must read like a production-grade comparative audit written for an engineering owner who values precision, safety, and implementation realism.
+
+### Self-Review
+
+Before concluding Phase 8, review your output and flag:
+
+- Any finding carried forward from an earlier phase that you haven't re-validated
+- Any recommendation where the tradeoff analysis is one-sided (benefits listed but risks minimized)
+- Any section where the evidence is thin but the recommendation is strong

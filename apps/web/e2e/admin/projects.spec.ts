@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin projects list", () => {
   test.beforeEach(async ({ page }) => {
@@ -27,14 +27,16 @@ test.describe("admin projects list", () => {
 test.describe("admin project detail", () => {
   test("shows not-found for unknown project", async ({ page }) => {
     await page.goto("/admin/projects/does-not-exist");
-    await expect(page.getByText(/not found/i)).toBeVisible();
+    await expect(page.getByText("Project not found.", { exact: true }).first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("shows project name and status when project exists", async ({ page }) => {
     await page.goto("/admin/projects");
     const projectLink = page.locator("a[href*='/admin/projects/']").first();
-    if (await projectLink.isVisible()) {
-      await projectLink.click();
+    if (await visibleWithin(projectLink)) {
+      await clickOrGoto(page, projectLink);
       await expect(page.getByText(/project/i).first()).toBeVisible();
     }
   });
@@ -42,8 +44,8 @@ test.describe("admin project detail", () => {
   test("shows task list section", async ({ page }) => {
     await page.goto("/admin/projects");
     const projectLink = page.locator("a[href*='/admin/projects/']").first();
-    if (await projectLink.isVisible()) {
-      await projectLink.click();
+    if (await visibleWithin(projectLink)) {
+      await clickOrGoto(page, projectLink);
       await expect(page.getByText(/tasks|add task/i).first()).toBeVisible();
     }
   });

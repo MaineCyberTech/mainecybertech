@@ -1,0 +1,15 @@
+{
+  "decision": "APPROVED_FOR_PROD_DEPLOY",
+  "readiness_score": 91,
+  "blocked": false,
+  "blocked_by": null,
+  "severity_counts": {
+    "P0": 0,
+    "P1": 0,
+    "P2": 3,
+    "P3": 3
+  },
+  "total_findings": 6,
+  "timestamp": "2026-08-06T21:22:14.204060+00:00",
+  "commit": "75d3926 test-data: cover admin workflow-button states (phishing launch + CAB approve/reject)"
+}

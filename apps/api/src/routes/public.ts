@@ -6,6 +6,7 @@ import { getEnv } from "../config/env";
 import { logAuditEvent } from "../services/audit";
 import { logger } from "../lib/logger";
 import { httpClients } from "../lib/http-client";
+import { isBotUserAgent, shouldSendVisitorAlert } from "../lib/bot-detection";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -19,7 +20,24 @@ const submitSchema = z.object({
   employees: z.string().min(1).max(50),
   urgency: z.string().min(1).max(50),
   message: z.string().min(1).max(5000),
+  captchaToken: z.string().min(1).max(10000).optional(),
 });
+
+async function verifyCaptcha(token: string): Promise<boolean> {
+  try {
+    const secret = getEnv().TURNSTILE_SECRET_KEY;
+    if (!secret) return true;
+    const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}`,
+    });
+    const data = (await res.json()) as { success: boolean };
+    return data.success === true;
+  } catch {
+    return false;
+  }
+}
 
 router.get("/init", async (req, res, next) => {
   try {
@@ -30,18 +48,27 @@ router.get("/init", async (req, res, next) => {
     const platform = (req.headers["sec-ch-ua-platform"] as string) || "Unknown";
     const referrer = req.headers["referer"] || "Direct";
 
+    // Crawlers, preview bots, uptime monitors and scanners hit this public
+    // endpoint constantly; do not treat them as human visitors.
+    const isBot = isBotUserAgent(userAgent);
+
     let location = "Unknown";
-    try {
-      const cleanIp = ipAddress.replace("::ffff:", "");
-      const geoRes = await httpClients.geo.get(
-        `http://ip-api.com/json/${cleanIp}`,
-      );
-      const geoData: any = await geoRes.json();
-      if (geoData.status === "success") {
-        location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
+    if (!isBot) {
+      try {
+        const cleanIp = ipAddress.replace("::ffff:", "");
+        const geoRes = await httpClients.geo.get(`http://ip-api.com/json/${cleanIp}`);
+        const geoData: {
+          status: string;
+          city?: string | null;
+          regionName?: string | null;
+          country?: string | null;
+        } = await geoRes.json();
+        if (geoData.status === "success") {
+          location = `${geoData.city}, ${geoData.regionName}, ${geoData.country}`;
+        }
+      } catch {
+        // Geo lookup failure is non-critical
       }
-    } catch {
-      // Geo lookup failure is non-critical
     }
 
     const { error } = await supabase.from("public_interactions").insert({
@@ -51,12 +78,13 @@ router.get("/init", async (req, res, next) => {
       user_agent: userAgent,
       platform,
       referrer,
+      is_bot: isBot,
     });
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 
     const env = getEnv();
-    if (env.PUBLIC_TRAFFIC_WEBHOOK_URL) {
+    if (env.PUBLIC_TRAFFIC_WEBHOOK_URL && !isBot && shouldSendVisitorAlert(ipAddress)) {
       const visitorCard = {
         type: "message",
         attachments: [
@@ -80,13 +108,9 @@ router.get("/init", async (req, res, next) => {
 
       httpClients.teams
         .post(env.PUBLIC_TRAFFIC_WEBHOOK_URL, visitorCard)
-        .catch((err) =>
-          logger.error({ err }, "Failed to send traffic webhook"),
-        );
-    } else {
-      logger.warn(
-        "PUBLIC_TRAFFIC_WEBHOOK_URL not set — skipping visitor webhook",
-      );
+        .catch((err) => logger.error({ err }, "Failed to send traffic webhook"));
+    } else if (!env.PUBLIC_TRAFFIC_WEBHOOK_URL) {
+      logger.warn("PUBLIC_TRAFFIC_WEBHOOK_URL not set — skipping visitor webhook");
     }
 
     res.json(success({ trackingId: interactionId }));
@@ -98,6 +122,21 @@ router.get("/init", async (req, res, next) => {
 router.post("/submit", async (req, res, next) => {
   try {
     const parsed = submitSchema.parse(req.body);
+
+    // When Turnstile is configured, a verified token is required. Previously
+    // the check was skipped whenever the token was absent, so an attacker
+    // could bypass it by simply omitting the field.
+    const captchaSecret = getEnv().TURNSTILE_SECRET_KEY;
+    if (captchaSecret) {
+      if (!parsed.captchaToken) {
+        throw new AppError("CAPTCHA_REQUIRED", "CAPTCHA verification is required.", 400);
+      }
+      const valid = await verifyCaptcha(parsed.captchaToken);
+      if (!valid) {
+        throw new AppError("CAPTCHA_FAILED", "CAPTCHA verification failed. Please try again.", 400);
+      }
+    }
+
     const supabase = getSupabaseAdmin();
 
     const { data: record, error: fetchError } = await supabase
@@ -107,11 +146,7 @@ router.post("/submit", async (req, res, next) => {
       .single();
 
     if (fetchError || !record) {
-      throw new AppError(
-        "NOT_FOUND",
-        "Session expired. Please refresh the page.",
-        404,
-      );
+      throw new AppError("NOT_FOUND", "Session expired. Please refresh the page.", 404);
     }
 
     const { error: updateError } = await supabase
@@ -161,8 +196,7 @@ router.post("/submit", async (req, res, next) => {
 
     if (env.JSM_DOMAIN && env.JSM_API_TOKEN) {
       const authHeader =
-        "Basic " +
-        Buffer.from(`${env.JSM_EMAIL}:${env.JSM_API_TOKEN}`).toString("base64");
+        "Basic " + Buffer.from(`${env.JSM_EMAIL}:${env.JSM_API_TOKEN}`).toString("base64");
 
       const ticketDescription = `*A new client request was submitted via the website.*
 
@@ -219,9 +253,7 @@ h3. Captured Session Metadata
         })
         .catch((err) => logger.error({ err }, "Failed to reach JSM API"));
     } else {
-      logger.warn(
-        "JSM_DOMAIN or JSM_API_TOKEN not set — skipping ticket creation",
-      );
+      logger.warn("JSM_DOMAIN or JSM_API_TOKEN not set — skipping ticket creation");
     }
 
     await logAuditEvent({

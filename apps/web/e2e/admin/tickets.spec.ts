@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin tickets list", () => {
   test.beforeEach(async ({ page }) => {
@@ -27,14 +27,16 @@ test.describe("admin tickets list", () => {
 test.describe("admin ticket detail", () => {
   test("shows not-found for unknown ticket", async ({ page }) => {
     await page.goto("/admin/tickets/does-not-exist");
-    await expect(page.getByText(/not found/i)).toBeVisible();
+    await expect(page.getByText("Ticket not found.", { exact: true }).first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("shows ticket info when ticket exists", async ({ page }) => {
     await page.goto("/admin/tickets");
     const ticketLink = page.locator("a[href*='/admin/tickets/']").first();
-    if (await ticketLink.isVisible()) {
-      await ticketLink.click();
+    if (await visibleWithin(ticketLink)) {
+      await clickOrGoto(page, ticketLink);
       await expect(page.getByText(/ticket|open tickets/i).first()).toBeVisible();
     }
   });
@@ -42,8 +44,8 @@ test.describe("admin ticket detail", () => {
   test("shows comments section", async ({ page }) => {
     await page.goto("/admin/tickets");
     const ticketLink = page.locator("a[href*='/admin/tickets/']").first();
-    if (await ticketLink.isVisible()) {
-      await ticketLink.click();
+    if (await visibleWithin(ticketLink)) {
+      await clickOrGoto(page, ticketLink);
       await expect(page.getByText(/comments|history/i).first()).toBeVisible();
     }
   });

@@ -1,0 +1,17 @@
+{
+  "count": 1,
+  "blockers": [
+    {
+      "severity": "P0",
+      "domain": "security",
+      "category": "tenancy",
+      "file": "apps/api/src/routes/users.ts",
+      "endpoint": "GET /api/v1/users, GET /api/v1/users/:id, PATCH /api/v1/users/:id/role, GET /api/v1/users/:id/permissions",
+      "data_path": "req.params.id \u2192 supabase.from('users').select() \u2192 all user data",
+      "issue": "Users router has no requireOrgAccess \u2014 any authenticated user can access any user's data",
+      "exploit_chain": "Authenticated user from Org A calls GET /api/v1/users/:id with Org B user's UUID \u2192 no org membership check \u2192 returns Org B user's email, role, permissions \u2192 cross-tenant user enumeration",
+      "impact": "Cross-tenant user enumeration and PII exposure",
+      "fix": "Add requireOrgAccess middleware or per-route org membership checks on users router"
+    }
+  ]
+}

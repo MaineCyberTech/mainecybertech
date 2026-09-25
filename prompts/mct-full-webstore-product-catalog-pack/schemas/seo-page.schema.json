@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["slug", "title", "description", "templateType"],
+  "properties": {
+    "slug": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "title": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "description": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "templateType": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "relatedProducts": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    },
+    "faqs": {
+      "type": ["string", "number", "boolean", "array", "object", "null"]
+    }
+  }
+}

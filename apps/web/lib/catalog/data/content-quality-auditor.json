@@ -1,0 +1,19 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "checks": [
+    "clarity",
+    "duplicate_content",
+    "missing_exclusions",
+    "missing_cta",
+    "missing_trust_badges",
+    "too_much_jargon",
+    "weak_value_proposition",
+    "overpromising",
+    "unsupported_compliance_claims",
+    "security_risk_wording",
+    "mobile_card_length",
+    "seo_quality",
+    "missing_safe_access_note"
+  ],
+  "severity": ["P0", "P1", "P2", "P3"]
+}

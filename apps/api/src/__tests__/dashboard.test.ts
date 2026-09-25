@@ -19,11 +19,15 @@ jest.mock("../config/env", () => ({
 
 jest.mock("../services/supabase", () => ({
   getSupabaseAdmin: jest.fn(),
-  
+    getScopedClient: jest.fn((_req, _moduleKey, _kind) => require("../services/supabase").getSupabaseAdmin()),
 }));
 
 jest.mock("../services/audit", () => ({
   logAuditEvent: jest.fn(),
+}));
+
+jest.mock("../middleware/admin", () => ({
+  requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 import { getSupabaseAdmin } from "../services/supabase";
@@ -51,8 +55,7 @@ describe("dashboard routes", () => {
   describe("GET /summary", () => {
     it("returns counts for all dashboard metrics", async () => {
       const supabase = mockAuth();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null, count: 5 }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null, count: 5 }));
 
       const res = await request(app)
         .get("/api/v1/dashboard/summary")
@@ -71,8 +74,7 @@ describe("dashboard routes", () => {
 
     it("defaults null counts to 0", async () => {
       const supabase = mockAuth();
-      supabase.from
-        .mockReturnValue(createMockBuilder({ data: null, error: null, count: null }));
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null, count: null }));
 
       const res = await request(app)
         .get("/api/v1/dashboard/summary")

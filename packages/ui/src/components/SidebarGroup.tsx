@@ -26,23 +26,18 @@ export function SidebarGroup({
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <div
-      className={cn(
-        "border border-white/5 rounded-lg bg-white/5 overflow-hidden",
-        className,
-      )}
-    >
+    <div className={cn("overflow-hidden rounded-lg border border-white/5 bg-white/5", className)}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "w-full flex items-center gap-2 px-4 py-3 text-left font-orbitron text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-slate-100 transition-colors",
+          "font-display flex w-full items-center gap-2 px-4 py-3 text-left text-xs font-bold tracking-wider text-slate-300 uppercase transition-colors hover:text-slate-100",
           titleClassName,
         )}
         aria-expanded={isOpen}
         aria-controls={`sidebar-group-${title.toLowerCase().replace(/\s+/g, "-")}`}
       >
-        {icon && <span className="flex-shrink-0 w-4 h-4">{icon}</span>}
+        {icon && <span className="h-4 w-4 flex-shrink-0">{icon}</span>}
         <span className="flex-1">{title}</span>
         <span
           className={cn(
@@ -50,7 +45,7 @@ export function SidebarGroup({
             isOpen ? "rotate-180" : "rotate-0",
           )}
         >
-          <ChevronDown className="w-4 h-4" />
+          <ChevronDown className="h-4 w-4" />
         </span>
       </button>
       <div
@@ -62,12 +57,7 @@ export function SidebarGroup({
         role="region"
         aria-labelledby={`sidebar-group-${title.toLowerCase().replace(/\s+/g, "-")}-title`}
       >
-        <div
-          className={cn(
-            "px-4 pb-4 space-y-1 border-t border-white/5",
-            contentClassName,
-          )}
-        >
+        <div className={cn("space-y-1 border-t border-white/5 px-4 pb-4", contentClassName)}>
           {children}
         </div>
       </div>
@@ -114,17 +104,17 @@ export function SidebarItem({
       onClick={handleClick}
       disabled={disabled && !href}
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-        "disabled:opacity-40 disabled:cursor-not-allowed",
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+        "disabled:cursor-not-allowed disabled:opacity-40",
         isActive
-          ? "bg-emerald-600/10 text-emerald-400 border-l-2 border-emerald-600"
+          ? "border-l-2 border-emerald-600 bg-emerald-600/10 text-emerald-400"
           : "text-slate-300 hover:bg-white/5 hover:text-slate-50",
         className,
       )}
       aria-current={isActive ? "page" : undefined}
       aria-disabled={disabled}
     >
-      {icon && <span className="flex-shrink-0 w-4 h-4">{icon}</span>}
+      {icon && <span className="h-4 w-4 flex-shrink-0">{icon}</span>}
       <span className="flex-1 truncate">{children}</span>
       {badge && <span className="flex-shrink-0">{badge}</span>}
     </Component>

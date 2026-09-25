@@ -1,0 +1,41 @@
+{
+  "domain": "evolution",
+  "total": 2,
+  "timestamp": "2026-08-06T21:21:31.517955+00:00",
+  "findings": [
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "category": "architecture",
+      "file": "apps/web/middleware.ts",
+      "issue": "Domain routing middleware runs on every request \u2014 adds JWT decode overhead even on static assets",
+      "remediation": "Use Next.js matcher config to exclude _next/static, favicon.ico from middleware execution (already done in config)",
+      "impact": "Minimal \u2014 already mitigated by matcher config"
+    },
+    {
+      "severity": "P3",
+      "domain": "evolution",
+      "category": "architecture",
+      "file": "apps/api/src/lib/circuit-breaker.ts",
+      "issue": "Circuit breaker state changes are not exported as Prometheus metrics",
+      "remediation": "Add prom-client Gauge to track circuit breaker state (0=closed, 1=open, 2=half-open)",
+      "impact": "Ops cannot see which external services are being circuit-broken"
+    }
+  ],
+  "roadmap": {
+    "immediate": [
+      "Add requireOrgAccess to users.ts router",
+      "Add timeout to JWT fallback Supabase getUser()",
+      "Add data retention purging worker task"
+    ],
+    "short_term": [
+      "Implement Redis-backed response cache for all list endpoints",
+      "Add per-email rate limiting on auth endpoints",
+      "Wire Prometheus metrics into worker health server"
+    ],
+    "medium_term": [
+      "Add SSE/WebSocket real-time notifications instead of 30s polling",
+      "Implement mobile-responsive PWA with push notifications"
+    ]
+  }
+}

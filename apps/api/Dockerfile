@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS base
 WORKDIR /app
 
 # Copy root package files
@@ -6,6 +6,10 @@ COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 
 # Copy API app
 COPY apps/api ./apps/api
+
+# Workspace packages the app depends on (@mct/sdk, @mct/config). Currently
+# only imported for types, but copy them so the workspace resolves.
+COPY packages ./packages
 
 # Enable pnpm and install dependencies
 RUN corepack enable && corepack prepare pnpm@10 --activate
@@ -16,7 +20,7 @@ WORKDIR /app/apps/api
 RUN pnpm build && rm -rf /app/apps/api/node_modules/.cache /root/.local/share/pnpm/store
 
 # Runtime stage
-FROM node:20-alpine
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293
 RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 appuser
 WORKDIR /app
 

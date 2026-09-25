@@ -1,13 +1,16 @@
-# Production DNS — mainecybertech.com
 # Production DNS — mainecybertech.com (only in prod environment)
 resource "cloudflare_dns_record" "prod_www" {
   count   = var.environment == "prod" ? 1 : 0
   zone_id = var.cloudflare_zone_id
   name    = "www"
   type    = "A"
-  content = digitalocean_reserved_ip.portal.ip_address
+  content = digitalocean_droplet.portal.ipv4_address
   ttl     = 1
   proxied = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "cloudflare_dns_record" "prod_app" {
@@ -15,9 +18,13 @@ resource "cloudflare_dns_record" "prod_app" {
   zone_id = var.cloudflare_zone_id
   name    = "app"
   type    = "A"
-  content = digitalocean_reserved_ip.portal.ip_address
+  content = digitalocean_droplet.portal.ipv4_address
   ttl     = 1
   proxied = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "cloudflare_dns_record" "prod_api" {
@@ -25,9 +32,13 @@ resource "cloudflare_dns_record" "prod_api" {
   zone_id = var.cloudflare_zone_id
   name    = "api"
   type    = "A"
-  content = digitalocean_reserved_ip.portal.ip_address
+  content = digitalocean_droplet.portal.ipv4_address
   ttl     = 1
   proxied = true
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 # Dev/Testing DNS — mainecybertech.us
@@ -36,7 +47,7 @@ resource "cloudflare_dns_record" "test_www" {
   zone_id = var.cloudflare_zone_id_us
   name    = "www"
   type    = "A"
-  content = digitalocean_reserved_ip.portal.ip_address
+  content = digitalocean_droplet.portal.ipv4_address
   ttl     = 1
   proxied = true
 }
@@ -46,7 +57,7 @@ resource "cloudflare_dns_record" "test_app" {
   zone_id = var.cloudflare_zone_id_us
   name    = "app"
   type    = "A"
-  content = digitalocean_reserved_ip.portal.ip_address
+  content = digitalocean_droplet.portal.ipv4_address
   ttl     = 1
   proxied = true
 }
@@ -56,7 +67,7 @@ resource "cloudflare_dns_record" "test_api" {
   zone_id = var.cloudflare_zone_id_us
   name    = "api"
   type    = "A"
-  content = digitalocean_reserved_ip.portal.ip_address
+  content = digitalocean_droplet.portal.ipv4_address
   ttl     = 1
   proxied = true
 }

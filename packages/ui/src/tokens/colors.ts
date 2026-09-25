@@ -3,10 +3,13 @@ export const colors = {
     base: "#0A1118",
     card: "rgba(18, 30, 45, 0.75)",
     cardHover: "rgba(25, 40, 60, 0.95)",
+    cardDeep: "#071018",
+    cardAlt: "#0F1923",
     accent: "#059669",
     accentHover: "#047857",
     accentLight: "#10b981",
     accentGlow: "rgba(5, 150, 105, 0.35)",
+    teal: "#0D9488",
   },
   slate: {
     50: "#f8fafc",

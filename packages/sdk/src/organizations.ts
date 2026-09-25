@@ -1,14 +1,27 @@
 import { ApiClient } from "./client";
-import type { Organization, OrganizationDomain, OrganizationDetail } from "./types";
+import type {
+  Organization,
+  OrganizationDomain,
+  OrganizationDetail,
+  OrganizationOnboardInput,
+  OrganizationOnboardResult,
+  PaginatedResult,
+} from "./types";
 
 export class OrganizationsApi {
   constructor(private client: ApiClient) {}
 
-  list(params?: { status?: string; ids?: string[] }) {
+  list(params?: { page?: number; limit?: number; status?: string; ids?: string[] }) {
     const qp: Record<string, string | number | undefined> = {};
+    qp.page = params?.page ?? 1;
+    qp.limit = params?.limit ?? 25;
     if (params?.status) qp.status = params.status;
     if (params?.ids?.length) qp.ids = params.ids.join(",");
-    return this.client.get<Organization[]>("/api/v1/organizations", qp);
+    return this.client.get<PaginatedResult<Organization>>("/api/v1/organizations", qp);
+  }
+
+  listAll() {
+    return this.client.get<PaginatedResult<Organization>>("/api/v1/admin/organizations");
   }
 
   get(id: string) {
@@ -26,6 +39,13 @@ export class OrganizationsApi {
     supportPlan?: string | null;
   }) {
     return this.client.post<Organization>("/api/v1/organizations", data);
+  }
+
+  onboard(data: OrganizationOnboardInput) {
+    return this.client.post<OrganizationOnboardResult>(
+      "/api/v1/organizations/onboard",
+      data,
+    );
   }
 
   update(
@@ -50,23 +70,14 @@ export class OrganizationsApi {
   }
 
   listDomains(orgId: string) {
-    return this.client.get<OrganizationDomain[]>(
-      `/api/v1/organizations/${orgId}/domains`,
-    );
+    return this.client.get<OrganizationDomain[]>(`/api/v1/organizations/${orgId}/domains`);
   }
 
   addDomain(orgId: string, data: { domain: string; autoApprove?: boolean }) {
-    return this.client.post<OrganizationDomain>(
-      `/api/v1/organizations/${orgId}/domains`,
-      data,
-    );
+    return this.client.post<OrganizationDomain>(`/api/v1/organizations/${orgId}/domains`, data);
   }
 
-  updateDomain(
-    orgId: string,
-    domainId: string,
-    data: { autoApprove: boolean },
-  ) {
+  updateDomain(orgId: string, domainId: string, data: { autoApprove: boolean }) {
     return this.client.patch<OrganizationDomain>(
       `/api/v1/organizations/${orgId}/domains/${domainId}`,
       data,
@@ -74,17 +85,12 @@ export class OrganizationsApi {
   }
 
   removeDomain(orgId: string, domainId: string) {
-    return this.client.delete<void>(
-      `/api/v1/organizations/${orgId}/domains/${domainId}`,
-    );
+    return this.client.delete<void>(`/api/v1/organizations/${orgId}/domains/${domainId}`);
   }
 
   uploadLogo(orgId: string, file: File | Blob) {
     const fd = new FormData();
     fd.append("logo", file);
-    return this.client.postFormData<{ logoUrl: string }>(
-      `/api/v1/organizations/${orgId}/logo`,
-      fd,
-    );
+    return this.client.postFormData<{ logoUrl: string }>(`/api/v1/organizations/${orgId}/logo`, fd);
   }
 }

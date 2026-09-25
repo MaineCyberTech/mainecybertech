@@ -12,12 +12,7 @@ import type {
 export class ProjectsApi {
   constructor(private client: ApiClient) {}
 
-  list(params?: {
-    page?: number;
-    limit?: number;
-    organizationId?: string;
-    status?: string;
-  }) {
+  list(params?: { page?: number; limit?: number; organizationId?: string; status?: string }) {
     const qp: Record<string, string | number | undefined> = {};
     if (params?.page !== undefined) qp.page = params.page;
     if (params?.limit !== undefined) qp.limit = params.limit;
@@ -26,12 +21,25 @@ export class ProjectsApi {
     return this.client.get<PaginatedResult<Project>>("/api/v1/projects", qp);
   }
 
+  getCompound(organizationId?: string) {
+    const qp: Record<string, string | number | undefined> = {};
+    if (organizationId) qp.organization_id = organizationId;
+    return this.client.get<{
+      projects: Project[];
+      tasks: ProjectTask[];
+      comments: ProjectTaskComment[];
+      reads: ProjectTaskReadState[];
+    }>("/api/v1/projects/compound", qp);
+  }
+
   get(id: string) {
     return this.client.get<Project>(`/api/v1/projects/${id}`);
   }
 
-  getDetail(id: string) {
-    return this.client.get<ProjectDetail>(`/api/v1/projects/${id}/detail`);
+  getDetail(id: string, organizationId?: string) {
+    const qp: Record<string, string | number | undefined> = {};
+    if (organizationId) qp.organization_id = organizationId;
+    return this.client.get<ProjectDetail>(`/api/v1/projects/${id}/detail`, qp);
   }
 
   create(data: {
@@ -67,9 +75,7 @@ export class ProjectsApi {
   }
 
   listTasks(projectId: string) {
-    return this.client.get<ProjectTask[]>(
-      `/api/v1/projects/${projectId}/tasks`,
-    );
+    return this.client.get<ProjectTask[]>(`/api/v1/projects/${projectId}/tasks`);
   }
 
   addTask(
@@ -93,10 +99,7 @@ export class ProjectsApi {
       sprint?: string | null;
     },
   ) {
-    return this.client.post<ProjectTask>(
-      `/api/v1/projects/${projectId}/tasks`,
-      data,
-    );
+    return this.client.post<ProjectTask>(`/api/v1/projects/${projectId}/tasks`, data);
   }
 
   updateTask(
@@ -123,23 +126,14 @@ export class ProjectsApi {
       sprint?: string | null;
     },
   ) {
-    return this.client.patch<ProjectTask>(
-      `/api/v1/projects/${projectId}/tasks/${taskId}`,
-      data,
-    );
+    return this.client.patch<ProjectTask>(`/api/v1/projects/${projectId}/tasks/${taskId}`, data);
   }
 
   removeTask(projectId: string, taskId: string) {
-    return this.client.delete<void>(
-      `/api/v1/projects/${projectId}/tasks/${taskId}`,
-    );
+    return this.client.delete<void>(`/api/v1/projects/${projectId}/tasks/${taskId}`);
   }
 
-  addTaskComment(
-    projectId: string,
-    taskId: string,
-    data: { body: string; isInternal?: boolean },
-  ) {
+  addTaskComment(projectId: string, taskId: string, data: { body: string; isInternal?: boolean }) {
     return this.client.post<ProjectTaskComment>(
       `/api/v1/projects/${projectId}/tasks/${taskId}/comments`,
       data,
@@ -174,8 +168,7 @@ export class ProjectsApi {
   ) {
     const qp: Record<string, string | number | undefined> = {};
     if (params?.organizationId) qp.organization_id = params.organizationId;
-    if (params?.isInternal !== undefined)
-      qp.is_internal = String(params.isInternal);
+    if (params?.isInternal !== undefined) qp.is_internal = String(params.isInternal);
     if (params?.taskIds?.length) qp.task_ids = params.taskIds.join(",");
     return this.client.get<ProjectTaskComment[]>(
       `/api/v1/projects/${projectId}/tasks/comments`,
@@ -183,10 +176,7 @@ export class ProjectsApi {
     );
   }
 
-  listReadStates(
-    projectId: string,
-    params?: { organizationId?: string; taskIds?: string[] },
-  ) {
+  listReadStates(projectId: string, params?: { organizationId?: string; taskIds?: string[] }) {
     const qp: Record<string, string | number | undefined> = {};
     if (params?.organizationId) qp.organization_id = params.organizationId;
     if (params?.taskIds?.length) qp.task_ids = params.taskIds.join(",");
@@ -203,22 +193,14 @@ export class ProjectsApi {
     );
   }
 
-  markTaskRead(
-    projectId: string,
-    taskId: string,
-    data: { organizationId: string },
-  ) {
+  markTaskRead(projectId: string, taskId: string, data: { organizationId: string }) {
     return this.client.post<{ marked: boolean }>(
       `/api/v1/projects/${projectId}/tasks/${taskId}/read`,
       data,
     );
   }
 
-  approveTask(
-    projectId: string,
-    taskId: string,
-    data: { organizationId: string },
-  ) {
+  approveTask(projectId: string, taskId: string, data: { organizationId: string }) {
     return this.client.post<{ approved: boolean }>(
       `/api/v1/projects/${projectId}/tasks/${taskId}/approve`,
       data,
@@ -236,32 +218,20 @@ export class ProjectsApi {
     );
   }
 
-  exportData(params?: {
-    format?: "csv" | "json";
-    organizationId?: string;
-    status?: string;
-  }) {
+  exportData(params?: { format?: "csv" | "json"; organizationId?: string; status?: string }) {
     const qp: Record<string, string | number | undefined> = {};
     if (params?.format) qp.format = params.format;
     if (params?.organizationId) qp.organization_id = params.organizationId;
     if (params?.status) qp.status = params.status;
-    return this.client.get<Blob>(`/api/v1/projects/export`, qp);
+    return this.client.getBlob(`/api/v1/projects/export`, qp);
   }
 
   listUpdates(projectId: string) {
-    return this.client.get<ProjectUpdate[]>(
-      `/api/v1/projects/${projectId}/updates`,
-    );
+    return this.client.get<ProjectUpdate[]>(`/api/v1/projects/${projectId}/updates`);
   }
 
-  addUpdate(
-    projectId: string,
-    data: { body: string; isInternal?: boolean; isPinned?: boolean },
-  ) {
-    return this.client.post<ProjectUpdate>(
-      `/api/v1/projects/${projectId}/updates`,
-      data,
-    );
+  addUpdate(projectId: string, data: { body: string; isInternal?: boolean; isPinned?: boolean }) {
+    return this.client.post<ProjectUpdate>(`/api/v1/projects/${projectId}/updates`, data);
   }
 
   updateUpdate(
@@ -280,8 +250,38 @@ export class ProjectsApi {
   }
 
   removeUpdate(projectId: string, updateId: string) {
-    return this.client.delete<void>(
-      `/api/v1/projects/${projectId}/updates/${updateId}`,
-    );
+    return this.client.delete<void>(`/api/v1/projects/${projectId}/updates/${updateId}`);
   }
+
+  phases = {
+    list: (projectId: string) =>
+      this.client.get("/api/v1/projects/phases", { project_id: projectId }),
+    get: (id: string) => this.client.get(`/api/v1/projects/phases/${id}`),
+    create: (data: Record<string, unknown>) => this.client.post("/api/v1/projects/phases", data),
+    update: (id: string, data: Record<string, unknown>) =>
+      this.client.patch(`/api/v1/projects/phases/${id}`, data),
+    remove: (id: string) => this.client.delete(`/api/v1/projects/phases/${id}`),
+  };
+
+  milestones = {
+    list: (projectId: string) =>
+      this.client.get("/api/v1/projects/milestones", { project_id: projectId }),
+    get: (id: string) => this.client.get(`/api/v1/projects/milestones/${id}`),
+    create: (data: Record<string, unknown>) =>
+      this.client.post("/api/v1/projects/milestones", data),
+    update: (id: string, data: Record<string, unknown>) =>
+      this.client.patch(`/api/v1/projects/milestones/${id}`, data),
+    remove: (id: string) => this.client.delete(`/api/v1/projects/milestones/${id}`),
+  };
+
+  dependencies = {
+    list: (projectId: string) =>
+      this.client.get("/api/v1/projects/dependencies", { project_id: projectId }),
+    get: (id: string) => this.client.get(`/api/v1/projects/dependencies/${id}`),
+    create: (data: Record<string, unknown>) =>
+      this.client.post("/api/v1/projects/dependencies", data),
+    update: (id: string, data: Record<string, unknown>) =>
+      this.client.patch(`/api/v1/projects/dependencies/${id}`, data),
+    remove: (id: string) => this.client.delete(`/api/v1/projects/dependencies/${id}`),
+  };
 }

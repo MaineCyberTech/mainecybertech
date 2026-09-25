@@ -1,4 +1,6 @@
-import { test as base, expect, type Page } from "@playwright/test";
+import { test as base, expect, type Locator, type Page } from "@playwright/test";
+
+export const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
 export class LoginPage {
   constructor(public readonly page: Page) {}
@@ -31,6 +33,88 @@ export class AdminPage {
 
   async expectHeading(name: string) {
     await expect(this.page.getByRole("heading", { name })).toBeVisible();
+  }
+}
+
+/**
+ * Switch the active tenant for the session. The API resolves the
+ * default org from the first approved membership when no cookie is
+ * present, which is non-deterministic once migrations seed extra
+ * memberships — so specs that depend on a specific tenant's data
+ * should pin the org explicitly.
+ */
+export async function setActiveOrg(page: Page, organizationId: string) {
+  // Set the active-org cookie directly on the context. Navigating to /login
+  // first is unnecessary (and the middleware would just redirect an
+  // authenticated session to /portal/dashboard), so we avoid that dance.
+  await page.context().addCookies([
+    {
+      name: "mct_active_org",
+      value: organizationId,
+      url: BASE_URL,
+    },
+  ]);
+}
+
+/**
+ * Navigate to an app route and, for authenticated routes, wait for the
+ * server-rendered shell to paint.
+ *
+ * The admin/portal layouts `throw` when the profile fetch fails with a
+ * transient 5xx/429, so the error boundary renders instead of the header
+ * and downstream locators (e.g. the notification bell) time out with no
+ * useful signal. Waiting on the shell here gives a deterministic failure
+ * point and absorbs ordinary hydration latency.
+ */
+export async function gotoApp(
+  page: Page,
+  path: string,
+  opts: { shell?: boolean } = {},
+): Promise<void> {
+  const { shell = true } = opts;
+  await page.goto(path);
+  await page.waitForLoadState("domcontentloaded");
+  if (shell) {
+    await expect(page.locator("header").first()).toBeVisible({ timeout: 20_000 });
+  }
+}
+
+/**
+ * Auto-wait for a locator to become visible, returning whether it did.
+ *
+ * Replaces `if (await locator.isVisible())`, which does not wait: on a
+ * slower render (CI API/Supabase contention) it returns false and the
+ * data-dependent branch is silently skipped, so the test "passes" without
+ * exercising anything. This waits up to `timeoutMs` for the element, which
+ * removes the race while still tolerating genuinely absent seed data.
+ */
+export async function visibleWithin(locator: Locator, timeoutMs = 5_000): Promise<boolean> {
+  try {
+    await locator.waitFor({ state: "visible", timeout: timeoutMs });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Click a link and wait for the URL to change; if the client-side
+ * navigation does not complete (an RSC fetch can reject under CI
+ * contention, leaving the URL unchanged), fall back to a direct `goto`.
+ *
+ * Playwright's `locator.click()` resolves as soon as the click is
+ * dispatched, so a spec that asserts the destination content immediately
+ * afterwards is racing the router. This keeps the click (so click handlers
+ * are still exercised) but guarantees arrival at the target.
+ */
+export async function clickOrGoto(page: Page, locator: Locator, timeoutMs = 5_000): Promise<void> {
+  const href = await locator.getAttribute("href");
+  const before = page.url();
+  await locator.click();
+  try {
+    await page.waitForURL((url) => url.toString() !== before, { timeout: timeoutMs });
+  } catch {
+    if (href) await page.goto(href);
   }
 }
 

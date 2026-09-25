@@ -1,7 +1,4 @@
-import {
-  CircuitBreaker,
-  createSupabaseCircuitBreaker,
-} from "./circuit-breaker";
+import { CircuitBreaker, createSupabaseCircuitBreaker } from "./circuit-breaker";
 
 export interface HttpClientConfig {
   timeout: number;
@@ -26,8 +23,7 @@ export class HttpClient {
 
   constructor(config: Partial<HttpClientConfig> = {}) {
     this.config = { ...defaultConfig, ...config };
-    this.circuitBreaker =
-      this.config.circuitBreaker ?? createSupabaseCircuitBreaker();
+    this.circuitBreaker = this.config.circuitBreaker ?? createSupabaseCircuitBreaker();
   }
 
   async fetch(url: string, options: FetchOptions = {}): Promise<Response> {
@@ -49,10 +45,14 @@ export class HttpClient {
 
     for (let attempt = 0; attempt <= this.config.maxRetries; attempt++) {
       try {
-        const response = await this.circuitBreaker.execute(() =>
-          fetch(url, finalOptions),
-        );
+        const response = await this.circuitBreaker.execute(() => fetch(url, finalOptions));
         clearTimeout(timeoutId);
+        // Retry transient server errors (5xx) and rate-limit responses.
+        // 4xx are client errors - never retried.
+        if (attempt < this.config.maxRetries && this.isRetryableStatus(response.status)) {
+          await this.sleep(this.config.retryDelay * (attempt + 1));
+          continue;
+        }
         return response;
       } catch (error) {
         clearTimeout(timeoutId);
@@ -71,15 +71,15 @@ export class HttpClient {
     throw lastError ?? new Error("Request failed");
   }
 
+  private isRetryableStatus(status: number): boolean {
+    return status === 429 || (status >= 500 && status <= 599);
+  }
+
   async get(url: string, options: FetchOptions = {}): Promise<Response> {
     return this.fetch(url, { ...options, method: "GET" });
   }
 
-  async post(
-    url: string,
-    body: unknown,
-    options: FetchOptions = {},
-  ): Promise<Response> {
+  async post(url: string, body: unknown, options: FetchOptions = {}): Promise<Response> {
     return this.fetch(url, {
       ...options,
       method: "POST",
@@ -91,11 +91,7 @@ export class HttpClient {
     });
   }
 
-  async put(
-    url: string,
-    body: unknown,
-    options: FetchOptions = {},
-  ): Promise<Response> {
+  async put(url: string, body: unknown, options: FetchOptions = {}): Promise<Response> {
     return this.fetch(url, {
       ...options,
       method: "PUT",
@@ -107,11 +103,7 @@ export class HttpClient {
     });
   }
 
-  async patch(
-    url: string,
-    body: unknown,
-    options: FetchOptions = {},
-  ): Promise<Response> {
+  async patch(url: string, body: unknown, options: FetchOptions = {}): Promise<Response> {
     return this.fetch(url, {
       ...options,
       method: "PATCH",
@@ -136,9 +128,7 @@ export class HttpClient {
   }
 }
 
-export function createHttpClient(
-  config?: Partial<HttpClientConfig>,
-): HttpClient {
+export function createHttpClient(config?: Partial<HttpClientConfig>): HttpClient {
   return new HttpClient(config);
 }
 

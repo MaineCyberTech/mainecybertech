@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Portal Alignment Finding Schema",
+  "description": "Schema for individual findings in the portal alignment audit",
+  "type": "object",
+  "required": ["severity", "phase", "category", "file", "issue", "impact", "fix"],
+  "properties": {
+    "severity": {
+      "type": "string",
+      "enum": ["P0", "P1", "P2", "P3"],
+      "description": "P0=blocker, P1=critical, P2=medium, P3=low"
+    },
+    "phase": {
+      "type": "integer",
+      "enum": [1, 2, 3, 4, 5, 6, 7],
+      "description": "Which phase generated this finding"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "inventory",
+        "schema",
+        "contract",
+        "frontend",
+        "reconciliation",
+        "remediation",
+        "release"
+      ],
+      "description": "Category of misalignment"
+    },
+    "file": {
+      "type": "string",
+      "description": "Primary file path relative to repo root"
+    },
+    "files_involved": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "All files involved (for cross-domain findings)"
+    },
+    "issue": {
+      "type": "string",
+      "description": "Short description of the misalignment"
+    },
+    "impact": {
+      "type": "string",
+      "description": "What breaks or degrades at runtime"
+    },
+    "fix": {
+      "type": "string",
+      "description": "Concrete remediation steps"
+    },
+    "resolved_by_phase": {
+      "type": "integer",
+      "description": "If this finding is resolved by a later phase's work"
+    },
+    "effort": {
+      "type": "string",
+      "enum": ["XS", "S", "M", "L", "XL"],
+      "description": "Estimated effort to fix"
+    },
+    "patch_set": {
+      "type": "string",
+      "description": "Reference to patch set ID from phase 6"
+    }
+  }
+}

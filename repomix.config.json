@@ -1,0 +1,71 @@
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "input": {
+    "maxFileSize": 800000
+  },
+  "output": {
+    "filePath": "repomix-reviewer.xml",
+    "style": "xml",
+    "compress": true,
+    "fileSummary": true,
+    "directoryStructure": true,
+    "files": true,
+    "topFilesLength": 20,
+    "showLineNumbers": false,
+    "includeEmptyDirectories": false,
+    "instructionFilePath": "AGENTS.md"
+  },
+  "include": [
+    "apps/api/src/**/*.ts",
+    "apps/web/app/**/*.ts",
+    "apps/web/app/**/*.tsx",
+    "apps/web/components/**/*.ts",
+    "apps/web/components/**/*.tsx",
+    "apps/web/lib/**/*.ts",
+    "apps/web/middleware.ts",
+    "apps/worker/src/**/*.ts",
+    "packages/sdk/src/**/*.ts",
+    "packages/ui/src/**/*.ts",
+    "packages/ui/src/**/*.tsx",
+    "packages/config/**",
+    "supabase/migrations/**/*.sql",
+    ".github/workflows/**/*.yml",
+    "infra/digitalocean/**",
+    "scripts/generate-db-types.js",
+    "scripts/verify-prompts.js",
+    "package.json",
+    "pnpm-workspace.yaml",
+    "turbo.json",
+    "AGENTS.md",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "prompts/**",
+      "docs/**",
+      "**/database.types.ts",
+      "supabase/seeds/**",
+      "supabase/migrations/*demo*.sql",
+      "supabase/migrations/*_seed_*.sql",
+      "supabase/migrations/*expanded_test_data*.sql",
+      "**/__tests__/**",
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "apps/web/e2e/**",
+      "**/*.snap",
+      "**/dist/**",
+      "**/.next/**",
+      "**/coverage/**",
+      "**/node_modules/**",
+      "**/storybook-static/**",
+      "pnpm-lock.yaml",
+      "**/*.lock",
+      "**/.terraform/**",
+      "**/*.tfstate",
+      "**/*.tfstate.backup"
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "domain": "privacy",
+  "total": 1,
+  "timestamp": "2026-08-06T21:21:31.514523+00:00",
+  "findings": [
+    {
+      "severity": "P2",
+      "domain": "privacy",
+      "category": "pii_storage",
+      "file": "supabase/migrations/",
+      "issue": "PII fields (email, phone, full_name) stored in profiles table without encryption at rest",
+      "remediation": "Enable Transparent Column Encryption (TCE) or Supabase Vault for PII columns",
+      "impact": "Database compromise exposes user names, emails, and phone numbers in plaintext"
+    }
+  ]
+}

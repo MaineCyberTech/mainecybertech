@@ -5,17 +5,16 @@ jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
 }));
 
-const mockMembershipsList = jest.fn();
-const mockProfilesList = jest.fn();
-const mockOrgsList = jest.fn();
-const mockRolesList = jest.fn();
+const mockRequirePermission = jest.fn();
+jest.mock("@/lib/auth/permissions", () => ({
+  requirePermission: (...args: any[]) => mockRequirePermission(...args),
+}));
+
+const mockGetCompound = jest.fn();
 
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    memberships: { list: mockMembershipsList },
-    profiles: { list: mockProfilesList },
-    organizations: { list: mockOrgsList },
-    roles: { list: mockRolesList },
+    users: { getCompound: mockGetCompound },
   }),
 }));
 
@@ -27,7 +26,19 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+}));
+
+jest.mock("@/lib/client-api", () => ({
+  getClientApi: () => ({
+    organizations: { list: jest.fn().mockResolvedValue({ items: [], total: 0 }) },
+    roles: { list: jest.fn().mockResolvedValue([]) },
+    memberships: { invite: jest.fn() },
+  }),
+}));
+
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -39,18 +50,33 @@ jest.mock("@/components/admin/AdminSubnav", () => {
   };
 });
 
-describe("UsersPage", () => {
-  beforeAll(async () => {
-    jest.isolateModules(() => {});
-  });
+const COMPOUND_ALICE = {
+  user: { id: "u1", full_name: "Alice Smith", email: "alice@test.com" },
+  profile: { id: "u1", full_name: "Alice Smith", email: "alice@test.com" },
+  memberships: [
+    {
+      id: "m1",
+      user_id: "u1",
+      organization_id: "o1",
+      role_id: "r1",
+      status: "approved",
+      is_billing_contact: false,
+      is_security_contact: false,
+    },
+  ],
+  organizations: [{ id: "o1", name: "Acme Corp" }],
+  roles: [{ id: "r1", name: "Admin" }],
+  allRoles: [],
+};
 
+describe("UsersPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRequireAdminAccess.mockResolvedValue(undefined);
+    mockGetCompound.mockResolvedValue([]);
   });
 
   it("renders page shell with title and description", async () => {
-    mockMembershipsList.mockResolvedValue([]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
     expect(screen.getByRole("heading", { name: "Users" })).toBeInTheDocument();
@@ -58,7 +84,6 @@ describe("UsersPage", () => {
   });
 
   it("renders breadcrumbs and subnav", async () => {
-    mockMembershipsList.mockResolvedValue([]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
@@ -66,40 +91,20 @@ describe("UsersPage", () => {
   });
 
   it("shows user count (unique users)", async () => {
-    mockMembershipsList.mockResolvedValue([
-      { id: "m1", user_id: "u1", organization_id: "o1", role_id: "r1" },
-      { id: "m2", user_id: "u1", organization_id: "o2", role_id: "r1" },
-    ]);
-    mockProfilesList.mockResolvedValue([]);
-    mockOrgsList.mockResolvedValue([]);
-    mockRolesList.mockResolvedValue([]);
+    mockGetCompound.mockResolvedValue([COMPOUND_ALICE]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
     expect(screen.getByText("Total users: 1")).toBeInTheDocument();
   });
 
-  it("renders empty state when no memberships", async () => {
-    mockMembershipsList.mockResolvedValue([]);
+  it("renders empty state when no users", async () => {
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
     expect(screen.getByText("No users found.")).toBeInTheDocument();
   });
 
   it("renders user cards with profile and org info", async () => {
-    mockMembershipsList.mockResolvedValue([
-      {
-        id: "m1",
-        user_id: "u1",
-        organization_id: "o1",
-        role_id: "r1",
-        status: "approved",
-      },
-    ]);
-    mockProfilesList.mockResolvedValue([
-      { id: "u1", full_name: "Alice Smith", email: "alice@test.com" },
-    ]);
-    mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme Corp" }]);
-    mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin" }]);
+    mockGetCompound.mockResolvedValue([COMPOUND_ALICE]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
     expect(screen.getByText("Alice Smith")).toBeInTheDocument();
@@ -109,32 +114,40 @@ describe("UsersPage", () => {
   });
 
   it("shows multi-org indicator for users in multiple orgs", async () => {
-    mockMembershipsList.mockResolvedValue([
+    mockGetCompound.mockResolvedValue([
       {
-        id: "m1",
-        user_id: "u1",
-        organization_id: "o1",
-        role_id: "r1",
-        status: "approved",
+        user: { id: "u1", full_name: "Alice", email: "alice@test.com" },
+        profile: { id: "u1", full_name: "Alice", email: "alice@test.com" },
+        memberships: [
+          {
+            id: "m1",
+            user_id: "u1",
+            organization_id: "o1",
+            role_id: "r1",
+            status: "approved",
+            is_billing_contact: false,
+            is_security_contact: false,
+          },
+          {
+            id: "m2",
+            user_id: "u1",
+            organization_id: "o2",
+            role_id: "r2",
+            status: "approved",
+            is_billing_contact: false,
+            is_security_contact: false,
+          },
+        ],
+        organizations: [
+          { id: "o1", name: "Acme" },
+          { id: "o2", name: "BetaCo" },
+        ],
+        roles: [
+          { id: "r1", name: "Admin" },
+          { id: "r2", name: "Viewer" },
+        ],
+        allRoles: [],
       },
-      {
-        id: "m2",
-        user_id: "u1",
-        organization_id: "o2",
-        role_id: "r2",
-        status: "approved",
-      },
-    ]);
-    mockProfilesList.mockResolvedValue([
-      { id: "u1", full_name: "Alice", email: "alice@test.com" },
-    ]);
-    mockOrgsList.mockResolvedValue([
-      { id: "o1", name: "Acme" },
-      { id: "o2", name: "BetaCo" },
-    ]);
-    mockRolesList.mockResolvedValue([
-      { id: "r1", name: "Admin" },
-      { id: "r2", name: "Viewer" },
     ]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
@@ -142,85 +155,69 @@ describe("UsersPage", () => {
   });
 
   it("renders super admin badge for super admins", async () => {
-    mockMembershipsList.mockResolvedValue([
+    mockGetCompound.mockResolvedValue([
       {
-        id: "m1",
-        user_id: "u1",
-        organization_id: "o1",
-        role_id: "r1",
-        status: "approved",
+        ...COMPOUND_ALICE,
+        user: { id: "u1", full_name: "Admin", email: "admin@test.com", is_super_admin: true },
+        profile: { id: "u1", full_name: "Admin", email: "admin@test.com", is_super_admin: true },
       },
     ]);
-    mockProfilesList.mockResolvedValue([
-      {
-        id: "u1",
-        full_name: "Admin",
-        email: "admin@test.com",
-        is_super_admin: true,
-      },
-    ]);
-    mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
-    mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin" }]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
     expect(screen.getByText("Super Admin")).toBeInTheDocument();
   });
 
   it("renders billing contact badge", async () => {
-    mockMembershipsList.mockResolvedValue([
+    mockGetCompound.mockResolvedValue([
       {
-        id: "m1",
-        user_id: "u1",
-        organization_id: "o1",
-        role_id: "r1",
-        status: "approved",
-        is_billing_contact: true,
+        ...COMPOUND_ALICE,
+        memberships: [
+          {
+            id: "m1",
+            user_id: "u1",
+            organization_id: "o1",
+            role_id: "r1",
+            status: "approved",
+            is_billing_contact: true,
+            is_security_contact: false,
+          },
+        ],
       },
     ]);
-    mockProfilesList.mockResolvedValue([
-      { id: "u1", full_name: "Bill", email: "bill@test.com" },
-    ]);
-    mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
-    mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin" }]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
     expect(screen.getByText("Billing Contact")).toBeInTheDocument();
   });
 
   it("links membership cards to user detail page", async () => {
-    mockMembershipsList.mockResolvedValue([
-      {
-        id: "m1",
-        user_id: "u1",
-        organization_id: "o1",
-        role_id: "r1",
-        status: "approved",
-      },
-    ]);
-    mockProfilesList.mockResolvedValue([
-      { id: "u1", full_name: "Alice", email: "a@a.com" },
-    ]);
-    mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
-    mockRolesList.mockResolvedValue([{ id: "r1", name: "Admin" }]);
+    mockGetCompound.mockResolvedValue([COMPOUND_ALICE]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
-    const link = screen.getByText("Alice").closest("a");
+    const link = screen.getByText("Alice Smith").closest("a");
     expect(link).toHaveAttribute("href", "/admin/users/u1");
   });
 
   it("handles unknown profile gracefully", async () => {
-    mockMembershipsList.mockResolvedValue([
+    mockGetCompound.mockResolvedValue([
       {
-        id: "m1",
-        user_id: "u-missing",
-        organization_id: "o1",
-        role_id: null,
-        status: "pending",
+        user: { id: "u-missing" },
+        profile: { id: "u-missing" },
+        memberships: [
+          {
+            id: "m1",
+            user_id: "u-missing",
+            organization_id: "o1",
+            role_id: null,
+            status: "pending",
+            is_billing_contact: false,
+            is_security_contact: false,
+          },
+        ],
+        organizations: [{ id: "o1", name: "Acme" }],
+        roles: [],
+        allRoles: [],
       },
     ]);
-    mockProfilesList.mockResolvedValue([]);
-    mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }]);
-    mockRolesList.mockResolvedValue([]);
     const UsersPage = (await import("@/app/(admin)/admin/users/page")).default;
     render(await UsersPage());
     expect(screen.getByText("Unknown User")).toBeInTheDocument();

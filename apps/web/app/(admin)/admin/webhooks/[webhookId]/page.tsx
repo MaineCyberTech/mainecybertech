@@ -1,10 +1,12 @@
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Link from "next/link";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import WebhookDetailClient from "./WebhookDetailClient";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 
@@ -17,10 +19,18 @@ export default async function WebhookDetailPage({ params }: Props) {
   const { webhookId } = await params;
   const api = getApiClient();
 
-  let webhook: any;
+  let webhook: {
+    id: string;
+    name: string;
+    url: string;
+    secret?: string | null;
+    events?: string[];
+    is_active: boolean;
+  };
   try {
-    webhook = await api.webhooks.get(webhookId);
-  } catch {
+    webhook = await withRetry(() => api.webhooks.get(webhookId));
+  } catch (error) {
+    if ((error as { status?: number })?.status !== 404) throw error;
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
         Webhook not found.
@@ -28,15 +38,29 @@ export default async function WebhookDetailPage({ params }: Props) {
     );
   }
 
-  let deliveries: any = { items: [], total: 0 };
+  let deliveries: {
+    items: Array<{
+      id: string;
+      event: string;
+      status: string;
+      response_status?: number | null;
+      duration_ms?: number | null;
+      created_at: string;
+    }>;
+    total: number;
+  } = { items: [], total: 0 };
+  let loadFailed = false;
   try {
     deliveries = await api.webhooks.listDeliveries(webhookId, { limit: 20 });
-  } catch {}
+  } catch (error) {
+    console.error("[[webhookId]/page]", error);
+    loadFailed = true;
+  }
 
   return (
     <AdminPageShell
       breadcrumbs={
-        <AdminBreadcrumbs
+        <Breadcrumbs
           items={[
             { label: "Admin", href: "/admin" },
             { label: "Webhooks", href: "/admin/webhooks" },
@@ -52,6 +76,7 @@ export default async function WebhookDetailPage({ params }: Props) {
         </Link>
       }
     >
+      {loadFailed && <DataErrorNote what="data" />}
       <WebhookDetailClient
         webhook={webhook}
         deliveries={deliveries.items}

@@ -38,7 +38,7 @@ For each patch set define:
 
 Also create:
 
-1. Top 25 prioritized recommendations
+1. Top N prioritized recommendations (aim for ~20-25, let findings dictate the count; do not pad or truncate)
 2. Quick wins
 3. Needs-tests-first list
 4. Copy-from-reference list
@@ -48,3 +48,11 @@ Also create:
 
 Do not produce code yet unless explicitly asked.
 This phase is for disciplined implementation planning.
+
+### Self-Review
+
+Before concluding Phase 7, review your output and flag:
+
+- Any patch set where dependencies between files create hidden merge conflicts
+- Any "quick win" that has unstated prerequisites or test gaps
+- Any recommendation where the rollback approach is impractical or unspecified

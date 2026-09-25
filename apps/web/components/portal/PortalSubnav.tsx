@@ -1,32 +1,57 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useMemo } from "react";
+import { portalGroupForKey } from "@/lib/navigation/portal-nav";
+import { usePermissions } from "@/lib/use-permissions";
 
-type PortalSubnavProps = {
-  current: "dashboard" | "projects" | "documents" | "support" | "billing" | string;
-};
+/**
+ * Contextual sibling navigation for a portal section. Renders the other
+ * destinations in the same sidebar group as horizontal tabs. Previously this
+ * was a no-op (`return null`) that ~20 pages passed as a prop.
+ */
+export default function PortalSubnav({ current }: { current: string }) {
+  const pathname = usePathname() ?? "";
+  const { can, loading } = usePermissions();
+  const group = portalGroupForKey(current);
 
-const NAV_ITEMS = [
-  { key: "dashboard", href: "/portal/dashboard", label: "Dashboard" },
-  { key: "projects", href: "/portal/projects", label: "Projects" },
-  { key: "timeline", href: "/portal/timeline", label: "Timeline" },
-  { key: "documents", href: "/portal/documents", label: "Documents" },
-  { key: "support", href: "/portal/support", label: "Support" },
-  { key: "billing", href: "/portal/billing", label: "Billing" }
-];
+  const activeHref = useMemo(() => {
+    const hrefs = group ? group.items.map((item) => item.href) : [];
+    const matches = hrefs.filter((h) => pathname === h || pathname.startsWith(`${h}/`));
+    const best = matches.sort((a, b) => b.length - a.length)[0] ?? null;
+    return best ?? (pathname === "/portal" ? "/portal/dashboard" : null);
+  }, [group, pathname]);
 
-function navClass(active: boolean) {
-  return active
-    ? "rounded-lg border border-emerald-600/30 bg-emerald-600/10 px-4 py-2 text-sm font-semibold text-emerald-300 transition shadow-[0_0_0_1px_rgba(5,150,105,0.08)]"
-    : "rounded-lg border border-white/10 bg-[#0A1118]/60 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-emerald-600/30 hover:bg-[#0D1622] hover:text-slate-50";
-}
+  if (loading || !group) return null;
 
-export default function PortalSubnav({ current }: PortalSubnavProps) {
+  const items = group.items.filter((item) => !item.module || can(item.module, "view"));
+  if (items.length < 2) return null;
+
+  const isActive = (href: string) => href === activeHref;
+
   return (
-    <nav className="cyber-subnav-scroll">
-      {NAV_ITEMS.map((item) => (
-        <Link key={item.key} href={item.href} className={`shrink-0 ${navClass(current === item.key)}`}>
-          {item.label}
-        </Link>
-      ))}
+    <nav aria-label={`${group.label} section`} className="mb-4 overflow-x-auto">
+      <ul className="flex min-w-max items-center gap-1 border-b border-white/10">
+        {items.map((item) => {
+          const active = isActive(item.href);
+          return (
+            <li key={item.key}>
+              <Link
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`block border-b-2 px-3 py-2 text-xs font-medium transition ${
+                  active
+                    ? "border-emerald-500 text-emerald-400"
+                    : "border-transparent text-slate-400 hover:border-slate-500 hover:text-slate-200"
+                }`}
+              >
+                {item.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

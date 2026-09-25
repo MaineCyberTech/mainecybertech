@@ -3,9 +3,7 @@ import { render, screen } from "@testing-library/react";
 import React from "react";
 
 const mockDocumentsList = jest.fn();
-const mockGetApprovedMembership = jest
-  .fn()
-  .mockResolvedValue({ organization_id: "org-1" });
+const mockGetApprovedMembership = jest.fn().mockResolvedValue({ organization_id: "org-1" });
 
 jest.mock("next/link", () => ({
   __esModule: true,
@@ -23,7 +21,7 @@ jest.mock("@/lib/auth/membership", () => ({
   getApprovedMembership: mockGetApprovedMembership,
 }));
 
-jest.mock("@/components/portal/PortalBreadcrumbs", () => ({
+jest.mock("@/components/Breadcrumbs", () => ({
   __esModule: true,
   default: () => React.createElement("nav", { "aria-label": "Breadcrumb" }),
 }));
@@ -36,8 +34,11 @@ jest.mock("@/components/portal/PortalSubnav", () => ({
 jest.mock("@/components/portal/PortalDocumentsCenterClient", () => ({
   __esModule: true,
   default: ({ documents, organizationId }: any) =>
-    React.createElement("div", { "data-testid": "portal-documents-client" },
-      `org:${organizationId},docs:${documents.length}`),
+    React.createElement(
+      "div",
+      { "data-testid": "portal-documents-client" },
+      `org:${organizationId},docs:${documents.length}`,
+    ),
 }));
 
 jest.mock("@/app/(portal)/portal/documents/actions", () => ({
@@ -58,23 +59,17 @@ describe("PortalDocumentsPage", () => {
   it("renders heading and breadcrumbs", async () => {
     mockDocumentsList.mockResolvedValue({ items: [] });
 
-    const { default: PortalDocumentsPage } = await import(
-      "@/app/(portal)/portal/documents/page"
-    );
+    const { default: PortalDocumentsPage } = await import("@/app/(portal)/portal/documents/page");
     const element = await PortalDocumentsPage();
     render(element);
 
-    expect(
-      screen.getByRole("heading", { name: /documents/i }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /documents/i })).toBeInTheDocument();
   });
 
   it("renders portal documents client with data", async () => {
     mockDocumentsList.mockResolvedValue({ items: [{ id: "d1" }, { id: "d2" }] });
 
-    const { default: PortalDocumentsPage } = await import(
-      "@/app/(portal)/portal/documents/page"
-    );
+    const { default: PortalDocumentsPage } = await import("@/app/(portal)/portal/documents/page");
     const element = await PortalDocumentsPage();
     render(element);
 
@@ -84,9 +79,7 @@ describe("PortalDocumentsPage", () => {
   it("shows access restricted when no membership", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
 
-    const { default: PortalDocumentsPage } = await import(
-      "@/app/(portal)/portal/documents/page"
-    );
+    const { default: PortalDocumentsPage } = await import("@/app/(portal)/portal/documents/page");
     const element = await PortalDocumentsPage();
     render(element);
 
@@ -96,9 +89,7 @@ describe("PortalDocumentsPage", () => {
   it("handles empty documents gracefully", async () => {
     mockDocumentsList.mockResolvedValue({ items: [] });
 
-    const { default: PortalDocumentsPage } = await import(
-      "@/app/(portal)/portal/documents/page"
-    );
+    const { default: PortalDocumentsPage } = await import("@/app/(portal)/portal/documents/page");
     const element = await PortalDocumentsPage();
     render(element);
 

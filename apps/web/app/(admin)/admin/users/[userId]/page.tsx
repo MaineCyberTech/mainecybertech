@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { requirePermission } from "@/lib/auth/permissions";
 import { updateUserProfileBasics, updateMembership } from "./actions";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
-import PermissionsMatrix from "@/components/admin/PermissionsMatrix";
+import UserPermissionOverridesClient from "@/components/admin/UserPermissionOverridesClient";
+import SubmitButton from "@/components/SubmitButton";
+import { Membership, Organization, Role, UserDetail } from "@mct/sdk";
 
 export const metadata = { title: "User Details - Admin - Maine CyberTech" };
 
@@ -17,13 +20,15 @@ type UserPageProps = {
 
 export default async function UserDetailPage({ params }: UserPageProps) {
   await requireAdminAccess();
+  await requirePermission("users", "view");
   const { userId } = await params;
   const api = getApiClient();
 
-  let detail: any;
+  let detail: UserDetail;
   try {
     detail = await api.users.getDetail(userId);
-  } catch {
+  } catch (error) {
+    if ((error as { status?: number })?.status !== 404) throw error;
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
         User not found.
@@ -31,23 +36,23 @@ export default async function UserDetailPage({ params }: UserPageProps) {
     );
   }
 
-  const profile = detail.profile;
+  const profile = detail.profile!;
   const memberships = detail.memberships ?? [];
   const organizations = detail.organizations ?? [];
   const roles = detail.roles ?? [];
   const allRoles = detail.allRoles ?? [];
 
-  const orgMap = new Map<string, any>(organizations.map((o: any) => [o.id, o]));
-  const roleMap = new Map<string, any>(roles.map((r: any) => [r.id, r]));
+  const orgMap = new Map<string, Organization>(organizations.map((o: Organization) => [o.id, o]));
+  const roleMap = new Map<string, Role>(roles.map((r: Role) => [r.id, r]));
 
   return (
     <AdminPageShell
       breadcrumbs={
-        <AdminBreadcrumbs
+        <Breadcrumbs
           items={[
             { label: "Admin", href: "/admin" },
             { label: "Users", href: "/admin/users" },
-            { label: profile.full_name ?? "User Detail" }
+            { label: profile.full_name ?? "User Detail" },
           ]}
         />
       }
@@ -68,8 +73,11 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="cyber-label">Full Name</label>
+              <label htmlFor="user-fullName" className="cyber-label">
+                Full Name
+              </label>
               <input
+                id="user-fullName"
                 name="fullName"
                 defaultValue={profile.full_name ?? ""}
                 className="cyber-input"
@@ -77,17 +85,23 @@ export default async function UserDetailPage({ params }: UserPageProps) {
             </div>
 
             <div>
-              <label className="cyber-label">Email</label>
+              <label htmlFor="user-email" className="cyber-label">
+                Email
+              </label>
               <input
+                id="user-email"
                 value={profile.email ?? ""}
                 readOnly
-                className="w-full rounded-lg border border-white/10 bg-[#0A1118]/40 px-4 py-3 text-slate-400 outline-none"
+                className="w-full rounded-lg border border-white/10 bg-cyber-base/40 px-4 py-3 text-slate-400 outline-none"
               />
             </div>
 
             <div>
-              <label className="cyber-label">Phone</label>
+              <label htmlFor="user-phone" className="cyber-label">
+                Phone
+              </label>
               <input
+                id="user-phone"
                 name="phone"
                 defaultValue={profile.phone ?? ""}
                 className="cyber-input"
@@ -95,8 +109,11 @@ export default async function UserDetailPage({ params }: UserPageProps) {
             </div>
 
             <div>
-              <label className="cyber-label">Title</label>
+              <label htmlFor="user-title" className="cyber-label">
+                Title
+              </label>
               <input
+                id="user-title"
                 name="title"
                 defaultValue={profile.title ?? ""}
                 className="cyber-input"
@@ -119,9 +136,9 @@ export default async function UserDetailPage({ params }: UserPageProps) {
           </div>
 
           <div className="mt-6">
-            <button type="submit" className="cyber-button">
+            <SubmitButton className="cyber-button" pendingText="Saving…">
               Save Profile
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </section>
@@ -131,19 +148,17 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
         <div className="mt-6 space-y-4">
           {memberships && memberships.length > 0 ? (
-            memberships.map((membership: any) => {
+            memberships.map((membership: Membership) => {
               const org = orgMap.get(membership.organization_id);
               const role = roleMap.get(membership.role_id);
 
               return (
                 <div
                   key={membership.id}
-                  className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4"
+                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                 >
                   <div className="mb-4">
-                    <p className="font-medium text-slate-50">
-                      {org?.name ?? "Unknown Org"}
-                    </p>
+                    <p className="font-medium text-slate-50">{org?.name ?? "Unknown Org"}</p>
                     <p className="text-sm text-slate-400">
                       Current Role: {role?.name ?? "Unknown"} • Status: {membership.status}
                     </p>
@@ -151,17 +166,20 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
                   <form action={updateMembership}>
                     <input type="hidden" name="membershipId" value={membership.id} />
-                    <input type="hidden" name="userId" value={profile.id} />
+                    <input type="hidden" name="userId" value={profile?.id ?? ""} />
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
-                        <label className="cyber-label">Role</label>
+                        <label className="cyber-label" htmlFor={`role-${membership.id}`}>
+                          Role
+                        </label>
                         <select
+                          id={`role-${membership.id}`}
                           name="roleId"
                           defaultValue={membership.role_id}
                           className="cyber-input"
                         >
-                          {allRoles.map((r: any) => (
+                          {allRoles.map((r: Role) => (
                             <option key={r.id} value={r.id}>
                               {r.name} ({r.key})
                             </option>
@@ -170,8 +188,11 @@ export default async function UserDetailPage({ params }: UserPageProps) {
                       </div>
 
                       <div>
-                        <label className="cyber-label">Status</label>
+                        <label className="cyber-label" htmlFor={`status-${membership.id}`}>
+                          Status
+                        </label>
                         <select
+                          id={`status-${membership.id}`}
                           name="status"
                           defaultValue={membership.status}
                           className="cyber-input"
@@ -205,16 +226,16 @@ export default async function UserDetailPage({ params }: UserPageProps) {
                     </div>
 
                     <div className="mt-6">
-                      <button type="submit" className="cyber-button-secondary">
+                      <SubmitButton className="cyber-button-secondary" pendingText="Saving…">
                         Save Membership
-                      </button>
+                      </SubmitButton>
                     </div>
                   </form>
                 </div>
               );
             })
           ) : (
-            <div className="rounded-lg border border-white/10 bg-[#0A1118]/60 p-4 text-slate-400">
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-slate-400">
               No memberships found.
             </div>
           )}
@@ -223,8 +244,16 @@ export default async function UserDetailPage({ params }: UserPageProps) {
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Permissions</h2>
-        <p className="mt-2 text-sm text-slate-400">Role-based and individual permission overrides.</p>
-        <PermissionsMatrix userId={userId} memberships={memberships} />
+        <p className="mt-2 text-sm text-slate-400">
+          Role-based permissions with per-user overrides. Click a cell to cycle: allow → deny →
+          reset to role default.
+        </p>
+        <UserPermissionOverridesClient
+          userId={userId}
+          memberships={(memberships ?? []).filter(
+            (m: Membership) => m.status === "approved" || m.status === "pending",
+          )}
+        />
       </section>
     </AdminPageShell>
   );

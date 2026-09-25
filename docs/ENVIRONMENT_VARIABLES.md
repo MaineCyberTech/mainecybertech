@@ -8,76 +8,99 @@
 
 ## Web (`apps/web`)
 
-| Variable                 | Required | Default       | Description                                                   |
-| ------------------------ | -------- | ------------- | ------------------------------------------------------------- |
-| `NEXT_PUBLIC_API_URL`    | Yes      | —             | URL of the API server (e.g. `http://localhost:4000`)          |
-| `NODE_ENV`               | No       | `development` | Node environment                                              |
-| `NEXT_PUBLIC_GA_ID`      | No       | —             | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)         |
-| `NEXT_PUBLIC_TAWKTO_ID`  | No       | —             | Tawk.to widget ID (e.g. `66898d27e1e4f70f24ee3260/1i24kuosn`) |
-| `NEXT_PUBLIC_SENTRY_DSN` | No       | —             | Sentry DSN for error tracking                                 |
-| `SENTRY_ORG`             | No       | —             | Sentry org slug (for source maps)                             |
-| `SENTRY_PROJECT`         | No       | —             | Sentry project slug (for source maps)                         |
+| Variable                            | Required | Default       | Description                                                     |
+| ----------------------------------- | -------- | ------------- | --------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`               | Yes      | —             | URL of the API server (e.g. `http://localhost:4000`)            |
+| `NODE_ENV`                          | No       | `development` | Node environment                                                |
+| `NEXT_PUBLIC_GA_ID`                 | No       | —             | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)           |
+| `NEXT_PUBLIC_TAWKTO_ID`             | No       | —             | Tawk.to widget ID (e.g. `66898d27e1e4f70f24ee3260/1i24kuosn`)   |
+| `NEXT_PUBLIC_SENTRY_DSN`            | No       | —             | Sentry DSN for error tracking                                   |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`    | No       | —             | Cloudflare Turnstile site key (contact form captcha)            |
+| `NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED` | No       | `false`       | Show the `/test-accounts` dev login page (localhost/`.us` only) |
+| `SENTRY_ORG`                        | No       | —             | Sentry org slug (for source maps)                               |
+| `SENTRY_PROJECT`                    | No       | —             | Sentry project slug (for source maps)                           |
 
 > **Note:** The web app no longer requires `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Auth is proxied through the API via `POST /api/v1/auth/callback`.
 
 ## API (`apps/api`)
 
-| Variable                     | Required | Default                      | Description                                                                           |
-| ---------------------------- | -------- | ---------------------------- | ------------------------------------------------------------------------------------- |
-| `NODE_ENV`                   | No       | `development`                | Node environment                                                                      |
-| `API_PORT`                   | No       | `4000`                       | Port the API server listens on                                                        |
-| `APP_BASE_URL`               | No       | `http://localhost:3000`      | Public-facing base URL for email notification links                                   |
-| `SUPABASE_URL`               | Yes      | —                            | Supabase project URL (e.g. `http://127.0.0.1:54321` for local)                        |
-| `SUPABASE_ANON_KEY`          | Yes      | —                            | Supabase publishable/anon key                                                         |
-| `SUPABASE_SERVICE_ROLE_KEY`  | Yes      | —                            | Supabase service role key (admin access)                                              |
-| `JWT_SECRET`                 | No       | —                            | JWT signing secret (optional; Supabase handles JWT by default)                        |
-| `CORS_ORIGIN`                | No       | `http://localhost:3000`      | Allowed CORS origin; comma-separated for multiple (deploy includes `app.*` + `www.*`) |
-| `LOG_LEVEL`                  | No       | `info`                       | Logging level (`debug`, `info`, `warn`, `error`)                                      |
-| `SMTP_HOST`                  | No       | —                            | SMTP host for email sending                                                           |
-| `SMTP_PORT`                  | No       | `587`                        | SMTP port                                                                             |
-| `SMTP_USER`                  | No       | —                            | SMTP username                                                                         |
-| `SMTP_PASS`                  | No       | —                            | SMTP password                                                                         |
-| `EMAIL_FROM`                 | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                      |
-| `SENTRY_DSN`                 | No       | —                            | Sentry DSN for error tracking                                                         |
-| `PUBLIC_TRAFFIC_WEBHOOK_URL` | No       | —                            | Teams webhook URL for visitor notifications (marketing site)                          |
-| `PUBLIC_LEAD_WEBHOOK_URL`    | No       | —                            | Teams webhook URL for new lead notifications (marketing site)                         |
-| `JSM_DOMAIN`                 | No       | —                            | JSM domain for auto-ticket creation from web leads                                    |
-| `JSM_EMAIL`                  | No       | —                            | JSM user email for API auth                                                           |
-| `JSM_API_TOKEN`              | No       | —                            | JSM API token                                                                         |
-| `JSM_SERVICEDESK_ID`         | No       | —                            | JSM service desk ID                                                                   |
-| `JSM_REQUEST_TYPE_ID`        | No       | —                            | JSM request type ID                                                                   |
-| `STRIPE_WEBHOOK_SECRET`      | No       | —                            | Stripe webhook signing secret for signature verification                              |
-| —                            | —        | —                            | —                                                                                     |
+| Variable                     | Required | Default                      | Description                                                                                                                                                                                                         |
+| ---------------------------- | -------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NODE_ENV`                   | No       | `development`                | Node environment                                                                                                                                                                                                    |
+| `API_PORT`                   | No       | `4000`                       | Port the API server listens on                                                                                                                                                                                      |
+| `APP_BASE_URL`               | No       | `http://localhost:3000`      | Public-facing base URL for email notification links                                                                                                                                                                 |
+| `SUPABASE_URL`               | Yes      | —                            | Supabase project URL (e.g. `http://127.0.0.1:54321` for local)                                                                                                                                                      |
+| `SUPABASE_ANON_KEY`          | Yes      | —                            | Supabase publishable/anon key                                                                                                                                                                                       |
+| `SUPABASE_SERVICE_ROLE_KEY`  | Yes      | —                            | Supabase service role key (admin access)                                                                                                                                                                            |
+| `JWT_SECRET`                 | Yes      | —                            | JWT signing secret (required; multi-secret rotation via comma-separated values)                                                                                                                                     |
+| `CORS_ORIGIN`                | No       | `http://localhost:3000`      | Allowed CORS origin; comma-separated for multiple (deploy includes `app.*` + `www.*`)                                                                                                                               |
+| `APP_DOMAIN`                 | No       | `app.mainecybertech.com`     | Public app domain (used by Caddy reverse proxy and APP_BASE_URL)                                                                                                                                                    |
+| `API_DOMAIN`                 | No       | `api.mainecybertech.com`     | Public API domain (used by Caddy reverse proxy and worker API_BASE_URL)                                                                                                                                             |
+| `LOG_LEVEL`                  | No       | `info`                       | Logging level (`debug`, `info`, `warn`, `error`)                                                                                                                                                                    |
+| `SMTP_HOST`                  | No       | —                            | SMTP host for email sending                                                                                                                                                                                         |
+| `SMTP_PORT`                  | No       | `587`                        | SMTP port                                                                                                                                                                                                           |
+| `SMTP_USER`                  | No       | —                            | SMTP username                                                                                                                                                                                                       |
+| `SMTP_PASS`                  | No       | —                            | SMTP password                                                                                                                                                                                                       |
+| `EMAIL_FROM`                 | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                                                                                                                                                    |
+| `SENTRY_DSN`                 | No       | —                            | Sentry DSN for error tracking                                                                                                                                                                                       |
+| `PUBLIC_TRAFFIC_WEBHOOK_URL` | No       | —                            | Teams webhook URL for visitor notifications (marketing site)                                                                                                                                                        |
+| `PUBLIC_LEAD_WEBHOOK_URL`    | No       | —                            | Teams webhook URL for new lead notifications (marketing site)                                                                                                                                                       |
+| `JSM_DOMAIN`                 | No       | —                            | JSM domain for auto-ticket creation from web leads                                                                                                                                                                  |
+| `JSM_EMAIL`                  | No       | —                            | JSM user email for API auth                                                                                                                                                                                         |
+| `JSM_API_TOKEN`              | No       | —                            | JSM API token                                                                                                                                                                                                       |
+| `JSM_SERVICEDESK_ID`         | No       | —                            | JSM service desk ID                                                                                                                                                                                                 |
+| `JSM_REQUEST_TYPE_ID`        | No       | —                            | JSM request type ID                                                                                                                                                                                                 |
+| `STRIPE_SECRET_KEY`          | No       | —                            | Stripe secret key for API calls and sync endpoint                                                                                                                                                                   |
+| `STRIPE_WEBHOOK_SECRET`      | No       | —                            | Stripe webhook signing secret for signature verification                                                                                                                                                            |
+| `REDIS_URL`                  | No       | —                            | Redis URL for caching, idempotency, and BullMQ (required in production)                                                                                                                                             |
+| `REDIS_PASSWORD`             | No       | —                            | Redis password (required in production; used by docker-compose and worker)                                                                                                                                          |
+| `TURNSTILE_SECRET_KEY`       | No       | —                            | Cloudflare Turnstile secret; when set, `POST /public/submit` requires a valid captcha token                                                                                                                         |
+| `TASK_QUEUE_ENABLED`         | No       | `false`                      | When `true`, API enqueues background tasks instead of running them inline                                                                                                                                           |
+| `RLS_READS_ENABLED`          | No       | —                            | Comma-separated module keys that use the user-scoped (RLS) Supabase client for reads (see `docs/RLS-rollout.md`)                                                                                                    |
+| `RLS_WRITES_ENABLED`         | No       | —                            | Comma-separated module keys that use the user-scoped (RLS) client for writes                                                                                                                                        |
+| `JIRA_WEBHOOK_SECRET`        | No       | —                            | Jira webhook secret for HMAC signature verification                                                                                                                                                                 |
+| `JSM_WEBHOOK_SECRET`         | No       | —                            | JSM webhook secret for HMAC signature verification                                                                                                                                                                  |
+| `M365_WEBHOOK_SECRET`        | No       | —                            | M365 webhook secret for HMAC signature verification                                                                                                                                                                 |
+| `MFA_ENFORCEMENT_ENABLED`    | No       | `false`                      | When `true`, an `aal1` session that has a verified TOTP factor is rejected with `403 MFA_REQUIRED` on non-`/auth/*` routes. Users without a factor are never blocked. Requires MFA enabled on the Supabase project. |
+| `FIELD_ENCRYPTION_KEY`       | No       | —                            | AES-256-GCM key for encrypted PII fields (`profiles.encrypted_pii`). Falls back to a dev `plain:` marker when unset.                                                                                                |
+| `METRICS_TOKEN`              | No       | —                            | When set, `GET /metrics` requires `Authorization: Bearer <token>` (returns 404 otherwise).                                                                                                                          |
+| `M365_CLIENT_STATE`          | No       | —                            | Shared clientState validated on inbound M365 webhook notifications.                                                                                                                                                 |
 
 ## Worker (`apps/worker`)
 
-| Variable                    | Required | Default                      | Description                                    |
-| --------------------------- | -------- | ---------------------------- | ---------------------------------------------- |
-| `NODE_ENV`                  | No       | `development`                | Node environment                               |
-| `LOG_LEVEL`                 | No       | `info`                       | Logging level                                  |
-| `SUPABASE_URL`              | No       | —                            | Supabase project URL (optional for local dev)  |
-| `SUPABASE_ANON_KEY`         | No       | —                            | Supabase publishable/anon key                  |
-| `SUPABASE_SERVICE_ROLE_KEY` | No       | —                            | Supabase service role key (for task DB access) |
-| `WORKER_CONCURRENCY`        | No       | `10`                         | Max concurrent jobs                            |
-| `WORKER_TIMEOUT`            | No       | `30000`                      | Job timeout in ms                              |
-| `SQS_QUEUE_URL`             | No       | —                            | SQS queue URL for task processing              |
-| `STRIPE_SECRET_KEY`         | No       | —                            | Stripe API key for billing reconciliation      |
-| `JIRA_BASE_URL`             | No       | —                            | Jira instance base URL                         |
-| `JIRA_EMAIL`                | No       | —                            | Jira user email                                |
-| `JIRA_API_TOKEN`            | No       | —                            | Jira API token                                 |
-| `JSM_BASE_URL`              | No       | —                            | Jira Service Management base URL               |
-| `JSM_EMAIL`                 | No       | —                            | JSM user email                                 |
-| `JSM_API_TOKEN`             | No       | —                            | JSM API token                                  |
-| `M365_TENANT_ID`            | No       | —                            | Microsoft 365 tenant ID                        |
-| `M365_CLIENT_ID`            | No       | —                            | Microsoft 365 app client ID                    |
-| `M365_CLIENT_SECRET`        | No       | —                            | Microsoft 365 app client secret                |
-| `SMTP_HOST`                 | No       | —                            | SMTP host for email notifications              |
-| `SMTP_PORT`                 | No       | `587`                        | SMTP port                                      |
-| `SMTP_USER`                 | No       | —                            | SMTP username                                  |
-| `SMTP_PASS`                 | No       | —                            | SMTP password                                  |
-| `EMAIL_FROM`                | No       | `noreply@mainecybertech.com` | From address for outgoing emails               |
-| `API_BASE_URL`              | No       | —                            | Public API base URL for notification links     |
-| `HEALTH_PORT`               | No       | `3001`                       | Health check server port                       |
+| Variable                    | Required | Default                      | Description                                                                     |
+| --------------------------- | -------- | ---------------------------- | ------------------------------------------------------------------------------- |
+| `NODE_ENV`                  | No       | `development`                | Node environment                                                                |
+| `LOG_LEVEL`                 | No       | `info`                       | Logging level                                                                   |
+| `SUPABASE_URL`              | Yes      | —                            | Supabase project URL (required for task DB access)                              |
+| `SUPABASE_ANON_KEY`         | Yes      | —                            | Supabase publishable/anon key                                                   |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes      | —                            | Supabase service role key (for task DB access)                                  |
+| `WORKER_CONCURRENCY`        | No       | `10`                         | Max concurrent jobs                                                             |
+| `WORKER_TIMEOUT`            | No       | `30000`                      | Job timeout in ms                                                               |
+| `QUEUE_BACKEND`             | No       | `inline`                     | Queue backend (`inline`, `sqs`, or `bullmq`; set to `bullmq` in docker-compose) |
+| `SQS_QUEUE_URL`             | No       | —                            | SQS queue URL for task processing                                               |
+| `STRIPE_SECRET_KEY`         | No       | —                            | Stripe API key for billing reconciliation                                       |
+| `JIRA_BASE_URL`             | No       | —                            | Jira instance base URL                                                          |
+| `JIRA_EMAIL`                | No       | —                            | Jira user email                                                                 |
+| `JIRA_API_TOKEN`            | No       | —                            | Jira API token                                                                  |
+| `JSM_BASE_URL`              | No       | —                            | Jira Service Management base URL                                                |
+| `JSM_EMAIL`                 | No       | —                            | JSM user email                                                                  |
+| `JSM_API_TOKEN`             | No       | —                            | JSM API token                                                                   |
+| `M365_TENANT_ID`            | No       | —                            | Microsoft 365 tenant ID                                                         |
+| `M365_CLIENT_ID`            | No       | —                            | Microsoft 365 app client ID                                                     |
+| `M365_CLIENT_SECRET`        | No       | —                            | Microsoft 365 app client secret                                                 |
+| `SMTP_HOST`                 | No       | —                            | SMTP host for email notifications                                               |
+| `SMTP_PORT`                 | No       | `587`                        | SMTP port                                                                       |
+| `SMTP_USER`                 | No       | —                            | SMTP username                                                                   |
+| `SMTP_PASS`                 | No       | —                            | SMTP password                                                                   |
+| `EMAIL_FROM`                | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                |
+| `API_BASE_URL`              | No       | —                            | Public API base URL for notification links                                      |
+| `HEALTH_PORT`               | No       | `3001`                       | Health check server port                                                        |
+| `REDIS_URL`                 | No       | —                            | Redis URL for BullMQ (`QUEUE_BACKEND=bullmq`)                                   |
+| `REDIS_PASSWORD`            | No       | —                            | Redis password (production)                                                     |
+| `TASK_QUEUE_ENABLED`        | No       | `false`                      | When `true`, API enqueues tasks instead of inline                               |
+| `SENTRY_DSN`                | No       | —                            | Sentry DSN for worker error tracking                                            |
+| `APP_BASE_URL`              | No       | —                            | Public app base URL for notification links                                      |
 
 ## E2E Tests (`apps/web/e2e`)
 
@@ -87,18 +110,11 @@
 | `E2E_ADMIN_EMAIL`    | Yes      | —                       | Admin email for login         |
 | `E2E_ADMIN_PASSWORD` | Yes      | —                       | Admin password for login      |
 
-## CI / Vercel (managed via Terraform)
+## CI / Docker
 
-The web app env vars are set on the Vercel project by Terraform (`infra/terraform/vercel.tf`):
+The deploy workflow (`deploy-do.yml`) writes all env vars to `/opt/mct-portal/.env` on the DO droplet via SSH heredoc. The `docker-compose.yml` on the droplet loads env vars from this file with `env_file: ./.env`.
 
-| Variable                 | Set Via                 | Default (dev)                        |
-| ------------------------ | ----------------------- | ------------------------------------ |
-| `NEXT_PUBLIC_API_URL`    | `var.api_domain`        | — (required)                         |
-| `NEXT_PUBLIC_SENTRY_DSN` | `var.vercel_sentry_dsn` | `""` (optional, skip if empty)       |
-| `NEXT_PUBLIC_GA_ID`      | `var.vercel_ga_id`      | `G-1JYZ96P0D9`                       |
-| `NEXT_PUBLIC_TAWKTO_ID`  | `var.vercel_tawkto_id`  | `66898d27e1e4f70f24ee3260/1i24kuosn` |
-
-Set these in your `.tfvars` file (which is stored as the `TF_VARS_FILE_CONTENT` GitHub secret).
+Web `NEXT_PUBLIC_*` vars are passed as Docker build args for client-side inlining, and set as runtime env vars for server-side use.
 
 ## Docker Compose
 

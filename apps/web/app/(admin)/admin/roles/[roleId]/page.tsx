@@ -1,10 +1,14 @@
 import { getApiClient } from "@/lib/api";
+import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import { requirePermission } from "@/lib/auth/permissions";
 import Link from "next/link";
-import AdminBreadcrumbs from "@/components/admin/AdminBreadcrumbs";
+import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import RolePermissionsEditor from "@/components/admin/RolePermissionsEditor";
+import RoleEditForm from "@/components/admin/RoleEditForm";
+import type { Role } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +18,15 @@ type Props = { params: Promise<{ roleId: string }> };
 
 export default async function RoleDetailPage({ params }: Props) {
   await requireAdminAccess();
+  await requirePermission("roles", "view");
   const { roleId } = await params;
   const api = getApiClient();
 
-  let role: any;
+  let role: Role;
   try {
-    role = await api.roles.get(roleId);
-  } catch {
+    role = await withRetry(() => api.roles.get(roleId));
+  } catch (error) {
+    if ((error as { status?: number })?.status !== 404) throw error;
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
         Role not found.
@@ -31,7 +37,7 @@ export default async function RoleDetailPage({ params }: Props) {
   return (
     <AdminPageShell
       breadcrumbs={
-        <AdminBreadcrumbs
+        <Breadcrumbs
           items={[
             { label: "Admin", href: "/admin" },
             { label: "Roles", href: "/admin/roles" },
@@ -49,6 +55,21 @@ export default async function RoleDetailPage({ params }: Props) {
       }
     >
       <section className="cyber-panel">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="cyber-heading text-lg">Role Settings</h2>
+            <p className="mt-1 text-sm text-slate-400">Edit the role name and description.</p>
+          </div>
+          <RoleEditForm
+            roleId={roleId}
+            initialName={role.name}
+            initialDescription={role.description ?? null}
+            isSystem={role.is_system ?? false}
+          />
+        </div>
+      </section>
+
+      <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Permission Toggles</h2>
         <p className="mt-2 text-sm text-slate-400">
           Click a cell to grant or revoke the permission for this role.
@@ -57,7 +78,7 @@ export default async function RoleDetailPage({ params }: Props) {
           <RolePermissionsEditor
             roleId={roleId}
             roleKey={role.key}
-            isSystem={role.is_system}
+            isSystem={role.is_system ?? false}
           />
         </div>
       </section>

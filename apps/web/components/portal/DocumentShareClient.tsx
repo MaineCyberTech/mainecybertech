@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { MCTClient } from "@mct/sdk";
@@ -26,8 +26,7 @@ export default function DocumentShareClient({
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const api =
-    typeof window !== "undefined" ? MCTClient.create({ baseUrl: "" }) : null;
+  const api = typeof window !== "undefined" ? MCTClient.create({ baseUrl: "" }) : null;
 
   const handleCreateShare = async () => {
     if (!api) return;
@@ -39,9 +38,7 @@ export default function DocumentShareClient({
         setError("Expiration must be at least 1 hour");
         return;
       }
-      const expiresAt = new Date(
-        Date.now() + hours * 60 * 60 * 1000,
-      ).toISOString();
+      const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
       const result = await api.documents.createShare(documentId, {
         expiresAt,
         maxAccess: maxAccess ? parseInt(maxAccess, 10) : undefined,
@@ -50,8 +47,8 @@ export default function DocumentShareClient({
       setDialogOpen(false);
       setExpiresIn("24");
       setMaxAccess("");
-    } catch (e: any) {
-      setError(e?.message || "Failed to create share link");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to create share link");
     } finally {
       setCreating(false);
     }
@@ -63,8 +60,8 @@ export default function DocumentShareClient({
       await api.documents.removeShare(documentId, shareId);
       setShares((prev) => prev.filter((s) => s.id !== shareId));
       setRevokeDialogOpen(null);
-    } catch (e: any) {
-      setError(e?.message || "Failed to revoke share link");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Failed to revoke share link");
     }
   };
 
@@ -102,11 +99,7 @@ export default function DocumentShareClient({
     <section className="cyber-panel">
       <div className="flex items-center justify-between">
         <h2 className="cyber-heading text-lg">Share Links</h2>
-        <Button
-          size="sm"
-          onClick={() => setDialogOpen(true)}
-          disabled={creating}
-        >
+        <Button size="sm" onClick={() => setDialogOpen(true)} disabled={creating}>
           Create Link
         </Button>
       </div>
@@ -120,8 +113,7 @@ export default function DocumentShareClient({
       <div className="mt-6 space-y-3">
         {shares.length === 0 ? (
           <p className="cyber-subtext">
-            No share links created yet. Create a link to share this document
-            with external parties.
+            No share links created yet. Create a link to share this document with external parties.
           </p>
         ) : (
           shares.map((share) => {
@@ -167,15 +159,13 @@ export default function DocumentShareClient({
                     )}
                   </div>
                 </div>
-                <div className="flex gap-4 text-xs text-slate-500">
+                <div className="flex gap-4 text-xs text-slate-400">
                   <span>
                     Access: {share.access_count}
                     {share.max_access ? ` / ${share.max_access}` : ""}
                   </span>
                   <span>Expires: {formatDate(share.expires_at)}</span>
-                  {share.revoked_at && (
-                    <span>Revoked: {formatDate(share.revoked_at)}</span>
-                  )}
+                  {share.revoked_at && <span>Revoked: {formatDate(share.revoked_at)}</span>}
                 </div>
               </div>
             );
@@ -228,10 +218,10 @@ export default function DocumentShareClient({
         size="sm"
       >
         <p className="cyber-subtext">
-          Are you sure you want to revoke this share link? Users with this link
-          will no longer be able to access the document.
+          Are you sure you want to revoke this share link? Users with this link will no longer be
+          able to access the document.
         </p>
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="mt-6 flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setRevokeDialogOpen(null)}>
             Cancel
           </Button>

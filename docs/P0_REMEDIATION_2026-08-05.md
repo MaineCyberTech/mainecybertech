@@ -1,0 +1,28 @@
+# P0 Remediation — 2026-08-05
+
+Fixes applied for the 9 critical runtime bugs identified in `docs/MODULE_BUILD_PROMPT_VERIFICATION_2026-08-05.md` (P0 section). All fixes pass typecheck, lint, and tests.
+
+## Changes
+
+| #   | Module                           | Fix                                                                                                                                                                                                                                | Files                                                                                                                                                                        |
+| --- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 28 Uptime Monitor                | Added `last_checked_at`/`last_status_code` to `uptime_checks`; `websiteMonitorCheck` now inserts correct `uptime_results` columns (`check_id`, `response_status`, `error_message`, `is_up`)                                        | `supabase/migrations/5302124_fix_worker_schema_columns.sql`, `apps/worker/src/tasks/module-tasks.ts`                                                                         |
+| 2   | 22 License Optimizer             | `licenseOptimizerCheck` now selects `software_name`/`cost_per_seat` (schema columns) instead of nonexistent `license_name`/`monthly_cost_per_seat`                                                                                 | `apps/worker/src/tasks/module-tasks.ts`                                                                                                                                      |
+| 3   | 23 DMARC Coach                   | Added `status` column to `dmarc_analyses`; worker only flags active→stale; **added audit logging** to create/update/delete/analyze                                                                                                 | `supabase/migrations/5302124_fix_worker_schema_columns.sql`, `apps/worker/src/tasks/module-tasks.ts`, `apps/api/src/routes/dmarc-coach.ts`                                   |
+| 4   | 44 Procurement Compare           | `/procurement/compare` now uses `quote_amount` (was nonexistent `total_price` → all 0s). Added SDK `procurement.compare()` + API test                                                                                              | `apps/api/src/routes/final.ts`, `packages/sdk/src/final.ts`, `apps/api/src/__tests__/final.test.ts`, `packages/sdk/src/__tests__/sdk-expanded.test.ts`                       |
+| 5   | 45/47/29/30/04/05 field-services | `crudRoute` gained `GET /:id` (org-scoped) — fixes admin `[id]` detail 404s for isp/unifi/port-maps/camera-calc/staging/network-diagrams                                                                                           | `apps/api/src/routes/field-services.ts`, `apps/api/src/__tests__/field-services.test.ts`                                                                                     |
+| 6   | 49 SLA/SLO                       | Added `slaLogCheck` worker (computes first_response/resolution minutes from tickets+comments, inserts `sla_logs`, honors `calculate_sla_breach`), registered + scheduled hourly. Added `businessOsSnapshot` worker too (module 20) | `apps/worker/src/tasks/module-tasks.ts`, `apps/worker/src/tasks/index.ts`, `apps/worker/src/main.ts`                                                                         |
+| 7   | 30 Camera Calculator             | Portal page now maps correct schema columns (`site_name`, `estimated_storage_tb`, `recommended_nvr`); added interactive `CameraCalculatorClient` with calculate + save form; SDK `camera.calculate()` added                        | `apps/web/app/(portal)/portal/camera-calculator/page.tsx`, `apps/web/app/(portal)/portal/camera-calculator/CameraCalculatorClient.tsx`, `packages/sdk/src/field-services.ts` |
+| 8   | 47 Network Diagrams              | New dedicated portal page `/portal/network-diagrams` rendering `network_diagrams` (was previously unwired to portal)                                                                                                               | `apps/web/app/(portal)/portal/network-diagrams/page.tsx`                                                                                                                     |
+| 9   | 20 Business OS                   | Fixed SDK URL prefix (missing `/api/v1`); added `businessOsSnapshot` worker                                                                                                                                                        | `packages/sdk/src/business-os.api.ts`, `apps/worker/src/tasks/module-tasks.ts`, `apps/worker/src/tasks/index.ts`                                                             |
+
+## Test Results
+
+| Package | Before | After                                            |
+| ------- | ------ | ------------------------------------------------ |
+| API     | 710    | **713** (final+field-services compare/GET tests) |
+| Web     | 1437   | **1442** (camera + network-diagrams page tests)  |
+| SDK     | 252    | **254** (camera.calculate + procurement.compare) |
+| Worker  | 31     | **36** (slaLogCheck + businessOsSnapshot)        |
+
+All packages: typecheck clean, lint 0 errors. Migration `5302124` pending `supabase db push` on dev/prod.

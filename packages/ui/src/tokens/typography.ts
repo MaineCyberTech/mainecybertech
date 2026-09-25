@@ -1,15 +1,8 @@
 export const typography = {
   fontFamily: {
-    display: ["var(--font-orbitron)", "sans-serif"],
-    body: ["var(--font-inter)", "sans-serif"],
-    mono: [
-      "ui-monospace",
-      "SFMono-Regular",
-      "Menlo",
-      "Monaco",
-      "Consolas",
-      "monospace",
-    ],
+    display: ["var(--font-display)", "sans-serif"],
+    body: ["var(--font-body)", "sans-serif"],
+    mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Monaco", "Consolas", "monospace"],
   },
   fontSize: {
     xs: ["0.75rem", "1rem"],

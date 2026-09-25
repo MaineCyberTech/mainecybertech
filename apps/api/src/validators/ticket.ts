@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createTicketSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   title: z.string().min(1, "Title is required").max(500),
   description: z.string().max(10000).optional().nullable(),
   priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
@@ -16,15 +16,7 @@ export const updateTicketSchema = z.object({
   title: z.string().min(1).max(500).optional(),
   description: z.string().max(10000).optional().nullable(),
   status: z
-    .enum([
-      "new",
-      "open",
-      "triaged",
-      "in_progress",
-      "waiting_on_client",
-      "resolved",
-      "closed",
-    ])
+    .enum(["new", "open", "triaged", "in_progress", "waiting_on_client", "resolved", "closed"])
     .optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
   category: z.string().max(100).optional().nullable(),
@@ -35,7 +27,7 @@ export const updateTicketSchema = z.object({
 });
 
 export const addTicketCommentSchema = z.object({
-  organizationId: z.string().min(1),
+  organizationId: z.string().uuid(),
   body: z.string().min(1, "Comment body is required").max(10000),
   isInternal: z.boolean().default(false),
 });
@@ -46,17 +38,9 @@ export const updateTicketCommentSchema = z.object({
 });
 
 export const bulkTicketUpdateSchema = z.object({
-  ids: z.array(z.string().min(1)).min(1, "At least one ticket ID required"),
+  ids: z.array(z.string().uuid()).min(1, "At least one ticket ID required"),
   status: z
-    .enum([
-      "new",
-      "open",
-      "triaged",
-      "in_progress",
-      "waiting_on_client",
-      "resolved",
-      "closed",
-    ])
+    .enum(["new", "open", "triaged", "in_progress", "waiting_on_client", "resolved", "closed"])
     .optional(),
   priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
 });

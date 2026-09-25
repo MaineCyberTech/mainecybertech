@@ -2,18 +2,39 @@
 
 import { useState } from "react";
 import { getClientApi } from "@/lib/client-api";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const EVENT_OPTIONS = [
-  "ticket.created", "ticket.updated", "ticket.assigned",
-  "project.created", "project.updated",
-  "document.created", "document.updated",
-  "membership.created", "membership.updated",
-  "billing.invoice.paid", "billing.invoice.overdue",
+  "ticket.created",
+  "ticket.updated",
+  "ticket.assigned",
+  "project.created",
+  "project.updated",
+  "document.created",
+  "document.updated",
+  "membership.created",
+  "membership.updated",
+  "billing.invoice.paid",
+  "billing.invoice.overdue",
 ];
 
 type Props = {
-  webhook: any;
-  deliveries: any[];
+  webhook: {
+    id: string;
+    name: string;
+    url: string;
+    secret?: string | null;
+    events?: string[];
+    is_active: boolean;
+  };
+  deliveries: Array<{
+    id: string;
+    event: string;
+    status: string;
+    response_status?: number | null;
+    duration_ms?: number | null;
+    created_at: string;
+  }>;
   totalDeliveries: number;
 };
 
@@ -28,43 +49,78 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
   const [testResult, setTestResult] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggleEvent(event: string) {
-    setEvents((prev) => prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event]);
+    setEvents((prev) =>
+      prev.includes(event) ? prev.filter((e) => e !== event) : [...prev, event],
+    );
   }
 
   async function handleSave() {
     setSaving(true);
+    setError(null);
     try {
-      await getClientApi().webhooks.update(webhook.id, { name, url, secret: secret || null, events, isActive });
-      setSaved(true); setTimeout(() => setSaved(false), 3000);
-    } catch {}
+      await getClientApi().webhooks.update(webhook.id, {
+        name,
+        url,
+        secret: secret || null,
+        events,
+        isActive,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      setError("Failed to save the webhook. Please try again.");
+    }
     setSaving(false);
   }
 
   async function handleTest() {
-    setTesting(true); setTestResult(null);
+    setTesting(true);
+    setTestResult(null);
     try {
       const result = await getClientApi().webhooks.test(webhook.id);
       if (result.ok) setTestResult(`Success (${result.status}ms)`);
       else setTestResult(`Failed: ${result.error ?? "Unknown"} (${result.duration_ms ?? "?"}ms)`);
-    } catch { setTestResult("Request failed"); }
+    } catch {
+      setTestResult("Request failed");
+    }
     setTesting(false);
   }
 
-  async function handleDelete() {
-    if (!confirm("Delete this webhook endpoint?")) return;
+  async function performDelete() {
+    setConfirmOpen(false);
     setDeleting(true);
+    setError(null);
     try {
       await getClientApi().webhooks.remove(webhook.id);
       window.location.href = "/admin/webhooks";
-    } catch { setDeleting(false); }
+    } catch {
+      setError("Failed to delete the webhook. Please try again.");
+      setDeleting(false);
+    }
   }
 
   return (
     <div className="space-y-6">
       {saved ? (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">Saved.</div>
+        <div
+          role="status"
+          className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300"
+        >
+          Saved.
+        </div>
+      ) : null}
+
+      {error ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        >
+          {error}
+        </div>
       ) : null}
 
       <section className="cyber-panel">
@@ -72,40 +128,85 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
         <div className="mt-6 space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="cyber-label">Name</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} className="cyber-input" />
+              <label className="cyber-label" htmlFor="webhook-name">
+                Name
+              </label>
+              <input
+                id="webhook-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="cyber-input"
+              />
             </div>
             <div>
-              <label className="cyber-label">Status</label>
-              <select value={isActive ? "true" : "false"} onChange={(e) => setIsActive(e.target.value === "true")} className="cyber-input">
+              <label className="cyber-label" htmlFor="webhook-status">
+                Status
+              </label>
+              <select
+                id="webhook-status"
+                value={isActive ? "true" : "false"}
+                onChange={(e) => setIsActive(e.target.value === "true")}
+                className="cyber-input"
+              >
                 <option value="true">Active</option>
                 <option value="false">Disabled</option>
               </select>
             </div>
           </div>
           <div>
-            <label className="cyber-label">URL</label>
-            <input value={url} onChange={(e) => setUrl(e.target.value)} className="cyber-input font-mono text-sm" placeholder="https://example.com/webhook" />
+            <label className="cyber-label" htmlFor="webhook-url">
+              URL
+            </label>
+            <input
+              id="webhook-url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className="cyber-input font-mono text-sm"
+              placeholder="https://example.com/webhook"
+            />
           </div>
           <div>
-            <label className="cyber-label">Secret (optional)</label>
-            <input value={secret} onChange={(e) => setSecret(e.target.value)} className="cyber-input font-mono text-sm" placeholder="Shared secret for HMAC signing" />
+            <label className="cyber-label" htmlFor="webhook-secret-optional">
+              Secret (optional)
+            </label>
+            <input
+              id="webhook-secret-optional"
+              value={secret}
+              onChange={(e) => setSecret(e.target.value)}
+              className="cyber-input font-mono text-sm"
+              placeholder="Shared secret for HMAC signing"
+            />
           </div>
           <div>
             <label className="cyber-label">Events</label>
             <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {EVENT_OPTIONS.map((event) => (
-                <label key={event} className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={events.includes(event)} onChange={() => toggleEvent(event)} className="accent-emerald-600" />
+                <label key={event} className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={events.includes(event)}
+                    onChange={() => toggleEvent(event)}
+                    className="accent-emerald-600"
+                  />
                   <span className="text-xs text-slate-300">{event}</span>
                 </label>
               ))}
             </div>
           </div>
           <div className="flex flex-wrap gap-3">
-            <button onClick={handleSave} disabled={saving} className="cyber-button">{saving ? "Saving..." : "Save"}</button>
-            <button onClick={handleTest} disabled={testing} className="cyber-button-secondary">{testing ? "Testing..." : "Test Webhook"}</button>
-            <button onClick={handleDelete} disabled={deleting} className="cyber-button-danger text-xs ml-auto">{deleting ? "Deleting..." : "Delete"}</button>
+            <button onClick={handleSave} disabled={saving} className="cyber-button">
+              {saving ? "Saving..." : "Save"}
+            </button>
+            <button onClick={handleTest} disabled={testing} className="cyber-button-secondary">
+              {testing ? "Testing..." : "Test Webhook"}
+            </button>
+            <button
+              onClick={() => setConfirmOpen(true)}
+              disabled={deleting}
+              className="cyber-button-danger ml-auto text-xs"
+            >
+              {deleting ? "Deleting..." : "Delete"}
+            </button>
           </div>
           {testResult ? <div className="text-sm text-slate-300">{testResult}</div> : null}
         </div>
@@ -115,31 +216,50 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
         <h2 className="cyber-heading text-lg">Delivery Log ({totalDeliveries})</h2>
         <div className="mt-6 overflow-x-auto">
           {deliveries.length === 0 ? (
-            <div className="py-4 text-sm text-slate-500">No deliveries yet.</div>
+            <div className="py-4 text-sm text-slate-400">No deliveries yet.</div>
           ) : (
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="px-3 py-2 text-xs text-slate-500 uppercase tracking-wider">Event</th>
-                  <th className="px-3 py-2 text-xs text-slate-500 uppercase tracking-wider">Status</th>
-                  <th className="px-3 py-2 text-xs text-slate-500 uppercase tracking-wider">Response</th>
-                  <th className="px-3 py-2 text-xs text-slate-500 uppercase tracking-wider">Duration</th>
-                  <th className="px-3 py-2 text-xs text-slate-500 uppercase tracking-wider">Time</th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400">
+                    Event
+                  </th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400">
+                    Status
+                  </th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400">
+                    Response
+                  </th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400">
+                    Duration
+                  </th>
+                  <th className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400">
+                    Time
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {deliveries.map((d: any) => (
+                {deliveries.map((d) => (
                   <tr key={d.id} className="border-b border-white/5 hover:bg-white/[0.02]">
-                    <td className="px-3 py-3 text-slate-200 font-mono text-xs">{d.event}</td>
+                    <td className="px-3 py-3 font-mono text-xs text-slate-200">{d.event}</td>
                     <td className="px-3 py-3">
-                      <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider ${
-                        d.status === "success" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-                        : "border-red-500/20 bg-red-500/10 text-red-300"
-                      }`}>{d.status}</span>
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider ${
+                          d.status === "success"
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+                            : "border-red-500/20 bg-red-500/10 text-red-300"
+                        }`}
+                      >
+                        {d.status}
+                      </span>
                     </td>
                     <td className="px-3 py-3 text-slate-400">{d.response_status ?? "—"}</td>
-                    <td className="px-3 py-3 text-slate-400">{d.duration_ms != null ? `${d.duration_ms}ms` : "—"}</td>
-                    <td className="px-3 py-3 text-slate-500 text-xs">{new Date(d.created_at).toLocaleString()}</td>
+                    <td className="px-3 py-3 text-slate-400">
+                      {d.duration_ms != null ? `${d.duration_ms}ms` : "—"}
+                    </td>
+                    <td className="px-3 py-3 text-xs text-slate-400">
+                      {new Date(d.created_at).toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -147,6 +267,16 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
           )}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete this webhook endpoint?"
+        body="Deliveries for this endpoint will stop immediately. This cannot be undone."
+        confirmLabel="Delete"
+        danger
+        onConfirm={performDelete}
+        onClose={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

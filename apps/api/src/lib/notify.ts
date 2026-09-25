@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "../services/supabase";
 import { sendEmail } from "./email";
+import { enqueueTask } from "./task-producer";
 import { logger } from "./logger";
 import { getEnv } from "../config/env";
 
@@ -13,6 +14,16 @@ type NotifyOptions = {
   action: string;
   emailOverride?: boolean;
 };
+
+/** Escape user-controlled content before interpolating it into email HTML. */
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 
 export async function createNotification(opts: NotifyOptions) {
   try {
@@ -34,10 +45,13 @@ export async function createNotification(opts: NotifyOptions) {
   }
 }
 
-export async function notifyAndEmail(
-  opts: NotifyOptions & { email: string; emailHtml?: string },
-) {
+export async function notifyAndEmail(opts: NotifyOptions & { email?: string; emailHtml?: string }) {
   await createNotification(opts);
+
+  // Email is optional: a recipient with no address still gets an in-app
+  // notification but no email.
+  const emailTo = opts.email;
+  if (!emailTo) return;
 
   const baseUrl = getEnv().APP_BASE_URL;
   const modulePath =
@@ -49,12 +63,19 @@ export async function notifyAndEmail(
           ? `/portal/documents/${opts.moduleId}`
           : "";
 
-  await sendEmail({
-    to: opts.email,
+  const emailPayload = {
+    to: emailTo,
     subject: `[Maine CyberTech] ${opts.title}`,
     text: `${opts.body}\n\nView: ${baseUrl}${modulePath}`,
     html:
       opts.emailHtml ??
-      `<p>${opts.body.replace(/\n/g, "<br/>")}</p>${modulePath ? `<p><a href="${baseUrl}${modulePath}">View details</a></p>` : ""}`,
-  });
+      `<p>${escapeHtml(opts.body).replace(/\n/g, "<br/>")}</p>${modulePath ? `<p><a href="${baseUrl}${modulePath}">View details</a></p>` : ""}`,
+  };
+
+  // Route email through the worker queue when available (retries + backoff);
+  // fall back to sending inline so the notification is never lost.
+  const enqueued = await enqueueTask("notification-email", emailPayload);
+  if (!enqueued) {
+    await sendEmail(emailPayload);
+  }
 }

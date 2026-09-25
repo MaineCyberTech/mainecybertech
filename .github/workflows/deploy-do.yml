@@ -8,6 +8,11 @@ on:
         type: choice
         options: [dev, prod]
         default: dev
+      rollback_sha:
+        description: "Rollback to this SHA (leave empty for normal deploy)"
+        type: string
+        required: false
+        default: ""
   push:
     branches: [main, develop]
     paths:
@@ -18,8 +23,19 @@ on:
       - "infra/digitalocean/**"
       - ".github/workflows/deploy-do.yml"
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  actions: write
+
 env:
-  IMAGE_TAG: ${{ github.sha }}
+  IMAGE_TAG: ${{ github.event.inputs.rollback_sha || github.sha }}
+
+concurrency:
+  group: deploy-do-${{ github.ref }}
+  # Queue deploys instead of cancelling an in-flight deploy (never abort a prod deploy mid-flight)
+  cancel-in-progress: false
 
 jobs:
   setup:
@@ -33,8 +49,18 @@ jobs:
       deploy_host: ${{ steps.env.outputs.deploy_host }}
       cors_origin: ${{ steps.env.outputs.cors_origin }}
       ghcr_prefix: ${{ steps.env.outputs.ghcr_prefix }}
+      droplet_name: ${{ steps.env.outputs.droplet_name }}
+      test_accounts_enabled: ${{ steps.env.outputs.test_accounts_enabled }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Validate rollback SHA
+        if: github.event.inputs.rollback_sha != ''
+        run: |
+          # The value is used unquoted in a remote root shell; only allow hex.
+          if ! printf '%s' "${{ github.event.inputs.rollback_sha }}" | grep -Eq '^[0-9a-f]{7,40}$'; then
+            echo "::error::rollback_sha must be 7-40 lowercase hex characters"
+            exit 1
+          fi
       - name: Determine environment
         id: env
         run: |
@@ -42,36 +68,128 @@ jobs:
             APP_DOMAIN=app.mainecybertech.com
             API_DOMAIN=api.mainecybertech.com
             WWW_DOMAIN=www.mainecybertech.com
-            DEPLOY_HOST=app.mainecybertech.com
             ENV_NAME=prod
+            DROPLET_NAME=mct-portal-prod
           else
             APP_DOMAIN=app.mainecybertech.us
             API_DOMAIN=api.mainecybertech.us
             WWW_DOMAIN=www.mainecybertech.us
-            DEPLOY_HOST=app.mainecybertech.us
             ENV_NAME=dev
+            DROPLET_NAME=mct-portal-dev
+          fi
+          # Test accounts page is enabled on dev only
+          if [ "$ENV_NAME" = "dev" ]; then
+            TEST_ACCOUNTS_ENABLED=true
+          else
+            TEST_ACCOUNTS_ENABLED=false
           fi
           echo "name=$ENV_NAME" >> $GITHUB_OUTPUT
           echo "app_domain=$APP_DOMAIN" >> $GITHUB_OUTPUT
           echo "api_domain=$API_DOMAIN" >> $GITHUB_OUTPUT
           echo "www_domain=$WWW_DOMAIN" >> $GITHUB_OUTPUT
-          echo "deploy_host=$DEPLOY_HOST" >> $GITHUB_OUTPUT
+          echo "deploy_host=$DROPLET_NAME" >> $GITHUB_OUTPUT
           echo "cors_origin=https://$APP_DOMAIN,https://$WWW_DOMAIN" >> $GITHUB_OUTPUT
           echo "ghcr_prefix=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          echo "droplet_name=$DROPLET_NAME" >> $GITHUB_OUTPUT
+          echo "test_accounts_enabled=$TEST_ACCOUNTS_ENABLED" >> $GITHUB_OUTPUT
+
+  resolve-ip:
+    # Resolve the droplet IP from Terraform state (single source of truth),
+    # instead of querying the DigitalOcean API directly. The per-environment
+    # backend config (env/backend.<env>.hcl) isolates dev/prod state in
+    # separate Spaces buckets/keys so a prod apply can never clobber dev.
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ needs.setup.outputs.name }}
+    outputs:
+      droplet_ip: ${{ steps.tf.outputs.droplet_ip }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
+        with:
+          terraform_version: 1.9
+      - name: Resolve droplet IP (DO API, fallback Terraform state)
+        id: tf
+        env:
+          DO_API_TOKEN: ${{ secrets.DO_API_TOKEN }}
+          # Optional escape hatch: an environment variable (dev/prod) holding
+          # the droplet's IPv4. Used only when the DO API and Terraform both
+          # fail to yield a valid address.
+          DROPLET_IP_VAR: ${{ vars.DROPLET_IP }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.DO_SPACES_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DO_SPACES_SECRET_ACCESS_KEY }}
+        working-directory: infra/terraform/digitalocean
+        run: |
+          set -e
+          ENV="${{ needs.setup.outputs.name }}"
+          DROPLET_NAME="mct-portal-$ENV"
+          IP=""
+          is_ipv4() { [[ "$1" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; }
+
+          if [ -n "$DO_API_TOKEN" ]; then
+            # Authoritative: the DO API returns the droplet's CURRENT IP.
+            # Match exact name or a suffixed variant (recycled/recreated
+            # droplets), take the newest, and pick the public IPv4.
+            echo "Resolving droplet IP from DigitalOcean API ($ENV)..."
+            response=$(curl -sS -w '\n%{http_code}' \
+              -H "Authorization: Bearer $DO_API_TOKEN" \
+              "https://api.digitalocean.com/v2/droplets?page=1&per_page=200" || true)
+            status=$(printf '%s' "$response" | tail -n1)
+            body=$(printf '%s' "$response" | sed '$d')
+            echo "DO API HTTP status: $status"
+            if [ "$status" = "200" ]; then
+              IP=$(printf '%s' "$body" | jq -r --arg name "$DROPLET_NAME" \
+                '[.droplets[] | select(.name == $name or (.name | startswith($name + "-")))]
+                 | sort_by(.created_at) | last
+                 | (.networks.v4[]? | select(.type == "public") | .ip_address) // empty' \
+                2>/dev/null | head -n1 || true)
+            else
+              echo "DO API did not return 200 (token may be invalid/expired)."
+            fi
+          else
+            echo "DO_API_TOKEN is not set; skipping the DO API."
+          fi
+
+          if ! is_ipv4 "$IP"; then
+            echo "DO API did not yield a valid IPv4; trying Terraform state ($ENV)..."
+            IP=""
+            terraform init -input=false -backend-config=env/backend.$ENV.hcl >/dev/null 2>&1 \
+              || echo "terraform init failed (non-fatal)"
+            # Extract only an IPv4 from the output: the hashicorp/setup-terraform
+            # wrapper emits ::error:: noise on failure that must never be parsed
+            # as an address (that produced a malformed empty droplet_ip output).
+            IP=$(terraform output -raw droplet_ip 2>/dev/null \
+              | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' | head -n1 || true)
+          fi
+
+          if ! is_ipv4 "$IP" && is_ipv4 "$DROPLET_IP_VAR"; then
+            echo "Falling back to the DROPLET_IP environment variable."
+            IP="$DROPLET_IP_VAR"
+          fi
+
+          if ! is_ipv4 "$IP"; then
+            echo "ERROR: could not resolve a valid droplet IPv4 for $ENV"
+            exit 1
+          fi
+          echo "droplet_ip=$IP" >> $GITHUB_OUTPUT
+          echo "Using droplet IP: $IP"
 
   build-api:
-    needs: setup
+    needs: [setup]
+    if: ${{ github.event_name == 'push' || github.event.inputs.rollback_sha == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/api/Dockerfile
@@ -81,18 +199,19 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-worker:
-    needs: setup
+    needs: [setup]
+    if: ${{ github.event_name == 'push' || github.event.inputs.rollback_sha == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/worker/Dockerfile
@@ -102,123 +221,315 @@ jobs:
           cache-to: type=gha,mode=max
 
   build-web:
-    needs: setup
+    needs: [setup]
+    if: ${{ github.event_name == 'push' || github.event.inputs.rollback_sha == '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: docker/login-action@v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/web/Dockerfile
           push: true
           build-args: |
             NEXT_PUBLIC_API_URL=https://${{ needs.setup.outputs.api_domain }}
+            NEXT_PUBLIC_APP_VERSION=${{ github.ref_name }}-${{ github.run_number }}
+            NEXT_PUBLIC_GIT_SHA=${{ github.sha }}
+            NEXT_PUBLIC_BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.pusher.date || '' }}
+            NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=${{ needs.setup.outputs.test_accounts_enabled }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  # ===== Deployment gates =====
+  # validate: always runs (test + lint + typecheck) for every deploy
+  validate:
+    needs: [setup]
+    uses: ./.github/workflows/validate.yml
+
+  # e2e + migrations: required for prod (main) deploys only; skipped on dev to keep deploys fast.
+  # Skipped jobs do NOT block deploy -- deploy uses always() && !failure() && !cancelled().
+  e2e-gate:
+    needs: [setup]
+    if: ${{ needs.setup.outputs.name == 'prod' && (github.event_name == 'push' || github.event.inputs.rollback_sha == '') }}
+    uses: ./.github/workflows/e2e.yml
+    secrets: inherit
+
+  migrate-gate:
+    needs: [setup]
+    if: ${{ needs.setup.outputs.name == 'prod' && (github.event_name == 'push' || github.event.inputs.rollback_sha == '') }}
+    uses: ./.github/workflows/supabase-migrations.yml
+    secrets: inherit
+
   deploy:
-    needs: [setup, build-api, build-worker, build-web]
+    needs: [setup, resolve-ip, validate, e2e-gate, migrate-gate, build-api, build-worker, build-web]
+    # always(): run even when gates are skipped (dev); !failure() && !cancelled(): never run after a failure
+    if: ${{ always() && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
+    environment: ${{ needs.setup.outputs.name }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.DO_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "${{ needs.setup.outputs.deploy_host }}" >> ~/.ssh/known_hosts 2>&1 || echo "ssh-keyscan failed (non-fatal)"
-      - name: Deploy to DigitalOcean
-        shell: bash
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Setup droplet
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
         env:
-          IMAGE_TAG: ${{ env.IMAGE_TAG }}
-          GHCR_IMAGE_PREFIX: ${{ needs.setup.outputs.ghcr_prefix }}
-          GHCR_USERNAME: ${{ github.actor }}
-          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOST: ${{ needs.setup.outputs.deploy_host }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JSM_BASE_URL: ${{ secrets.JSM_BASE_URL }}
+          M365_TENANT_ID: ${{ secrets.M365_TENANT_ID }}
+          M365_CLIENT_ID: ${{ secrets.M365_CLIENT_ID }}
+          M365_CLIENT_SECRET: ${{ secrets.M365_CLIENT_SECRET }}
+          PUBLIC_TRAFFIC_WEBHOOK_URL: ${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }}
+          PUBLIC_LEAD_WEBHOOK_URL: ${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }}
+          JSM_DOMAIN: ${{ secrets.JSM_DOMAIN }}
+          JSM_EMAIL: ${{ secrets.JSM_EMAIL }}
+          JSM_API_TOKEN: ${{ secrets.JSM_API_TOKEN }}
+          JSM_SERVICEDESK_ID: ${{ secrets.JSM_SERVICEDESK_ID }}
+          JSM_REQUEST_TYPE_ID: ${{ secrets.JSM_REQUEST_TYPE_ID }}
           APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
           API_DOMAIN: ${{ needs.setup.outputs.api_domain }}
           CORS_ORIGIN: ${{ needs.setup.outputs.cors_origin }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          FIELD_ENCRYPTION_KEY: ${{ secrets.FIELD_ENCRYPTION_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+          RLS_READS_ENABLED: ${{ secrets.RLS_READS_ENABLED }}
+          RLS_WRITES_ENABLED: ${{ secrets.RLS_WRITES_ENABLED }}
+          # Forwarded so the remote script never interpolates these into the
+          # command text (a branch name may contain shell metacharacters).
+          DEPLOY_REF: ${{ github.ref_name }}
+          REPO_SLUG: ${{ github.repository }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_ACTOR: ${{ github.actor }}
+        with:
+          host: ${{ needs.resolve-ip.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          command_timeout: 45m
+          # Secrets are forwarded as environment variables rather than being
+          # interpolated into the remote script, so a value containing $,
+          # backticks or quotes cannot execute on the droplet.
+          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
+          script: |
+            set -e
+            timeout 60 cloud-init status --wait 2>/dev/null || true
+            if ! docker compose version >/dev/null 2>&1; then
+              apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2
+            fi
+            if ! git --version >/dev/null 2>&1; then
+              apt-get install -y -qq git
+            fi
+            if [ ! -d "/opt/mct-portal/repo" ] || [ ! -d "/opt/mct-portal/repo/.git" ]; then
+              rm -rf /opt/mct-portal/repo
+              git clone "https://github.com/$REPO_SLUG.git" /opt/mct-portal/repo
+            fi
+            cd /opt/mct-portal/repo
+            git fetch origin "$DEPLOY_REF"
+            git checkout -B "$DEPLOY_REF" "origin/$DEPLOY_REF"
+            git reset --hard "origin/$DEPLOY_REF"
+            mkdir -p /opt/mct-portal
+            : > /opt/mct-portal/.env
+            # printf '%s' does not re-expand values, so shell metacharacters in
+            # a secret are written literally.
+            {
+              printf 'SUPABASE_URL=%s\n' "$SUPABASE_URL"
+              printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
+              printf 'SUPABASE_ANON_KEY=%s\n' "$SUPABASE_ANON_KEY"
+              printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
+              printf 'STRIPE_SECRET_KEY=%s\n' "$STRIPE_SECRET_KEY"
+              printf 'STRIPE_WEBHOOK_SECRET=%s\n' "$STRIPE_WEBHOOK_SECRET"
+              printf 'SENTRY_DSN=%s\n' "$SENTRY_DSN"
+              printf 'SMTP_HOST=%s\n' "$SMTP_HOST"
+              printf 'SMTP_PORT=%s\n' "$SMTP_PORT"
+              printf 'SMTP_USER=%s\n' "$SMTP_USER"
+              printf 'SMTP_PASS=%s\n' "$SMTP_PASS"
+              printf 'EMAIL_FROM=%s\n' "$EMAIL_FROM"
+              printf 'JIRA_BASE_URL=%s\n' "$JIRA_BASE_URL"
+              printf 'JIRA_EMAIL=%s\n' "$JIRA_EMAIL"
+              printf 'JIRA_API_TOKEN=%s\n' "$JIRA_API_TOKEN"
+              printf 'JSM_BASE_URL=%s\n' "$JSM_BASE_URL"
+              printf 'M365_TENANT_ID=%s\n' "$M365_TENANT_ID"
+              printf 'M365_CLIENT_ID=%s\n' "$M365_CLIENT_ID"
+              printf 'M365_CLIENT_SECRET=%s\n' "$M365_CLIENT_SECRET"
+              printf 'PUBLIC_TRAFFIC_WEBHOOK_URL=%s\n' "$PUBLIC_TRAFFIC_WEBHOOK_URL"
+              printf 'PUBLIC_LEAD_WEBHOOK_URL=%s\n' "$PUBLIC_LEAD_WEBHOOK_URL"
+              printf 'JSM_DOMAIN=%s\n' "$JSM_DOMAIN"
+              printf 'JSM_EMAIL=%s\n' "$JSM_EMAIL"
+              printf 'JSM_API_TOKEN=%s\n' "$JSM_API_TOKEN"
+              printf 'JSM_SERVICEDESK_ID=%s\n' "$JSM_SERVICEDESK_ID"
+              printf 'JSM_REQUEST_TYPE_ID=%s\n' "$JSM_REQUEST_TYPE_ID"
+              printf 'APP_DOMAIN=%s\n' "$APP_DOMAIN"
+              printf 'API_DOMAIN=%s\n' "$API_DOMAIN"
+              printf 'CORS_ORIGIN=%s\n' "$CORS_ORIGIN"
+              printf 'REDIS_PASSWORD=%s\n' "$REDIS_PASSWORD"
+              printf 'FIELD_ENCRYPTION_KEY=%s\n' "$FIELD_ENCRYPTION_KEY"
+              printf 'TURNSTILE_SECRET_KEY=%s\n' "$TURNSTILE_SECRET_KEY"
+              printf 'RLS_READS_ENABLED=%s\n' "$RLS_READS_ENABLED"
+              printf 'RLS_WRITES_ENABLED=%s\n' "$RLS_WRITES_ENABLED"
+            } >> /opt/mct-portal/.env
+            chmod 600 /opt/mct-portal/.env
+            echo "Droplet ready"
+
+      - name: Deploy containers
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2
+        with:
+          host: ${{ needs.resolve-ip.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.CI_SSH_PRIVATE_KEY }}
+          command_timeout: 45m
+          envs: CF_ORIGIN_CERT,CF_ORIGIN_KEY,GHCR_TOKEN,GHCR_ACTOR
+          script: |
+            set -e
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_ACTOR" --password-stdin
+            mkdir -p /opt/mct-portal/certs
+            printf '%s\n' "$CF_ORIGIN_CERT" > /opt/mct-portal/certs/fullchain.pem
+            printf '%s\n' "$CF_ORIGIN_KEY" > /opt/mct-portal/certs/privkey.pem
+            chmod 600 /opt/mct-portal/certs/privkey.pem
+            # NOTE: no `docker image prune` here — old mct-* images are still in
+            # use until compose down/up, so pruning pre-pull would remove nothing.
+            # Retry pulls — the droplet's connection to GHCR can reset mid-pull.
+            pull_retry() {
+              local img="$1" attempt=1
+              until docker pull "$img"; do
+                if [ "$attempt" -ge 3 ]; then
+                  echo "ERROR: failed to pull $img after 3 attempts" >&2
+                  return 1
+                fi
+                echo "WARNING: pull of $img failed (attempt $attempt/3) — retrying in 10s"
+                attempt=$((attempt + 1))
+                sleep 10
+              done
+            }
+            pull_retry ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
+            pull_retry ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
+            pull_retry ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
+            CADDYFILE="infra/digitalocean/Caddyfile.${{ needs.setup.outputs.name }}"
+            [ -f "/opt/mct-portal/repo/$CADDYFILE" ] || CADDYFILE="infra/digitalocean/Caddyfile"
+            if [ -s "/opt/mct-portal/certs/fullchain.pem" ] && [ -s "/opt/mct-portal/certs/privkey.pem" ]; then
+              cp /opt/mct-portal/repo/$CADDYFILE /opt/mct-portal/Caddyfile
+            else
+              echo "WARNING: Cert files empty/missing, using tls internal fallback"
+              sed 's|tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem|tls internal|' /opt/mct-portal/repo/$CADDYFILE > /opt/mct-portal/Caddyfile
+            fi
+            cp /opt/mct-portal/repo/infra/digitalocean/docker-compose.yml /opt/mct-portal/docker-compose.yml
+            cp /opt/mct-portal/repo/infra/digitalocean/prometheus.yml /opt/mct-portal/prometheus.yml
+            cp /opt/mct-portal/repo/infra/digitalocean/prometheus.rules.yml /opt/mct-portal/prometheus.rules.yml
+            cd /opt/mct-portal
+            # Remember what is currently running so a failed deploy can revert.
+            PREV_TAG=$(docker inspect --format '{{.Config.Image}}' mct-portal-api-1 2>/dev/null | sed 's/.*://')
+            docker compose -p mct-portal down --remove-orphans || true
+            docker rm -f mct-portal-caddy-1 2>/dev/null || true
+            IMAGE_TAG=${{ env.IMAGE_TAG }} GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans
+            sleep 15
+            echo "=== Docker compose ps ==="
+            docker compose -p mct-portal ps --format 'table {{.Name}}\t{{.Status}}\t{{.Ports}}'
+            echo "=== Port 443 listener ==="
+            ss -tlnp 2>/dev/null | grep :443 || netstat -tlnp 2>/dev/null | grep :443 || echo "no listener"
+
+            # Health gate: only prune the previous images once the new
+            # containers report healthy, so a failed deploy can still roll
+            # back. Use the containers' own healthchecks (probing the app
+            # ports from the host does not work - they are not published).
+            container_health() {
+              docker inspect --format '{{.State.Health.Status}}' "mct-portal-$1-1" 2>/dev/null || echo "missing"
+            }
+            healthy=0
+            for attempt in $(seq 1 18); do
+              if [ "$(container_health api)" = "healthy" ] && [ "$(container_health web)" = "healthy" ]; then
+                healthy=1
+                echo "Health checks passed (attempt $attempt)"
+                break
+              fi
+              echo "Waiting for services to become healthy (attempt $attempt/18)..."
+              sleep 10
+            done
+            if [ "$healthy" != "1" ]; then
+              echo "=== Caddy logs (last 30 lines) ==="
+              docker compose -p mct-portal logs --tail=30 caddy 2>/dev/null || true
+              if [ -n "$PREV_TAG" ] && [ "$PREV_TAG" != "${{ env.IMAGE_TAG }}" ]; then
+                echo "Attempting rollback to previously running tag $PREV_TAG" >&2
+                docker compose -p mct-portal down --remove-orphans || true
+                IMAGE_TAG="$PREV_TAG" GHCR_IMAGE_PREFIX=${{ needs.setup.outputs.ghcr_prefix }} docker compose -p mct-portal up -d --remove-orphans || true
+              fi
+              echo "ERROR: health checks failed after deploy" >&2
+              exit 1
+            fi
+
+            echo "=== Pruning old mct images (keep current tag) ==="
+            docker images --format '{{.Repository}}:{{.Tag}}' | grep -E "mct-(api|worker|web)" | grep -v ":${{ env.IMAGE_TAG }}$" | xargs -r docker rmi -f 2>/dev/null || true
+            docker image prune -f 2>/dev/null || true
+        env:
           CF_ORIGIN_CERT: ${{ secrets.CF_ORIGIN_CERT }}
           CF_ORIGIN_KEY: ${{ secrets.CF_ORIGIN_KEY }}
-        run: |
-          SSH_OPTS="-o StrictHostKeyChecking=no -o ConnectTimeout=10 -o ServerAliveInterval=30"
-          echo "--- WAITING FOR SSH ---"
-          for i in $(seq 1 10); do
-            ssh -q $SSH_OPTS root@$HOST "echo alive" && { echo "SSH ready after $((i*10))s"; break; }
-            echo "Retry $i/10..."
-            sleep 10
-            [ $i -eq 10 ] && { echo "SSH never available"; exit 1; }
-          done
-          echo "--- WRITING .ENV ---"
-          ssh $SSH_OPTS root@$HOST "mkdir -p /opt/mct-portal"
-          ssh $SSH_OPTS root@$HOST "
-            echo SUPABASE_URL=${{ secrets.SUPABASE_URL }} > /opt/mct-portal/.env
-            echo JWT_SECRET=${{ secrets.JWT_SECRET }} >> /opt/mct-portal/.env
-            echo SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} >> /opt/mct-portal/.env
-            echo SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }} >> /opt/mct-portal/.env
-            echo STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }} >> /opt/mct-portal/.env
-            echo STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }} >> /opt/mct-portal/.env
-            echo SENTRY_DSN=${{ secrets.SENTRY_DSN }} >> /opt/mct-portal/.env
-            echo SMTP_HOST=${{ secrets.SMTP_HOST }} >> /opt/mct-portal/.env
-            echo SMTP_PORT=${{ secrets.SMTP_PORT }} >> /opt/mct-portal/.env
-            echo SMTP_USER=${{ secrets.SMTP_USER }} >> /opt/mct-portal/.env
-            echo SMTP_PASS=${{ secrets.SMTP_PASS }} >> /opt/mct-portal/.env
-            echo EMAIL_FROM=${{ secrets.EMAIL_FROM }} >> /opt/mct-portal/.env
-            echo JIRA_BASE_URL=${{ secrets.JIRA_BASE_URL }} >> /opt/mct-portal/.env
-            echo JIRA_EMAIL=${{ secrets.JIRA_EMAIL }} >> /opt/mct-portal/.env
-            echo JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }} >> /opt/mct-portal/.env
-            echo JSM_BASE_URL=${{ secrets.JSM_BASE_URL }} >> /opt/mct-portal/.env
-            echo M365_TENANT_ID=${{ secrets.M365_TENANT_ID }} >> /opt/mct-portal/.env
-            echo M365_CLIENT_ID=${{ secrets.M365_CLIENT_ID }} >> /opt/mct-portal/.env
-            echo M365_CLIENT_SECRET=${{ secrets.M365_CLIENT_SECRET }} >> /opt/mct-portal/.env
-            echo PUBLIC_TRAFFIC_WEBHOOK_URL=${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }} >> /opt/mct-portal/.env
-            echo PUBLIC_LEAD_WEBHOOK_URL=${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }} >> /opt/mct-portal/.env
-            echo JSM_DOMAIN=${{ secrets.JSM_DOMAIN }} >> /opt/mct-portal/.env
-            echo JSM_EMAIL=${{ secrets.JSM_EMAIL }} >> /opt/mct-portal/.env
-            echo JSM_API_TOKEN=${{ secrets.JSM_API_TOKEN }} >> /opt/mct-portal/.env
-            echo JSM_SERVICEDESK_ID=${{ secrets.JSM_SERVICEDESK_ID }} >> /opt/mct-portal/.env
-            echo JSM_REQUEST_TYPE_ID=${{ secrets.JSM_REQUEST_TYPE_ID }} >> /opt/mct-portal/.env
-            echo APP_DOMAIN=${APP_DOMAIN} >> /opt/mct-portal/.env
-            echo API_DOMAIN=${API_DOMAIN} >> /opt/mct-portal/.env
-            echo CORS_ORIGIN=${CORS_ORIGIN} >> /opt/mct-portal/.env
-            chmod 600 /opt/mct-portal/.env
-          " 2>&1
-          echo "--- TRANSFERRING FILES ---"
-          base64 -w0 infra/digitalocean/docker-compose.yml | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/docker-compose.yml"
-          CADDYFILE_SRC="infra/digitalocean/Caddyfile.${{ needs.setup.outputs.name }}"
-          [ -f "$CADDYFILE_SRC" ] || CADDYFILE_SRC="infra/digitalocean/Caddyfile"
-          base64 -w0 "$CADDYFILE_SRC" | ssh $SSH_OPTS root@$HOST "base64 -d > /opt/mct-portal/Caddyfile"
-          echo "--- FREEING DISK ---"
-          ssh $SSH_OPTS root@$HOST "docker system prune -af --volumes 2>/dev/null; docker image ls --format '{{.Repository}}:{{.Tag}}' | grep 'mct-' | grep -v ':$IMAGE_TAG' | xargs -r docker rmi 2>/dev/null; true"
-          echo "--- PULLING IMAGES ---"
-          echo "$GHCR_TOKEN" | ssh $SSH_OPTS root@$HOST "docker login ghcr.io -u $GHCR_USERNAME --password-stdin" 2>&1
-          ssh $SSH_OPTS root@$HOST "docker pull $GHCR_IMAGE_PREFIX/mct-api:$IMAGE_TAG && docker pull $GHCR_IMAGE_PREFIX/mct-worker:$IMAGE_TAG && docker pull $GHCR_IMAGE_PREFIX/mct-web:$IMAGE_TAG"
-          echo "--- DEPLOYING ---"
-          ssh $SSH_OPTS root@$HOST "cd /opt/mct-portal && IMAGE_TAG=$IMAGE_TAG GHCR_IMAGE_PREFIX=$GHCR_IMAGE_PREFIX docker compose up -d --no-deps api worker web caddy && sleep 15 && docker compose ps --format 'table {{.Name}}\t{{.Status}}'"
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GHCR_ACTOR: ${{ github.actor }}
+
       - name: Health check
         env:
           API_DOMAIN: ${{ needs.setup.outputs.api_domain }}
           APP_DOMAIN: ${{ needs.setup.outputs.app_domain }}
+          DROPLET_IP: ${{ needs.resolve-ip.outputs.droplet_ip }}
+          CI_SSH_PRIVATE_KEY: ${{ secrets.CI_SSH_PRIVATE_KEY }}
         run: |
+          # The worker port is not published, so it must be checked over SSH.
+          # Write the key so ssh can actually authenticate (without -i the
+          # check silently returned 000 and was treated as non-fatal).
+          KEY_FILE="$(mktemp)"
+          printf '%s\n' "$CI_SSH_PRIVATE_KEY" > "$KEY_FILE"
+          chmod 600 "$KEY_FILE"
+          SSH="ssh -i $KEY_FILE -o StrictHostKeyChecking=no -o ConnectTimeout=10 root@$DROPLET_IP"
+          api_ok=""
           for i in $(seq 1 30); do
-            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null || echo "000")
-            [ "$CODE" = "200" ] && { echo "API ready after $((i*4))s"; break; }
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$API_DOMAIN/health" 2>/dev/null | tr -d '\r\n' || echo "000")
+            if [ "$CODE" = "200" ]; then echo "API ready after $((i*4))s (HTTP 200)"; api_ok=1; break; fi
             echo "Attempt $i/30: $CODE"; sleep 4
           done
-          [ "$CODE" != "200" ] && { echo "API health check failed"; exit 1; }
+          if [ -z "$api_ok" ]; then
+            echo "===== API CONTAINER LOGS START ====="
+            $SSH "docker ps -a --format '{{.Names}} {{.Status}}'; echo '---'; docker compose -p mct-portal logs --tail=50 api 2>/dev/null || docker logs mct-portal-api-1 --tail 50 2>/dev/null || echo 'no api container found'" || echo "SSH to droplet failed"
+            echo "===== API CONTAINER LOGS END ====="
+            rm -f "$KEY_FILE"
+            exit 1
+          fi
+          echo "Worker health check via SSH..."
+          wcode=$($SSH \
+            "docker exec mct-portal-worker-1 wget -qO- http://localhost:3001/health >/dev/null 2>&1 && echo 200 || echo 000" 2>/dev/null | tr -d '\r\n' || echo "000")
+          if [ "$wcode" = "200" ]; then
+            echo "Worker healthy (HTTP 200)"
+          else
+            echo "Warning: Worker health check returned HTTP $wcode (non-fatal — worker is restart-loop tolerant)"
+          fi
+          rm -f "$KEY_FILE"
+          web_ok=""
           for i in $(seq 1 15); do
-            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null || echo "000")
-            [ "$CODE" != "000" ] && { echo "Web ready after $((i*4))s (HTTP $CODE)"; break; }
+            CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "https://$APP_DOMAIN/login" 2>/dev/null | tr -d '\r\n' || echo "000")
+            # Only redirect + success codes are healthy (200, 301, 302, 307);
+            # a 500/502/503 means the app booted but is failing.
+            if [ "$CODE" = "200" ] || [ "$CODE" = "301" ] || [ "$CODE" = "302" ] || [ "$CODE" = "307" ]; then
+              echo "Web ready after $((i*4))s (HTTP $CODE)"; web_ok=1; break
+            fi
             echo "Attempt $i/15: $CODE"; sleep 4
           done
-          [ "$CODE" = "000" ] && { echo "Web health check failed"; exit 1; }
+          [ -z "$web_ok" ] && { echo "Web health check failed"; exit 1; }
           echo "--- ALL HEALTH CHECKS PASSED ---"

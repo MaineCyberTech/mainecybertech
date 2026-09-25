@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin } from "../fixtures";
 
 test.describe("portal dashboard", () => {
   test.beforeEach(async ({ page }) => {
@@ -52,7 +52,7 @@ test.describe("portal documents", () => {
 
   test("bulk action bar appears on selection", async ({ page }) => {
     const checkbox = page.locator('input[type="checkbox"]').first();
-    if (await checkbox.isVisible()) {
+    if (await visibleWithin(checkbox)) {
       await checkbox.check();
       await expect(page.getByText(/selected/i)).toBeVisible();
     }
@@ -60,7 +60,7 @@ test.describe("portal documents", () => {
 
   test("has upload button or action", async ({ page }) => {
     const uploadBtn = page.getByRole("button", { name: /upload|add|new/i });
-    if (await uploadBtn.isVisible()) {
+    if (await visibleWithin(uploadBtn)) {
       await expect(uploadBtn).toBeEnabled();
     }
   });
@@ -99,7 +99,7 @@ test.describe("portal support", () => {
 
   test("has create ticket button", async ({ page }) => {
     const createBtn = page.getByRole("button", { name: /create|new|submit/i });
-    if (await createBtn.isVisible()) {
+    if (await visibleWithin(createBtn)) {
       await expect(createBtn).toBeEnabled();
     }
   });

@@ -1,17 +1,18 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import ContactForm from "../../../components/marketing/ContactForm";
 
 export const metadata: Metadata = {
   title: "Contact Us — Maine CyberTech",
-  description: "Get in touch with Maine CyberTech for IT support, security, and networking services.",
+  description:
+    "Get in touch with Maine CyberTech for IT support, security, and networking services.",
 };
 
 export default function ContactPage() {
   return (
-    <section className="min-h-screen px-4 pt-32 pb-20 sm:px-6 sm:pt-40">
+    <section className="min-h-screen px-4 pb-20 pt-32 sm:px-6 sm:pt-40">
       <div className="mx-auto max-w-7xl">
         <div className="mb-16 text-center">
-          <h1 className="font-orbitron text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
+          <h1 className="font-display text-4xl font-bold uppercase tracking-wider text-slate-50 sm:text-5xl">
             Contact <span className="text-emerald-500">Us</span>
           </h1>
           <p className="mt-4 text-lg text-slate-400">
@@ -21,11 +22,12 @@ export default function ContactPage() {
 
         <div className="grid gap-12 lg:grid-cols-2">
           <div>
-            <h2 className="font-orbitron text-3xl font-bold uppercase tracking-wider text-slate-50">
+            <h2 className="font-display text-3xl font-bold uppercase tracking-wider text-slate-50">
               Let&apos;s Connect
             </h2>
-            <p className="mt-6 mb-10 text-lg leading-relaxed text-slate-400">
-              Reach out today to schedule a consultation or request immediate support. Our engineers are standing by.
+            <p className="mb-10 mt-6 text-lg leading-relaxed text-slate-400">
+              Reach out today to schedule a consultation or request immediate support. Our engineers
+              are standing by.
             </p>
 
             <div className="space-y-6">
@@ -35,17 +37,28 @@ export default function ContactPage() {
               </div>
               <div className="flex items-center gap-4 text-lg">
                 <span className="text-2xl text-emerald-500">📞</span>
-                <a href="tel:+12072227525" className="text-slate-300 no-underline transition hover:text-emerald-400">(207) 222-7525</a>
+                <a
+                  href="tel:+12072227525"
+                  className="text-slate-300 no-underline transition hover:text-emerald-400"
+                >
+                  (207) 222-7525
+                </a>
               </div>
               <div className="flex items-center gap-4 text-lg">
                 <span className="text-2xl text-emerald-500">✉️</span>
-                <a href="mailto:contact@mainecybertech.com" className="text-slate-300 no-underline transition hover:text-emerald-400">contact@mainecybertech.com</a>
+                <a
+                  href="mailto:contact@mainecybertech.com"
+                  className="text-slate-300 no-underline transition hover:text-emerald-400"
+                >
+                  contact@mainecybertech.com
+                </a>
               </div>
             </div>
 
             <div className="mt-12 border-t border-white/10 pt-8">
-              <p className="text-sm text-slate-500">
-                Please fill out the secure form to the right, and a member of our team will assist you shortly.
+              <p className="text-sm text-slate-400">
+                Please fill out the secure form to the right, and a member of our team will assist
+                you shortly.
               </p>
             </div>
           </div>

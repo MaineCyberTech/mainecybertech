@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS base
 WORKDIR /app
 
 # Copy root package files
@@ -6,6 +6,9 @@ COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 
 # Copy worker app
 COPY apps/worker ./apps/worker
+
+# Workspace packages the app depends on (@mct/sdk, @mct/config).
+COPY packages ./packages
 
 # Enable pnpm and install dependencies
 RUN corepack enable && corepack prepare pnpm@10 --activate
@@ -16,7 +19,7 @@ WORKDIR /app/apps/worker
 RUN pnpm build && rm -rf /app/apps/worker/node_modules/.cache /root/.local/share/pnpm/store
 
 # Runtime stage
-FROM node:20-alpine
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293
 RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 appuser
 WORKDIR /app
 
@@ -32,8 +35,9 @@ WORKDIR /app/apps/worker
 USER appuser
 ENV NODE_ENV=production
 ENV HEALTH_PORT=3001
+EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:3001/health || exit 1
 
 CMD ["node", "dist/main.js"]

@@ -1,0 +1,83 @@
+{
+  "ruleVersion": "2026-07-29.full-expanded",
+  "publicCategoryOrder": [
+    "quick-fixes",
+    "cybersecurity",
+    "microsoft-365",
+    "computer-setup-support",
+    "wifi-networking",
+    "security-cameras",
+    "backup-recovery",
+    "website-seo",
+    "compliance-policies",
+    "monthly-it-plans",
+    "emergency-support",
+    "business-starter-packs"
+  ],
+  "recommendationRules": [
+    {
+      "id": "security_quick_win_path",
+      "whenCategoryViewed": "Quick Fixes",
+      "whenTagsInclude": ["security"],
+      "recommend": ["m365_secure_bundle", "pine_tree_protection_pack", "mct_secure_care"]
+    },
+    {
+      "id": "m365_path",
+      "whenCategoryViewed": "Microsoft 365",
+      "recommend": [
+        "microsoft_365_security_baseline",
+        "microsoft_365_monthly_admin",
+        "mct_business_care"
+      ]
+    },
+    {
+      "id": "network_camera_path",
+      "whenCategoryViewed": "Wi-Fi & Networking",
+      "recommend": [
+        "business_network_foundation",
+        "camera_and_wi_fi_bundle",
+        "unifi_monthly_management"
+      ]
+    },
+    {
+      "id": "website_path",
+      "whenCategoryViewed": "Website & SEO",
+      "recommend": [
+        "local_business_online_presence_pack",
+        "monthly_website_care_plan",
+        "monthly_local_seo_plan"
+      ]
+    },
+    {
+      "id": "resilience_path",
+      "whenCategoryViewed": "Backup & Recovery",
+      "recommend": [
+        "small_business_resilience_pack",
+        "backup_monitoring_plan",
+        "disaster_recovery_plan_starter"
+      ]
+    },
+    {
+      "id": "emergency_aftercare",
+      "whenCategoryViewed": "Emergency Support",
+      "recommend": [
+        "business_owner_peace_of_mind_pack",
+        "mct_secure_care",
+        "small_business_resilience_pack"
+      ]
+    }
+  ],
+  "checkoutPolicy": {
+    "directCheckoutEligible": "Low-risk quick fixes with no privileged access and no onsite assessment may be direct checkout.",
+    "consultationRequired": "Elevated-risk, emergency, monthly plan, DNS/domain, tenant, backup restore, offboarding, network change, camera, and compliance projects should require consult or signed authorization.",
+    "neverCollectInPublicForms": [
+      "passwords",
+      "API keys",
+      "MFA recovery codes",
+      "backup seed phrases",
+      "private keys",
+      "full card data",
+      "sensitive regulated records"
+    ]
+  }
+}

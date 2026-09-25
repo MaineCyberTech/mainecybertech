@@ -1,0 +1,20 @@
+id,name,description
+store_analytics,Store Analytics + Conversion Tracking,"Track views, CTA clicks, quiz events, quote events, promo interactions, and conversion paths."
+lead_scoring,Lead Scoring,"Score quote requests and service finder results based on urgency, selected products, business size, and buying intent."
+recommendation_engine_v2,Recommendation Engine V2,"Advanced recommendation groups such as frequently paired, next step, upgrade path, monthly match, dependency, and seasonal match."
+comparison_pages,Product Comparison Pages,Generate structured comparison pages for common product and package decisions.
+package_ladders,Good Better Best Package Ladders,Show guided three-step choices per category.
+proposal_generator,Quote-to-Proposal Generator,"Generate internal quote review, client-facing proposal draft, scope, assumptions, exclusions, add-ons, and follow-up email."
+intake_to_project,Intake-to-Project Conversion,Convert quote/intake submissions into organization/contact/project/ticket/task scaffolds later.
+product_lifecycle,Admin Product Lifecycle Workflow,"Draft, review, published, seasonal, paused, archived, needs update, and compliance review lifecycle."
+content_quality_auditor,Store Content Quality Auditor,"Audit product copy for clarity, completeness, risk, unsupported claims, and SEO quality."
+seo_landing_pages,SEO Landing Page Generator,Generate local and vertical service landing page scaffolds from catalog data.
+faq_objection_system,FAQ and Objection Handling System,Reusable product/category FAQs with FAQ schema readiness.
+testimonial_system,Review/Testimonial Placement System,Admin-approved testimonials with permission and provenance tracking.
+case_study_generator,Case Study Generator,Turn completed work into publishable case study drafts with approval controls.
+email_nurture,Email Nurture Sequences,Follow-up content for leads by interest area and funnel stage.
+portal_service_hub,Customer Portal Service Hub,"Expose requested services, quote status, proposals, projects, docs, tasks, and recommended next services in portal."
+fulfillment_checklists,Internal Fulfillment Checklist Generator,Generate task checklists from product/service definitions.
+profitability_scoring,Product Profitability + Effort Scoring,"Score products by effort, complexity, margin, lead value, onsite needs, admin access, risk, seasonality."
+dependency_engine,Product Dependency Engine,Define required/recommended prerequisites and quote/admin warnings.
+lead_magnets,Public Service Readiness Checklist Downloads,"Lead magnet checklists for cyber insurance, starter IT, website, onboarding/offboarding, marinas, churches, backups."

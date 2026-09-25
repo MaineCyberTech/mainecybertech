@@ -1,4 +1,4 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("portal timeline page", () => {
   test("renders timeline heading", async ({ page }) => {
@@ -31,27 +31,36 @@ test.describe("portal project task views", () => {
   test("project detail has view toggles", async ({ page }) => {
     await page.goto("/portal/projects");
     const projectLink = page.locator("a[href*='/portal/projects/']").first();
-    if (await projectLink.isVisible()) {
-      await projectLink.click();
-      await expect(page.getByRole("button", { name: /list|timeline|calendar/i }).first()).toBeVisible();
+    if (await visibleWithin(projectLink)) {
+      await clickOrGoto(page, projectLink);
+      await expect(
+        page.getByRole("button", { name: /list|timeline|calendar/i }).first(),
+      ).toBeVisible({ timeout: 10000 });
+    } else {
+      // No seeded projects — the list page itself must still render.
+      await expect(page.getByRole("heading", { name: /projects/i })).toBeVisible();
     }
   });
 
   test("can switch to timeline view", async ({ page }) => {
     await page.goto("/portal/projects");
     const projectLink = page.locator("a[href*='/portal/projects/']").first();
-    if (await projectLink.isVisible()) {
-      await projectLink.click();
+    if (await visibleWithin(projectLink)) {
+      await clickOrGoto(page, projectLink);
       const timelineBtn = page.getByRole("button", { name: /timeline/i });
-      if (await timelineBtn.isVisible()) {
+      if (await visibleWithin(timelineBtn)) {
         await timelineBtn.click();
-        await expect(page.getByText(/tasks with due dates/i).or(page.getByText(/no tasks/i))).toBeVisible();
+        // The timeline view renders either task rows or an empty-period
+        // message, so assert the view container rather than its copy.
+        await expect(page.getByTestId("project-timeline-view")).toBeVisible();
       }
     }
   });
 
-  test("timeline page link is in subnav", async ({ page }) => {
-    await page.goto("/portal/dashboard");
-    await expect(page.getByRole("link", { name: /timeline/i })).toBeVisible();
+  test("timeline page loads", async ({ page }) => {
+    await page.goto("/portal/timeline");
+    await expect(
+      page.getByRole("navigation", { name: "Breadcrumb" }).getByText("Timeline", { exact: true }),
+    ).toBeVisible();
   });
 });

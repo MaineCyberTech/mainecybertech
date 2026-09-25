@@ -17,7 +17,13 @@ const mockOrgsList = jest.fn();
 const mockTicketsList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    organizations: { list: mockOrgsList },
+    organizations: {
+    list: (...args: any[]) =>
+      mockOrgsList(...args).then((data: any) => ({
+        items: Array.isArray(data) ? data : data?.items ?? [],
+        total: Array.isArray(data) ? data.length : data?.total ?? 0,
+      })),
+  },
     tickets: { list: mockTicketsList },
   }),
 }));
@@ -30,7 +36,7 @@ jest.mock("next/link", () => {
   );
 });
 
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -48,7 +54,9 @@ jest.mock("@/components/admin/AdminTicketCenterClient", () => {
       <div data-testid="ticket-center-client">
         <span data-testid="ticket-count">{tickets.length}</span>
         <span data-testid="org-count">{organizations.length}</span>
-        <span data-testid="has-create-action">{typeof createTicketAction === "function" ? "yes" : "no"}</span>
+        <span data-testid="has-create-action">
+          {typeof createTicketAction === "function" ? "yes" : "no"}
+        </span>
       </div>
     );
   };
@@ -77,7 +85,10 @@ describe("AdminTicketsPage", () => {
   });
 
   it("passes organizations to the client", async () => {
-    mockOrgsList.mockResolvedValue([{ id: "o1", name: "Acme" }, { id: "o2", name: "Beta" }]);
+    mockOrgsList.mockResolvedValue([
+      { id: "o1", name: "Acme" },
+      { id: "o2", name: "Beta" },
+    ]);
     const Page = (await import("@/app/(admin)/admin/tickets/page")).default;
     render(await Page());
     expect(screen.getByTestId("org-count")).toHaveTextContent("2");

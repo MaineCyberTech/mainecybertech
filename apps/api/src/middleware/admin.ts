@@ -1,12 +1,9 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { AppError } from "../types";
+import { roleKeyOf } from "../lib/roles";
 
-export async function requireAdmin(
-  req: Request,
-  _res: Response,
-  next: NextFunction,
-) {
+export async function requireAdmin(req: Request, _res: Response, next: NextFunction) {
   try {
     if (!req.authUser) {
       throw new AppError("UNAUTHORIZED", "Authentication required", 401);
@@ -25,7 +22,7 @@ export async function requireAdmin(
     }
 
     const adminRole = data.find((row) =>
-      ["admin", "super_admin"].includes((row.roles as unknown as { key: string }).key),
+      ["admin", "super_admin"].includes(roleKeyOf(row.roles) ?? ""),
     );
 
     if (!adminRole) {

@@ -1,0 +1,258 @@
+﻿{
+  "generated_at": "2026-06-30T23:30:00Z",
+  "source_phases": [
+    "phase1_inventory",
+    "phase2_schema",
+    "phase3_api_contract",
+    "phase4_frontend",
+    "phase5_cross_domain"
+  ],
+  "total_prior_findings": 37,
+  "total_unresolved": 14,
+  "by_severity": { "P0": 1, "P1": 3, "P2": 5, "P3": 5 },
+  "patch_sets": [
+    {
+      "id": "PS-001",
+      "name": "Fix export endpoint chain (P0)",
+      "severity": "P0",
+      "dependencies": [],
+      "effort": "S",
+      "files": [
+        "packages/sdk/src/client.ts",
+        "packages/sdk/src/tickets.ts",
+        "packages/sdk/src/projects.ts",
+        "packages/sdk/src/audit.ts"
+      ],
+      "findings": ["P0-export-chain", "P3-export-sdk-types"],
+      "strategy": "Add ApiClient.getBlob() method that uses res.blob() instead of res.json(). Route tickets.exportData(), projects.exportData(), and audit.exportData() to use getBlob(). Verify frontend export buttons trigger the correct method."
+    },
+    {
+      "id": "PS-002",
+      "name": "Auth page UX polish",
+      "severity": "P1",
+      "dependencies": [],
+      "effort": "XS",
+      "files": [
+        "apps/web/app/(public)/login/page.tsx",
+        "apps/web/app/(public)/signup/page.tsx",
+        "apps/web/app/(public)/forgot-password/page.tsx",
+        "apps/web/app/(public)/password-reset/page.tsx",
+        "apps/web/app/(public)/pending/page.tsx",
+        "apps/web/app/(public)/loading.tsx"
+      ],
+      "findings": ["P1-auth-metadata", "P1-public-loading"],
+      "strategy": "Add metadata exports to all 5 auth pages. Create loading.tsx in (public) route group with spinner matching marketing design."
+    },
+    {
+      "id": "PS-003",
+      "name": "Server action standardization",
+      "severity": "P2",
+      "dependencies": [],
+      "effort": "M",
+      "files": [
+        "apps/web/app/(admin)/admin/tickets/actions.ts",
+        "apps/web/app/(admin)/admin/tickets/[ticketId]/actions.ts",
+        "apps/web/app/(admin)/admin/projects/actions.ts",
+        "apps/web/app/(admin)/admin/projects/[projectId]/actions.ts",
+        "apps/web/app/(portal)/portal/support/actions.ts",
+        "apps/web/app/(portal)/portal/support/[ticketId]/actions.ts",
+        "apps/web/app/(portal)/portal/projects/[projectId]/actions.ts"
+      ],
+      "findings": ["P2-server-actions"],
+      "strategy": "Wrap all 7 server action bodies in try/catch returning { ok, error }. Remove bare throw statements. Update client components to check result.ok instead of try/catch."
+    },
+    {
+      "id": "PS-004",
+      "name": "Ticket comments SDK type fix",
+      "severity": "P1",
+      "dependencies": [],
+      "effort": "XS",
+      "files": ["packages/sdk/src/tickets.ts"],
+      "findings": ["P1-ticket-comments-type"],
+      "strategy": "Change listComments() return type from PaginatedResult<TicketComment> to TicketComment[] to match API response. Verify callers in frontend components."
+    },
+    {
+      "id": "PS-005",
+      "name": "Dead schema cleanup",
+      "severity": "P2",
+      "dependencies": [],
+      "effort": "S",
+      "files": [
+        "supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql",
+        "supabase/migrations/"
+      ],
+      "findings": ["P2-dead-schema"],
+      "strategy": "Create migration to DROP 9 unused tables. Verify worker doesn't SQL-reference webhook_dead_letters before dropping. Add migration: DROP TABLE IF EXISTS public.appointments, public.chat_messages, public.chat_threads, public.comments, public.contracts, public.contract_signers, public.document_permissions, public.onboarding_submissions, public.project_members;"
+    },
+    {
+      "id": "PS-006",
+      "name": "Missing indexes",
+      "severity": "P1",
+      "dependencies": [],
+      "effort": "XS",
+      "files": ["supabase/migrations/"],
+      "findings": ["P1-notifications-index", "P3-billing-index", "P3-document-shares-index"],
+      "strategy": "Create migration adding 3 indexes: idx_notifications_org (organization_id, created_at DESC), idx_billing_customers_org (organization_id), idx_document_shares_org (organization_id)."
+    },
+    {
+      "id": "PS-007",
+      "name": "Minor schema + SDK cleanup",
+      "severity": "P3",
+      "dependencies": ["PS-005"],
+      "effort": "S",
+      "files": ["packages/sdk/src/__tests__/", "infra/terraform/aws/"],
+      "findings": [
+        "P3-sdk-split-tests",
+        "P3-archive-aws-terraform",
+        "P3-memberships-role-fk",
+        "P3-document-upload-formdata"
+      ],
+      "strategy": "1) Split SDK tests into per-module files. 2) Move infra/terraform/aws/ to archive/. 3) Add ON DELETE SET NULL to memberships.role_id FK. 4) Verify multer field name matches FormData.append('file') in upload()."
+    }
+  ],
+  "unresolved": [
+    {
+      "severity": "P0",
+      "phase": 5,
+      "finding_ref": "P0-export-chain",
+      "file": "packages/sdk/src/client.ts",
+      "issue": "ApiClient.get<Blob>() calls executeFetch which runs res.json() — export endpoints return CSV binary, causing JSON parse crash",
+      "impact": "All 3 export features (tickets, projects, audit) broken end-to-end",
+      "fix": "Add getBlob() method using res.blob(). Route exportData() through getBlob().",
+      "effort": "S",
+      "patch_set": "PS-001"
+    },
+    {
+      "severity": "P1",
+      "phase": 4,
+      "finding_ref": "P1-auth-metadata",
+      "file": "apps/web/app/(public)/login/page.tsx",
+      "issue": "5 auth pages missing metadata export — no title/description",
+      "impact": "Login, signup, forgot-password, password-reset, pending show 'Untitled' in browser tab",
+      "fix": "Add export const metadata = { title: '...' } to each page",
+      "effort": "XS",
+      "patch_set": "PS-002"
+    },
+    {
+      "severity": "P1",
+      "phase": 4,
+      "finding_ref": "P1-public-loading",
+      "file": "apps/web/app/(public)",
+      "issue": "Missing loading.tsx in (public) route group",
+      "impact": "Marketing pages have no loading state during data fetches",
+      "fix": "Create apps/web/app/(public)/loading.tsx with spinner",
+      "effort": "XS",
+      "patch_set": "PS-002"
+    },
+    {
+      "severity": "P2",
+      "phase": 5,
+      "finding_ref": "P2-server-actions",
+      "file": "Multiple server action files",
+      "issue": "7 of 12 server actions throw errors instead of returning { ok, error }",
+      "impact": "Inconsistent error handling DX — callers must handle both patterns",
+      "fix": "Wrap all server action bodies in try/catch returning { ok, error }",
+      "effort": "M",
+      "patch_set": "PS-003"
+    },
+    {
+      "severity": "P1",
+      "phase": 5,
+      "finding_ref": "P1-ticket-comments-type",
+      "file": "packages/sdk/src/tickets.ts",
+      "issue": "listComments() typed as PaginatedResult<TicketComment> but API returns TicketComment[]",
+      "impact": "Runtime crash when frontend accesses .data on plain array",
+      "fix": "Change return type to TicketComment[]",
+      "effort": "XS",
+      "patch_set": "PS-004"
+    },
+    {
+      "severity": "P2",
+      "phase": 5,
+      "finding_ref": "P2-dead-schema",
+      "file": "supabase/migrations/",
+      "issue": "10 DB tables with zero API/SDK/frontend usage — full-stack dead code",
+      "impact": "Schema bloat, migration noise, cognitive load",
+      "fix": "DROP 9 unused tables via migration",
+      "effort": "S",
+      "patch_set": "PS-005"
+    },
+    {
+      "severity": "P1",
+      "phase": 2,
+      "finding_ref": "P1-notifications-index",
+      "file": "supabase/migrations/",
+      "issue": "Missing org_id index on notifications table",
+      "impact": "Admin queries by org scan notifications table",
+      "fix": "CREATE INDEX idx_notifications_org ON public.notifications(organization_id, created_at DESC)",
+      "effort": "XS",
+      "patch_set": "PS-006"
+    },
+    {
+      "severity": "P3",
+      "phase": 2,
+      "finding_ref": "P3-billing-index",
+      "file": "supabase/migrations/",
+      "issue": "Missing org_id index on billing_customers",
+      "impact": "Org lookups on billing_customers scan",
+      "fix": "CREATE INDEX idx_billing_customers_org ON public.billing_customers(organization_id)",
+      "effort": "XS",
+      "patch_set": "PS-006"
+    },
+    {
+      "severity": "P3",
+      "phase": 2,
+      "finding_ref": "P3-document-shares-index",
+      "file": "supabase/migrations/",
+      "issue": "Missing org_id index on document_shares",
+      "impact": "Org lookups on document_shares scan",
+      "fix": "CREATE INDEX idx_document_shares_org ON public.document_shares(organization_id)",
+      "effort": "XS",
+      "patch_set": "PS-006"
+    },
+    {
+      "severity": "P3",
+      "phase": 1,
+      "finding_ref": "P3-sdk-split-tests",
+      "file": "packages/sdk/src/__tests__/sdk.test.ts",
+      "issue": "All 108 SDK tests in a single file — hard to maintain",
+      "impact": "Test file is large and grows with each new SDK method",
+      "fix": "Split into per-module test files (tickets.test.ts, documents.test.ts, etc.)",
+      "effort": "S",
+      "patch_set": "PS-007"
+    },
+    {
+      "severity": "P3",
+      "phase": 1,
+      "finding_ref": "P3-archive-aws-terraform",
+      "file": "infra/terraform/aws/",
+      "issue": "AWS terraform files are dormant but remain in repo",
+      "impact": "Increases cognitive load — unclear if AWS infra is active",
+      "fix": "Archive infra/terraform/aws/ to archive/",
+      "effort": "XS",
+      "patch_set": "PS-007"
+    },
+    {
+      "severity": "P2",
+      "phase": 2,
+      "finding_ref": "P3-memberships-role-fk",
+      "file": "supabase/migrations/",
+      "issue": "memberships.role_id REFERENCES roles(id) without ON DELETE CASCADE/SET NULL",
+      "impact": "Deleting a role with active memberships fails with FK violation",
+      "fix": "Add ON DELETE SET NULL to the FK or add RESTRICT explicitly",
+      "effort": "XS",
+      "patch_set": "PS-007"
+    },
+    {
+      "severity": "P3",
+      "phase": 3,
+      "finding_ref": "P3-document-upload-formdata",
+      "file": "packages/sdk/src/documents.ts",
+      "issue": "SDK upload() FormData field names must match multer middleware expectations",
+      "impact": "Potential silent upload failure if field names differ",
+      "fix": "Verify FormData.append('file') matches multer.single('file') in documents.ts route",
+      "effort": "XS",
+      "patch_set": "PS-007"
+    }
+  ]
+}

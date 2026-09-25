@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Alignment Dashboard</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2em auto; background: #0f172a; color: #e2e8f0; }
+h1 { color: #059669; }
+.score { font-size: 4em; font-weight: bold; text-align: center; }
+.score.high { color: #22c55e; } .score.mid { color: #eab308; } .score.low { color: #ef4444; }
+.badge { display: inline-block; padding: .25em .75em; border-radius: 999px; font-size: .875em; }
+.p0 { background: #ef4444; color: #fff; } .p1 { background: #f97316; color: #fff; }
+.p2 { background: #eab308; color: #000; } .p3 { background: #64748b; color: #fff; }
+table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+th, td { border: 1px solid #334155; padding: .5em; text-align: left; }
+th { background: #1e293b; }
+</style></head>
+<body>
+<h1>Portal Alignment Dashboard v3</h1>
+<div class="score high">91<small>/100</small></div>
+<p style="text-align:center"><strong>Decision:</strong> APPROVED_FOR_PROD_DEPLOY</p>
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td><span class="badge p0">P0</span></td><td>0</td></tr>
+<tr><td><span class="badge p1">P1</span></td><td>0</td></tr>
+<tr><td><span class="badge p2">P2</span></td><td>3</td></tr>
+<tr><td><span class="badge p3">P3</span></td><td>3</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>6</strong></td></tr>
+</table>
+<h2>Domains</h2>
+<table>
+<tr><th>Domain</th><th>Count</th></tr>
+<tr><td>api</td><td>1</td></tr>
+<tr><td>cross-domain</td><td>1</td></tr>
+<tr><td>database</td><td>2</td></tr>
+<tr><td>frontend</td><td>2</td></tr>
+</table></body></html>

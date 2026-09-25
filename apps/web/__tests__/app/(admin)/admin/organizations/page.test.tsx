@@ -1,26 +1,22 @@
 import { render, screen } from "@testing-library/react";
 
 const mockRequireAdminAccess = jest.fn();
+const mockRequirePermission = jest.fn();
 jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
 }));
+jest.mock("@/lib/auth/permissions", () => ({
+  requirePermission: (...args: any[]) => mockRequirePermission(...args),
+}));
 
-const mockOrgsList = jest.fn();
+const mockOrganizationsList = jest.fn();
 jest.mock("@/lib/api", () => ({
   getApiClient: () => ({
-    organizations: { list: mockOrgsList },
+    organizations: { list: mockOrganizationsList },
   }),
 }));
 
-jest.mock("next/link", () => {
-  return ({ children, href, ...rest }: any) => (
-    <a href={href} {...rest}>
-      {children}
-    </a>
-  );
-});
-
-jest.mock("@/components/admin/AdminBreadcrumbs", () => {
+jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
     return <nav data-testid="breadcrumbs">{items.length} items</nav>;
   };
@@ -32,73 +28,83 @@ jest.mock("@/components/admin/AdminSubnav", () => {
   };
 });
 
+jest.mock("@/components/admin/AdminOrganizationsClient", () => {
+  return function MockAdminOrganizationsClient({ organizations }: any) {
+    return (
+      <div data-testid="orgs">
+        {organizations.map((o: any) => (
+          <span key={o.id}>{o.name}</span>
+        ))}
+      </div>
+    );
+  };
+});
+
+jest.mock("@/components/admin/CreateOrganizationForm", () => {
+  return function MockCreateOrganizationForm() {
+    return <div data-testid="create-form" />;
+  };
+});
+
+jest.mock("@/components/admin/AdminPagination", () => {
+  return function MockAdminPagination() {
+    return <nav data-testid="pagination" />;
+  };
+});
+
+jest.mock("next/link", () => {
+  return ({ children, href, ...rest }: any) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  );
+});
+
 describe("OrganizationsPage", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockRequireAdminAccess.mockResolvedValue(undefined);
+    mockRequirePermission.mockResolvedValue(undefined);
+    mockOrganizationsList.mockResolvedValue({ items: [], total: 0 });
   });
 
-  it("renders page shell with title and description", async () => {
-    mockOrgsList.mockResolvedValue([]);
+  it("renders page title and description", async () => {
     const Page = (await import("@/app/(admin)/admin/organizations/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByRole("heading", { name: "Organizations" })).toBeInTheDocument();
-    expect(screen.getByText(/View and manage client tenants/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/View and manage client tenants, domains, status, and service plans\./),
+    ).toBeInTheDocument();
   });
 
   it("renders breadcrumbs and subnav", async () => {
-    mockOrgsList.mockResolvedValue([]);
     const Page = (await import("@/app/(admin)/admin/organizations/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByTestId("breadcrumbs")).toBeInTheDocument();
     expect(screen.getByTestId("subnav")).toHaveTextContent("organizations");
   });
 
-  it("renders empty state when no organizations", async () => {
-    mockOrgsList.mockResolvedValue([]);
+  it("renders organizations list when orgs exist", async () => {
+    mockOrganizationsList.mockResolvedValue({
+      items: [{ id: "o1", name: "Acme Corp" }],
+      total: 1,
+    });
     const Page = (await import("@/app/(admin)/admin/organizations/page")).default;
-    render(await Page());
-    expect(screen.getByText("No organizations found.")).toBeInTheDocument();
-  });
-
-  it("renders organization cards with details", async () => {
-    mockOrgsList.mockResolvedValue([
-      { id: "org-1", name: "Acme Corp", slug: "acme", primary_domain: "acme.com", status: "active", support_plan: "premium" },
-    ]);
-    const Page = (await import("@/app/(admin)/admin/organizations/page")).default;
-    render(await Page());
+    render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("Acme Corp")).toBeInTheDocument();
-    expect(screen.getByText(/acme/)).toBeInTheDocument();
-    expect(screen.getByText(/acme\.com/)).toBeInTheDocument();
-    expect(screen.getAllByText("active").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("premium")).toBeInTheDocument();
   });
 
-  it("handles null primary_domain", async () => {
-    mockOrgsList.mockResolvedValue([
-      { id: "org-1", name: "Beta Inc", slug: "beta", primary_domain: null, status: "pending", support_plan: null },
-    ]);
+  it("calls requireAdminAccess and requirePermission", async () => {
     const Page = (await import("@/app/(admin)/admin/organizations/page")).default;
-    render(await Page());
-    expect(screen.getByText("Beta Inc")).toBeInTheDocument();
-    expect(screen.getByText(/Domain: —/)).toBeInTheDocument();
-    expect(screen.getByText("No Plan")).toBeInTheDocument();
+    render(await Page({ searchParams: Promise.resolve({}) }));
+    expect(mockRequireAdminAccess).toHaveBeenCalled();
+    expect(mockRequirePermission).toHaveBeenCalledWith("organizations", "view");
   });
 
-  it("links org cards to detail page", async () => {
-    mockOrgsList.mockResolvedValue([
-      { id: "org-1", name: "Acme Corp", slug: "acme", status: "active", support_plan: null },
-    ]);
+  it("handles API error gracefully", async () => {
+    mockOrganizationsList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/organizations/page")).default;
-    render(await Page());
-    const link = screen.getByText("Acme Corp").closest("a");
-    expect(link).toHaveAttribute("href", "/admin/organizations/org-1");
-  });
-
-  it("handles null organizations response", async () => {
-    mockOrgsList.mockResolvedValue(null);
-    const Page = (await import("@/app/(admin)/admin/organizations/page")).default;
-    render(await Page());
-    expect(screen.getByText("No organizations found.")).toBeInTheDocument();
+    render(await Page({ searchParams: Promise.resolve({}) }));
+    expect(screen.getByTestId("orgs")).toBeInTheDocument();
   });
 });

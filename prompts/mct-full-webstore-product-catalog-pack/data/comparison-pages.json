@@ -1,0 +1,38 @@
+{
+  "version": "2026-07-29.v5-analytics-automation-sales-ops",
+  "comparisons": [
+    {
+      "slug": "quick-fix-vs-bundle",
+      "title": "Quick Fix vs Bundle",
+      "items": ["quick_win", "bundle"],
+      "sections": [
+        "Best for",
+        "Price range",
+        "Included work",
+        "Not included",
+        "Delivery type",
+        "Upgrade path",
+        "Consult required"
+      ]
+    },
+    {
+      "slug": "essential-care-vs-business-care",
+      "title": "Essential Care vs Business Care",
+      "items": ["mct_essential_care", "mct_business_care"],
+      "sections": [
+        "Best for",
+        "Coverage",
+        "Support style",
+        "Security depth",
+        "Review cadence",
+        "Upgrade path"
+      ]
+    },
+    {
+      "slug": "website-health-check-vs-website-care",
+      "title": "Website Health Check vs Website Care",
+      "items": ["website_health_check", "monthly_website_care_plan"],
+      "sections": ["One-time vs recurring", "Included work", "Best fit", "Follow-up path"]
+    }
+  ]
+}

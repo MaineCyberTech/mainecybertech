@@ -1,6 +1,7 @@
 {
   "name": "api",
   "private": true,
+  "license": "ISC",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
@@ -10,13 +11,16 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "generate:openapi": "tsx src/openapi/generate.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@mct/config": "workspace:^",
+    "@mct/sdk": "workspace:^",
     "@sentry/node": "^10.56.0",
     "@supabase/supabase-js": "^2.49.1",
     "@types/zxcvbn": "^4.4.5",
+    "bullmq": "^5.78.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
@@ -26,7 +30,7 @@
     "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
-    "nodemailer": "^8.0.10",
+    "nodemailer": "^9.0.1",
     "pino": "^9.5.0",
     "prom-client": "^15.1.0",
     "redis": "^4.7.0",

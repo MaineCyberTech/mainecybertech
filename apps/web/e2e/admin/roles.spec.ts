@@ -1,9 +1,11 @@
-import { test, expect } from "../fixtures";
+import { test, expect, visibleWithin, clickOrGoto } from "../fixtures";
 
 test.describe("admin roles page", () => {
   test("renders roles heading", async ({ page }) => {
     await page.goto("/admin/roles");
-    await expect(page.getByRole("heading", { name: /roles/i })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Roles & Permissions", exact: true }),
+    ).toBeVisible();
   });
 
   test("shows role list or empty state", async ({ page }) => {
@@ -16,8 +18,8 @@ test.describe("admin role detail", () => {
   test("navigates to role detail and shows permission matrix", async ({ page }) => {
     await page.goto("/admin/roles");
     const roleLink = page.locator("a[href*='/admin/roles/']").first();
-    if (await roleLink.isVisible()) {
-      await roleLink.click();
+    if (await visibleWithin(roleLink)) {
+      await clickOrGoto(page, roleLink);
       await expect(page.getByText(/permission toggles|permissions/i).first()).toBeVisible();
     }
   });

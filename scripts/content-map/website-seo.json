@@ -1,0 +1,716 @@
+{
+  "website_health_check": {
+    "marketingCopy": "Your website is your hardest-working salesperson - and most businesses have no idea if it's healthy: is it up, is it backed up, is the admin account secure, are the forms actually delivering messages? The Website Health Check reviews uptime, SSL, backups, admin access, forms, and obvious website risks in one assessment. We verify your site is reachable, your SSL certificate is valid, backups exist and work, admin access is controlled, contact forms are delivering, and obvious security issues are flagged. You get a clear health report on the website you depend on - before something quietly breaks.",
+    "bestFor": [
+      "Businesses that rely on their website for leads and inquiries",
+      "Organizations that have never had their website health reviewed",
+      "Companies worried about missing form submissions or site issues",
+      "Businesses that want a documented website health baseline"
+    ],
+    "whatIsIncluded": [
+      "Website uptime and availability check",
+      "SSL certificate verification",
+      "Backup existence and configuration review",
+      "Admin account and access review",
+      "Contact form delivery testing",
+      "Obvious website risk identification",
+      "Website health report with prioritized fixes"
+    ],
+    "customerOutcomes": [
+      "A clear picture of your website's health and risks",
+      "Missing or broken backups, forms, and SSL issues identified",
+      "A prioritized fix list for your website",
+      "A documented health baseline"
+    ]
+  },
+  "website_speed_snapshot": {
+    "marketingCopy": "Slow websites lose visitors and rankings - every second of load time costs you leads - yet most business owners have no idea why their site is slow. The Website Speed Snapshot reviews basic page performance and identifies obvious bottlenecks: large images, unoptimized assets, slow hosting, render-blocking resources, and plugin bloat. We test your key pages, identify the biggest performance problems, and give you practical speed recommendations ranked by impact. You get a clear picture of why your site is slow and the specific fixes that will make it faster.",
+    "bestFor": [
+      "Businesses whose website loads slowly",
+      "Organizations that want to improve rankings and conversions",
+      "Companies that want practical speed fixes without technical complexity",
+      "Businesses preparing for website improvements or redesigns"
+    ],
+    "whatIsIncluded": [
+      "Key page performance testing",
+      "Bottleneck identification (images, assets, hosting, plugins)",
+      "Load time analysis for important pages",
+      "Speed improvement recommendations ranked by impact",
+      "Performance baseline documentation",
+      "Practical next steps"
+    ],
+    "customerOutcomes": [
+      "A clear picture of why your website is slow",
+      "Specific speed fixes ranked by impact",
+      "A performance baseline to measure improvement",
+      "Faster pages and better visitor experience"
+    ]
+  },
+  "website_security_review": {
+    "marketingCopy": "A compromised website can infect visitors, damage your reputation, and take your site offline - and most business sites have vulnerabilities nobody has checked. The Website Security Review examines your website's security posture: SSL, admin access, plugins and dependencies, backups, and overall risk. We check your SSL configuration, review admin accounts and access, identify outdated plugins or dependencies, verify backups, and assess common website vulnerabilities. You get a security assessment of your website with prioritized fixes - before a compromise happens, not after.",
+    "bestFor": [
+      "Businesses worried about website compromise or defacement",
+      "Organizations running sites with outdated plugins or dependencies",
+      "Companies that want website security reviewed before it's a problem",
+      "Businesses preparing for insurance or compliance that covers web presence"
+    ],
+    "whatIsIncluded": [
+      "SSL configuration review",
+      "Admin account and access security review",
+      "Plugin and dependency vulnerability assessment",
+      "Backup verification",
+      "Common website vulnerability check",
+      "Website security report with prioritized fixes"
+    ],
+    "customerOutcomes": [
+      "A clear assessment of your website's security risks",
+      "Outdated plugins and risky admin access identified",
+      "Prioritized fixes to harden your site",
+      "Documented website security review"
+    ]
+  },
+  "website_backup_setup": {
+    "marketingCopy": "When a website gets hacked, a plugin update breaks the site, or someone deletes the wrong content, the fix depends on one thing: a backup you can restore. Most small business websites have no backup at all. The Website Backup Setup configures or guides a website backup process that protects your site and its content. We set up automated backups of your website files and database, configure retention, verify a restore works, and document the process. Your website data becomes recoverable - instead of being one mistake or attack away from disaster.",
+    "bestFor": [
+      "Businesses whose website has no backup at all",
+      "Organizations that want website content recoverable after an incident",
+      "Companies that have been hacked or lost website content before",
+      "Businesses preparing for insurance or risk management"
+    ],
+    "whatIsIncluded": [
+      "Website backup solution setup",
+      "Automated backup configuration for files and database",
+      "Retention policy configuration",
+      "Restore testing and verification",
+      "Backup process documentation",
+      "Website recovery instructions"
+    ],
+    "customerOutcomes": [
+      "Automated website backups that actually work",
+      "Files and database recoverable after an incident",
+      "Verified restore capability",
+      "A documented backup process"
+    ]
+  },
+  "monthly_website_care_plan": {
+    "marketingCopy": "Websites need ongoing care - updates, uptime, backups, form checks, and minor edits - and when they're neglected, they slowly break, get hacked, or go stale. The Monthly Website Care Plan is a recurring service that keeps your website healthy: updates, uptime monitoring, backups, form checks, and minor edits each month. We handle the maintenance so your site stays up-to-date, backed up, and working - catching issues before they become problems and making small changes when you need them. It's website maintenance on a schedule, so your site stays reliable and secure.",
+    "bestFor": [
+      "Businesses that want website maintenance handled monthly",
+      "Organizations that need updates, backups, and uptime managed",
+      "Companies that want minor edits made without hourly invoices",
+      "Businesses that want a healthy, reliable website without doing the work"
+    ],
+    "whatIsIncluded": [
+      "CMS, plugin, and theme updates",
+      "Uptime monitoring",
+      "Backup verification",
+      "Contact form checks",
+      "Minor edits (within scope)",
+      "Monthly website health report"
+    ],
+    "customerOutcomes": [
+      "A website maintained monthly without your effort",
+      "Updates, backups, and uptime managed proactively",
+      "Minor edits handled within the plan",
+      "A reliable, healthy website"
+    ]
+  },
+  "landing_page_build": {
+    "marketingCopy": "A focused landing page converts more visitors than a generic website page - because it's built for one purpose, one audience, and one action. The Landing Page Build creates a focused landing page for a service, campaign, or local market. We build a page with clear messaging, a compelling structure, and a clear call to action - designed to convert visitors into inquiries. You get a standalone, conversion-focused page that supports a specific campaign or offer, built and ready to drive results.",
+    "bestFor": [
+      "Businesses running campaigns that need a dedicated page",
+      "Organizations that want a focused page for one service or offer",
+      "Companies that want better conversion than their generic pages deliver",
+      "Businesses targeting a specific local market or campaign"
+    ],
+    "whatIsIncluded": [
+      "Landing page strategy and messaging",
+      "Conversion-focused page structure",
+      "Page build with clear call to action",
+      "Basic SEO structure for the page",
+      "Form or contact integration",
+      "Launch and handover"
+    ],
+    "customerOutcomes": [
+      "A focused page built to convert visitors",
+      "Clear messaging and a single call to action",
+      "A dedicated destination for your campaign",
+      "A page designed to drive inquiries"
+    ]
+  },
+  "local_seo_page_build": {
+    "marketingCopy": "Local businesses win customers from people searching for services in their town - but only if they have pages that show up for those searches. The Local SEO Page Build creates a service-and-town page with proper local SEO structure. We build a page that targets a specific service in a specific town or city, structured with the headings, content, and local signals that help it rank for local searches. You get a page designed to capture local search traffic for a service area that matters to your business - built to rank, not just to exist.",
+    "bestFor": [
+      "Local businesses that want to rank for town-based searches",
+      "Organizations serving specific cities or towns",
+      "Companies that want service pages built with local SEO structure",
+      "Businesses that want to capture local search demand"
+    ],
+    "whatIsIncluded": [
+      "Service and location targeting",
+      "Local SEO page structure",
+      "Local keyword integration",
+      "Local business signals and structure",
+      "Page build and optimization",
+      "Local SEO page documentation"
+    ],
+    "customerOutcomes": [
+      "A page structured to rank for local searches",
+      "Capturing search demand for your service areas",
+      "A local SEO asset built properly",
+      "More local visibility for key services"
+    ]
+  },
+  "contact_form_fix": {
+    "marketingCopy": "A contact form that silently drops messages is costing you leads every day - and it's one of the most common website failures, usually unnoticed until a customer says 'I emailed but never heard back.' The Contact Form Fix troubleshoots form delivery, spam, validation, and routing issues. We test your forms, identify why submissions fail or get lost, fix delivery and spam filtering issues, correct validation problems, and verify routing to the right inbox. Your contact forms start actually delivering the leads they're supposed to capture.",
+    "bestFor": [
+      "Businesses that have lost inquiries to broken forms",
+      "Organizations that suspect forms aren't delivering",
+      "Companies dealing with spam floods or missed submissions",
+      "Businesses that want forms verified as working"
+    ],
+    "whatIsIncluded": [
+      "Contact form delivery testing",
+      "Form failure diagnosis",
+      "Delivery and spam filtering fixes",
+      "Validation and routing correction",
+      "Form testing and verification",
+      "Form fix documentation"
+    ],
+    "customerOutcomes": [
+      "Contact forms that reliably deliver submissions",
+      "No more lost leads from silent form failures",
+      "Spam and validation issues corrected",
+      "Verified working forms"
+    ]
+  },
+  "analytics_setup": {
+    "marketingCopy": "You can't improve what you can't measure - and most small business websites have no idea how many visitors they get, where they come from, or which pages convert. The Analytics Setup installs or configures analytics and search visibility tracking on your website. We set up analytics to measure traffic, configure search visibility tools to understand your rankings, and establish goal tracking for the actions that matter - inquiries, calls, and purchases. You get visibility into your website's performance that lets you make informed decisions instead of guessing.",
+    "bestFor": [
+      "Businesses with no analytics on their website",
+      "Organizations that want to understand traffic and conversions",
+      "Companies that want search visibility tracked",
+      "Businesses that want data-driven website decisions"
+    ],
+    "whatIsIncluded": [
+      "Analytics installation and configuration",
+      "Search visibility and tracking setup",
+      "Goal and conversion tracking",
+      "Traffic source visibility",
+      "Reporting configuration",
+      "Analytics setup documentation"
+    ],
+    "customerOutcomes": [
+      "Visibility into who visits your site and why",
+      "Conversion and goal tracking for what matters",
+      "Search visibility data to guide improvements",
+      "Data-driven decisions instead of guesses"
+    ]
+  },
+  "cookie_privacy_basics_review": {
+    "marketingCopy": "Website privacy and cookie notices are easy to get wrong - and for businesses in regulated industries, the consequences range from fines to lost trust. The Cookie/Privacy Basics Review assesses your website's basic privacy and cookie notice needs and provides practical recommendations. We review what your site currently does with cookies and data, identify gaps against basic privacy expectations, and recommend a practical path to compliance for your business size and industry. You get a clear, jargon-free review of your privacy posture - without an enterprise-level legal project.",
+    "bestFor": [
+      "Businesses with no cookie or privacy notice",
+      "Organizations unsure whether their website privacy setup is adequate",
+      "Companies in regulated industries handling visitor data",
+      "Businesses that want a practical privacy review"
+    ],
+    "whatIsIncluded": [
+      "Current cookie and data practice review",
+      "Cookie and privacy notice gap assessment",
+      "Basic privacy expectations comparison",
+      "Practical recommendations for your business",
+      "Cookie consent considerations",
+      "Privacy review documentation"
+    ],
+    "customerOutcomes": [
+      "A clear picture of your website's privacy posture",
+      "Practical recommendations sized to your business",
+      "Gaps identified before they become problems",
+      "A jargon-free path to basic compliance"
+    ]
+  },
+  "local_seo_snapshot": {
+    "marketingCopy": "When someone in your town searches for your service, does your business show up? For most local businesses, the answer is 'I hope so' - because they've never actually checked. The Local SEO Snapshot reviews your business profile, titles, pages, citations, and local visibility basics. We check how your business appears in local search, review your Google Business Profile, assess your titles and pages for local optimization, and identify citation and visibility gaps. You get a snapshot of your local search standing with a prioritized improvement list - so you know where you rank and how to climb.",
+    "bestFor": [
+      "Local businesses unsure how they appear in local search",
+      "Organizations that want their local visibility assessed",
+      "Companies that want a baseline before investing in local SEO",
+      "Businesses that want prioritized local SEO improvements"
+    ],
+    "whatIsIncluded": [
+      "Local search visibility review",
+      "Google Business Profile assessment",
+      "Page titles and local optimization review",
+      "Citation and directory check",
+      "Local visibility gap identification",
+      "Local SEO snapshot report with improvements"
+    ],
+    "customerOutcomes": [
+      "A clear picture of your local search standing",
+      "Google Business Profile gaps identified",
+      "Citation and local optimization issues documented",
+      "A prioritized path to better local visibility"
+    ]
+  },
+  "google_business_profile_optimization": {
+    "marketingCopy": "Your Google Business Profile is the first thing people see when they search for your business - and an incomplete, unoptimized profile sends them to a competitor. The Google Business Profile Optimization improves your profile's categories, services, description, photos, FAQs, and overall completeness. We optimize the categories and services you list, improve your description, add quality photos where needed, build out FAQs, and make sure your profile is complete and accurate. You get a profile that's complete, compelling, and positioned to win local searches.",
+    "bestFor": [
+      "Local businesses with incomplete or outdated Google profiles",
+      "Organizations that want to win more local searches",
+      "Companies that want categories, services, and photos optimized",
+      "Businesses that want a complete, compelling online presence"
+    ],
+    "whatIsIncluded": [
+      "Google Business Profile audit",
+      "Category and service optimization",
+      "Business description improvement",
+      "Photo recommendations and organization",
+      "FAQ development",
+      "Profile completeness optimization"
+    ],
+    "customerOutcomes": [
+      "A complete, optimized Google Business Profile",
+      "Better local search performance",
+      "A compelling profile that wins clicks and calls",
+      "Optimized categories, services, photos, and FAQs"
+    ]
+  },
+  "local_service_page_pack": {
+    "marketingCopy": "One website page can't rank for every service in every town - but a set of targeted local service pages can capture local search demand across your service areas. The Local Service Page Pack creates multiple local service pages for your priority services and towns. We plan which combinations of services and locations deserve their own page, build each page with proper local SEO structure and content, and optimize them to rank for town-based searches. You get a coordinated set of local pages that capture search demand across your markets - built to rank for the searches your customers actually make.",
+    "bestFor": [
+      "Local businesses serving multiple towns or cities",
+      "Organizations that want to rank for service-and-location searches",
+      "Companies that want a coordinated set of local pages",
+      "Businesses that want to expand local search coverage"
+    ],
+    "whatIsIncluded": [
+      "Service and location targeting plan",
+      "Local service page strategy",
+      "Page builds with local SEO structure",
+      "Local keyword and content optimization",
+      "Internal linking between local pages",
+      "Local page pack documentation"
+    ],
+    "customerOutcomes": [
+      "A coordinated set of local service pages",
+      "Ranking for service-and-location searches",
+      "Expanded local search coverage across markets",
+      "A structured, optimized local presence"
+    ]
+  },
+  "blog_starter_pack": {
+    "marketingCopy": "Consistent content is how small businesses win search traffic - but most struggle to start because they don't know what to write or where to begin. The Blog Starter Pack prepares your blog for success: a topic plan and starter article briefs or posts tailored to your business. We develop a content strategy aligned to your services and customers, create a topic plan with priority articles, and prepare briefs (or starter posts) to get you publishing. You get a blog foundation that turns content from a daunting chore into a working system for attracting search traffic.",
+    "bestFor": [
+      "Businesses that want to start blogging but don't know where to begin",
+      "Organizations that want a content strategy aligned to services",
+      "Companies that want articles planned and prepared",
+      "Businesses that want to attract search traffic with content"
+    ],
+    "whatIsIncluded": [
+      "Content strategy development",
+      "Blog topic plan aligned to services",
+      "Priority article identification",
+      "Starter article briefs or posts",
+      "Content optimization guidance",
+      "Blog starter documentation"
+    ],
+    "customerOutcomes": [
+      "A working blog content plan",
+      "Topics aligned to what customers search for",
+      "Starter content ready to publish",
+      "A foundation for attracting search traffic"
+    ]
+  },
+  "technical_seo_fix_pack": {
+    "marketingCopy": "Search engines can't rank what they can't crawl or understand - and technical SEO issues silently hold websites back no matter how good the content. The Technical SEO Fix Pack improves your website's technical foundations: metadata, headings, sitemap, indexing basics, and common technical issues. We review and fix title and description issues, correct heading structure, verify your sitemap and indexing, and address the technical problems that limit rankings. You get a website that search engines can properly crawl, understand, and rank - removing the technical barriers holding back your visibility.",
+    "bestFor": [
+      "Businesses that want to improve search rankings",
+      "Organizations that have content but weak technical SEO",
+      "Companies that want metadata, sitemap, and indexing fixed",
+      "Businesses that want technical barriers to visibility removed"
+    ],
+    "whatIsIncluded": [
+      "Metadata review and fixes (titles, descriptions)",
+      "Heading structure correction",
+      "Sitemap verification and submission",
+      "Indexing basics review and fixes",
+      "Common technical SEO issue fixes",
+      "Technical SEO fix documentation"
+    ],
+    "customerOutcomes": [
+      "A website search engines can crawl and rank",
+      "Corrected metadata, headings, and indexing",
+      "Technical barriers to visibility removed",
+      "A stronger technical SEO foundation"
+    ]
+  },
+  "monthly_local_seo_plan": {
+    "marketingCopy": "Local SEO isn't a one-time project - it's ongoing content, optimization, reviews, and reporting that compounds over time. The Monthly Local SEO Plan manages your local SEO month after month: content, local optimization, Google Business Profile updates, review monitoring, and reporting. We keep your local presence active and improving - publishing content, optimizing pages, managing your profile, encouraging reviews, and reporting on progress. You get ongoing local search growth managed for you, instead of a one-time effort that fades.",
+    "bestFor": [
+      "Local businesses that want ongoing local search growth",
+      "Organizations that want content and optimization managed monthly",
+      "Companies that want reviews and profiles monitored",
+      "Businesses that want monthly local SEO reporting"
+    ],
+    "whatIsIncluded": [
+      "Monthly content development",
+      "Local page optimization",
+      "Google Business Profile management",
+      "Review monitoring and request support",
+      "Monthly local SEO reporting",
+      "Ongoing local optimization"
+    ],
+    "customerOutcomes": [
+      "Consistent, compounding local search improvement",
+      "Content and optimization managed monthly",
+      "Profiles and reviews kept active",
+      "Monthly visibility into local SEO progress"
+    ]
+  },
+  "review_request_system_setup": {
+    "marketingCopy": "Reviews are one of the most powerful local ranking and trust signals - yet most businesses ask for them sporadically or not at all. The Review Request System Setup creates a process and templates for systematically requesting customer reviews. We set up a repeatable process for asking happy customers for reviews, create effective request templates, and establish how to route requests to the right platforms. You get a system that generates reviews consistently - instead of leaving one of your strongest marketing assets to chance.",
+    "bestFor": [
+      "Businesses that want more customer reviews",
+      "Organizations that get great feedback but never capture it as reviews",
+      "Companies that want a systematic review request process",
+      "Businesses that want to improve local ranking and trust signals"
+    ],
+    "whatIsIncluded": [
+      "Review request process design",
+      "Review request template creation",
+      "Platform routing strategy",
+      "Review solicitation best practices",
+      "Process setup and implementation",
+      "Review system documentation"
+    ],
+    "customerOutcomes": [
+      "A systematic process for generating reviews",
+      "Effective templates ready to use",
+      "Reviews routed to the right platforms",
+      "Consistent growth in your review presence"
+    ]
+  },
+  "schema_markup_setup": {
+    "marketingCopy": "Schema markup tells search engines what your business is, what you offer, and what people ask about you - giving you a chance to stand out with rich results. The Schema Markup Setup adds or recommends LocalBusiness, service, FAQ, or structured data markup to your website. We assess what markup makes sense for your business, implement the appropriate schema, and verify it's recognized correctly. You get structured data that helps search engines understand and display your business better - potentially earning rich results that improve click-through.",
+    "bestFor": [
+      "Businesses that want structured data on their website",
+      "Organizations that want to qualify for rich search results",
+      "Companies that want search engines to understand them better",
+      "Businesses that want a technical SEO edge"
+    ],
+    "whatIsIncluded": [
+      "Schema markup assessment for your business",
+      "LocalBusiness, service, and FAQ markup implementation",
+      "Structured data configuration",
+      "Markup validation and testing",
+      "Rich result eligibility review",
+      "Schema markup documentation"
+    ],
+    "customerOutcomes": [
+      "Structured data that helps search engines understand your business",
+      "Eligibility for rich results like stars and FAQs",
+      "Validated, correctly implemented markup",
+      "A technical SEO improvement for local visibility"
+    ]
+  },
+  "website_safety_bundle": {
+    "marketingCopy": "Website safety comes down to a few essentials: uptime, backups, SSL, admin access, and an overall health report. The Website Safety Bundle packages these into one coordinated engagement: uptime monitoring, backup check, SSL review, admin access review, and a health report. Instead of checking each piece separately, you get a coordinated assessment of the things that keep your website safe and available. You get a documented picture of your website's safety posture - with the gaps that need fixing identified.",
+    "bestFor": [
+      "Businesses that want website safety assessed comprehensively",
+      "Organizations that want uptime, backup, and SSL verified together",
+      "Companies that want admin access reviewed",
+      "Businesses preparing for insurance or risk management"
+    ],
+    "whatIsIncluded": [
+      "Uptime monitoring setup",
+      "Backup check and verification",
+      "SSL review",
+      "Admin access review",
+      "Website health report",
+      "Coordinated safety assessment"
+    ],
+    "customerOutcomes": [
+      "A coordinated website safety assessment",
+      "Uptime, backup, SSL, and access all verified",
+      "Gaps identified and prioritized",
+      "A documented website safety posture"
+    ]
+  },
+  "local_seo_starter": {
+    "marketingCopy": "Local SEO starts with the basics: a good Google Business Profile, local pages, clean metadata, and a process for reviews. The Local SEO Starter packages these fundamentals into one coordinated engagement: Google Business Profile review, local pages, metadata cleanup, and a review request process. Instead of tackling local SEO piecemeal, you get a coordinated starter that covers the essentials for local visibility. You get the foundations in place that local search success is built on - done together, not scattered.",
+    "bestFor": [
+      "Local businesses starting their local SEO journey",
+      "Organizations that want the fundamentals done together",
+      "Companies that want profile, pages, metadata, and reviews addressed",
+      "Businesses that want a coordinated local SEO foundation"
+    ],
+    "whatIsIncluded": [
+      "Google Business Profile review and optimization",
+      "Local page development",
+      "Metadata cleanup",
+      "Review request process setup",
+      "Local SEO fundamentals implementation",
+      "Local SEO starter documentation"
+    ],
+    "customerOutcomes": [
+      "The local SEO fundamentals in place together",
+      "An optimized profile and local pages",
+      "Clean metadata and a review system",
+      "A coordinated foundation for local visibility"
+    ]
+  },
+  "website_growth_bundle": {
+    "marketingCopy": "Growing a website takes more than one fix - it takes ongoing care, content, SEO, conversion improvements, and regular strategy. The Website Growth Bundle packages website growth into one coordinated recurring engagement: monthly website care, content, SEO, conversion improvements, and strategy review. Instead of managing each piece separately, you get a coordinated program that keeps your website improving - maintained, optimized, and guided toward growth. It's a comprehensive website growth program managed for you, month after month.",
+    "bestFor": [
+      "Businesses that want their website actively growing",
+      "Organizations that want care, content, and SEO coordinated",
+      "Companies that want conversion improvements and strategy",
+      "Businesses that want a managed website growth program"
+    ],
+    "whatIsIncluded": [
+      "Monthly website care and maintenance",
+      "Content development",
+      "SEO optimization",
+      "Conversion improvements",
+      "Strategy and performance review",
+      "Website growth reporting"
+    ],
+    "customerOutcomes": [
+      "A website that improves month after month",
+      "Care, content, SEO, and conversion coordinated",
+      "Data-driven strategy and growth guidance",
+      "A managed growth program for your website"
+    ]
+  },
+  "cloudflare_basic_setup": {
+    "marketingCopy": "Cloudflare can improve your website's speed, security, and reliability - but only if it's configured correctly, and many business sites have Cloudflare accounts that were never set up right. The Cloudflare Basic Setup configures the fundamentals: DNS import, SSL review, proxy basics, and baseline Cloudflare configuration. We bring your DNS into Cloudflare, review and secure your SSL settings, enable proxying for your site, and establish a baseline configuration. Your website gets Cloudflare's performance and protection benefits - configured properly and documented.",
+    "bestFor": [
+      "Businesses with Cloudflare accounts that were never configured properly",
+      "Organizations that want Cloudflare's speed and security benefits",
+      "Companies that want DNS and SSL managed through Cloudflare",
+      "Businesses that want a proper Cloudflare baseline"
+    ],
+    "whatIsIncluded": [
+      "DNS import into Cloudflare",
+      "SSL configuration and review",
+      "Proxy enablement for your website",
+      "Baseline Cloudflare configuration",
+      "Setup verification",
+      "Cloudflare configuration documentation"
+    ],
+    "customerOutcomes": [
+      "Cloudflare configured properly for your website",
+      "SSL and DNS managed through Cloudflare",
+      "Performance and security benefits enabled",
+      "A documented Cloudflare baseline"
+    ]
+  },
+  "cloudflare_security_tune_up": {
+    "marketingCopy": "Cloudflare includes powerful security features - WAF rules, bot protection, rate limiting - but they only help if they're configured and tuned. The Cloudflare Security Tune-Up reviews and improves your Cloudflare security settings. We assess your WAF configuration, review security settings, and apply practical protections for your site - blocking malicious traffic, managing bots, and stopping abuse. You get Cloudflare's security features actually configured for your website, tuned to protect without breaking legitimate visitors.",
+    "bestFor": [
+      "Businesses using Cloudflare without security features configured",
+      "Organizations dealing with bot traffic, spam, or attacks",
+      "Companies that want WAF and security rules applied",
+      "Businesses that want Cloudflare protecting their site, not just speeding it up"
+    ],
+    "whatIsIncluded": [
+      "Cloudflare WAF configuration review",
+      "Security settings assessment",
+      "Practical protection configuration",
+      "Bot and malicious traffic management",
+      "Rate limiting where appropriate",
+      "Security tune-up documentation"
+    ],
+    "customerOutcomes": [
+      "Cloudflare security features configured for your site",
+      "Malicious traffic blocked and bots managed",
+      "Protection tuned to not break legitimate visitors",
+      "A safer website behind Cloudflare"
+    ]
+  },
+  "dns_cleanup": {
+    "marketingCopy": "DNS records accumulate over time - old hosting records, abandoned subdomains, forgotten services - and stale records create confusion, security risks, and deliverability problems. The DNS Cleanup removes stale DNS records and documents the important ones. We review your DNS zone, identify outdated and risky records, remove what you approve, and document what remains and why it matters. Your DNS goes from a messy collection of old records to a clean, documented, understood configuration - reducing risk and making changes straightforward.",
+    "bestFor": [
+      "Businesses with DNS records accumulated over years",
+      "Organizations unsure what DNS records exist and why",
+      "Companies with abandoned subdomains or old hosting records",
+      "Businesses preparing for website, email, or provider changes"
+    ],
+    "whatIsIncluded": [
+      "DNS zone review",
+      "Stale and risky record identification",
+      "Approved record removal",
+      "Important record documentation",
+      "DNS verification after cleanup",
+      "DNS documentation"
+    ],
+    "customerOutcomes": [
+      "A clean, documented DNS configuration",
+      "Stale and risky records removed",
+      "Understanding of what each remaining record does",
+      "DNS that's safe and straightforward to manage"
+    ]
+  },
+  "email_dns_authentication_fix": {
+    "marketingCopy": "Without proper SPF, DKIM, and DMARC records, your email domain can be spoofed, your mail lands in spam, and scammers can impersonate you to customers. The Email DNS Authentication Fix reviews or configures SPF, DKIM, and DMARC where possible. We assess your current email authentication, configure the records correctly (including the tricky SPF limit issue), and verify email deliverability and spoofing protection. You get email authentication that protects your domain from impersonation and improves deliverability - configured, tested, and documented.",
+    "bestFor": [
+      "Businesses whose email is landing in spam",
+      "Organizations concerned about domain spoofing",
+      "Companies that want SPF, DKIM, and DMARC properly configured",
+      "Businesses preparing for insurance that requires email authentication"
+    ],
+    "whatIsIncluded": [
+      "SPF, DKIM, and DMARC assessment",
+      "Record configuration and correction",
+      "SPF limit and include handling",
+      "Deliverability testing",
+      "Spoofing protection verification",
+      "Email authentication documentation"
+    ],
+    "customerOutcomes": [
+      "Properly configured SPF, DKIM, and DMARC",
+      "Email deliverability improved",
+      "Domain spoofing blocked",
+      "Documented email authentication for insurance"
+    ]
+  },
+  "domain_registrar_security_setup": {
+    "marketingCopy": "Your domain is your digital identity - whoever controls it controls your website, email, and brand. And if the account holding it has weak security, your domain can be stolen. The Domain Registrar Security Setup hardens your domain account: MFA, domain lock, account recovery, and renewal practices. We review your registrar account security, enable MFA, verify domain lock is preventing unauthorized transfers, document account recovery, and confirm renewal settings protect you from expiration. Your most important digital asset gets the security it deserves.",
+    "bestFor": [
+      "Businesses that want their domain protected from theft",
+      "Organizations that have never reviewed registrar security",
+      "Companies worried about domain expiration or transfer risk",
+      "Businesses preparing for insurance or risk management"
+    ],
+    "whatIsIncluded": [
+      "Registrar account security review",
+      "MFA enablement on the registrar account",
+      "Domain lock and transfer protection verification",
+      "Account recovery documentation",
+      "Renewal and expiration practice review",
+      "Domain security documentation"
+    ],
+    "customerOutcomes": [
+      "A hardened, protected domain account",
+      "MFA and domain lock enabled",
+      "Recovery and renewal secured",
+      "Your most important digital asset protected"
+    ]
+  },
+  "cloudflare_turnstile_setup": {
+    "marketingCopy": "Spam submissions and bots can flood your website forms, polluting your inbox and your database. Cloudflare Turnstile is a privacy-friendly bot protection that blocks spam without frustrating visitors with puzzles. The Cloudflare Turnstile Setup adds bot and spam protection to your supported website forms. We configure Turnstile on your forms, verify it blocks bots while letting real visitors through, and document the setup. Your forms stop being a spam magnet and start only receiving real submissions.",
+    "bestFor": [
+      "Businesses dealing with spam form submissions",
+      "Organizations that want bot protection without annoying visitors",
+      "Companies that want privacy-friendly spam prevention",
+      "Businesses that want forms protected automatically"
+    ],
+    "whatIsIncluded": [
+      "Turnstile configuration assessment",
+      "Form integration setup",
+      "Bot and spam blocking configuration",
+      "Visitor experience verification",
+      "Form testing",
+      "Turnstile setup documentation"
+    ],
+    "customerOutcomes": [
+      "Spam and bots blocked from your forms",
+      "Privacy-friendly protection without frustrating puzzles",
+      "Cleaner inboxes and databases",
+      "Documented form protection"
+    ]
+  },
+  "cloudflare_redirect_setup": {
+    "marketingCopy": "Redirects matter - whether you're moving a page, changing domains, or enforcing HTTPS - and misconfigured redirects cost you visitors, rankings, and trust. The Cloudflare Redirect Setup configures redirects or page rules where appropriate. We assess your redirect needs, configure redirects and rules through Cloudflare, and verify they work correctly - including the all-important HTTPS enforcement. Your website's redirects work the way they should, preserving traffic and rankings through changes.",
+    "bestFor": [
+      "Businesses moving pages, domains, or restructuring their site",
+      "Organizations that need HTTPS enforcement configured",
+      "Companies that want redirects managed through Cloudflare",
+      "Businesses that want redirects tested and working"
+    ],
+    "whatIsIncluded": [
+      "Redirect needs assessment",
+      "Redirect configuration through Cloudflare",
+      "Page rule setup where appropriate",
+      "HTTPS enforcement configuration",
+      "Redirect testing and verification",
+      "Redirect documentation"
+    ],
+    "customerOutcomes": [
+      "Redirects configured and working correctly",
+      "Traffic and rankings preserved through changes",
+      "HTTPS enforced properly",
+      "Documented redirect configuration"
+    ]
+  },
+  "domain_expiration_protection": {
+    "marketingCopy": "An expired domain is a business disaster - your website disappears, your email stops working, and someone else can buy your domain out from under you. Yet most businesses have no idea when their domains expire or whether renewal is protected. The Domain Expiration Protection documents your renewal ownership and monitors domain expiration risk. We identify all your domains, document who controls them and the renewal settings, and establish monitoring so expirations are caught well in advance. Your domain can't quietly expire and take your business offline.",
+    "bestFor": [
+      "Businesses that don't know when their domains expire",
+      "Organizations worried about domain expiration risk",
+      "Companies that have had domains lapse before",
+      "Businesses that want renewal ownership documented"
+    ],
+    "whatIsIncluded": [
+      "Domain inventory and ownership documentation",
+      "Renewal settings review",
+      "Auto-renewal verification",
+      "Expiration risk assessment",
+      "Expiration monitoring setup",
+      "Domain protection documentation"
+    ],
+    "customerOutcomes": [
+      "Documented ownership and renewal for every domain",
+      "Expiration risk identified before it matters",
+      "Monitoring that catches lapses in advance",
+      "Your domain protected from silent expiration"
+    ]
+  },
+  "cloudflare_monthly_management": {
+    "marketingCopy": "Cloudflare needs ongoing management - DNS changes, configuration review, and documentation - and without it, your configuration drifts and problems creep in. The Cloudflare Monthly Management is a recurring service for DNS changes, Cloudflare review, and documentation. Each month we handle your DNS changes, review your Cloudflare configuration, and keep documentation current. Your Cloudflare and DNS environment gets managed, reviewed, and documented - instead of being an account nobody touches until something breaks.",
+    "bestFor": [
+      "Businesses that use Cloudflare and want it managed",
+      "Organizations that need regular DNS changes handled",
+      "Companies that want configuration reviewed monthly",
+      "Businesses that want their DNS and Cloudflare documented"
+    ],
+    "whatIsIncluded": [
+      "Monthly DNS changes and management",
+      "Cloudflare configuration review",
+      "Security and proxy setting maintenance",
+      "Documentation updates",
+      "Issue identification",
+      "Monthly management summary"
+    ],
+    "customerOutcomes": [
+      "Cloudflare and DNS managed monthly",
+      "Configuration reviewed and kept current",
+      "Changes handled without chasing invoices",
+      "A documented, well-managed DNS environment"
+    ]
+  },
+  "domain_protection_pack": {
+    "marketingCopy": "Domain protection is built from several coordinated layers: registrar MFA, domain lock, DNS documentation, email authentication, Cloudflare review, and renewal tracking. The Domain Protection Pack packages these into one coordinated engagement: registrar MFA, domain lock, DNS documentation, email authentication, Cloudflare review, and renewal tracking. Instead of handling each piece separately, you get a coordinated project that protects your domain and DNS comprehensively. Your most important digital asset gets complete, documented protection - with every layer verified and in place.",
+    "bestFor": [
+      "Businesses that want their domain and DNS comprehensively protected",
+      "Organizations that want registrar security, DNS, and email authentication done together",
+      "Companies preparing for insurance or risk management",
+      "Businesses that want a coordinated domain protection project"
+    ],
+    "whatIsIncluded": [
+      "Registrar MFA and security setup",
+      "Domain lock verification",
+      "DNS documentation",
+      "Email authentication (SPF, DKIM, DMARC)",
+      "Cloudflare review",
+      "Renewal tracking"
+    ],
+    "customerOutcomes": [
+      "Comprehensive, coordinated domain protection",
+      "Registrar security, DNS, and email authentication in place",
+      "Renewal tracking protecting against expiration",
+      "A documented domain protection posture"
+    ]
+  }
+}

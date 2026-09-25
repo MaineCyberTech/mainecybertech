@@ -1,0 +1,60 @@
+{
+  "version": "2026-07-29.v4-conversion-modules",
+  "module": "trust_badges",
+  "badges": [
+    {
+      "id": "no_secret_intake",
+      "label": "No-secret intake",
+      "description": "Customers are warned not to submit passwords, keys, MFA codes, or regulated records.",
+      "icon": "ShieldAlert"
+    },
+    {
+      "id": "plain_english_report",
+      "label": "Plain-English report",
+      "description": "Deliverables include customer-friendly notes and next steps.",
+      "icon": "FileText"
+    },
+    {
+      "id": "local_maine_support",
+      "label": "Local Maine support",
+      "description": "Positioned for Maine small businesses, nonprofits, seasonal businesses, and local offices.",
+      "icon": "MapPin"
+    },
+    {
+      "id": "scoped_deliverables",
+      "label": "Scoped deliverables",
+      "description": "Each service clearly states what is included and excluded.",
+      "icon": "ListChecks"
+    },
+    {
+      "id": "upgrade_path_available",
+      "label": "Upgrade path available",
+      "description": "Quick wins can lead to bundles or ongoing care when the customer is ready.",
+      "icon": "ArrowUpRight"
+    },
+    {
+      "id": "consult_required_sensitive",
+      "label": "Consult required for sensitive work",
+      "description": "Privileged changes, security incidents, DNS, tenant, backup restore, and network changes require appropriate coordination.",
+      "icon": "LockKeyhole"
+    }
+  ],
+  "placementRules": [
+    {
+      "surface": "product_card",
+      "maxBadges": 2
+    },
+    {
+      "surface": "product_detail",
+      "maxBadges": 4
+    },
+    {
+      "surface": "intake_form",
+      "requiredBadges": ["no_secret_intake"]
+    },
+    {
+      "surface": "sensitive_service",
+      "requiredBadges": ["consult_required_sensitive"]
+    }
+  ]
+}
