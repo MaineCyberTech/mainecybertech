@@ -112,32 +112,33 @@ Unhealthy containers are automatically restarted via `restart: unless-stopped`.
 
 ---
 
-## 4. Prometheus Metrics (Planned)
+## 4. Prometheus Metrics (implemented)
 
-A `/metrics` endpoint will be added at `GET /api/v1/metrics` exposing Prometheus-formatted counters and histograms.
+`GET /metrics` (`apps/api/src/app.ts`) exposes Prometheus-formatted counters and histograms, optionally gated by `METRICS_TOKEN` (returns 404 when the token is set and not supplied). `infra/digitalocean/docker-compose.yml` runs a `prometheus` service (`prom/prometheus:v3.5.1`) that scrapes it using `prometheus.yml` + `prometheus.rules.yml`. In production Caddy returns 404 for `/metrics`, so scraping is internal to the compose network.
 
-### Custom metrics (14 planned)
+### Custom metrics
 
-| Metric                        | Type      | Labels                     | Purpose                                           |
-| ----------------------------- | --------- | -------------------------- | ------------------------------------------------- |
-| `http_requests_total`         | Counter   | `method`, `path`, `status` | Request volume & error rate                       |
-| `http_request_duration_ms`    | Histogram | `method`, `path`           | Latency percentiles                               |
-| `db_query_duration_ms`        | Histogram | `operation`, `table`       | Database performance                              |
-| `db_queries_total`            | Counter   | `operation`, `table`       | Query volume                                      |
-| `webhook_deliveries_total`    | Counter   | `service`, `status`        | Outbound webhook throughput                       |
-| `auth_attempts_total`         | Counter   | `type`, `success`          | Login/signup attempt rate                         |
-| `circuit_breaker_state`       | Gauge     | `name`                     | 0=closed, 1=open, 2=half-open                     |
-| `circuit_breaker_trips_total` | Counter   | `name`                     | How many times circuit opened                     |
-| `entity_count`                | Gauge     | `entity_type`              | Row counts (tickets, projects, docs, users, orgs) |
-| `worker_tasks_total`          | Counter   | `type`, `success`          | Task completion volume                            |
-| `worker_queue_depth`          | Gauge     | `queue`                    | BullMQ queue depth                                |
-| `cache_hits_total`            | Counter   | `endpoint`                 | Cache effectiveness                               |
-| `cache_misses_total`          | Counter   | `endpoint`                 | Cache misses                                      |
-| `app_uptime_seconds`          | Gauge     | `service`                  | Process uptime                                    |
+| Metric                          | Type      | Labels                     | Purpose                                           |
+| ------------------------------- | --------- | -------------------------- | ------------------------------------------------- |
+| `http_requests_total`           | Counter   | `method`, `path`, `status` | Request volume & error rate (live)                |
+| `http_request_duration_ms`      | Histogram | `method`, `path`           | Latency percentiles (live)                        |
+| `webhook_deliveries_total`      | Counter   | `service`, `status`        | Outbound webhook throughput (live)                |
+| `portal_circuit_breaker_status` | Gauge     | `state`                    | Circuit breaker state (live)                      |
+| `db_query_duration_ms`          | Histogram | `operation`, `table`       | Database performance (defined, not yet wired)     |
+| `db_queries_total`              | Counter   | `operation`, `table`       | Query volume (defined, not yet wired)             |
+| `auth_attempts_total`           | Counter   | `type`, `success`          | Login/signup attempt rate                         |
+| `circuit_breaker_state`         | Gauge     | `name`                     | 0=closed, 1=open, 2=half-open                     |
+| `circuit_breaker_trips_total`   | Counter   | `name`                     | How many times circuit opened                     |
+| `entity_count`                  | Gauge     | `entity_type`              | Row counts (tickets, projects, docs, users, orgs) |
+| `worker_tasks_total`            | Counter   | `type`, `success`          | Task completion volume                            |
+| `worker_queue_depth`            | Gauge     | `queue`                    | BullMQ queue depth                                |
+| `cache_hits_total`              | Counter   | `endpoint`                 | Cache effectiveness                               |
+| `cache_misses_total`            | Counter   | `endpoint`                 | Cache misses                                      |
+| `app_uptime_seconds`            | Gauge     | `service`                  | Process uptime                                    |
 
-### Scraping (future)
+### Scraping
 
-Add a `prometheus` service to docker-compose or use DO Managed Monitoring to scrape the droplet.
+The compose `prometheus` service scrapes the API on the internal network; no public exposure.
 
 ---
 

@@ -91,7 +91,7 @@
 | [PRODUCTION_VS_TESTING_DOMAINS.md](PRODUCTION_VS_TESTING_DOMAINS.md)                           | Production vs testing domain configuration                    |
 | [CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md](CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md) | Cloudflare caching and proxy configuration                    |
 
-## Module Documentation (`docs/modules/` — 72 files)
+## Module Documentation (`docs/modules/` — 75 files)
 
 API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module:
 
@@ -183,15 +183,19 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 
 ## Additional References
 
-| Document                                                         | Purpose                                                      |
-| ---------------------------------------------------------------- | ------------------------------------------------------------ |
-| [database-types-api-adoption.md](database-types-api-adoption.md) | Supabase `Database` type adoption across the API (completed) |
-| [RLS-rollout.md](RLS-rollout.md)                                 | `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` rollout           |
-| [RLS-coverage-matrix.md](RLS-coverage-matrix.md)                 | Per-table RLS coverage                                       |
-| [MODULE_AUDIT.md](MODULE_AUDIT.md)                               | 60-module implementation audit                               |
-| [P0_REMEDIATION_2026-08-05.md](P0_REMEDIATION_2026-08-05.md)     | P0 remediation log                                           |
-| [audits/README.md](audits/README.md)                             | Audit output contract                                        |
-| [openapi.yaml](openapi.yaml)                                     | Generated OpenAPI spec (317 paths)                           |
+| Document                                                                                         | Purpose                                                      |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| [database-types-api-adoption.md](database-types-api-adoption.md)                                 | Supabase `Database` type adoption across the API (completed) |
+| [RLS-rollout.md](RLS-rollout.md)                                                                 | `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` rollout           |
+| [RLS-coverage-matrix.md](RLS-coverage-matrix.md)                                                 | Per-table RLS coverage                                       |
+| [MODULE_AUDIT.md](MODULE_AUDIT.md)                                                               | 60-module implementation audit                               |
+| [P0_REMEDIATION_2026-08-05.md](P0_REMEDIATION_2026-08-05.md)                                     | P0 remediation log                                           |
+| [ADMIN_PORTAL_PARITY_AUDIT_2026-08-05.md](ADMIN_PORTAL_PARITY_AUDIT_2026-08-05.md)               | Admin/portal parity audit                                    |
+| [MODULE_BUILD_PROMPT_VERIFICATION_2026-08-05.md](MODULE_BUILD_PROMPT_VERIFICATION_2026-08-05.md) | Module build verification                                    |
+| [MODULE_SPECS_GAP_AUDIT_2026-08-05.md](MODULE_SPECS_GAP_AUDIT_2026-08-05.md)                     | Module spec gap audit                                        |
+| [MT-P0-001-RLS-remediation-design.md](MT-P0-001-RLS-remediation-design.md)                       | RLS remediation design                                       |
+| [audits/README.md](audits/README.md)                                                             | Audit output contract                                        |
+| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (317 paths)                           |
 
 ## Marketing & SEO (`docs/seo/` — 10 files)
 

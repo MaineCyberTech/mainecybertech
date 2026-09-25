@@ -62,6 +62,9 @@
 | `JSM_WEBHOOK_SECRET`         | No       | —                            | JSM webhook secret for HMAC signature verification                                                                                                                                                                  |
 | `M365_WEBHOOK_SECRET`        | No       | —                            | M365 webhook secret for HMAC signature verification                                                                                                                                                                 |
 | `MFA_ENFORCEMENT_ENABLED`    | No       | `false`                      | When `true`, an `aal1` session that has a verified TOTP factor is rejected with `403 MFA_REQUIRED` on non-`/auth/*` routes. Users without a factor are never blocked. Requires MFA enabled on the Supabase project. |
+| `FIELD_ENCRYPTION_KEY`       | No       | —                            | AES-256-GCM key for encrypted PII fields (`profiles.encrypted_pii`). Falls back to a dev `plain:` marker when unset.                                                                                                |
+| `METRICS_TOKEN`              | No       | —                            | When set, `GET /metrics` requires `Authorization: Bearer <token>` (returns 404 otherwise).                                                                                                                          |
+| `M365_CLIENT_STATE`          | No       | —                            | Shared clientState validated on inbound M365 webhook notifications.                                                                                                                                                 |
 
 ## Worker (`apps/worker`)
 
@@ -93,6 +96,11 @@
 | `EMAIL_FROM`                | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                |
 | `API_BASE_URL`              | No       | —                            | Public API base URL for notification links                                      |
 | `HEALTH_PORT`               | No       | `3001`                       | Health check server port                                                        |
+| `REDIS_URL`                 | No       | —                            | Redis URL for BullMQ (`QUEUE_BACKEND=bullmq`)                                   |
+| `REDIS_PASSWORD`            | No       | —                            | Redis password (production)                                                     |
+| `TASK_QUEUE_ENABLED`        | No       | `false`                      | When `true`, API enqueues tasks instead of inline                               |
+| `SENTRY_DSN`                | No       | —                            | Sentry DSN for worker error tracking                                            |
+| `APP_BASE_URL`              | No       | —                            | Public app base URL for notification links                                      |
 
 ## E2E Tests (`apps/web/e2e`)
 

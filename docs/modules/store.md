@@ -1,41 +1,53 @@
 # Store
 
 **Category:** Public + Admin
-**API Routes:** `apps/api/src/routes/store.ts`
+**API Routes:** `apps/api/src/routes/store.ts` → `apps/api/src/routes/store/{catalog,promotions,quotes,campaigns,visual-assets}.ts`
 **SDK:** `packages/sdk/src/store.ts`
 **Frontend:** `apps/web/app/(public)/store/**`, `apps/web/app/(admin)/admin/store/**`, `apps/web/lib/catalog/`
 
 ## Overview
 
-Public-facing service storefront backed by a 245-product catalog (shared JSON between web and API) plus a promotions engine and quote intake. The admin center manages promotions and quotes; the public store renders products, categories, bundles, and conversion features (service finder quiz, quote builder, trust badges).
+Public-facing service storefront. The catalog is **DB-first** (`store_products` / `store_categories`) with the bundled JSON (`apps/api/src/data/products.json`, `categories.json`) as an offline/empty-table fallback; the public storefront reads it through `apps/web/lib/catalog/catalog-source.ts`. Admin pages manage the catalog, promotions, campaigns, quotes, leads, proposal drafts and visual assets.
 
 ## Key Features
 
-- 245-product catalog across 12 categories (shared `products.json` / `categories.json` in both `apps/web/lib/catalog/` and `apps/api/src/data/`)
-- Public product + category browsing, bundle savings calculator
+- Catalog persisted in `store_products` / `store_categories` (seed/fallback: 245 products / 12 categories from JSON); admin CRUD
+- Public product + category browsing, bundle savings calculator, comparison pages, trust badges, FAQ, service-finder quiz, quote builder
 - Promotions CRUD (admin) with active/inactive states and audit logging
-- Quote request intake (public) + admin quote review
-- Conversion modules: service finder quiz, quote builder, seasonal campaigns, lead magnets, comparison pages, trust badges, FAQ system
-- Migration-backed persistence for quotes/leads/proposal drafts/visual assets (`store_quote_requests`, `store_leads`, `store_proposal_drafts`, `store_visual_assets`)
+- Quote intake (public) → `store_quotes` + structured `store_quote_requests` + scored `store_leads`
+- Proposal drafts (`store_proposal_drafts`, linked to a first-class `proposals` row) and intake→project handoff (`/quote-requests/:id/convert`)
+- Seasonal campaigns (`store_campaigns`) feeding the public banner, with truthful capacity messaging
+- Visual assets (`store_visual_assets`) admin CRUD
+- Import/export of the live DB catalog
 
-## Endpoints
+## Endpoints (all under `/api/v1/store`)
 
-| Method | Path                          | Description                              |
-| ------ | ----------------------------- | ---------------------------------------- |
-| GET    | /api/v1/store/products        | List products (filter by category)       |
-| GET    | /api/v1/store/products/:slug  | Get product by slug                      |
-| GET    | /api/v1/store/categories      | List categories                          |
-| GET    | /api/v1/store/categories/:slug| Get category by slug                     |
-| GET    | /api/v1/store/promotions      | List active promotions (public)          |
-| GET    | /api/v1/store/promotions/active | Alias for active promotions            |
-| GET    | /api/v1/store/promotions/admin| List all promotions (admin)              |
-| POST   | /api/v1/store/promotions      | Create promotion (admin)                 |
-| PATCH  | /api/v1/store/promotions/:id  | Update promotion (admin)                 |
-| DELETE | /api/v1/store/promotions/:id  | Delete promotion (admin)                 |
-| POST   | /api/v1/store/quotes          | Submit a quote request (public)          |
-| GET    | /api/v1/store/quotes          | List quote requests (admin)              |
+| Method            | Path                                             | Description                                                  |
+| ----------------- | ------------------------------------------------ | ------------------------------------------------------------ |
+| GET               | `/products`                                      | List products (optional `?category=`) — public               |
+| GET               | `/products/by-id/:id`                            | Product by id — admin                                        |
+| GET               | `/products/:slug`                                | Product detail — public                                      |
+| POST/PATCH/DELETE | `/products[/:id]`                                | Catalog CRUD — admin                                         |
+| GET               | `/categories`, `/categories/:slug`               | Categories (+products) — public                              |
+| POST/PATCH/DELETE | `/categories[/:id]`                              | Category CRUD — admin                                        |
+| GET               | `/promotions`, `/promotions/active`              | Active promotions — public                                   |
+| GET               | `/promotions/admin`                              | All promotions — admin                                       |
+| POST/PATCH/DELETE | `/promotions[/:id]`                              | Promotion CRUD — admin                                       |
+| GET               | `/campaigns`                                     | Active global campaigns — public                             |
+| GET               | `/campaigns/admin`                               | All campaigns — admin                                        |
+| POST/PATCH/DELETE | `/campaigns[/:id]`                               | Campaign CRUD — admin                                        |
+| POST              | `/quotes`                                        | Submit a quote — public                                      |
+| GET               | `/quotes`                                        | List quotes — admin                                          |
+| GET               | `/quote-requests`                                | List structured quote requests — admin                       |
+| POST              | `/quote-requests/:id/proposal`                   | Generate a proposal draft (+ linked `proposals` row) — admin |
+| POST              | `/quote-requests/:id/convert`                    | Intake → project handoff — admin                             |
+| GET               | `/leads`                                         | Scored leads — admin                                         |
+| GET               | `/proposal-drafts`, PATCH `/proposal-drafts/:id` | Proposal drafts — admin                                      |
+| GET               | `/visual-assets`, POST/PATCH/DELETE              | Visual assets — admin                                        |
+
+List endpoints return plain arrays capped at `LIST_HARD_CAP` (1000); store admin routes use `requireAdmin` + `requireOrgAccess`.
 
 ## Access Control
 
-- Public endpoints (products, categories, active promotions, quote submit): unauthenticated
-- Admin endpoints (promotion CRUD, quote list): `requireAuth` + `requireAdmin`
+- Public: products, categories, active promotions, active global campaigns, quote submit
+- Admin: catalog/promotion/campaign/visual-asset CRUD, quotes/leads/drafts/handoff — `requireAuth` + `requireAdmin` (+ `requireOrgAccess` on org-scoped writes)

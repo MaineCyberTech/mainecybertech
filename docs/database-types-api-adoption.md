@@ -1,4 +1,4 @@
-﻿# Database Types â€” API Adoption Backlog
+# Database Types — API Adoption Backlog
 
 Generated 2026-08-26 while wiring the typed Supabase client (`Database` from
 `@mct/sdk/database.types`) into the worker (adopted) and trialing it on the API.
@@ -7,15 +7,15 @@ The API clients in `apps/api/src/services/supabase.ts` remain untyped for now.
 Wiring them surfaces ~259 strictness findings that this file preserves as the
 adoption backlog. Categories seen:
 
-1. **Json assignments** â€” `Record<string, unknown>` payloads assigned to
+1. **Json assignments** — `Record<string, unknown>` payloads assigned to
    `Json` columns. Fix: type payloads as `Record<string, Json>` or build
    Json-compatible literals.
-2. **Update/Insert excess-property rejects** â€” dynamically-built row objects.
+2. **Update/Insert excess-property rejects** — dynamically-built row objects.
    Fix: give them explicit row types (`TablesInsert<"t">`) or inline literals.
-3. **`req.query` / `req.params` widening** â€” `string | string[]` passed where
+3. **`req.query` / `req.params` widening** — `string | string[]` passed where
    `string` is required. Fix: coerce (`String(v)`), validate with zod, or take
    `req.params.id` (always string) instead of `req.query.x`.
-4. **SelectQueryError markers** â€” column names in `.select()` strings that do
+4. **SelectQueryError markers** — column names in `.select()` strings that do
    not exist. Each one is a REAL runtime bug class; `ai.ts` `tickets.subject`
    (fixed to `title` on 2026-08-26) was found this way.
 

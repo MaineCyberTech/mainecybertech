@@ -10,23 +10,23 @@
 
 Turborepo monorepo: 3 apps + 3 packages.
 
-| Service | Entry                       | Port | Purpose                                               |
-| ------- | --------------------------- | ---- | ----------------------------------------------------- |
-| API     | `apps/api/src/main.ts`      | 4000 | Express server, Supabase Admin for DB/auth            |
-| Web     | `apps/web/app/layout.tsx`   | 3000 | Next.js App Router, server components + actions       |
-| Worker  | `apps/worker/src/main.ts`   | 3001 | Queue consumer (`consumer-sqs.ts`; BullMQ/SQS/inline) |
-| SDK     | `packages/sdk/src/index.ts` | —    | Typed API client factory (`MCTClient.create()`)       |
-| UI      | `packages/ui`               | —    | `cn()` utility (clsx + tailwind-merge)                |
-| Config  | `packages/config`           | —    | Shared ESLint/TypeScript configs                      |
+| Service | Entry                       | Port | Purpose                                                                  |
+| ------- | --------------------------- | ---- | ------------------------------------------------------------------------ |
+| API     | `apps/api/src/main.ts`      | 4000 | Express server, Supabase Admin for DB/auth                               |
+| Web     | `apps/web/app/layout.tsx`   | 3000 | Next.js App Router, server components + actions                          |
+| Worker  | `apps/worker/src/main.ts`   | 3001 | Queue consumer (`consumer-sqs.ts`; BullMQ/SQS/inline)                    |
+| SDK     | `packages/sdk/src/index.ts` | —    | Typed API client factory (`MCTClient.create()`)                          |
+| UI      | `packages/ui`               | —    | Shared components (`cn()`, Button/Input/Dialog/…), tokens, ThemeProvider |
+| Config  | `packages/config`           | —    | Shared ESLint/TypeScript configs                                         |
 
 **Deploy:** DigitalOcean droplet. Caddy reverse proxy (TLS). Hosted Supabase (cloud.supabase.com). Redis 7 on droplet for BullMQ. Docker images on GHCR (`ghcr.io/mainecybertech/mainecybertech/mct-{api,worker,web}`).
 
 **Request flow:**
 
 ```
-Browser → loginAction() → Supabase Auth REST/PKCE
+Browser → loginAction() → API POST /api/v1/auth/sign-in (Supabase PKCE)
   → /auth/callback?code=... → forwards Cookie to API POST /api/v1/auth/callback
-  → API exchanges code for session → sets mct_session cookie
+  → API exchanges code → returns accessToken; the web callback sets mct_session
   → Browser uses SDK with Bearer token / cookie-backed auth
   → API requireAuth → supabase.auth.getUser(token)
   → API requireAdmin → single `roles!inner()` JOIN query
@@ -90,9 +90,9 @@ pnpm e2e                     # Playwright E2E
 | API route files           | 62    | `apps/api/src/routes/*.ts` (75 incl. `routes/final/` + `routes/store/`)                             |
 | API SDK modules           | 60    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                         |
 | Worker task files         | 12    | Registered in `apps/worker/src/tasks/index.ts`                                                      |
-| Web pages                 | 318   | Admin 202, Portal 86, Public 28, Root 2                                                             |
-| Web components            | 99    | `apps/web/components/`                                                                              |
-| SQL migrations            | 124   | `supabase/migrations/` (latest: 5302425 public interactions is_bot)                                 |
+| Web pages                 | 318   | Admin 202, Portal 86, Public 29, Root 1                                                             |
+| Web components            | 100   | `apps/web/components/`                                                                              |
+| SQL migrations            | 125   | `supabase/migrations/` (latest: 5302426 status actions)                                             |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                              |
 | GitHub Actions workflows  | 14    | `.github/workflows/`                                                                                |
 | AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                        |
@@ -133,13 +133,14 @@ returned 500/404 at runtime. Fixed 2026-08-26.
 
 See `infra/digitalocean/docker-compose.yml` — runs on a single DO droplet behind Caddy:
 
-| Service | Image (GHCR)                                     | Port   | Notes                    |
-| ------- | ------------------------------------------------ | ------ | ------------------------ |
-| api     | ghcr.io/mainecybertech/mainecybertech/mct-api    | 4000   | Express API              |
-| web     | ghcr.io/mainecybertech/mainecybertech/mct-web    | 3000   | Next.js standalone       |
-| worker  | ghcr.io/mainecybertech/mainecybertech/mct-worker | 3001   | BullMQ consumer (health) |
-| redis   | redis:7-alpine                                   | 6379   | BullMQ backend           |
-| caddy   | caddy:2-alpine                                   | 80/443 | TLS reverse proxy        |
+| Service    | Image (GHCR)                                     | Port     | Notes                                       |
+| ---------- | ------------------------------------------------ | -------- | ------------------------------------------- |
+| api        | ghcr.io/mainecybertech/mainecybertech/mct-api    | 4000     | Express API                                 |
+| web        | ghcr.io/mainecybertech/mainecybertech/mct-web    | 3000     | Next.js standalone                          |
+| worker     | ghcr.io/mainecybertech/mainecybertech/mct-worker | 3001     | BullMQ consumer (health)                    |
+| redis      | redis:7-alpine                                   | 6379     | BullMQ backend                              |
+| caddy      | caddy:2-alpine                                   | 80/443   | TLS reverse proxy                           |
+| prometheus | prom/prometheus:v3.5.1                           | internal | Metrics scraping (`prometheus.yml` + rules) |
 
 Supabase is **hosted** (cloud.supabase.com) — not self-hosted in docker-compose.
 
@@ -247,7 +248,7 @@ SENTRY_DSN=
 ### API (Express)
 
 - **Auth:** `requireAuth` → `requireAdmin` / `requireOrgAccess` → `requirePermission(module, action)` (routers mount them in this order)
-- **Validation:** Zod schemas on all ~27 mutation endpoints
+- **Validation:** Zod schemas on mutation endpoints (~48 `z.object` schemas across the route files)
 - **Caching:** `responseCache()` / `responseCacheNoRenew()` + `invalidateCache()` on mutations
 - **Rate limiting:** Per-user buckets, 600 req/15min
 - **Error handling:** Global error handler, `failure()` helper, structured logging (pino)
@@ -258,7 +259,7 @@ SENTRY_DSN=
 
 - **Route groups:** `(admin)`, `(portal)`, `(public)` — separate layouts
 - **Server components:** Default for data fetching; client components marked `"use client"`
-- **Server actions:** Named exports in `actions.ts` files, bound with `.bind()` (not inline closures)
+- **Server actions:** Named exports in `actions.ts` files, passed directly (`action={createArticle}`) or bound with `.bind()` when an argument is needed — never inline closures
 - **Permissions:** `usePermissions()` hook, `<HasPermission>` component, `requirePermission()` server helper
 - **Error boundaries:** `error.tsx` in each route group, `global-error.tsx` at root
 
@@ -445,7 +446,7 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
   a successful deploy: the droplet runs the new tag with all containers healthy.
 - **Web** `DataErrorNote` extended to ~100 admin/portal pages (CRLF-tolerant
   transform + inline-fallback and multi-catch shapes).
-- Docs counts re-measured (3,078 tests / 356 suites, 119 migrations, 93
+- Docs counts re-measured (3,262 tests / 380 suites, 125 migrations, 100
   components, worker 155 lines, 28 handlers).
 
 **Known remaining debt (second audit):**
@@ -477,7 +478,7 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
   server-computed and only emitted when an admin enabled it with consistent
   numbers (`lib/store-campaigns.ts`), and `QuickWinLadder` (with the
   "Start With a Quick Win" CTA), `TrustPanel`, `MiniPackageComparison`,
-  `StickyMobileCta` and A/B copy variants (`copy-variants.json`) ship on the
+  `StickyMobileCta` and A/B copy variants (`apps/web/lib/catalog/copy-variants.ts`) ship on the
   public store. **Import/export is now real**: it exports the live DB catalog and
   upserts products/categories through the store API. Still open: ~12 store admin
   pages remain static reference viewers for JSON-driven config (no backend table
@@ -747,14 +748,14 @@ best-effort _job_; `terraform fmt -check -recursive` is blocking);
 
 ### Features (snapshot — see the header tables for current counts)
 
-- 301 pages (196 admin, 77 portal, 26 public) _(at the time of this snapshot; now 317)_
+- 301 pages (196 admin, 77 portal, 26 public) _(at the time of this snapshot; now 318)_
 - 55+ API route files (incl. `routes/final/` submodule split) covering ~90 module areas
 - 28 registered worker task handlers
 - RBAC with 13 roles, 90-module permission matrix
 - Multi-org switching (`X-Active-Org` header + cookie)
 - Marketing site integration (4 phases complete)
 - DigitalOcean deploy pipeline (build → SSH → Caddy)
-- 96 SQL migrations, 9 seed files with comprehensive test data _(now 121)_
+- 96 SQL migrations, 9 seed files with comprehensive test data _(now 125)_
 - E2E tests for all major flows
 
 ### Testing (snapshot — the header table holds the current numbers)

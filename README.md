@@ -42,7 +42,7 @@ The platform is designed to support:
 
 - frontend / web app with complete test coverage (1,688 tests)
 - API / backend with security middleware and OpenAPI docs (1,186 tests)
-- database / RLS foundation (124 migrations)
+- database / RLS foundation (125 migrations)
 - SDK package with retry logic (289 tests)
 - worker framework with 28 registered task handlers (99 tests)
 - Docker images for all services (web, api, worker)
@@ -150,7 +150,7 @@ pnpm --filter=web lint       # ESLint
 
 ### Infrastructure
 
-- **SSM secrets** — 16 integration secrets (Stripe, Sentry, SMTP, Jira, JSM, M365) added to Terraform with conditional creation
+- **Deploy secrets** — integration secrets (Stripe, Sentry, SMTP, Jira, JSM, M365) are injected into the droplet `.env` by `deploy-do.yml` from GitHub environment secrets
 - **Docker HEALTHCHECK** — Added to worker Dockerfile (port 3001)
 - **Web build args** — `NEXT_PUBLIC_API_URL` added as Docker build arg
 - **CI/CD gates** — E2E tests now gate all production deploys; validation gates all dev deploys
@@ -162,9 +162,9 @@ pnpm --filter=web lint       # ESLint
 The web app never directly talks to Supabase. Instead, the auth callback flow works as follows:
 
 1. User logs in via the web login page, which calls `loginAction` (a Next.js server action)
-2. `loginAction` calls the Supabase Auth REST API directly (via `fetch`) to initiate PKCE flow
+2. `loginAction` calls the API (`POST /api/v1/auth/sign-in`) through the SDK, which starts the Supabase PKCE flow
 3. After Supabase redirects back, the web callback at `/auth/callback` forwards the raw `Cookie` header to the API endpoint `POST /api/v1/auth/callback`
-4. The API extracts the PKCE code verifier from its own `SUPABASE_URL` ref, exchanges it for a session, and sets the `mct_session` cookie
+4. The API exchanges the code and returns `{ accessToken }`; the **web** callback route sets the `mct_session` cookie
 
 This means:
 
