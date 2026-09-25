@@ -69,8 +69,9 @@ export default async function AdminProposalDetailPage({ params }: Props) {
 
   try {
     proposal = await withRetry(() => api.proposals.get(id));
-  } catch {
-    notFound();
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   if (!proposal) notFound();

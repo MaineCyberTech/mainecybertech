@@ -57,7 +57,12 @@ jest.mock("@/components/admin/AdminPageShell", () => {
 });
 
 jest.mock("@/components/admin/ProjectTaskListV5", () => {
-  return function MockTaskList({ projectId, organizationId, tasks, owners }: any) {
+  return function MockTaskList({
+    projectId: _projectId,
+    organizationId: _organizationId,
+    tasks,
+    owners,
+  }: any) {
     return (
       <div data-testid="task-list">
         <span data-testid="task-count">{tasks.length}</span>
@@ -109,7 +114,7 @@ describe("AdminProjectDetailPage", () => {
   });
 
   it("renders project not found error", async () => {
-    mockProjectsGetDetail.mockRejectedValue(new Error("not found"));
+    mockProjectsGetDetail.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     const Page = (await import("@/app/(admin)/admin/projects/[projectId]/page")).default;
     render(await Page({ params: Promise.resolve({ projectId: "bad" }) }));
     expect(screen.getByText("Project not found.")).toBeInTheDocument();

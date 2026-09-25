@@ -18,8 +18,9 @@ export default async function EditProposalPage(props: { params: Promise<{ id: st
   let proposal: ProposalDetail | null = null;
   try {
     proposal = await api.proposals.get(id);
-  } catch {
-    notFound();
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
   if (!proposal) notFound();
 

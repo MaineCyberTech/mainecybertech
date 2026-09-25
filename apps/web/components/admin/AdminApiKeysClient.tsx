@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Organization } from "@mct/sdk";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 type ApiKey = {
   id: string;
@@ -28,6 +29,8 @@ export default function AdminApiKeysClient({
   const [newKeyResult, setNewKeyResult] = useState<ApiKeyWithSecret | null>(null);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const handleCreate = async () => {
     if (!newName.trim() || !newOrgId) return;
@@ -64,7 +67,11 @@ export default function AdminApiKeysClient({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this API key? This action cannot be undone.")) return;
+    setConfirmId(id);
+  };
+
+  const performDelete = async (id: string) => {
+    setConfirmId(null);
     try {
       const { getClientApi } = await import("@/lib/client-api");
       const client = getClientApi();
@@ -95,11 +102,12 @@ export default function AdminApiKeysClient({
           <button
             onClick={() => {
               navigator.clipboard.writeText(newKeyResult.fullKey);
-              alert("Copied!");
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 2000);
             }}
             className="mt-2 rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500"
           >
-            Copy to clipboard
+            {copied ? "Copied!" : "Copy to clipboard"}
           </button>
           <button
             onClick={() => setNewKeyResult(null)}
@@ -219,6 +227,18 @@ export default function AdminApiKeysClient({
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmId !== null}
+        title="Delete this API key?"
+        body="This action cannot be undone."
+        confirmLabel="Delete"
+        danger
+        onConfirm={() => {
+          if (confirmId) void performDelete(confirmId);
+        }}
+        onClose={() => setConfirmId(null)}
+      />
     </div>
   );
 }

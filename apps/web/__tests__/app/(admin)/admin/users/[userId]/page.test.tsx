@@ -108,7 +108,7 @@ describe("UserDetailPage", () => {
   });
 
   it("renders user not found error", async () => {
-    mockUsersGetDetail.mockRejectedValue(new Error("not found"));
+    mockUsersGetDetail.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     const Page = (await import("@/app/(admin)/admin/users/[userId]/page")).default;
     render(await Page({ params: Promise.resolve({ userId: "bad" }) }));
     expect(screen.getByText("User not found.")).toBeInTheDocument();

@@ -29,7 +29,8 @@ export default async function WebhookDetailPage({ params }: Props) {
   };
   try {
     webhook = await withRetry(() => api.webhooks.get(webhookId));
-  } catch {
+  } catch (error) {
+    if ((error as { status?: number })?.status !== 404) throw error;
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
         Webhook not found.

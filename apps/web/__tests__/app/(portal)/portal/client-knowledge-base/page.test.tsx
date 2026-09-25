@@ -14,6 +14,9 @@ jest.mock("next/link", () => ({
 jest.mock("@/lib/api", () => ({
   getApiClient: jest.fn().mockReturnValue({
     knowledgeBase: { list: mockKbList },
+    permissions: {
+      getMyPermissions: jest.fn().mockResolvedValue({ isSuperAdmin: true, keys: [] }),
+    },
   }),
 }));
 

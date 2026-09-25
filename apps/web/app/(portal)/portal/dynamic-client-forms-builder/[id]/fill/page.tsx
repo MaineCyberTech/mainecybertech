@@ -15,8 +15,9 @@ export default async function FillFormPage(props: { params: Promise<{ id: string
   let form: DynamicFormRecord | null = null;
   try {
     form = await api.dynamicForms.get(id);
-  } catch {
-    notFound();
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
   if (!form) notFound();
 

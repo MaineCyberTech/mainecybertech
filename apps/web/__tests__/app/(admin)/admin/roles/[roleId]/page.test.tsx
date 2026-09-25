@@ -38,7 +38,7 @@ jest.mock("@/components/admin/AdminSubnav", () => {
 });
 
 jest.mock("@/components/admin/RolePermissionsEditor", () => {
-  return function MockEditor({ roleId, roleKey, isSystem }: any) {
+  return function MockEditor({ roleId: _roleId, roleKey, isSystem }: any) {
     return (
       <div data-testid="permissions-editor">
         {roleKey} - {String(isSystem)}
@@ -141,7 +141,7 @@ describe("RoleDetailPage", () => {
   });
 
   it("shows error for not-found role", async () => {
-    mockRolesGet.mockRejectedValue(new Error("not found"));
+    mockRolesGet.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page")).default;
     render(await Page({ params: Promise.resolve({ roleId: "missing" }) }));
     expect(screen.getByText("Role not found.")).toBeInTheDocument();

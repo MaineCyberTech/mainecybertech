@@ -79,7 +79,7 @@ describe("AdminTicketDetailPage", () => {
   });
 
   it("renders ticket not found error", async () => {
-    mockTicketsGet.mockRejectedValue(new Error("not found"));
+    mockTicketsGet.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
     render(
       await Page({

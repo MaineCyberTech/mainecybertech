@@ -71,7 +71,8 @@ export default async function AdminProjectDetailPage({ params }: Props) {
   let detail: ProjectDetail;
   try {
     detail = await api.projects.getDetail(projectId);
-  } catch {
+  } catch (error) {
+    if ((error as { status?: number })?.status !== 404) throw error;
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
         Project not found.

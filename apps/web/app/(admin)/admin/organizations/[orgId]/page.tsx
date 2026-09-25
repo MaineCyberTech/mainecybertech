@@ -35,7 +35,8 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
     // Supabase contention would otherwise blank the page behind the
     // "Organization not found." fallback.
     detail = await withRetry(() => api.organizations.getDetail(orgId));
-  } catch {
+  } catch (error) {
+    if ((error as { status?: number })?.status !== 404) throw error;
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
         Organization not found.

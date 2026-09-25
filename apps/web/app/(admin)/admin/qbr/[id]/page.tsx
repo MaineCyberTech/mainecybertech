@@ -36,8 +36,9 @@ export default async function QbrDetailPage(props: { params: Promise<{ id: strin
   let report: (QbrReport & { visibility?: string }) | null = null;
   try {
     report = await withRetry(() => api.qbr.get(id));
-  } catch {
-    notFound();
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
   if (!report) notFound();
 

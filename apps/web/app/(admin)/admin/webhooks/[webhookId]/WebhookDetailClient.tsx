@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getClientApi } from "@/lib/client-api";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const EVENT_OPTIONS = [
   "ticket.created",
@@ -48,6 +49,8 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
   const [testResult, setTestResult] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function toggleEvent(event: string) {
     setEvents((prev) =>
@@ -57,6 +60,7 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
 
   async function handleSave() {
     setSaving(true);
+    setError(null);
     try {
       await getClientApi().webhooks.update(webhook.id, {
         name,
@@ -67,8 +71,8 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch (error) {
-      console.error("[[webhookId]/WebhookDetailClient]", error);
+    } catch {
+      setError("Failed to save the webhook. Please try again.");
     }
     setSaving(false);
   }
@@ -86,13 +90,15 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
     setTesting(false);
   }
 
-  async function handleDelete() {
-    if (!confirm("Delete this webhook endpoint?")) return;
+  async function performDelete() {
+    setConfirmOpen(false);
     setDeleting(true);
+    setError(null);
     try {
       await getClientApi().webhooks.remove(webhook.id);
       window.location.href = "/admin/webhooks";
     } catch {
+      setError("Failed to delete the webhook. Please try again.");
       setDeleting(false);
     }
   }
@@ -100,8 +106,20 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
   return (
     <div className="space-y-6">
       {saved ? (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+        <div
+          role="status"
+          className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300"
+        >
           Saved.
+        </div>
+      ) : null}
+
+      {error ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        >
+          {error}
         </div>
       ) : null}
 
@@ -183,7 +201,7 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
               {testing ? "Testing..." : "Test Webhook"}
             </button>
             <button
-              onClick={handleDelete}
+              onClick={() => setConfirmOpen(true)}
               disabled={deleting}
               className="cyber-button-danger ml-auto text-xs"
             >
@@ -249,6 +267,16 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
           )}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete this webhook endpoint?"
+        body="Deliveries for this endpoint will stop immediately. This cannot be undone."
+        confirmLabel="Delete"
+        danger
+        onConfirm={performDelete}
+        onClose={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

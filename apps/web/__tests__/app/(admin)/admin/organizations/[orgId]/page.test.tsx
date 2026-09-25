@@ -87,7 +87,7 @@ describe("OrganizationDetailPage", () => {
   });
 
   it("renders org not found error", async () => {
-    mockOrgsGetDetail.mockRejectedValue(new Error("not found"));
+    mockOrgsGetDetail.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     const Page = (await import("@/app/(admin)/admin/organizations/[orgId]/page")).default;
     render(await Page({ params: Promise.resolve({ orgId: "bad" }) }));
     expect(screen.getByText("Organization not found.")).toBeInTheDocument();

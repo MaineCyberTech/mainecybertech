@@ -27,7 +27,8 @@ export default async function UserDetailPage({ params }: UserPageProps) {
   let detail: UserDetail;
   try {
     detail = await api.users.getDetail(userId);
-  } catch {
+  } catch (error) {
+    if ((error as { status?: number })?.status !== 404) throw error;
     return (
       <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
         User not found.

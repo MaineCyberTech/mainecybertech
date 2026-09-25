@@ -5,6 +5,8 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import { createArticle } from "./actions";
 import { logger } from "@/lib/logger";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import SubmitButton from "@/components/SubmitButton";
+import { hasPermission } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Knowledge Base - Portal - Maine CyberTech" };
@@ -31,6 +33,12 @@ export default async function PortalKnowledgeBasePage() {
     loadFailed = true;
   }
 
+  // Authoring is permission-gated at the API (client-knowledge-base:create);
+  // hide the form when the caller lacks it so they don't hit a 403.
+  const perms = await api.permissions.getMyPermissions().catch(() => null);
+  const canCreate =
+    Boolean(perms?.isSuperAdmin) || hasPermission(perms?.keys, "client-knowledge-base", "create");
+
   return (
     <div className="space-y-6" role="region" aria-label="Knowledge Base">
       <Breadcrumbs
@@ -52,35 +60,49 @@ export default async function PortalKnowledgeBasePage() {
             {items.length} article{items.length !== 1 ? "s" : ""} available for your organization.
           </p>
 
-          <form
-            action={createArticle}
-            className="space-y-3 rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-            aria-label="Create knowledge base article"
-          >
-            <h2 className="font-medium text-slate-50">Add an article</h2>
-            <input
-              name="title"
-              placeholder="Title"
-              className="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm text-slate-50"
-            />
-            <textarea
-              name="body"
-              placeholder="Body"
-              rows={4}
-              className="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm text-slate-50"
-            />
-            <input
-              name="category"
-              placeholder="Category (optional)"
-              className="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm text-slate-400"
-            />
-            <button
-              type="submit"
-              className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+          {canCreate ? (
+            <form
+              action={createArticle}
+              className="space-y-3 rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+              aria-label="Create knowledge base article"
             >
-              Create
-            </button>
-          </form>
+              <h2 className="font-medium text-slate-50">Add an article</h2>
+              <label htmlFor="kb-title" className="sr-only">
+                Title
+              </label>
+              <input
+                id="kb-title"
+                name="title"
+                placeholder="Title"
+                className="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm text-slate-50"
+              />
+              <label htmlFor="kb-body" className="sr-only">
+                Body
+              </label>
+              <textarea
+                id="kb-body"
+                name="body"
+                placeholder="Body"
+                rows={4}
+                className="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm text-slate-50"
+              />
+              <label htmlFor="kb-category" className="sr-only">
+                Category
+              </label>
+              <input
+                id="kb-category"
+                name="category"
+                placeholder="Category (optional)"
+                className="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm text-slate-400"
+              />
+              <SubmitButton
+                className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+                pendingText="Creating…"
+              >
+                Create
+              </SubmitButton>
+            </form>
+          ) : null}
 
           <div className="grid gap-4 md:grid-cols-2">
             {items.map((a) => (
