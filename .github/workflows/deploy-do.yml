@@ -244,6 +244,7 @@ jobs:
             NEXT_PUBLIC_GIT_SHA=${{ github.sha }}
             NEXT_PUBLIC_BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.pusher.date || '' }}
             NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=${{ needs.setup.outputs.test_accounts_enabled }}
+            NEXT_PUBLIC_TURNSTILE_SITE_KEY=${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -312,6 +313,7 @@ jobs:
           CORS_ORIGIN: ${{ needs.setup.outputs.cors_origin }}
           REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
           FIELD_ENCRYPTION_KEY: ${{ secrets.FIELD_ENCRYPTION_KEY }}
+          TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           RLS_READS_ENABLED: ${{ secrets.RLS_READS_ENABLED }}
           RLS_WRITES_ENABLED: ${{ secrets.RLS_WRITES_ENABLED }}
           # Forwarded so the remote script never interpolates these into the
@@ -328,7 +330,7 @@ jobs:
           # Secrets are forwarded as environment variables rather than being
           # interpolated into the remote script, so a value containing $,
           # backticks or quotes cannot execute on the droplet.
-          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
+          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
           script: |
             set -e
             timeout 60 cloud-init status --wait 2>/dev/null || true
@@ -382,6 +384,7 @@ jobs:
               printf 'CORS_ORIGIN=%s\n' "$CORS_ORIGIN"
               printf 'REDIS_PASSWORD=%s\n' "$REDIS_PASSWORD"
               printf 'FIELD_ENCRYPTION_KEY=%s\n' "$FIELD_ENCRYPTION_KEY"
+              printf 'TURNSTILE_SECRET_KEY=%s\n' "$TURNSTILE_SECRET_KEY"
               printf 'RLS_READS_ENABLED=%s\n' "$RLS_READS_ENABLED"
               printf 'RLS_WRITES_ENABLED=%s\n' "$RLS_WRITES_ENABLED"
             } >> /opt/mct-portal/.env
