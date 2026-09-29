@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Runbooks - Portal - Maine CyberTech" };
 
@@ -44,12 +46,10 @@ export default async function PortalRunbooksPage() {
               <p className="mt-1 text-xs text-slate-400">Category: {String(item.category)}</p>
             ) : null}
             <p className="mt-1 text-xs text-slate-400">Version: {String(item.version ?? "1.0")}</p>
-            <p className="mt-1 text-xs text-slate-400">
-              Created: {new Date(String(item.created_at)).toISOString().slice(0, 10)}
-            </p>
+            <p className="mt-1 text-xs text-slate-400">Created: {formatDate(item.created_at)}</p>
           </Link>
         ))}
-        {items.length === 0 && <p className="text-sm text-slate-400">No runbooks found.</p>}
+        {!loadFailed && items.length === 0 && <EmptyState icon="📖" title="No runbooks found." />}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard

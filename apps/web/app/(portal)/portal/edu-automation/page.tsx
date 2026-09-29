@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Education Automation - Portal - Maine CyberTech" };
 
@@ -60,14 +62,12 @@ export default async function EduAutomationPage() {
               >
                 {String(item.status)}
               </span>
-              {item.created_at != null && (
-                <span>Created: {new Date(String(item.created_at)).toISOString().slice(0, 10)}</span>
-              )}
+              {item.created_at != null && <span>Created: {formatDate(item.created_at)}</span>}
             </div>
           </div>
         ))}
-        {items.length === 0 && (
-          <p className="text-sm text-slate-400">No compliance records found.</p>
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="🎓" title="No compliance records found." />
         )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

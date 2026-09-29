@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatCurrency, formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "SaaS Audit - Portal - Maine CyberTech" };
 
@@ -46,29 +48,15 @@ export default async function SaasAuditPage() {
             )}
             <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
               {item.monthly_cost != null && (
-                <span>
-                  Cost:{" "}
-                  {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-                    Number(item.monthly_cost),
-                  )}
-                </span>
+                <span>Cost: {formatCurrency(Number(item.monthly_cost))}</span>
               )}
               {item.annual_cost != null && (
-                <span>
-                  Annual:{" "}
-                  {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-                    Number(item.annual_cost),
-                  )}
-                </span>
+                <span>Annual: {formatCurrency(Number(item.annual_cost))}</span>
               )}
               {item.classification != null && (
                 <span>Classification: {String(item.classification)}</span>
               )}
-              {item.renewal_date != null && (
-                <span>
-                  Renewal: {new Date(String(item.renewal_date)).toISOString().slice(0, 10)}
-                </span>
-              )}
+              {item.renewal_date != null && <span>Renewal: {formatDate(item.renewal_date)}</span>}
               {item.cancellation_risk != null && (
                 <span>Risk: {String(item.cancellation_risk)}</span>
               )}
@@ -78,8 +66,8 @@ export default async function SaasAuditPage() {
             </div>
           </div>
         ))}
-        {items.length === 0 && (
-          <p className="text-sm text-slate-400">No SaaS subscriptions found.</p>
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="☁️" title="No SaaS subscriptions found." />
         )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

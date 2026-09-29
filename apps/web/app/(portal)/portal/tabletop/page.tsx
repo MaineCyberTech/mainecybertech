@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import StatusPill from "@/components/StatusPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Tabletop Exercises - Portal - Maine CyberTech" };
 
@@ -49,12 +50,12 @@ export default async function PortalTabletopPage() {
             </p>
             {(a.scheduled_date as string | null) && (
               <p className="mt-1 text-xs text-slate-400">
-                Scheduled: {new Date(String(a.scheduled_date)).toISOString().slice(0, 10)}
+                Scheduled: {formatDate(a.scheduled_date)}
               </p>
             )}
           </div>
         ))}
-        {items.length === 0 && (
+        {!loadFailed && items.length === 0 && (
           <p className="col-span-2 text-sm text-slate-400">No tabletop exercises scheduled.</p>
         )}
       </div>

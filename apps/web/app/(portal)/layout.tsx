@@ -103,7 +103,10 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         const status = (err as { status?: number })?.status;
         return status === 401 || status === 403 ? null : { error: true };
       }),
-      getApprovedMembership().catch(() => null),
+      getApprovedMembership().catch((err) => {
+        const status = (err as { status?: number })?.status;
+        return status === 401 || status === 403 ? null : Promise.reject(err);
+      }),
       getUnreadCount().catch(() => 0),
       getApiClient()
         .organizations.list({ limit: 100 })

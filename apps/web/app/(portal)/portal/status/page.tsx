@@ -4,6 +4,7 @@ import { getApiClient } from "@/lib/api";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status - Portal - Maine CyberTech" };
@@ -48,7 +49,7 @@ export default async function PortalStatusPage() {
                 )}
                 {(s.scheduled_start as string | null) && (
                   <p className="mt-1 text-xs text-slate-400">
-                    Scheduled: {new Date(String(s.scheduled_start)).toISOString().slice(0, 10)}
+                    Scheduled: {formatDate(s.scheduled_start)}
                   </p>
                 )}
               </div>

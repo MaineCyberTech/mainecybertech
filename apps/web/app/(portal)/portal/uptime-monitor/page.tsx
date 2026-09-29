@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
+import StatusPill from "@/components/StatusPill";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -22,14 +24,6 @@ export default async function PortalUptimeMonitorPage() {
     console.error("[uptime-monitor/page]", error);
     loadFailed = true;
   }
-
-  const statusBadge = (s: string) => {
-    const status = s.toLowerCase();
-    if (status === "up" || status === "healthy") return "bg-emerald-500/10 text-emerald-400";
-    if (status === "down" || status === "unhealthy") return "bg-red-500/10 text-red-400";
-    if (status === "degraded") return "bg-amber-500/10 text-amber-400";
-    return "bg-white/5 text-slate-400";
-  };
 
   return (
     <div className="space-y-6" role="region" aria-label="Uptime Monitor">
@@ -53,16 +47,14 @@ export default async function PortalUptimeMonitorPage() {
                   Type: {String(m.check_type || "HTTP")}
                 </p>
               </div>
-              <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusBadge(String(m.status || "unknown"))}`}
-              >
-                {String(m.status || "Unknown")}
-              </span>
+              <StatusPill status={String(m.status || "Unknown")} />
             </div>
           </div>
         ))}
-        {items.length === 0 && (
-          <p className="col-span-2 text-sm text-slate-400">No monitors configured.</p>
+        {!loadFailed && items.length === 0 && (
+          <div className="col-span-2">
+            <EmptyState icon="📡" title="No monitors configured." />
+          </div>
         )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

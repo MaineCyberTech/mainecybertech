@@ -4,6 +4,7 @@ import PromoBadge from "@/components/store/PromoBadge";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { getApiClient } from "@/lib/api";
 import type { StorePromotion } from "@mct/sdk";
+import { formatDateShort } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -127,14 +128,7 @@ function PromotionCard({ promotion: p }: { promotion: Promotion }) {
           <span>{p.eligibilityTargets.length} eligible services</span>
         )}
         {isExpiring && p.endDate && (
-          <span className="text-amber-400">
-            Expires{" "}
-            {new Date(p.endDate).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })}
-          </span>
+          <span className="text-amber-400">Expires {formatDateShort(p.endDate)}</span>
         )}
       </div>
 

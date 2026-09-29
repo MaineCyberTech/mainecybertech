@@ -7,9 +7,13 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import StatusPill from "@/components/StatusPill";
 import { SeverityPill } from "@/components/admin/SeverityPill";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Finding - Portal - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Finding (${id.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -31,15 +35,6 @@ type FindingDetail = {
   created_at: string;
   updated_at: string;
 };
-
-function formatDate(value: string | null): string {
-  if (!value) return "—";
-  try {
-    return new Date(value).toISOString().slice(0, 10);
-  } catch {
-    return "—";
-  }
-}
 
 export default async function PortalFindingDetailPage({ params }: Props) {
   const membership = await getApprovedMembership();

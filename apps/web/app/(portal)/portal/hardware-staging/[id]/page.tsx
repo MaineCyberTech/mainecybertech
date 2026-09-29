@@ -7,7 +7,10 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import StatusPill from "@/components/StatusPill";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Staging Detail - Portal - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Staging Detail (${id.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 
 type PortalStagingDetailProps = {
   params: Promise<{ id: string }>;

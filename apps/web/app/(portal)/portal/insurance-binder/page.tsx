@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Insurance Evidence - Portal - Maine CyberTech" };
 
@@ -57,15 +59,15 @@ export default async function PortalInsuranceBinderPage() {
                 {String(e.status || "Pending")}
               </span>
               {e.expiry_date ? (
-                <span className="text-xs text-slate-500">
-                  Expires {new Date(String(e.expiry_date)).toISOString().slice(0, 10)}
-                </span>
+                <span className="text-xs text-slate-500">Expires {formatDate(e.expiry_date)}</span>
               ) : null}
             </div>
           </div>
         ))}
-        {items.length === 0 && (
-          <p className="col-span-2 text-sm text-slate-400">No evidence items found.</p>
+        {!loadFailed && items.length === 0 && (
+          <div className="col-span-2">
+            <EmptyState icon="🛡️" title="No evidence items found." />
+          </div>
         )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

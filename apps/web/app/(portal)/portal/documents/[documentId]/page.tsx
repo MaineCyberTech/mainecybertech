@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
@@ -10,9 +11,10 @@ import DocumentVersionsClient from "@/components/portal/DocumentVersionsClient";
 import DocumentShareClient from "@/components/portal/DocumentShareClient";
 import { DocumentShare } from "@mct/sdk";
 
-export const metadata = {
-  title: "Document Details - Portal - Maine CyberTech",
-};
+export async function generateMetadata({ params }: { params: Promise<{ documentId: string }> }) {
+  const { documentId } = await params;
+  return { title: `Document Details (${documentId.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 
 function formatBytes(bytes?: number | null) {
   if (!bytes || bytes <= 0) return "\u2014";
@@ -41,16 +43,12 @@ export default async function PortalDocumentDetailPage({ params }: PortalDocumen
     throw new Error("No approved membership found.");
   }
 
-  let document: any;
+  let document: Awaited<ReturnType<typeof api.documents.get>> & { title?: string | null };
   try {
     document = await withRetry(() => api.documents.get(documentId));
   } catch (error) {
-    if ((error as { status?: number })?.status !== 404) throw error;
-    return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
-        Document not found.
-      </div>
-    );
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   let downloadUrl: string | null = null;

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
@@ -61,8 +62,10 @@ export default async function PortalNetworkPortMapsPage() {
             ) : null}
           </div>
         ))}
-        {items.length === 0 && (
-          <p className="col-span-2 text-sm text-slate-400">No port maps available.</p>
+        {!loadFailed && items.length === 0 && (
+          <div className="col-span-2">
+            <EmptyState icon="🔌" title="No port maps available." />
+          </div>
         )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

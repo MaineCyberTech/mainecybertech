@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { getClientApi } from "@/lib/client-api";
+import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
+import { formatDate } from "@/lib/format";
 
 interface Props {
   organizationId: string;
@@ -190,14 +192,14 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
                 {String(a.recommended_nvr ?? "N/A")}
               </p>
               {(a.created_at as string | null) && (
-                <p className="mt-1 text-xs text-slate-400">
-                  Created: {new Date(String(a.created_at)).toISOString().slice(0, 10)}
-                </p>
+                <p className="mt-1 text-xs text-slate-400">Created: {formatDate(a.created_at)}</p>
               )}
             </div>
           ))}
           {items.length === 0 && (
-            <p className="col-span-2 text-sm text-slate-400">No camera calculations available.</p>
+            <div className="col-span-2">
+              <EmptyState icon="📷" title="No camera calculations available." />
+            </div>
           )}
         </div>
       </div>

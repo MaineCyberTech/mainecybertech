@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Time Entries - Portal - Maine CyberTech" };
 
@@ -41,9 +43,7 @@ export default async function PortalTimeEntriesPage() {
             <p className="font-medium text-slate-50">{String(item.description)}</p>
             <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-400">
               {item.hours != null ? <span>{Number(item.hours).toFixed(1)}h</span> : null}
-              {item.work_date ? (
-                <span>Date: {new Date(String(item.work_date)).toISOString().slice(0, 10)}</span>
-              ) : null}
+              {item.work_date ? <span>Date: {formatDate(item.work_date)}</span> : null}
               {item.ticket_id ? <span>Ticket: {String(item.ticket_id).slice(0, 8)}</span> : null}
               <span>
                 {item.billable ? (
@@ -59,7 +59,9 @@ export default async function PortalTimeEntriesPage() {
             </div>
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-slate-400">No time entries found.</p>}
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="⏱️" title="No time entries found." />
+        )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard

@@ -46,7 +46,7 @@ export default async function ClientPortalOverviewPage() {
         </p>
       </section>
 
-      {memberships.length === 0 ? (
+      {!loadFailed && memberships.length === 0 ? (
         <section className="cyber-panel">
           <EmptyState
             icon="🏢"

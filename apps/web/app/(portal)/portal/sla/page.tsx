@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -82,8 +83,8 @@ export default async function SlaPage() {
         </div>
       )}
 
-      {byMetric.length === 0 && total === 0 && (
-        <p className="text-sm text-slate-400">No SLA metrics available.</p>
+      {!loadFailed && byMetric.length === 0 && total === 0 && (
+        <EmptyState icon="⏱️" title="No SLA metrics available." />
       )}
 
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

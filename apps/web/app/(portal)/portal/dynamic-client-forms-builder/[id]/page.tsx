@@ -4,9 +4,14 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Link from "next/link";
+import StatusPill from "@/components/StatusPill";
 import { DynamicFormRecord } from "@mct/sdk";
+import { formatDate } from "@/lib/format";
 
-export const metadata = { title: "Form Detail - Portal - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Form Detail (${id.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 export const dynamic = "force-dynamic";
 
 interface Props {
@@ -23,22 +28,7 @@ function rel(value?: string | null) {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d ago`;
-  return new Date(value).toISOString().slice(0, 10);
-}
-
-function statusBadge(status: string) {
-  const styles: Record<string, string> = {
-    draft: "border-slate-500/25 bg-slate-500/10 text-slate-300",
-    published: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
-    closed: "border-red-500/25 bg-red-500/10 text-red-300",
-  };
-  return (
-    <span
-      className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${styles[status] || "border-white/10 bg-white/5 text-slate-300"}`}
-    >
-      {status}
-    </span>
-  );
+  return formatDate(value);
 }
 
 function fieldTypeBadge(type: string) {
@@ -102,7 +92,7 @@ export default async function DynamicFormDetailPage({ params }: Props) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {statusBadge(form.status)}
+          <StatusPill status={form.status} />
           {form.status === "published" && (
             <Link
               href={`/portal/dynamic-client-forms-builder/${form.id}/fill`}
@@ -199,7 +189,9 @@ export default async function DynamicFormDetailPage({ params }: Props) {
                 <dt className="text-slate-400">Type</dt>
                 <dd className="text-slate-50">{form.form_type.replace(/_/g, " ")}</dd>
                 <dt className="text-slate-400">Status</dt>
-                <dd className="text-slate-50">{statusBadge(form.status)}</dd>
+                <dd className="text-slate-50">
+                  <StatusPill status={form.status} />
+                </dd>
                 <dt className="text-slate-400">Fields</dt>
                 <dd className="text-slate-50">{form.fields?.length ?? 0}</dd>
                 <dt className="text-slate-400">Submissions</dt>

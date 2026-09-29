@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "UniFi Site Surveys - Portal - Maine CyberTech" };
 
@@ -61,13 +63,15 @@ export default async function PortalUnifiSurveysPage() {
             </p>
             {(a.survey_date as string | null) && (
               <p className="mt-1 text-xs text-slate-400">
-                Survey date: {new Date(String(a.survey_date)).toISOString().slice(0, 10)}
+                Survey date: {formatDate(a.survey_date)}
               </p>
             )}
           </div>
         ))}
-        {items.length === 0 && (
-          <p className="col-span-2 text-sm text-slate-400">No site surveys available.</p>
+        {!loadFailed && items.length === 0 && (
+          <div className="col-span-2">
+            <EmptyState icon="📡" title="No site surveys available." />
+          </div>
         )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

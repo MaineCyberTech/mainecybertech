@@ -2,8 +2,10 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Cyber Scoreboard - Portal - Maine CyberTech" };
 
@@ -73,14 +75,16 @@ export default async function PortalScoreboardPage() {
               <p className="mt-1 text-xs text-emerald-400">{cheer}</p>
               {a.last_updated ? (
                 <p className="mt-1 text-xs text-slate-400">
-                  Last updated: {new Date(String(a.last_updated)).toISOString().slice(0, 10)}
+                  Last updated: {formatDate(a.last_updated)}
                 </p>
               ) : null}
             </div>
           );
         })}
-        {items.length === 0 && (
-          <p className="col-span-2 text-sm text-slate-400">No scorecards available.</p>
+        {!loadFailed && items.length === 0 && (
+          <div className="col-span-2">
+            <EmptyState icon="🎯" title="No scorecards available." />
+          </div>
         )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

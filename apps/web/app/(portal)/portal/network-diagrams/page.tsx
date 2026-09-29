@@ -2,8 +2,10 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import AdminPagination from "@/components/admin/AdminPagination";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Network Diagrams - Portal - Maine CyberTech" };
@@ -114,14 +116,16 @@ export default async function PortalNetworkDiagramsPage({
                   ) : null}
                   {d.created_at ? (
                     <p className="mt-1 text-xs text-slate-400">
-                      Updated: {new Date(d.created_at).toISOString().slice(0, 10)}
+                      Updated: {formatDate(d.created_at)}
                     </p>
                   ) : null}
                 </div>
               );
             })}
-            {diagrams.length === 0 && (
-              <p className="col-span-2 text-sm text-slate-400">No network diagrams available.</p>
+            {!loadFailed && diagrams.length === 0 && (
+              <div className="col-span-2">
+                <EmptyState icon="🌐" title="No network diagrams available." />
+              </div>
             )}
           </div>
 

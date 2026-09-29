@@ -133,7 +133,7 @@ export default async function PortalDashboardPage() {
           <div>
             <h1 className="cyber-heading text-2xl">Client Dashboard</h1>
             <p className="mt-3 text-slate-300">
-              Organization: {organization?.name ?? "Loading..."}
+              Organization: {organization?.name ?? (loadFailed ? "Unavailable" : "\u2014")}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

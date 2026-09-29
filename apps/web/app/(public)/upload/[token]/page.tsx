@@ -1,4 +1,5 @@
 import { getClientEnv } from "@/lib/env";
+import { formatDateShort } from "@/lib/format";
 import UploadForm from "./UploadForm";
 
 export const metadata = { title: "Secure Upload - Maine CyberTech" };
@@ -59,7 +60,7 @@ export default async function PublicUploadPage(props: { params: Promise<{ token:
                 </span>
               )}
               <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5">
-                Expires {new Date(info.expiresAt).toLocaleDateString()}
+                Expires {formatDateShort(info.expiresAt)}
               </span>
             </div>
 

@@ -2,11 +2,31 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDateTime } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Automation Workflows - Portal - Maine CyberTech" };
+
+function runStatus(workflow: Record<string, unknown>): string {
+  if (workflow.last_run_status) return String(workflow.last_run_status);
+  return workflow.is_active === false ? "inactive" : "active";
+}
+
+function runStatusTone(status: string): "emerald" | "red" | "blue" | undefined {
+  switch (status) {
+    case "success":
+      return "emerald";
+    case "failed":
+      return "red";
+    case "running":
+      return "blue";
+    default:
+      return undefined;
+  }
+}
 
 export default async function PortalAutomationPage() {
   const membership = await getApprovedMembership();
@@ -41,21 +61,23 @@ export default async function PortalAutomationPage() {
           >
             <div className="flex items-center justify-between">
               <p className="font-medium text-slate-50">{String(a.name || a.title || "")}</p>
-              <StatusPill status={String(a.status || "unknown")} />
+              <StatusPill status={runStatus(a)} tone={runStatusTone(runStatus(a))} />
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              Trigger: {String(a.trigger_type || "N/A")} &bull; Frequency:{" "}
-              {String(a.frequency || "N/A")}
+              Trigger: {String(a.trigger_type || "N/A")} &bull; Script:{" "}
+              {String(a.script_type || "N/A")}
             </p>
-            {(a.last_run as string | null) && (
+            {(a.last_run_at as string | null) && (
               <p className="mt-1 text-xs text-slate-400">
-                Last run: {new Date(String(a.last_run)).toISOString().slice(0, 10)}
+                Last run: {formatDateTime(a.last_run_at)}
               </p>
             )}
           </div>
         ))}
-        {items.length === 0 && (
-          <p className="col-span-2 text-sm text-slate-400">No automation workflows configured.</p>
+        {!loadFailed && items.length === 0 && (
+          <div className="col-span-2">
+            <EmptyState icon="⚡" title="No automation workflows configured." />
+          </div>
         )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

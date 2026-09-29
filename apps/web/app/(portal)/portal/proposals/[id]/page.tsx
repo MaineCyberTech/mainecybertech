@@ -10,16 +10,16 @@ import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import CommentBody from "@/components/CommentBody";
 import { ProposalDetail, ProposalLineItem } from "@mct/sdk";
+import { formatCurrency, formatDate } from "@/lib/format";
 
-export const metadata = { title: "Proposal Details - Portal - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Proposal Details (${id.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 export const dynamic = "force-dynamic";
 
 interface Props {
   params: Promise<{ id: string }>;
-}
-
-function fmtCurrency(n: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
 }
 
 function formatRelative(value?: string | null): string {
@@ -32,7 +32,7 @@ function formatRelative(value?: string | null): string {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(value).toISOString().slice(0, 10);
+  return formatDate(value);
 }
 
 function statusClass(status: string): string {
@@ -100,7 +100,7 @@ export default async function PortalProposalDetailPage({ params }: Props) {
           />
           <h1 className="cyber-heading mt-2 text-2xl">{proposal.title}</h1>
           <p className="mt-1 text-sm text-slate-400">
-            {fmtCurrency(proposal.grand_total ?? 0)} total
+            {formatCurrency(proposal.grand_total ?? 0)} total
             {proposal.valid_until && (
               <span> • Valid until {formatRelative(proposal.valid_until)}</span>
             )}
@@ -167,10 +167,10 @@ export default async function PortalProposalDetailPage({ params }: Props) {
                         </div>
                         <div className="flex items-center gap-4 text-sm text-slate-400">
                           <span>
-                            {item.quantity} × {fmtCurrency(item.unit_price)}
+                            {item.quantity} × {formatCurrency(item.unit_price)}
                           </span>
                           <span className="font-medium text-slate-50">
-                            {fmtCurrency(item.total_price)}
+                            {formatCurrency(item.total_price)}
                           </span>
                           <span className="text-[11px] font-semibold uppercase tracking-[0.12em]">
                             {item.item_type}
@@ -209,31 +209,31 @@ export default async function PortalProposalDetailPage({ params }: Props) {
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400">Labor</p>
             <p className="mt-3 font-display text-xl text-slate-50">
-              {fmtCurrency(proposal.total_labor ?? 0)}
+              {formatCurrency(proposal.total_labor ?? 0)}
             </p>
           </div>
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400">Materials</p>
             <p className="mt-3 font-display text-xl text-slate-50">
-              {fmtCurrency(proposal.total_materials ?? 0)}
+              {formatCurrency(proposal.total_materials ?? 0)}
             </p>
           </div>
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400">Recurring</p>
             <p className="mt-3 font-display text-xl text-slate-50">
-              {fmtCurrency(proposal.total_recurring ?? 0)}
+              {formatCurrency(proposal.total_recurring ?? 0)}
             </p>
           </div>
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400">One-Time</p>
             <p className="mt-3 font-display text-xl text-slate-50">
-              {fmtCurrency(proposal.total_one_time ?? 0)}
+              {formatCurrency(proposal.total_one_time ?? 0)}
             </p>
           </div>
         </div>
         <div className="mt-6 text-right">
           <p className="font-display text-2xl text-emerald-400">
-            Grand Total: {fmtCurrency(proposal.grand_total ?? 0)}
+            Grand Total: {formatCurrency(proposal.grand_total ?? 0)}
           </p>
         </div>
       </section>

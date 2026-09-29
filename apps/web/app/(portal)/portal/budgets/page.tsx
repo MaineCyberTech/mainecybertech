@@ -2,13 +2,13 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatCurrency, formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Budget Roadmap - Portal - Maine CyberTech" };
-
-const fmtCurrency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
 export default async function PortalBudgetsPage() {
   const membership = await getApprovedMembership();
@@ -67,7 +67,7 @@ export default async function PortalBudgetsPage() {
                 <p className="mt-1 text-xs text-slate-400">Category: {String(item.category)}</p>
                 {item.estimated_cost != null ? (
                   <p className="mt-1 text-xs text-slate-400">
-                    Est. Cost: {fmtCurrency.format(Number(item.estimated_cost))}
+                    Est. Cost: {formatCurrency(Number(item.estimated_cost))}
                   </p>
                 ) : null}
                 <p className="mt-1 text-xs text-slate-400">
@@ -75,14 +75,16 @@ export default async function PortalBudgetsPage() {
                   {item.quarter != null ? String(item.quarter) : "—"}
                 </p>
                 <p className="mt-1 text-xs text-slate-400">
-                  Created: {new Date(String(item.created_at)).toISOString().slice(0, 10)}
+                  Created: {formatDate(item.created_at)}
                 </p>
               </div>
               {priorityBadge(String(item.priority))}
             </div>
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-slate-400">No budget items found.</p>}
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="💰" title="No budget items found." />
+        )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard

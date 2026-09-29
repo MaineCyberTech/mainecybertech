@@ -66,7 +66,7 @@ export default async function PortalEndpointSecurityPage() {
             </div>
           );
         })}
-        {items.length === 0 && (
+        {!loadFailed && items.length === 0 && (
           <p className="col-span-2 text-sm text-slate-400">No endpoints registered.</p>
         )}
       </div>

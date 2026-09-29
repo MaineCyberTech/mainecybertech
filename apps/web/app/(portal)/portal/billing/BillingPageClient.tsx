@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getClientApi } from "@/lib/client-api";
+import { formatCurrency, formatDateShort } from "@/lib/format";
 
 type Invoice = {
   id: string;
@@ -50,19 +51,12 @@ type Props = {
 };
 
 function formatCents(cents: number, currency = "usd") {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format(cents / 100);
+  return formatCurrency(cents / 100, currency.toUpperCase());
 }
 
 function formatDate(iso?: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return formatDateShort(iso);
 }
 
 function statusColor(status: string) {
@@ -215,19 +209,34 @@ export default function BillingPageClient({ summary, subscriptions, invoices, cu
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
+                  >
                     Invoice
                   </th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
+                  >
                     Date
                   </th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
+                  >
                     Amount
                   </th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
+                  >
                     Status
                   </th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
+                  >
                     Download
                   </th>
                 </tr>

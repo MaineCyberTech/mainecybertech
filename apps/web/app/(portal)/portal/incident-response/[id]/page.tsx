@@ -9,7 +9,10 @@ import StatusPill from "@/components/StatusPill";
 import LinkedRunbook from "@/components/runbooks/LinkedRunbook";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Incident - Portal - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Incident (${id.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 
 type Props = { params: Promise<{ id: string }> };
 

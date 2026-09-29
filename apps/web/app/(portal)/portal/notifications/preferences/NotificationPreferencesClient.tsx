@@ -112,11 +112,15 @@ export default function NotificationPreferencesClient() {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-white/10">
-              <th className="px-4 py-3 text-xs uppercase tracking-[0.12em] text-slate-400">
+              <th
+                scope="col"
+                className="px-4 py-3 text-xs uppercase tracking-[0.12em] text-slate-400"
+              >
                 Module
               </th>
               {CHANNELS.map((c) => (
                 <th
+                  scope="col"
                   key={c.key}
                   className="px-4 py-3 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
                 >

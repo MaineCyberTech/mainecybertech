@@ -3,8 +3,13 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import { notFound } from "next/navigation";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import EmptyState from "@/components/EmptyState";
+import StatusPill from "@/components/StatusPill";
+import { formatDate } from "@/lib/format";
 
-export const metadata = { title: "Onboarding Detail - Portal - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Onboarding Detail (${id.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 export const dynamic = "force-dynamic";
 
 interface Props {
@@ -21,28 +26,11 @@ function rel(value?: string | null) {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d ago`;
-  return new Date(value).toISOString().slice(0, 10);
+  return formatDate(value);
 }
 
-function statusBadge(status: string) {
-  const styles: Record<string, string> = {
-    discovery: "border-blue-500/25 bg-blue-500/10 text-blue-300",
-    m365_setup: "border-purple-500/25 bg-purple-500/10 text-purple-300",
-    access_collection: "border-indigo-500/25 bg-indigo-500/10 text-indigo-300",
-    network_baseline: "border-teal-500/25 bg-teal-500/10 text-teal-300",
-    documentation: "border-cyan-500/25 bg-cyan-500/10 text-cyan-300",
-    security_baseline: "border-red-500/25 bg-red-500/10 text-red-300",
-    support_handoff: "border-orange-500/25 bg-orange-500/10 text-orange-300",
-    completed: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
-    on_hold: "border-slate-500/25 bg-slate-500/10 text-slate-300",
-  };
-  return (
-    <span
-      className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${styles[status] || "border-white/10 bg-white/5 text-slate-300"}`}
-    >
-      {status.replace(/_/g, " ")}
-    </span>
-  );
+function statusLabel(status: string) {
+  return status.replace(/_/g, " ");
 }
 
 function riskBadge(risk: string) {
@@ -275,7 +263,7 @@ export default async function ClientOnboardingDetailPage({ params }: Props) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {statusBadge(record.status)}
+          <StatusPill status={statusLabel(record.status)} />
           {riskBadge(record.risk_level)}
           {record.next_review_at && (
             <span className="inline-flex min-h-8 items-center rounded-full border border-slate-500/25 bg-slate-500/10 px-3 py-1 text-[11px] font-semibold text-slate-300">

@@ -74,7 +74,9 @@ export default async function PortalFindingsPage() {
             </div>
           </Link>
         ))}
-        {items.length === 0 && <p className="text-sm text-slate-400">No findings reported.</p>}
+        {!loadFailed && items.length === 0 && (
+          <p className="text-sm text-slate-400">No findings reported.</p>
+        )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard

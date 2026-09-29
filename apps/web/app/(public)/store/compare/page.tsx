@@ -1,6 +1,7 @@
 import { getComparisonData } from "@/lib/catalog/v5-loaders";
 import Link from "next/link";
 import type { Metadata } from "next";
+import EmptyState from "@/components/EmptyState";
 import { buildMetadata } from "@/lib/seo/metadata";
 
 export const dynamic = "force-dynamic";
@@ -41,9 +42,7 @@ export default function CompareIndexPage() {
         </p>
 
         {data.comparisons.length === 0 ? (
-          <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-12 text-center backdrop-blur-sm">
-            <p className="text-slate-400">No comparisons available yet.</p>
-          </div>
+          <EmptyState icon="📊" title="No comparisons available yet." />
         ) : (
           <div className="grid gap-6 sm:grid-cols-2">
             {data.comparisons.map((comparison) => (

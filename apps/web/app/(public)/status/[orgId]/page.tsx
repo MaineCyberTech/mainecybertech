@@ -1,4 +1,5 @@
 import { getApiClient } from "@/lib/api";
+import { formatDateTimeUtc } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -124,7 +125,7 @@ export default async function PublicStatusPage({ params }: Props) {
                   <span className="text-xs text-amber-300">{i.status.replace(/_/g, " ")}</span>
                 </div>
                 <p className="mt-1 text-xs text-slate-400">
-                  Started {new Date(i.started_at).toLocaleString("en-US", { timeZone: "UTC" })} UTC
+                  Started {formatDateTimeUtc(i.started_at)} UTC
                 </p>
               </li>
             ))}
@@ -142,7 +143,7 @@ export default async function PublicStatusPage({ params }: Props) {
               <li key={m.id} className="rounded-lg border border-sky-600/20 bg-sky-600/5 p-4">
                 <span className="font-medium text-slate-100">{m.title}</span>
                 <p className="mt-1 text-xs text-slate-400">
-                  {new Date(m.scheduled_start).toLocaleString("en-US", { timeZone: "UTC" })} UTC
+                  {formatDateTimeUtc(m.scheduled_start)} UTC
                 </p>
               </li>
             ))}

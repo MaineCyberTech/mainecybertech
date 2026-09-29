@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "File Requests - Portal - Maine CyberTech" };
 
@@ -46,9 +47,7 @@ export default async function PortalFileRequestsPage() {
                 )}
                 <p className="mt-1 text-xs text-slate-400">
                   {String(fr.upload_count)}/{String(fr.max_files)} uploads &bull; Expires:{" "}
-                  {(fr.expires_at as string | null)
-                    ? new Date(String(fr.expires_at)).toISOString().slice(0, 10)
-                    : "N/A"}
+                  {(fr.expires_at as string | null) ? formatDate(fr.expires_at) : "N/A"}
                 </p>
               </div>
               <span
@@ -59,7 +58,7 @@ export default async function PortalFileRequestsPage() {
             </div>
           </div>
         ))}
-        {items.length === 0 && (
+        {!loadFailed && items.length === 0 && (
           <p className="text-sm text-slate-400">No active file request links.</p>
         )}
       </div>

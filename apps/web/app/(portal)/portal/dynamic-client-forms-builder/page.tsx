@@ -3,7 +3,9 @@ import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
+import StatusPill from "@/components/StatusPill";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 
 export const metadata = { title: "Dynamic Forms - Portal - Maine CyberTech" };
 export const dynamic = "force-dynamic";
@@ -18,22 +20,7 @@ function rel(value?: string | null) {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d ago`;
-  return new Date(value).toISOString().slice(0, 10);
-}
-
-function statusBadge(status: string) {
-  const styles: Record<string, string> = {
-    draft: "border-slate-500/25 bg-slate-500/10 text-slate-300",
-    published: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
-    closed: "border-red-500/25 bg-red-500/10 text-red-300",
-  };
-  return (
-    <span
-      className={`inline-flex min-h-7 items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] ${styles[status] || "border-white/10 bg-white/5 text-slate-300"}`}
-    >
-      {status}
-    </span>
-  );
+  return formatDate(value);
 }
 
 function formTypeBadge(formType: string) {
@@ -125,7 +112,7 @@ export default async function DynamicFormsListPage() {
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                {statusBadge(form.status)}
+                <StatusPill status={form.status} />
                 {formTypeBadge(form.form_type)}
               </div>
               <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
@@ -142,13 +129,17 @@ export default async function DynamicFormsListPage() {
           ))}
         </div>
       ) : (
-        <EmptyState
-          icon="📝"
-          title="No forms yet"
-          description="Create your first dynamic form to collect client intake data, site survey responses, access requests, and more."
-          actionLabel="Create Form"
-          actionHref="/portal/dynamic-client-forms-builder/new"
-        />
+        !loadFailed && (
+          <div className="col-span-2">
+            <EmptyState
+              icon="📝"
+              title="No forms yet"
+              description="Create your first dynamic form to collect client intake data, site survey responses, access requests, and more."
+              actionLabel="Create Form"
+              actionHref="/portal/dynamic-client-forms-builder/new"
+            />
+          </div>
+        )
       )}
     </div>
   );

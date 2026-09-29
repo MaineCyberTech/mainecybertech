@@ -2,9 +2,12 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
+import StatusPill from "@/components/StatusPill";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Domain Monitors - Portal - Maine CyberTech" };
 
@@ -17,22 +20,6 @@ function Pill({ value }: { value: unknown }) {
       }`}
     >
       {active ? "Yes" : "No"}
-    </span>
-  );
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const classes =
-    status === "active"
-      ? "bg-emerald-500/20 text-emerald-400"
-      : status === "warning"
-        ? "bg-amber-500/20 text-amber-400"
-        : status === "error"
-          ? "bg-red-500/20 text-red-400"
-          : "bg-slate-500/20 text-slate-400";
-  return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${classes}`}>
-      {status}
     </span>
   );
 }
@@ -79,11 +66,7 @@ export default async function DomainMonitorsPage() {
               <span>
                 SSL: <Pill value={item.ssl_valid} />
               </span>
-              {item.ssl_expires != null && (
-                <span>
-                  SSL Expires: {new Date(String(item.ssl_expires)).toISOString().slice(0, 10)}
-                </span>
-              )}
+              {item.ssl_expires != null && <span>SSL Expires: {formatDate(item.ssl_expires)}</span>}
               <span>SPF: {String(item.spf_status)}</span>
               <span>DKIM: {String(item.dkim_status)}</span>
               <span>DMARC: {String(item.dmarc_status)}</span>
@@ -92,11 +75,13 @@ export default async function DomainMonitorsPage() {
               </span>
             </div>
             <div className="mt-2">
-              <StatusBadge status={String(item.status ?? "inactive")} />
+              <StatusPill status={String(item.status ?? "inactive")} />
             </div>
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-slate-400">No domain monitors found.</p>}
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="📡" title="No domain monitors found." />
+        )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard

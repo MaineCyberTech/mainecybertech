@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -81,8 +82,8 @@ export default async function SecuritySuitePage() {
             </div>
           </div>
         ))}
-        {items.length === 0 && (
-          <p className="text-sm text-slate-400">No M365 hardening records found.</p>
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="🛡️" title="No M365 hardening records found." />
         )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

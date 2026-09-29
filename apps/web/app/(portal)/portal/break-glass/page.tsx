@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import StatusPill from "@/components/StatusPill";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Break Glass Accounts - Portal - Maine CyberTech" };
 
@@ -48,18 +49,16 @@ export default async function PortalBreakGlassPage() {
               {String(a.custodian_name || "N/A")}
             </p>
             {(a.last_used_at as string | null) && (
-              <p className="mt-1 text-xs text-slate-400">
-                Last used: {new Date(String(a.last_used_at)).toISOString().slice(0, 10)}
-              </p>
+              <p className="mt-1 text-xs text-slate-400">Last used: {formatDate(a.last_used_at)}</p>
             )}
             {(a.next_rotation_at as string | null) && (
               <p className="mt-1 text-xs text-slate-400">
-                Next rotation: {new Date(String(a.next_rotation_at)).toISOString().slice(0, 10)}
+                Next rotation: {formatDate(a.next_rotation_at)}
               </p>
             )}
           </div>
         ))}
-        {items.length === 0 && (
+        {!loadFailed && items.length === 0 && (
           <p className="col-span-2 text-sm text-slate-400">No break glass accounts registered.</p>
         )}
       </div>

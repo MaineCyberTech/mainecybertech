@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import SubmitButton from "@/components/SubmitButton";
 import AvatarPill from "@/components/admin/AvatarPill";
 import { getApiClient } from "@/lib/api";
@@ -9,9 +10,19 @@ import PortalSubnav from "@/components/portal/PortalSubnav";
 import CommentBody from "@/components/CommentBody";
 import ProjectTasksWithViews from "@/components/portal/ProjectTasksWithViews";
 import { addPortalProjectUpdate, approvePortalProjectTask, addPortalTaskComment } from "./actions";
-import { Profile, ProjectTask, ProjectTaskComment, ProjectTaskReadState } from "@mct/sdk";
+import {
+  Profile,
+  ProjectDetail,
+  ProjectTask,
+  ProjectTaskComment,
+  ProjectTaskReadState,
+  ProjectUpdate,
+} from "@mct/sdk";
 
-export const metadata = { title: "Project Details - Portal - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params;
+  return { title: `Project Details (${projectId.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 
 function projectStatusClass(status: string) {
   const base =
@@ -63,6 +74,10 @@ function formatRelativeTime(value?: string | null) {
   return formatDateTime(value);
 }
 
+type PortalProjectDetail = ProjectDetail & {
+  project: ProjectDetail["project"] & { project_updates?: ProjectUpdate[] | null };
+};
+
 type Props = { params: Promise<{ projectId: string }> };
 
 export default async function PortalProjectDetailPage({ params }: Props) {
@@ -91,26 +106,12 @@ export default async function PortalProjectDetailPage({ params }: Props) {
   const currentUser = await api.users.me();
   const currentUserId = currentUser?.userId ?? null;
 
-  let project: any;
+  let project: PortalProjectDetail;
   try {
     project = await api.projects.getDetail(projectId, membership.organization_id);
   } catch (error) {
-    if ((error as { status?: number })?.status !== 404) throw error;
-    return (
-      <div className="space-y-6">
-        <Breadcrumbs
-          items={[
-            { label: "Portal", href: "/portal/dashboard" },
-            { label: "Projects", href: "/portal/projects" },
-            { label: "Project" },
-          ]}
-        />
-        <PortalSubnav current="projects" />
-        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
-          Project not found.
-        </div>
-      </div>
-    );
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   const rawTasks = project.tasks ?? [];

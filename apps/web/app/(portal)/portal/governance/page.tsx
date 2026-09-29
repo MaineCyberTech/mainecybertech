@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Governance - Portal - Maine CyberTech" };
 
@@ -62,13 +64,13 @@ export default async function GovernancePage() {
               </span>
               {item.priority != null && <span>Priority: {String(item.priority)}</span>}
               {item.requested_by != null && <span>Requested by: {String(item.requested_by)}</span>}
-              {item.created_at != null && (
-                <span>Created: {new Date(String(item.created_at)).toISOString().slice(0, 10)}</span>
-              )}
+              {item.created_at != null && <span>Created: {formatDate(item.created_at)}</span>}
             </div>
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-slate-400">No change requests found.</p>}
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="🏢" title="No change requests found." />
+        )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard

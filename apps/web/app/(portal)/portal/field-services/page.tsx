@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatCurrency } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Field Services - Portal - Maine CyberTech" };
 
@@ -44,12 +46,7 @@ export default async function FieldServicesPage() {
             <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
               <span>Provider: {String(item.current_provider || "N/A")}</span>
               <span>Bandwidth: {String(item.bandwidth_current || "N/A")}</span>
-              <span>
-                Monthly Cost:{" "}
-                {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-                  Number(item.current_cost ?? 0),
-                )}
-              </span>
+              <span>Monthly Cost: {formatCurrency(Number(item.current_cost ?? 0))}</span>
               {item.contract_status != null && (
                 <span>Contract: {String(item.contract_status)}</span>
               )}
@@ -72,7 +69,9 @@ export default async function FieldServicesPage() {
             </div>
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-slate-400">No ISP assessments found.</p>}
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="📡" title="No ISP assessments found." />
+        )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard

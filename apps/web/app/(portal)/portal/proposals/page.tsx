@@ -5,13 +5,10 @@ import PortalSubnav from "@/components/portal/PortalSubnav";
 import Link from "next/link";
 import EmptyState from "@/components/EmptyState";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Proposals - Portal - Maine CyberTech" };
-
-function fmtCurrency(n: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
 
 function statusClass(status: string): string {
   const base =
@@ -42,7 +39,7 @@ function formatRelative(value?: string | null): string {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d ago`;
-  return new Date(value).toISOString().slice(0, 10);
+  return formatDate(value);
 }
 
 export default async function PortalProposalsPage() {
@@ -97,7 +94,7 @@ export default async function PortalProposalsPage() {
                 <div className="min-w-0">
                   <p className="truncate font-medium text-slate-50">{proposal.title}</p>
                   <p className="mt-1 text-xs text-slate-400">
-                    {fmtCurrency(proposal.grand_total ?? 0)} total • Created{" "}
+                    {formatCurrency(proposal.grand_total ?? 0)} total • Created{" "}
                     {formatRelative(proposal.created_at)}
                   </p>
                 </div>
@@ -105,21 +102,22 @@ export default async function PortalProposalsPage() {
               </div>
               <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-4 text-xs text-slate-400">
                 <span>
-                  Valid until:{" "}
-                  {proposal.valid_until
-                    ? new Date(proposal.valid_until).toISOString().slice(0, 10)
-                    : "—"}
+                  Valid until: {proposal.valid_until ? formatDate(proposal.valid_until) : "—"}
                 </span>
               </div>
             </Link>
           ))}
         </div>
       ) : (
-        <EmptyState
-          icon="📄"
-          title="No proposals yet"
-          description="Proposals sent to your organization will appear here."
-        />
+        !loadFailed && (
+          <div className="col-span-2">
+            <EmptyState
+              icon="📄"
+              title="No proposals yet"
+              description="Proposals sent to your organization will appear here."
+            />
+          </div>
+        )
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import { getApprovedMembership } from "@/lib/auth/membership";
@@ -48,7 +49,10 @@ type CommentLike = {
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Ticket Details - Portal - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ ticketId: string }> }) {
+  const { ticketId } = await params;
+  return { title: `Ticket Details (${ticketId.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 
 function ticketSubject(ticket: TicketLike) {
   return ticket?.subject ?? ticket?.title ?? ticket?.name ?? `Ticket ${ticket?.id}`;
@@ -178,19 +182,10 @@ export default async function PortalSupportDetailPage({ params }: Props) {
   try {
     ticket = await withRetry(() => api.tickets.get(ticketId));
   } catch (error) {
-    if ((error as { status?: number })?.status !== 404) throw error;
-    return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
-        Ticket not found.
-      </div>
-    );
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
-  if (isDeletedTicket(ticket))
-    return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
-        Ticket not found.
-      </div>
-    );
+  if (isDeletedTicket(ticket)) notFound();
 
   const rawComments = await api.tickets.listComments(ticketId);
   const comments = (rawComments ?? []).filter((comment: CommentLike) => !commentInternal(comment));

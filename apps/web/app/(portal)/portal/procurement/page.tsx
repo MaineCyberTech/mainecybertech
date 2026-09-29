@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatCurrency, formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Procurement - Portal - Maine CyberTech" };
 
@@ -43,19 +45,9 @@ export default async function ProcurementPage() {
             <p className="font-medium text-slate-50">{String(item.product ?? "Untitled")}</p>
             <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-400">
               <span>Vendor: {String(item.vendor_name ?? "—")}</span>
-              <span>
-                Quote:{" "}
-                {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-                  Number(item.quote_amount ?? 0),
-                )}
-              </span>
+              <span>Quote: {formatCurrency(Number(item.quote_amount ?? 0))}</span>
               {item.competitor_quote != null && (
-                <span>
-                  Competitor:{" "}
-                  {Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-                    Number(item.competitor_quote),
-                  )}
-                </span>
+                <span>Competitor: {formatCurrency(Number(item.competitor_quote))}</span>
               )}
               <span
                 className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -66,14 +58,12 @@ export default async function ProcurementPage() {
               >
                 {item.selected ? "selected" : "candidate"}
               </span>
-              {item.created_at != null && (
-                <span>Created: {new Date(String(item.created_at)).toISOString().slice(0, 10)}</span>
-              )}
+              {item.created_at != null && <span>Created: {formatDate(item.created_at)}</span>}
             </div>
           </div>
         ))}
-        {items.length === 0 && (
-          <p className="text-sm text-slate-400">No procurement quotes found.</p>
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="🛒" title="No procurement quotes found." />
         )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">

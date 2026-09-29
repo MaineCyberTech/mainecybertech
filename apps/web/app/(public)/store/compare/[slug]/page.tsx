@@ -32,7 +32,10 @@ function Cell({ children }: { children: React.ReactNode }) {
 
 function HeaderCell({ children }: { children: React.ReactNode }) {
   return (
-    <th className="border border-white/5 px-4 py-3 text-left text-sm font-bold uppercase tracking-wider text-emerald-400">
+    <th
+      scope="col"
+      className="border border-white/5 px-4 py-3 text-left text-sm font-bold uppercase tracking-wider text-emerald-400"
+    >
       {children}
     </th>
   );

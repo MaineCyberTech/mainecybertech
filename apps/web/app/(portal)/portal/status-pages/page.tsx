@@ -2,8 +2,10 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDateTimeMinutesUtc } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status Page - Portal - Maine CyberTech" };
@@ -84,8 +86,10 @@ export default async function PortalStatusPagesPage() {
             </div>
           </div>
         ))}
-        {items.length === 0 && (
-          <p className="col-span-2 text-sm text-slate-400">No status components defined.</p>
+        {!loadFailed && items.length === 0 && (
+          <div className="col-span-2">
+            <EmptyState icon="🖥️" title="No status components defined." />
+          </div>
         )}
       </div>
 
@@ -102,8 +106,7 @@ export default async function PortalStatusPagesPage() {
                   <p className="font-medium text-slate-50">{String(inc.title)}</p>
                   <p className="mt-1 text-xs text-slate-400">
                     Severity: {String(inc.severity)} &bull; Started:{" "}
-                    {new Date(String(inc.started_at)).toISOString().slice(0, 16).replace("T", " ")}{" "}
-                    UTC
+                    {formatDateTimeMinutesUtc(inc.started_at)} UTC
                   </p>
                 </div>
                 <span
@@ -114,7 +117,9 @@ export default async function PortalStatusPagesPage() {
               </div>
             </div>
           ))}
-          {incidents.length === 0 && <p className="text-sm text-slate-400">No active incidents.</p>}
+          {!loadFailed && incidents.length === 0 && (
+            <EmptyState icon="🚨" title="No active incidents." />
+          )}
         </div>
       </section>
 
@@ -128,13 +133,13 @@ export default async function PortalStatusPagesPage() {
             >
               <p className="font-medium text-slate-50">{String(m.title)}</p>
               <p className="mt-1 text-xs text-slate-400">
-                {new Date(String(m.scheduled_start)).toISOString().slice(0, 16).replace("T", " ")} →{" "}
-                {new Date(String(m.scheduled_end)).toISOString().slice(0, 16).replace("T", " ")} UTC
+                {formatDateTimeMinutesUtc(m.scheduled_start)} →{" "}
+                {formatDateTimeMinutesUtc(m.scheduled_end)} UTC
               </p>
             </div>
           ))}
-          {maintenance.length === 0 && (
-            <p className="text-sm text-slate-400">No maintenance scheduled.</p>
+          {!loadFailed && maintenance.length === 0 && (
+            <EmptyState icon="📅" title="No maintenance scheduled." />
           )}
         </div>
       </section>

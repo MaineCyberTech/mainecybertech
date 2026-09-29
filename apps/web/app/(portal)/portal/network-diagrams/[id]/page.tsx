@@ -3,8 +3,14 @@ import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Network Diagram (${id.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -54,7 +60,7 @@ export default async function PortalNetworkDiagramDetailPage({ params }: Props) 
           <p className="mt-1 text-sm text-slate-400">{diagram.description}</p>
         ) : null}
         <p className="mt-1 text-xs text-slate-500">
-          Updated: {new Date(diagram.updated_at ?? diagram.created_at).toISOString().slice(0, 10)}
+          Updated: {formatDate(diagram.updated_at ?? diagram.created_at)}
         </p>
       </div>
 

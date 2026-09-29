@@ -88,7 +88,7 @@ export default async function PortalHardwareStagingPage({
                 </p>
               </Link>
             ))}
-            {items.length === 0 && (
+            {!loadFailed && items.length === 0 && (
               <p className="col-span-2 text-sm text-slate-400">No hardware staging items.</p>
             )}
           </div>

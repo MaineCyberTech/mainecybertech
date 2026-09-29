@@ -2,28 +2,14 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
+import StatusPill from "@/components/StatusPill";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import PortalTriageClient from "./PortalTriageClient";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "AI Triage - Portal - Maine CyberTech" };
-
-function StatusBadge({ status }: { status: string }) {
-  const classes =
-    status === "analyzed"
-      ? "bg-emerald-500/20 text-emerald-400"
-      : status === "converted"
-        ? "bg-sky-500/20 text-sky-400"
-        : status === "pending"
-          ? "bg-amber-500/20 text-amber-400"
-          : "bg-slate-500/20 text-slate-400";
-  return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${classes}`}>
-      {status}
-    </span>
-  );
-}
 
 function truncate(text: unknown, max: number): string {
   const str = String(text ?? "");
@@ -80,11 +66,13 @@ export default async function AiTriagePage() {
               )}
             </div>
             <div className="mt-2">
-              <StatusBadge status={String(item.status ?? "pending")} />
+              <StatusPill status={String(item.status ?? "pending")} />
             </div>
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-slate-400">No triage records found.</p>}
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="🤖" title="No triage records found." />
+        )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard

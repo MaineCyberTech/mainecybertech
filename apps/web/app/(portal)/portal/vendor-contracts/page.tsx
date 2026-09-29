@@ -2,13 +2,14 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
+import StatusPill from "@/components/StatusPill";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatCurrency, formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendor Contracts - Portal - Maine CyberTech" };
-
-const fmtCurrency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
 
 export default async function PortalVendorContractsPage() {
   const membership = await getApprovedMembership();
@@ -25,29 +26,12 @@ export default async function PortalVendorContractsPage() {
     loadFailed = true;
   }
 
-  function statusBadge(status: string) {
+  function statusLabel(status: string) {
     const s = status.toLowerCase();
-    if (s === "active")
-      return (
-        <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-xs text-emerald-400">
-          Active
-        </span>
-      );
-    if (s.includes("expir"))
-      return (
-        <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-400">
-          Expiring Soon
-        </span>
-      );
-    if (s === "expired")
-      return (
-        <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-xs text-red-400">Expired</span>
-      );
-    return (
-      <span className="rounded-full bg-slate-500/20 px-2 py-0.5 text-xs text-slate-400">
-        {status}
-      </span>
-    );
+    if (s === "active") return "Active";
+    if (s.includes("expir")) return "Expiring Soon";
+    if (s === "expired") return "Expired";
+    return status;
   }
 
   return (
@@ -75,28 +59,24 @@ export default async function PortalVendorContractsPage() {
                   </p>
                 ) : null}
                 <p className="mt-1 text-xs text-slate-400">
-                  Start:{" "}
-                  {item.start_date
-                    ? new Date(String(item.start_date)).toISOString().slice(0, 10)
-                    : "—"}
+                  Start: {item.start_date ? formatDate(item.start_date) : "—"}
                   {" — "}
-                  End:{" "}
-                  {item.end_date ? new Date(String(item.end_date)).toISOString().slice(0, 10) : "—"}
+                  End: {item.end_date ? formatDate(item.end_date) : "—"}
                 </p>
                 {item.renewal_date ? (
                   <p className="mt-1 text-xs text-slate-400">
-                    Renewal: {new Date(String(item.renewal_date)).toISOString().slice(0, 10)}
+                    Renewal: {formatDate(item.renewal_date)}
                   </p>
                 ) : null}
                 {item.contract_value != null ? (
                   <p className="mt-1 text-xs text-slate-400">
-                    Value: {fmtCurrency.format(Number(item.contract_value))}
+                    Value: {formatCurrency(Number(item.contract_value))}
                   </p>
                 ) : null}
                 <p className="mt-1 text-xs text-slate-400">Type: {String(item.contract_type)}</p>
               </div>
               <div className="flex flex-col items-end gap-1">
-                {statusBadge(String(item.status))}
+                <StatusPill status={statusLabel(String(item.status))} />
                 {item.auto_renews ? (
                   <span className="rounded-full bg-sky-500/20 px-2 py-0.5 text-xs text-sky-400">
                     Auto-renews
@@ -106,7 +86,9 @@ export default async function PortalVendorContractsPage() {
             </div>
           </div>
         ))}
-        {items.length === 0 && <p className="text-sm text-slate-400">No vendor contracts found.</p>}
+        {!loadFailed && items.length === 0 && (
+          <EmptyState icon="📄" title="No vendor contracts found." />
+        )}
       </div>
       <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
         &larr; Dashboard

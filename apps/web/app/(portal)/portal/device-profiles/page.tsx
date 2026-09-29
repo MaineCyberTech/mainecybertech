@@ -2,9 +2,11 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import AdminPagination from "@/components/admin/AdminPagination";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Device Profiles - Portal - Maine CyberTech" };
@@ -97,13 +99,13 @@ export default async function DeviceProfilesPage({ searchParams }: DeviceProfile
                 )}
                 {item.created_at != null && (
                   <span className="mt-2 block text-xs text-slate-400">
-                    Created: {new Date(String(item.created_at)).toISOString().slice(0, 10)}
+                    Created: {formatDate(item.created_at)}
                   </span>
                 )}
               </div>
             ))}
-            {items.length === 0 && (
-              <p className="text-sm text-slate-400">No device profiles found.</p>
+            {!loadFailed && items.length === 0 && (
+              <EmptyState icon="💻" title="No device profiles found." />
             )}
           </div>
 

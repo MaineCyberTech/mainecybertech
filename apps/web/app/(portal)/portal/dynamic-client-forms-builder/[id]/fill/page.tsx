@@ -6,7 +6,10 @@ import FormFillForm from "./FormFillForm";
 import { DynamicFormRecord } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Fill Form - Portal - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Fill Form (${id.slice(0, 8)}) - Portal - Maine CyberTech` };
+}
 
 export default async function FillFormPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;

@@ -2,8 +2,10 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import StatusPill from "@/components/StatusPill";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Compliance Readiness - Portal - Maine CyberTech" };
@@ -93,10 +95,18 @@ export default async function PortalComplianceReadinessPage() {
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-left text-xs uppercase text-slate-400">
-                          <th className="py-1 pr-4">Control</th>
-                          <th className="py-1 pr-4">Status</th>
-                          <th className="py-1 pr-4">Owner</th>
-                          <th className="py-1 pr-4">Due</th>
+                          <th scope="col" className="py-1 pr-4">
+                            Control
+                          </th>
+                          <th scope="col" className="py-1 pr-4">
+                            Status
+                          </th>
+                          <th scope="col" className="py-1 pr-4">
+                            Owner
+                          </th>
+                          <th scope="col" className="py-1 pr-4">
+                            Due
+                          </th>
                         </tr>
                       </thead>
                       <tbody>
@@ -108,11 +118,11 @@ export default async function PortalComplianceReadinessPage() {
                             </td>
                             <td className="py-1 pr-4 text-slate-300">{c.owner ?? "—"}</td>
                             <td className="py-1 pr-4 text-slate-300">
-                              {c.due_at ? new Date(c.due_at).toISOString().slice(0, 10) : "—"}
+                              {c.due_at ? formatDate(c.due_at) : "—"}
                             </td>
                           </tr>
                         ))}
-                        {frameworkControls.length === 0 && (
+                        {!loadFailed && frameworkControls.length === 0 && (
                           <tr>
                             <td colSpan={4} className="py-2 text-xs text-slate-400">
                               No controls yet.
@@ -125,8 +135,8 @@ export default async function PortalComplianceReadinessPage() {
                 </div>
               );
             })}
-            {frameworks.length === 0 && (
-              <p className="text-sm text-slate-400">No compliance frameworks yet.</p>
+            {!loadFailed && frameworks.length === 0 && (
+              <EmptyState icon="🛡️" title="No compliance frameworks yet." />
             )}
           </div>
           <Link
