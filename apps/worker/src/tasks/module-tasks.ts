@@ -524,7 +524,7 @@ export const websiteMonitorCheck: TaskHandler = async (_payload): Promise<TaskRe
       let errorMsg: string | null = null;
       let ssl: { expires: string; daysRemaining: number } | null = null;
 
-      // SSRF guard �?" uptime check URLs are user-supplied; never fetch
+      // SSRF guard — uptime check URLs are user-supplied; never fetch
       // private / loopback / link-local hosts or hostnames resolving to them.
       const blocked = await assertSafeUrl(check.url);
       if (blocked) {

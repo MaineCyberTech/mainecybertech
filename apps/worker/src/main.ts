@@ -12,7 +12,8 @@ if (env.SENTRY_DSN) {
   Sentry.init({
     dsn: env.SENTRY_DSN,
     environment: env.NODE_ENV,
-    tracesSampleRate: env.NODE_ENV === "production" ? 0.2 : 0.0,
+    release: env.SENTRY_RELEASE ?? process.env.GIT_SHA,
+    tracesSampleRate: env.SENTRY_TRACES_SAMPLE_RATE ?? (env.NODE_ENV === "production" ? 0.2 : 0.0),
   });
   logger.info("Sentry initialized");
 }

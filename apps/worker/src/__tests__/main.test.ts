@@ -85,6 +85,34 @@ describe("env schema", () => {
     expect(env.WORKER_CONCURRENCY).toBe(42);
     expect(env.WORKER_TIMEOUT).toBe(99999);
   });
+
+  it("accepts SENTRY_TRACES_SAMPLE_RATE within 0-1 and coerces it", () => {
+    for (const [raw, expected] of [
+      ["0", 0],
+      ["0.5", 0.5],
+      ["1", 1],
+    ] as const) {
+      const env = parseEnv({ ...REQUIRED, SENTRY_TRACES_SAMPLE_RATE: raw });
+      expect(env.SENTRY_TRACES_SAMPLE_RATE).toBe(expected);
+    }
+  });
+
+  it("rejects SENTRY_TRACES_SAMPLE_RATE above 1 or below 0", () => {
+    expect(() => parseEnv({ ...REQUIRED, SENTRY_TRACES_SAMPLE_RATE: "1.5" })).toThrow();
+    expect(() => parseEnv({ ...REQUIRED, SENTRY_TRACES_SAMPLE_RATE: "-0.1" })).toThrow();
+  });
+
+  it("rejects non-numeric SENTRY_TRACES_SAMPLE_RATE", () => {
+    expect(() => parseEnv({ ...REQUIRED, SENTRY_TRACES_SAMPLE_RATE: "abc" })).toThrow();
+  });
+
+  it("leaves SENTRY_TRACES_SAMPLE_RATE undefined when unset (service fallback applies)", () => {
+    expect(parseEnv({ ...REQUIRED }).SENTRY_TRACES_SAMPLE_RATE).toBeUndefined();
+  });
+
+  it("accepts an optional SENTRY_RELEASE", () => {
+    expect(parseEnv({ ...REQUIRED, SENTRY_RELEASE: "sha-123" }).SENTRY_RELEASE).toBe("sha-123");
+  });
 });
 
 describe("task registry", () => {

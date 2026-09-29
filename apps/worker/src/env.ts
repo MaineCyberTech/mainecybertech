@@ -34,6 +34,11 @@ export const envSchema = z
     API_BASE_URL: z.string().url().optional(),
     APP_BASE_URL: z.string().url().optional(),
     SENTRY_DSN: z.string().optional(),
+    // Optional Sentry trace sample rate (0–1). Defaults to 0.2 in production, 0
+    // otherwise. See main.ts.
+    SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
+    // Optional Sentry release identifier. Defaults to process.env.GIT_SHA.
+    SENTRY_RELEASE: z.string().optional(),
     HEALTH_PORT: z.coerce.number().int().positive().max(65535).default(3001),
   })
   .superRefine((val, ctx) => {
