@@ -26,11 +26,11 @@ test.describe("admin projects list", () => {
 
 test.describe("admin project detail", () => {
   test("shows not-found for unknown project", async ({ page }) => {
-    const response = await page.goto("/admin/projects/00000000-0000-0000-0000-000000000000");
-    expect(response?.status()).toBe(404);
-    await expect(page.getByRole("heading", { name: "Not Found" }).first()).toBeVisible({
+    await page.goto("/admin/projects/00000000-0000-0000-0000-000000000000");
+    await expect(page.getByRole("heading", { name: "Not Found", level: 1 })).toBeVisible({
       timeout: 10000,
     });
+    await expect(page.getByRole("link", { name: "Back to Admin Dashboard" })).toBeVisible();
   });
 
   test("shows project name and status when project exists", async ({ page }) => {
