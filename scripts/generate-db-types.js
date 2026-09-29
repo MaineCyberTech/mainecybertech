@@ -567,6 +567,26 @@ export type TablesUpdate<
     : never;
 `;
 
+// `--check` regenerates in memory and compares against the committed file
+// instead of writing, so CI can fail when the checked-in types drift from the
+// migrations. Line endings are normalized because git may check the file out
+// with CRLF on Windows while the generator always emits LF.
+if (process.argv.includes("--check")) {
+  const normalize = (s) => s.replace(/\r\n/g, "\n");
+  let current = "";
+  try {
+    current = fs.readFileSync(OUTPUT_FILE, "utf-8");
+  } catch {
+    // Missing file → treated as stale below.
+  }
+  if (normalize(current) === normalize(output)) {
+    console.log("database types up to date");
+    process.exit(0);
+  }
+  console.error("database types are stale — run: node scripts/generate-db-types.js");
+  process.exit(1);
+}
+
 fs.writeFileSync(OUTPUT_FILE, output);
 console.log(`Generated types for ${sortedTables.length} tables → ${OUTPUT_FILE}`);
 

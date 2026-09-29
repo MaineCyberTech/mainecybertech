@@ -1,0 +1,23 @@
+name: A11y breadth (triage)
+
+# Non-blocking weekly/manual run of the full accessibility page list with
+# WCAG 2.2 tags (68 routes). The default E2E gate stays on the 19-page
+# critical/serious scan so new rules can be triaged here first.
+# See docs/WEB_UI_CONVENTIONS.md ("Accessibility scanning").
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 5 * * 1"
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  breadth:
+    uses: ./.github/workflows/e2e.yml
+    with:
+      a11y_full: true
+    secrets: inherit
+    continue-on-error: true

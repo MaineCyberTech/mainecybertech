@@ -2,6 +2,11 @@ name: E2E
 
 on:
   workflow_dispatch:
+    inputs:
+      a11y_full:
+        description: "Run the full accessibility breadth scan (A11Y_FULL)"
+        type: boolean
+        default: false
   # Push trigger removed: the PR run plus the prod deploy's `workflow_call`
   # gate already cover changes, and a push trigger ran E2E 2-3x per change.
   pull_request:
@@ -16,6 +21,11 @@ on:
       - "supabase/migrations/**"
       - ".github/workflows/e2e.yml"
   workflow_call:
+    inputs:
+      a11y_full:
+        description: "Run the full accessibility breadth scan"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -89,7 +99,7 @@ jobs:
         run: |
           API_ENV="apps/api/.env.local"
           # supabase status --output json returns UPPERCASE keys (API_URL,
-          # ANON_KEY, SERVICE_ROLE_KEY) â€” lowercase jq selectors yield null.
+          # ANON_KEY, SERVICE_ROLE_KEY) — lowercase jq selectors yield null.
           echo "SUPABASE_URL=$(supabase status --output json | jq -r '.API_URL')" > $API_ENV
           echo "SUPABASE_ANON_KEY=$(supabase status --output json | jq -r '.ANON_KEY')" >> $API_ENV
           echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status --output json | jq -r '.SERVICE_ROLE_KEY')" >> $API_ENV
@@ -144,6 +154,7 @@ jobs:
           E2E_BASE_URL: http://localhost:3000
           E2E_ADMIN_EMAIL: superadmin.real@mainecybertech.local
           E2E_ADMIN_PASSWORD: 1
+          A11Y_FULL: ${{ inputs.a11y_full && '1' || '0' }}
 
       - name: Upload Playwright report
         if: failure()

@@ -31,9 +31,9 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Dependency audit
         # Hard fail: high/critical vulnerabilities block the deploy gate (and
-        # every workflow that calls validate.yml, including terraform-do prod 
+        # every workflow that calls validate.yml, including terraform-do prod
         # apply).
-        # --prod: only audit production dependencies (dev deps like storybook 
+        # --prod: only audit production dependencies (dev deps like storybook
         # have unpatchable image-size vulns)
         run: pnpm audit --audit-level=high --prod
 
@@ -74,6 +74,25 @@ jobs:
         # Keeps the deploy gate in parity with test.yml: the generated spec must
         # parse and its paths must resolve.
         run: pnpm --filter=api exec tsx src/scripts/validate-openapi.ts
+
+      - name: OpenAPI coverage audit
+        # Fails when a statically-resolvable Express route is missing from the
+        # generated spec; dynamic factory routes are reported as warnings.
+        run: node scripts/openapi-audit.js
+
+      - name: Check docs counts
+        # Fails when README/AGENTS/INDEX state counts that have drifted from the
+        # repo (web components, unit tests, migrations, OpenAPI paths).
+        run: node scripts/check-docs-counts.mjs
+
+      - name: Check docs links
+        run: node scripts/check-docs-links.mjs
+
+      - name: Verify database types are current
+        run: node scripts/generate-db-types.js --check
+
+      - name: Verify RLS/migration hygiene
+        run: node scripts/verify-rls.mjs
 
   # Secret scanning — same patterns as the pre-commit hook (scripts/scan-secrets.sh).
   # Runs as part of the deploy gate so a leaked credential cannot ship even if

@@ -5,19 +5,19 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'apps/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - 'package.json'
-      - '.github/workflows/test.yml'
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/test.yml"
   pull_request:
     branches: [main, develop]
     paths:
-      - 'apps/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - 'package.json'
-      - '.github/workflows/test.yml'
+      - "apps/**"
+      - "packages/**"
+      - "pnpm-lock.yaml"
+      - "package.json"
+      - ".github/workflows/test.yml"
 
 permissions:
   contents: read
@@ -61,6 +61,25 @@ jobs:
       - name: Validate OpenAPI spec
         run: pnpm --filter=api exec tsx src/scripts/validate-openapi.ts
 
+      - name: OpenAPI coverage audit
+        # Fails when a statically-resolvable Express route is missing from the
+        # generated spec; dynamic factory routes are reported as warnings.
+        run: node scripts/openapi-audit.js
+
+      - name: Check docs counts
+        # Fails when README/AGENTS/INDEX state counts that have drifted from the
+        # repo (web components, unit tests, migrations, OpenAPI paths).
+        run: node scripts/check-docs-counts.mjs
+
+      - name: Check docs links
+        run: node scripts/check-docs-links.mjs
+
+      - name: Verify database types are current
+        run: node scripts/generate-db-types.js --check
+
+      - name: Verify RLS/migration hygiene
+        run: node scripts/verify-rls.mjs
+
   # Dependency audit — hard gate, no continue-on-error
   security-scan:
     timeout-minutes: 15
@@ -99,7 +118,7 @@ jobs:
           scan-ref: .
           format: sarif
           output: trivy-results.sarif
-          exit-code: '1'
+          exit-code: "1"
           ignore-unfixed: true
           severity: CRITICAL,HIGH
           skip-dirs: node_modules,.pnpm-store,dist,.next,coverage,prompts,apps/web/.next
