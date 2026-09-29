@@ -92,6 +92,7 @@ describe("TimeEntryPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/final/time-entries/page")).default;
     render(await Page());
-    expect(screen.getByText("No time entries")).toBeInTheDocument();
+    expect(screen.queryByText("No time entries")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

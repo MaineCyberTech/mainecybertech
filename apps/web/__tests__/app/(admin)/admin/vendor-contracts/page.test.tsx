@@ -92,6 +92,7 @@ describe("VendorContractsPage", () => {
     mockContractsList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/vendor-contracts/page")).default;
     render(await Page());
-    expect(screen.getByText(/no contracts/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no contracts/i)).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

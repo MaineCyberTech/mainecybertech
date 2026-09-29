@@ -46,7 +46,11 @@ jest.mock("@/app/(admin)/admin/store/promotions/PromoForm", () => {
 
 jest.mock("@/app/(admin)/admin/store/promotions/DeleteButton", () => {
   return function MockDeleteButton({ id }: any) {
-    return <button data-testid="delete-button" data-id={id}>Delete</button>;
+    return (
+      <button data-testid="delete-button" data-id={id}>
+        Delete
+      </button>
+    );
   };
 });
 
@@ -107,6 +111,17 @@ describe("AdminStorePromotionsPage", () => {
     expect(screen.getAllByText("Bundle Savings").length).toBeGreaterThan(0);
   });
 
+  it("uses the shared status tone map for promotion pills", async () => {
+    mockListPromotions.mockResolvedValue([
+      mockPromotion({ status: "active" }),
+      mockPromotion({ id: "promo-2", name: "Paused Promo", status: "paused" }),
+    ]);
+    const Page = (await import("@/app/(admin)/admin/store/promotions/page")).default;
+    render(await Page());
+    expect(screen.getAllByText("active")[0].className).toContain("-emerald-");
+    expect(screen.getAllByText("paused")[0].className).toContain("-amber-");
+  });
+
   it("renders create form button", async () => {
     const Page = (await import("@/app/(admin)/admin/store/promotions/page")).default;
     render(await Page());
@@ -118,17 +133,15 @@ describe("AdminStorePromotionsPage", () => {
     mockListPromotions.mockResolvedValue([mockPromotion()]);
     const Page = (await import("@/app/(admin)/admin/store/promotions/page")).default;
     render(await Page());
-    const editForms = screen.getAllByTestId("promo-form").filter(
-      (f) => f.getAttribute("data-mode") === "edit",
-    );
+    const editForms = screen
+      .getAllByTestId("promo-form")
+      .filter((f) => f.getAttribute("data-mode") === "edit");
     expect(editForms.length).toBe(2);
     expect(screen.getAllByTestId("delete-button").length).toBe(2);
   });
 
   it("shows validation warnings for invalid active promotions", async () => {
-    mockListPromotions.mockResolvedValue([
-      mockPromotion({ name: "", badge_text: "" }),
-    ]);
+    mockListPromotions.mockResolvedValue([mockPromotion({ name: "", badge_text: "" })]);
     const Page = (await import("@/app/(admin)/admin/store/promotions/page")).default;
     render(await Page());
     expect(screen.getAllByText(/Name is required/).length).toBeGreaterThan(0);

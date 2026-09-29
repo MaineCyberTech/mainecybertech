@@ -92,6 +92,7 @@ describe("BudgetPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/final/budgets/page")).default;
     render(await Page());
-    expect(screen.getByText("No budget items")).toBeInTheDocument();
+    expect(screen.queryByText("No budget items")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

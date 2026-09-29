@@ -84,6 +84,7 @@ describe("TrainingPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/edu-automation/training/page")).default;
     render(await Page());
-    expect(screen.getByText("No training modules")).toBeInTheDocument();
+    expect(screen.queryByText("No training modules")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

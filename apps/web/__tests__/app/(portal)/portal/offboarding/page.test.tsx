@@ -49,7 +49,7 @@ describe("PortalOffboardingPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByRole("heading", { name: /offboarding/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /offboarding/i })).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

@@ -130,10 +130,11 @@ describe("ServiceCatalogPage", () => {
     expect(mockRequireAdminAccess).toHaveBeenCalled();
   });
 
-  it("handles API error gracefully", async () => {
+  it("shows an error note instead of a misleading empty state on API error", async () => {
     mockServiceCatalogList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/service-catalog/page")).default;
     render(await Page());
-    expect(screen.getByTestId("empty-state")).toHaveTextContent("No services defined");
+    expect(screen.getByText(/could not load/i)).toBeInTheDocument();
+    expect(screen.queryByTestId("empty-state")).not.toBeInTheDocument();
   });
 });

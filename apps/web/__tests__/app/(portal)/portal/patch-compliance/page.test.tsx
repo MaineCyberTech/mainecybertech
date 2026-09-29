@@ -49,7 +49,9 @@ describe("PortalPatchCompliancePage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByRole("heading", { name: /patch compliance/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: /patch compliance/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

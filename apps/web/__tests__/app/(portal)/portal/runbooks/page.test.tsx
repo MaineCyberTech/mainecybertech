@@ -44,7 +44,7 @@ describe("PortalRunbooksPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByRole("heading", { name: /runbooks/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /runbooks/i })).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

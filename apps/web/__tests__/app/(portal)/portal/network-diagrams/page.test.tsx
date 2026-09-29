@@ -2,9 +2,7 @@ import { jest } from "@jest/globals";
 import { render, screen } from "@testing-library/react";
 import React from "react";
 
-const mockGetApprovedMembership = jest
-  .fn()
-  .mockResolvedValue({ organization_id: "org-1" });
+const mockGetApprovedMembership = jest.fn().mockResolvedValue({ organization_id: "org-1" });
 const mockNetworkDiagramsList = jest.fn();
 
 jest.mock("next/link", () => ({
@@ -71,10 +69,11 @@ describe("PortalNetworkDiagramsPage", () => {
     expect(screen.getByText("Firewall")).toBeInTheDocument();
   });
 
-  it("handles API error gracefully", async () => {
+  it("shows an error note instead of a misleading empty state on API error", async () => {
     mockNetworkDiagramsList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(portal)/portal/network-diagrams/page")).default;
     render(await Page({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByText("No network diagrams available.")).toBeInTheDocument();
+    expect(screen.getByText(/could not load/i)).toBeInTheDocument();
+    expect(screen.queryByText("No network diagrams available.")).not.toBeInTheDocument();
   });
 });

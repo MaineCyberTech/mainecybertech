@@ -56,7 +56,9 @@ describe("FindingsPage", () => {
   it("renders page title and description", async () => {
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
     render(await Page({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByRole("heading", { name: "Open Findings & Remediation Tracker" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Open Findings & Remediation Tracker" }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/P0\/P1\/P2\/P3 finding lifecycle/)).toBeInTheDocument();
   });
 
@@ -97,10 +99,22 @@ describe("FindingsPage", () => {
   it("renders findings list when findings exist", async () => {
     mockFindingsList.mockResolvedValue({
       items: [
-        { id: "f1", title: "SQL Injection", severity: "p0", status: "open", source: "pentest", remediation_deadline: "2026-08-01", created_at: "2026-06-01T00:00:00Z" },
+        {
+          id: "f1",
+          title: "SQL Injection",
+          severity: "p0",
+          status: "open",
+          source: "pentest",
+          remediation_deadline: "2026-08-01",
+          created_at: "2026-06-01T00:00:00Z",
+        },
       ],
     });
-    mockFindingsStats.mockResolvedValue({ bySeverity: { p0: 1, p1: 0, p2: 0, p3: 0 }, byStatus: { open: 1 }, total: 1 });
+    mockFindingsStats.mockResolvedValue({
+      bySeverity: { p0: 1, p1: 0, p2: 0, p3: 0 },
+      byStatus: { open: 1 },
+      total: 1,
+    });
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
     render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("SQL Injection")).toBeInTheDocument();
@@ -109,7 +123,11 @@ describe("FindingsPage", () => {
   });
 
   it("renders severity count updates when stats returned", async () => {
-    mockFindingsStats.mockResolvedValue({ bySeverity: { p0: 1, p1: 2, p2: 3, p3: 4 }, byStatus: {}, total: 10 });
+    mockFindingsStats.mockResolvedValue({
+      bySeverity: { p0: 1, p1: 2, p2: 3, p3: 4 },
+      byStatus: {},
+      total: 10,
+    });
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
     render(await Page({ searchParams: Promise.resolve({}) }));
     expect(screen.getByText("P0: 1")).toBeInTheDocument();
@@ -129,6 +147,7 @@ describe("FindingsPage", () => {
     mockFindingsStats.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/findings/page")).default;
     render(await Page({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByText("No findings yet")).toBeInTheDocument();
+    expect(screen.queryByText("No findings yet")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

@@ -89,7 +89,16 @@ describe("AssetsPage", () => {
   it("renders assets list when assets exist", async () => {
     mockAssetsList.mockResolvedValue({
       items: [
-        { id: "a1", name: "Dell PowerEdge R750", asset_type: "server", status: "active", make: "Dell", model: "R750", warranty_expires: "2028-01-01", created_at: "2026-01-01T00:00:00Z" },
+        {
+          id: "a1",
+          name: "Dell PowerEdge R750",
+          asset_type: "server",
+          status: "active",
+          make: "Dell",
+          model: "R750",
+          warranty_expires: "2028-01-01",
+          created_at: "2026-01-01T00:00:00Z",
+        },
       ],
     });
     mockAssetsStats.mockResolvedValue({ byType: { server: 1 }, total: 1, expiringWarranty: 0 });
@@ -102,7 +111,16 @@ describe("AssetsPage", () => {
   it("renders with warranty info when present", async () => {
     mockAssetsList.mockResolvedValue({
       items: [
-        { id: "a1", name: "Server 1", asset_type: "server", status: "active", make: "HP", model: "DL360", warranty_expires: "2028-06-15", created_at: "2026-01-01T00:00:00Z" },
+        {
+          id: "a1",
+          name: "Server 1",
+          asset_type: "server",
+          status: "active",
+          make: "HP",
+          model: "DL360",
+          warranty_expires: "2028-06-15",
+          created_at: "2026-01-01T00:00:00Z",
+        },
       ],
     });
     mockAssetsStats.mockResolvedValue({ byType: {}, total: 1, expiringWarranty: 0 });
@@ -130,6 +148,7 @@ describe("AssetsPage", () => {
     mockAssetsStats.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/assets/page")).default;
     render(await Page({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByText("No assets registered")).toBeInTheDocument();
+    expect(screen.queryByText("No assets registered")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

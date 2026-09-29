@@ -90,6 +90,7 @@ describe("FileRequestsPage", () => {
     mockFileRequestsList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/file-requests/page")).default;
     render(await Page());
-    expect(screen.getByText(/no file requests/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no file requests/i)).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

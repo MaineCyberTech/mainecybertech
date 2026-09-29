@@ -1,5 +1,11 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import type { ReactElement } from "react";
 import RolePermissionsEditor from "@/components/admin/RolePermissionsEditor";
+import { ToastProvider } from "@/components/ui/ToastProvider";
+
+function renderEditor(ui: ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>);
+}
 
 const mockGetPermissions = jest.fn();
 const mockUpdatePermission = jest.fn();
@@ -46,12 +52,12 @@ describe("RolePermissionsEditor", () => {
 
   it("shows loading state initially", () => {
     mockGetPermissions.mockReturnValue(new Promise(() => {}));
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     expect(screen.getByText("Loading permissions...")).toBeInTheDocument();
   });
 
   it("renders permission matrix after loading", async () => {
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     await waitFor(() => {
       expect(screen.getByText("Dashboard")).toBeInTheDocument();
       expect(screen.getByText("Users")).toBeInTheDocument();
@@ -63,7 +69,7 @@ describe("RolePermissionsEditor", () => {
   });
 
   it("shows granted vs total count", async () => {
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     await waitFor(() => {
       const all = document.body.textContent || "";
       expect(all).toContain("permissions granted");
@@ -71,21 +77,21 @@ describe("RolePermissionsEditor", () => {
   });
 
   it("shows checkmark for granted permissions", async () => {
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     await waitFor(() => {
       expect(screen.getAllByText("✓").length).toBe(2);
     });
   });
 
   it("shows super admin message for super_admin role", async () => {
-    render(<RolePermissionsEditor roleId="r1" roleKey="super_admin" isSystem={true} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="super_admin" isSystem={true} />);
     await waitFor(() => {
       expect(screen.getByText(/Super Admin has all permissions/)).toBeInTheDocument();
     });
   });
 
   it("disables toggles for super_admin role", async () => {
-    render(<RolePermissionsEditor roleId="r1" roleKey="super_admin" isSystem={true} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="super_admin" isSystem={true} />);
     await waitFor(() => {
       const buttons = screen.getAllByRole("button");
       const toggleButtons = buttons.filter((btn) =>
@@ -100,7 +106,7 @@ describe("RolePermissionsEditor", () => {
 
   it("calls updatePermission on toggle", async () => {
     mockUpdatePermission.mockResolvedValue({ updated: true });
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     await waitFor(() => {
       const buttons = screen.getAllByRole("button");
       const grantButton = buttons.find((b) => b.textContent === "");
@@ -112,7 +118,7 @@ describe("RolePermissionsEditor", () => {
   });
 
   it("shows dash for non-existent permission combos", async () => {
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     await waitFor(() => {
       const dashes = screen.getAllByText("—");
       expect(dashes.length).toBeGreaterThan(0);
@@ -120,7 +126,7 @@ describe("RolePermissionsEditor", () => {
   });
 
   it("organizes permissions into module groups", async () => {
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     await waitFor(() => {
       expect(screen.getByText("Core")).toBeInTheDocument();
       expect(screen.getByText("Admin")).toBeInTheDocument();
@@ -129,7 +135,7 @@ describe("RolePermissionsEditor", () => {
 
   it("shows toast on successful toggle", async () => {
     mockUpdatePermission.mockResolvedValue({ updated: true });
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     await waitFor(() => {
       const buttons = screen.getAllByRole("button");
       const grantButton = buttons.find((b) => b.textContent === "");
@@ -142,7 +148,7 @@ describe("RolePermissionsEditor", () => {
 
   it("shows error toast on network failure", async () => {
     mockUpdatePermission.mockRejectedValue(new Error("Network error"));
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     await waitFor(() => {
       const buttons = screen.getAllByRole("button");
       const checkButton = buttons.find((b) => b.textContent === "✓");
@@ -155,7 +161,7 @@ describe("RolePermissionsEditor", () => {
 
   it("shows loading indicator during toggle", async () => {
     mockUpdatePermission.mockImplementation(() => new Promise(() => {}));
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     await waitFor(() => {
       const buttons = screen.getAllByRole("button");
       const grantButton = buttons.find((b) => !b.disabled && b.textContent === "");
@@ -191,7 +197,7 @@ describe("RolePermissionsEditor", () => {
       permissions: sortedPerms,
       rolePermissionIds: [],
     });
-    render(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
+    renderEditor(<RolePermissionsEditor roleId="r1" roleKey="admin" isSystem={false} />);
     await waitFor(() => {
       const modules = screen.getAllByRole("row");
       expect(modules.length).toBeGreaterThan(0);

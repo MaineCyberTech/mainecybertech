@@ -1,5 +1,11 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import type { ReactElement } from "react";
 import UserPermissionOverridesClient from "@/components/admin/UserPermissionOverridesClient";
+import { ToastProvider } from "@/components/ui/ToastProvider";
+
+function renderOverrides(ui: ReactElement) {
+  return render(<ToastProvider>{ui}</ToastProvider>);
+}
 
 const mockGetPermissions = jest.fn();
 const mockUpdatePermissions = jest.fn();
@@ -46,12 +52,12 @@ describe("UserPermissionOverridesClient", () => {
 
   it("shows loading state initially", () => {
     mockGetPermissions.mockReturnValue(new Promise(() => {}));
-    render(<UserPermissionOverridesClient userId="u1" memberships={MEMBERSHIPS} />);
+    renderOverrides(<UserPermissionOverridesClient userId="u1" memberships={MEMBERSHIPS} />);
     expect(screen.getByText("Loading permissions...")).toBeInTheDocument();
   });
 
   it("renders the matrix with modules and groups", async () => {
-    render(<UserPermissionOverridesClient userId="u1" memberships={MEMBERSHIPS} />);
+    renderOverrides(<UserPermissionOverridesClient userId="u1" memberships={MEMBERSHIPS} />);
     await waitFor(() => {
       expect(screen.getByText("Tickets")).toBeInTheDocument();
       expect(screen.getByText("Users")).toBeInTheDocument();
@@ -61,14 +67,14 @@ describe("UserPermissionOverridesClient", () => {
   });
 
   it("shows role-default checkmark for role-granted permissions", async () => {
-    render(<UserPermissionOverridesClient userId="u1" memberships={MEMBERSHIPS} />);
+    renderOverrides(<UserPermissionOverridesClient userId="u1" memberships={MEMBERSHIPS} />);
     await waitFor(() => {
       expect(screen.getAllByText("✓").length).toBe(1);
     });
   });
 
   it("cycles override: allow -> deny -> reset", async () => {
-    render(<UserPermissionOverridesClient userId="u1" memberships={MEMBERSHIPS} />);
+    renderOverrides(<UserPermissionOverridesClient userId="u1" memberships={MEMBERSHIPS} />);
     await waitFor(() => {
       expect(screen.getByText("Tickets")).toBeInTheDocument();
     });
@@ -85,7 +91,7 @@ describe("UserPermissionOverridesClient", () => {
   });
 
   it("renders empty state without memberships", async () => {
-    render(<UserPermissionOverridesClient userId="u1" memberships={[]} />);
+    renderOverrides(<UserPermissionOverridesClient userId="u1" memberships={[]} />);
     await waitFor(() => {
       expect(screen.getByText(/No memberships — permission overrides require/)).toBeInTheDocument();
     });
@@ -93,7 +99,7 @@ describe("UserPermissionOverridesClient", () => {
 
   it("shows error toast when loading fails", async () => {
     mockGetPermissions.mockRejectedValue(new Error("boom"));
-    render(<UserPermissionOverridesClient userId="u1" memberships={MEMBERSHIPS} />);
+    renderOverrides(<UserPermissionOverridesClient userId="u1" memberships={MEMBERSHIPS} />);
     await waitFor(() => {
       expect(screen.getByText("Failed to load permissions")).toBeInTheDocument();
     });

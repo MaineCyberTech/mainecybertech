@@ -1,5 +1,6 @@
 import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { ToastProvider } from "@/components/ui/ToastProvider";
 
 const mockRefresh = jest.fn();
 jest.mock("next/navigation", () => ({
@@ -48,19 +49,21 @@ function renderClient(overrides: any = {}) {
   const documents = overrides.documents ?? [baseDoc];
   const organizations = overrides.organizations ?? [baseOrg];
   return render(
-    <AdminDocumentsCenterClient
-      documents={documents}
-      organizations={organizations}
-      createDocumentAction={mockCreateDoc}
-      updateMetadataAction={mockUpdateMetadata}
-      updateVisibilityAction={mockUpdateVisibility}
-      replaceFileAction={mockReplaceFile}
-      deleteDocumentAction={mockDeleteDoc}
-      bulkVisibilityAction={mockBulkVisibility}
-      bulkDeleteAction={mockBulkDelete}
-      bulkFolderAction={mockBulkFolder}
-      bulkMetadataAction={mockBulkMetadata}
-    />,
+    <ToastProvider>
+      <AdminDocumentsCenterClient
+        documents={documents}
+        organizations={organizations}
+        createDocumentAction={mockCreateDoc}
+        updateMetadataAction={mockUpdateMetadata}
+        updateVisibilityAction={mockUpdateVisibility}
+        replaceFileAction={mockReplaceFile}
+        deleteDocumentAction={mockDeleteDoc}
+        bulkVisibilityAction={mockBulkVisibility}
+        bulkDeleteAction={mockBulkDelete}
+        bulkFolderAction={mockBulkFolder}
+        bulkMetadataAction={mockBulkMetadata}
+      />
+    </ToastProvider>,
   );
 }
 
@@ -408,6 +411,17 @@ describe("AdminDocumentsCenterClient", () => {
       renderClient();
       const toastContainer = document.querySelector(".fixed.right-4.top-4");
       expect(toastContainer).toBeInTheDocument();
+    });
+
+    it("shows a shared toast when create is submitted without an organization", async () => {
+      renderClient();
+      await userEvent.click(screen.getByRole("button", { name: "New Document" }));
+      const submit = screen.getByRole("button", { name: "Create Document" });
+      fireEvent.submit(submit.closest("form")!);
+      expect(await screen.findByText("Organization required")).toBeInTheDocument();
+      expect(
+        screen.getByText("Select an organization before creating a document."),
+      ).toBeInTheDocument();
     });
   });
 

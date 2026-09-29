@@ -42,7 +42,7 @@ describe("PortalVendorContactsPage", () => {
     const { default: Page } = await import("@/app/(portal)/portal/vendor-contacts/page");
     const element = await Page();
     render(element);
-    expect(screen.getByRole("heading", { name: /vendor contacts/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /vendor contacts/i })).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

@@ -96,6 +96,7 @@ describe("LicensesPage", () => {
     mockLicensesList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/licenses/page")).default;
     render(await Page());
-    expect(screen.getByText(/no licenses tracked/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no licenses tracked/i)).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

@@ -92,6 +92,7 @@ describe("BackupPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/final/backups/page")).default;
     render(await Page());
-    expect(screen.getByText("No backup plans")).toBeInTheDocument();
+    expect(screen.queryByText("No backup plans")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

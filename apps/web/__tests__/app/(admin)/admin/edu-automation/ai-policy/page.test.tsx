@@ -84,6 +84,7 @@ describe("AiPolicyPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/edu-automation/ai-policy/page")).default;
     render(await Page());
-    expect(screen.getByText("No AI policies")).toBeInTheDocument();
+    expect(screen.queryByText("No AI policies")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

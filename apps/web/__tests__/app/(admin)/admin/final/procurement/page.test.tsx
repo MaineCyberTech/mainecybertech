@@ -97,6 +97,7 @@ describe("ProcurementPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/final/procurement/page")).default;
     render(await Page());
-    expect(screen.getByText("No procurement records")).toBeInTheDocument();
+    expect(screen.queryByText("No procurement records")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

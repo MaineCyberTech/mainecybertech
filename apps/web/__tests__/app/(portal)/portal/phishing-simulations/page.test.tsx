@@ -49,7 +49,9 @@ describe("PortalPhishingSimulationsPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByRole("heading", { name: /phishing simulations/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: /phishing simulations/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

@@ -7,6 +7,9 @@ jest.mock("@/lib/auth/admin", () => ({
 
 jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
 }));
 
 jest.mock("next/cache", () => ({
@@ -78,16 +81,15 @@ describe("AdminTicketDetailPage", () => {
     });
   });
 
-  it("renders ticket not found error", async () => {
+  it("calls notFound for a missing ticket", async () => {
     mockTicketsGet.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     const Page = (await import("@/app/(admin)/admin/tickets/[ticketId]/page")).default;
-    render(
-      await Page({
+    await expect(
+      Page({
         params: Promise.resolve({ ticketId: "bad" }),
         searchParams: Promise.resolve({}),
       }),
-    );
-    expect(screen.getByText("Ticket not found.")).toBeInTheDocument();
+    ).rejects.toThrow("NEXT_NOT_FOUND");
   });
 
   it("renders breadcrumbs and subnav", async () => {

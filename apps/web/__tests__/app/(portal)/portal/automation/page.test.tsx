@@ -49,7 +49,9 @@ describe("PortalAutomationPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByRole("heading", { name: /automation workflows/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: /automation workflows/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {
@@ -62,23 +64,24 @@ describe("PortalAutomationPage", () => {
     expect(screen.getByRole("navigation", { "aria-label": "Breadcrumb" })).toBeInTheDocument();
   });
 
-  it("renders items when data exists", async () => {
+  it("renders items using the real automation_workflows fields", async () => {
     mockList.mockResolvedValue({
       items: [
         {
           id: "a1",
           name: "Ticket Auto-Close",
-          status: "active",
+          is_active: true,
           trigger_type: "scheduled",
-          frequency: "daily",
-          last_run: "2026-07-26T00:00:00.000Z",
+          script_type: "powershell",
+          last_run_status: "success",
+          last_run_at: "2026-07-26T00:00:00.000Z",
         },
         {
           id: "a2",
           name: "User Provisioning",
-          status: "paused",
+          is_active: false,
           trigger_type: "event",
-          frequency: "realtime",
+          script_type: "python",
         },
       ],
     });
@@ -90,7 +93,9 @@ describe("PortalAutomationPage", () => {
     expect(screen.getByText("Ticket Auto-Close")).toBeInTheDocument();
     expect(screen.getByText("User Provisioning")).toBeInTheDocument();
     expect(screen.getAllByText(/Trigger:/)).toHaveLength(2);
-    expect(screen.getAllByText(/Frequency:/)).toHaveLength(2);
+    expect(screen.getAllByText(/Script:/)).toHaveLength(2);
+    expect(screen.getAllByText(/Last run:/)).toHaveLength(1);
+    expect(screen.queryByText(/Frequency:/)).not.toBeInTheDocument();
   });
 
   it("shows empty state", async () => {
@@ -103,13 +108,24 @@ describe("PortalAutomationPage", () => {
     expect(screen.getByText("No automation workflows configured.")).toBeInTheDocument();
   });
 
-  it("renders status pills", async () => {
+  it("renders the last-run status pill and falls back to is_active", async () => {
     mockList.mockResolvedValue({
       items: [
         {
           id: "a1",
           name: "Ticket Auto-Close",
-          status: "active",
+          is_active: true,
+          last_run_status: "success",
+        },
+        {
+          id: "a2",
+          name: "User Provisioning",
+          is_active: false,
+        },
+        {
+          id: "a3",
+          name: "Asset Sync",
+          is_active: true,
         },
       ],
     });
@@ -119,8 +135,10 @@ describe("PortalAutomationPage", () => {
     render(element);
 
     const pills = screen.getAllByTestId("status-pill");
-    expect(pills).toHaveLength(1);
-    expect(pills[0]).toHaveTextContent("active");
+    expect(pills).toHaveLength(3);
+    expect(pills[0]).toHaveTextContent("success");
+    expect(pills[1]).toHaveTextContent("inactive");
+    expect(pills[2]).toHaveTextContent("active");
   });
 
   it("shows access restricted when no org", async () => {

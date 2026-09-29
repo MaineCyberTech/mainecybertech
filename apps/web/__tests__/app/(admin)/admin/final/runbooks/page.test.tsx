@@ -92,6 +92,7 @@ describe("RunbookPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/final/runbooks/page")).default;
     render(await Page());
-    expect(screen.getByText("No runbooks")).toBeInTheDocument();
+    expect(screen.queryByText("No runbooks")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

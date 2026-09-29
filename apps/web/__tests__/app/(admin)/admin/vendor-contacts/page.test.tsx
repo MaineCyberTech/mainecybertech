@@ -89,6 +89,7 @@ describe("VendorContactsPage", () => {
     mockVendorContactsList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/vendor-contacts/page")).default;
     render(await Page({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByText(/no vendor contacts/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no vendor contacts/i)).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

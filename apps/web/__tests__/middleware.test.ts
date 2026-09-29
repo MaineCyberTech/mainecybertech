@@ -276,6 +276,78 @@ describe("CSP and nonce headers", () => {
   });
 });
 
+describe("CSP reporting", () => {
+  const originalApiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  afterEach(() => {
+    if (originalApiUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_API_URL;
+    } else {
+      process.env.NEXT_PUBLIC_API_URL = originalApiUrl;
+    }
+  });
+
+  it("adds report-uri/report-to and the Reporting API headers on a prod host", async () => {
+    process.env.NEXT_PUBLIC_API_URL = "https://api.mainecybertech.com";
+    const response = await middleware(
+      makeRequest({ host: "www.mainecybertech.com", pathname: "/contact" }),
+    );
+    const csp = response.headers.get("Content-Security-Policy") ?? "";
+    expect(csp).toContain("report-uri https://api.mainecybertech.com/api/v1/public/csp-report");
+    expect(csp).toContain("report-to csp-endpoint");
+    expect(response.headers.get("Reporting-Endpoints")).toBe(
+      'csp-endpoint="https://api.mainecybertech.com/api/v1/public/csp-report"',
+    );
+    expect(JSON.parse(response.headers.get("Report-To") ?? "{}")).toEqual({
+      group: "csp-endpoint",
+      max_age: 10886400,
+      endpoints: [{ url: "https://api.mainecybertech.com/api/v1/public/csp-report" }],
+    });
+  });
+
+  it("omits reporting directives and headers when NEXT_PUBLIC_API_URL is unset", async () => {
+    delete process.env.NEXT_PUBLIC_API_URL;
+    const response = await middleware(
+      makeRequest({ host: "www.mainecybertech.com", pathname: "/contact" }),
+    );
+    const csp = response.headers.get("Content-Security-Policy") ?? "";
+    expect(csp).not.toContain("report-uri");
+    expect(csp).not.toContain("report-to");
+    expect(response.headers.get("Report-To")).toBeNull();
+    expect(response.headers.get("Reporting-Endpoints")).toBeNull();
+  });
+
+  it("normalizes a trailing slash in NEXT_PUBLIC_API_URL", async () => {
+    process.env.NEXT_PUBLIC_API_URL = "https://api.mainecybertech.com/";
+    const response = await middleware(
+      makeRequest({ host: "www.mainecybertech.com", pathname: "/contact" }),
+    );
+    expect(response.headers.get("Reporting-Endpoints")).toBe(
+      'csp-endpoint="https://api.mainecybertech.com/api/v1/public/csp-report"',
+    );
+  });
+
+  it("keeps reporting directives out of the localhost CSP", async () => {
+    process.env.NEXT_PUBLIC_API_URL = "https://api.mainecybertech.com";
+    const response = await middleware(makeRequest({ host: "localhost:3000", pathname: "/" }));
+    const csp = response.headers.get("Content-Security-Policy") ?? "";
+    expect(csp).not.toContain("report-uri");
+    expect(response.headers.get("Report-To")).toBeNull();
+    expect(response.headers.get("Reporting-Endpoints")).toBeNull();
+  });
+
+  it("adds reporting headers to redirect responses too", async () => {
+    process.env.NEXT_PUBLIC_API_URL = "https://api.mainecybertech.com";
+    const response = await middleware(
+      makeRequest({ host: "www.mainecybertech.com", pathname: "/portal/support" }),
+    );
+    expect(NextResponse.redirect).toHaveBeenCalled();
+    expect(response.headers.get("Reporting-Endpoints")).toBe(
+      'csp-endpoint="https://api.mainecybertech.com/api/v1/public/csp-report"',
+    );
+  });
+});
+
 describe("config", () => {
   it("exports a matcher that skips _next and favicon.ico", () => {
     expect(config.matcher).toHaveLength(1);

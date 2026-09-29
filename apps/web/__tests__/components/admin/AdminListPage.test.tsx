@@ -2,11 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 jest.mock("@/components/Breadcrumbs", () => {
   return function MockBreadcrumbs({ items }: any) {
-    return (
-      <nav data-testid="breadcrumbs">
-        {items.map((i: any) => i.label).join(" > ")}
-      </nav>
-    );
+    return <nav data-testid="breadcrumbs">{items.map((i: any) => i.label).join(" > ")}</nav>;
   };
 });
 
@@ -30,9 +26,7 @@ describe("AdminListPage", () => {
   });
 
   it("renders breadcrumbs and subnav", () => {
-    render(
-      <AdminListPage title="Widgets" subnavCurrent="widgets" items={[]} />,
-    );
+    render(<AdminListPage title="Widgets" subnavCurrent="widgets" items={[]} />);
     expect(screen.getByTestId("breadcrumbs")).toHaveTextContent("Admin > Widgets");
     expect(screen.getByTestId("subnav")).toHaveTextContent("widgets");
   });
@@ -51,9 +45,7 @@ describe("AdminListPage", () => {
   });
 
   it("renders custom actions", () => {
-    render(
-      <AdminListPage title="Widgets" items={[]} actions={<button>Export</button>} />,
-    );
+    render(<AdminListPage title="Widgets" items={[]} actions={<button>Export</button>} />);
     expect(screen.getByRole("button", { name: "Export" })).toBeInTheDocument();
   });
 
@@ -87,6 +79,24 @@ describe("AdminListPage", () => {
       />,
     );
     expect(screen.getByTestId("custom-empty")).toBeInTheDocument();
+  });
+
+  it("suppresses the empty state when loadFailed is set", () => {
+    render(
+      <AdminListPage
+        title="Widgets"
+        items={[]}
+        loadFailed
+        emptyState={<div data-testid="custom-empty">No widgets</div>}
+      />,
+    );
+    expect(screen.queryByTestId("custom-empty")).toBeNull();
+    expect(screen.queryByText("No items found.")).toBeNull();
+  });
+
+  it("renders the empty state when loadFailed is false", () => {
+    render(<AdminListPage title="Widgets" items={[]} loadFailed={false} />);
+    expect(screen.getByText("No items found.")).toBeInTheDocument();
   });
 
   it("renders rows via renderRow", () => {

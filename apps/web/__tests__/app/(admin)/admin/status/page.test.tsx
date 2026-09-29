@@ -124,6 +124,7 @@ describe("StatusPage", () => {
     mockStatusList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/status/page")).default;
     render(await Page());
-    expect(screen.getByTestId("empty-state")).toHaveTextContent("No status notices");
+    expect(screen.queryByTestId("empty-state")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

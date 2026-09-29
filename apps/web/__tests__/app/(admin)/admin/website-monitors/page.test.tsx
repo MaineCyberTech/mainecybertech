@@ -89,6 +89,7 @@ describe("WebsiteMonitorPage", () => {
     mockWebsiteMonitorsList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/website-monitors/page")).default;
     render(await Page());
-    expect(screen.getByText(/no websites monitored/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no websites monitored/i)).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

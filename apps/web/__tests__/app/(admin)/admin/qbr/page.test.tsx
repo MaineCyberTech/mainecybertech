@@ -70,8 +70,20 @@ describe("QbrPage", () => {
   it("renders reports list when reports exist", async () => {
     mockQbrList.mockResolvedValue({
       items: [
-        { id: "q1", title: "Q1 2026 Review", status: "draft", period_start: "2026-01-01", created_at: "2026-04-01T00:00:00Z" },
-        { id: "q2", title: "Q2 2026 Review", status: "published", period_start: "2026-04-01", created_at: "2026-07-01T00:00:00Z" },
+        {
+          id: "q1",
+          title: "Q1 2026 Review",
+          status: "draft",
+          period_start: "2026-01-01",
+          created_at: "2026-04-01T00:00:00Z",
+        },
+        {
+          id: "q2",
+          title: "Q2 2026 Review",
+          status: "published",
+          period_start: "2026-04-01",
+          created_at: "2026-07-01T00:00:00Z",
+        },
       ],
     });
     const Page = (await import("@/app/(admin)/admin/qbr/page")).default;
@@ -83,7 +95,13 @@ describe("QbrPage", () => {
   it("shows date range for reports with period_start", async () => {
     mockQbrList.mockResolvedValue({
       items: [
-        { id: "q1", title: "Q1 Review", status: "draft", period_start: "2026-01-01", created_at: "2026-04-01T00:00:00Z" },
+        {
+          id: "q1",
+          title: "Q1 Review",
+          status: "draft",
+          period_start: "2026-01-01",
+          created_at: "2026-04-01T00:00:00Z",
+        },
       ],
     });
     const Page = (await import("@/app/(admin)/admin/qbr/page")).default;
@@ -101,6 +119,7 @@ describe("QbrPage", () => {
     mockQbrList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/qbr/page")).default;
     render(await Page());
-    expect(screen.getByText("No QBR reports yet")).toBeInTheDocument();
+    expect(screen.queryByText("No QBR reports yet")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

@@ -84,6 +84,7 @@ describe("AutomationPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/edu-automation/automation/page")).default;
     render(await Page());
-    expect(screen.getByText("No automation workflows")).toBeInTheDocument();
+    expect(screen.queryByText("No automation workflows")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

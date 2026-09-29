@@ -84,7 +84,14 @@ describe("DeviceProfilesPage", () => {
   it("renders profiles list when profiles exist", async () => {
     mockDeviceProfilesList.mockResolvedValue({
       items: [
-        { id: "p1", name: "Clinical Workstation Standard", type: "workstation", manufacturer: "Dell", model: "OptiPlex 7020", created_at: "2026-01-01T00:00:00Z" },
+        {
+          id: "p1",
+          name: "Clinical Workstation Standard",
+          type: "workstation",
+          manufacturer: "Dell",
+          model: "OptiPlex 7020",
+          created_at: "2026-01-01T00:00:00Z",
+        },
       ],
       total: 1,
     });
@@ -104,6 +111,7 @@ describe("DeviceProfilesPage", () => {
     mockDeviceProfilesList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/final/device-profiles/page")).default;
     render(await Page({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByText("No device profiles")).toBeInTheDocument();
+    expect(screen.queryByText("No device profiles")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

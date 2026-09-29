@@ -84,6 +84,7 @@ describe("PowerShellPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/edu-automation/powershell/page")).default;
     render(await Page());
-    expect(screen.getByText("No PowerShell scripts")).toBeInTheDocument();
+    expect(screen.queryByText("No PowerShell scripts")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

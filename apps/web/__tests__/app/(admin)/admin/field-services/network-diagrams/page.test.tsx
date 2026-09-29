@@ -83,7 +83,10 @@ describe("NetworkDiagramsPage (admin)", () => {
           name: "Main Office",
           description: "HQ topology",
           diagram: {
-            nodes: [{ id: "n1", label: "Router" }, { id: "n2", label: "Switch" }],
+            nodes: [
+              { id: "n1", label: "Router" },
+              { id: "n2", label: "Switch" },
+            ],
             edges: [{ from: "n1", to: "n2" }],
           },
           created_at: "2026-01-01T00:00:00Z",
@@ -111,6 +114,7 @@ describe("NetworkDiagramsPage (admin)", () => {
     mockNetworkDiagramsList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/field-services/network-diagrams/page")).default;
     render(await Page({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByText("No network diagrams")).toBeInTheDocument();
+    expect(screen.queryByText("No network diagrams")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

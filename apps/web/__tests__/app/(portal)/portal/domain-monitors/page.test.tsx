@@ -44,7 +44,7 @@ describe("DomainMonitorsPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByRole("heading", { name: /domain monitors/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /domain monitors/i })).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

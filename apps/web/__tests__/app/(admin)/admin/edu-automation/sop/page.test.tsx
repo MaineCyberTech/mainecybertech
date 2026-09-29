@@ -84,6 +84,7 @@ describe("SopPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/edu-automation/sop/page")).default;
     render(await Page());
-    expect(screen.getByText("No SOPs")).toBeInTheDocument();
+    expect(screen.queryByText("No SOPs")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

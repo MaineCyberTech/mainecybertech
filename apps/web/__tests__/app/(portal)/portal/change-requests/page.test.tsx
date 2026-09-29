@@ -49,7 +49,7 @@ describe("PortalChangeRequestsPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByRole("heading", { name: /change requests/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /change requests/i })).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

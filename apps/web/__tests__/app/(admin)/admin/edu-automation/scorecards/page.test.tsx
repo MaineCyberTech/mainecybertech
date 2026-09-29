@@ -84,6 +84,7 @@ describe("ScorecardPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/edu-automation/scorecards/page")).default;
     render(await Page());
-    expect(screen.getByText("No scorecards")).toBeInTheDocument();
+    expect(screen.queryByText("No scorecards")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

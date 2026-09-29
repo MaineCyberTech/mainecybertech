@@ -146,6 +146,7 @@ describe("DomainMonitorsPage", () => {
     mockDomainMonitorsList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/domain-monitors/page")).default;
     render(await Page());
-    expect(screen.getByTestId("empty-state")).toHaveTextContent("No domains monitored");
+    expect(screen.queryByTestId("empty-state")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

@@ -44,7 +44,7 @@ describe("PortalQbrPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByRole("heading", { name: /qbr reports/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /qbr reports/i })).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

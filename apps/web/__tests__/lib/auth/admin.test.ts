@@ -44,9 +44,7 @@ describe("requireAdminAccess", () => {
 
   it("returns userId and roleKey for admin user", async () => {
     mockMe.mockResolvedValue({ userId: "user-1", email: "admin@test.com" });
-    mockMembershipsList.mockResolvedValue([
-      { roles: { key: "admin" }, status: "approved" },
-    ]);
+    mockMembershipsList.mockResolvedValue([{ roles: { key: "admin" }, status: "approved" }]);
 
     const { requireAdminAccess } = await import("@/lib/auth/admin");
     const result = await requireAdminAccess();
@@ -54,13 +52,31 @@ describe("requireAdminAccess", () => {
     expect(result).toEqual({ userId: "user-1", roleKey: "admin" });
   });
 
-  it("redirects to login when me() throws", async () => {
-    mockMe.mockRejectedValue(new Error("Unauthorized"));
+  it("redirects to login when me() throws 401", async () => {
+    mockMe.mockRejectedValue(Object.assign(new Error("Unauthorized"), { status: 401 }));
 
     const { requireAdminAccess } = await import("@/lib/auth/admin");
     await expect(requireAdminAccess()).rejects.toThrow("NEXT_REDIRECT");
 
     expect(mockRedirect).toHaveBeenCalledWith("/login");
+  });
+
+  it("rethrows transient me() failures instead of redirecting", async () => {
+    mockMe.mockRejectedValue(Object.assign(new Error("Internal error"), { status: 500 }));
+
+    const { requireAdminAccess } = await import("@/lib/auth/admin");
+    await expect(requireAdminAccess()).rejects.toThrow("Internal error");
+
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  it("redirects to the MFA step-up page when a factor must be verified", async () => {
+    mockMe.mockRejectedValue(Object.assign(new Error("MFA required"), { code: "MFA_REQUIRED" }));
+
+    const { requireAdminAccess } = await import("@/lib/auth/admin");
+    await expect(requireAdminAccess()).rejects.toThrow("NEXT_REDIRECT");
+
+    expect(mockRedirect).toHaveBeenCalledWith("/portal/profile/security?mfa=required");
   });
 
   it("redirects to login when user has no userId", async () => {
@@ -72,14 +88,24 @@ describe("requireAdminAccess", () => {
     expect(mockRedirect).toHaveBeenCalledWith("/login");
   });
 
-  it("redirects to dashboard when memberships list throws", async () => {
+  it("redirects to dashboard when memberships list throws 403", async () => {
     mockMe.mockResolvedValue({ userId: "user-1", email: "u@test.com" });
-    mockMembershipsList.mockRejectedValue(new Error("DB error"));
+    mockMembershipsList.mockRejectedValue(Object.assign(new Error("Forbidden"), { status: 403 }));
 
     const { requireAdminAccess } = await import("@/lib/auth/admin");
     await expect(requireAdminAccess()).rejects.toThrow("NEXT_REDIRECT");
 
     expect(mockRedirect).toHaveBeenCalledWith("/portal/dashboard");
+  });
+
+  it("rethrows transient memberships failures instead of redirecting", async () => {
+    mockMe.mockResolvedValue({ userId: "user-1", email: "u@test.com" });
+    mockMembershipsList.mockRejectedValue(Object.assign(new Error("DB error"), { status: 500 }));
+
+    const { requireAdminAccess } = await import("@/lib/auth/admin");
+    await expect(requireAdminAccess()).rejects.toThrow("DB error");
+
+    expect(mockRedirect).not.toHaveBeenCalled();
   });
 
   it("redirects to dashboard when no approved memberships", async () => {
@@ -94,9 +120,7 @@ describe("requireAdminAccess", () => {
 
   it("redirects to dashboard when user is not admin", async () => {
     mockMe.mockResolvedValue({ userId: "user-1", email: "u@test.com" });
-    mockMembershipsList.mockResolvedValue([
-      { roles: { key: "viewer" }, status: "approved" },
-    ]);
+    mockMembershipsList.mockResolvedValue([{ roles: { key: "viewer" }, status: "approved" }]);
 
     const { requireAdminAccess } = await import("@/lib/auth/admin");
     await expect(requireAdminAccess()).rejects.toThrow("NEXT_REDIRECT");

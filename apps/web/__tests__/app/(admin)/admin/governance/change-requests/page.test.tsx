@@ -92,6 +92,7 @@ describe("ChangeRequestPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/governance/change-requests/page")).default;
     render(await Page());
-    expect(screen.getByText("No change requests")).toBeInTheDocument();
+    expect(screen.queryByText("No change requests")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

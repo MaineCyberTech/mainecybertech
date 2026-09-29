@@ -1,15 +1,33 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { ToastProvider } from "@/components/ui/ToastProvider";
 
 jest.mock("@/components/admin/AvatarPill", () => {
-  return function MockAvatarPill({ name, subtitle, size, active }: any) {
-    return <span data-testid="avatar-pill">{name}{subtitle ? ` (${subtitle})` : ""}{active ? " [active]" : ""}</span>;
+  return function MockAvatarPill({ name, subtitle, active }: any) {
+    return (
+      <span data-testid="avatar-pill">
+        {name}
+        {subtitle ? ` (${subtitle})` : ""}
+        {active ? " [active]" : ""}
+      </span>
+    );
   };
 });
 
 jest.mock("@/components/admin/ConfirmIntentButton", () => {
   return function MockConfirmButton({ label, onConfirm, confirmMessage, ...rest }: any) {
-    return <button data-testid="confirm-btn" onClick={() => { const ok = confirm(confirmMessage ?? "Confirm?"); if (ok) onConfirm(); }} {...rest}>{label}</button>;
+    return (
+      <button
+        data-testid="confirm-btn"
+        onClick={() => {
+          const ok = confirm(confirmMessage ?? "Confirm?");
+          if (ok) onConfirm();
+        }}
+        {...rest}
+      >
+        {label}
+      </button>
+    );
   };
 });
 
@@ -33,30 +51,42 @@ const baseOwners = [
 ];
 
 const baseTask = {
-  id: "t1", title: "Implement auth", description: "Add login flow", details: "Use JWT",
-  status: "todo", due_at: new Date(Date.now() + 86400000).toISOString(),
-  sort_order: 1, approval_required: false,
-  owner_id: "u1", owner_name: "Alice", owner_email: "a@t.com",
-  created_by: "admin", created_by_name: "Admin", created_by_email: "admin@t.com",
-  comments: [], unread_count: 0,
+  id: "t1",
+  title: "Implement auth",
+  description: "Add login flow",
+  details: "Use JWT",
+  status: "todo",
+  due_at: new Date(Date.now() + 86400000).toISOString(),
+  sort_order: 1,
+  approval_required: false,
+  owner_id: "u1",
+  owner_name: "Alice",
+  owner_email: "a@t.com",
+  created_by: "admin",
+  created_by_name: "Admin",
+  created_by_email: "admin@t.com",
+  comments: [],
+  unread_count: 0,
 };
 
 function renderTaskList(overrides: any = {}) {
   const tasks = overrides.tasks ?? [baseTask];
   return render(
-    <ProjectTaskListV5
-      projectId="p1"
-      organizationId="o1"
-      tasks={tasks}
-      owners={baseOwners}
-      createTaskAction={mockCreateTask}
-      submitTaskFormAction={mockSubmitTaskForm}
-      reorderTasksAction={mockReorderTasks}
-      addTaskCommentAction={mockAddComment}
-      updateTaskCommentAction={mockUpdateComment}
-      deleteTaskCommentAction={mockDeleteComment}
-      markTaskCommentsReadAction={mockMarkRead}
-    />
+    <ToastProvider>
+      <ProjectTaskListV5
+        projectId="p1"
+        organizationId="o1"
+        tasks={tasks}
+        owners={baseOwners}
+        createTaskAction={mockCreateTask}
+        submitTaskFormAction={mockSubmitTaskForm}
+        reorderTasksAction={mockReorderTasks}
+        addTaskCommentAction={mockAddComment}
+        updateTaskCommentAction={mockUpdateComment}
+        deleteTaskCommentAction={mockDeleteComment}
+        markTaskCommentsReadAction={mockMarkRead}
+      />
+    </ToastProvider>,
   );
 }
 
@@ -87,7 +117,9 @@ describe("ProjectTaskListV5", () => {
 
     it("renders task status pill", () => {
       renderTaskList();
-      const statusPills = screen.getAllByText((c) => c === "todo" || c === "in_progress" || c === "done" || c === "blocked");
+      const statusPills = screen.getAllByText(
+        (c) => c === "todo" || c === "in_progress" || c === "done" || c === "blocked",
+      );
       expect(statusPills.length).toBeGreaterThanOrEqual(1);
     });
 
@@ -108,10 +140,7 @@ describe("ProjectTaskListV5", () => {
 
     it("renders multiple task cards", () => {
       renderTaskList({
-        tasks: [
-          baseTask,
-          { ...baseTask, id: "t2", title: "Task two" },
-        ],
+        tasks: [baseTask, { ...baseTask, id: "t2", title: "Task two" }],
       });
       expect(screen.getByText("Implement auth")).toBeInTheDocument();
       expect(screen.getByText("Task two")).toBeInTheDocument();
@@ -121,10 +150,7 @@ describe("ProjectTaskListV5", () => {
   describe("search filter", () => {
     it("filters tasks by search query", async () => {
       renderTaskList({
-        tasks: [
-          baseTask,
-          { ...baseTask, id: "t2", title: "Design UI" },
-        ],
+        tasks: [baseTask, { ...baseTask, id: "t2", title: "Design UI" }],
       });
       const searchInput = screen.getByPlaceholderText("title, details, owner...");
       await userEvent.type(searchInput, "Design");
@@ -143,10 +169,7 @@ describe("ProjectTaskListV5", () => {
   describe("status filter", () => {
     it("filters by status when quick status button clicked", async () => {
       renderTaskList({
-        tasks: [
-          baseTask,
-          { ...baseTask, id: "t2", title: "Done task", status: "done" },
-        ],
+        tasks: [baseTask, { ...baseTask, id: "t2", title: "Done task", status: "done" }],
       });
       await userEvent.click(screen.getByText("Done"));
       expect(screen.queryByText("Implement auth")).not.toBeInTheDocument();
@@ -155,10 +178,7 @@ describe("ProjectTaskListV5", () => {
 
     it("shows all tasks when All filter selected", async () => {
       renderTaskList({
-        tasks: [
-          baseTask,
-          { ...baseTask, id: "t2", title: "Done task", status: "done" },
-        ],
+        tasks: [baseTask, { ...baseTask, id: "t2", title: "Done task", status: "done" }],
       });
       await userEvent.click(screen.getByText("Done"));
       await userEvent.click(screen.getByText("All"));
@@ -215,6 +235,24 @@ describe("ProjectTaskListV5", () => {
         expect(mockCreateTask).toHaveBeenCalled();
       });
     });
+
+    it("shows a shared toast when task creation succeeds", async () => {
+      mockCreateTask.mockResolvedValue({ ok: true, task: { ...baseTask, id: "new1" } });
+      renderTaskList();
+      const addTaskInput = document.querySelectorAll<HTMLInputElement>("input[name='title']")[0];
+      await userEvent.type(addTaskInput, "New task");
+      fireEvent.submit(addTaskInput.closest("form")!);
+      expect(await screen.findByText("Task added.")).toBeInTheDocument();
+    });
+
+    it("shows a shared toast when task creation fails", async () => {
+      mockCreateTask.mockResolvedValue({ ok: false, error: "Task create exploded" });
+      renderTaskList();
+      const addTaskInput = document.querySelectorAll<HTMLInputElement>("input[name='title']")[0];
+      await userEvent.type(addTaskInput, "New task");
+      fireEvent.submit(addTaskInput.closest("form")!);
+      expect(await screen.findByText("Task create exploded")).toBeInTheDocument();
+    });
   });
 
   describe("approval required badge", () => {
@@ -227,7 +265,14 @@ describe("ProjectTaskListV5", () => {
 
     it("shows approved badge when approved", () => {
       renderTaskList({
-        tasks: [{ ...baseTask, approval_required: true, approved_at: new Date().toISOString(), approved_by_name: "Admin" }],
+        tasks: [
+          {
+            ...baseTask,
+            approval_required: true,
+            approved_at: new Date().toISOString(),
+            approved_by_name: "Admin",
+          },
+        ],
       });
       expect(screen.getByText("Approved")).toBeInTheDocument();
     });
@@ -236,22 +281,42 @@ describe("ProjectTaskListV5", () => {
   describe("comment count", () => {
     it("shows comment count when comments exist", () => {
       renderTaskList({
-        tasks: [{
-          ...baseTask,
-          comments: [{ id: "c1", body: "Nice", author_name: "Alice", created_at: new Date().toISOString() }],
-          unread_count: 1,
-        }],
+        tasks: [
+          {
+            ...baseTask,
+            comments: [
+              {
+                id: "c1",
+                body: "Nice",
+                author_name: "Alice",
+                created_at: new Date().toISOString(),
+              },
+            ],
+            unread_count: 1,
+          },
+        ],
       });
-      expect(screen.getByText((c) => c.includes("Comments") && c.includes("1"))).toBeInTheDocument();
+      expect(
+        screen.getByText((c) => c.includes("Comments") && c.includes("1")),
+      ).toBeInTheDocument();
     });
 
     it("shows unread badge when unread > 0", () => {
       renderTaskList({
-        tasks: [{
-          ...baseTask,
-          comments: [{ id: "c1", body: "Nice", author_name: "Alice", created_at: new Date().toISOString() }],
-          unread_count: 1,
-        }],
+        tasks: [
+          {
+            ...baseTask,
+            comments: [
+              {
+                id: "c1",
+                body: "Nice",
+                author_name: "Alice",
+                created_at: new Date().toISOString(),
+              },
+            ],
+            unread_count: 1,
+          },
+        ],
       });
       expect(screen.getByText((c) => c.includes("Unread") && c.includes("1"))).toBeInTheDocument();
     });

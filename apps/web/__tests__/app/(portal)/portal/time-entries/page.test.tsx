@@ -44,7 +44,7 @@ describe("PortalTimeEntriesPage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByRole("heading", { name: /time entries/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /time entries/i })).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

@@ -93,10 +93,11 @@ describe("DeviceProfilesPage", () => {
     expect(screen.getByText(/Manufacturer: Dell/)).toBeInTheDocument();
   });
 
-  it("handles API error gracefully", async () => {
+  it("shows an error note instead of a misleading empty state on API error", async () => {
     mockDeviceProfilesList.mockRejectedValue(new Error("API down"));
     const { default: Page } = await import("@/app/(portal)/portal/device-profiles/page");
     render(await Page({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByText(/no device profiles found/i)).toBeInTheDocument();
+    expect(screen.getByText(/could not load/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no device profiles found/i)).not.toBeInTheDocument();
   });
 });

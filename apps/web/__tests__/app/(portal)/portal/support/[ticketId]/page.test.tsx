@@ -8,6 +8,13 @@ const mockUsersMe = jest.fn();
 const mockRequireAdminAccess = jest.fn();
 const mockGetApprovedMembership = jest.fn().mockResolvedValue({ organization_id: "org-1" });
 
+jest.mock("next/navigation", () => ({
+  usePathname: () => "/portal/support",
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
+}));
+
 jest.mock("next/link", () => ({
   __esModule: true,
   default: ({ children, href, ...props }: Record<string, unknown>) =>
@@ -121,15 +128,14 @@ describe("PortalSupportDetailPage", () => {
     expect(screen.getByText(/access restricted/i)).toBeInTheDocument();
   });
 
-  it("shows ticket not found when API throws", async () => {
+  it("calls notFound when API throws 404", async () => {
     mockTicketsGet.mockRejectedValue(Object.assign(new Error("Not found"), { status: 404 }));
 
     const { default: PortalSupportDetailPage } =
       await import("@/app/(portal)/portal/support/[ticketId]/page");
-    const element = await PortalSupportDetailPage({ params: Promise.resolve({ ticketId: "t1" }) });
-    render(element);
-
-    expect(screen.getByText("Ticket not found.")).toBeInTheDocument();
+    await expect(
+      PortalSupportDetailPage({ params: Promise.resolve({ ticketId: "t1" }) }),
+    ).rejects.toThrow("NEXT_NOT_FOUND");
   });
 
   it("shows view in admin link for admin users", async () => {

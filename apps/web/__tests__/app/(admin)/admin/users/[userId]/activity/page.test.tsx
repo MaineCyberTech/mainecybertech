@@ -1,5 +1,11 @@
 import { render, screen } from "@testing-library/react";
 
+jest.mock("next/navigation", () => ({
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
+}));
+
 const mockRequireAdminAccess = jest.fn();
 jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
@@ -13,12 +19,12 @@ jest.mock("@/lib/api", () => ({
     profiles: { get: mockProfilesGet },
     audit: { list: mockAuditList },
     organizations: {
-    list: (...args: any[]) =>
-      mockOrgsList(...args).then((data: any) => ({
-        items: Array.isArray(data) ? data : data?.items ?? [],
-        total: Array.isArray(data) ? data.length : data?.total ?? 0,
-      })),
-  },
+      list: (...args: any[]) =>
+        mockOrgsList(...args).then((data: any) => ({
+          items: Array.isArray(data) ? data : (data?.items ?? []),
+          total: Array.isArray(data) ? data.length : (data?.total ?? 0),
+        })),
+    },
   }),
 }));
 
@@ -30,7 +36,16 @@ jest.mock("next/link", () => {
   );
 });
 
-const baseLog = { id: "log1", action: "user.login", entity_type: "session", entity_id: null, organization_id: "o1", actor_user_id: "u1", created_at: new Date().toISOString(), metadata: null };
+const baseLog = {
+  id: "log1",
+  action: "user.login",
+  entity_type: "session",
+  entity_id: null,
+  organization_id: "o1",
+  actor_user_id: "u1",
+  created_at: new Date().toISOString(),
+  metadata: null,
+};
 
 describe("UserActivityPage", () => {
   beforeEach(() => {
@@ -60,7 +75,9 @@ describe("UserActivityPage", () => {
     render(await Page({ params: Promise.resolve({ userId: "u1" }) }));
     expect(screen.getByText("user.login")).toBeInTheDocument();
     expect(screen.getByText((c) => c.includes("Entity: session"))).toBeInTheDocument();
-    expect(screen.getByText((c) => c.includes("Org:") && c.includes("Acme Corp"))).toBeInTheDocument();
+    expect(
+      screen.getByText((c) => c.includes("Org:") && c.includes("Acme Corp")),
+    ).toBeInTheDocument();
   });
 
   it("renders empty state", async () => {
@@ -70,12 +87,19 @@ describe("UserActivityPage", () => {
     expect(screen.getByText("No activity found for this user.")).toBeInTheDocument();
   });
 
-  it("uses fallback title when profile not found", async () => {
-    mockProfilesGet.mockRejectedValue(new Error("not found"));
+  it("calls notFound when the profile is missing", async () => {
+    mockProfilesGet.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     mockAuditList.mockResolvedValue({ items: [] });
     const Page = (await import("@/app/(admin)/admin/users/[userId]/activity/page")).default;
-    render(await Page({ params: Promise.resolve({ userId: "u1" }) }));
-    expect(screen.getByText("User Activity")).toBeInTheDocument();
+    await expect(Page({ params: Promise.resolve({ userId: "u1" }) })).rejects.toThrow(
+      "NEXT_NOT_FOUND",
+    );
+  });
+
+  it("rethrows transient profile lookup failures", async () => {
+    mockProfilesGet.mockRejectedValue(Object.assign(new Error("DB down"), { status: 500 }));
+    const Page = (await import("@/app/(admin)/admin/users/[userId]/activity/page")).default;
+    await expect(Page({ params: Promise.resolve({ userId: "u1" }) })).rejects.toThrow("DB down");
   });
 
   it("shows Global / None for missing org", async () => {

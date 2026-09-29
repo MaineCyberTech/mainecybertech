@@ -42,7 +42,7 @@ describe("PortalKnowledgeBasePage", () => {
     const element = await Page();
     render(element);
 
-    expect(screen.getByRole("heading", { name: /knowledge base/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: /knowledge base/i })).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

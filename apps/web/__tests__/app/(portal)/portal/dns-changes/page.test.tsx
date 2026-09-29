@@ -42,7 +42,9 @@ describe("DnsChangesPage", () => {
     const { default: Page } = await import("@/app/(portal)/portal/dns-changes/page");
     const element = await Page();
     render(element);
-    expect(screen.getByRole("heading", { name: /dns change requests/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: /dns change requests/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

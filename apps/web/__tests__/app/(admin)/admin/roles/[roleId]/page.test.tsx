@@ -49,6 +49,9 @@ jest.mock("@/components/admin/RolePermissionsEditor", () => {
 
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push: jest.fn(), refresh: jest.fn() }),
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
 }));
 
 jest.mock("@/lib/client-api", () => ({
@@ -140,11 +143,12 @@ describe("RoleDetailPage", () => {
     expect(screen.getByText("Permission Toggles")).toBeInTheDocument();
   });
 
-  it("shows error for not-found role", async () => {
+  it("calls notFound for a missing role", async () => {
     mockRolesGet.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     const Page = (await import("@/app/(admin)/admin/roles/[roleId]/page")).default;
-    render(await Page({ params: Promise.resolve({ roleId: "missing" }) }));
-    expect(screen.getByText("Role not found.")).toBeInTheDocument();
+    await expect(Page({ params: Promise.resolve({ roleId: "missing" }) })).rejects.toThrow(
+      "NEXT_NOT_FOUND",
+    );
   });
 
   it("uses fallback for missing description", async () => {

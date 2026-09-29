@@ -92,6 +92,7 @@ describe("SharePointPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/final/sharepoint/page")).default;
     render(await Page());
-    expect(screen.getByText("No SharePoint plans")).toBeInTheDocument();
+    expect(screen.queryByText("No SharePoint plans")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

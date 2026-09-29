@@ -89,6 +89,7 @@ describe("DmarcPage", () => {
     mockDmarcList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/dmarc/page")).default;
     render(await Page());
-    expect(screen.getByText(/no dmarc assessments/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no dmarc assessments/i)).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

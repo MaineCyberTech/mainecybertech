@@ -90,7 +90,13 @@ describe("StagingPage", () => {
   it("renders items list when items exist", async () => {
     mockStagingList.mockResolvedValue({
       items: [
-        { id: "s1", device_name: "Dell OptiPlex 7090", asset_tag: "TAG-1", status: "pending", created_at: "2026-01-01T00:00:00Z" },
+        {
+          id: "s1",
+          device_name: "Dell OptiPlex 7090",
+          asset_tag: "TAG-1",
+          status: "pending",
+          created_at: "2026-01-01T00:00:00Z",
+        },
       ],
       total: 1,
     });
@@ -110,6 +116,7 @@ describe("StagingPage", () => {
     mockStagingList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/field-services/staging/page")).default;
     render(await Page({ searchParams: Promise.resolve({}) }));
-    expect(screen.getByText("No staged devices")).toBeInTheDocument();
+    expect(screen.queryByText("No staged devices")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

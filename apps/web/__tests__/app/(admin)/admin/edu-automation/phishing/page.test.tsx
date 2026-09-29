@@ -84,6 +84,7 @@ describe("PhishingPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/edu-automation/phishing/page")).default;
     render(await Page());
-    expect(screen.getByText("No phishing campaigns")).toBeInTheDocument();
+    expect(screen.queryByText("No phishing campaigns")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

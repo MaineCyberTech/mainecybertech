@@ -42,7 +42,9 @@ describe("ProcurementPage", () => {
     const { default: Page } = await import("@/app/(portal)/portal/procurement/page");
     const element = await Page();
     render(element);
-    expect(screen.getByRole("heading", { name: /procurement quotes/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: /procurement quotes/i }),
+    ).toBeInTheDocument();
   });
 
   it("renders breadcrumbs", async () => {

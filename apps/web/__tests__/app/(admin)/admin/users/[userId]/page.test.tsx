@@ -1,5 +1,11 @@
 import { render, screen } from "@testing-library/react";
 
+jest.mock("next/navigation", () => ({
+  notFound: () => {
+    throw new Error("NEXT_NOT_FOUND");
+  },
+}));
+
 const mockRequireAdminAccess = jest.fn();
 jest.mock("@/lib/auth/admin", () => ({
   requireAdminAccess: (...args: any[]) => mockRequireAdminAccess(...args),
@@ -107,11 +113,12 @@ describe("UserDetailPage", () => {
     mockUsersGetDetail.mockResolvedValue(makeDetail());
   });
 
-  it("renders user not found error", async () => {
+  it("calls notFound for a missing user", async () => {
     mockUsersGetDetail.mockRejectedValue(Object.assign(new Error("not found"), { status: 404 }));
     const Page = (await import("@/app/(admin)/admin/users/[userId]/page")).default;
-    render(await Page({ params: Promise.resolve({ userId: "bad" }) }));
-    expect(screen.getByText("User not found.")).toBeInTheDocument();
+    await expect(Page({ params: Promise.resolve({ userId: "bad" }) })).rejects.toThrow(
+      "NEXT_NOT_FOUND",
+    );
   });
 
   it("renders breadcrumbs and subnav", async () => {

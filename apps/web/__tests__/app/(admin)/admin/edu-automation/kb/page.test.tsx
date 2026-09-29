@@ -84,6 +84,7 @@ describe("KbPage", () => {
     mockList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/edu-automation/kb/page")).default;
     render(await Page());
-    expect(screen.getByText("No knowledge base articles")).toBeInTheDocument();
+    expect(screen.queryByText("No knowledge base articles")).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });

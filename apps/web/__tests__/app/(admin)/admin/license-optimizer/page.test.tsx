@@ -87,6 +87,7 @@ describe("LicenseOptimizerPage", () => {
     mockLicenseOptimizerList.mockRejectedValue(new Error("API down"));
     const Page = (await import("@/app/(admin)/admin/license-optimizer/page")).default;
     render(await Page());
-    expect(screen.getByText(/no licenses tracked yet/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no licenses tracked yet/i)).toBeNull();
+    expect(screen.getByText(/Could not load/)).toBeInTheDocument();
   });
 });
