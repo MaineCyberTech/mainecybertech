@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Organization } from "@mct/sdk";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { formatDateShort } from "@/lib/format";
 
 type ApiKey = {
   id: string;
@@ -192,13 +193,9 @@ export default function AdminApiKeysClient({
                 </div>
                 <p className="mt-0.5 font-mono text-xs text-slate-400">{key.key_prefix}...</p>
                 <p className="mt-0.5 text-xs text-slate-400">
-                  Created {new Date(key.created_at).toLocaleDateString()}
-                  {key.last_used_at
-                    ? ` · Last used ${new Date(key.last_used_at).toLocaleDateString()}`
-                    : ""}
-                  {key.expires_at
-                    ? ` · Expires ${new Date(key.expires_at).toLocaleDateString()}`
-                    : ""}
+                  Created {formatDateShort(key.created_at)}
+                  {key.last_used_at ? ` · Last used ${formatDateShort(key.last_used_at)}` : ""}
+                  {key.expires_at ? ` · Expires ${formatDateShort(key.expires_at)}` : ""}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">

@@ -4,11 +4,17 @@ import { useState } from "react";
 import { getClientApi } from "@/lib/client-api";
 
 const EVENT_OPTIONS = [
-  "ticket.created", "ticket.updated", "ticket.assigned",
-  "project.created", "project.updated",
-  "document.created", "document.updated",
-  "membership.created", "membership.updated",
-  "billing.invoice.paid", "billing.invoice.overdue",
+  "ticket.created",
+  "ticket.updated",
+  "ticket.assigned",
+  "project.created",
+  "project.updated",
+  "document.created",
+  "document.updated",
+  "membership.created",
+  "membership.updated",
+  "billing.invoice.paid",
+  "billing.invoice.overdue",
 ];
 
 type Props = {
@@ -17,6 +23,7 @@ type Props = {
 
 export default function NewWebhookForm({ organizations }: Props) {
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -24,7 +31,10 @@ export default function NewWebhookForm({ organizations }: Props) {
     const events = Array.from(
       e.currentTarget.querySelectorAll<HTMLInputElement>('input[name="events"]:checked'),
     ).map((cb) => cb.value);
-    if (!events.length) { alert("Select at least one event"); return; }
+    if (!events.length) {
+      setError("Select at least one event.");
+      return;
+    }
     const data = {
       organizationId: fd.get("organizationId") as string,
       name: fd.get("name") as string,
@@ -33,50 +43,93 @@ export default function NewWebhookForm({ organizations }: Props) {
       events,
     };
     setSaving(true);
+    setError(null);
     try {
       await getClientApi().webhooks.create(data);
       window.location.href = "/admin/webhooks";
-    } catch { alert("Failed to create webhook"); }
+    } catch {
+      setError("Failed to create webhook. Please try again.");
+    }
     setSaving(false);
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label htmlFor="webhook-organization" className="cyber-label">Organization</label>
+          <label htmlFor="webhook-organization" className="cyber-label">
+            Organization
+          </label>
           <select id="webhook-organization" name="organizationId" required className="cyber-input">
             <option value="">Select...</option>
             {organizations.map((org) => (
-              <option key={org.id} value={org.id}>{org.name}</option>
+              <option key={org.id} value={org.id}>
+                {org.name}
+              </option>
             ))}
           </select>
         </div>
         <div>
-          <label htmlFor="webhook-name" className="cyber-label">Name</label>
-          <input id="webhook-name" name="name" required className="cyber-input" placeholder="My Webhook" />
+          <label htmlFor="webhook-name" className="cyber-label">
+            Name
+          </label>
+          <input
+            id="webhook-name"
+            name="name"
+            required
+            className="cyber-input"
+            placeholder="My Webhook"
+          />
         </div>
       </div>
       <div>
-        <label htmlFor="webhook-url" className="cyber-label">URL</label>
-        <input id="webhook-url" name="url" type="url" required className="cyber-input font-mono text-sm" placeholder="https://example.com/webhook" />
+        <label htmlFor="webhook-url" className="cyber-label">
+          URL
+        </label>
+        <input
+          id="webhook-url"
+          name="url"
+          type="url"
+          required
+          className="cyber-input font-mono text-sm"
+          placeholder="https://example.com/webhook"
+        />
       </div>
       <div>
-        <label htmlFor="webhook-secret" className="cyber-label">Secret (optional)</label>
-        <input id="webhook-secret" name="secret" className="cyber-input font-mono text-sm" placeholder="Shared secret for HMAC signing" />
+        <label htmlFor="webhook-secret" className="cyber-label">
+          Secret (optional)
+        </label>
+        <input
+          id="webhook-secret"
+          name="secret"
+          className="cyber-input font-mono text-sm"
+          placeholder="Shared secret for HMAC signing"
+        />
       </div>
       <div>
-        <label htmlFor="webhook-events" className="cyber-label">Events</label>
+        <label htmlFor="webhook-events" className="cyber-label">
+          Events
+        </label>
         <div id="webhook-events" className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {EVENT_OPTIONS.map((event) => (
-            <label key={event} className="flex items-center gap-2 cursor-pointer">
+            <label key={event} className="flex cursor-pointer items-center gap-2">
               <input type="checkbox" name="events" value={event} className="accent-emerald-600" />
               <span className="text-xs text-slate-300">{event}</span>
             </label>
           ))}
         </div>
       </div>
-      <button type="submit" disabled={saving} className="cyber-button">{saving ? "Creating..." : "Create Webhook"}</button>
+      {error && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        >
+          {error}
+        </div>
+      )}
+      <button type="submit" disabled={saving} className="cyber-button">
+        {saving ? "Creating..." : "Create Webhook"}
+      </button>
     </form>
   );
 }

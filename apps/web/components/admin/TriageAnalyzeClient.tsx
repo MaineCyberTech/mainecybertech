@@ -24,6 +24,7 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
   const [converting, setConverting] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   async function handleAnalyze(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -42,6 +43,7 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
 
     setAnalyzing(true);
     setError(null);
+    setSuccess(null);
     setResult(null);
 
     try {
@@ -67,6 +69,7 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
 
     setConverting(true);
     setError(null);
+    setSuccess(null);
 
     try {
       const api = getClientApi();
@@ -78,7 +81,7 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
         priority: result.suggested_priority,
         ticketBody,
       });
-      alert("Ticket created successfully!");
+      setSuccess("Ticket created successfully.");
       setResult(null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to convert to ticket.");
@@ -96,6 +99,14 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
 
   return (
     <div className="space-y-6">
+      {success && (
+        <div
+          role="status"
+          className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300"
+        >
+          {success}
+        </div>
+      )}
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Analyze Description</h2>
         <p className="mt-2 text-sm text-slate-400">
@@ -136,7 +147,10 @@ export default function TriageAnalyzeClient({ organizations }: Props) {
             />
           </div>
           {error && (
-            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div
+              role="alert"
+              className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+            >
               {error}
             </div>
           )}

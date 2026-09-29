@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { formatMonthDay, formatMonthDayYear } from "@/lib/format";
 
 type Task = {
   id: string;
@@ -47,14 +48,6 @@ function daysBetween(a: Date, b: Date) {
   return Math.ceil((b.getTime() - a.getTime()) / 86400000);
 }
 
-function formatDate(d: Date) {
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-function formatDateShort(d: Date) {
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
-}
-
 export default function ProjectTimelineView({
   tasks,
   projects,
@@ -84,7 +77,7 @@ export default function ProjectTimelineView({
 
     const headers: { label: string; colSpan: number }[] = [];
     if (zoom === "month") {
-      headers.push({ label: formatDate(start), colSpan: days });
+      headers.push({ label: formatMonthDay(start), colSpan: days });
     } else {
       let cursor = new Date(start);
       while (cursor <= end) {
@@ -92,7 +85,7 @@ export default function ProjectTimelineView({
         const weekEnd = new Date(cursor);
         weekEnd.setDate(weekEnd.getDate() + 6);
         const weekDays = Math.min(daysBetween(cursor, end) + 1, 7);
-        headers.push({ label: formatDateShort(weekStart), colSpan: weekDays });
+        headers.push({ label: formatMonthDayYear(weekStart), colSpan: weekDays });
         cursor.setDate(cursor.getDate() + 7);
       }
     }
@@ -138,7 +131,8 @@ export default function ProjectTimelineView({
           ))}
         </div>
         <span className="text-xs text-slate-400">
-          {formatDate(startDate)} – {formatDateShort(endDate)} &middot; {taskRows.length} tasks
+          {formatMonthDay(startDate)} – {formatMonthDayYear(endDate)} &middot; {taskRows.length}{" "}
+          tasks
         </span>
       </div>
 
@@ -204,7 +198,7 @@ export default function ProjectTimelineView({
                         <span className="truncate">
                           {STATUS_LABELS[row.task.status] ?? row.task.status}
                         </span>
-                        <span className="opacity-70">{formatDate(row.dueDate)}</span>
+                        <span className="opacity-70">{formatMonthDay(row.dueDate)}</span>
                       </div>
                     </div>
                   </div>

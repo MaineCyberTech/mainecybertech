@@ -1,12 +1,14 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MCTClient } from "@mct/sdk";
 import { Button } from "@mct/ui/components/Button";
 import { Input } from "@mct/ui/components/Input";
 import { Dialog } from "@mct/ui/components/Dialog";
 import { Badge } from "@mct/ui/components/Badge";
 import type { DocumentShare } from "@mct/sdk";
+import { useToast } from "@/components/ui/ToastProvider";
+import { formatDateTime } from "@/lib/format";
 
 interface DocumentShareClientProps {
   documentId: string;
@@ -17,6 +19,7 @@ export default function DocumentShareClient({
   documentId,
   initialShares,
 }: DocumentShareClientProps) {
+  const { pushToast } = useToast();
   const [shares, setShares] = useState<DocumentShare[]>(initialShares);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [revokeDialogOpen, setRevokeDialogOpen] = useState<string | null>(null);
@@ -25,8 +28,15 @@ export default function DocumentShareClient({
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   const api = typeof window !== "undefined" ? MCTClient.create({ baseUrl: "" }) : null;
+
+  const sharePath = (token: string) => `/api/v1/documents/shares/${token}`;
 
   const handleCreateShare = async () => {
     if (!api) return;
@@ -67,31 +77,25 @@ export default function DocumentShareClient({
 
   const copyToClipboard = async (url: string, id: string) => {
     try {
-      await navigator.clipboard.writeText(url);
+      try {
+        await navigator.clipboard.writeText(url);
+      } catch {
+        const input = document.createElement("input");
+        input.value = url;
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        document.body.removeChild(input);
+      }
       setCopiedId(id);
       setTimeout(() => setCopiedId(null), 2000);
+      pushToast("success", "Share link copied to your clipboard.", "Copied");
     } catch {
-      // Fallback
-      const input = document.createElement("input");
-      input.value = url;
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand("copy");
-      document.body.removeChild(input);
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
+      pushToast("error", "Clipboard access was blocked by the browser.", "Copy failed");
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatDate = (dateStr: string) => formatDateTime(dateStr);
 
   const isExpired = (expiresAt: string) => new Date(expiresAt) < new Date();
 
@@ -118,7 +122,7 @@ export default function DocumentShareClient({
         ) : (
           shares.map((share) => {
             const expired = isExpired(share.expires_at);
-            const shareUrl = `${window.location.origin}/api/v1/documents/shares/${share.token}`;
+            const shareUrl = origin ? `${origin}${sharePath(share.token)}` : sharePath(share.token);
 
             return (
               <div
@@ -159,6 +163,7 @@ export default function DocumentShareClient({
                     )}
                   </div>
                 </div>
+                <p className="break-all font-mono text-[11px] text-slate-500">{shareUrl}</p>
                 <div className="flex gap-4 text-xs text-slate-400">
                   <span>
                     Access: {share.access_count}

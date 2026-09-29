@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getClientApi } from "@/lib/client-api";
 import { MODULE_LABELS, PERMISSION_GROUPS } from "@/lib/permissions";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type Props = {
   userId: string;
@@ -26,12 +27,6 @@ type Override = {
   is_allowed: boolean;
 };
 
-interface ToastItem {
-  id: number;
-  message: string;
-  kind: "success" | "error";
-}
-
 const GROUP_ORDER = PERMISSION_GROUPS.map((g) => g.key);
 
 export default function UserPermissionOverridesClient({ userId, memberships }: Props) {
@@ -40,8 +35,8 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
   const [overrides, setOverrides] = useState<Override[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const { pushToast } = useToast();
 
   const toggleGroup = useCallback((group: string) => {
     setCollapsedGroups((prev) => {
@@ -55,12 +50,6 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
     });
   }, []);
 
-  const addToast = useCallback((message: string, kind: "success" | "error" = "success") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, kind }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
-  }, []);
-
   useEffect(() => {
     let cancelled = false;
     getClientApi()
@@ -72,7 +61,7 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
         setOverrides(result.overrides ?? []);
       })
       .catch(() => {
-        if (!cancelled) addToast("Failed to load permissions", "error");
+        if (!cancelled) pushToast("error", "Failed to load permissions");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -80,7 +69,7 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
     return () => {
       cancelled = true;
     };
-  }, [userId, addToast]);
+  }, [userId, pushToast]);
 
   const modules = [...new Set(permissions.map((p) => p.module_key))];
   const actions = [...new Set(permissions.map((p) => p.action_key))];
@@ -105,7 +94,8 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
           { id: "tmp", organization_id: orgId, permission_id: permissionId, is_allowed: next },
         ];
       });
-      addToast(
+      pushToast(
+        "success",
         next === null
           ? "Override removed (role default applies)"
           : next
@@ -113,7 +103,7 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
             : "Permission explicitly denied",
       );
     } catch {
-      addToast("Network error updating override", "error");
+      pushToast("error", "Network error updating override");
     }
     setBusy(null);
   }
@@ -144,19 +134,6 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
 
   return (
     <div className="mt-4 space-y-8">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={`rounded-lg border px-4 py-3 text-sm ${
-            t.kind === "success"
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-              : "border-red-500/20 bg-red-500/10 text-red-300"
-          }`}
-        >
-          {t.message}
-        </div>
-      ))}
-
       <div className="flex items-center gap-4 text-xs text-slate-400">
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block h-3 w-3 rounded border border-emerald-500/30 bg-emerald-500/15" />
@@ -220,11 +197,15 @@ export default function UserPermissionOverridesClient({ userId, memberships }: P
                       <table id={`override-group-${group}`} className="w-full text-left text-sm">
                         <thead>
                           <tr className="border-b border-white/10">
-                            <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                            <th
+                              scope="col"
+                              className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
+                            >
                               Module
                             </th>
                             {actions.map((action) => (
                               <th
+                                scope="col"
                                 key={action}
                                 className="px-3 py-2 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
                               >

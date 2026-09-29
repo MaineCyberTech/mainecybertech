@@ -310,6 +310,7 @@ export default function AdminTicketCenterClient({
   const [bulkStatus, setBulkStatus] = useState("");
   const [bulkPriority, setBulkPriority] = useState("");
   const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [bulkError, setBulkError] = useState<string | null>(null);
   const selectAllRef = useRef<HTMLInputElement>(null);
 
   const handleBulkApply = async () => {
@@ -317,19 +318,23 @@ export default function AdminTicketCenterClient({
     if (!bulkStatus && !bulkPriority) return;
 
     setBulkProcessing(true);
+    setBulkError(null);
     try {
       const formData = new FormData();
       selectedIds.forEach((id) => formData.append("ids", id));
       if (bulkStatus) formData.set("status", bulkStatus);
       if (bulkPriority) formData.set("priority", bulkPriority);
-      await bulkUpdateTicketsAction(formData);
+      const result = await bulkUpdateTicketsAction(formData);
+      if (!result.ok) {
+        setBulkError(result.error ?? "Bulk update failed");
+        return;
+      }
       setSelectedIds(new Set());
       setBulkAction(null);
       setBulkStatus("");
       setBulkPriority("");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Bulk update failed";
-      alert(message);
+      setBulkError(error instanceof Error ? error.message : "Bulk update failed");
     } finally {
       setBulkProcessing(false);
     }
@@ -593,85 +598,92 @@ export default function AdminTicketCenterClient({
         </div>
         <div className="mt-6 space-y-4">
           {selectedIds.size > 0 && bulkUpdateTicketsAction && (
-            <div className="mb-4 flex flex-col gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-sm font-medium text-emerald-300">
-                  {selectedIds.size} ticket{selectedIds.size !== 1 ? "s" : ""} selected
-                </span>
-                <select
-                  value={bulkAction ?? ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setBulkAction(
-                      val === "status" ? "status" : val === "priority" ? "priority" : null,
-                    );
-                    setBulkStatus("");
-                    setBulkPriority("");
-                  }}
-                  className="cyber-input w-auto"
-                  style={{ minWidth: "140px" }}
-                  aria-label="Bulk action"
-                >
-                  <option value="">Select bulk action</option>
-                  <option value="status">Change Status</option>
-                  <option value="priority">Change Priority</option>
-                </select>
-                {bulkAction === "status" && (
+            <>
+              <div className="mb-4 flex flex-col gap-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-sm font-medium text-emerald-300">
+                    {selectedIds.size} ticket{selectedIds.size !== 1 ? "s" : ""} selected
+                  </span>
                   <select
-                    value={bulkStatus}
-                    onChange={(e) => setBulkStatus(e.target.value)}
-                    className="cyber-input w-auto"
-                    style={{ minWidth: "160px" }}
-                    disabled={bulkProcessing}
-                    aria-label="Bulk status"
-                  >
-                    <option value="">Select status</option>
-                    {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {bulkAction === "priority" && (
-                  <select
-                    value={bulkPriority}
-                    onChange={(e) => setBulkPriority(e.target.value)}
+                    value={bulkAction ?? ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setBulkAction(
+                        val === "status" ? "status" : val === "priority" ? "priority" : null,
+                      );
+                      setBulkStatus("");
+                      setBulkPriority("");
+                    }}
                     className="cyber-input w-auto"
                     style={{ minWidth: "140px" }}
-                    disabled={bulkProcessing}
-                    aria-label="Bulk priority"
+                    aria-label="Bulk action"
                   >
-                    <option value="">Select priority</option>
-                    {PRIORITY_OPTIONS.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
+                    <option value="">Select bulk action</option>
+                    <option value="status">Change Status</option>
+                    <option value="priority">Change Priority</option>
                   </select>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {bulkAction && (bulkAction === "status" ? bulkStatus : bulkPriority) && (
+                  {bulkAction === "status" && (
+                    <select
+                      value={bulkStatus}
+                      onChange={(e) => setBulkStatus(e.target.value)}
+                      className="cyber-input w-auto"
+                      style={{ minWidth: "160px" }}
+                      disabled={bulkProcessing}
+                      aria-label="Bulk status"
+                    >
+                      <option value="">Select status</option>
+                      {STATUS_OPTIONS.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {bulkAction === "priority" && (
+                    <select
+                      value={bulkPriority}
+                      onChange={(e) => setBulkPriority(e.target.value)}
+                      className="cyber-input w-auto"
+                      style={{ minWidth: "140px" }}
+                      disabled={bulkProcessing}
+                      aria-label="Bulk priority"
+                    >
+                      <option value="">Select priority</option>
+                      {PRIORITY_OPTIONS.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {bulkAction && (bulkAction === "status" ? bulkStatus : bulkPriority) && (
+                    <button
+                      type="button"
+                      className="cyber-button"
+                      disabled={bulkProcessing}
+                      onClick={() => handleBulkApply()}
+                    >
+                      {bulkProcessing ? "Applying..." : "Apply"}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    className="cyber-button"
+                    className="cyber-button-secondary"
+                    onClick={() => setSelectedIds(new Set())}
                     disabled={bulkProcessing}
-                    onClick={() => handleBulkApply()}
                   >
-                    {bulkProcessing ? "Applying..." : "Apply"}
+                    Clear Selection
                   </button>
-                )}
-                <button
-                  type="button"
-                  className="cyber-button-secondary"
-                  onClick={() => setSelectedIds(new Set())}
-                  disabled={bulkProcessing}
-                >
-                  Clear Selection
-                </button>
+                </div>
               </div>
-            </div>
+              {bulkError && (
+                <p role="alert" className="mb-4 text-sm text-red-300">
+                  {bulkError}
+                </p>
+              )}
+            </>
           )}
           {paginated.length > 0 ? (
             paginated.map((ticket) => (

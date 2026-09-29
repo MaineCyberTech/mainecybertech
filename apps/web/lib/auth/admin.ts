@@ -13,8 +13,11 @@ export async function requireAdminAccess(): Promise<AdminAccessResult> {
   let user;
   try {
     user = await api.users.me();
-  } catch {
-    redirect("/login");
+  } catch (error) {
+    const err = error as { code?: string; status?: number };
+    if (err?.code === "MFA_REQUIRED") redirect("/portal/profile/security?mfa=required");
+    if (err?.status === 401 || err?.status === 403) redirect("/login");
+    throw error;
   }
 
   if (!user?.userId) {
@@ -24,8 +27,10 @@ export async function requireAdminAccess(): Promise<AdminAccessResult> {
   let memberships;
   try {
     memberships = await api.memberships.list({ userId: user.userId, status: "approved" });
-  } catch {
-    redirect("/portal/dashboard");
+  } catch (error) {
+    const status = (error as { status?: number })?.status;
+    if (status === 401 || status === 403) redirect("/portal/dashboard");
+    throw error;
   }
 
   if (!memberships.length) {

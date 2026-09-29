@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getClientApi } from "@/lib/client-api";
 import { MODULE_LABELS, PERMISSION_GROUPS, ACTION_ORDER } from "@/lib/permissions";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type Props = {
   roleId: string;
@@ -19,12 +20,6 @@ type Permission = {
   label?: string | null;
   description?: string | null;
 };
-
-interface ToastItem {
-  id: number;
-  message: string;
-  kind: "success" | "error";
-}
 
 const LEGACY_GROUP: Record<string, string> = {
   dashboard: "core",
@@ -80,8 +75,8 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
   const [rolePermissionIds, setRolePermissionIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const { pushToast } = useToast();
 
   const toggleGroup = useCallback((group: string) => {
     setCollapsedGroups((prev) => {
@@ -95,22 +90,16 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
     });
   }, []);
 
-  const addToast = useCallback((message: string, kind: "success" | "error" = "success") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, kind }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000);
-  }, []);
-
   const fetchData = useCallback(async () => {
     try {
       const result = await getClientApi().roles.getPermissions(roleId);
       setPermissions(result.permissions);
       setRolePermissionIds(result.rolePermissionIds);
     } catch {
-      addToast("Failed to load permissions", "error");
+      pushToast("error", "Failed to load permissions");
     }
     setLoading(false);
-  }, [roleId, addToast]);
+  }, [roleId, pushToast]);
 
   useEffect(() => {
     fetchData();
@@ -127,13 +116,13 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
       await getClientApi().roles.updatePermission(roleId, permissionId, !currentlyHas);
       if (currentlyHas) {
         setRolePermissionIds((prev) => prev.filter((id) => id !== permissionId));
-        addToast("Permission revoked");
+        pushToast("success", "Permission revoked");
       } else {
         setRolePermissionIds((prev) => [...prev, permissionId]);
-        addToast("Permission granted");
+        pushToast("success", "Permission granted");
       }
     } catch {
-      addToast("Network error updating permission", "error");
+      pushToast("error", "Network error updating permission");
     }
     setToggling(null);
   }
@@ -164,19 +153,6 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
 
   return (
     <div className="space-y-6">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={`rounded-lg border px-4 py-3 text-sm ${
-            t.kind === "success"
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
-              : "border-red-500/20 bg-red-500/10 text-red-300"
-          }`}
-        >
-          {t.message}
-        </div>
-      ))}
-
       {isSystem && roleKey === "super_admin" ? (
         <div className="rounded-lg border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-300">
           Super Admin has all permissions and cannot be modified.
@@ -232,11 +208,15 @@ export default function RolePermissionsEditor({ roleId, roleKey, isSystem }: Pro
               <table id={`role-group-${group}`} className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-white/10">
-                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
+                    >
                       Module
                     </th>
                     {actions.map((action) => (
                       <th
+                        scope="col"
                         key={action}
                         className="px-3 py-2 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
                       >

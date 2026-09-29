@@ -66,7 +66,11 @@ export default function AdminPagination({
 
       {first > 1 ? (
         <>
-          <Link href={buildHref(1)} className={pageLinkClass(1 === currentPage)}>
+          <Link
+            href={buildHref(1)}
+            className={pageLinkClass(1 === currentPage)}
+            aria-current={1 === currentPage ? "page" : undefined}
+          >
             1
           </Link>
           {first > 2 ? <span className="px-1 text-slate-500">…</span> : null}
@@ -74,7 +78,12 @@ export default function AdminPagination({
       ) : null}
 
       {window.map((p) => (
-        <Link key={p} href={buildHref(p)} className={pageLinkClass(p === currentPage)}>
+        <Link
+          key={p}
+          href={buildHref(p)}
+          className={pageLinkClass(p === currentPage)}
+          aria-current={p === currentPage ? "page" : undefined}
+        >
           {p}
         </Link>
       ))}
@@ -82,7 +91,11 @@ export default function AdminPagination({
       {last < totalPages ? (
         <>
           {last < totalPages - 1 ? <span className="px-1 text-slate-500">…</span> : null}
-          <Link href={buildHref(totalPages)} className={pageLinkClass(totalPages === currentPage)}>
+          <Link
+            href={buildHref(totalPages)}
+            className={pageLinkClass(totalPages === currentPage)}
+            aria-current={totalPages === currentPage ? "page" : undefined}
+          >
             {totalPages}
           </Link>
         </>

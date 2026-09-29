@@ -46,11 +46,15 @@ export default function MiniPackageComparison({
         <table className="w-full min-w-[32rem] border-collapse text-sm">
           <thead>
             <tr>
-              <th className="border-b border-white/10 px-3 py-2 text-left font-semibold text-slate-400">
+              <th
+                scope="col"
+                className="border-b border-white/10 px-3 py-2 text-left font-semibold text-slate-400"
+              >
                 Tier
               </th>
               {available.map((tier) => (
                 <th
+                  scope="col"
                   key={tier.product.id}
                   className="border-b border-white/10 px-3 py-2 text-left font-semibold text-emerald-400"
                 >

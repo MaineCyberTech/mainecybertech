@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getClientEnv } from "@/lib/env";
+import { formatTime } from "@/lib/format";
 
 type ServiceStatus = "ok" | "degraded" | "down" | "checking";
 
@@ -131,7 +132,7 @@ export default function HealthDashboardClient() {
       </div>
 
       <div className="flex items-center justify-between text-xs text-slate-400">
-        <span>Last checked: {lastChecked?.toLocaleTimeString() ?? "—"}</span>
+        <span>Last checked: {formatTime(lastChecked)}</span>
         <button onClick={check} className="cyber-button-secondary text-xs">
           Refresh
         </button>

@@ -14,6 +14,7 @@ export default function PortalGlobalSearch() {
   const [results, setResults] = useState<SearchResult | null>(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -43,9 +44,12 @@ export default function PortalGlobalSearch() {
       try {
         const result = await getClientApi().search.portal(query, "");
         setResults(result);
+        setSearchFailed(false);
         setOpen(true);
       } catch {
-        // Search failed — non-critical
+        setResults(null);
+        setSearchFailed(true);
+        setOpen(true);
       } finally {
         setLoading(false);
       }
@@ -153,9 +157,12 @@ export default function PortalGlobalSearch() {
       {open && query.length >= 2 && resultCount() === 0 && !loading ? (
         <div
           ref={dropdownRef}
+          role="status"
           className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-white/10 bg-cyber-card-alt p-4 text-center text-sm text-slate-400"
         >
-          No results found for &ldquo;{query}&rdquo;
+          {searchFailed
+            ? "Search is unavailable right now. Please try again."
+            : `No results found for \u201C${query}\u201D`}
         </div>
       ) : null}
     </div>

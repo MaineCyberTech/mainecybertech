@@ -5,19 +5,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import AdminDocumentsBulkControls from "@/components/admin/AdminDocumentsBulkControls";
 import EmptyState from "@/components/EmptyState";
+import { useToast } from "@/components/ui/ToastProvider";
 import { useFocusTrap } from "@/lib/use-focus-trap";
 import type {
   BulkActionResult,
   DocumentVisibility,
 } from "@/app/(admin)/admin/documents/bulk-actions";
+import { formatDate } from "@/lib/format";
 
 type OrganizationRecord = { id: string; name?: string | null };
 type VisibilityValue = "private" | "org" | "internal" | "public";
 type DrawerTab = "overview" | "edit" | "file" | "preview";
 type ViewMode = "list" | "table" | "grid";
 type SortKey = "updated" | "name" | "organization" | "folder" | "type" | "visibility";
-type ToastTone = "success" | "info" | "warning" | "error";
-type Toast = { id: number; tone: ToastTone; title: string; message: string };
 type ActionResult = {
   ok: boolean;
   kind?: string;
@@ -133,7 +133,7 @@ function formatRelativeTime(value?: string | null) {
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(value).toISOString().slice(0, 10);
+  return formatDate(value);
 }
 function formatBytes(value?: number | null) {
   const size = Number(value ?? 0);
@@ -188,13 +188,6 @@ function chipClass(seed: string, kind: "org" | "folder") {
     Math.abs(Array.from(seed).reduce((sum, ch) => sum + ch.charCodeAt(0), 0)) % palettes.length;
   return `inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${palettes[idx]}`;
 }
-function toastClass(tone: ToastTone) {
-  if (tone === "success") return "border-emerald-500/20 bg-emerald-500/10 text-emerald-200";
-  if (tone === "warning") return "border-amber-500/20 bg-amber-500/10 text-amber-200";
-  if (tone === "error") return "border-red-500/20 bg-red-500/10 text-red-200";
-  return "border-blue-500/20 bg-blue-500/10 text-blue-200";
-}
-
 function FileThumb({ doc, large = false }: { doc: DocumentRecord; large?: boolean }) {
   const type = fileType(doc);
   const size = large ? "h-36 w-full" : "h-14 w-14";
@@ -298,6 +291,7 @@ export default function AdminDocumentsCenterClient({
   bulkMetadataAction,
 }: Props) {
   const router = useRouter();
+  const { pushToast } = useToast();
   const [localDocuments, setLocalDocuments] = useState<DocumentRecord[]>(documents);
   const [search, setSearch] = useState("");
   const [orgFilter, setOrgFilter] = useState("");
@@ -311,7 +305,6 @@ export default function AdminDocumentsCenterClient({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
-  const [toasts, setToasts] = useState<Toast[]>([]);
   const [inlineRenameId, setInlineRenameId] = useState<string | null>(null);
   const [inlineNameValue, setInlineNameValue] = useState("");
   const [inlineVisibilityId, setInlineVisibilityId] = useState<string | null>(null);
@@ -496,17 +489,6 @@ export default function AdminDocumentsCenterClient({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  function pushToast(tone: ToastTone, title: string, message: string) {
-    const toast = {
-      id: Date.now() + Math.floor(Math.random() * 1000),
-      tone,
-      title,
-      message,
-    };
-    setToasts((cur) => [toast, ...cur].slice(0, 4));
-    window.setTimeout(() => setToasts((cur) => cur.filter((item) => item.id !== toast.id)), 5000);
-  }
-
   function markSuccess(docId: string, label = "Saved") {
     setSuccessMap((cur) => ({ ...cur, [docId]: label }));
     window.setTimeout(() => {
@@ -631,19 +613,19 @@ export default function AdminDocumentsCenterClient({
       const result = await action();
       if (!result.ok) {
         rollback?.();
-        pushToast("error", "Action failed", result.error ?? "Unexpected error.");
+        pushToast("error", result.error ?? "Unexpected error.", "Action failed");
         return;
       }
       onSuccess?.(result);
       if (successDocId) markSuccess(successDocId, successLabel ?? "Saved");
-      pushToast("success", successTitle, successMessage);
+      pushToast("success", successMessage, successTitle);
       router.refresh();
     } catch (error) {
       rollback?.();
       pushToast(
         "error",
-        "Action failed",
         error instanceof Error ? error.message : "Unexpected error.",
+        "Action failed",
       );
     } finally {
       if (busyKey) setBusyId((cur) => (cur == busyKey ? null : cur));
@@ -653,9 +635,9 @@ export default function AdminDocumentsCenterClient({
   async function copyText(value: string, label: string) {
     try {
       await navigator.clipboard.writeText(value);
-      pushToast("success", `${label} copied`, "The value was copied to your clipboard.");
+      pushToast("success", "The value was copied to your clipboard.", `${label} copied`);
     } catch {
-      pushToast("error", "Copy failed", "Clipboard access was blocked by the browser.");
+      pushToast("error", "Clipboard access was blocked by the browser.", "Copy failed");
     }
   }
 
@@ -774,7 +756,7 @@ export default function AdminDocumentsCenterClient({
     const formData = new FormData(event.currentTarget);
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) {
-      pushToast("warning", "Choose a file", "Select a replacement file before saving.");
+      pushToast("warning", "Select a replacement file before saving.", "Choose a file");
       return;
     }
     formData.set("documentId", doc.id);
@@ -824,8 +806,8 @@ export default function AdminDocumentsCenterClient({
     if (!String(formData.get("organizationId") ?? "").trim()) {
       pushToast(
         "warning",
-        "Organization required",
         "Select an organization before creating a document.",
+        "Organization required",
       );
       return;
     }
@@ -845,12 +827,12 @@ export default function AdminDocumentsCenterClient({
         data.set("file", file);
         const result = await createDocumentAction(data);
         if (!result.ok) {
-          pushToast("error", "Create failed", result.error ?? `Failed to create ${file.name}.`);
+          pushToast("error", result.error ?? `Failed to create ${file.name}.`, "Create failed");
           return;
         }
         upsertDocument(result.document);
       }
-      pushToast("success", "Documents created", `Created ${files.length} documents successfully.`);
+      pushToast("success", `Created ${files.length} documents successfully.`, "Documents created");
       setShowCreateModal(false);
       setDroppedFileName("");
       form.reset();
@@ -1115,18 +1097,6 @@ export default function AdminDocumentsCenterClient({
         onClose={() => setConfirmState(null)}
       />
 
-      <div className="fixed right-4 top-4 z-[70] flex w-full max-w-sm flex-col gap-3">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`rounded-2xl border px-4 py-3 shadow-[0_20px_50px_rgba(2,6,23,0.30)] backdrop-blur ${toastClass(toast.tone)}`}
-          >
-            <p className="text-sm font-semibold">{toast.title}</p>
-            <p className="mt-1 text-sm opacity-90">{toast.message}</p>
-          </div>
-        ))}
-      </div>
-
       <section className="cyber-panel">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -1366,7 +1336,6 @@ export default function AdminDocumentsCenterClient({
             onApplyFolderLocal={applyBulkFolderLocal}
             onApplyMetadataLocal={applyBulkMetadataLocal}
             onClearSelection={() => setSelectedIds([])}
-            onToast={pushToast}
             onRefresh={() => router.refresh()}
           />
         </>
@@ -1444,15 +1413,33 @@ export default function AdminDocumentsCenterClient({
               <table className="min-w-full divide-y divide-white/10 text-sm">
                 <thead className="bg-cyber-card-deep/95">
                   <tr className="text-left text-xs uppercase tracking-[0.12em] text-slate-400">
-                    <th className="px-4 py-3">Select</th>
-                    <th className="px-4 py-3">File</th>
-                    <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">Organization</th>
-                    <th className="px-4 py-3">Folder</th>
-                    <th className="px-4 py-3">Visibility</th>
-                    <th className="px-4 py-3">Type</th>
-                    <th className="px-4 py-3">Updated</th>
-                    <th className="px-4 py-3">Actions</th>
+                    <th scope="col" className="px-4 py-3">
+                      Select
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      File
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Name
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Organization
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Folder
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Visibility
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Type
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Updated
+                    </th>
+                    <th scope="col" className="px-4 py-3">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/10 bg-cyber-base/60">

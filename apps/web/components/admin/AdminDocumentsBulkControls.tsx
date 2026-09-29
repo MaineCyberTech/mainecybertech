@@ -6,6 +6,7 @@ import type {
   DocumentVisibility,
 } from "@/app/(admin)/admin/documents/bulk-actions";
 import { useFocusTrap } from "@/lib/use-focus-trap";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type Props = {
   selectedIds: string[];
@@ -17,7 +18,6 @@ type Props = {
     ids: string[],
   ) => void;
   onClearSelection: () => void;
-  onToast: (tone: "success" | "warning" | "error" | "info", title: string, message: string) => void;
   onRefresh?: () => void;
 };
 
@@ -30,9 +30,9 @@ export default function AdminDocumentsBulkControls({
   onApplyFolderLocal,
   onApplyMetadataLocal,
   onClearSelection,
-  onToast,
   onRefresh,
 }: Props) {
+  const { pushToast } = useToast();
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [showMetadataModal, setShowMetadataModal] = useState(false);
   const [folderValue, setFolderValue] = useState("");
@@ -48,11 +48,11 @@ export default function AdminDocumentsBulkControls({
   async function applyBulkFolder() {
     const nextFolder = folderValue.trim();
     if (!selectedIds.length) {
-      onToast("warning", "Nothing selected", "Select one or more documents first.");
+      pushToast("warning", "Select one or more documents first.", "Nothing selected");
       return;
     }
     if (!nextFolder) {
-      onToast("warning", "Folder required", "Enter a non-empty folder path to apply.");
+      pushToast("warning", "Enter a non-empty folder path to apply.", "Folder required");
       return;
     }
 
@@ -64,14 +64,14 @@ export default function AdminDocumentsBulkControls({
       setBusyKey("bulk-folder");
       const result = await bulkFolderAction(formData);
       if (!result.ok) {
-        onToast("error", "Bulk folder failed", result.error ?? "Unexpected error.");
+        pushToast("error", result.error ?? "Unexpected error.", "Bulk folder failed");
         return;
       }
       onApplyFolderLocal(nextFolder, selectedIds);
-      onToast(
+      pushToast(
         "success",
-        "Folder reassigned",
         `${selectedIds.length} document(s) moved to ${nextFolder}.`,
+        "Folder reassigned",
       );
       setShowFolderModal(false);
       setFolderValue("");
@@ -83,7 +83,7 @@ export default function AdminDocumentsBulkControls({
 
   async function applyBulkMetadata() {
     if (!selectedIds.length) {
-      onToast("warning", "Nothing selected", "Select one or more documents first.");
+      pushToast("warning", "Select one or more documents first.", "Nothing selected");
       return;
     }
 
@@ -92,10 +92,10 @@ export default function AdminDocumentsBulkControls({
     const safeVisibility = metaVisibility || undefined;
 
     if (!safeDescription && !safeFolder && !safeVisibility) {
-      onToast(
+      pushToast(
         "warning",
-        "No bulk fields provided",
         "Safe apply rules skip blank values. Enter at least one non-empty field.",
+        "No bulk fields provided",
       );
       return;
     }
@@ -110,7 +110,7 @@ export default function AdminDocumentsBulkControls({
       setBusyKey("bulk-metadata");
       const result = await bulkMetadataAction(formData);
       if (!result.ok) {
-        onToast("error", "Bulk metadata failed", result.error ?? "Unexpected error.");
+        pushToast("error", result.error ?? "Unexpected error.", "Bulk metadata failed");
         return;
       }
       onApplyMetadataLocal(
@@ -121,10 +121,10 @@ export default function AdminDocumentsBulkControls({
         },
         selectedIds,
       );
-      onToast(
+      pushToast(
         "success",
-        "Metadata applied",
         `${selectedIds.length} document(s) updated using safe apply rules.`,
+        "Metadata applied",
       );
       setShowMetadataModal(false);
       setMetaDescription("");

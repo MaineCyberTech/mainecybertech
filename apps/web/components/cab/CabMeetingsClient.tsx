@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import StatusPill from "@/components/StatusPill";
 import { getClientApi } from "@/lib/client-api";
+import { formatDate } from "@/lib/format";
 
 type AgendaItem = {
   id: string;
@@ -121,9 +122,7 @@ export default function PortalCabClient({
               <div key={m.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
                 <div className="flex items-center justify-between">
                   <p className="font-medium text-slate-50">
-                    {m.scheduled_at
-                      ? new Date(m.scheduled_at).toISOString().slice(0, 10)
-                      : "Unscheduled"}
+                    {m.scheduled_at ? formatDate(m.scheduled_at) : "Unscheduled"}
                   </p>
                   <StatusPill status={m.status || "unknown"} />
                 </div>
@@ -195,9 +194,7 @@ export default function PortalCabClient({
                   <option value="">Select meeting…</option>
                   {meetings.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.scheduled_at
-                        ? new Date(m.scheduled_at).toISOString().slice(0, 10)
-                        : "Unscheduled"}
+                      {m.scheduled_at ? formatDate(m.scheduled_at) : "Unscheduled"}
                     </option>
                   ))}
                 </select>

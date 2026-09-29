@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Organization } from "@mct/sdk";
+import EmptyState from "@/components/EmptyState";
+import { formatDateShort } from "@/lib/format";
 
 type SLAMetrics = {
   summary: { total: number; breached: number; breachedRate: number; resolved: number };
@@ -125,7 +127,7 @@ export default function AdminSLAClient({
               </div>
             ))
           ) : (
-            <p className="text-sm text-slate-400">No metric data available.</p>
+            <EmptyState icon="⏱️" title="No metric data available." />
           )}
         </div>
       </section>
@@ -164,9 +166,7 @@ export default function AdminSLAClient({
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-slate-400">
-                  {new Date(event.created_at).toLocaleDateString()}
-                </p>
+                <p className="text-xs text-slate-400">{formatDateShort(event.created_at)}</p>
               </div>
             ))
           ) : (

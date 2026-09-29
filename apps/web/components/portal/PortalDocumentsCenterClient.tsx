@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import type { BulkActionResult } from "@/app/(portal)/portal/documents/bulk-actions";
+import EmptyState from "@/components/EmptyState";
+import { useToast } from "@/components/ui/ToastProvider";
+import { formatDateShort } from "@/lib/format";
 
 type DocumentRecord = Record<string, any> & {
   id: string;
@@ -38,11 +41,7 @@ function formatBytes(bytes?: number | null) {
 
 function formatDate(iso?: string | null) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return formatDateShort(iso);
 }
 
 function docName(doc: DocumentRecord) {
@@ -72,15 +71,7 @@ export default function PortalDocumentsCenterClient({
   const [bulkFolderOpen, setBulkFolderOpen] = useState(false);
   const [bulkMetaOpen, setBulkMetaOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
-  const [toasts, setToasts] = useState<
-    Array<{ id: number; message: string; kind: "success" | "error" }>
-  >([]);
-
-  const addToast = useCallback((message: string, kind: "success" | "error" = "success") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, kind }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000);
-  }, []);
+  const { pushToast } = useToast();
 
   const sorted = useMemo(() => {
     let list = [...documents];
@@ -119,15 +110,15 @@ export default function PortalDocumentsCenterClient({
     const form = e.currentTarget;
     const fd = new FormData(form);
     if (!fd.get("file")) {
-      addToast("Please select a file", "error");
+      pushToast("error", "Please select a file");
       return;
     }
     const res = await uploadAction(fd);
     if (res.ok) {
-      addToast("Document uploaded successfully");
+      pushToast("success", "Document uploaded successfully");
       form.reset();
     } else {
-      addToast(res.error ?? "Upload failed", "error");
+      pushToast("error", res.error ?? "Upload failed");
     }
   }
 
@@ -139,11 +130,11 @@ export default function PortalDocumentsCenterClient({
     fd.set("documentIds", JSON.stringify(selectedIds));
     const res = await bulkFolderAction(fd);
     if (res.ok) {
-      addToast(`${res.updated} documents updated`);
+      pushToast("success", `${res.updated} documents updated`);
       setSelectedIds([]);
       setBulkFolderOpen(false);
     } else {
-      addToast(res.error ?? "Failed", "error");
+      pushToast("error", res.error ?? "Failed");
     }
     setBusy(null);
   }
@@ -156,11 +147,11 @@ export default function PortalDocumentsCenterClient({
     fd.set("documentIds", JSON.stringify(selectedIds));
     const res = await bulkMetadataAction(fd);
     if (res.ok) {
-      addToast(`${res.updated} documents updated`);
+      pushToast("success", `${res.updated} documents updated`);
       setSelectedIds([]);
       setBulkMetaOpen(false);
     } else {
-      addToast(res.error ?? "Failed", "error");
+      pushToast("error", res.error ?? "Failed");
     }
     setBusy(null);
   }
@@ -170,15 +161,6 @@ export default function PortalDocumentsCenterClient({
 
   return (
     <div className="space-y-4">
-      {toasts.map((t) => (
-        <div
-          key={t.id}
-          className={`rounded-lg border px-4 py-3 text-sm ${t.kind === "success" ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-300" : "border-red-500/20 bg-red-500/10 text-red-300"}`}
-        >
-          {t.message}
-        </div>
-      ))}
-
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Upload Document</h2>
         <form onSubmit={handleUpload} className="mt-6 space-y-4">
@@ -370,7 +352,7 @@ export default function PortalDocumentsCenterClient({
 
         <div className="mt-6">
           {sorted.length === 0 ? (
-            <div className="py-8 text-center text-sm text-slate-400">No documents found.</div>
+            <EmptyState icon="📄" title="No documents found." />
           ) : viewMode === "list" ? (
             <div className="space-y-3">
               {sorted.map((doc) => (
@@ -415,7 +397,7 @@ export default function PortalDocumentsCenterClient({
                 <thead>
                   <tr className="border-b border-white/10">
                     {hasBulk ? (
-                      <th className="w-10 px-3 py-2">
+                      <th scope="col" className="w-10 px-3 py-2">
                         <input
                           type="checkbox"
                           checked={selectedIds.length === sorted.length && sorted.length > 0}
@@ -426,6 +408,7 @@ export default function PortalDocumentsCenterClient({
                       </th>
                     ) : null}
                     <th
+                      scope="col"
                       className="cursor-pointer select-none px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
                       onClick={() => {
                         setSortKey("name");
@@ -434,13 +417,20 @@ export default function PortalDocumentsCenterClient({
                     >
                       Name{sortIndicator("name")}
                     </th>
-                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
+                    >
                       Type
                     </th>
-                    <th className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400">
+                    <th
+                      scope="col"
+                      className="px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
+                    >
                       Size
                     </th>
                     <th
+                      scope="col"
                       className="cursor-pointer select-none px-3 py-2 text-xs uppercase tracking-[0.12em] text-slate-400"
                       onClick={() => {
                         setSortKey("updated");
@@ -449,7 +439,7 @@ export default function PortalDocumentsCenterClient({
                     >
                       Updated{sortIndicator("updated")}
                     </th>
-                    <th className="px-3 py-2" />
+                    <th scope="col" className="px-3 py-2" />
                   </tr>
                 </thead>
                 <tbody>

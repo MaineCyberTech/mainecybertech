@@ -8,6 +8,7 @@ import { getClientEnv } from "@/lib/env";
 import { isPlatformAdminKey } from "@/lib/roles";
 
 const SESSION_COOKIE = "mct_session";
+const MFA_PENDING_COOKIE = "mct_mfa_pending";
 
 function unauthClient() {
   return MCTClient.create({
@@ -15,11 +16,13 @@ function unauthClient() {
   });
 }
 
-export async function loginAction(email: string, password: string) {
-  let accessToken: string;
+export async function loginAction(
+  email: string,
+  password: string,
+): Promise<{ error?: string; mfaRequired?: boolean }> {
+  let result;
   try {
-    const result = await unauthClient().auth.signIn(email, password);
-    accessToken = result.accessToken;
+    result = await unauthClient().auth.signIn(email, password);
   } catch (error) {
     const message = error instanceof ApiError ? error.message : "An unexpected error occurred";
     return { error: message };
@@ -27,9 +30,91 @@ export async function loginAction(email: string, password: string) {
   const cookieStore = await cookies();
   const headersList = await headers();
   const host = headersList.get("host") || "";
+  if (result.mfaRequired) {
+    cookieStore.set(MFA_PENDING_COOKIE, result.accessToken, {
+      ...getCookieOptions(host),
+      maxAge: 60 * 10,
+    });
+    return { mfaRequired: true };
+  }
+  cookieStore.set(SESSION_COOKIE, result.accessToken, getCookieOptions(host));
+  // redirect() throws NEXT_REDIRECT - must NOT be inside the try/catch above.
+  redirect(await resolveLandingRedirect(result.accessToken));
+}
+
+export async function mfaLoginVerifyAction(code: string): Promise<{ error?: string }> {
+  const cookieStore = await cookies();
+  const headersList = await headers();
+  const host = headersList.get("host") || "";
+  const pendingToken = cookieStore.get(MFA_PENDING_COOKIE)?.value;
+  if (!pendingToken) {
+    return { error: "Your sign-in attempt expired. Please sign in again." };
+  }
+
+  let accessToken: string;
+  try {
+    const client = MCTClient.create({
+      baseUrl: getClientEnv().NEXT_PUBLIC_API_URL,
+      getToken: async () => pendingToken,
+    });
+    const factors = await client.auth.mfaFactors();
+    const factor = factors.totp.find((f) => f.status === "verified") ?? factors.totp[0];
+    if (!factor) {
+      return { error: "No authenticator app is enrolled for this account." };
+    }
+    const { challengeId } = await client.auth.mfaChallenge(factor.id);
+    const verified = await client.auth.mfaVerify(factor.id, challengeId, code);
+    accessToken = verified.accessToken;
+  } catch (error) {
+    return {
+      error:
+        error instanceof ApiError
+          ? error.message
+          : "Verification failed. Check the code and try again.",
+    };
+  }
+
   cookieStore.set(SESSION_COOKIE, accessToken, getCookieOptions(host));
+  cookieStore.delete(MFA_PENDING_COOKIE);
   // redirect() throws NEXT_REDIRECT - must NOT be inside the try/catch above.
   redirect(await resolveLandingRedirect(accessToken));
+}
+
+export async function mfaRecoveryLoginAction(code: string): Promise<{ error?: string }> {
+  const cookieStore = await cookies();
+  const headersList = await headers();
+  const host = headersList.get("host") || "";
+  const pendingToken = cookieStore.get(MFA_PENDING_COOKIE)?.value;
+  if (!pendingToken) {
+    return { error: "Your sign-in attempt expired. Please sign in again." };
+  }
+
+  try {
+    const client = MCTClient.create({
+      baseUrl: getClientEnv().NEXT_PUBLIC_API_URL,
+      getToken: async () => pendingToken,
+    });
+    await client.auth.mfaRecover(code);
+  } catch (error) {
+    return {
+      error:
+        error instanceof ApiError
+          ? error.message
+          : "Recovery failed. Check the code and try again.",
+    };
+  }
+
+  // Spending a recovery code unenrolls the factor, so the pending aal1 token
+  // is the clean session to keep; the user re-enrolls from the security page.
+  cookieStore.set(SESSION_COOKIE, pendingToken, getCookieOptions(host));
+  cookieStore.delete(MFA_PENDING_COOKIE);
+  // redirect() throws NEXT_REDIRECT - must NOT be inside the try/catch above.
+  redirect("/portal/profile/security?recovered=1");
+}
+
+export async function mfaCancelAction(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(MFA_PENDING_COOKIE);
 }
 
 /**
@@ -88,6 +173,12 @@ export async function testLoginAction(email: string, password: string): Promise<
 
     const client = unauthClient();
     const result = await client.auth.signIn(email, password);
+    if (result.mfaRequired) {
+      return {
+        ok: false,
+        error: "This account requires an authenticator code. Sign in from the login page.",
+      };
+    }
     cookieStore.set(SESSION_COOKIE, result.accessToken, getCookieOptions(host));
 
     let redirectTo = "/portal/dashboard";

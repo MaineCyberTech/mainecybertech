@@ -17,6 +17,7 @@ export default function InviteUserForm() {
   const [roleId, setRoleId] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [optionsError, setOptionsError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export default function InviteUserForm() {
         setOrgs(data);
         if (data.length > 0) setOrganizationId(data[0].id);
       })
-      .catch(() => {});
+      .catch(() => setOptionsError("Could not load organizations."));
     client.roles
       .list()
       .then((data) => {
@@ -38,7 +39,7 @@ export default function InviteUserForm() {
         if (clientRole) setRoleId(clientRole.id);
         else if ((data ?? []).length > 0) setRoleId(data[0].id);
       })
-      .catch(() => {});
+      .catch(() => setOptionsError("Could not load roles."));
   }, [open]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -137,6 +138,11 @@ export default function InviteUserForm() {
             ))}
           </select>
         </div>
+        {optionsError && (
+          <p role="alert" className="text-xs text-amber-400">
+            {optionsError}
+          </p>
+        )}
         {error && (
           <p role="alert" className="text-xs text-red-400">
             {error}

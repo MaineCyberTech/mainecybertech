@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Organization } from "@mct/sdk";
+import EmptyState from "@/components/EmptyState";
 
 const PAGE_SIZE = 25;
 
@@ -161,7 +162,7 @@ export default function AdminOrganizationsClient({
             </Link>
           ))
         ) : (
-          <div className="cyber-panel text-slate-400">No organizations found.</div>
+          <EmptyState icon="🏢" title="No organizations found." />
         )}
       </div>
 

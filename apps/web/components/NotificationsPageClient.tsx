@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import EmptyState from "@/components/EmptyState";
 import { getClientApi } from "@/lib/client-api";
+import { formatDateTime } from "@/lib/format";
 
 type NotificationItem = {
   id: string;
@@ -94,7 +96,7 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
     if (n.module === "tickets") return `${basePath}/tickets/${n.module_id}`;
     if (n.module === "projects") return `${basePath}/projects/${n.module_id}`;
     if (n.module === "documents") return `${basePath}/documents/${n.module_id}`;
-    return "#";
+    return basePath;
   };
 
   const filtered = filterModule
@@ -160,7 +162,7 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
         {loading ? (
           <div className="py-8 text-center text-sm text-slate-400">Loading...</div>
         ) : filteredByRead.length === 0 ? (
-          <div className="py-8 text-center text-sm text-slate-400">No notifications found.</div>
+          <EmptyState icon="💬" title="No notifications found." />
         ) : (
           filteredByRead.map((n) => (
             <div
@@ -191,9 +193,9 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
                   <p className="mt-1 line-clamp-2 text-sm text-slate-400">{n.body}</p>
                 </Link>
                 <div className="mt-2 flex flex-wrap gap-3 text-[11px] text-slate-600">
-                  <span>{new Date(n.created_at).toLocaleString()}</span>
+                  <span>{formatDateTime(n.created_at)}</span>
                   <span className="capitalize">{n.module}</span>
-                  {n.read_at ? <span>Read {new Date(n.read_at).toLocaleString()}</span> : null}
+                  {n.read_at ? <span>Read {formatDateTime(n.read_at)}</span> : null}
                 </div>
               </div>
               {!n.read ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { useFocusTrap } from "@/lib/use-focus-trap";
 
 /**
@@ -28,6 +28,7 @@ export default function ConfirmDialog({
   onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
   useFocusTrap(dialogRef, open);
 
   if (!open) return null;
@@ -38,13 +39,13 @@ export default function ConfirmDialog({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="confirm-dialog-title"
+        aria-labelledby={titleId}
         onKeyDown={(event) => {
           if (event.key === "Escape") onClose();
         }}
         className="w-full max-w-md rounded-xl border border-white/10 bg-slate-900 p-6 shadow-2xl"
       >
-        <h2 id="confirm-dialog-title" className="text-lg font-bold text-slate-50">
+        <h2 id={titleId} className="text-lg font-bold text-slate-50">
           {title}
         </h2>
         {body ? <p className="mt-3 text-sm text-slate-300">{body}</p> : null}

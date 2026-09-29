@@ -26,6 +26,7 @@ export default function SuperAdminOrgSwitcher() {
   const router = useRouter();
   const { isSuperAdmin, loading: permissionsLoading } = usePermissions();
   const [orgs, setOrgs] = useState<Org[] | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [value, setValue] = useState("");
 
   useEffect(() => {
@@ -42,7 +43,10 @@ export default function SuperAdminOrgSwitcher() {
         }
       })
       .catch(() => {
-        if (!cancelled) setOrgs([]);
+        if (!cancelled) {
+          setOrgs([]);
+          setLoadError(true);
+        }
       });
     return () => {
       cancelled = true;
@@ -68,7 +72,7 @@ export default function SuperAdminOrgSwitcher() {
       className="max-w-[180px] truncate rounded-lg border border-purple-500/30 bg-cyber-base/80 px-2 py-1.5 text-[11px] text-purple-300 outline-none transition focus:border-purple-500 sm:max-w-[220px] sm:px-3 sm:py-2 sm:text-xs"
     >
       {!orgs || orgs.length === 0 ? (
-        <option value="">No tenants</option>
+        <option value="">{loadError ? "Could not load tenants" : "No tenants"}</option>
       ) : (
         orgs.map((org) => (
           <option key={org.id} value={org.id}>

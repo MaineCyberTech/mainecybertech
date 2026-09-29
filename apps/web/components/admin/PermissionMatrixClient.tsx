@@ -41,9 +41,15 @@ export default function PermissionMatrixClient({
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-white/10">
-            <th className="px-4 py-3 text-xs uppercase tracking-[0.12em] text-slate-400">Module</th>
+            <th
+              scope="col"
+              className="px-4 py-3 text-xs uppercase tracking-[0.12em] text-slate-400"
+            >
+              Module
+            </th>
             {roles.map((role: Role) => (
               <th
+                scope="col"
                 key={role.id}
                 className="px-3 py-3 text-center text-xs uppercase tracking-[0.12em] text-slate-400"
               >

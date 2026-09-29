@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { getClientApi } from "@/lib/client-api";
+import { formatDateTime } from "@/lib/format";
 
 type Version = {
   id: string;
@@ -47,7 +48,7 @@ export default function DocumentVersionsClient({ documentId }: Props) {
               <span className="rounded bg-emerald-600/15 px-1.5 py-0.5 font-mono text-emerald-400">
                 v{v.version_number}
               </span>
-              <span className="text-slate-400">{new Date(v.created_at).toLocaleString()}</span>
+              <span className="text-slate-400">{formatDateTime(v.created_at)}</span>
             </div>
           </div>
         ))}

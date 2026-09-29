@@ -5,6 +5,7 @@ import AvatarPill from "@/components/admin/AvatarPill";
 import ConfirmIntentButton from "@/components/admin/ConfirmIntentButton";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import CommentBody from "@/components/CommentBody";
+import { useToast } from "@/components/ui/ToastProvider";
 
 type Owner = { id: string; full_name?: string | null; email?: string | null };
 type Comment = {
@@ -43,7 +44,6 @@ type TaskMutationResult = {
   error?: string;
   task?: TaskRecord;
 };
-type Toast = { id: string; kind: "success" | "error" | "info"; message: string };
 
 type Props = {
   projectId: string;
@@ -148,14 +148,8 @@ export default function ProjectTaskListV5({
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
   const [dragId, setDragId] = useState<string | null>(null);
   const [isSavingOrder, startTransition] = useTransition();
-  const [toasts, setToasts] = useState<Toast[]>([]);
   const [isCreatingTask, startCreateTransition] = useTransition();
-
-  function pushToast(kind: Toast["kind"], message: string) {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    setToasts((prev) => [...prev, { id, kind, message }]);
-    setTimeout(() => setToasts((prev) => prev.filter((toast) => toast.id !== id)), 2600);
-  }
+  const { pushToast } = useToast();
 
   const filtered = useMemo(
     () =>
@@ -241,23 +235,6 @@ export default function ProjectTaskListV5({
 
   return (
     <div className="space-y-6">
-      <div className="pointer-events-none fixed right-4 top-4 z-50 space-y-2 sm:right-6 sm:top-6">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={
-              toast.kind === "success"
-                ? pillBase("success")
-                : toast.kind === "error"
-                  ? pillBase("danger")
-                  : pillBase("default")
-            }
-          >
-            {toast.message}
-          </div>
-        ))}
-      </div>
-
       <div className="grid gap-4 md:grid-cols-4">
         <div>
           <label className="cyber-label" htmlFor="task-search">
@@ -446,7 +423,6 @@ export default function ProjectTaskListV5({
               dragId={dragId}
               onDropped={moveItem}
               onDragEnd={() => setDragId(null)}
-              pushToast={pushToast}
             />
           ))
         ) : (
@@ -475,7 +451,6 @@ type CardProps = {
   onDragStart: (taskId: string) => void;
   onDropped: (activeId: string, overId: string) => void;
   onDragEnd: () => void;
-  pushToast: (kind: Toast["kind"], message: string) => void;
 };
 
 function AdminTaskCard({
@@ -494,8 +469,8 @@ function AdminTaskCard({
   onDragStart,
   onDropped,
   onDragEnd,
-  pushToast,
 }: CardProps) {
+  const { pushToast } = useToast();
   const [taskState, setTaskState] = useState(task);
   const [isSubmitting, startTransition] = useTransition();
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);

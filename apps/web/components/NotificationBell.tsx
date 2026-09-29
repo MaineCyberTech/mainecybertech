@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { getClientApi } from "@/lib/client-api";
 import { getClientEnv } from "@/lib/env";
+import { formatDateTime } from "@/lib/format";
 
 const MODULES = ["tickets", "projects", "documents", "billing", "system"] as const;
 
@@ -187,7 +188,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
     if (n.module === "tickets" && n.module_id) return `${basePath}/tickets/${n.module_id}`;
     if (n.module === "projects" && n.module_id) return `${basePath}/projects/${n.module_id}`;
     if (n.module === "documents" && n.module_id) return `${basePath}/documents/${n.module_id}`;
-    return "#";
+    return `${basePath}/notifications`;
   };
 
   return (
@@ -255,7 +256,7 @@ export default function NotificationBell({ basePath, initialUnread = 0 }: Props)
                       <p className="text-sm font-medium text-slate-200">{n.title}</p>
                       <p className="mt-0.5 line-clamp-2 text-xs text-slate-400">{n.body}</p>
                       <p className="mt-1 text-[11px] text-slate-600">
-                        {new Date(n.created_at).toLocaleString()}
+                        {formatDateTime(n.created_at)}
                       </p>
                     </Link>
                     <button

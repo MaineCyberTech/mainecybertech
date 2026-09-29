@@ -4,9 +4,7 @@ import Link from "next/link";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import { cn } from "@/lib/cn";
-import AdminListPageSearch, {
-  type AdminListPageSearchProps,
-} from "./AdminListPageSearch";
+import AdminListPageSearch, { type AdminListPageSearchProps } from "./AdminListPageSearch";
 
 export type AdminListPageProps<T> = {
   title: string;
@@ -20,6 +18,7 @@ export type AdminListPageProps<T> = {
   headerContent?: ReactNode;
   search?: AdminListPageSearchProps;
   loading?: boolean;
+  loadFailed?: boolean;
   emptyMessage?: string;
   emptyState?: ReactNode;
   panel?: boolean;
@@ -56,6 +55,7 @@ export default function AdminListPage<T>({
   headerContent,
   search,
   loading = false,
+  loadFailed = false,
   emptyMessage,
   emptyState,
   panel = false,
@@ -69,25 +69,20 @@ export default function AdminListPage<T>({
   const list =
     children ??
     items.map((item, index) => (
-      <Fragment key={getId ? getId(item) : index}>
-        {renderRow?.(item, index)}
-      </Fragment>
+      <Fragment key={getId ? getId(item) : index}>{renderRow?.(item, index)}</Fragment>
     ));
 
   return (
     <div className={cn("space-y-6", className)}>
       <Breadcrumbs
-        items={[
-          { label: "Admin", href: "/admin" },
-          { label: breadcrumbLabel ?? title },
-        ]}
+        items={[{ label: "Admin", href: "/admin" }, { label: breadcrumbLabel ?? title }]}
       />
       {subnavCurrent ? <AdminSubnav current={subnavCurrent} /> : null}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="cyber-heading text-2xl">{title}</h1>
-          {description ? <p className="mt-3 cyber-subtext">{description}</p> : null}
+          {description ? <p className="cyber-subtext mt-3">{description}</p> : null}
         </div>
         <div className="flex flex-wrap gap-3">
           {actions}
@@ -105,10 +100,12 @@ export default function AdminListPage<T>({
       {loading ? (
         <AdminListPageSkeleton panel={panel} />
       ) : !hasItems ? (
-        emptyState ?? (
-          <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-8 text-center text-sm text-slate-400">
-            {emptyMessage ?? "No items found."}
-          </div>
+        loadFailed ? null : (
+          (emptyState ?? (
+            <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-8 text-center text-sm text-slate-400">
+              {emptyMessage ?? "No items found."}
+            </div>
+          ))
         )
       ) : panel ? (
         <section className="cyber-panel">

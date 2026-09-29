@@ -394,6 +394,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { key: "api-keys", href: "/admin/api-keys", label: "API Keys", module: "api-keys" },
       { key: "webhooks", href: "/admin/webhooks", label: "Webhooks", module: "webhooks" },
+      {
+        key: "webhook-dead-letters",
+        href: "/admin/webhooks/dead-letters",
+        label: "Dead Letters",
+        module: "webhooks",
+      },
       { key: "final", href: "/admin/final", label: "More Tools", module: "final" },
       { key: "health", href: "/admin/health", label: "Health", module: "health" },
       { key: "settings", href: "/admin/settings", label: "Settings", module: "settings" },
