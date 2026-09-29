@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
@@ -8,14 +9,18 @@ import { getRecommendationsForProduct } from "@/lib/catalog/bundles";
 import ProductForm from "../ProductForm";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Product Detail - Store - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Product Detail - Store (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 async function fetchProduct(id: string) {
   try {
     const product = await getApiClient().store.getProductById(id);
     return toProductView(product);
-  } catch {
-    return null;
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 }
 
@@ -36,29 +41,6 @@ export default async function AdminStoreProductDetailPage(props: {
 
   const [product, categories] = await Promise.all([fetchProduct(id), fetchCategories()]);
   const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
-
-  if (!product) {
-    return (
-      <AdminPageShell
-        breadcrumbs={
-          <Breadcrumbs
-            items={[
-              { label: "Admin", href: "/admin" },
-              { label: "Store", href: "/admin/store" },
-              { label: "Products", href: "/admin/store/products" },
-              { label: id },
-            ]}
-          />
-        }
-        subnav={<AdminSubnav current="store-products" />}
-        title="Product Not Found"
-      >
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-8 text-center text-sm text-amber-300">
-          Product with ID &ldquo;{id}&rdquo; was not found in the catalog.
-        </div>
-      </AdminPageShell>
-    );
-  }
 
   const recommendations = getRecommendationsForProduct(id);
 
@@ -137,12 +119,24 @@ export default async function AdminStoreProductDetailPage(props: {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-cyber-base/60">
-                    <th className="px-3 py-2 text-left font-semibold text-slate-300">ID</th>
-                    <th className="px-3 py-2 text-left font-semibold text-slate-300">Label</th>
-                    <th className="px-3 py-2 text-left font-semibold text-slate-300">Type</th>
-                    <th className="px-3 py-2 text-left font-semibold text-slate-300">Required</th>
-                    <th className="px-3 py-2 text-left font-semibold text-slate-300">Help</th>
-                    <th className="px-3 py-2 text-left font-semibold text-slate-300">Options</th>
+                    <th scope="col" className="px-3 py-2 text-left font-semibold text-slate-300">
+                      ID
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left font-semibold text-slate-300">
+                      Label
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left font-semibold text-slate-300">
+                      Type
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left font-semibold text-slate-300">
+                      Required
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left font-semibold text-slate-300">
+                      Help
+                    </th>
+                    <th scope="col" className="px-3 py-2 text-left font-semibold text-slate-300">
+                      Options
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

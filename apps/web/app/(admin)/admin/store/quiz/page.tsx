@@ -105,10 +105,18 @@ export default async function AdminQuizPage() {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-white/10 bg-white/5">
               <tr>
-                <th className="px-4 py-3 font-semibold text-slate-400">When</th>
-                <th className="px-4 py-3 font-semibold text-slate-400">Quick Win</th>
-                <th className="px-4 py-3 font-semibold text-slate-400">Bundle</th>
-                <th className="px-4 py-3 font-semibold text-slate-400">Monthly Plan</th>
+                <th scope="col" className="px-4 py-3 font-semibold text-slate-400">
+                  When
+                </th>
+                <th scope="col" className="px-4 py-3 font-semibold text-slate-400">
+                  Quick Win
+                </th>
+                <th scope="col" className="px-4 py-3 font-semibold text-slate-400">
+                  Bundle
+                </th>
+                <th scope="col" className="px-4 py-3 font-semibold text-slate-400">
+                  Monthly Plan
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">

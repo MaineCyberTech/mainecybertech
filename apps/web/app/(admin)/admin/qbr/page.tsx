@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import { StatusPill } from "@/components/admin/StatusPill";
 import Link from "next/link";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "QBR Reports - Admin - Maine CyberTech" };
@@ -49,37 +50,37 @@ export default async function QbrPage() {
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Reports</h2>
         <div className="mt-6 space-y-3">
-          {reports.length > 0 ? (
-            reports.map((r) => (
-              <Link
-                key={r.id}
-                href={`/admin/qbr/${r.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{r.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {r.period_start
-                        ? `${r.period_start} → ${new Date(r.created_at).toISOString().slice(0, 10)}`
-                        : `Generated ${new Date(r.created_at).toISOString().slice(0, 10)}`}
-                    </p>
+          {reports.length > 0
+            ? reports.map((r) => (
+                <Link
+                  key={r.id}
+                  href={`/admin/qbr/${r.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{r.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {r.period_start
+                          ? `${r.period_start} → ${formatDate(r.created_at)}`
+                          : `Generated ${formatDate(r.created_at)}`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusPill status={r.status} />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <StatusPill status={r.status} />
-                  </div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="📊"
-              title="No QBR reports yet"
-              description="Generate your first quarterly business review report aggregating data across all client modules."
-              actionHref="/admin/qbr/new"
-              actionLabel="Generate Report"
-            />
-          )}
+                </Link>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="📊"
+                  title="No QBR reports yet"
+                  description="Generate your first quarterly business review report aggregating data across all client modules."
+                  actionHref="/admin/qbr/new"
+                  actionLabel="Generate Report"
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

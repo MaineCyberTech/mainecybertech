@@ -59,30 +59,33 @@ export default async function DmarcPage() {
       />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((d) => (
-              <div key={d.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <Link className="transition hover:text-emerald-400" href={`/admin/dmarc/${d.id}`}>
-                    <p className="font-medium text-slate-50">{d.domain}</p>
-                  </Link>
-                  <div className="flex items-center gap-3 text-xs">
-                    <span>SPF: {ok(d.spf_valid)}</span>
-                    <span>DKIM: {ok(d.dkim_configured)}</span>
-                    <span>
-                      DMARC: {ok(d.dmarc_valid)} {d.dmarc_policy ? `(${d.dmarc_policy})` : ""}
-                    </span>
+          {items.length > 0
+            ? items.map((d) => (
+                <div key={d.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    <Link
+                      className="transition hover:text-emerald-400"
+                      href={`/admin/dmarc/${d.id}`}
+                    >
+                      <p className="font-medium text-slate-50">{d.domain}</p>
+                    </Link>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span>SPF: {ok(d.spf_valid)}</span>
+                      <span>DKIM: {ok(d.dkim_configured)}</span>
+                      <span>
+                        DMARC: {ok(d.dmarc_valid)} {d.dmarc_policy ? `(${d.dmarc_policy})` : ""}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="📧"
-              title="No DMARC assessments"
-              description="Record SPF/DKIM/DMARC assessment results."
-            />
-          )}
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="📧"
+                  title="No DMARC assessments"
+                  description="Record SPF/DKIM/DMARC assessment results."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

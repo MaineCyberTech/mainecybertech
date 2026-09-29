@@ -55,48 +55,50 @@ export default async function SatisfactionPulseAdminPage() {
         <section className="cyber-panel lg:col-span-2">
           <h2 className="cyber-heading text-lg">Pulses</h2>
           <div className="mt-4 space-y-3">
-            {items.length > 0 ? (
-              items.map((p) => (
-                <div
-                  key={String(p.id)}
-                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-                >
-                  <Link
-                    className="transition hover:text-emerald-400"
-                    href={`/admin/satisfaction-pulse/${p.id}`}
+            {items.length > 0
+              ? items.map((p) => (
+                  <div
+                    key={String(p.id)}
+                    className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                   >
-                    <p className="font-medium text-slate-50">{String(p.subject)}</p>
-                  </Link>
-                  <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-                    <span className="rounded-full border border-white/10 px-2 py-0.5">
-                      {String(p.source || "ticket")}
-                    </span>
-                    <span className="rounded-full border border-white/10 px-2 py-0.5">
-                      {String(p.status || "draft")}
-                    </span>
-                    {typeof p.rating === "number" && (
+                    <Link
+                      className="transition hover:text-emerald-400"
+                      href={`/admin/satisfaction-pulse/${p.id}`}
+                    >
+                      <p className="font-medium text-slate-50">{String(p.subject)}</p>
+                    </Link>
+                    <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
                       <span className="rounded-full border border-white/10 px-2 py-0.5">
-                        Rating: {p.rating}
+                        {String(p.source || "ticket")}
                       </span>
-                    )}
-                    {p.sent_at != null && (
-                      <span className="rounded-full border border-white/10 px-2 py-0.5">Sent</span>
-                    )}
-                    {p.responded_at != null && (
                       <span className="rounded-full border border-white/10 px-2 py-0.5">
-                        Responded
+                        {String(p.status || "draft")}
                       </span>
-                    )}
-                  </p>
-                </div>
-              ))
-            ) : (
-              <EmptyState
-                icon="😊"
-                title="No pulses"
-                description="Create a pulse survey to capture client satisfaction."
-              />
-            )}
+                      {typeof p.rating === "number" && (
+                        <span className="rounded-full border border-white/10 px-2 py-0.5">
+                          Rating: {p.rating}
+                        </span>
+                      )}
+                      {p.sent_at != null && (
+                        <span className="rounded-full border border-white/10 px-2 py-0.5">
+                          Sent
+                        </span>
+                      )}
+                      {p.responded_at != null && (
+                        <span className="rounded-full border border-white/10 px-2 py-0.5">
+                          Responded
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                ))
+              : !loadFailed && (
+                  <EmptyState
+                    icon="😊"
+                    title="No pulses"
+                    description="Create a pulse survey to capture client satisfaction."
+                  />
+                )}
           </div>
         </section>
 
@@ -104,39 +106,35 @@ export default async function SatisfactionPulseAdminPage() {
           <section className="cyber-panel">
             <h2 className="cyber-heading text-lg">Templates ({templates.length})</h2>
             <div className="mt-3 space-y-2">
-              {templates.length > 0 ? (
-                templates.map((t) => (
-                  <div
-                    key={String(t.id)}
-                    className="rounded-lg border border-white/5 bg-cyber-base/60 p-3 text-sm"
-                  >
-                    <span className="text-slate-50">{String(t.name)}</span>
-                    <span className="ml-2 text-xs text-slate-400">
-                      {t.is_active ? "active" : "inactive"}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-slate-500">No templates yet.</p>
-              )}
+              {templates.length > 0
+                ? templates.map((t) => (
+                    <div
+                      key={String(t.id)}
+                      className="rounded-lg border border-white/5 bg-cyber-base/60 p-3 text-sm"
+                    >
+                      <span className="text-slate-50">{String(t.name)}</span>
+                      <span className="ml-2 text-xs text-slate-400">
+                        {t.is_active ? "active" : "inactive"}
+                      </span>
+                    </div>
+                  ))
+                : !loadFailed && <EmptyState icon="📋" title="No templates yet." />}
             </div>
           </section>
 
           <section className="cyber-panel">
             <h2 className="cyber-heading text-lg">Schedules ({schedules.length})</h2>
             <div className="mt-3 space-y-2">
-              {schedules.length > 0 ? (
-                schedules.map((s) => (
-                  <div
-                    key={String(s.id)}
-                    className="rounded-lg border border-white/5 bg-cyber-base/60 p-3 text-sm"
-                  >
-                    <span className="text-slate-50">{String(s.name)}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-slate-500">No schedules yet.</p>
-              )}
+              {schedules.length > 0
+                ? schedules.map((s) => (
+                    <div
+                      key={String(s.id)}
+                      className="rounded-lg border border-white/5 bg-cyber-base/60 p-3 text-sm"
+                    >
+                      <span className="text-slate-50">{String(s.name)}</span>
+                    </div>
+                  ))
+                : !loadFailed && <EmptyState icon="📅" title="No schedules yet." />}
             </div>
           </section>
 

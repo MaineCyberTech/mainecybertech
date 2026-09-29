@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import { getApiClient } from "@/lib/api";
 import { getIntakeToProjectData } from "@/lib/catalog/v5-loaders";
 import type { StoreQuoteRequest } from "@mct/sdk";
+import { formatDateShort } from "@/lib/format";
 import ConvertIntakeForm from "./ConvertIntakeForm";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +60,7 @@ export default async function AdminStoreOperationsPage() {
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-slate-200">Awaiting Handoff</h2>
-        {pending.length === 0 ? (
+        {!loadFailed && pending.length === 0 ? (
           <EmptyState
             icon="🚀"
             title="Nothing awaiting handoff"
@@ -77,7 +78,7 @@ export default async function AdminStoreOperationsPage() {
                     <p className="font-medium text-slate-50">{customerName(request.customer)}</p>
                     <p className="mt-1 text-xs text-slate-500">
                       {itemLabels(request.items).join(", ") || "No items"} ·{" "}
-                      {new Date(request.created_at).toLocaleDateString()}
+                      {formatDateShort(request.created_at)}
                     </p>
                   </div>
                   <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">

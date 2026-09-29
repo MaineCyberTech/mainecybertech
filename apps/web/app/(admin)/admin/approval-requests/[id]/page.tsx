@@ -6,9 +6,13 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import ApprovalWorkflowActions from "./ApprovalWorkflowActions";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Approval Request Detail - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Approval Request Detail (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 export default async function DetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
@@ -109,16 +113,12 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
                 {record?.due_at != null && (
                   <>
                     <dt className="text-slate-400">Due</dt>
-                    <dd className="text-slate-50">
-                      {new Date(String(record.due_at)).toISOString().slice(0, 10)}
-                    </dd>
+                    <dd className="text-slate-50">{formatDate(record.due_at)}</dd>
                   </>
                 )}
                 <dt className="text-slate-400">Created</dt>
                 <dd className="text-slate-50">
-                  {record?.created_at
-                    ? new Date(String(record.created_at)).toISOString().slice(0, 10)
-                    : "—"}
+                  {record?.created_at ? formatDate(record.created_at) : "—"}
                 </dd>
               </div>
             </dl>

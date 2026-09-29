@@ -4,6 +4,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { StatusPill, type StatusTone } from "@/components/admin/StatusPill";
 import { getApiClient } from "@/lib/api";
 import { toProductView, toCategoryView } from "@/lib/catalog/store-view";
 import ProductForm from "./ProductForm";
@@ -22,15 +23,12 @@ function riskColor(risk: string) {
   return map[risk] ?? "border-white/10 bg-white/5 text-slate-400";
 }
 
-function statusPill(status: string) {
+function productStatusTone(status: string): StatusTone {
   const lower = status.toLowerCase();
-  if (lower === "live" || lower === "active" || lower === "published") {
-    return "border-emerald-500/25 bg-emerald-500/10 text-emerald-400";
-  }
-  if (lower.startsWith("draft") || lower === "hidden") {
-    return "border-slate-500/25 bg-slate-500/10 text-slate-400";
-  }
-  return "border-white/10 bg-white/5 text-slate-400";
+  if (lower === "live" || lower === "active" || lower === "published") return "emerald";
+  if (lower.startsWith("draft")) return "amber";
+  if (lower === "hidden") return "slate";
+  return "slate";
 }
 
 async function fetchProducts() {
@@ -179,12 +177,24 @@ export default async function AdminStoreProductsPage(props: {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10 bg-cyber-base/60">
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Name</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Category</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Price Range</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Status</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Risk</th>
-              <th className="px-4 py-3 text-right font-semibold text-slate-300">Actions</th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Name
+              </th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Category
+              </th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Price Range
+              </th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Status
+              </th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Risk
+              </th>
+              <th scope="col" className="px-4 py-3 text-right font-semibold text-slate-300">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -201,11 +211,7 @@ export default async function AdminStoreProductsPage(props: {
                 </td>
                 <td className="px-4 py-3 text-emerald-400">{p.priceRange}</td>
                 <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
-                  >
-                    {p.status}
-                  </span>
+                  <StatusPill status={p.status} tone={productStatusTone(p.status)} />
                 </td>
                 <td className="px-4 py-3">
                   <span
@@ -237,7 +243,7 @@ export default async function AdminStoreProductsPage(props: {
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 ? (
+        {!loadFailed && filtered.length === 0 ? (
           <div className="p-8 text-center text-sm text-slate-400">
             No products match the current filters.
           </div>
@@ -254,10 +260,8 @@ export default async function AdminStoreProductsPage(props: {
           >
             <div className="flex items-start justify-between gap-2">
               <p className="font-medium text-slate-50">{p.name}</p>
-              <span
-                className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
-              >
-                {p.status}
+              <span className="shrink-0">
+                <StatusPill status={p.status} tone={productStatusTone(p.status)} />
               </span>
             </div>
             <p className="mt-1 text-xs text-slate-500">{p.slug}</p>
@@ -273,7 +277,7 @@ export default async function AdminStoreProductsPage(props: {
             </div>
           </Link>
         ))}
-        {filtered.length === 0 ? (
+        {!loadFailed && filtered.length === 0 ? (
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-8 text-center text-sm text-slate-400">
             No products match the current filters.
           </div>

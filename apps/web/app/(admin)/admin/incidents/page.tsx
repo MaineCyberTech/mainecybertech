@@ -8,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import DataErrorNote from "@/components/admin/DataErrorNote";
 import { createIncident } from "@/lib/module-actions";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Incidents" };
 export default async function IncidentsPage() {
@@ -60,35 +61,35 @@ export default async function IncidentsPage() {
       />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((i) => (
-              <div key={i.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <div className="flex items-center justify-between">
-                  <Link
-                    className="transition hover:text-emerald-400"
-                    href={`/admin/incidents/${i.id}`}
-                  >
-                    <p className="font-medium text-slate-50">{i.title}</p>
-                  </Link>
-                  <span
-                    className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] border-${sev(i.severity)}-500/25 bg-${sev(i.severity)}-500/10 text-${sev(i.severity)}-300`}
-                  >
-                    {i.status}
-                  </span>
+          {items.length > 0
+            ? items.map((i) => (
+                <div key={i.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <div className="flex items-center justify-between">
+                    <Link
+                      className="transition hover:text-emerald-400"
+                      href={`/admin/incidents/${i.id}`}
+                    >
+                      <p className="font-medium text-slate-50">{i.title}</p>
+                    </Link>
+                    <span
+                      className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] border-${sev(i.severity)}-500/25 bg-${sev(i.severity)}-500/10 text-${sev(i.severity)}-300`}
+                    >
+                      {i.status}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {i.incident_type} &bull; {i.severity} &bull; Detected:{" "}
+                    {i.detected_at ? formatDate(i.detected_at) : "—"}
+                  </p>
                 </div>
-                <p className="mt-1 text-xs text-slate-400">
-                  {i.incident_type} &bull; {i.severity} &bull; Detected:{" "}
-                  {i.detected_at ? new Date(i.detected_at).toISOString().slice(0, 10) : "—"}
-                </p>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="🚨"
-              title="No incidents"
-              description="Report a security incident to begin the response workflow."
-            />
-          )}
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="🚨"
+                  title="No incidents"
+                  description="Report a security incident to begin the response workflow."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

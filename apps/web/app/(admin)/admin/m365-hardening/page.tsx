@@ -51,28 +51,29 @@ export default async function M365Page() {
       />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((t) => (
-              <div key={t.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <Link
-                  className="transition hover:text-emerald-400"
-                  href={`/admin/m365-hardening/${t.id}`}
-                >
-                  <p className="font-medium text-slate-50">{t.tenant_domain}</p>
-                </Link>
-                <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-                  {chk(t.mfa_enforced)} MFA {chk(t.conditional_access_configured)} CA{" "}
-                  {chk(t.legacy_auth_blocked)} Legacy Blocked &bull; Score: {t.overall_score ?? "—"}
-                </p>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="🏢"
-              title="No M365 assessments"
-              description="Assess a Microsoft 365 tenant security posture."
-            />
-          )}
+          {items.length > 0
+            ? items.map((t) => (
+                <div key={t.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <Link
+                    className="transition hover:text-emerald-400"
+                    href={`/admin/m365-hardening/${t.id}`}
+                  >
+                    <p className="font-medium text-slate-50">{t.tenant_domain}</p>
+                  </Link>
+                  <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
+                    {chk(t.mfa_enforced)} MFA {chk(t.conditional_access_configured)} CA{" "}
+                    {chk(t.legacy_auth_blocked)} Legacy Blocked &bull; Score:{" "}
+                    {t.overall_score ?? "—"}
+                  </p>
+                </div>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="🏢"
+                  title="No M365 assessments"
+                  description="Assess a Microsoft 365 tenant security posture."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

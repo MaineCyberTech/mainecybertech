@@ -93,7 +93,7 @@ export default async function ServiceCatalogPage() {
           </div>
         </section>
       ))}
-      {items.length === 0 && (
+      {!loadFailed && items.length === 0 && (
         <EmptyState
           icon="💲"
           title="No services defined"

@@ -8,6 +8,7 @@ import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
 import { createVendorContract } from "@/lib/module-actions";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Vendor Contracts - Admin - Maine CyberTech" };
@@ -86,8 +87,7 @@ export default async function VendorContractsPage() {
                   {c.vendor_name} — {c.service_name}
                 </p>
                 <p className="text-xs text-slate-400">
-                  Renews:{" "}
-                  {c.renewal_date ? new Date(c.renewal_date).toISOString().slice(0, 10) : "N/A"}
+                  Renews: {c.renewal_date ? formatDate(c.renewal_date) : "N/A"}
                 </p>
               </Link>
             ))}
@@ -97,41 +97,39 @@ export default async function VendorContractsPage() {
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">All Contracts ({contracts.length})</h2>
         <div className="mt-4 space-y-3">
-          {contracts.length > 0 ? (
-            contracts.map((c) => (
-              <Link
-                key={c.id}
-                href={`/admin/vendor-contracts/${c.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">
-                      {c.vendor_name} — {c.service_name}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {c.contract_value ? `$${c.contract_value.toLocaleString()}` : "N/A"} &bull;{" "}
-                      {c.auto_renews ? "Auto-renews" : "Manual renewal"} &bull;{" "}
-                      {c.end_date
-                        ? `Ends ${new Date(c.end_date).toISOString().slice(0, 10)}`
-                        : "Ongoing"}
-                    </p>
+          {contracts.length > 0
+            ? contracts.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/admin/vendor-contracts/${c.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">
+                        {c.vendor_name} — {c.service_name}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {c.contract_value ? formatCurrency(c.contract_value) : "N/A"} &bull;{" "}
+                        {c.auto_renews ? "Auto-renews" : "Manual renewal"} &bull;{" "}
+                        {c.end_date ? `Ends ${formatDate(c.end_date)}` : "Ongoing"}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${c.status === "active" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-white/10 bg-white/5 text-slate-300"}`}
+                    >
+                      {c.status}
+                    </span>
                   </div>
-                  <span
-                    className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${c.status === "active" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-white/10 bg-white/5 text-slate-300"}`}
-                  >
-                    {c.status}
-                  </span>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="📅"
-              title="No contracts"
-              description="Track vendor contracts and renewal dates."
-            />
-          )}
+                </Link>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="📅"
+                  title="No contracts"
+                  description="Track vendor contracts and renewal dates."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

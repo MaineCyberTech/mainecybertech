@@ -103,41 +103,44 @@ export default async function NetworkDiagramsPage({ searchParams }: NetworkDiagr
           <h2 className="cyber-heading text-lg">Network Diagrams</h2>
         </div>
         <div className="mt-6 space-y-3">
-          {diagrams.length > 0 ? (
-            diagrams.map((d) => {
-              const nodes = nodesOf(d);
-              const edges = edgesOf(d);
-              return (
-                <div key={d.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                  <Link
-                    className="transition hover:text-emerald-400"
-                    href={`/admin/field-services/network-diagrams/${d.id}`}
+          {diagrams.length > 0
+            ? diagrams.map((d) => {
+                const nodes = nodesOf(d);
+                const edges = edgesOf(d);
+                return (
+                  <div
+                    key={d.id}
+                    className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                   >
-                    <p className="font-medium text-slate-50">{d.name}</p>
-                  </Link>
-                  {d.description ? (
-                    <p className="mt-1 text-xs text-slate-400">{d.description}</p>
-                  ) : null}
-                  <p className="mt-1 text-xs text-slate-400">
-                    Nodes: {nodes.length} &bull; Edges: {edges.length}
-                  </p>
-                  {nodes.length > 0 ? (
-                    <ul className="mt-2 list-disc pl-5 text-xs text-slate-400">
-                      {nodes.map((n, i) => (
-                        <li key={n?.id ?? i}>{String(n?.label ?? n?.id ?? `node-${i}`)}</li>
-                      ))}
-                    </ul>
-                  ) : null}
-                </div>
-              );
-            })
-          ) : (
-            <EmptyState
-              icon="🌐"
-              title="No network diagrams"
-              description="Use the form above to create one."
-            />
-          )}
+                    <Link
+                      className="transition hover:text-emerald-400"
+                      href={`/admin/field-services/network-diagrams/${d.id}`}
+                    >
+                      <p className="font-medium text-slate-50">{d.name}</p>
+                    </Link>
+                    {d.description ? (
+                      <p className="mt-1 text-xs text-slate-400">{d.description}</p>
+                    ) : null}
+                    <p className="mt-1 text-xs text-slate-400">
+                      Nodes: {nodes.length} &bull; Edges: {edges.length}
+                    </p>
+                    {nodes.length > 0 ? (
+                      <ul className="mt-2 list-disc pl-5 text-xs text-slate-400">
+                        {nodes.map((n, i) => (
+                          <li key={n?.id ?? i}>{String(n?.label ?? n?.id ?? `node-${i}`)}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                );
+              })
+            : !loadFailed && (
+                <EmptyState
+                  icon="🌐"
+                  title="No network diagrams"
+                  description="Use the form above to create one."
+                />
+              )}
         </div>
       </section>
 

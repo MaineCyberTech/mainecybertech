@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -63,7 +64,7 @@ export default async function AdminClientPortalPage({ searchParams }: Props) {
       {orgId ? (
         <ClientPortalEntitlementsForm organizationId={orgId} />
       ) : (
-        <p className="text-sm text-slate-400">No organizations available.</p>
+        !loadFailed && <EmptyState icon="🏢" title="No organizations available." />
       )}
     </AdminPageShell>
   );

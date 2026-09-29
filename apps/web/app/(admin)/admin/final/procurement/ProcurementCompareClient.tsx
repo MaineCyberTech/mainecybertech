@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { getClientApi } from "@/lib/client-api";
+import { formatCurrency } from "@/lib/format";
 
 type Quote = {
   id: string;
@@ -68,7 +69,7 @@ export default function ProcurementCompareClient({
           >
             <span className="text-slate-50">{String(q.vendor_name ?? "Vendor")}</span>
             <span className="text-xs text-slate-400">
-              ${Number(q.quote_amount ?? 0).toLocaleString()}
+              {formatCurrency(Number(q.quote_amount ?? 0))}
             </span>
             <input
               type="checkbox"
@@ -98,17 +99,25 @@ export default function ProcurementCompareClient({
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-white/10 text-xs uppercase tracking-wider text-slate-400">
-                <th className="py-2 pr-4">Vendor</th>
-                <th className="py-2 pr-4">Quote</th>
-                <th className="py-2 pr-4">Savings</th>
-                <th className="py-2">Lowest</th>
+                <th scope="col" className="py-2 pr-4">
+                  Vendor
+                </th>
+                <th scope="col" className="py-2 pr-4">
+                  Quote
+                </th>
+                <th scope="col" className="py-2 pr-4">
+                  Savings
+                </th>
+                <th scope="col" className="py-2">
+                  Lowest
+                </th>
               </tr>
             </thead>
             <tbody>
               {((result.quotes as Quote[]) ?? []).map((q) => (
                 <tr key={q.id} className="border-b border-white/5">
                   <td className="py-2 pr-4 text-slate-50">{q.vendor_name}</td>
-                  <td className="py-2 pr-4 text-slate-300">${(q.price ?? 0).toLocaleString()}</td>
+                  <td className="py-2 pr-4 text-slate-300">{formatCurrency(q.price ?? 0)}</td>
                   <td className="py-2 pr-4 text-slate-300">{q.savings ?? 0}%</td>
                   <td className="py-2 text-emerald-400">{q.isLowest ? "✓" : "—"}</td>
                 </tr>
@@ -116,9 +125,9 @@ export default function ProcurementCompareClient({
             </tbody>
           </table>
           <p className="mt-3 text-xs text-slate-400">
-            Lowest: ${(result.lowestPrice as number).toLocaleString()} &bull; Highest: $
-            {(result.highestPrice as number).toLocaleString()} &bull; Average: $
-            {(result.averagePrice as number).toLocaleString()}
+            Lowest: {formatCurrency(result.lowestPrice as number)} &bull; Highest:{" "}
+            {formatCurrency(result.highestPrice as number)} &bull; Average:{" "}
+            {formatCurrency(result.averagePrice as number)}
           </p>
         </div>
       )}

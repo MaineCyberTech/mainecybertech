@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import { getApiClient } from "@/lib/api";
 import { getLeadScoringData } from "@/lib/catalog/v5-loaders";
 import type { StoreLead } from "@mct/sdk";
+import { formatDateShort } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Lead Scoring - Store - Admin - Maine CyberTech" };
@@ -52,7 +53,7 @@ export default async function AdminStoreLeadsPage() {
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold text-slate-200">Scored Leads</h2>
-        {leads.length === 0 ? (
+        {!loadFailed && leads.length === 0 ? (
           <EmptyState
             icon="🎯"
             title="No scored leads yet"
@@ -63,11 +64,21 @@ export default async function AdminStoreLeadsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 bg-cyber-base/60">
-                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Band</th>
-                  <th className="px-4 py-3 text-right font-semibold text-slate-300">Score</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Signals</th>
-                  <th className="px-4 py-3 text-right font-semibold text-slate-300">Follow up</th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                    Band
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right font-semibold text-slate-300">
+                    Score
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                    Status
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                    Signals
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right font-semibold text-slate-300">
+                    Follow up
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -88,9 +99,7 @@ export default async function AdminStoreLeadsPage() {
                       {(lead.score_breakdown ?? []).map((b) => b.label).join(", ") || "—"}
                     </td>
                     <td className="px-4 py-3 text-right text-xs text-slate-500">
-                      {lead.follow_up_due_at
-                        ? new Date(lead.follow_up_due_at).toLocaleDateString()
-                        : "—"}
+                      {lead.follow_up_due_at ? formatDateShort(lead.follow_up_due_at) : "—"}
                     </td>
                   </tr>
                 ))}
@@ -122,8 +131,12 @@ export default async function AdminStoreLeadsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10 bg-cyber-base/60">
-                <th className="px-4 py-3 text-left font-semibold text-slate-300">Rule</th>
-                <th className="px-4 py-3 text-right font-semibold text-slate-300">Points</th>
+                <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                  Rule
+                </th>
+                <th scope="col" className="px-4 py-3 text-right font-semibold text-slate-300">
+                  Points
+                </th>
               </tr>
             </thead>
             <tbody>

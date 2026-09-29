@@ -62,43 +62,43 @@ export default async function StatusPage() {
       />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((s) => (
-              <div key={s.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <Link
-                      className="transition hover:text-emerald-400"
-                      href={`/admin/status/${s.id}`}
-                    >
-                      <p className="font-medium text-slate-50">{s.title}</p>
-                    </Link>
-                    {s.description && (
-                      <p className="mt-1 text-xs text-slate-400">{s.description}</p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {s.is_public && (
-                      <span className="inline-flex min-h-6 items-center rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-300">
-                        Public
+          {items.length > 0
+            ? items.map((s) => (
+                <div key={s.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <Link
+                        className="transition hover:text-emerald-400"
+                        href={`/admin/status/${s.id}`}
+                      >
+                        <p className="font-medium text-slate-50">{s.title}</p>
+                      </Link>
+                      {s.description && (
+                        <p className="mt-1 text-xs text-slate-400">{s.description}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {s.is_public && (
+                        <span className="inline-flex min-h-6 items-center rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-300">
+                          Public
+                        </span>
+                      )}
+                      <span
+                        className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${s.is_resolved ? "border-white/10 bg-white/5 text-slate-300" : `border-${sev(s.severity)}-500/25 bg-${sev(s.severity)}-500/10 text-${sev(s.severity)}-300`}`}
+                      >
+                        {s.is_resolved ? "Resolved" : s.severity}
                       </span>
-                    )}
-                    <span
-                      className={`inline-flex min-h-6 items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${s.is_resolved ? "border-white/10 bg-white/5 text-slate-300" : `border-${sev(s.severity)}-500/25 bg-${sev(s.severity)}-500/10 text-${sev(s.severity)}-300`}`}
-                    >
-                      {s.is_resolved ? "Resolved" : s.severity}
-                    </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="📢"
-              title="No status notices"
-              description="Publish maintenance windows or incident updates."
-            />
-          )}
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="📢"
+                  title="No status notices"
+                  description="Publish maintenance windows or incident updates."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

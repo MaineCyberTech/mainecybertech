@@ -62,43 +62,43 @@ export default async function OnboardingPage() {
       />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((o) => (
-              <div key={o.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <Link
-                  className="transition hover:text-emerald-400"
-                  href={`/admin/onboarding/${o.id}`}
-                >
-                  <p className="font-medium text-slate-50">{o.client_name}</p>
-                </Link>
-                <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-                  <span className="rounded-full border border-white/10 px-2 py-0.5">
-                    {o.status}
-                  </span>
-                  <span className="rounded-full border border-white/10 px-2 py-0.5">
-                    Phase: {o.phase}
-                  </span>
-                  <span className="rounded-full border border-white/10 px-2 py-0.5">
-                    Risk: {o.risk_level}
-                  </span>
-                  {o.security_baseline_score !== null && (
+          {items.length > 0
+            ? items.map((o) => (
+                <div key={o.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <Link
+                    className="transition hover:text-emerald-400"
+                    href={`/admin/onboarding/${o.id}`}
+                  >
+                    <p className="font-medium text-slate-50">{o.client_name}</p>
+                  </Link>
+                  <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
                     <span className="rounded-full border border-white/10 px-2 py-0.5">
-                      Security: {o.security_baseline_score}/100
+                      {o.status}
                     </span>
-                  )}
-                  <span className="rounded-full border border-white/10 px-2 py-0.5">
-                    Handoff: {o.support_handoff_status}
-                  </span>
-                </p>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="🚀"
-              title="No onboardings"
-              description="Start a client onboarding workflow."
-            />
-          )}
+                    <span className="rounded-full border border-white/10 px-2 py-0.5">
+                      Phase: {o.phase}
+                    </span>
+                    <span className="rounded-full border border-white/10 px-2 py-0.5">
+                      Risk: {o.risk_level}
+                    </span>
+                    {o.security_baseline_score !== null && (
+                      <span className="rounded-full border border-white/10 px-2 py-0.5">
+                        Security: {o.security_baseline_score}/100
+                      </span>
+                    )}
+                    <span className="rounded-full border border-white/10 px-2 py-0.5">
+                      Handoff: {o.support_handoff_status}
+                    </span>
+                  </p>
+                </div>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="🚀"
+                  title="No onboardings"
+                  description="Start a client onboarding workflow."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

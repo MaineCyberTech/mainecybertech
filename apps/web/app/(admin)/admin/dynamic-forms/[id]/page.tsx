@@ -7,9 +7,13 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import DynamicFormAdminActions from "./DynamicFormAdminActions";
+import { formatDate, formatDateTimeMinutesUtc } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Dynamic Form Detail - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Dynamic Form Detail (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 export default async function DetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
@@ -97,7 +101,7 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
                       </span>
                       {sub.submitted_at != null && (
                         <span className="text-[11px] text-slate-400">
-                          {new Date(String(sub.submitted_at)).toISOString().slice(0, 16)}
+                          {formatDateTimeMinutesUtc(sub.submitted_at)}
                         </span>
                       )}
                     </div>
@@ -128,24 +132,18 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
                 <dd className="text-slate-50">{submissions.length}</dd>
                 <dt className="text-slate-400">Created</dt>
                 <dd className="text-slate-50">
-                  {record?.created_at
-                    ? new Date(String(record.created_at)).toISOString().slice(0, 10)
-                    : "—"}
+                  {record?.created_at ? formatDate(record.created_at) : "—"}
                 </dd>
                 {record?.published_at != null && (
                   <>
                     <dt className="text-slate-400">Published</dt>
-                    <dd className="text-slate-50">
-                      {new Date(String(record.published_at)).toISOString().slice(0, 10)}
-                    </dd>
+                    <dd className="text-slate-50">{formatDate(record.published_at)}</dd>
                   </>
                 )}
                 {record?.closes_at != null && (
                   <>
                     <dt className="text-slate-400">Closes</dt>
-                    <dd className="text-slate-50">
-                      {new Date(String(record.closes_at)).toISOString().slice(0, 10)}
-                    </dd>
+                    <dd className="text-slate-50">{formatDate(record.closes_at)}</dd>
                   </>
                 )}
               </div>

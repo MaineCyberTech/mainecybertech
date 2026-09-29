@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
@@ -12,7 +13,10 @@ import type { Role } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Role Details - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ roleId: string }> }) {
+  const { roleId } = await params;
+  return { title: `Role Details (${roleId.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 type Props = { params: Promise<{ roleId: string }> };
 
@@ -26,12 +30,8 @@ export default async function RoleDetailPage({ params }: Props) {
   try {
     role = await withRetry(() => api.roles.get(roleId));
   } catch (error) {
-    if ((error as { status?: number })?.status !== 404) throw error;
-    return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
-        Role not found.
-      </div>
-    );
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   return (

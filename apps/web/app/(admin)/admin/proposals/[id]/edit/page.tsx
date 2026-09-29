@@ -8,7 +8,10 @@ import ProposalEditForm from "./ProposalEditForm";
 import type { ProposalDetail } from "@mct/sdk";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Edit Proposal - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Edit Proposal (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 export default async function EditProposalPage(props: { params: Promise<{ id: string }> }) {
   await requireAdminAccess();

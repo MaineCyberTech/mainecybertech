@@ -48,8 +48,12 @@ export default async function AdminStoreRecommendationsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/10 bg-cyber-base/60">
-                <th className="px-4 py-3 text-left font-semibold text-slate-300">Source Product</th>
-                <th className="px-4 py-3 text-left font-semibold text-slate-300">Recommended</th>
+                <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                  Source Product
+                </th>
+                <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                  Recommended
+                </th>
               </tr>
             </thead>
             <tbody>

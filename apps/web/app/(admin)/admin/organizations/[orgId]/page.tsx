@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import SubmitButton from "@/components/SubmitButton";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
@@ -16,7 +17,10 @@ import {
 } from "./actions";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Organization Details - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ orgId: string }> }) {
+  const { orgId } = await params;
+  return { title: `Organization Details (${orgId.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 type OrgPageProps = {
   params: Promise<{
@@ -31,17 +35,12 @@ export default async function OrganizationDetailPage({ params }: OrgPageProps) {
 
   let detail: OrganizationDetail;
   try {
-    // The SDK retries 429/502/503/504 but not 500; a transient 500 under
-    // Supabase contention would otherwise blank the page behind the
-    // "Organization not found." fallback.
+    // The SDK retries 429/502/503/504 but not 500; retry here so a transient
+    // 500 under Supabase contention does not immediately reach the error boundary.
     detail = await withRetry(() => api.organizations.getDetail(orgId));
   } catch (error) {
-    if ((error as { status?: number })?.status !== 404) throw error;
-    return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
-        Organization not found.
-      </div>
-    );
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   const org = detail.organization;

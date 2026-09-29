@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
+import EmptyState from "@/components/EmptyState";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import DataErrorNote from "@/components/admin/DataErrorNote";
@@ -101,41 +102,39 @@ export default async function AdminComplianceReadinessPage({ searchParams }: Pro
       <section className="cyber-panel mt-4">
         <h2 className="cyber-heading text-lg">Frameworks &amp; Controls</h2>
         <div className="mt-6 space-y-4">
-          {frameworks.length > 0 ? (
-            frameworks.map((f) => (
-              <div key={f.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <p className="font-medium text-slate-50">{f.name}</p>
-                {f.description ? (
-                  <p className="mt-1 text-xs text-slate-400">{f.description}</p>
-                ) : null}
+          {frameworks.length > 0
+            ? frameworks.map((f) => (
+                <div key={f.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <p className="font-medium text-slate-50">{f.name}</p>
+                  {f.description ? (
+                    <p className="mt-1 text-xs text-slate-400">{f.description}</p>
+                  ) : null}
 
-                <ul className="mt-3 space-y-1">
-                  {f.controls.map((c) => (
-                    <li key={c.id} className="flex items-center justify-between text-xs">
-                      <span className="text-slate-300">{c.title}</span>
-                      <span className="rounded bg-white/5 px-1.5 py-0.5 text-slate-400">
-                        {c.status.replace(/_/g, " ")}
-                      </span>
-                    </li>
-                  ))}
-                  {f.controls.length === 0 && (
-                    <li className="text-xs text-slate-500">No controls yet.</li>
-                  )}
-                </ul>
+                  <ul className="mt-3 space-y-1">
+                    {f.controls.map((c) => (
+                      <li key={c.id} className="flex items-center justify-between text-xs">
+                        <span className="text-slate-300">{c.title}</span>
+                        <span className="rounded bg-white/5 px-1.5 py-0.5 text-slate-400">
+                          {c.status.replace(/_/g, " ")}
+                        </span>
+                      </li>
+                    ))}
+                    {!loadFailed && f.controls.length === 0 && (
+                      <li className="text-xs text-slate-500">No controls yet.</li>
+                    )}
+                  </ul>
 
-                <div className="mt-3">
-                  <CrudForm
-                    fields={[{ key: "title", label: "New control", required: true }]}
-                    title="Add control"
-                    action={createComplianceControl}
-                    hiddenFields={{ organizationId: orgId ?? "", frameworkId: f.id }}
-                  />
+                  <div className="mt-3">
+                    <CrudForm
+                      fields={[{ key: "title", label: "New control", required: true }]}
+                      title="Add control"
+                      action={createComplianceControl}
+                      hiddenFields={{ organizationId: orgId ?? "", frameworkId: f.id }}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-slate-400">No frameworks defined.</p>
-          )}
+              ))
+            : !loadFailed && <EmptyState icon="🛡️" title="No frameworks defined." />}
         </div>
       </section>
     </AdminPageShell>

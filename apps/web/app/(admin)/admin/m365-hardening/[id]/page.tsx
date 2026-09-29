@@ -1,4 +1,5 @@
 ﻿import { getApiClient } from "@/lib/api";
+import { notFound } from "next/navigation";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
@@ -6,22 +7,23 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
 import { updateM365, deleteM365Hardening } from "@/lib/module-actions";
 import { revalidatePath } from "next/cache";
-import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "M365 Hardening Detail - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `M365 Hardening Detail (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 export default async function DetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   await requireAdminAccess();
   const api = getApiClient();
   let record: Record<string, unknown> | null = null;
-  let loadFailed = false;
   try {
     record = (await api.securitySuite.m365.get(id)) as unknown as Record<string, unknown>;
   } catch (error) {
-    console.error("[[id]/page]", error);
-    loadFailed = true;
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   return (
@@ -38,7 +40,6 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
       subnav={<AdminSubnav current="m365-hardening" />}
       title={String(record?.tenant_domain ?? "Record Detail")}
     >
-      {loadFailed && <DataErrorNote what="data" />}
       <RecordDetail
         id={id}
         record={record}

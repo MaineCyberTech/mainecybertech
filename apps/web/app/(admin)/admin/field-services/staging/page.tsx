@@ -112,31 +112,31 @@ export default async function StagingPage({ searchParams }: StagingPageProps) {
           <div className="cyber-pill">{total} Total</div>
         </div>
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((item) => (
-              <Link
-                key={item.id}
-                href={`/admin/field-services/staging/${item.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{item.device_name}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {item.asset_tag ? `Tag: ${item.asset_tag}` : "No asset tag"}
-                    </p>
+          {items.length > 0
+            ? items.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/admin/field-services/staging/${item.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{item.device_name}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {item.asset_tag ? `Tag: ${item.asset_tag}` : "No asset tag"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">{statusPill(item.status)}</div>
                   </div>
-                  <div className="flex items-center gap-2">{statusPill(item.status)}</div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="🖥️"
-              title="No staged devices"
-              description="Use the form above to create one."
-            />
-          )}
+                </Link>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="🖥️"
+                  title="No staged devices"
+                  description="Use the form above to create one."
+                />
+              )}
         </div>
       </section>
 

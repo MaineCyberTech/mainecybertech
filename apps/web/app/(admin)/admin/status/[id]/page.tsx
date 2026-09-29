@@ -1,4 +1,5 @@
 ﻿import { getApiClient } from "@/lib/api";
+import { notFound } from "next/navigation";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
@@ -6,26 +7,22 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import RecordDetail from "@/components/admin/RecordDetail";
 import { updateStatusItem, deleteStatusItem } from "@/lib/module-actions";
 import { revalidatePath } from "next/cache";
-import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Status Detail - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Status Detail (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 export default async function DetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
   await requireAdminAccess();
   const api = getApiClient();
-  let record: Record<string, unknown> | null = null;
-  let loadFailed = false;
-  try {
-    const items = (await api.batch.status.list({})).items as unknown as Array<
-      Record<string, unknown>
-    >;
-    record = items.find((r) => r.id === id) ?? null;
-  } catch (error) {
-    console.error("[[id]/page]", error);
-    loadFailed = true;
-  }
+  const items = (await api.batch.status.list({})).items as unknown as Array<
+    Record<string, unknown>
+  >;
+  const record = items.find((r) => r.id === id) ?? null;
+  if (!record) notFound();
 
   return (
     <AdminPageShell
@@ -41,7 +38,6 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
       subnav={<AdminSubnav current="status" />}
       title={String(record?.title ?? "Record Detail")}
     >
-      {loadFailed && <DataErrorNote what="data" />}
       <RecordDetail
         id={id}
         record={record}

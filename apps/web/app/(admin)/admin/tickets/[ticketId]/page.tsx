@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import SubmitButton from "@/components/SubmitButton";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
@@ -22,7 +23,10 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Ticket Details - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ ticketId: string }> }) {
+  const { ticketId } = await params;
+  return { title: `Ticket Details (${ticketId.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 const DELETED_PREFIX = "[Deleted] ";
 
@@ -184,12 +188,8 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
   try {
     ticket = await withRetry(() => api.tickets.get(ticketId));
   } catch (error) {
-    if ((error as { status?: number })?.status !== 404) throw error;
-    return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
-        Ticket not found.
-      </div>
-    );
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   const deleted = isDeletedTicket(ticket);

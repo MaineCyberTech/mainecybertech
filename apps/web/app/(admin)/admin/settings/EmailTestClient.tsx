@@ -35,8 +35,14 @@ export default function EmailTestClient() {
   return (
     <form onSubmit={handleSend} className="space-y-4">
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-300">Send test email to</label>
+        <label
+          htmlFor="email-test-recipient"
+          className="mb-1 block text-sm font-medium text-slate-300"
+        >
+          Send test email to
+        </label>
         <input
+          id="email-test-recipient"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}

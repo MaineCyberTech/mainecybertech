@@ -75,32 +75,34 @@ export default async function VendorContactsPage({ searchParams }: VendorContact
       />
       <section className="cyber-panel">
         <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {contacts.length > 0 ? (
-            contacts.map((c) => (
-              <Link
-                key={c.id}
-                href={`/admin/vendor-contacts/${c.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <p className="font-medium text-slate-50">
-                  {c.contact_name || "Unknown Contact"}{" "}
-                  {c.is_primary && <span className="text-xs text-amber-400">(Primary)</span>}
-                </p>
-                <p className="mt-1 text-sm text-slate-400">
-                  {c.vendor_name} &bull; {c.role_title || "—"}
-                </p>
-                <p className="mt-1 text-xs text-slate-400">
-                  {c.email || "—"} &bull; {c.phone || "—"}
-                </p>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="📞"
-              title="No vendor contacts"
-              description="Add vendor support contacts and escalation paths."
-            />
-          )}
+          {contacts.length > 0
+            ? contacts.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/admin/vendor-contacts/${c.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <p className="font-medium text-slate-50">
+                    {c.contact_name || "Unknown Contact"}{" "}
+                    {c.is_primary && <span className="text-xs text-amber-400">(Primary)</span>}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {c.vendor_name} &bull; {c.role_title || "—"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    {c.email || "—"} &bull; {c.phone || "—"}
+                  </p>
+                </Link>
+              ))
+            : !loadFailed && (
+                <div className="col-span-2">
+                  <EmptyState
+                    icon="📞"
+                    title="No vendor contacts"
+                    description="Add vendor support contacts and escalation paths."
+                  />
+                </div>
+              )}
         </div>
       </section>
 

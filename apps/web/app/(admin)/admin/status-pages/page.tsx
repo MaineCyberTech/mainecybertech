@@ -5,32 +5,18 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
+import { StatusPill } from "@/components/admin/StatusPill";
 import CrudForm from "@/components/admin/CrudForm";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDateTimeMinutesUtc } from "@/lib/format";
 import {
   createStatusComponent,
   createStatusIncident,
   createStatusMaintenance,
 } from "@/lib/module-actions";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Status Pages - Admin - Maine CyberTech" };
-
-function ComponentStatusPill({ status }: { status: string }) {
-  const colorMap: Record<string, string> = {
-    operational: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
-    degraded: "border-amber-500/25 bg-amber-500/10 text-amber-300",
-    outage: "border-red-500/25 bg-red-500/10 text-red-300",
-    maintenance: "border-blue-500/25 bg-blue-500/10 text-blue-300",
-  };
-  const colors = colorMap[status.toLowerCase()] || "border-white/10 bg-white/5 text-slate-300";
-  return (
-    <span
-      className={`inline-flex min-h-8 items-center justify-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase leading-none tracking-[0.12em] ${colors}`}
-    >
-      {status}
-    </span>
-  );
-}
 
 export default async function StatusPagesPage() {
   await requireAdminAccess();
@@ -71,12 +57,14 @@ export default async function StatusPagesPage() {
     incidents = r.items as typeof incidents;
   } catch (e) {
     console.error("Status Pages: failed to load incidents", e);
+    loadFailed = true;
   }
   try {
     const r = (await api.statusPage.maintenance.list({})) as any;
     maintenance = r.items as typeof maintenance;
   } catch (e) {
     console.error("Status Pages: failed to load maintenance", e);
+    loadFailed = true;
   }
 
   return (
@@ -143,88 +131,87 @@ export default async function StatusPagesPage() {
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Components</h2>
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((item) => (
-              <div
-                key={item.id}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <Link
-                      className="transition hover:text-emerald-400"
-                      href={`/admin/status-pages/${item.id}`}
-                    >
-                      <p className="font-medium text-slate-50">{item.name}</p>
-                    </Link>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {item.component_type} &bull;{" "}
-                      {new Date(item.created_at).toISOString().slice(0, 10)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <ComponentStatusPill status={item.status} />
+          {items.length > 0
+            ? items.map((item) => (
+                <div
+                  key={item.id}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <Link
+                        className="transition hover:text-emerald-400"
+                        href={`/admin/status-pages/${item.id}`}
+                      >
+                        <p className="font-medium text-slate-50">{item.name}</p>
+                      </Link>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {item.component_type} &bull; {formatDate(item.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusPill status={item.status} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="📊"
-              title="No status components defined"
-              description="Add your first status component to start building your public status page."
-              actionHref="/admin/status-pages"
-              actionLabel="Refresh"
-            />
-          )}
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="📊"
+                  title="No status components defined"
+                  description="Add your first status component to start building your public status page."
+                  actionHref="/admin/status-pages"
+                  actionLabel="Refresh"
+                />
+              )}
         </div>
       </section>
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Active Incidents</h2>
         <div className="mt-6 space-y-3">
-          {incidents.length > 0 ? (
-            incidents.map((inc) => (
-              <div key={inc.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{inc.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {inc.severity} &bull; started{" "}
-                      {new Date(inc.started_at).toISOString().slice(0, 16).replace("T", " ")} UTC
-                    </p>
+          {incidents.length > 0
+            ? incidents.map((inc) => (
+                <div
+                  key={inc.id}
+                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{inc.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {inc.severity} &bull; started {formatDateTimeMinutesUtc(inc.started_at)} UTC
+                      </p>
+                    </div>
+                    <StatusPill status={inc.status} />
                   </div>
-                  <ComponentStatusPill status={inc.status} />
                 </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-slate-400">No incidents recorded.</p>
-          )}
+              ))
+            : !loadFailed && <EmptyState icon="🚨" title="No incidents recorded." />}
         </div>
       </section>
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Scheduled Maintenance</h2>
         <div className="mt-6 space-y-3">
-          {maintenance.length > 0 ? (
-            maintenance.map((m) => (
-              <div key={m.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{m.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {new Date(m.scheduled_start).toISOString().slice(0, 16).replace("T", " ")} →{" "}
-                      {new Date(m.scheduled_end).toISOString().slice(0, 16).replace("T", " ")} UTC
-                    </p>
+          {maintenance.length > 0
+            ? maintenance.map((m) => (
+                <div key={m.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{m.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {formatDateTimeMinutesUtc(m.scheduled_start)} →{" "}
+                        {formatDateTimeMinutesUtc(m.scheduled_end)} UTC
+                      </p>
+                    </div>
+                    <StatusPill status={m.status} />
                   </div>
-                  <ComponentStatusPill status={m.status} />
                 </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-slate-400">No maintenance notices scheduled.</p>
-          )}
+              ))
+            : !loadFailed && (
+                <p className="text-sm text-slate-400">No maintenance notices scheduled.</p>
+              )}
         </div>
       </section>
     </AdminPageShell>

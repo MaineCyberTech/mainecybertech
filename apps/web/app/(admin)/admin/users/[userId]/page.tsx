@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { requirePermission } from "@/lib/auth/permissions";
@@ -10,7 +11,10 @@ import UserPermissionOverridesClient from "@/components/admin/UserPermissionOver
 import SubmitButton from "@/components/SubmitButton";
 import { Membership, Organization, Role, UserDetail } from "@mct/sdk";
 
-export const metadata = { title: "User Details - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params;
+  return { title: `User Details (${userId.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 type UserPageProps = {
   params: Promise<{
@@ -28,12 +32,8 @@ export default async function UserDetailPage({ params }: UserPageProps) {
   try {
     detail = await api.users.getDetail(userId);
   } catch (error) {
-    if ((error as { status?: number })?.status !== 404) throw error;
-    return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
-        User not found.
-      </div>
-    );
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   const profile = detail.profile!;

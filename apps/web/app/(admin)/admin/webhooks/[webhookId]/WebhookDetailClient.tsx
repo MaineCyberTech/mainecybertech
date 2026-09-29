@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getClientApi } from "@/lib/client-api";
+import { formatDateTime } from "@/lib/format";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const EVENT_OPTIONS = [
@@ -221,19 +222,34 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400"
+                  >
                     Event
                   </th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400"
+                  >
                     Status
                   </th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400"
+                  >
                     Response
                   </th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400"
+                  >
                     Duration
                   </th>
-                  <th className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400">
+                  <th
+                    scope="col"
+                    className="px-3 py-2 text-xs uppercase tracking-wider text-slate-400"
+                  >
                     Time
                   </th>
                 </tr>
@@ -258,7 +274,7 @@ export default function WebhookDetailClient({ webhook, deliveries, totalDeliveri
                       {d.duration_ms != null ? `${d.duration_ms}ms` : "—"}
                     </td>
                     <td className="px-3 py-3 text-xs text-slate-400">
-                      {new Date(d.created_at).toLocaleString()}
+                      {formatDateTime(d.created_at)}
                     </td>
                   </tr>
                 ))}

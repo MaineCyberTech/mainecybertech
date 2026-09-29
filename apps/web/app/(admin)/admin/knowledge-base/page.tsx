@@ -7,6 +7,7 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import DataErrorNote from "@/components/admin/DataErrorNote";
 import CrudForm from "@/components/admin/CrudForm";
 import { createKbArticle } from "@/lib/module-actions";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Knowledge Base - Admin - Maine CyberTech" };
@@ -102,32 +103,29 @@ export default async function AdminKnowledgeBasePage({ searchParams }: Props) {
       <section className="cyber-panel mt-4">
         <h2 className="cyber-heading text-lg">Articles</h2>
         <div className="mt-6 space-y-3">
-          {articles.length > 0 ? (
-            articles.map((a) => (
-              <div key={a.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{a.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {a.category ?? "Uncategorized"} &bull; updated{" "}
-                      {new Date(a.updated_at).toISOString().slice(0, 10)}
-                    </p>
+          {articles.length > 0
+            ? articles.map((a) => (
+                <div key={a.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{a.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {a.category ?? "Uncategorized"} &bull; updated {formatDate(a.updated_at)}
+                      </p>
+                    </div>
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                        a.is_published
+                          ? "bg-emerald-500/20 text-emerald-400"
+                          : "bg-slate-500/20 text-slate-400"
+                      }`}
+                    >
+                      {a.is_published ? "published" : "draft"}
+                    </span>
                   </div>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      a.is_published
-                        ? "bg-emerald-500/20 text-emerald-400"
-                        : "bg-slate-500/20 text-slate-400"
-                    }`}
-                  >
-                    {a.is_published ? "published" : "draft"}
-                  </span>
                 </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-slate-400">No knowledge base articles.</p>
-          )}
+              ))
+            : !loadFailed && <p className="text-sm text-slate-400">No knowledge base articles.</p>}
         </div>
       </section>
     </AdminPageShell>

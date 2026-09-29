@@ -77,32 +77,32 @@ export default async function AiToolsPage() {
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Recent Triage Drafts</h2>
         <div className="mt-6 space-y-3">
-          {drafts.length > 0 ? (
-            drafts.slice(0, 10).map((d) => (
-              <div key={d.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="line-clamp-2 text-sm text-slate-300">{d.raw_description}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {d.suggested_category} &bull; {d.suggested_priority} &bull; Score:{" "}
-                      {d.confidence_score}%
-                    </p>
+          {drafts.length > 0
+            ? drafts.slice(0, 10).map((d) => (
+                <div key={d.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="line-clamp-2 text-sm text-slate-300">{d.raw_description}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {d.suggested_category} &bull; {d.suggested_priority} &bull; Score:{" "}
+                        {d.confidence_score}%
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${d.status === "converted" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-amber-500/25 bg-amber-500/10 text-amber-300"}`}
+                    >
+                      {d.status}
+                    </span>
                   </div>
-                  <span
-                    className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${d.status === "converted" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-amber-500/25 bg-amber-500/10 text-amber-300"}`}
-                  >
-                    {d.status}
-                  </span>
                 </div>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="🤖"
-              title="No triage drafts yet"
-              description="Start triaging client descriptions into structured tickets."
-            />
-          )}
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="🤖"
+                  title="No triage drafts yet"
+                  description="Start triaging client descriptions into structured tickets."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

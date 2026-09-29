@@ -9,12 +9,12 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 import CommentBody from "@/components/CommentBody";
 import type { ProposalDetail } from "@mct/sdk";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Proposal Detail - Admin - Maine CyberTech" };
-
-function fmtCurrency(n: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Proposal Detail (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
 }
 
 function statusClass(status: string): string {
@@ -53,7 +53,7 @@ function formatRelative(value?: string | null): string {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d ago`;
-  return new Date(value).toISOString().slice(0, 10);
+  return formatDate(value);
 }
 
 interface Props {
@@ -104,7 +104,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
       }
       subnav={<AdminSubnav current="proposals" />}
       title={proposal.title}
-      description={`Status: ${proposal.status} • ${fmtCurrency(proposal.grand_total ?? 0)} total`}
+      description={`Status: ${proposal.status} • ${formatCurrency(proposal.grand_total ?? 0)} total`}
       actions={
         <Link href={`/admin/proposals/${proposal.id}/edit`} className="cyber-button-secondary">
           Edit
@@ -122,7 +122,7 @@ export default async function AdminProposalDetailPage({ params }: Props) {
           <dd className="text-slate-50">{proposal.visibility}</dd>
           <dt className="text-slate-400">Grand Total</dt>
           <dd className="font-display text-lg text-slate-50">
-            {fmtCurrency(proposal.grand_total ?? 0)}
+            {formatCurrency(proposal.grand_total ?? 0)}
           </dd>
           <dt className="text-slate-400">Valid Until</dt>
           <dd className="text-slate-50">
@@ -173,31 +173,31 @@ export default async function AdminProposalDetailPage({ params }: Props) {
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400">Labor</p>
             <p className="mt-3 font-display text-xl text-slate-50">
-              {fmtCurrency(proposal.total_labor ?? 0)}
+              {formatCurrency(proposal.total_labor ?? 0)}
             </p>
           </div>
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400">Materials</p>
             <p className="mt-3 font-display text-xl text-slate-50">
-              {fmtCurrency(proposal.total_materials ?? 0)}
+              {formatCurrency(proposal.total_materials ?? 0)}
             </p>
           </div>
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400">Recurring</p>
             <p className="mt-3 font-display text-xl text-slate-50">
-              {fmtCurrency(proposal.total_recurring ?? 0)}
+              {formatCurrency(proposal.total_recurring ?? 0)}
             </p>
           </div>
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-5">
             <p className="text-[11px] uppercase tracking-[0.12em] text-slate-400">One-Time</p>
             <p className="mt-3 font-display text-xl text-slate-50">
-              {fmtCurrency(proposal.total_one_time ?? 0)}
+              {formatCurrency(proposal.total_one_time ?? 0)}
             </p>
           </div>
         </div>
         <div className="mt-6 text-right">
           <p className="font-display text-2xl text-emerald-400">
-            Grand Total: {fmtCurrency(proposal.grand_total ?? 0)}
+            Grand Total: {formatCurrency(proposal.grand_total ?? 0)}
           </p>
         </div>
       </section>
@@ -257,9 +257,9 @@ export default async function AdminProposalDetailPage({ params }: Props) {
                   </div>
                   <div className="flex items-center gap-4 text-sm text-slate-400">
                     <span>Qty: {item.quantity}</span>
-                    <span>Unit: {fmtCurrency(item.unit_price)}</span>
+                    <span>Unit: {formatCurrency(item.unit_price)}</span>
                     <span className="font-medium text-slate-50">
-                      Total: {fmtCurrency(item.total_price)}
+                      Total: {formatCurrency(item.total_price)}
                     </span>
                     {item.is_optional && <span className="cyber-pill-warning">Optional</span>}
                     {item.is_recurring && (

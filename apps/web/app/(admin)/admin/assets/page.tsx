@@ -9,6 +9,7 @@ import CrudForm from "@/components/admin/CrudForm";
 import AdminPagination from "@/components/admin/AdminPagination";
 import DataErrorNote from "@/components/admin/DataErrorNote";
 import { createAsset } from "@/lib/module-actions";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Assets - Admin - Maine CyberTech" };
@@ -119,35 +120,35 @@ export default async function AssetsPage({ searchParams }: AssetsPageProps) {
           <h2 className="cyber-heading text-lg">Assets</h2>
         </div>
         <div className="mt-6 space-y-3">
-          {assets.length > 0 ? (
-            assets.map((a) => (
-              <Link
-                key={a.id}
-                href={`/admin/assets/${a.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{a.name}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {a.make}
-                      {a.model ? ` ${a.model}` : ""} &bull; {a.asset_type}
-                      {a.warranty_expires
-                        ? ` &bull; Warranty: ${new Date(a.warranty_expires).toISOString().slice(0, 10)}`
-                        : ""}
-                    </p>
+          {assets.length > 0
+            ? assets.map((a) => (
+                <Link
+                  key={a.id}
+                  href={`/admin/assets/${a.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{a.name}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {a.make}
+                        {a.model ? ` ${a.model}` : ""} &bull; {a.asset_type}
+                        {a.warranty_expires
+                          ? ` &bull; Warranty: ${formatDate(a.warranty_expires)}`
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">{statusPill(a.status)}</div>
                   </div>
-                  <div className="flex items-center gap-2">{statusPill(a.status)}</div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="💻"
-              title="No assets registered"
-              description="Add hardware, warranties, and lifecycle data."
-            />
-          )}
+                </Link>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="💻"
+                  title="No assets registered"
+                  description="Add hardware, warranties, and lifecycle data."
+                />
+              )}
         </div>
       </section>
 

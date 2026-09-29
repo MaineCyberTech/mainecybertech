@@ -7,12 +7,12 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import type { QbrReport } from "@mct/sdk";
+import { formatCurrency } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "QBR Report - Admin - Maine CyberTech" };
-
-function fmtCurrency(n: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `QBR Report (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
 }
 
 function renderValue(value: unknown): string {
@@ -106,7 +106,7 @@ export default async function QbrDetailPage(props: { params: Promise<{ id: strin
                       </dt>
                       <dd className="mt-1 text-sm text-slate-200">
                         {typeof v === "number" && /cost|price|amount|total|savings/i.test(k)
-                          ? fmtCurrency(v)
+                          ? formatCurrency(v)
                           : renderValue(v)}
                       </dd>
                     </div>

@@ -53,34 +53,34 @@ export default async function WebsiteMonitorPage() {
       />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((w) => (
-              <div key={w.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <Link
-                      className="transition hover:text-emerald-400"
-                      href={`/admin/website-monitors/${w.id}`}
-                    >
-                      <p className="font-medium text-slate-50">{w.display_name || w.url}</p>
-                    </Link>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {w.url} &bull; {w.last_status}{" "}
-                      {w.last_response_ms ? `(${w.last_response_ms}ms)` : ""} &bull; SSL:{" "}
-                      {w.ssl_valid ? "OK" : "FAIL"}{" "}
-                      {w.lighthouse_score ? `&bull; LH: ${w.lighthouse_score}` : ""}
-                    </p>
+          {items.length > 0
+            ? items.map((w) => (
+                <div key={w.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <Link
+                        className="transition hover:text-emerald-400"
+                        href={`/admin/website-monitors/${w.id}`}
+                      >
+                        <p className="font-medium text-slate-50">{w.display_name || w.url}</p>
+                      </Link>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {w.url} &bull; {w.last_status}{" "}
+                        {w.last_response_ms ? `(${w.last_response_ms}ms)` : ""} &bull; SSL:{" "}
+                        {w.ssl_valid ? "OK" : "FAIL"}{" "}
+                        {w.lighthouse_score ? `&bull; LH: ${w.lighthouse_score}` : ""}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="🌐"
-              title="No websites monitored"
-              description="Add websites to monitor uptime and SSL."
-            />
-          )}
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="🌐"
+                  title="No websites monitored"
+                  description="Add websites to monitor uptime and SSL."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

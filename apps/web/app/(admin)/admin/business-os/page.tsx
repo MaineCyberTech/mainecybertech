@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import Link from "next/link";
 import { ApprovalRequest, AuditLog } from "@mct/sdk";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Business OS - Admin - Maine CyberTech" };
@@ -21,7 +22,7 @@ function rel(value?: string | null) {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d ago`;
-  return new Date(value).toISOString().slice(0, 10);
+  return formatDate(value);
 }
 
 function statCard(label: string, value: number, description: string, href?: string) {
@@ -149,32 +150,34 @@ export default async function BusinessOsPage() {
             </Link>
           </div>
           <div className="mt-6 space-y-3">
-            {overdue.items.length > 0 ? (
-              overdue.items.map((item: ApprovalRequest) => (
-                <div
-                  key={item.id}
-                  className="rounded-lg border border-amber-500/20 bg-cyber-base/60 p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-slate-50">{item.request_subject}</p>
-                      <p className="mt-1 text-xs text-slate-400">
-                        {item.request_type} &bull; Due {rel(item.due_at)}
-                      </p>
+            {overdue.items.length > 0
+              ? overdue.items.map((item: ApprovalRequest) => (
+                  <div
+                    key={item.id}
+                    className="rounded-lg border border-amber-500/20 bg-cyber-base/60 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-slate-50">{item.request_subject}</p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {item.request_type} &bull; Due {rel(item.due_at)}
+                        </p>
+                      </div>
+                      <span className="inline-flex min-h-8 items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-300">
+                        Overdue
+                      </span>
                     </div>
-                    <span className="inline-flex min-h-8 items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-300">
-                      Overdue
-                    </span>
                   </div>
-                </div>
-              ))
-            ) : (
-              <EmptyState
-                icon="✅"
-                title="No overdue approvals"
-                description="All pending approval requests are on schedule."
-              />
-            )}
+                ))
+              : !loadFailed && (
+                  <div className="col-span-2">
+                    <EmptyState
+                      icon="✅"
+                      title="No overdue approvals"
+                      description="All pending approval requests are on schedule."
+                    />
+                  </div>
+                )}
           </div>
         </section>
 
@@ -186,26 +189,28 @@ export default async function BusinessOsPage() {
             </Link>
           </div>
           <div className="mt-6 space-y-2">
-            {activity.length > 0 ? (
-              activity.slice(0, 10).map((log: AuditLog) => (
-                <div
-                  key={log.id}
-                  className="flex items-start gap-3 rounded-lg border border-white/5 bg-cyber-base/60 px-4 py-3"
-                >
-                  <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/60" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-slate-300">{log.action}</p>
-                    <p className="mt-0.5 text-[11px] text-slate-400">{rel(log.created_at)}</p>
+            {activity.length > 0
+              ? activity.slice(0, 10).map((log: AuditLog) => (
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-3 rounded-lg border border-white/5 bg-cyber-base/60 px-4 py-3"
+                  >
+                    <div className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500/60" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs text-slate-300">{log.action}</p>
+                      <p className="mt-0.5 text-[11px] text-slate-400">{rel(log.created_at)}</p>
+                    </div>
                   </div>
-                </div>
-              ))
-            ) : (
-              <EmptyState
-                icon="📊"
-                title="No recent activity"
-                description="Audit events from the platform will appear here."
-              />
-            )}
+                ))
+              : !loadFailed && (
+                  <div className="col-span-2">
+                    <EmptyState
+                      icon="📊"
+                      title="No recent activity"
+                      description="Audit events from the platform will appear here."
+                    />
+                  </div>
+                )}
           </div>
         </section>
       </div>
@@ -216,62 +221,66 @@ export default async function BusinessOsPage() {
           <span className="text-xs text-slate-400">{health.length} organizations</span>
         </div>
         <div className="mt-6 space-y-3">
-          {health.length > 0 ? (
-            health.map((org) => (
-              <Link
-                key={org.id}
-                href={`/admin/organizations/${org.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <p className="font-medium text-slate-50">{org.name}</p>
-                  <div className="flex items-center gap-4 text-xs text-slate-400">
-                    <span>{org.openTickets} open tickets</span>
-                    <span>{org.activeProjects} active projects</span>
+          {health.length > 0
+            ? health.map((org) => (
+                <Link
+                  key={org.id}
+                  href={`/admin/organizations/${org.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="font-medium text-slate-50">{org.name}</p>
+                    <div className="flex items-center gap-4 text-xs text-slate-400">
+                      <span>{org.openTickets} open tickets</span>
+                      <span>{org.activeProjects} active projects</span>
+                    </div>
                   </div>
+                </Link>
+              ))
+            : !loadFailed && (
+                <div className="col-span-2">
+                  <EmptyState
+                    icon="🏢"
+                    title="No organizations"
+                    description="Approved organizations will appear here."
+                  />
                 </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="🏢"
-              title="No organizations"
-              description="Approved organizations will appear here."
-            />
-          )}
+              )}
         </div>
       </section>
 
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">Recent Organizations</h2>
         <div className="mt-6 space-y-3">
-          {summary.organizations.recent.length > 0 ? (
-            summary.organizations.recent.map((org) => (
-              <Link
-                key={org.id}
-                href={`/admin/organizations/${org.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{org.name}</p>
-                    <p className="mt-1 text-xs text-slate-400">Created {rel(org.createdAt)}</p>
+          {summary.organizations.recent.length > 0
+            ? summary.organizations.recent.map((org) => (
+                <Link
+                  key={org.id}
+                  href={`/admin/organizations/${org.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{org.name}</p>
+                      <p className="mt-1 text-xs text-slate-400">Created {rel(org.createdAt)}</p>
+                    </div>
+                    <span
+                      className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${org.status === "approved" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-amber-500/25 bg-amber-500/10 text-amber-300"}`}
+                    >
+                      {org.status}
+                    </span>
                   </div>
-                  <span
-                    className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${org.status === "approved" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-amber-500/25 bg-amber-500/10 text-amber-300"}`}
-                  >
-                    {org.status}
-                  </span>
+                </Link>
+              ))
+            : !loadFailed && (
+                <div className="col-span-2">
+                  <EmptyState
+                    icon="🏢"
+                    title="No organizations yet"
+                    description="Organizations will appear here when added."
+                  />
                 </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="🏢"
-              title="No organizations yet"
-              description="Organizations will appear here when added."
-            />
-          )}
+              )}
         </div>
       </section>
 
@@ -281,28 +290,28 @@ export default async function BusinessOsPage() {
           <span className="cyber-pill">{snapshots.length} snapshots</span>
         </div>
         <div className="mt-6 space-y-2">
-          {snapshots.length > 0 ? (
-            snapshots.map((s) => (
-              <div
-                key={s.id}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-cyber-base/60 px-4 py-3 text-sm"
-              >
-                <span className="text-slate-300" title={new Date(s.captured_at).toISOString()}>
-                  {rel(s.captured_at)}
-                </span>
-                <span className="flex flex-wrap gap-3 text-xs text-slate-400">
-                  <span>Orgs: {s.metrics.organizations ?? 0}</span>
-                  <span>Open tickets: {s.metrics.openTickets ?? 0}</span>
-                  <span>Active projects: {s.metrics.activeProjects ?? 0}</span>
-                  <span>Pending approvals: {s.metrics.pendingApprovals ?? 0}</span>
-                </span>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-slate-400">
-              No snapshots yet. The worker records one each day.
-            </p>
-          )}
+          {snapshots.length > 0
+            ? snapshots.map((s) => (
+                <div
+                  key={s.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/10 bg-cyber-base/60 px-4 py-3 text-sm"
+                >
+                  <span className="text-slate-300" title={new Date(s.captured_at).toISOString()}>
+                    {rel(s.captured_at)}
+                  </span>
+                  <span className="flex flex-wrap gap-3 text-xs text-slate-400">
+                    <span>Orgs: {s.metrics.organizations ?? 0}</span>
+                    <span>Open tickets: {s.metrics.openTickets ?? 0}</span>
+                    <span>Active projects: {s.metrics.activeProjects ?? 0}</span>
+                    <span>Pending approvals: {s.metrics.pendingApprovals ?? 0}</span>
+                  </span>
+                </div>
+              ))
+            : !loadFailed && (
+                <p className="text-sm text-slate-400">
+                  No snapshots yet. The worker records one each day.
+                </p>
+              )}
         </div>
       </section>
     </AdminPageShell>

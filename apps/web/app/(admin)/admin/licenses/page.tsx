@@ -8,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createLicense } from "@/lib/module-actions";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatCurrency } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Licenses - Admin" };
 
@@ -48,7 +49,7 @@ export default async function LicensesPage() {
       description="Track assigned vs used licenses, costs, and reclaimable savings."
       actions={
         <div className="flex flex-wrap gap-2">
-          <div className="cyber-pill">${savings.totalAnnualCost.toLocaleString()}/yr</div>
+          <div className="cyber-pill">{formatCurrency(savings.totalAnnualCost)}/yr</div>
           <div className="cyber-pill">{savings.unusedSeats} unused</div>
         </div>
       }
@@ -68,35 +69,35 @@ export default async function LicensesPage() {
       />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((l) => (
-              <div key={l.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <Link
-                      className="transition hover:text-emerald-400"
-                      href={`/admin/licenses/${l.id}`}
-                    >
-                      <p className="font-medium text-slate-50">
-                        {l.vendor} — {l.product_name}
+          {items.length > 0
+            ? items.map((l) => (
+                <div key={l.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <Link
+                        className="transition hover:text-emerald-400"
+                        href={`/admin/licenses/${l.id}`}
+                      >
+                        <p className="font-medium text-slate-50">
+                          {l.vendor} — {l.product_name}
+                        </p>
+                      </Link>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {l.assigned_seats}/{l.total_seats} seats &bull;{" "}
+                        {formatCurrency(l.annual_cost ?? 0)}/yr &bull;{" "}
+                        {formatCurrency(l.reclaimable_savings ?? 0)} reclaimable
                       </p>
-                    </Link>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {l.assigned_seats}/{l.total_seats} seats &bull; $
-                      {(l.annual_cost ?? 0).toLocaleString()}/yr &bull; $
-                      {(l.reclaimable_savings ?? 0).toLocaleString()} reclaimable
-                    </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="📊"
-              title="No licenses tracked"
-              description="Track software licenses across client organizations."
-            />
-          )}
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="📊"
+                  title="No licenses tracked"
+                  description="Track software licenses across client organizations."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

@@ -8,6 +8,7 @@ import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
 import { createFileRequest } from "@/lib/module-actions";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "File Requests - Admin - Maine CyberTech" };
@@ -64,37 +65,37 @@ export default async function FileRequestsPage() {
       <section className="cyber-panel">
         <h2 className="cyber-heading text-lg">File Requests</h2>
         <div className="mt-6 space-y-3">
-          {requests.length > 0 ? (
-            requests.map((r) => (
-              <Link
-                key={r.id}
-                href={`/admin/file-requests/${r.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{r.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {r.upload_count}/{r.max_files} uploads &bull; Expires{" "}
-                      {new Date(r.expires_at).toISOString().slice(0, 10)}
-                      &bull; Token: {r.token.slice(0, 8)}…
-                    </p>
+          {requests.length > 0
+            ? requests.map((r) => (
+                <Link
+                  key={r.id}
+                  href={`/admin/file-requests/${r.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{r.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {r.upload_count}/{r.max_files} uploads &bull; Expires{" "}
+                        {formatDate(r.expires_at)}
+                        &bull; Token: {r.token.slice(0, 8)}…
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${r.status === "active" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-white/10 bg-white/5 text-slate-300"}`}
+                    >
+                      {r.status}
+                    </span>
                   </div>
-                  <span
-                    className={`inline-flex min-h-8 items-center rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${r.status === "active" ? "border-emerald-500/25 bg-emerald-500/10 text-emerald-300" : "border-white/10 bg-white/5 text-slate-300"}`}
-                  >
-                    {r.status}
-                  </span>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="📁"
-              title="No file requests"
-              description="Create a secure upload link for a client to submit files."
-            />
-          )}
+                </Link>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="📁"
+                  title="No file requests"
+                  description="Create a secure upload link for a client to submit files."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

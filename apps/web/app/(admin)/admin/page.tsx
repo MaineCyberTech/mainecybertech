@@ -5,6 +5,7 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import EmptyState from "@/components/EmptyState";
 import type { Ticket, Document, Project, Organization, Membership, AuditLog } from "@mct/sdk";
+import { formatDate } from "@/lib/format";
 
 export const metadata = { title: "Admin Dashboard - Maine CyberTech" };
 
@@ -20,7 +21,7 @@ function rel(value?: string | null) {
   if (h < 24) return `${h}h ago`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d ago`;
-  return new Date(value).toISOString().slice(0, 10);
+  return formatDate(value);
 }
 function ticketSubject(t: Ticket & { subject?: string }) {
   return t?.subject ?? t?.title ?? `Ticket ${t?.id}`;
@@ -107,6 +108,10 @@ export default async function AdminHomePage() {
     <div className="space-y-6">
       <Breadcrumbs items={[{ label: "Admin" }]} />
       <AdminSubnav current="home" />
+
+      <h1 className="font-display text-2xl uppercase tracking-[0.14em] text-slate-50">
+        Admin Dashboard
+      </h1>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 sm:p-5">
@@ -363,11 +368,13 @@ export default async function AdminHomePage() {
                 </div>
               ))
             ) : (
-              <EmptyState
-                icon="👥"
-                title="No pending memberships"
-                description="New membership requests will appear here for review."
-              />
+              <div className="col-span-2">
+                <EmptyState
+                  icon="👥"
+                  title="No pending memberships"
+                  description="New membership requests will appear here for review."
+                />
+              </div>
             )}
           </div>
         </section>

@@ -9,7 +9,10 @@ import AdminPageShell from "@/components/admin/AdminPageShell";
 import EmptyState from "@/components/EmptyState";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Staging Detail - Field Services - Admin" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Staging Detail - Field Services (${id.slice(0, 8)}) - Admin` };
+}
 
 type StagingDetailProps = {
   params: Promise<{ id: string }>;

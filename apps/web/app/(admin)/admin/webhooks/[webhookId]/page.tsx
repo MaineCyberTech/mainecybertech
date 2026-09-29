@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { withRetry } from "@/lib/retry";
 import { requireAdminAccess } from "@/lib/auth/admin";
@@ -10,7 +11,10 @@ import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Webhook Details - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ webhookId: string }> }) {
+  const { webhookId } = await params;
+  return { title: `Webhook Details (${webhookId.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 type Props = { params: Promise<{ webhookId: string }> };
 
@@ -30,12 +34,8 @@ export default async function WebhookDetailPage({ params }: Props) {
   try {
     webhook = await withRetry(() => api.webhooks.get(webhookId));
   } catch (error) {
-    if ((error as { status?: number })?.status !== 404) throw error;
-    return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
-        Webhook not found.
-      </div>
-    );
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   let deliveries: {

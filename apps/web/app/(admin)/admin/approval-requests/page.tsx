@@ -91,6 +91,7 @@ export default async function ApprovalRequestsAdminPage({
         description="Review, approve, or reject approval requests across all organizations (proposals, changes, budgets, procurement, client sign-offs)."
         subnavCurrent="approvals"
         items={items}
+        loadFailed={loadFailed}
         panel
         actions={
           <Link href="/admin/approvals" className="cyber-button-secondary">

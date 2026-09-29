@@ -5,6 +5,7 @@ import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import Link from "next/link";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Governance - Admin" };
 
@@ -89,7 +90,7 @@ export default async function GovernancePage() {
                 </p>
               </div>
             ))}
-            {changes.length === 0 && (
+            {!loadFailed && changes.length === 0 && (
               <p className="text-xs text-slate-400">No change requests yet.</p>
             )}
           </div>
@@ -105,7 +106,7 @@ export default async function GovernancePage() {
                 </p>
               </div>
             ))}
-            {risks.length === 0 && (
+            {!loadFailed && risks.length === 0 && (
               <p className="text-xs text-slate-400">No risks registered yet.</p>
             )}
           </div>
@@ -123,7 +124,7 @@ export default async function GovernancePage() {
                 </p>
               </div>
             ))}
-            {retention.length === 0 && (
+            {!loadFailed && retention.length === 0 && (
               <p className="text-xs text-slate-400">No retention policies yet.</p>
             )}
           </div>
@@ -136,13 +137,11 @@ export default async function GovernancePage() {
                 <p className="text-sm text-slate-50">{t.title}</p>
                 <p className="text-xs text-slate-400">
                   {t.scenario_type} &bull; {t.status}{" "}
-                  {t.scheduled_date
-                    ? `(${new Date(t.scheduled_date).toISOString().slice(0, 10)})`
-                    : ""}
+                  {t.scheduled_date ? `(${formatDate(t.scheduled_date)})` : ""}
                 </p>
               </div>
             ))}
-            {tabletop.length === 0 && (
+            {!loadFailed && tabletop.length === 0 && (
               <p className="text-xs text-slate-400">No exercises planned yet.</p>
             )}
           </div>

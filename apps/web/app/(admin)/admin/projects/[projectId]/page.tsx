@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
@@ -22,7 +23,10 @@ import {
   markProjectTaskCommentsRead,
 } from "./actions";
 
-export const metadata = { title: "Project Details - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ projectId: string }> }) {
+  const { projectId } = await params;
+  return { title: `Project Details (${projectId.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 function pillBase(kind: "default" | "warning" | "danger" | "success" = "default") {
   const base =
@@ -72,12 +76,8 @@ export default async function AdminProjectDetailPage({ params }: Props) {
   try {
     detail = await api.projects.getDetail(projectId);
   } catch (error) {
-    if ((error as { status?: number })?.status !== 404) throw error;
-    return (
-      <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-6 text-red-300">
-        Project not found.
-      </div>
-    );
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   const project = detail.project;

@@ -6,22 +6,13 @@ import DataErrorNote from "@/components/admin/DataErrorNote";
 import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { getApiClient } from "@/lib/api";
+import { StatusPill } from "@/components/admin/StatusPill";
 import type { StoreCampaign } from "@mct/sdk";
 import { createCampaignAction } from "./actions";
 import { CampaignStatusForm, DeleteCampaignButton } from "./CampaignRowActions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Seasonal Campaigns - Admin - Maine CyberTech" };
-
-function statusPill(status: string): string {
-  const map: Record<string, string> = {
-    active: "border-emerald-500/25 bg-emerald-500/10 text-emerald-400",
-    draft: "border-slate-500/25 bg-slate-500/10 text-slate-400",
-    paused: "border-amber-500/25 bg-amber-500/10 text-amber-400",
-    archived: "border-white/10 bg-white/5 text-slate-500",
-  };
-  return map[status] ?? "border-white/10 bg-white/5 text-slate-400";
-}
 
 function capacitySummary(campaign: StoreCampaign): string {
   if (!campaign.capacityEnabled) return "Capacity messaging off";
@@ -96,7 +87,7 @@ export default async function AdminCampaignsPage() {
         />
       </div>
 
-      {campaigns.length === 0 ? (
+      {!loadFailed && campaigns.length === 0 ? (
         <EmptyState
           icon="📣"
           title="No campaigns yet"
@@ -116,11 +107,7 @@ export default async function AdminCampaignsPage() {
                   <p className="mt-1 text-xs text-slate-400">{campaign.audience}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(String(campaign.status))}`}
-                  >
-                    {String(campaign.status)}
-                  </span>
+                  <StatusPill status={String(campaign.status)} />
                   <DeleteCampaignButton id={campaign.id} />
                 </div>
               </div>

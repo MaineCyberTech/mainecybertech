@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { AuditLog, Organization } from "@mct/sdk";
+import { formatDateTime } from "@/lib/format";
 
-export const metadata = { title: "User Activity - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params;
+  return { title: `User Activity (${userId.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 type UserActivityPageProps = {
   params: Promise<{
@@ -17,7 +22,10 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
   const api = getApiClient();
 
   const [profile, logsResult] = await Promise.all([
-    api.profiles.get(userId).catch(() => null),
+    api.profiles.get(userId).catch((error: unknown) => {
+      if ((error as { status?: number })?.status === 404) notFound();
+      throw error;
+    }),
     api.audit.list({ actorUserId: userId }),
   ]);
   const logs = logsResult.items ?? [];
@@ -74,7 +82,7 @@ export default async function UserActivityPage({ params }: UserActivityPageProps
                   </div>
 
                   <div className="text-right text-xs text-slate-400">
-                    {new Date(log.created_at).toLocaleString()}
+                    {formatDateTime(log.created_at)}
                   </div>
                 </div>
 

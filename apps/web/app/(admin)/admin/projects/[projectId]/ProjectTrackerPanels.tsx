@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { getClientApi } from "@/lib/client-api";
+import { formatDate } from "@/lib/format";
 
 type Phase = {
   id: string;
@@ -21,7 +22,7 @@ type Dependency = {
 function fmt(value: string | null): string {
   if (!value) return "—";
   try {
-    return new Date(value).toISOString().slice(0, 10);
+    return formatDate(value);
   } catch {
     return "—";
   }

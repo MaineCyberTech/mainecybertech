@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import { getApiClient } from "@/lib/api";
 import Link from "next/link";
 import type { StoreProposalDraft, StoreQuoteRequest } from "@mct/sdk";
+import { formatDateShort, formatDateTime } from "@/lib/format";
 import { GenerateProposalDraftButton, ProposalDraftStatusForm } from "./ProposalDraftActions";
 
 export const dynamic = "force-dynamic";
@@ -70,7 +71,7 @@ export default async function AdminStoreQuoteRequestsPage() {
     >
       {loadFailed && <DataErrorNote what="quote requests" />}
 
-      {requests.length === 0 ? (
+      {!loadFailed && requests.length === 0 ? (
         <EmptyState
           icon="🧾"
           title="No quote requests yet"
@@ -91,7 +92,7 @@ export default async function AdminStoreQuoteRequestsPage() {
                     <p className="text-xs text-slate-400">{customerEmail(request.customer)}</p>
                     <p className="mt-1 text-xs text-slate-500">
                       {itemLabels(request.items).join(", ") || "No items"} ·{" "}
-                      {new Date(request.created_at).toLocaleDateString()}
+                      {formatDateShort(request.created_at)}
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
@@ -117,7 +118,7 @@ export default async function AdminStoreQuoteRequestsPage() {
                         className="flex flex-wrap items-center justify-between gap-3"
                       >
                         <span className="font-mono text-xs text-slate-400">
-                          {draft.id.slice(0, 8)} · {new Date(draft.created_at).toLocaleString()}
+                          {draft.id.slice(0, 8)} · {formatDateTime(draft.created_at)}
                         </span>
                         <div className="flex items-center gap-3">
                           {draft.proposal_id && (

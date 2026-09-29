@@ -2,17 +2,18 @@ import { requireAdminAccess } from "@/lib/auth/admin";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
+import { StatusPill, type StatusTone } from "@/components/admin/StatusPill";
 import { getDependencyEngineData } from "@/lib/catalog/v5-loaders";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Dependency Engine - Store - Admin - Maine CyberTech" };
 
-function severityBadge(severity: string) {
-  const map: Record<string, string> = {
-    required: "border-red-500/25 bg-red-500/10 text-red-400",
-    recommended: "border-amber-500/25 bg-amber-500/10 text-amber-400",
+function dependencyTone(severity: string): StatusTone {
+  const map: Record<string, StatusTone> = {
+    required: "red",
+    recommended: "amber",
   };
-  return map[severity] ?? "border-white/10 bg-white/5 text-slate-400";
+  return map[severity] ?? "slate";
 }
 
 export default async function AdminStoreDependenciesPage() {
@@ -70,11 +71,7 @@ export default async function AdminStoreDependenciesPage() {
                 <span className="rounded bg-white/5 px-2 py-0.5 font-mono text-xs text-slate-200">
                   {rule.productId}
                 </span>
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${severityBadge(rule.severity)}`}
-                >
-                  {rule.severity}
-                </span>
+                <StatusPill status={rule.severity} tone={dependencyTone(rule.severity)} />
               </div>
               <div className="space-y-1">
                 {rule.requires.length > 0 && (

@@ -7,9 +7,13 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import SatisfactionPulseRespondForm from "./SatisfactionPulseRespondForm";
+import { formatDateTimeMinutesUtc } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Satisfaction Pulse Detail - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Satisfaction Pulse Detail (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 export default async function DetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
@@ -64,13 +68,11 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
             <dd className="text-slate-50">{String(record?.feedback ?? "—")}</dd>
             <dt className="text-slate-400">Sent</dt>
             <dd className="text-slate-50">
-              {record?.sent_at ? new Date(String(record.sent_at)).toISOString().slice(0, 16) : "—"}
+              {record?.sent_at ? formatDateTimeMinutesUtc(record.sent_at) : "—"}
             </dd>
             <dt className="text-slate-400">Responded</dt>
             <dd className="text-slate-50">
-              {record?.responded_at
-                ? new Date(String(record.responded_at)).toISOString().slice(0, 16)
-                : "—"}
+              {record?.responded_at ? formatDateTimeMinutesUtc(record.responded_at) : "—"}
             </dd>
           </div>
         </dl>

@@ -3,6 +3,7 @@ import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { requirePermission } from "@/lib/auth/permissions";
 import type { AuditLog, Organization, Profile } from "@mct/sdk";
+import { formatDateTime } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Audit Log - Admin - Maine CyberTech" };
@@ -230,7 +231,7 @@ export default async function AuditPage({ searchParams }: AuditPageProps) {
                     </p>
                   </div>
                   <div className="shrink-0 text-right text-xs text-slate-400">
-                    {new Date(log.created_at).toLocaleString()}
+                    {formatDateTime(log.created_at)}
                   </div>
                 </div>
                 {log.metadata && Object.keys(log.metadata).length > 0 ? (

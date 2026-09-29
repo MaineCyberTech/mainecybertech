@@ -40,48 +40,48 @@ export default async function DynamicFormsAdminPage() {
       {loadFailed && <DataErrorNote what="dynamic forms" />}
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((f) => {
-              const submissions = f.submission_count ?? 0;
-              return (
-                <div
-                  key={String(f.id)}
-                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-                >
-                  <Link
-                    className="transition hover:text-emerald-400"
-                    href={`/admin/dynamic-forms/${f.id}`}
+          {items.length > 0
+            ? items.map((f) => {
+                const submissions = f.submission_count ?? 0;
+                return (
+                  <div
+                    key={String(f.id)}
+                    className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                   >
-                    <p className="font-medium text-slate-50">{String(f.form_name)}</p>
-                  </Link>
-                  <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-                    <span className="rounded-full border border-white/10 px-2 py-0.5">
-                      {String(f.form_type || "unknown")}
-                    </span>
-                    <span className="rounded-full border border-white/10 px-2 py-0.5">
-                      {String(f.status || "draft")}
-                    </span>
-                    {typeof submissions === "number" && (
+                    <Link
+                      className="transition hover:text-emerald-400"
+                      href={`/admin/dynamic-forms/${f.id}`}
+                    >
+                      <p className="font-medium text-slate-50">{String(f.form_name)}</p>
+                    </Link>
+                    <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
                       <span className="rounded-full border border-white/10 px-2 py-0.5">
-                        {submissions} submissions
+                        {String(f.form_type || "unknown")}
                       </span>
-                    )}
-                    {f.published_at != null && (
                       <span className="rounded-full border border-white/10 px-2 py-0.5">
-                        Published
+                        {String(f.status || "draft")}
                       </span>
-                    )}
-                  </p>
-                </div>
-              );
-            })
-          ) : (
-            <EmptyState
-              icon="📝"
-              title="No forms"
-              description="Create client intake or questionnaire forms from the portal builder."
-            />
-          )}
+                      {typeof submissions === "number" && (
+                        <span className="rounded-full border border-white/10 px-2 py-0.5">
+                          {submissions} submissions
+                        </span>
+                      )}
+                      {f.published_at != null && (
+                        <span className="rounded-full border border-white/10 px-2 py-0.5">
+                          Published
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                );
+              })
+            : !loadFailed && (
+                <EmptyState
+                  icon="📝"
+                  title="No forms"
+                  description="Create client intake or questionnaire forms from the portal builder."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

@@ -8,6 +8,7 @@ import EmptyState from "@/components/EmptyState";
 import CrudForm from "@/components/admin/CrudForm";
 import { createOffboarding } from "@/lib/module-actions";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Offboarding - Admin" };
 
@@ -59,36 +60,34 @@ export default async function OffboardingPage() {
       />
       <section className="cyber-panel">
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((o) => (
-              <div key={o.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <Link
-                  className="transition hover:text-emerald-400"
-                  href={`/admin/offboarding/${o.id}`}
-                >
-                  <p className="font-medium text-slate-50">
-                    {o.employee_name}{" "}
-                    <span className="text-xs text-slate-400">
-                      {o.offboarding_date
-                        ? `(${new Date(o.offboarding_date).toISOString().slice(0, 10)})`
-                        : ""}
-                    </span>
+          {items.length > 0
+            ? items.map((o) => (
+                <div key={o.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <Link
+                    className="transition hover:text-emerald-400"
+                    href={`/admin/offboarding/${o.id}`}
+                  >
+                    <p className="font-medium text-slate-50">
+                      {o.employee_name}{" "}
+                      <span className="text-xs text-slate-400">
+                        {o.offboarding_date ? `(${formatDate(o.offboarding_date)})` : ""}
+                      </span>
+                    </p>
+                  </Link>
+                  <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
+                    {chk(o.account_disabled)} Disabled {chk(o.mailbox_converted)} Mailbox{" "}
+                    {chk(o.license_reclaimed)} License {chk(o.access_reviewed)} Access{" "}
+                    {chk(o.evidence_collected)} Evidence
                   </p>
-                </Link>
-                <p className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-                  {chk(o.account_disabled)} Disabled {chk(o.mailbox_converted)} Mailbox{" "}
-                  {chk(o.license_reclaimed)} License {chk(o.access_reviewed)} Access{" "}
-                  {chk(o.evidence_collected)} Evidence
-                </p>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="👋"
-              title="No offboarding checklists"
-              description="Start an offboarding checklist for departing employees."
-            />
-          )}
+                </div>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="👋"
+                  title="No offboarding checklists"
+                  description="Start an offboarding checklist for departing employees."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

@@ -76,7 +76,7 @@ export default async function AdminVisualsPage() {
           ]}
         />
 
-        {assets.length === 0 ? (
+        {!loadFailed && assets.length === 0 ? (
           <EmptyState
             icon="🎨"
             title="No linked visual assets"
@@ -87,13 +87,21 @@ export default async function AdminVisualsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 bg-cyber-base/60">
-                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Entity</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Type</th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-300">
+                  <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                    Entity
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                    Type
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
                     Icon / Accent
                   </th>
-                  <th className="px-4 py-3 text-left font-semibold text-slate-300">Alt text</th>
-                  <th className="px-4 py-3 text-right font-semibold text-slate-300">Actions</th>
+                  <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                    Alt text
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-right font-semibold text-slate-300">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>

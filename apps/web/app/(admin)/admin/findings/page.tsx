@@ -11,6 +11,7 @@ import CrudForm from "@/components/admin/CrudForm";
 import AdminPagination from "@/components/admin/AdminPagination";
 import DataErrorNote from "@/components/admin/DataErrorNote";
 import { createFinding } from "@/lib/module-actions";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Findings - Admin - Maine CyberTech" };
@@ -106,37 +107,37 @@ export default async function FindingsPage({ searchParams }: FindingsPageProps) 
           <h2 className="cyber-heading text-lg">Findings ({stats.total})</h2>
         </div>
         <div className="mt-6 space-y-3">
-          {findings.length > 0 ? (
-            findings.map((f) => (
-              <Link
-                key={f.id}
-                href={`/admin/findings/${f.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{f.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {f.source} &bull; Created {new Date(f.created_at).toISOString().slice(0, 10)}
-                      {f.remediation_deadline
-                        ? ` &bull; Due ${new Date(f.remediation_deadline).toISOString().slice(0, 10)}`
-                        : ""}
-                    </p>
+          {findings.length > 0
+            ? findings.map((f) => (
+                <Link
+                  key={f.id}
+                  href={`/admin/findings/${f.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{f.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {f.source} &bull; Created {formatDate(f.created_at)}
+                        {f.remediation_deadline
+                          ? ` &bull; Due ${formatDate(f.remediation_deadline)}`
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <SeverityPill severity={f.severity} />
+                      <StatusPill status={f.status} />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <SeverityPill severity={f.severity} />
-                    <StatusPill status={f.status} />
-                  </div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="🔍"
-              title="No findings yet"
-              description="Record your first security or compliance finding."
-            />
-          )}
+                </Link>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="🔍"
+                  title="No findings yet"
+                  description="Record your first security or compliance finding."
+                />
+              )}
         </div>
       </section>
 

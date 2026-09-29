@@ -2,7 +2,10 @@ import ModuleDetailPage from "@/components/admin/ModuleDetailPage";
 import AiPolicyGenerateButton from "./AiPolicyGenerateButton";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Record Detail - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Record Detail (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 export default async function DetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;

@@ -55,24 +55,29 @@ export default async function BackupPage() {
       />
       <section className="cyber-panel mt-6">
         <div className="space-y-3">
-          {items.length > 0 ? (
-            items.map((item) => (
-              <div key={item.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <Link
-                  className="transition hover:text-emerald-400"
-                  href={`/admin/final/backups/${item.id}`}
+          {items.length > 0
+            ? items.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-lg border border-white/10 bg-cyber-base/60 p-4"
                 >
-                  <p className="font-medium text-slate-50">{item.system_name ?? String(item.id)}</p>
-                </Link>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="💾"
-              title="No backup plans"
-              description="Use the form above to create one."
-            />
-          )}
+                  <Link
+                    className="transition hover:text-emerald-400"
+                    href={`/admin/final/backups/${item.id}`}
+                  >
+                    <p className="font-medium text-slate-50">
+                      {item.system_name ?? String(item.id)}
+                    </p>
+                  </Link>
+                </div>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="💾"
+                  title="No backup plans"
+                  description="Use the form above to create one."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

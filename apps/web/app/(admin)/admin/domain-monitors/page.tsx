@@ -8,6 +8,7 @@ import Link from "next/link";
 import CrudForm from "@/components/admin/CrudForm";
 import DataErrorNote from "@/components/admin/DataErrorNote";
 import { createDomainMonitor } from "@/lib/module-actions";
+import { formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Domain Monitor - Admin - Maine CyberTech" };
@@ -103,35 +104,35 @@ export default async function DomainMonitorsPage() {
           <h2 className="cyber-heading text-lg">Monitored Domains ({stats.total})</h2>
         </div>
         <div className="mt-6 space-y-3">
-          {monitors.length > 0 ? (
-            monitors.map((d) => (
-              <Link
-                key={d.id}
-                href={`/admin/domain-monitors/${d.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{d.display_name ?? d.domain}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {d.domain} &bull; {d.dns_provider} &bull; SPF: {d.spf_status} &bull; DKIM:{" "}
-                      {d.dkim_status} &bull; DMARC: {d.dmarc_status}
-                      {d.last_checked_at
-                        ? ` &bull; Checked ${new Date(d.last_checked_at).toISOString().slice(0, 10)}`
-                        : ""}
-                    </p>
+          {monitors.length > 0
+            ? monitors.map((d) => (
+                <Link
+                  key={d.id}
+                  href={`/admin/domain-monitors/${d.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{d.display_name ?? d.domain}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {d.domain} &bull; {d.dns_provider} &bull; SPF: {d.spf_status} &bull; DKIM:{" "}
+                        {d.dkim_status} &bull; DMARC: {d.dmarc_status}
+                        {d.last_checked_at
+                          ? ` &bull; Checked ${formatDate(d.last_checked_at)}`
+                          : ""}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">{okPill(d.ssl_valid)}</div>
                   </div>
-                  <div className="flex items-center gap-2">{okPill(d.ssl_valid)}</div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="🌐"
-              title="No domains monitored"
-              description="Add domains to track SSL, DNS, and email deliverability posture."
-            />
-          )}
+                </Link>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="🌐"
+                  title="No domains monitored"
+                  description="Add domains to track SSL, DNS, and email deliverability posture."
+                />
+              )}
         </div>
       </section>
     </AdminPageShell>

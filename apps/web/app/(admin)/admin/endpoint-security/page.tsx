@@ -51,34 +51,36 @@ export default async function EndpointPage() {
       />
       <section className="cyber-panel">
         <div className="grid gap-4 md:grid-cols-2">
-          {items.length > 0 ? (
-            items.map((e) => (
-              <div key={e.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
-                <Link
-                  className="transition hover:text-emerald-400"
-                  href={`/admin/endpoint-security/${e.id}`}
-                >
-                  <p className="font-medium text-slate-50">{e.device_group}</p>
-                </Link>
-                <p className="mt-2 text-xs text-slate-400">
-                  AV: {e.av_installed}/{e.total_endpoints} &bull; Encrypted: {e.disk_encrypted}/
-                  {e.total_endpoints} &bull; MDM: {e.mdm_enrolled}/{e.total_endpoints}
-                </p>
-                <div className="mt-2 h-2 w-full rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-emerald-500"
-                    style={{ width: `${e.coverage_pct || 0}%` }}
+          {items.length > 0
+            ? items.map((e) => (
+                <div key={e.id} className="rounded-lg border border-white/10 bg-cyber-base/60 p-4">
+                  <Link
+                    className="transition hover:text-emerald-400"
+                    href={`/admin/endpoint-security/${e.id}`}
+                  >
+                    <p className="font-medium text-slate-50">{e.device_group}</p>
+                  </Link>
+                  <p className="mt-2 text-xs text-slate-400">
+                    AV: {e.av_installed}/{e.total_endpoints} &bull; Encrypted: {e.disk_encrypted}/
+                    {e.total_endpoints} &bull; MDM: {e.mdm_enrolled}/{e.total_endpoints}
+                  </p>
+                  <div className="mt-2 h-2 w-full rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-emerald-500"
+                      style={{ width: `${e.coverage_pct || 0}%` }}
+                    />
+                  </div>
+                </div>
+              ))
+            : !loadFailed && (
+                <div className="col-span-2">
+                  <EmptyState
+                    icon="💻"
+                    title="No endpoint groups"
+                    description="Track endpoint security coverage by device group."
                   />
                 </div>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="💻"
-              title="No endpoint groups"
-              description="Track endpoint security coverage by device group."
-            />
-          )}
+              )}
         </div>
       </section>
     </AdminPageShell>

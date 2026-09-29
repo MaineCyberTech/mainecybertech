@@ -8,10 +8,13 @@ import { getModuleConfig } from "@/lib/module-config";
 import { updateModuleRecord, deleteModuleRecord } from "@/lib/module-record-actions";
 import RiskAssessButton from "./RiskAssessButton";
 import RiskAcceptButton from "./RiskAcceptButton";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Risk Detail - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return { title: `Risk Detail (${id.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 export default async function DetailPage(props: { params: Promise<{ id: string }> }) {
   const { id } = await props.params;
@@ -22,8 +25,9 @@ export default async function DetailPage(props: { params: Promise<{ id: string }
   let record: Record<string, unknown> | null = null;
   try {
     record = (await config.sdk(api).get(id)) as unknown as Record<string, unknown>;
-  } catch {
-    record = null;
+  } catch (error) {
+    if ((error as { status?: number })?.status === 404) notFound();
+    throw error;
   }
 
   return (

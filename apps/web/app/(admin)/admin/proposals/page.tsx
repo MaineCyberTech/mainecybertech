@@ -7,13 +7,10 @@ import EmptyState from "@/components/EmptyState";
 import { StatusPill } from "@/components/admin/StatusPill";
 import Link from "next/link";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatCurrency, formatDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Proposals - Admin - Maine CyberTech" };
-
-function fmtCurrency(n: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
-}
 
 export default async function ProposalsPage() {
   await requireAdminAccess();
@@ -66,36 +63,36 @@ export default async function ProposalsPage() {
           </Link>
         </div>
         <div className="mt-6 space-y-3">
-          {proposals.length > 0 ? (
-            proposals.map((p) => (
-              <Link
-                key={p.id}
-                href={`/admin/proposals/${p.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{p.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {fmtCurrency(p.grand_total ?? 0)} total &bull; Created{" "}
-                      {new Date(p.created_at).toISOString().slice(0, 10)}
-                    </p>
+          {proposals.length > 0
+            ? proposals.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/admin/proposals/${p.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{p.title}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {formatCurrency(p.grand_total ?? 0)} total &bull; Created{" "}
+                        {formatDate(p.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <StatusPill status={p.status} />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <StatusPill status={p.status} />
-                  </div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="📄"
-              title="No proposals yet"
-              description="Create your first MSP proposal to send to a client."
-              actionHref="/admin/proposals/new"
-              actionLabel="Create Proposal"
-            />
-          )}
+                </Link>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="📄"
+                  title="No proposals yet"
+                  description="Create your first MSP proposal to send to a client."
+                  actionHref="/admin/proposals/new"
+                  actionLabel="Create Proposal"
+                />
+              )}
         </div>
       </section>
 

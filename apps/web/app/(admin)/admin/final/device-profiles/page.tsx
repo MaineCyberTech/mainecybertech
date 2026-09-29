@@ -85,32 +85,32 @@ export default async function DeviceProfilesPage({ searchParams }: DeviceProfile
           <h2 className="cyber-heading text-lg">Device Profiles</h2>
         </div>
         <div className="mt-6 space-y-3">
-          {profiles.length > 0 ? (
-            profiles.map((p) => (
-              <Link
-                key={p.id}
-                href={`/admin/final/device-profiles/${p.id}`}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{p.name}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {p.manufacturer}
-                      {p.model ? ` ${p.model}` : ""}
-                      {p.type ? ` &bull; ${p.type}` : ""}
-                    </p>
+          {profiles.length > 0
+            ? profiles.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/admin/final/device-profiles/${p.id}`}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4 transition hover:border-emerald-500/20 hover:bg-cyber-base/80"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{p.name}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {p.manufacturer}
+                        {p.model ? ` ${p.model}` : ""}
+                        {p.type ? ` &bull; ${p.type}` : ""}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))
-          ) : (
-            <EmptyState
-              icon="🖥️"
-              title="No device profiles"
-              description="Use the form above to create one."
-            />
-          )}
+                </Link>
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="🖥️"
+                  title="No device profiles"
+                  description="Use the form above to create one."
+                />
+              )}
         </div>
       </section>
 

@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
 import { AuditLog, Profile } from "@mct/sdk";
+import { formatDateTime } from "@/lib/format";
 
-export const metadata = { title: "Organization Activity - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ orgId: string }> }) {
+  const { orgId } = await params;
+  return { title: `Organization Activity (${orgId.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 type OrgActivityPageProps = {
   params: Promise<{
@@ -17,7 +22,10 @@ export default async function OrganizationActivityPage({ params }: OrgActivityPa
   const api = getApiClient();
 
   const [org, logsResult] = await Promise.all([
-    api.organizations.get(orgId).catch(() => null),
+    api.organizations.get(orgId).catch((error: unknown) => {
+      if ((error as { status?: number })?.status === 404) notFound();
+      throw error;
+    }),
     api.audit.list({ organizationId: orgId }),
   ]);
   const logs = logsResult.items ?? [];
@@ -73,7 +81,7 @@ export default async function OrganizationActivityPage({ params }: OrgActivityPa
                   </div>
 
                   <div className="text-right text-xs text-slate-400">
-                    {new Date(log.created_at).toLocaleString()}
+                    {formatDateTime(log.created_at)}
                   </div>
                 </div>
 

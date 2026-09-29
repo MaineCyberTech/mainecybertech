@@ -7,6 +7,7 @@ import EmptyState from "@/components/EmptyState";
 import AdminPagination from "@/components/admin/AdminPagination";
 import DmarcAnalyzeForm from "./DmarcAnalyzeForm";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { formatDate } from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "DMARC Coach - Admin - Maine CyberTech" };
 
@@ -85,37 +86,37 @@ export default async function DmarcCoachPage({ searchParams }: DmarcCoachPagePro
       <section className="cyber-panel mt-6">
         <h2 className="cyber-heading text-lg">Analyzed Domains</h2>
         <div className="mt-6 space-y-3">
-          {items.length > 0 ? (
-            items.map((item) => (
-              <div
-                key={item.id}
-                className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-slate-50">{item.domain}</p>
-                    <p className="mt-1 text-xs text-slate-400">
-                      {item.dmarc_record
-                        ? `DMARC: ${item.dmarc_record.slice(0, 80)}${item.dmarc_record.length > 80 ? "..." : ""}`
-                        : "No DMARC record found"}{" "}
-                      &bull; {new Date(item.created_at).toISOString().slice(0, 10)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <GradePill grade={item.overall_grade} />
+          {items.length > 0
+            ? items.map((item) => (
+                <div
+                  key={item.id}
+                  className="block rounded-lg border border-white/10 bg-cyber-base/60 p-4"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="font-medium text-slate-50">{item.domain}</p>
+                      <p className="mt-1 text-xs text-slate-400">
+                        {item.dmarc_record
+                          ? `DMARC: ${item.dmarc_record.slice(0, 80)}${item.dmarc_record.length > 80 ? "..." : ""}`
+                          : "No DMARC record found"}{" "}
+                        &bull; {formatDate(item.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <GradePill grade={item.overall_grade} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          ) : (
-            <EmptyState
-              icon="🛡️"
-              title="No domains analyzed yet"
-              description="Run your first DMARC analysis to grade email security posture and get remediation recommendations."
-              actionHref="/admin/dmarc-coach"
-              actionLabel="Refresh"
-            />
-          )}
+              ))
+            : !loadFailed && (
+                <EmptyState
+                  icon="🛡️"
+                  title="No domains analyzed yet"
+                  description="Run your first DMARC analysis to grade email security posture and get remediation recommendations."
+                  actionHref="/admin/dmarc-coach"
+                  actionLabel="Refresh"
+                />
+              )}
         </div>
       </section>
 

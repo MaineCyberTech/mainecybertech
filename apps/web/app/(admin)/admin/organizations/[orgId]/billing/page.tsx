@@ -1,10 +1,15 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getApiClient } from "@/lib/api";
 import { requireAdminAccess } from "@/lib/auth/admin";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 import AdminBillingClient from "./AdminBillingClient";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Organization Billing - Admin - Maine CyberTech" };
+export async function generateMetadata({ params }: { params: Promise<{ orgId: string }> }) {
+  const { orgId } = await params;
+  return { title: `Organization Billing (${orgId.slice(0, 8)}) - Admin - Maine CyberTech` };
+}
 
 type Props = { params: Promise<{ orgId: string }> };
 
@@ -13,13 +18,30 @@ export default async function AdminOrgBillingPage({ params }: Props) {
   const { orgId } = await params;
   const api = getApiClient();
 
+  let loadFailed = false;
+  const fail = () => {
+    loadFailed = true;
+    return null;
+  };
   const [org, summary, subscriptions, invoices, payments, customer] = await Promise.all([
-    api.organizations.get(orgId).catch(() => null),
-    api.billing.summary({ organizationId: orgId }).catch(() => null),
-    api.billing.listSubscriptions({ organizationId: orgId }).catch(() => []),
-    api.billing.listInvoices({ organizationId: orgId, limit: 50 }).catch(() => ({ items: [] })),
-    api.billing.listPayments({ organizationId: orgId, limit: 50 }).catch(() => ({ items: [] })),
-    api.billing.getBillingCustomer({ organizationId: orgId }).catch(() => null),
+    api.organizations.get(orgId).catch((error: unknown) => {
+      if ((error as { status?: number })?.status === 404) notFound();
+      return fail();
+    }),
+    api.billing.summary({ organizationId: orgId }).catch(fail),
+    api.billing.listSubscriptions({ organizationId: orgId }).catch(() => {
+      loadFailed = true;
+      return [];
+    }),
+    api.billing.listInvoices({ organizationId: orgId, limit: 50 }).catch(() => {
+      loadFailed = true;
+      return { items: [] };
+    }),
+    api.billing.listPayments({ organizationId: orgId, limit: 50 }).catch(() => {
+      loadFailed = true;
+      return { items: [] };
+    }),
+    api.billing.getBillingCustomer({ organizationId: orgId }).catch(fail),
   ]);
 
   return (
@@ -40,6 +62,8 @@ export default async function AdminOrgBillingPage({ params }: Props) {
           Back to Organization
         </Link>
       </div>
+
+      {loadFailed && <DataErrorNote what="billing data" />}
 
       <AdminBillingClient
         summary={summary}

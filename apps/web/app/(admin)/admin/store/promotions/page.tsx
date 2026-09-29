@@ -3,11 +3,13 @@ import Breadcrumbs from "@/components/Breadcrumbs";
 import AdminSubnav from "@/components/admin/AdminSubnav";
 import AdminPageShell from "@/components/admin/AdminPageShell";
 import DataErrorNote from "@/components/admin/DataErrorNote";
+import { StatusPill } from "@/components/admin/StatusPill";
 import { validatePromotion, type Promotion } from "@/lib/catalog/promotions";
 import { getApiClient } from "@/lib/api";
 import type { StorePromotion } from "@mct/sdk";
 import PromoForm from "./PromoForm";
 import DeleteButton from "./DeleteButton";
+import { formatDateShort } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Promotions - Store - Admin - Maine CyberTech" };
@@ -21,23 +23,9 @@ const promoTypeLabels: Record<string, string> = {
   free_addon: "Free Add-on",
 };
 
-function statusPill(status: string) {
-  const styles: Record<string, string> = {
-    active: "border-emerald-500/25 bg-emerald-500/10 text-emerald-400",
-    paused: "border-amber-500/25 bg-amber-500/10 text-amber-400",
-    expired: "border-slate-500/25 bg-slate-500/10 text-slate-400",
-    archived: "border-red-500/25 bg-red-500/10 text-red-400",
-  };
-  return styles[status] ?? "border-white/10 bg-white/5 text-slate-400";
-}
-
 function formatDate(d?: string) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return formatDateShort(d);
 }
 
 function toPromotion(p: StorePromotion): Promotion {
@@ -101,13 +89,27 @@ export default async function AdminPromotionsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-white/10 bg-cyber-base/60">
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Name</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Badge</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Type</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Status</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Eligibility</th>
-              <th className="px-4 py-3 text-left font-semibold text-slate-300">Dates</th>
-              <th className="px-4 py-3 text-right font-semibold text-slate-300">Actions</th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Name
+              </th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Badge
+              </th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Type
+              </th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Status
+              </th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Eligibility
+              </th>
+              <th scope="col" className="px-4 py-3 text-left font-semibold text-slate-300">
+                Dates
+              </th>
+              <th scope="col" className="px-4 py-3 text-right font-semibold text-slate-300">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -131,11 +133,7 @@ export default async function AdminPromotionsPage() {
                     {promoTypeLabels[p.promoType] || p.promoType}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
-                    >
-                      {p.status}
-                    </span>
+                    <StatusPill status={p.status} />
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-400">
                     {p.eligibilityTargets.length === 1 && p.eligibilityTargets[0] === "all"
@@ -164,7 +162,7 @@ export default async function AdminPromotionsPage() {
             })}
           </tbody>
         </table>
-        {promotions.length === 0 && (
+        {!loadFailed && promotions.length === 0 && (
           <div className="p-8 text-center text-sm text-slate-400">
             No promotions yet. Click &quot;Create Promotion&quot; to get started.
           </div>
@@ -179,10 +177,8 @@ export default async function AdminPromotionsPage() {
             <div key={p.id} className="glass-card block p-4">
               <div className="flex items-start justify-between gap-2">
                 <p className="font-medium text-slate-50">{p.name}</p>
-                <span
-                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.1em] ${statusPill(p.status)}`}
-                >
-                  {p.status}
+                <span className="shrink-0">
+                  <StatusPill status={p.status} />
                 </span>
               </div>
               {result.errors.length > 0 && (
@@ -221,7 +217,7 @@ export default async function AdminPromotionsPage() {
             </div>
           );
         })}
-        {promotions.length === 0 && (
+        {!loadFailed && promotions.length === 0 && (
           <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-8 text-center text-sm text-slate-400">
             No promotions yet. Click &quot;Create Promotion&quot; to get started.
           </div>

@@ -20,6 +20,11 @@ export default async function AdminWebhooksPage() {
       description="Manage outbound webhook endpoints for event notifications."
       subnavCurrent="webhooks"
       items={endpoints}
+      actions={
+        <Link href="/admin/webhooks/dead-letters" className="cyber-button-secondary">
+          Dead Letters
+        </Link>
+      }
       newHref="/admin/webhooks/new"
       newLabel="+ New Webhook"
       emptyMessage="No webhook endpoints configured."
