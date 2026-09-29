@@ -1,7 +1,7 @@
 # API Documentation
 
 **Category:** Infrastructure
-**API Routes:** `apps/api/src/routes/swagger.ts`
+**API Routes:** `apps/api/src/routes/docs.ts` + `apps/api/src/openapi/spec.ts`
 
 ## Overview
 

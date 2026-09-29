@@ -40,28 +40,31 @@ Browser → loginAction() → API POST /api/v1/auth/sign-in (Supabase PKCE)
 
 **Security model:** Auth User → Profile → Membership → Role → Permission/Override → RLS → Storage
 
-## Test Status (2026-09-21 Verified)
+## Test Status (2026-09-27 Verified)
 
-**3,262 tests, all passing. 380 suites.**
+**3,476 tests, all passing. 396 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,186         | 109    | Jest + supertest                  |
-| Web     | 1,688         | 259    | Jest + Testing Library            |
-| SDK     | 289           | 3      | Jest (mocked fetch)               |
-| Worker  | 99            | 9      | Jest (env schema + task handlers) |
+| API     | 1,256         | 114    | Jest + supertest                  |
+| Web     | 1,820         | 270    | Jest + Testing Library            |
+| SDK     | 296           | 3      | Jest (mocked fetch)               |
+| Worker  | 104           | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
 
 ### Known Debt (2026-08-29)
 
 - **`portal-knowledge-base` E2E failure — FIXED & validated:** the 3 KB E2E tests now pass in prod mode. Root cause was the inline server-action wrapper `<form action={async (fd) => await createArticle(fd)}>` breaking under Next's production build; fixed via `action={createArticle}` + `void` return + `items` guard (commit `688f9fa`).
 - **E2E has known run-to-run flakiness:** data-dependent tests (notification bell, project/user/document detail, admin-documents modal) fail intermittently due to CI API/Supabase contention — identical seeds, yet the same test passes in one shard and fails in another. This is **not** a product regression and **not** caused by the CORS `*`→`http://localhost:3000` change. The E2E gate is **prod-only** (`deploy-do.yml` `if: name == 'prod'`), so only a `main` deploy would be exposed to it. As of 2026-09-21 there are **no `main`-branch `deploy-do` runs at all** (prod has not been deployed through this pipeline since E2E was made a prod-only gate), and E2E is currently green on PRs — so "prod deploy is blocked" is not observable. Dev (`develop`) deploy is unaffected and green. **Partially hardened 2026-09-18** (`44900e3`): artifact paths, action/navigation timeouts, shell-wait helper, bounded `networkidle` before axe, and a `withRetry()` around the layout profile fetch (the SDK does not retry 500). **Hardened 2026-09-20** (`2865f7b`): the ~35 `if (await locator.isVisible())` data gates across 12 specs now go through `visibleWithin()` in `e2e/fixtures.ts` (auto-waits for `state:"visible"`, tolerates absent seed data) so a slow render skips the branch instead of failing it. The documents modals already carry `role="dialog"`/`aria-modal`/`aria-labelledby`. **Also hardened 2026-09-20** (`bc46bb9`): `e2e.yml` installed the CLI via `supabase/setup-cli` with `version: latest`, which resolves `releases/latest` through the GitHub API and intermittently failed the job before Playwright ran (`Failed to resolve latest Supabase CLI release: rate limit exceeded`). Now installs the pinned `supabase@2.107.0` from npm (matching `supabase-migrations.yml`/`package.json`).
-- **MFA/SSO (net-new):** TOTP **management** backend + SDK shipped 2026-09-18 (`334d65f`). An opt-in enrollment UI (`/portal/profile/security`) shipped in `471b63e`. **`aal2` enforcement now exists** behind `MFA_ENFORCEMENT_ENABLED` (`apps/api/src/lib/mfa.ts`, wired into `requireAuth`): once enabled, an `aal1` session that has a _verified_ factor is rejected with `403 MFA_REQUIRED` on non-`/auth/*` routes, the web layouts step the user up to `/portal/profile/security`, the factor lookup is cached 60s and fails open with a warning (a GoTrue blip cannot lock users out), and a user with no factor is never blocked. Remaining: (1) enable MFA on the hosted Supabase project + set the flag; (2) a first-class login second-factor step (today the security page handles the challenge); (3) SSO (SAML/OIDC) — own larger effort, needs a paid Supabase plan + per-org provider config.
-- **Toast consolidation (open):** three ad-hoc toast implementations remain — `pushToast` (`AdminDocumentsCenterClient`, `ProjectTaskListV5`), `addToast` (`RolePermissionsEditor`, `UserPermissionOverridesClient`, `PortalDocumentsCenterClient`), and the `onToast` prop (`AdminDocumentsBulkControls`). Intended fix is one `ToastProvider`/`useToast()`; see `docs/WEB_UI_CONVENTIONS.md`.
-- **Axe automation breadth (open):** `apps/web/e2e/a11y.spec.ts` scans 19 of 318 pages and filters to `critical`/`serious` only (no WCAG 2.2 tags). Expanding it should be done where the E2E stack runs so new rules can be triaged rather than failing the prod gate blind.
-- **Infra/ops (open, needs GitHub credentials):** the `prod` environment has no `SUPABASE_*`/`JWT_SECRET`/vars, so the prod deploy path cannot succeed; `main` is far behind `develop` (scheduled `db-backup`/`db-restore-test`/`sbom` only fire from the default branch, and the last backup runs failed); `prod`/`prod-approval` environments have no protection rules; `terraform-do` masks `plan` failures (`tee` without `pipefail`) behind the invalid `DO_API_TOKEN`; `DROPLET_IP` is the dev fallback only.
+- **MFA/SSO (net-new):** TOTP **management** backend + SDK shipped 2026-09-18 (`334d65f`). An opt-in enrollment UI (`/portal/profile/security`) shipped in `471b63e`. **`aal2` enforcement now exists** behind `MFA_ENFORCEMENT_ENABLED` (`apps/api/src/lib/mfa.ts`, wired into `requireAuth`): once enabled, an `aal1` session that has a _verified_ factor is rejected with `403 MFA_REQUIRED` on non-`/auth/*` routes, the web layouts step the user up to `/portal/profile/security`, the factor lookup is cached 60s and fails open with a warning (a GoTrue blip cannot lock users out), and a user with no factor is never blocked. **First-class login second factor shipped 2026-09-27:** `/auth/sign-in` returns `mfaRequired` (via the cached factor lookup), the login form stores a 10-minute `mct_mfa_pending` cookie instead of the session, shows the code step and completes `challenge`+`verify` before swapping `mct_session` for the `aal2` token (`docs/MFA.md`). **Recovery codes shipped 2026-09-27:** 10 scrypt-hashed single-use codes per user (migration `5302427`), generated after step-up, spendable at the login step (`POST /auth/mfa/recovery`) to unenroll factors and force re-enrollment; managed from the security page. Trusted devices ("remember this device") are intentionally **not** implemented — GoTrue derives `aal2` from an in-session factor verification, so a device bypass would either weaken `MFA_ENFORCEMENT_ENABLED` or require a parallel session model. Remaining: (1) enable MFA on the hosted Supabase project + set the flag; (2) SSO (SAML/OIDC) — own larger effort, needs a paid Supabase plan + per-org provider config.
+- **Store catalog JSON copies (open, low):** `apps/api/src/data/products.json` (API fallback + `scripts/seed-store.ts` source) and `apps/web/lib/catalog/data/products.json` (web offline fallback) are different content generations — the web copy carries the enriched marketing/fulfillment copy (`cce023c`), the API copy the shorter reverted set (`62de9c1`). Reconcile to one canonical catalog (and drop the duplicate) when the catalog content workflow is defined; do not force-merge user-visible copy meanwhile.
+- **`webhook_dead_letters` RLS writes (open, low):** the table has RLS but no user-scoped `DELETE` policy; the dead-letter API uses the service-role client for deletes, so it is safe today. If `webhook-management` is ever added to `RLS_WRITES_ENABLED`, add a delete policy (or keep the admin-client path) — noted in `apps/api/src/routes/webhook-management.ts`.
+- **Local relative-time date helpers (open, low):** ~20 components keep a local `formatRelativeTime`/null-safe `formatDateTime` wrapper for "2h ago"-style labels and ticket timestamps. They do not use `toLocale*` directly (fine for now), but consolidating them into `lib/format.ts` would complete the single-source goal.
+- **UI consistency (closed 2026-09-27):** toasts use `components/ui/ToastProvider` + `useToast()`, page-level empties use `EmptyState`, every status badge uses `StatusPill` (with a `tone`/`label` escape hatch) and all money/date formatting goes through `lib/format.ts` — the four legacy store badge helpers and the UTC/timeline `toLocale*` exceptions were converted in the same session. Nested section/sub-list empty notes stay inline by design. See `docs/WEB_UI_CONVENTIONS.md`.
+- **Axe automation breadth (triage-only):** the default gate scans 19 pages with `critical`/`serious` filtering; `a11y.spec.ts` now carries a 49-page `FULL_PAGES` triage set (68 total) with `wcag22aa` tags behind `A11Y_FULL=1`, run weekly/manually by the non-blocking `a11y-breadth.yml`. Triage failures there should be fixed (or triaged into the default list) before widening the prod gate.
+- **Infra/ops (open, needs GitHub credentials):** the `prod` environment has no `SUPABASE_*`/`JWT_SECRET`/vars, so the prod deploy path cannot succeed; `main` is far behind `develop` (scheduled `db-backup`/`db-restore-test`/`sbom` only fire from the default branch, and the last backup runs failed); `prod`/`prod-approval` environments have no protection rules; `DROPLET_IP` is the dev fallback only. (`terraform-do` plan masking was fixed 2026-09-27 with `set -o pipefail`.)
 - **Store/portal write surfaces left unguarded by design:** `field-services` camera-calc (portal lets clients save calculations), `client-onboarding-command-center` (clients complete their own onboarding), and `billing/create-portal-session` (customer self-service portal; `billing:manage` is not granted to client roles). Each carries a code comment.
-- **`client_portal_entitlements` RLS admits `client_admin` while the API requires platform admin** (migration `5302420` vs `client-portal.ts`) — reconcile when portal-admin delegation is defined.
+- **`client_portal_entitlements` RLS — FIXED 2026-09-27:** migration `5302428` aligns the insert/update policies with the API gate (platform `admin`/`super_admin` only, `client_admin` dropped, `with check` added to update). The API writes with the service role, so no code path depended on the wider policy.
 
 ### Test patterns
 
@@ -94,23 +97,23 @@ pnpm e2e                     # Playwright E2E
 
 ## File Counts (2026-09-21 Verified)
 
-| Category                  | Count | Notes                                                                                               |
-| ------------------------- | ----- | --------------------------------------------------------------------------------------------------- |
-| API route files           | 62    | `apps/api/src/routes/*.ts` (75 incl. `routes/final/` + `routes/store/`)                             |
-| API SDK modules           | 60    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                         |
-| Worker task files         | 12    | Registered in `apps/worker/src/tasks/index.ts`                                                      |
-| Web pages                 | 318   | Admin 202, Portal 86, Public 29, Root 1                                                             |
-| Web components            | 100   | `apps/web/components/`                                                                              |
-| SQL migrations            | 125   | `supabase/migrations/` (latest: 5302426 status actions)                                             |
-| Seed files                | 9     | `supabase/seeds/*.sql`                                                                              |
-| GitHub Actions workflows  | 14    | `.github/workflows/`                                                                                |
-| AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                        |
-| Build/dev/utility scripts | 67    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `seed-store.ts`, `generate-db-types.js`, etc.) |
+| Category                  | Count | Notes                                                                                                                                                                  |
+| ------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API route files           | 62    | `apps/api/src/routes/*.ts` (75 incl. `routes/final/` + `routes/store/`)                                                                                                |
+| API SDK modules           | 60    | `packages/sdk/src/` (excl. `index.ts`, `database.types.ts`)                                                                                                            |
+| Worker task files         | 12    | Registered in `apps/worker/src/tasks/index.ts`                                                                                                                         |
+| Web pages                 | 319   | Admin 203, Portal 86, Public 29, `forbidden` 1                                                                                                                         |
+| Web components            | 102   | `apps/web/components/`                                                                                                                                                 |
+| SQL migrations            | 127   | `supabase/migrations/` (latest: 5302428 entitlements RLS alignment)                                                                                                    |
+| Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                 |
+| GitHub Actions workflows  | 16    | `.github/workflows/`                                                                                                                                                   |
+| AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                           |
+| Build/dev/utility scripts | 71    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `seed-store.ts`, `generate-db-types.js`, etc.) |
 
 ## Database Types (2026-09-21)
 
 `packages/sdk/src/database.types.ts` is generated from SQL migrations by
-`node scripts/generate-db-types.js` (135 tables, 12 enums). Exported via
+`node scripts/generate-db-types.js` (136 tables, 12 enums). Exported via
 `@mct/sdk` (`Database`, `Tables`, `TablesInsert`, `Json`) and subpath
 `@mct/sdk/database.types`.
 
@@ -231,24 +234,26 @@ SENTRY_DSN=
 
 ## CI/CD
 
-**14 GitHub Actions workflows** in `.github/workflows/`:
+**16 GitHub Actions workflows** in `.github/workflows/`:
 
-| Workflow                | Trigger            | Purpose                                                           |
-| ----------------------- | ------------------ | ----------------------------------------------------------------- |
-| test.yml                | push/PR            | Unit tests + coverage, OpenAPI validate, Trivy, secrets scan      |
-| lint.yml                | push/PR            | ESLint                                                            |
-| typecheck.yml           | push/PR            | TypeScript typecheck                                              |
-| supabase-migrations.yml | push main+dev/call | Apply Supabase migrations                                         |
-| e2e.yml                 | PR/manual/call     | Playwright E2E tests                                              |
-| deploy-do.yml           | push main+dev      | Build images, SSH deploy to droplet                               |
-| terraform-do.yml        | push/PR main+dev   | Terraform plan/apply for DO infra                                 |
-| validate.yml            | workflow_call      | Deploy gate (audit + test + lint + typecheck + prompt-provenance) |
-| build-push.yml          | dispatch           | Build/push GHCR images (manual)                                   |
-| chromatic.yml           | push/PR            | Visual regression (Storybook)                                     |
-| db-backup.yml           | schedule/manual    | Database backup to Spaces                                         |
-| db-restore-test.yml     | schedule/manual    | Restore a backup into a throwaway DB and validate                 |
-| dependency-review.yml   | pull_request       | Block PRs introducing vulnerable dependencies                     |
-| sbom.yml                | push/PR/weekly     | CycloneDX SBOM artifact (`scripts/generate-sbom.mjs`)             |
+| Workflow                | Trigger            | Purpose                                                                                     |
+| ----------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
+| test.yml                | push/PR            | Unit tests + coverage, OpenAPI validate, Trivy, secrets scan                                |
+| codeql.yml              | push/PR/weekly     | CodeQL static analysis (SAST)                                                               |
+| a11y-breadth.yml        | schedule/manual    | Full a11y breadth scan (68 routes, WCAG 2.2) — triage-only, non-blocking                    |
+| lint.yml                | push/PR            | ESLint                                                                                      |
+| typecheck.yml           | push/PR            | TypeScript typecheck                                                                        |
+| supabase-migrations.yml | push main+dev/call | Apply Supabase migrations                                                                   |
+| e2e.yml                 | PR/manual/call     | Playwright E2E tests                                                                        |
+| deploy-do.yml           | push main+dev      | Build images, SSH deploy to droplet                                                         |
+| terraform-do.yml        | push/PR main+dev   | Terraform plan/apply for DO infra                                                           |
+| validate.yml            | workflow_call      | Deploy gate (audit + test + lint + typecheck + docs/openapi/RLS guards + prompt-provenance) |
+| build-push.yml          | dispatch           | Build/push GHCR images (manual)                                                             |
+| chromatic.yml           | push/PR            | Visual regression (Storybook)                                                               |
+| db-backup.yml           | schedule/manual    | Database backup to Spaces                                                                   |
+| db-restore-test.yml     | schedule/manual    | Restore a backup into a throwaway DB and validate                                           |
+| dependency-review.yml   | pull_request       | Block PRs introducing vulnerable dependencies                                               |
+| sbom.yml                | push/PR/weekly     | CycloneDX SBOM artifact (`scripts/generate-sbom.mjs`)                                       |
 
 **Deploy pipeline:** `setup` → (`build api/worker/web` ∥ `validate`) → (`e2e-gate` + `migrate-gate`, **prod-only**) → `deploy` via SSH (Caddy auto-restarts).
 
@@ -418,6 +423,143 @@ The CSRF implementation uses the double-submit cookie pattern (`csrf.ts:55-98`).
 
 ## Completed Work
 
+### UI/UX + docs completeness audit + remediation (2026-09-27 session)
+
+Fresh manual audit focused on UI/UX and documentation completeness; report at
+`docs/audits/ui-ux-docs-completeness/2026-09-27/report.md` (linked from
+`docs/audits/README.md`).
+
+- **P1 web (404/5xx semantics):** 18 admin detail pages that masked every
+  failure as "Record not found" now use the `ModuleDetailPage` pattern
+  (404 → `notFound()`, else rethrow); `store/products/[id]` got the same
+  treatment; the inline HTTP-200 "Webhook not found"/"Document not found"
+  panels became real 404s; added `(admin)/admin/not-found.tsx` and
+  `(portal)/portal/not-found.tsx` boundaries.
+- **P1 web (auth redirects):** `lib/auth/admin.ts` and `(portal)/layout.tsx`
+  only redirect on 401/403 (plus `MFA_REQUIRED` step-up); transient 5xx/429 now
+  rethrow to the error boundary instead of bouncing signed-in users to
+  `/login`, `/portal/dashboard` or `/pending`.
+- **P2 web:** empty/zero states suppressed when `loadFailed` (56 list pages +
+  8 store/client-portal ternaries); `packages/ui` `Dialog` now focus-traps,
+  closes on Escape and uses `useId()` labels; all five ad-hoc toast renderers
+  have `role="status"`/`aria-live`; 4 native `alert()` calls replaced with
+  inline `role="alert"`/`role="status"` messages; undefined `cyber-button-sm`,
+  `cyber-button-danger`, `cyber-text` utilities defined; 7 silent-swallow
+  sites surface errors (org/user activity, org billing, invite form, tenant
+  switcher, both global searches, portal dashboard); `lib/format.ts` added and
+  83 raw UTC date-slice call sites migrated; theme pinned dark (the provider
+  had no consumer and light mode was unreadable); `AdminPagination`
+  `aria-current`; admin dashboard `h1`; `EmailTestClient` label association;
+  `href="#"` notification fallbacks now route to the notifications page.
+- **P2 docs:** `docs/openapi.yaml` completed — MFA (5), store groups, 45
+  explicit routes and 254 dynamic-factory method entries; 406 paths, 0 missing;
+  `scripts/openapi-audit.js` rewritten (mount-prefix, method/path parsing,
+  subdirs, trailing-slash and param normalization) and wired as a blocking step
+  in `test.yml` + `validate.yml`; 19 stale `docs/modules/*.md` path headers
+  fixed; `README.dev.md` (`DO_API_TOKEN`, local vs prod compose, prod-approval
+  note); six undocumented `NEXT_PUBLIC_*` vars documented (+ `lib/env.ts`
+  optional validation); `docs/API_RATE_LIMITING.md` key description corrected;
+  CHANGELOG entries for `e6bb073`/`9698315`/`f4d5073`; `CODE_OF_CONDUCT.md`,
+  `.github/PULL_REQUEST_TEMPLATE.md` and two issue templates added.
+- **Encoding:** mojibake purged from both `products.json` catalogs, route
+  comments (`documents.ts`, `projects.ts`, `module-tasks.ts`, `e2e.yml`) and the
+  UTF-16-garbage `infra/digitalocean/README.md` (rewritten as a real README).
+- **Second round (same session):** `components/ui/ToastProvider` +
+  `useToast()` replaced all five ad-hoc toast implementations (mounted in the
+  root layout; `AdminDocumentsBulkControls` `onToast` prop removed);
+  `lib/format.ts` gained `formatDateShort`/`formatCurrency(value, currency)` and
+  the remaining currency/date call sites were migrated (local `fmtCurrency`
+  helpers, `$X.toLocaleString()` money displays, `toLocaleDateString()` /
+  `toLocaleString()` dates); page-level empties now use `EmptyState` (55 files)
+  and 12 status badges moved onto `StatusPill` (23 statuses added to
+  `STATUS_TONES`); 83 dynamic admin/portal pages now export `generateMetadata`
+  (id-distinguishable titles).
+- **MFA login second factor (same session):** `/auth/sign-in` now reports
+  `mfaRequired` via the cached `userHasVerifiedFactor()`; `loginAction` stores a
+  10-minute `mct_mfa_pending` cookie and the `/login` page shows a two-step
+  verification UI that completes `mfaFactors` → `mfaChallenge` → `mfaVerify`
+  before replacing `mct_session` with the `aal2` token (SDK `SignInResult`
+  gained `mfaRequired`; `docs/MFA.md` updated).
+- **Third round (same session):** the last four legacy badge helpers
+  (`store/{products,promotions,quotes}` `statusPill`, `store/dependencies`
+  `severityBadge`) now use `StatusPill`, which gained a `tone`/`label` API and a
+  tone map; `lib/format.ts` gained
+  `formatDateUtc`/`formatDateTimeUtc`/`formatMonthDay`/`formatMonthDayYear` and
+  `version-badge`, the public status page and `ProjectTimelineView` were
+  migrated (no `toLocale*`/`Intl.NumberFormat` remains outside the helper);
+  `terraform-do` plan failures are no longer masked by `tee` (`set -o
+pipefail`); `docs/module-matrix-mapping.md` maps all 60 prompt-pack modules to
+  real feature/runbook/API/SDK/UI paths (linked from `docs/INDEX.md`).
+- **Fourth round (fresh audit, same session):** admin empty-state suppression
+  finished — 66 pages now gate their `EmptyState`/empty text on `!loadFailed`,
+  `AdminListPage` gained a `loadFailed` prop, and 11 grid empties were wrapped
+  in `col-span-2`; `governance/risks/[id]` and 7 inline HTTP-200 panels now use
+  `notFound()`, activity/billing 404s are real 404s, and
+  `portal/network-diagrams/[id]` gained `generateMetadata`; `StatusPill` tone
+  map extended (outage/incident/live/hidden/archived/scheduled) and store tone
+  overrides normalized; `ToastProvider` sits above dialogs with an assertive
+  error region and specific dismiss labels; `Dialog` locks scroll, always shows
+  a close button, accepts `ariaLabel` and focuses itself when empty;
+  `ConfirmDialog` uses `useId`; root `not-found`/`forbidden` got skip-link
+  targets; `lib/format.ts` is now invalid-safe (`—`) with
+  `formatDateTimeMinutesUtc`/`formatTime`, the last raw date slices and
+  `toLocaleTimeString` migrated, and format tests added; new `RouteAnnouncer`
+  announces client-side navigation; docs drift fixed (README API count,
+  INDEX 406 paths/date, AGENTS counts/wording), `docs/ui-kit.md` and the MFA
+  recovery section added, OpenAPI sign-in summary + header caveat updated,
+  CONTRIBUTING links the community files, and
+  `scripts/check-docs-counts.mjs` now gates README/AGENTS/INDEX/OpenAPI counts
+  in `test.yml` + `validate.yml`.
+- **Fifth round (fresh audit run 3, same session):** fixed a P1 SSR crash in
+  `DocumentShareClient` (post-mount origin + regression tests), the portal
+  automation page's non-existent fields, `/admin/store/quotes` status mapping
+  vs the DB CHECK, dead-letter action labels/busy safety, MFA banner roles /
+  revoke affordance / step-up focus, 18 missing `StatusPill` tones, Dialog
+  effect/focus, login recovery polish and the `RouteAnnouncer` initial-load
+  announcement; added `scope="col"` to all 102 table headers. Docs:
+  `README.dev.md` secrets/env section and the secrets matrix rewritten from the
+  workflows, RLS/nav/matrix/format counts corrected, `docs/MFA.md` revocation
+  semantics fixed, env examples filled, and new canonical `docs/testing.md`,
+  `docs/CI.md`, `docs/PERFORMANCE.md` plus features/runbooks indexes. Gates:
+  `check-docs-counts.mjs` widened (pages/workflows/scripts/migrations/E2E/
+  routes/SDK/seeds/worker/prompts/nav/RLS) and a new
+  `check-docs-links.mjs` wired into `test.yml` + `validate.yml`.
+- **Tests:** 3,262 → 3,476 (API 1,186 → 1,256; web 1,688 → 1,820; SDK 289 →
+  296; worker 99 → 104; auth/MFA recovery, dead letters, format, StatusPill,
+  Dialog, RouteAnnouncer, ToastProvider and portal documents tests).
+
+### Tier 1/2 security/quality additions (2026-09-27 session)
+
+- **MFA recovery codes** (migration `5302427_mfa_recovery_codes.sql`, scrypt
+  hashes, RLS deny-all): `POST/GET/DELETE /auth/mfa/recovery-codes` and
+  `POST /auth/mfa/recovery`; SDK methods; login "Use a recovery code" path
+  (spending a code unenrolls factors, keeps the `aal1` session, redirects to
+  the security page) and a security-page panel with generate/reveal-once/copy/
+  revoke; trusted devices intentionally not implemented (documented in
+  `docs/MFA.md`).
+- **OpenAPI response schemas + contract tests**: `responseSchema` on 14
+  high-value routes (auth/MFA/tickets/store) with a new `successStatus` builder
+  field; `openapi-contracts.test.ts` resolves schemas from the spec and
+  validates live responses (412 paths, 0 missing). Generating the SDK from the
+  spec remains a follow-up.
+- **CI schema guards**: `scripts/generate-db-types.js --check` and
+  `scripts/verify-rls.mjs` (136 tables, all RLS-enabled, 1011 policies) wired
+  into `test.yml` + `validate.yml`; `docs/RLS-coverage-matrix.md` is now a
+  snapshot with the script as the live source.
+- **CSP reporting + SAST**: unauthenticated `POST /api/v1/public/csp-report`
+  (sanitized, 200-char truncation, never persisted, exempt from the XSS body
+  blocklist) with `report-uri`/`report-to`/`Reporting-Endpoints` emitted by the
+  web middleware; new `codeql.yml` (JS/TS, `security-and-quality`, pinned SHA).
+- **Tier 2**: **dead-letter webhook deliveries** now have an admin surface
+  (`GET /webhook-endpoints/dead-letters`, `POST .../:id/retry`,
+  `DELETE .../:id`, SDK methods, `/admin/webhooks/dead-letters` page with
+  retry/dismiss + nav entry); **Sentry tracing/release tunable** via
+  `SENTRY_TRACES_SAMPLE_RATE`/`SENTRY_RELEASE` (web: the two
+  `NEXT_PUBLIC_SENTRY_*` equivalents, `GIT_SHA` fallback); **a11y breadth
+  triage** (`A11Y_FULL=1` 68-page scan with `wcag22aa` tags + non-blocking
+  weekly/manual `a11y-breadth.yml`); **ADRs 008–011** (RLS rollout, MFA model,
+  dark-only theme, shared UI kit) and `docs/RELEASING.md`.
+
 ### Second full audit + remediation (2026-09-21 session)
 
 Re-audited all six prompt packs (`mct-portal-os-expanded-60-modules`,
@@ -499,19 +641,20 @@ the code. Prior fixes were verified in source (all held); new issues fixed:
   to `develop` + `main` (2026-09-24; `enforce_admins:false`, so admins can still
   bypass). `vercel.json` is retained (Vercel previews are
   connected); the 2026-08-26 audit report was relocated under `docs/audits/`.
-- **Pack path drift**: the 60-module `implementation-matrix.csv` points at
-  aspirational 1-file-per-module paths (58/60 api/web/sdk) that do not exist
-  (modules are real, in consolidated routes); `hardening`/`portal-alignment`/
+- **Pack path drift**: the 60-module matrix at
+  `prompts/mct-portal-os-expanded-60-modules-deep-prompts-pack/docs/04-implementation-matrix.csv`
+  points at aspirational 1-file-per-module paths (58/60 api/web/sdk) that do not exist
+  (modules are real, in consolidated routes); the real mapping for all 60
+  modules (feature doc, runbook, API, SDK, web UI) is now recorded in
+  `docs/module-matrix-mapping.md`. `hardening`/`portal-alignment`/
   `repo_audit` prompts reference `apps/api/src/lib/auth.ts` and
   `lib/supabase.ts` (actual: `middleware/auth.ts`, `services/supabase.ts`), and
   the hardening/alignment CI runner workflows are not installed.
-- ```7 admin pages still swallow~~ **FIXED 2026-09-21** — `approval-requests`,
-`cab`, `client-portal`, `compliance-readiness`, `knowledge-base`and`store/{products,categories,promotions,quotes}`now set a`loadFailed`flag and
-render`DataErrorNote` instead of a misleading empty/zero state.
-
-  ```
-
-  ```
+- **7 admin pages that converted failures into a misleading empty state — FIXED
+  2026-09-21:** `approval-requests`, `cab`, `client-portal`,
+  `compliance-readiness`, `knowledge-base` and
+  `store/{products,categories,promotions,quotes}` now set a `loadFailed` flag
+  and render `DataErrorNote` instead of a misleading empty/zero state.
 
 - `terraform-do push` still fails on the `DO_API_TOKEN` 401 (rotate the token).
 
@@ -764,12 +907,12 @@ best-effort _job_; `terraform fmt -check -recursive` is blocking);
 - Multi-org switching (`X-Active-Org` header + cookie)
 - Marketing site integration (4 phases complete)
 - DigitalOcean deploy pipeline (build → SSH → Caddy)
-- 96 SQL migrations, 9 seed files with comprehensive test data _(now 125)_
+- 96 SQL migrations, 9 seed files with comprehensive test data _(now 126)_
 - E2E tests for all major flows
 
 ### Testing (snapshot — the header table holds the current numbers)
 
-- 2,734 unit tests across 225 suites (all green) _(now 3,262 / 380)_
+- 2,734 unit tests across 225 suites (all green) _(now 3,333 / 386)_
 - 90 Playwright E2E spec files
 - ESLint: 0 errors
 - TypeScript: clean

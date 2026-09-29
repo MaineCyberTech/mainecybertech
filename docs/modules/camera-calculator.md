@@ -1,8 +1,8 @@
 # Camera Retention / Storage Calculator
 
 **Category:** Security
-**API Routes:** `apps/api/src/routes/camera-calculator.ts`
-**SDK:** `packages/sdk/src/camera-calculator.ts`
+**API Routes:** `apps/api/src/routes/field-services.ts`
+**SDK:** `packages/sdk/src/field-services.ts`
 
 ## Overview
 

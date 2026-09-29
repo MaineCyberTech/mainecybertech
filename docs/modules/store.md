@@ -1,7 +1,7 @@
 # Store
 
 **Category:** Public + Admin
-**API Routes:** `apps/api/src/routes/store.ts` → `apps/api/src/routes/store/{catalog,promotions,quotes,campaigns,visual-assets}.ts`
+**API Routes:** `apps/api/src/routes/store.ts` → `apps/api/src/routes/store/catalog.ts`, `apps/api/src/routes/store/promotions.ts`, `apps/api/src/routes/store/quotes.ts`, `apps/api/src/routes/store/campaigns.ts`, `apps/api/src/routes/store/visual-assets.ts`
 **SDK:** `packages/sdk/src/store.ts`
 **Frontend:** `apps/web/app/(public)/store/**`, `apps/web/app/(admin)/admin/store/**`, `apps/web/lib/catalog/`
 

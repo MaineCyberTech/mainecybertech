@@ -1,7 +1,8 @@
 # SLA Metrics
 
 **Category:** Operations
-**API Routes:** `apps/api/src/routes/sla-metrics.ts`
+**API Routes:** `apps/api/src/routes/sla.ts`
+**SDK:** `packages/sdk/src/sla.ts`
 
 ## Overview
 

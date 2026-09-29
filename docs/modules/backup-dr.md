@@ -1,8 +1,8 @@
 # Backup/DR Review Dashboard
 
 **Category:** Infrastructure
-**API Routes:** `apps/api/src/routes/backup-dr.ts`
-**SDK:** `packages/sdk/src/backup-dr.ts`
+**API Routes:** `apps/api/src/routes/final/backups.ts` + `apps/api/src/routes/final/crud.ts`
+**SDK:** `packages/sdk/src/final.ts`
 
 ## Overview
 

@@ -1,8 +1,8 @@
 # Change Advisory / Mini-CAB Tool
 
 **Category:** Operations
-**API Routes:** `apps/api/src/routes/change-requests.ts`
-**SDK:** `packages/sdk/src/change-requests.ts`
+**API Routes:** `apps/api/src/routes/governance.ts` + `apps/api/src/routes/cab.ts`
+**SDK:** `packages/sdk/src/governance.ts` + `packages/sdk/src/cab.ts`
 
 ## Overview
 

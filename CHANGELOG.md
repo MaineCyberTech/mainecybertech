@@ -11,6 +11,31 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Added
 
+- First-class MFA login second factor: `POST /auth/sign-in` reports
+  `mfaRequired` (cached `userHasVerifiedFactor()`), the login form stores a
+  10-minute `mct_mfa_pending` cookie and shows a verification step that
+  completes `auth.mfaFactors` → `mfaChallenge` → `mfaVerify` before issuing the
+  `aal2` session (`docs/MFA.md`).
+- MFA recovery codes (migration `5302427`): 10 scrypt-hashed single-use codes
+  generated after step-up (`POST /auth/mfa/recovery-codes`, status/report at
+  `GET`, revoke at `DELETE`), spendable at the login step
+  (`POST /auth/mfa/recovery`) to unenroll a lost authenticator and force
+  re-enrollment; managed from `/portal/profile/security`.
+- CSP violation reporting: unauthenticated `POST /api/v1/public/csp-report`
+  accepts `application/csp-report` and `application/reports+json`, logs a
+  sanitized/truncated summary and never persists; the web middleware emits
+  `report-uri`, `report-to` and `Reporting-Endpoints` for the production CSP.
+- OpenAPI response schemas + contract tests: `responseSchema` on 14 high-value
+  routes (auth/MFA/tickets/store) with a `successStatus` builder field, and
+  `openapi-contracts.test.ts` validating live responses against the spec
+  (412 paths, 0 missing).
+- Dead-letter webhook deliveries are now visible and actionable: admin list +
+  retry/dismiss API (`/webhook-endpoints/dead-letters`), SDK methods and a
+  `/admin/webhooks/dead-letters` page.
+- Accessibility breadth triage: `A11Y_FULL=1` scans 68 routes with `wcag22aa`
+  tags via the non-blocking weekly/manual `a11y-breadth.yml`.
+- Architecture decision records 008–011 (RLS rollout, MFA model, dark-only
+  theme, shared UI kit) and `docs/RELEASING.md`.
 - **Prompt 17 — ethical FOMO conversion UX**: `store_campaigns` (migration
   `5302422`) persists seasonal readiness campaigns with an opt-in
   limited-capacity field; the public banner and admin manager are DB-backed and
@@ -58,6 +83,26 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   The convert step carries `proposalId` onto the project metadata, and
   `/admin/store/quote-requests` links through to `/admin/proposals/[id]`.
 
+### Security
+
+- Deploy now injects the Turnstile keys (`TURNSTILE_SECRET_KEY` into the droplet
+  `.env`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as the web build arg) so the
+  production contact form is captcha-protected (`e6bb073`).
+- Rate-limit buckets no longer trust the unverified JWT `sub` claim; the key is
+  now a SHA-256 hash of the whole Bearer token, with the global IP limiter as the
+  authoritative ceiling (`9698315`).
+- Project task-comment POST/PATCH/DELETE verify the task belongs to the path
+  project before writing, closing a cross-project tamper path (`9698315`).
+- Notification email HTML escapes user content — API `lib/notify.ts` and the
+  worker's scheduled notifications (`9698315`, `f4d5073`).
+- CodeQL static analysis (`codeql.yml`, JS/TS, `security-and-quality`,
+  push/PR/weekly) added alongside the existing dependency/SBOM scanning.
+- `client_portal_entitlements` RLS insert/update policies aligned with the API
+  gate: platform `admin`/`super_admin` only (`client_admin` dropped) plus a
+  `with check` so a row cannot be moved across organizations (migration
+  `5302428`). The API writes with the service role, so nothing depended on the
+  wider policy.
+
 ### Fixed
 
 - Proposal creation lost the phase association for nested items — items declared
@@ -84,6 +129,29 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   from the server layout.
 - Second full audit of all six prompt packs; see `AGENTS.md` for the finding
   ledger.
+- UI/docs completeness remediation from the 2026-09-27 audit
+  (`docs/audits/ui-ux-docs-completeness/2026-09-27/report.md`): admin/portal
+  detail pages now return real 404s and rethrow 5xx, auth helpers no longer
+  redirect on transient failures, toasts consolidated onto
+  `components/ui/ToastProvider` + `useToast()`, page-level empties use
+  `EmptyState`, 12 status badges moved onto `StatusPill`, money/date formatting
+  goes through `lib/format.ts`, 83 dynamic pages export `generateMetadata`, and
+  `docs/openapi.yaml` was completed to 406 paths with a new blocking coverage
+  audit (`scripts/openapi-audit.js`) in `test.yml` and `validate.yml`.
+- UI consistency follow-through: `StatusPill` gained a `tone`/`label` API and
+  the last four store badge helpers were converted; `lib/format.ts` added
+  UTC/month-day helpers and the remaining `toLocale*` call sites moved onto it.
+- `terraform-do` plan failures are no longer masked by the `tee` pipeline
+  (`set -o pipefail`).
+- `docs/module-matrix-mapping.md` maps the 60-module prompt-pack matrix to the
+  real feature/runbook/API/SDK/UI paths.
+- CI schema guards: `node scripts/generate-db-types.js --check` (generated types
+  must be current) and `node scripts/verify-rls.mjs` (every table RLS-enabled,
+  policy idempotency for new migrations) run in `test.yml` + `validate.yml`;
+  `docs/RLS-coverage-matrix.md` notes the script as the live source.
+- Sentry tracing/release are tunable via `SENTRY_TRACES_SAMPLE_RATE` and
+  `SENTRY_RELEASE` (web client: `NEXT_PUBLIC_SENTRY_*`), defaulting to the
+  previous 0.2 production / 0 development behaviour.
 
 ## 2026-09-21
 

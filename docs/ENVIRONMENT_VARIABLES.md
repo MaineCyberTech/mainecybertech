@@ -8,17 +8,27 @@
 
 ## Web (`apps/web`)
 
-| Variable                            | Required | Default       | Description                                                     |
-| ----------------------------------- | -------- | ------------- | --------------------------------------------------------------- |
-| `NEXT_PUBLIC_API_URL`               | Yes      | —             | URL of the API server (e.g. `http://localhost:4000`)            |
-| `NODE_ENV`                          | No       | `development` | Node environment                                                |
-| `NEXT_PUBLIC_GA_ID`                 | No       | —             | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)           |
-| `NEXT_PUBLIC_TAWKTO_ID`             | No       | —             | Tawk.to widget ID (e.g. `66898d27e1e4f70f24ee3260/1i24kuosn`)   |
-| `NEXT_PUBLIC_SENTRY_DSN`            | No       | —             | Sentry DSN for error tracking                                   |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`    | No       | —             | Cloudflare Turnstile site key (contact form captcha)            |
-| `NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED` | No       | `false`       | Show the `/test-accounts` dev login page (localhost/`.us` only) |
-| `SENTRY_ORG`                        | No       | —             | Sentry org slug (for source maps)                               |
-| `SENTRY_PROJECT`                    | No       | —             | Sentry project slug (for source maps)                           |
+| Variable                                | Required | Default                | Description                                                                                 |
+| --------------------------------------- | -------- | ---------------------- | ------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`                   | Yes      | —                      | URL of the API server (e.g. `http://localhost:4000`)                                        |
+| `NODE_ENV`                              | No       | `development`          | Node environment                                                                            |
+| `NEXT_PUBLIC_GA_ID`                     | No       | —                      | Google Analytics measurement ID (e.g. `G-XXXXXXXXXX`)                                       |
+| `NEXT_PUBLIC_TAWKTO_ID`                 | No       | —                      | Tawk.to widget ID (e.g. `66898d27e1e4f70f24ee3260/1i24kuosn`)                               |
+| `NEXT_PUBLIC_SENTRY_DSN`                | No       | —                      | Sentry DSN for error tracking                                                               |
+| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | No       | `0.2` prod / `0` other | Client-side Sentry trace sample rate (0–1); invalid values use the default                  |
+| `NEXT_PUBLIC_SENTRY_RELEASE`            | No       | `NEXT_PUBLIC_GIT_SHA`  | Client-side Sentry release identifier                                                       |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`        | No       | —                      | Cloudflare Turnstile site key (contact form captcha)                                        |
+| `NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED`     | No       | `false`                | Show the `/test-accounts` dev login page (localhost/`.us` only)                             |
+| `NEXT_PUBLIC_TEST_ACCOUNT_PASSWORD`     | No       | `1`                    | Password used by the `/test-accounts` dev login page; **never set in production or CI**     |
+| `NEXT_PUBLIC_APP_VERSION`               | No       | `0.0.0-dev`            | App version string shown by the web app (injected as a build arg by `deploy-do.yml`)        |
+| `NEXT_PUBLIC_GIT_SHA`                   | No       | `local`                | Git commit SHA of the build (shown in version info)                                         |
+| `NEXT_PUBLIC_BUILD_TIME`                | No       | version.json           | Build timestamp persisted to `public/version.json` (`apps/web/scripts/generate-version.js`) |
+| `NEXT_PUBLIC_LOG_LEVEL`                 | No       | `info`                 | Minimum client-side log level (`debug`, `info`, `warn`, `error`, `silent`)                  |
+| `NEXT_PUBLIC_LOG_ENDPOINT`              | No       | —                      | Optional POST endpoint receiving client-side log entries                                    |
+| `SENTRY_ORG`                            | No       | —                      | Sentry org slug (for source maps)                                                           |
+| `SENTRY_PROJECT`                        | No       | —                      | Sentry project slug (for source maps)                                                       |
+| `SENTRY_TRACES_SAMPLE_RATE`             | No       | `0.2` prod / `0` other | Server-side Sentry trace sample rate (0–1)                                                  |
+| `SENTRY_RELEASE`                        | No       | `NEXT_PUBLIC_GIT_SHA`  | Server-side Sentry release identifier                                                       |
 
 > **Note:** The web app no longer requires `NEXT_PUBLIC_SUPABASE_URL` or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. Auth is proxied through the API via `POST /api/v1/auth/callback`.
 
@@ -43,6 +53,8 @@
 | `SMTP_PASS`                  | No       | —                            | SMTP password                                                                                                                                                                                                       |
 | `EMAIL_FROM`                 | No       | `noreply@mainecybertech.com` | From address for outgoing emails                                                                                                                                                                                    |
 | `SENTRY_DSN`                 | No       | —                            | Sentry DSN for error tracking                                                                                                                                                                                       |
+| `SENTRY_TRACES_SAMPLE_RATE`  | No       | `0.2` prod / `0` otherwise   | Sentry trace sample rate (0–1)                                                                                                                                                                                      |
+| `SENTRY_RELEASE`             | No       | `GIT_SHA`                    | Sentry release identifier (defaults to `process.env.GIT_SHA`)                                                                                                                                                       |
 | `PUBLIC_TRAFFIC_WEBHOOK_URL` | No       | —                            | Teams webhook URL for visitor notifications (marketing site)                                                                                                                                                        |
 | `PUBLIC_LEAD_WEBHOOK_URL`    | No       | —                            | Teams webhook URL for new lead notifications (marketing site)                                                                                                                                                       |
 | `JSM_DOMAIN`                 | No       | —                            | JSM domain for auto-ticket creation from web leads                                                                                                                                                                  |
@@ -100,6 +112,8 @@
 | `REDIS_PASSWORD`            | No       | —                            | Redis password (production)                                                     |
 | `TASK_QUEUE_ENABLED`        | No       | `false`                      | When `true`, API enqueues tasks instead of inline                               |
 | `SENTRY_DSN`                | No       | —                            | Sentry DSN for worker error tracking                                            |
+| `SENTRY_TRACES_SAMPLE_RATE` | No       | `0.2` prod / `0` otherwise   | Sentry trace sample rate (0–1)                                                  |
+| `SENTRY_RELEASE`            | No       | `GIT_SHA`                    | Sentry release identifier (defaults to `process.env.GIT_SHA`)                   |
 | `APP_BASE_URL`              | No       | —                            | Public app base URL for notification links                                      |
 
 ## E2E Tests (`apps/web/e2e`)
@@ -110,9 +124,24 @@
 | `E2E_ADMIN_EMAIL`    | Yes      | —                       | Admin email for login         |
 | `E2E_ADMIN_PASSWORD` | Yes      | —                       | Admin password for login      |
 
+## CI-only variables
+
+Set in GitHub (repository or environment scoped), never in local `.env` files.
+See [`GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`](GITHUB_SECRETS_AND_VARIABLES_MATRIX.md)
+for the full deployment/terraform secret list.
+
+| Variable                  | Used by                                | Purpose                                                                  |
+| ------------------------- | -------------------------------------- | ------------------------------------------------------------------------ |
+| `E2E_JWT_SECRET`          | `e2e.yml`                              | Optional JWT secret for the E2E API; falls back to a built-in test value |
+| `SUPABASE_ACCESS_TOKEN`   | `supabase-migrations.yml`              | Supabase CLI auth for `supabase link` / `supabase db push`               |
+| `CHROMATIC_PROJECT_TOKEN` | `chromatic.yml`                        | Chromatic visual-regression upload (best-effort job)                     |
+| `AWS_ACCESS_KEY_ID`       | `db-backup.yml`, `db-restore-test.yml` | S3/Spaces key for backup upload and restore download                     |
+| `AWS_SECRET_ACCESS_KEY`   | `db-backup.yml`, `db-restore-test.yml` | S3/Spaces secret for backup upload and restore                           |
+| `SLACK_WEBHOOK_URL`       | `db-backup.yml`                        | Slack notification when a backup fails                                   |
+
 ## CI / Docker
 
-The deploy workflow (`deploy-do.yml`) writes all env vars to `/opt/mct-portal/.env` on the DO droplet via SSH heredoc. The `docker-compose.yml` on the droplet loads env vars from this file with `env_file: ./.env`.
+The deploy workflow (`deploy-do.yml`) writes the runtime env to `/opt/mct-portal/.env` on the DO droplet via SSH heredoc. `infra/digitalocean/docker-compose.yml` interpolates that file for the values it references in each service's `environment:` block.
 
 Web `NEXT_PUBLIC_*` vars are passed as Docker build args for client-side inlining, and set as runtime env vars for server-side use.
 

@@ -1,8 +1,8 @@
 # Fun Cyber Scoreboard / Mascot
 
 **Category:** Engagement
-**API Routes:** `apps/api/src/routes/scoreboards-gamification.ts`
-**SDK:** `packages/sdk/src/scoreboards-gamification.ts`
+**API Routes:** `apps/api/src/routes/edu-automation.ts`
+**SDK:** `packages/sdk/src/edu-automation.ts`
 
 ## Overview
 

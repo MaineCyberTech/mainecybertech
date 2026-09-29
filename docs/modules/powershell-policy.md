@@ -1,8 +1,8 @@
 # PowerShell Script Builder / Policy Guard
 
 **Category:** Automation
-**API Routes:** `apps/api/src/routes/powershell-policy.ts`
-**SDK:** `packages/sdk/src/powershell-policy.ts`
+**API Routes:** `apps/api/src/routes/edu-automation.ts`
+**SDK:** `packages/sdk/src/edu-automation.ts`
 
 ## Overview
 

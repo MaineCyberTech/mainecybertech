@@ -1,8 +1,8 @@
 # Satisfaction Pulse
 
 **Category:** Client Experience
-**API Routes:** `apps/api/src/routes/satisfaction-pulses.ts`
-**SDK:** `packages/sdk/src/satisfaction-pulses.ts`
+**API Routes:** `apps/api/src/routes/satisfaction-pulse-widget.ts`
+**SDK:** `packages/sdk/src/satisfaction-pulse-widget.api.ts` + `packages/sdk/src/satisfaction-pulse-widget.ts`
 
 ## Overview
 

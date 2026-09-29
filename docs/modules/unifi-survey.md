@@ -1,8 +1,8 @@
 # UniFi Site Survey Planner
 
 **Category:** Network
-**API Routes:** `apps/api/src/routes/unifi-survey.ts`
-**SDK:** `packages/sdk/src/unifi-survey.ts`
+**API Routes:** `apps/api/src/routes/field-services.ts`
+**SDK:** `packages/sdk/src/field-services.ts`
 
 ## Overview
 

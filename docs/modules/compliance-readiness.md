@@ -1,8 +1,8 @@
 # Compliance Readiness Lite
 
 **Category:** Compliance
-**API Routes:** `apps/api/src/routes/compliance-readiness.ts`
-**SDK:** `packages/sdk/src/compliance-readiness.ts`
+**API Routes:** `apps/api/src/routes/compliance.ts` + `apps/api/src/routes/edu-automation.ts`
+**SDK:** `packages/sdk/src/compliance.ts` + `packages/sdk/src/edu-automation.ts`
 
 ## Overview
 

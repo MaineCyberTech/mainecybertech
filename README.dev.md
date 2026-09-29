@@ -82,7 +82,7 @@ Install these if you will work on infrastructure or deployment-related tasks:
 
 - **Terraform**
 - **Supabase CLI**
-- **Docker** (for local stack via `infra/digitalocean/docker-compose.yml`)
+- **Docker** (for the local stack via the repo-root `docker-compose.yml`; `infra/digitalocean/docker-compose.yml` is the production stack)
 - **doctl** (DigitalOcean CLI, optional)
 
 ### Recommended VS Code extensions
@@ -233,7 +233,7 @@ It is useful because it lets you:
 
 ## Environment file setup
 
-Your final infrastructure model uses Terraform rooted at `infra/terraform/digitalocean`, with separate files for testing/dev and production. That environment split was already established in the Terraform bundles you generated earlier, with:
+Infrastructure is Terraform-rooted at `infra/terraform/digitalocean`, with separate files for testing/dev and production:
 
 - `env/backend.dev.hcl`
 - `env/backend.prod.hcl`
@@ -254,8 +254,8 @@ env/
 
 ### What they do
 
-- `dev.tfvars` → testing/dev values such as testing domains and testing ECS targets
-- `prod.tfvars` → production values such as production domains and production ECS targets
+- `dev.tfvars` → testing/dev values such as domains, zone IDs and droplet size
+- `prod.tfvars` → production values such as domains, zone IDs and droplet size
 - `backend.dev.hcl` → points Terraform at the testing/dev state backend
 - `backend.prod.hcl` → points Terraform at the production state backend
 
@@ -267,7 +267,7 @@ Never mix dev backend config with prod tfvars, or prod backend config with dev t
 
 ## How to run the app locally
 
-Your current GitHub workflow set shows that the repo’s CI jobs use **pnpm** for workspace install/build/lint/test flows in the generated workflow pack, while your original uploaded snippets showed only the initial checkout steps for build/lint/test. The final workflow bundle completed that pattern using `pnpm install --frozen-lockfile`, `pnpm build`, `pnpm lint`, and `pnpm test`.
+The repo's CI jobs use **pnpm** for workspace install/build/lint/test — `pnpm install --frozen-lockfile`, `pnpm build`, `pnpm lint`, and `pnpm test` (see `.github/workflows/`).
 
 ### Recommended local start sequence
 
@@ -282,7 +282,7 @@ pnpm test
 
 ### Web app local workflow
 
-The final web workflows target `apps/web`, and the preview workflow validates the web app build from that location.
+The web app lives in `apps/web`; CI builds it from the repo root with `pnpm --filter web build`, and `e2e.yml` starts it before running Playwright.
 
 A reasonable contributor pattern locally is:
 
@@ -321,8 +321,6 @@ terraform init -backend-config=env/backend.prod.hcl
 terraform plan -var-file=env/prod.tfvars
 terraform apply -var-file=env/prod.tfvars
 ```
-
-Those dev/prod backend and tfvars patterns are the same environment split established in your final Terraform-root and deployment-handbook bundles.
 
 ---
 
@@ -382,18 +380,17 @@ Then open a PR into `develop`.
 
 The repo's validation layer (`.github/workflows/`):
 
-- `validate.yml` — deploy gate (audit + test + lint + typecheck + prompt-provenance)
+- `validate.yml` — reusable deploy gate: dependency audit + tests/coverage + lint + typecheck + OpenAPI validate/coverage + docs-counts, DB-types and RLS-hygiene checks + prompt provenance + review.md sync.
+- `test.yml` — push/PR run of the same test and schema guards, plus Trivy and secret scans.
 - `lint.yml` / `typecheck.yml`
-- `test.yml` — tests + OpenAPI validate + Trivy + secret scan
-- `e2e.yml` — Playwright (PR + prod deploy gate)
+- `e2e.yml` — Playwright (PR runs; also the prod deploy gate).
 
 So once you open a PR, the expected validation path is:
 
-1. workspace build validation
-2. lint validation
-3. test execution
-4. web preview build validation if web files changed
-5. Terraform plan if infra files changed and the PR targets `develop` or `main` using the environment-specific plan workflows.
+1. lint and typecheck
+2. test execution (unit/integration + schema guards)
+3. Playwright E2E if web, package, seed, or migration files changed
+4. `terraform fmt`/plan if `infra/terraform/digitalocean/**` changed (plan runs on PRs; apply runs from `develop`/`main`)
 
 This means contributors should expect PRs to be the first official gate after local work.
 
@@ -401,7 +398,7 @@ This means contributors should expect PRs to be the first official gate after lo
 
 ## How changes move to testing/dev
 
-Your final workflow bundle defines a testing/dev lane based on the `develop` branch using:
+Merges to `develop` run:
 
 - `terraform-do.yml` (DigitalOcean infrastructure)
 - `deploy-do.yml` (Build 3 GHCR images + SSH deploy to droplet)
@@ -430,9 +427,9 @@ Before promoting onward, verify:
 
 ## How changes move to production
 
-Your final workflow bundle defines the production lane based on `main` using:
+Merges to `main` run:
 
-- `terraform-do.yml` (DigitalOcean infrastructure, gated by `prod-approval` environment)
+- `terraform-do.yml` (DigitalOcean infrastructure; the prod apply job uses the `prod-approval` environment, which currently has no required reviewers configured)
 - `deploy-do.yml` (Build 3 GHCR images + SSH deploy to production droplet)
 - `supabase-migrations.yml` (runs as deployment gate)
 
@@ -441,7 +438,7 @@ Your final workflow bundle defines the production lane based on `main` using:
 When tested changes are promoted and merged into `main`:
 
 - Terraform applies against the **production DigitalOcean backend** and **production tfvars**
-- The web app, API, API, and worker deploy to the **production DO droplet** behind Caddy via `deploy-do.yml`
+- The web app, API, and worker deploy to the **production DO droplet** behind Caddy via `deploy-do.yml`
 - Supabase migrations run as a required gate before the deployment proceeds.
 
 ### What to validate in production
@@ -460,47 +457,29 @@ After deployment, verify:
 
 ## GitHub Environments, secrets, and variables
 
-Your final deployment model recommends creating two GitHub Environments:
+Workflows reference these GitHub Environments:
 
-- `dev`
-- `prod` (with required reviewers for `prod-approval` gate)
+- `dev` — dev deploy, Terraform dev apply, dev migrations.
+- `prod` — prod deploy and prod migrations.
+- `prod-approval` — Terraform prod apply (`terraform-do.yml`); protection rules
+  (required reviewers) are **not** configured yet.
 
-### Secrets needed
+The canonical, verified list of secrets and variables — which workflow uses
+each one and whether it is dev/prod scoped — is
+[`docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`](docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md).
+Keep that file as the single source; do not duplicate the list here, because a
+second copy drifts.
 
-The final workflow and deployment documentation consistently call for:
+### What you set locally
 
-- `DO_TOKEN` (DigitalOcean API token for Terraform)
-- `CLOUDFLARE_API_TOKEN`
-- `TF_VAR_DB_PASSWORD`
-- `SUPABASE_ACCESS_TOKEN`
-- `SSH_PRIVATE_KEY` (for `deploy-do.yml` droplet access)
-- `GHCR_TOKEN` (for pushing images to GitHub Container Registry)
+Local development needs no GitHub secrets. Each service reads a `.env.local`:
 
-### Variables needed
+- `apps/api/.env.local` — Supabase URL/keys, `JWT_SECRET`, optional integrations (see `apps/api/.env.example`)
+- `apps/web/.env.local` — `NEXT_PUBLIC_API_URL` and optional public keys (see `apps/web/.env.example`)
+- `apps/worker/.env.local` — Supabase URL/service key, Redis/SMTP/integration settings (see `apps/worker/.env.example`)
 
-And for environment-specific variables:
-
-- `DO_REGION`
-- `DO_DROPLET_SIZE`
-- `DO_SSH_KEY_FINGERPRINT`
-- `CLOUDFLARE_ZONE_ID_PROD`
-- `CLOUDFLARE_ZONE_ID_DEV`
-- `TF_BACKEND_CONFIG`
-- `TF_VAR_FILE`
-
-### Recommended environment-scoped values
-
-#### `dev`
-
-- `TF_BACKEND_CONFIG=env/backend.dev.hcl`
-- `TF_VAR_FILE=env/dev.tfvars`
-- values point to testing/dev cluster/services/repos.
-
-#### `prod`
-
-- `TF_BACKEND_CONFIG=env/backend.prod.hcl`
-- `TF_VAR_FILE=env/prod.tfvars`
-- values point to production cluster/services/repos.
+The full variable reference is [`docs/ENVIRONMENT_VARIABLES.md`](docs/ENVIRONMENT_VARIABLES.md).
+The `GITHUB_TOKEN` used for GHCR logins in CI is provided automatically by Actions.
 
 ---
 
@@ -560,22 +539,14 @@ That is expected — the GitHub Pull Requests and Issues extension is explicitly
 
 ---
 
-## Recommended companion docs to keep in the repo
+## Companion docs
 
-For the cleanest contributor/operator experience, keep this file alongside:
-
-- local development checklist
-- VS Code Git quickstart
-- final deployment operations handbook
-- production cutover checklist
-- GitHub secrets and variables matrix
-- Terraform environment file guide
-
-### New Documentation (Added 2026-06-26)
-
-- `docs/technical-writing/migration-guide.md` - Comprehensive deployment and migration guide
-- `docs/migrations/naming-guide.md` - Database migration naming conventions
-- `docs/ONBOARDING.md` - Comprehensive local development setup
-- `docs/arch/evaluation/db-package-evaluation.md` - Shared DB package evaluation
-- `docs/API_ERROR_HANDLING.md` - API error handling patterns and standards
-- `scripts/dev-setup.sh` - Automated setup script
+- [`docs/ONBOARDING.md`](docs/ONBOARDING.md) — comprehensive local development setup
+- [`docs/ENVIRONMENT_VARIABLES.md`](docs/ENVIRONMENT_VARIABLES.md) — every variable per service
+- [`docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md`](docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md) — CI/CD secrets and variables
+- [`docs/technical-writing/migration-guide.md`](docs/technical-writing/migration-guide.md) — deployment and migration guide
+- [`docs/migrations/naming-guide.md`](docs/migrations/naming-guide.md) — database migration naming conventions
+- [`docs/API_ERROR_HANDLING.md`](docs/API_ERROR_HANDLING.md) — API error handling patterns and standards
+- [`docs/arch/evaluation/db-package-evaluation.md`](docs/arch/evaluation/db-package-evaluation.md) — shared DB package evaluation
+- [`scripts/dev-setup.sh`](scripts/dev-setup.sh) — automated local setup script
+- [`docs/INDEX.md`](docs/INDEX.md) — documentation index

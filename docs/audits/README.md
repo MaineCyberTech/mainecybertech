@@ -29,9 +29,12 @@ Rules:
 
 ## Runs
 
-| Pack                   | Run        | Report                                                                                   |
-| ---------------------- | ---------- | ---------------------------------------------------------------------------------------- |
-| comprehensive (manual) | 2026-08-26 | [`comprehensive-audit/2026-08-26/report.md`](./comprehensive-audit/2026-08-26/report.md) |
+| Pack                               | Run          | Report                                                                                               |
+| ---------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------- |
+| comprehensive (manual)             | 2026-08-26   | [`comprehensive-audit/2026-08-26/report.md`](./comprehensive-audit/2026-08-26/report.md)             |
+| ui-ux + docs completeness (manual) | 2026-09-27   | [`ui-ux-docs-completeness/2026-09-27/report.md`](./ui-ux-docs-completeness/2026-09-27/report.md)     |
+| ui-ux + docs completeness (manual) | 2026-09-27-2 | [`ui-ux-docs-completeness/2026-09-27-2/report.md`](./ui-ux-docs-completeness/2026-09-27-2/report.md) |
+| ui-ux + docs completeness (manual) | 2026-09-27-3 | [`ui-ux-docs-completeness/2026-09-27-3/report.md`](./ui-ux-docs-completeness/2026-09-27-3/report.md) |
 
 The running summary of every audit and its remediation status lives in
 [`AGENTS.md`](../../AGENTS.md) under **Known Debt** and **Completed Work**.

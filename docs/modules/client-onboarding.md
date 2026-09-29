@@ -2,7 +2,7 @@
 
 **Category:** Admin
 **API Routes:** `apps/api/src/routes/client-onboarding-command-center.ts`
-**SDK:** `packages/sdk/src/client-onboarding.ts`
+**SDK:** `packages/sdk/src/client-onboarding-command-center.api.ts` + `packages/sdk/src/client-onboarding-command-center.ts`
 
 ## Overview
 

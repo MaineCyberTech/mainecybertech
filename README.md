@@ -40,21 +40,18 @@ The platform is designed to support:
 
 ### Production-ready now
 
-- frontend / web app with complete test coverage (1,688 tests)
-- API / backend with security middleware and OpenAPI docs (1,186 tests)
-- database / RLS foundation (125 migrations)
-- SDK package with retry logic (289 tests)
-- worker framework with 28 registered task handlers (99 tests)
+- frontend / web app with complete test coverage (1,820 tests)
+- API / backend with security middleware and OpenAPI docs (1,256 tests)
+- database / RLS foundation (127 migrations)
+- SDK package with retry logic (296 tests)
+- worker framework with 28 registered task handlers (104 tests)
 - Docker images for all services (web, api, worker)
 - E2E tests with Playwright (90 spec files)
 - CI/CD pipelines (test, lint, typecheck, build, deploy, E2E)
 - Security hardening (XSS prevention, CSP headers, rate limiting)
 - Performance optimization (database indexes, response caching)
 - OpenAPI/Swagger documentation
-
-### Still in progress
-
-- shared package consolidation
+- shared packages consolidated: `packages/sdk` (typed API client), `packages/ui` (components + tokens), `packages/config` (shared ESLint/TypeScript configs)
 
 ## Prerequisites
 
@@ -127,7 +124,7 @@ terraform apply -var-file=env/prod.tfvars
 ## Useful Commands
 
 ```bash
-pnpm test                    # All unit tests (3,262)
+pnpm test                    # All unit tests (3,476)
 pnpm e2e                     # E2E tests (90 spec files)
 pnpm --filter=api dev        # API dev server
 pnpm --filter=web dev        # Web dev server (auto-started by Playwright)
@@ -222,7 +219,7 @@ Auth User → Profile → Membership → Role → Permission / Override → RLS 
 
 ## Testing
 
-The monorepo includes **3,262 tests** across all packages. See [AGENTS.md](AGENTS.md) for the current breakdown.
+The monorepo includes **3,476 tests** across all packages. See [AGENTS.md](AGENTS.md) for the current breakdown.
 
 ### Running tests
 
@@ -286,12 +283,14 @@ docker compose up
 docker compose run e2e
 ```
 
-| Service | Image                                  | Size    | Exposed Port |
-| ------- | -------------------------------------- | ------- | ------------ |
-| web     | `mainecybertech-portal-web`            | ~331 MB | 3000         |
-| api     | `mainecybertech-portal-api`            | ~287 MB | 4000         |
-| worker  | `mainecybertech-portal-worker`         | ~278 MB | —            |
-| e2e     | `mcr.microsoft.com/playwright:v1.60.0` | —       | —            |
+| Service | Image (GHCR)                                       | Build              | Exposed Port  |
+| ------- | -------------------------------------------------- | ------------------ | ------------- |
+| web     | `ghcr.io/mainecybertech/mainecybertech/mct-web`    | Next.js standalone | 3000          |
+| api     | `ghcr.io/mainecybertech/mainecybertech/mct-api`    | tsup bundle        | 4000          |
+| worker  | `ghcr.io/mainecybertech/mainecybertech/mct-worker` | tsup bundle        | 3001 (health) |
+| e2e     | `mcr.microsoft.com/playwright:v1.61.0`             | —                  | —             |
+
+The local (repo-root) `docker-compose.yml` names these services `web`, `api` and `worker` and builds them from source. The production stack (`infra/digitalocean/docker-compose.yml`) pulls the GHCR images above tagged with `IMAGE_TAG`.
 
 The web app uses Next.js `output: "standalone"` for optimized production builds. The API and worker use `tsup` for compilation.
 
@@ -307,22 +306,24 @@ Each service expects a `.env.local` file in its app directory:
 
 GitHub Actions workflows in `.github/workflows/`:
 
-| Workflow                  | Trigger                          | Purpose                                          |
-| ------------------------- | -------------------------------- | ------------------------------------------------ |
-| `validate.yml`            | workflow_call                    | Reusable gate: test + lint + typecheck           |
-| `test.yml`                | push/PR main,develop             | Run all unit/integration tests                   |
-| `lint.yml`                | push/PR main,develop             | Lint check                                       |
-| `typecheck.yml`           | push/PR main,develop             | TypeScript type checking                         |
-| `e2e.yml`                 | PR main,develop, workflow_call   | Build web, run Playwright E2E tests              |
-| `supabase-migrations.yml` | push main+develop, workflow_call | Run Supabase DB migrations                       |
-| `deploy-do.yml`           | push main+develop                | Build images, SSH deploy to DigitalOcean droplet |
-| `terraform-do.yml`        | push/PR main,develop             | Terraform plan/apply for DO infra                |
-| `build-push.yml`          | workflow_dispatch                | Manual Docker image build + push to GHCR         |
-| `chromatic.yml`           | push/PR                          | Visual regression (Storybook)                    |
-| `db-backup.yml`           | schedule/manual                  | Database backup to Spaces                        |
-| `db-restore-test.yml`     | schedule/manual                  | Restore a backup into a throwaway DB             |
-| `dependency-review.yml`   | pull_request                     | Block PRs with vulnerable dependencies           |
-| `sbom.yml`                | push/PR/weekly                   | CycloneDX SBOM artifact                          |
+| Workflow                  | Trigger                          | Purpose                                                                                                                                                                    |
+| ------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `validate.yml`            | workflow_call                    | Reusable gate: dependency audit + tests/coverage + lint + typecheck + OpenAPI validate + docs-counts, DB-types and RLS-hygiene guards + prompt provenance + review.md sync |
+| `test.yml`                | push/PR main,develop             | Unit/integration tests + OpenAPI validate/coverage audit + docs-counts, DB-types and RLS-hygiene guards + Trivy/secret scans                                               |
+| `lint.yml`                | push/PR main,develop             | Lint check                                                                                                                                                                 |
+| `typecheck.yml`           | push/PR main,develop             | TypeScript type checking                                                                                                                                                   |
+| `e2e.yml`                 | PR main,develop, workflow_call   | Build web, run Playwright E2E tests                                                                                                                                        |
+| `supabase-migrations.yml` | push main+develop, workflow_call | Run Supabase DB migrations                                                                                                                                                 |
+| `deploy-do.yml`           | push main+develop                | Build images, SSH deploy to DigitalOcean droplet                                                                                                                           |
+| `terraform-do.yml`        | push/PR main,develop             | Terraform plan/apply for DO infra                                                                                                                                          |
+| `build-push.yml`          | workflow_dispatch                | Manual Docker image build + push to GHCR                                                                                                                                   |
+| `chromatic.yml`           | push/PR (`packages/ui/**` only)  | Visual regression (Storybook) — best-effort (job-level `continue-on-error`)                                                                                                |
+| `db-backup.yml`           | schedule/manual                  | Database backup to Spaces                                                                                                                                                  |
+| `db-restore-test.yml`     | schedule/manual                  | Restore a backup into a throwaway DB                                                                                                                                       |
+| `dependency-review.yml`   | pull_request                     | Block PRs with vulnerable dependencies                                                                                                                                     |
+| `sbom.yml`                | push/PR/weekly                   | CycloneDX SBOM artifact                                                                                                                                                    |
+| `codeql.yml`              | push/PR/weekly                   | CodeQL static analysis (SAST)                                                                                                                                              |
+| `a11y-breadth.yml`        | schedule/manual                  | Full a11y breadth scan (68 routes, WCAG 2.2) — triage-only, non-blocking                                                                                                   |
 
 ## License
 

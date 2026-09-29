@@ -19,13 +19,13 @@ This limiter applies to all requests based on the client's IP address.
 
 ### 2. Per-User Rate Limiter
 
-| Setting      | Value                                                                  |
-| ------------ | ---------------------------------------------------------------------- |
-| Window       | 15 minutes                                                             |
-| Max requests | 600 per user                                                           |
-| Scope        | All authenticated endpoints                                            |
-| Key          | Decoded JWT `sub` claim, falling back to a SHA-256 token hash, then IP |
-| Skip         | `/health`, `/api/v1/docs`, `/api/v1/openapi.json`, loopback            |
+| Setting      | Value                                                           |
+| ------------ | --------------------------------------------------------------- |
+| Window       | 15 minutes                                                      |
+| Max requests | 600 per user                                                    |
+| Scope        | All authenticated endpoints                                     |
+| Key          | SHA-256 hash of the Bearer token (32 hex chars), then client IP |
+| Skip         | `/health`, `/api/v1/docs`, `/api/v1/openapi.json`, loopback     |
 
 This limiter provides higher limits for authenticated users and falls back to IP-based limiting for unauthenticated requests.
 
@@ -77,7 +77,7 @@ export const rateLimitByUser = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 600, // 600 requests per window
   keyGenerator: (req) => {
-    // Prefer the decoded JWT `sub`; fall back to a full-token hash, then IP.
+    // Hash the whole token (claims are unverified at this layer), else the IP.
     return userRateLimitKeyGenerator(req.headers.authorization, req.ip);
   },
   skip: (req) =>

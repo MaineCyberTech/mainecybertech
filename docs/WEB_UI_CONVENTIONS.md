@@ -2,12 +2,15 @@
 
 Patterns the web app relies on. Prefer these over hand-rolled equivalents.
 
+> Browse the components themselves (purpose, "use when", import paths) in
+> [ui-kit.md](ui-kit.md).
+
 ## Navigation
 
 - **Catalogs are the source of truth:** `apps/web/lib/navigation/admin-nav.ts`
-  (60 sections) and `portal-nav.ts` (70 sections). Every route directory must
-  have an entry; `AdminSidebarContent` / `PortalSidebarContent` and the two
-  subnav components read from them.
+  (94 entries across 6 groups) and `portal-nav.ts` (70 entries across 5 groups).
+  Every route directory must have an entry; `AdminSidebarContent` /
+  `PortalSidebarContent` and the two subnav components read from them.
 - **Contextual subnav:** `AdminSubnav` / `PortalSubnav` render the sibling items
   of the current item's group as tabs. Pass the catalog `key`
   (`<AdminSubnav current="tickets" />`); an unknown key renders nothing.
@@ -63,5 +66,26 @@ dialog and re-submits the form with the button as submitter on confirm.
 
 - Admin pages use `AdminPageShell` (breadcrumbs/subnav/title/actions); 35 detail
   pages use `ModuleDetailPage`/`RecordDetail`.
-- Toasts are still ad-hoc (`onToast` / `pushToast` / `addToast`) — a shared
-  provider is a known follow-up.
+- Status badges use `components/admin/StatusPill` (`SeverityPill` for p0–p3
+  severities). Extend its `STATUS_TONES` map for a status, or pass
+  `tone`/`label` for context-specific colours and humanized text — do not add
+  per-page badge helpers.
+- Empty lists use `components/EmptyState` (page-level); nested section/sub-list
+  fallbacks stay as short inline text.
+- Formatting: `lib/format.ts` is the single source (`formatDate`,
+  `formatDateShort`, `formatDateTime`, `formatDateUtc`, `formatDateTimeUtc`,
+  `formatDateTimeMinutesUtc`, `formatTime`, `formatMonthDay`, `formatMonthDayYear`,
+  `formatCurrency`) — no direct
+  `toLocaleDateString`/`toLocaleString`/`Intl.NumberFormat` in pages.
+- Toasts use `components/ui/ToastProvider` + `useToast().pushToast(tone, message, title?)`;
+  do not add per-component toast state or renderers.
+- The theme is dark-only; `ThemeProvider` is pinned (`defaultTheme="dark"`).
+
+## Accessibility scanning
+
+- **Default gate:** `apps/web/e2e/a11y.spec.ts` scans 19 core routes and fails
+  on `critical`/`serious` axe violations (WCAG 2.0/2.1 A+AA tags).
+- **Breadth triage:** run with `A11Y_FULL=1` (or the weekly/manual, non-blocking
+  `a11y-breadth.yml`) to scan 68 routes with `wcag22aa` tags added. Fix findings
+  there, then promote the route into `BASE_PAGES` once clean — do not widen the
+  prod gate with known failures.

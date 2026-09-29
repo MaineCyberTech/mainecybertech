@@ -1,8 +1,8 @@
 # Security Incident Response
 
 **Category:** Security
-**API Routes:** `apps/api/src/routes/incident-response.ts`
-**SDK:** `packages/sdk/src/incident-response.ts`
+**API Routes:** `apps/api/src/routes/security-suite.ts`
+**SDK:** `packages/sdk/src/security-suite.ts`
 
 ## Overview
 

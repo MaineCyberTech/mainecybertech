@@ -1,7 +1,7 @@
 # Scoreboards & Gamification
 
 **Category:** Automation (sub-route of edu-automation)
-**API Routes:** `apps/api/src/routes/edu-automation/scorecards.ts`
+**API Routes:** `apps/api/src/routes/edu-automation.ts`
 **SDK:** `packages/sdk/src/edu-automation.ts` (scorecards namespace)
 
 ## Overview

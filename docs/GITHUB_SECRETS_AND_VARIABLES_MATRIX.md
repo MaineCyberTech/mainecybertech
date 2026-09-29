@@ -2,9 +2,9 @@
 
 ## Recommended GitHub Environments
 
-- `dev` — Dev deployments (no approval required)
-- `prod` — Prod Terraform and Supabase migrations
-- `prod-approval` — Prod deployment approval gate (requires 1+ reviewers)
+- `dev` — Dev deploys, Terraform dev apply, dev migrations (no protection rules)
+- `prod` — Prod deploys and prod Supabase migrations (no protection rules)
+- `prod-approval` — Used by the Terraform prod apply job (`terraform-do.yml`); no required reviewers are configured yet
 
 Use environment-scoped values wherever possible.
 
@@ -34,6 +34,11 @@ Use environment-scoped values wherever possible.
 | `JWT_SECRET`                 | yes | yes  | JWT signing secret                                   |
 | `STRIPE_SECRET_KEY`          | yes | yes  | Stripe secret key for billing                        |
 | `STRIPE_WEBHOOK_SECRET`      | yes | yes  | Stripe webhook signing secret                        |
+| `REDIS_PASSWORD`             | yes | yes  | Redis/BullMQ password written to the droplet `.env`  |
+| `FIELD_ENCRYPTION_KEY`       | yes | yes  | AES-256-GCM key for encrypted profile PII            |
+| `TURNSTILE_SECRET_KEY`       | yes | yes  | Cloudflare Turnstile captcha secret (contact form)   |
+| `RLS_READS_ENABLED`          | yes | yes  | Module keys using the RLS (user-scoped) client reads |
+| `RLS_WRITES_ENABLED`         | yes | yes  | Module keys using the RLS client for writes          |
 | `SENTRY_DSN`                 | —   | yes  | Sentry DSN for error tracking                        |
 | `SMTP_HOST`                  | yes | yes  | SMTP host for email                                  |
 | `SMTP_PORT`                  | yes | yes  | SMTP port (default 587)                              |
@@ -55,39 +60,57 @@ Use environment-scoped values wherever possible.
 | `JSM_SERVICEDESK_ID`         | —   | yes  | JSM service desk ID                                  |
 | `JSM_REQUEST_TYPE_ID`        | —   | yes  | JSM request type ID                                  |
 
-## Secrets required by database backup workflow
+## Secrets required by the database backup / restore workflows
 
-| Secret              | Dev | Prod | Purpose                                         |
-| ------------------- | --- | ---- | ----------------------------------------------- |
-| `AWS_ROLE_ARN`      | —   | yes  | AWS OIDC role for S3 backup uploads             |
-| `SUPABASE_DB_URL`   | —   | yes  | Direct database connection string for `pg_dump` |
-| `SLACK_WEBHOOK_URL` | —   | yes  | Slack webhook for backup failure notifications  |
+| Secret                  | Dev | Prod | Purpose                                               |
+| ----------------------- | --- | ---- | ----------------------------------------------------- |
+| `SUPABASE_DB_URL`       | —   | yes  | Direct database connection string for `pg_dump`       |
+| `AWS_ACCESS_KEY_ID`     | —   | yes  | S3/Spaces key for backup upload and restore download  |
+| `AWS_SECRET_ACCESS_KEY` | —   | yes  | S3/Spaces secret for backup upload and restore        |
+| `S3_BACKUP_BUCKET`      | —   | yes  | Bucket/prefix holding backups (`db-restore-test.yml`) |
+| `SLACK_WEBHOOK_URL`     | —   | yes  | Slack webhook for backup failure notifications        |
 
-## Repository or environment variables required by deployment workflows
+## Secrets required by other workflows
 
-| Variable               | Dev | Prod | Purpose                                   |
-| ---------------------- | --- | ---- | ----------------------------------------- |
-| `SUPABASE_PROJECT_REF` | yes | yes  | Supabase project reference for migrations |
+| Secret                    | Dev | Prod | Purpose                                                                       |
+| ------------------------- | --- | ---- | ----------------------------------------------------------------------------- |
+| `SUPABASE_ACCESS_TOKEN`   | yes | yes  | Supabase CLI auth for `supabase link` / `db push` (`supabase-migrations.yml`) |
+| `CHROMATIC_PROJECT_TOKEN` | yes | yes  | Chromatic visual-regression upload (`chromatic.yml`, best-effort job)         |
+| `E2E_JWT_SECRET`          | opt | opt  | Optional E2E JWT secret; `e2e.yml` falls back to a built-in test value        |
+
+## Repository or environment variables required by workflows
+
+| Variable                         | Dev | Prod | Purpose                                                       |
+| -------------------------------- | --- | ---- | ------------------------------------------------------------- |
+| `SUPABASE_PROJECT_REF`           | yes | yes  | Supabase project reference for migrations                     |
+| `DROPLET_IP`                     | opt | opt  | Optional droplet IPv4 fallback when the DO API/Terraform fail |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | yes | yes  | Turnstile site key baked into the web image build arg         |
 
 ## GitHub Environment Configuration Steps
 
 1. **Create environments** in GitHub Settings → Environments:
    - `dev` — no protection rules
    - `prod` — no protection rules
-   - `prod-approval` — add Required reviewers (1+)
+   - `prod-approval` — add Required reviewers (1+) to actually gate the prod apply; none are configured yet
 
 2. **Add secrets** to the appropriate environment scopes (or repo-wide):
    - `DO_API_TOKEN` — from DigitalOcean dashboard
    - `DO_SSH_FINGERPRINT` — from DigitalOcean SSH keys page
    - `DO_SPACES_ACCESS_KEY_ID` / `DO_SPACES_SECRET_ACCESS_KEY` — from DO Spaces
+   - `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` — S3/Spaces credentials for backup and restore
    - `CLOUDFLARE_API_TOKEN` — from Cloudflare dashboard
    - `CLOUDFLARE_ZONE_ID` / `CLOUDFLARE_ZONE_ID_US` — from Cloudflare dashboard
    - `CI_SSH_PRIVATE_KEY` — private key (e.g. `cat ~/.ssh/id_rsa`) for droplet SSH access
    - `CF_ORIGIN_CERT` / `CF_ORIGIN_KEY` — from Cloudflare Origin CA
    - `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — from Supabase dashboard
+   - `SUPABASE_ACCESS_TOKEN` — from the Supabase dashboard (CLI migrations)
    - `JWT_SECRET` — generate a secure random string
+   - `REDIS_PASSWORD`, `FIELD_ENCRYPTION_KEY`, `TURNSTILE_SECRET_KEY`, `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` — deployment/runtime config forwarded by `deploy-do.yml`
    - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` — from Stripe dashboard
+   - `CHROMATIC_PROJECT_TOKEN` — from the Chromatic project (visual regression)
    - Integration secrets as needed (Jira, JSM, M365, SMTP, Sentry, Teams webhooks)
 
 3. **Add variables** to the appropriate environment scopes (or repo-wide):
    - `SUPABASE_PROJECT_REF` — Supabase project reference for migrations
+   - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` — Turnstile site key baked into the web build
+   - `DROPLET_IP` — optional droplet IPv4 fallback (dev has it set; add to `prod` when known)

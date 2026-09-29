@@ -1,8 +1,8 @@
 # MSP Automation Workflow Catalog
 
 **Category:** Automation
-**API Routes:** `apps/api/src/routes/automation-workflow.ts`
-**SDK:** `packages/sdk/src/automation-workflow.ts`
+**API Routes:** `apps/api/src/routes/edu-automation.ts`
+**SDK:** `packages/sdk/src/edu-automation.ts`
 
 ## Overview
 

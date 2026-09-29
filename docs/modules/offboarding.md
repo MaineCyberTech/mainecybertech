@@ -1,8 +1,8 @@
 # M365 Offboarding Safety Checklist
 
 **Category:** Operations
-**API Routes:** `apps/api/src/routes/offboarding.ts`
-**SDK:** `packages/sdk/src/offboarding.ts`
+**API Routes:** `apps/api/src/routes/security-ops.ts`
+**SDK:** `packages/sdk/src/security-ops.ts`
 
 ## Overview
 

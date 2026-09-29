@@ -1,8 +1,8 @@
 # Identity Verification Anti-Vishing
 
 **Category:** Security
-**API Routes:** `apps/api/src/routes/identity-verification.ts`
-**SDK:** `packages/sdk/src/identity-verification.ts`
+**API Routes:** `apps/api/src/routes/security-suite.ts`
+**SDK:** `packages/sdk/src/security-suite.ts`
 
 ## Overview
 

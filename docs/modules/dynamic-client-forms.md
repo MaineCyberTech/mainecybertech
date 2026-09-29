@@ -1,8 +1,8 @@
 # Dynamic Client Forms
 
 **Category:** Client Experience
-**API Routes:** `apps/api/src/routes/dynamic-forms.ts`
-**SDK:** `packages/sdk/src/dynamic-forms.ts`
+**API Routes:** `apps/api/src/routes/dynamic-client-forms-builder.ts`
+**SDK:** `packages/sdk/src/dynamic-client-forms-builder.api.ts` + `packages/sdk/src/dynamic-client-forms-builder.ts`
 
 ## Overview
 

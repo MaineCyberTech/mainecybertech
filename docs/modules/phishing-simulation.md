@@ -1,8 +1,8 @@
 # Phishing Simulation Lite
 
 **Category:** Security
-**API Routes:** `apps/api/src/routes/phishing-simulation.ts`
-**SDK:** `packages/sdk/src/phishing-simulation.ts`
+**API Routes:** `apps/api/src/routes/edu-automation.ts`
+**SDK:** `packages/sdk/src/edu-automation.ts`
 
 ## Overview
 

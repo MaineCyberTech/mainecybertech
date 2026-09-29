@@ -1,29 +1,31 @@
 # Documentation Index
 
 > Canonical index for the Maine CyberTech Portal monorepo documentation.
-> Reconciled against the repo on 2026-09-24 — every link below targets a real file.
+> Reconciled against the repo on 2026-09-27 — every link below targets a real file.
 
 ## Quick Start
 
-| Document                                                         | Purpose                                                     |
-| ---------------------------------------------------------------- | ----------------------------------------------------------- |
-| [README.md](../README.md)                                        | Project overview, testing, Docker, CI/CD, design decisions  |
-| [AGENTS.md](../AGENTS.md)                                        | Agent context: progress, constraints, test patterns         |
-| [CONTRIBUTING.md](../CONTRIBUTING.md)                            | Contribution workflow, conventions, PR expectations         |
-| [README.dev.md](../README.dev.md)                                | Developer setup guide, environment variables, testing       |
-| [ONBOARDING.md](ONBOARDING.md)                                   | Developer onboarding — architecture, workflow, patterns     |
-| [LOCAL_DEVELOPMENT_CHECKLIST.md](LOCAL_DEVELOPMENT_CHECKLIST.md) | 12-step local dev checklist                                 |
-| [VSCODE_GIT_QUICKSTART.md](VSCODE_GIT_QUICKSTART.md)             | VS Code Git workflow guide                                  |
-| [MFA.md](MFA.md)                                                 | MFA (TOTP) management + `aal2` enforcement                  |
-| [VISITOR_ALERTS.md](VISITOR_ALERTS.md)                           | Visitor alerts, bot filtering, robots/sitemap crawl policy  |
-| [WEB_UI_CONVENTIONS.md](WEB_UI_CONVENTIONS.md)                   | Web UI patterns (nav catalogs, error states, forms, modals) |
+| Document                                                         | Purpose                                                      |
+| ---------------------------------------------------------------- | ------------------------------------------------------------ |
+| [README.md](../README.md)                                        | Project overview, testing, Docker, CI/CD, design decisions   |
+| [AGENTS.md](../AGENTS.md)                                        | Agent context: progress, constraints, test patterns          |
+| [CONTRIBUTING.md](../CONTRIBUTING.md)                            | Contribution workflow, conventions, PR expectations          |
+| [README.dev.md](../README.dev.md)                                | Developer setup guide, environment variables, testing        |
+| [testing.md](testing.md)                                         | Canonical testing guide: frameworks, commands, E2E, patterns |
+| [ONBOARDING.md](ONBOARDING.md)                                   | Developer onboarding — architecture, workflow, patterns      |
+| [LOCAL_DEVELOPMENT_CHECKLIST.md](LOCAL_DEVELOPMENT_CHECKLIST.md) | 12-step local dev checklist                                  |
+| [VSCODE_GIT_QUICKSTART.md](VSCODE_GIT_QUICKSTART.md)             | VS Code Git workflow guide                                   |
+| [MFA.md](MFA.md)                                                 | MFA (TOTP) management + `aal2` enforcement                   |
+| [VISITOR_ALERTS.md](VISITOR_ALERTS.md)                           | Visitor alerts, bot filtering, robots/sitemap crawl policy   |
+| [WEB_UI_CONVENTIONS.md](WEB_UI_CONVENTIONS.md)                   | Web UI patterns (nav catalogs, error states, forms, modals)  |
+| [ui-kit.md](ui-kit.md)                                           | Shared web UI kit inventory (when to use + import paths)     |
 
 ## Architecture & Design
 
 | Document                                                                             | Purpose                                                            |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
 | [ARCHITECTURE_DIAGRAM.md](ARCHITECTURE_DIAGRAM.md)                                   | Mermaid system architecture diagram                                |
-| [adr/README.md](adr/README.md)                                                       | Architecture Decision Records (7 decisions)                        |
+| [adr/README.md](adr/README.md)                                                       | Architecture Decision Records (11 decisions)                       |
 | [MASTER_SYSTEM_ARCHITECTURE_REVIEW.md](MASTER_SYSTEM_ARCHITECTURE_REVIEW.md)         | 12-domain synthesis of the full system architecture                |
 | [arch/evaluation/db-package-evaluation.md](arch/evaluation/db-package-evaluation.md) | Shared DB package evaluation                                       |
 | [GAP_ANALYSIS.md](GAP_ANALYSIS.md)                                                   | Comprehensive gap analysis, known issues, recommendations          |
@@ -80,16 +82,19 @@
 
 ## Deployment & Operations
 
-| Document                                                                                       | Purpose                                                       |
-| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| [FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md](FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md)             | Operator manual: env model, Terraform, promotion, rollback    |
-| [FINAL_OPERATOR_MAP.md](FINAL_OPERATOR_MAP.md)                                                 | Quick reference: Terraform roots, hostnames, core infra files |
-| [TROUBLESHOOTING.md](TROUBLESHOOTING.md)                                                       | Common issues and fixes by service (new)                      |
-| [ROLLBACK_PROCEDURES.md](ROLLBACK_PROCEDURES.md)                                               | Docker, Supabase, Terraform rollback                          |
-| [MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md)                                       | Monitoring strategy, alerting setup, dashboards               |
-| [DEPLOYMENT_OPTIONS_COMPARISON.md](DEPLOYMENT_OPTIONS_COMPARISON.md)                           | Cost analysis: Vercel vs AWS vs hybrid                        |
-| [PRODUCTION_VS_TESTING_DOMAINS.md](PRODUCTION_VS_TESTING_DOMAINS.md)                           | Production vs testing domain configuration                    |
-| [CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md](CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md) | Cloudflare caching and proxy configuration                    |
+| Document                                                                                       | Purpose                                                         |
+| ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md](FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md)             | Operator manual: env model, Terraform, promotion, rollback      |
+| [FINAL_OPERATOR_MAP.md](FINAL_OPERATOR_MAP.md)                                                 | Quick reference: Terraform roots, hostnames, core infra files   |
+| [TROUBLESHOOTING.md](TROUBLESHOOTING.md)                                                       | Common issues and fixes by service (new)                        |
+| [ROLLBACK_PROCEDURES.md](ROLLBACK_PROCEDURES.md)                                               | Docker, Supabase, Terraform rollback                            |
+| [RELEASING.md](RELEASING.md)                                                                   | Branch model, quality gates, production promotion, rollback     |
+| [CI.md](CI.md)                                                                                 | GitHub Actions workflows: triggers, filters, gates, triage-only |
+| [PERFORMANCE.md](PERFORMANCE.md)                                                               | Response caching, rate limits, DB indexes, web performance      |
+| [MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md)                                       | Monitoring strategy, alerting setup, dashboards                 |
+| [DEPLOYMENT_OPTIONS_COMPARISON.md](DEPLOYMENT_OPTIONS_COMPARISON.md)                           | Cost analysis: Vercel vs AWS vs hybrid                          |
+| [PRODUCTION_VS_TESTING_DOMAINS.md](PRODUCTION_VS_TESTING_DOMAINS.md)                           | Production vs testing domain configuration                      |
+| [CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md](CLOUDFLARE_CACHE_AND_PROXY_RECOMMENDATIONS.md) | Cloudflare caching and proxy configuration                      |
 
 ## Module Documentation (`docs/modules/` — 75 files)
 
@@ -175,11 +180,13 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 
 | Document                                                                                     | Purpose                                       |
 | -------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| [features/README.md](features/README.md)                                                     | Index of the 60 module feature specs          |
+| [runbooks/README.md](runbooks/README.md)                                                     | Index of the 60 module runbooks               |
 | [features/client-onboarding-command-center.md](features/client-onboarding-command-center.md) | Client onboarding command center feature spec |
 | [runbooks/client-onboarding-command-center.md](runbooks/client-onboarding-command-center.md) | Client onboarding command center runbook      |
 
-> `docs/features/` and `docs/runbooks/` each contain ~60 files (one per module);
-> only the command-center pair is listed here as the canonical example.
+> `docs/features/` and `docs/runbooks/` each contain 60 files (one per module);
+> both `README.md` indexes list every file with its title.
 
 ## Additional References
 
@@ -189,13 +196,14 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 | [RLS-rollout.md](RLS-rollout.md)                                                                 | `RLS_READS_ENABLED` / `RLS_WRITES_ENABLED` rollout           |
 | [RLS-coverage-matrix.md](RLS-coverage-matrix.md)                                                 | Per-table RLS coverage                                       |
 | [MODULE_AUDIT.md](MODULE_AUDIT.md)                                                               | 60-module implementation audit                               |
+| [module-matrix-mapping.md](module-matrix-mapping.md)                                             | 60-module prompt-pack matrix → real implementation paths     |
 | [P0_REMEDIATION_2026-08-05.md](P0_REMEDIATION_2026-08-05.md)                                     | P0 remediation log                                           |
 | [ADMIN_PORTAL_PARITY_AUDIT_2026-08-05.md](ADMIN_PORTAL_PARITY_AUDIT_2026-08-05.md)               | Admin/portal parity audit                                    |
 | [MODULE_BUILD_PROMPT_VERIFICATION_2026-08-05.md](MODULE_BUILD_PROMPT_VERIFICATION_2026-08-05.md) | Module build verification                                    |
 | [MODULE_SPECS_GAP_AUDIT_2026-08-05.md](MODULE_SPECS_GAP_AUDIT_2026-08-05.md)                     | Module spec gap audit                                        |
 | [MT-P0-001-RLS-remediation-design.md](MT-P0-001-RLS-remediation-design.md)                       | RLS remediation design                                       |
 | [audits/README.md](audits/README.md)                                                             | Audit output contract                                        |
-| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (317 paths)                           |
+| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (412 paths)                           |
 
 ## Marketing & SEO (`docs/seo/` — 10 files)
 
