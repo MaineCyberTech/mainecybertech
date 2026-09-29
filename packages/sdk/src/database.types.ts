@@ -3077,6 +3077,34 @@ export type Database = {
           { foreignKeyName: "memberships_role_id_fkey", columns: ["role_id"], isOneToOne: false, referencedRelation: "roles", referencedColumns: ["id"] },
         ];
       };
+      mfa_recovery_codes: {
+        Row: {
+          code_hash: string;
+          created_at: string;
+          id: string;
+          salt: string;
+          used_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          code_hash: string;
+          salt: string;
+          user_id: string;
+          created_at?: string | null;
+          id?: string | null;
+          used_at?: string | null;
+        };
+        Update: {
+          code_hash?: string | null;
+          created_at?: string | null;
+          id?: string | null;
+          salt?: string | null;
+          used_at?: string | null;
+          user_id?: string | null;
+        };
+        Relationships: [
+        ];
+      };
       module_comments: {
         Row: {
           author_id: string;
