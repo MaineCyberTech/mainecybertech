@@ -17,7 +17,7 @@ overrides:
   body-parser@<1.20.6: '>=1.20.6'
   sharp: '>=0.35.4'
   postcss@<=8.5.17: '>=8.5.18'
-  image-size: '>=2.0.0'
+  image-size: '>=2.0.4 <3'
   nanoid: '>=3.3.18'
   next: '>=15.5.24 <16'
   browserslist: '>=4.28.7'
@@ -4575,9 +4575,9 @@ packages:
     resolution: {integrity: sha512-Hs59xBNfUIunMFgWAbGX5cq6893IbWg4KnrjbYwX3tx0ztorVgTDA6B2sxf8ejHJ4wz8BqGUMYlnzNBer5NvGg==}
     engines: {node: '>= 4'}
 
-  image-size@2.0.2:
-    resolution: {integrity: sha512-IRqXKlaXwgSMAMtpNzZa1ZAe8m+Sa1770Dhk8VkSsP9LS+iHD62Zd8FQKs8fbPiagBE7BzoFX23cxFnwshpV6w==}
-    engines: {node: '>=16.x'}
+  image-size@2.0.4:
+    resolution: {integrity: sha512-QRUkFFsRV/6fuESxb9Vkq+a0LkSrgKXuc2NEqfikiXxxN/G3tjWt5EVUlMaImRBZRZK/jRBEbYvpPYZL8t08Zw==}
+    engines: {node: '>=18'}
     hasBin: true
 
   import-fresh@3.3.1:
@@ -9419,7 +9419,7 @@ snapshots:
       babel-loader: 9.2.1(@babel/core@7.29.7)(webpack@5.107.2(esbuild@0.28.1)(postcss@8.5.25))
       css-loader: 6.11.0(webpack@5.107.2(esbuild@0.28.1)(postcss@8.5.25))
       find-up: 5.0.0
-      image-size: 2.0.2
+      image-size: 2.0.4
       loader-utils: 3.3.1
       next: 16.3.5(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.61.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       node-polyfill-webpack-plugin: 2.0.1(webpack@5.107.2(esbuild@0.28.1)(postcss@8.5.25))
@@ -11996,7 +11996,7 @@ snapshots:
 
   ignore@7.0.5: {}
 
-  image-size@2.0.2: {}
+  image-size@2.0.4: {}
 
   import-fresh@3.3.1:
     dependencies:

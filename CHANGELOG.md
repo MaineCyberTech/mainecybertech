@@ -97,6 +97,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   worker's scheduled notifications (`9698315`, `f4d5073`).
 - CodeQL static analysis (`codeql.yml`, JS/TS, `security-and-quality`,
   push/PR/weekly) added alongside the existing dependency/SBOM scanning.
+- `image-size` override tightened to `>=2.0.4 <3`, clearing the high advisories
+  from the Storybook toolchain; `pnpm audit` on `develop` is now 0
+  critical/high (one low `elliptic` dev-only advisory remains, no upstream
+  fix — see AGENTS Known Debt).
 - `client_portal_entitlements` RLS insert/update policies aligned with the API
   gate: platform `admin`/`super_admin` only (`client_admin` dropped) plus a
   `with check` so a row cannot be moved across organizations (migration
