@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request } from "express";
 import { z } from "zod";
 import zxcvbn from "zxcvbn";
 import { getSupabaseAdmin, getScopedClient, getSupabaseUser } from "../services/supabase";
@@ -9,6 +9,13 @@ import { logAuditEvent } from "../services/audit";
 import { logger } from "../lib/logger";
 import { rateLimitAuth, rateLimitEmail } from "../middleware/rate-limit";
 import { recordAuthAttempt } from "../lib/metrics";
+import { clearMfaFactorCache, decodeAssuranceLevel, userHasVerifiedFactor } from "../lib/mfa";
+import {
+  CODE_COUNT,
+  findMatchingRecoveryCode,
+  generateRecoveryCodes,
+  hashRecoveryCode,
+} from "../lib/mfa-recovery";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -90,10 +97,15 @@ router.post("/sign-in", rateLimitAuth, async (req, res, next) => {
     });
     recordAuthAttempt("success");
 
+    // A verified TOTP factor means this aal1 session still owes its second
+    // factor. Fail open (null => false) so a GoTrue blip cannot block sign-in.
+    const mfaRequired = (await userHasVerifiedFactor(data.user.id)) === true;
+
     res.json(
       success({
         accessToken: data.session.access_token,
         user: { id: data.user.id, email: data.user.email },
+        mfaRequired,
       }),
     );
   } catch (error) {
@@ -483,6 +495,193 @@ router.delete("/mfa/factors/:factorId", requireAuth, rateLimitAuth, async (req, 
     });
 
     res.json(success({ ok: true }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// --- MFA recovery codes ----------------------------------------------------
+//
+// GoTrue has no backup codes, so the portal stores 10 single-use scrypt-hashed
+// codes per user. Spending one is a lost-device fallback: it deletes the
+// remaining codes and unenrolls every verified TOTP factor, forcing a
+// re-enrollment. There is no way to mint an `aal2` session from a recovery
+// code, so unenroll is the only sound semantics.
+
+/**
+ * Blocks a request whose session owes a second factor. Mirrors the semantics
+ * of `MFA_ENFORCEMENT_ENABLED` but scoped to factor/credential management:
+ * a user with no verified factor is never blocked; an `aal2` session passes.
+ */
+async function requireAal2IfEnrolled(req: Request): Promise<void> {
+  const hasFactor = await userHasVerifiedFactor(req.authUser!.userId);
+  if (hasFactor === true && decodeAssuranceLevel(req.userJwt!) !== "aal2") {
+    throw new AppError("MFA_REQUIRED", "Second factor required", 403);
+  }
+}
+
+router.post("/mfa/recovery-codes", requireAuth, rateLimitAuth, async (req, res, next) => {
+  try {
+    await requireAal2IfEnrolled(req);
+
+    const hasFactor = await userHasVerifiedFactor(req.authUser!.userId);
+    if (hasFactor !== true) {
+      throw new AppError("VALIDATION", "Enroll an authenticator app first", 400);
+    }
+
+    const userId = req.authUser!.userId;
+    const supabase = getSupabaseAdmin();
+
+    // Regenerating invalidates every previous code (used and unused).
+    const { error: deleteError } = await supabase
+      .from("mfa_recovery_codes")
+      .delete()
+      .eq("user_id", userId);
+    if (deleteError) throw new AppError("INTERNAL", deleteError.message, 500);
+
+    const codes = generateRecoveryCodes();
+    const rowsToInsert = await Promise.all(
+      codes.map(async (code) => {
+        const { hash, salt } = await hashRecoveryCode(code);
+        return { user_id: userId, code_hash: hash, salt };
+      }),
+    );
+    const { error: insertError } = await supabase.from("mfa_recovery_codes").insert(rowsToInsert);
+    if (insertError) throw new AppError("INTERNAL", insertError.message, 500);
+
+    await logAuditEvent({
+      actorUserId: userId,
+      action: "auth.mfa.recovery_codes.generated",
+      entityType: "user",
+      entityId: userId,
+      metadata: { count: codes.length },
+    });
+
+    // The plaintext codes are returned exactly once, here.
+    res.status(201).json(success({ codes, remaining: CODE_COUNT }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/mfa/recovery-codes", requireAuth, async (req, res, next) => {
+  try {
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("mfa_recovery_codes")
+      .select("created_at, used_at")
+      .eq("user_id", req.authUser!.userId);
+    if (error) throw new AppError("INTERNAL", error.message, 500);
+
+    const rows = data ?? [];
+    const remaining = rows.filter((row) => row.used_at === null).length;
+    const lastGeneratedAt = rows.reduce<string | null>((latest, row) => {
+      if (!row.created_at) return latest;
+      return !latest || row.created_at > latest ? row.created_at : latest;
+    }, null);
+
+    res.json(success({ remaining, total: CODE_COUNT, lastGeneratedAt }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete("/mfa/recovery-codes", requireAuth, rateLimitAuth, async (req, res, next) => {
+  try {
+    await requireAal2IfEnrolled(req);
+
+    const userId = req.authUser!.userId;
+    const supabase = getSupabaseAdmin();
+    const { error } = await supabase.from("mfa_recovery_codes").delete().eq("user_id", userId);
+    if (error) throw new AppError("INTERNAL", error.message, 500);
+
+    await logAuditEvent({
+      actorUserId: userId,
+      action: "auth.mfa.recovery_codes.revoked",
+      entityType: "user",
+      entityId: userId,
+    });
+
+    res.json(success({ ok: true }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/mfa/recovery", requireAuth, rateLimitAuth, async (req, res, next) => {
+  try {
+    const { code } = z.object({ code: z.string().min(6).max(16) }).parse(req.body);
+    const userId = req.authUser!.userId;
+
+    const hasFactor = await userHasVerifiedFactor(userId);
+    if (hasFactor !== true) {
+      throw new AppError("VALIDATION", "No authenticator app is enrolled", 400);
+    }
+
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("mfa_recovery_codes")
+      .select("id, code_hash, salt")
+      .eq("user_id", userId)
+      .is("used_at", null);
+    if (error) throw new AppError("INTERNAL", error.message, 500);
+
+    const rows = data ?? [];
+    const match = await findMatchingRecoveryCode(code, rows);
+    if (!match) {
+      await logAuditEvent({
+        actorUserId: userId,
+        action: "auth.mfa.recovery.failed",
+        entityType: "user",
+        entityId: userId,
+      });
+      throw new AppError("INVALID_RECOVERY_CODE", "Invalid recovery code", 401);
+    }
+
+    const { error: markError } = await supabase
+      .from("mfa_recovery_codes")
+      .update({ used_at: new Date().toISOString() })
+      .eq("id", match.id);
+    if (markError) throw new AppError("INTERNAL", markError.message, 500);
+
+    const { error: pruneError } = await supabase
+      .from("mfa_recovery_codes")
+      .delete()
+      .eq("user_id", userId)
+      .neq("id", match.id);
+    if (pruneError) throw new AppError("INTERNAL", pruneError.message, 500);
+
+    type AdminFactor = { id: string; factor_type?: string; status?: string };
+    const { data: factorData, error: factorError } = await supabase.auth.admin.mfa.listFactors({
+      userId,
+    });
+    if (factorError) throw new AppError("AUTH_ERROR", factorError.message, 500);
+
+    const factors = (factorData?.factors ?? []) as AdminFactor[];
+    let factorsRemoved = 0;
+    for (const factor of factors) {
+      if (factor.factor_type === "totp" && factor.status === "verified") {
+        const { error: deleteFactorError } = await supabase.auth.admin.mfa.deleteFactor({
+          id: factor.id,
+          userId,
+        });
+        if (deleteFactorError) throw new AppError("AUTH_ERROR", deleteFactorError.message, 500);
+        factorsRemoved += 1;
+      }
+    }
+    // The user now has no factor; drop the cached lookup so they are not held
+    // at the step-up gate (or told MFA is required at sign-in) for 60s.
+    clearMfaFactorCache();
+
+    await logAuditEvent({
+      actorUserId: userId,
+      action: "auth.mfa.recovery.used",
+      entityType: "user",
+      entityId: userId,
+      metadata: { factorsRemoved },
+    });
+
+    res.json(success({ ok: true, factorsRemoved }));
   } catch (error) {
     next(error);
   }

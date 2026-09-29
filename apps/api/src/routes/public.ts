@@ -274,4 +274,114 @@ h3. Captured Session Metadata
   }
 });
 
+const MAX_CSP_REPORTS = 10;
+const MAX_CSP_FIELD_LENGTH = 200;
+
+const cspReportSchema = z
+  .object({
+    "document-uri": z.string().optional(),
+    documentURL: z.string().optional(),
+    "violated-directive": z.string().optional(),
+    violatedDirective: z.string().optional(),
+    "effective-directive": z.string().optional(),
+    effectiveDirective: z.string().optional(),
+    "blocked-uri": z.string().optional(),
+    blockedURL: z.string().optional(),
+    "source-file": z.string().optional(),
+    sourceFile: z.string().optional(),
+    "line-number": z.union([z.number(), z.string()]).optional(),
+    lineNumber: z.union([z.number(), z.string()]).optional(),
+    "script-sample": z.string().optional(),
+    sample: z.string().optional(),
+  })
+  .passthrough();
+
+function truncateCspField(value: unknown): string | undefined {
+  if (typeof value !== "string" || value.length === 0) return undefined;
+  return value.length > MAX_CSP_FIELD_LENGTH ? value.slice(0, MAX_CSP_FIELD_LENGTH) : value;
+}
+
+/**
+ * Reduce a browser CSP report to a small allow-list of fields. Everything else
+ * (headers, cookies, arbitrary report extensions) is dropped before logging.
+ */
+function sanitizeCspReport(report: unknown): Record<string, string | number> | null {
+  const parsed = cspReportSchema.safeParse(report);
+  if (!parsed.success) return null;
+  const raw = parsed.data;
+  const sanitized: Record<string, string | number> = {};
+
+  const documentUri = truncateCspField(raw["document-uri"] ?? raw.documentURL);
+  if (documentUri) sanitized["document-uri"] = documentUri;
+
+  const directive = truncateCspField(
+    raw["effective-directive"] ??
+      raw.effectiveDirective ??
+      raw["violated-directive"] ??
+      raw.violatedDirective,
+  );
+  if (directive) sanitized.directive = directive;
+
+  const blockedUri = truncateCspField(raw["blocked-uri"] ?? raw.blockedURL);
+  if (blockedUri) sanitized["blocked-uri"] = blockedUri;
+
+  const sourceFile = truncateCspField(raw["source-file"] ?? raw.sourceFile);
+  if (sourceFile) sanitized["source-file"] = sourceFile;
+
+  const lineNumber = raw["line-number"] ?? raw.lineNumber;
+  if (typeof lineNumber === "number" && Number.isFinite(lineNumber)) {
+    sanitized["line-number"] = lineNumber;
+  } else {
+    const limited = truncateCspField(lineNumber);
+    if (limited) sanitized["line-number"] = limited;
+  }
+
+  const sample = truncateCspField(raw["script-sample"] ?? raw.sample);
+  if (sample) sanitized["script-sample"] = sample;
+
+  return Object.keys(sanitized).length > 0 ? sanitized : null;
+}
+
+/**
+ * Accept both wire formats: a legacy `{ "csp-report": {...} }` envelope or an
+ * array of Reporting API `{ type, body }` entries. Capped so one request can
+ * never flood the logs.
+ */
+function extractCspReports(body: unknown): unknown[] {
+  if (Array.isArray(body)) {
+    const reports: unknown[] = [];
+    for (const entry of body) {
+      if (reports.length >= MAX_CSP_REPORTS) break;
+      if (!entry || typeof entry !== "object") continue;
+      const { type, body: reportBody } = entry as { type?: unknown; body?: unknown };
+      if (typeof type === "string" && type !== "csp-violation") continue;
+      reports.push(reportBody);
+    }
+    return reports;
+  }
+  if (body && typeof body === "object" && "csp-report" in body) {
+    return [(body as { "csp-report"?: unknown })["csp-report"]];
+  }
+  return [];
+}
+
+/**
+ * Browser CSP violation reports. Unauthenticated by design (the global limiter
+ * still applies); reports are logged and never persisted. Responses are always
+ * 204 because browsers ignore anything they cannot read.
+ */
+router.post("/csp-report", (req, res) => {
+  try {
+    for (const report of extractCspReports(req.body)) {
+      const sanitized = sanitizeCspReport(report);
+      if (sanitized) logger.warn({ csp: sanitized }, "csp.violation");
+    }
+  } catch (error) {
+    // Reports are best-effort telemetry; a malformed payload must not fail the
+    // request.
+    logger.debug({ err: error }, "csp.report.parse_failed");
+  }
+  res.status(204).end();
+});
+
 export default router;

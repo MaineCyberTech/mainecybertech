@@ -379,7 +379,7 @@ router.get("/:id/detail", async (req, res, next) => {
 
     if (projError || !project) throw new AppError("NOT_FOUND", "Project not found", 404);
 
-    // Platform admins can fetch any tenant's project without an org param Ã¢â‚¬â€
+    // Platform admins can fetch any tenant's project without an org param —
     // scope the sub-queries to the project's own org in that case.
     const scopeOrgId = orgId ?? (project as { organization_id?: string }).organization_id;
 

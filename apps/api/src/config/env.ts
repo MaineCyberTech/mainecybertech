@@ -16,6 +16,11 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
+  // Optional Sentry trace sample rate (0–1). Defaults to 0.2 in production, 0
+  // otherwise. See lib/sentry.ts.
+  SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
+  // Optional Sentry release identifier. Defaults to process.env.GIT_SHA.
+  SENTRY_RELEASE: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   // AES-256-GCM key for profile PII at rest (hex/base64, 32 bytes).

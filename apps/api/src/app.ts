@@ -110,6 +110,9 @@ export function createApp(): Express {
   app.use(
     express.json({
       limit: "10mb",
+      // CSP reports arrive as `application/csp-report` (legacy report-uri) or
+      // `application/reports+json` (Reporting API); both are JSON payloads.
+      type: ["application/json", "application/csp-report", "application/reports+json"],
       verify: (req: express.Request & { rawBody?: string }, _res, buf) => {
         req.rawBody = buf.toString();
       },

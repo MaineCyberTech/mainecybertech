@@ -3,6 +3,7 @@ import { ApiClient } from "./client";
 export type SignInResult = {
   accessToken: string;
   user: { id: string; email: string | null };
+  mfaRequired?: boolean;
 };
 
 export type SignUpResult = {
@@ -38,6 +39,17 @@ export type MfaChallengeResult = {
 export type MfaVerifyResult = {
   accessToken: string;
   user: { id: string; email: string | null };
+};
+
+export type MfaRecoveryStatus = {
+  remaining: number;
+  total: number;
+  lastGeneratedAt: string | null;
+};
+
+export type MfaRecoveryCodesResult = {
+  codes: string[];
+  remaining: number;
 };
 
 export class AuthApi {
@@ -101,5 +113,23 @@ export class AuthApi {
     return this.client.delete<{ ok: boolean }>(
       `/api/v1/auth/mfa/factors/${encodeURIComponent(factorId)}`,
     );
+  }
+
+  mfaRecoveryCodes() {
+    return this.client.get<MfaRecoveryStatus>("/api/v1/auth/mfa/recovery-codes");
+  }
+
+  mfaGenerateRecoveryCodes() {
+    return this.client.post<MfaRecoveryCodesResult>("/api/v1/auth/mfa/recovery-codes");
+  }
+
+  mfaRevokeRecoveryCodes() {
+    return this.client.delete<{ ok: boolean }>("/api/v1/auth/mfa/recovery-codes");
+  }
+
+  mfaRecover(code: string) {
+    return this.client.post<{ ok: boolean; factorsRemoved: number }>("/api/v1/auth/mfa/recovery", {
+      code,
+    });
   }
 }

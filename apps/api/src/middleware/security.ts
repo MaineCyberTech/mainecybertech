@@ -73,6 +73,15 @@ function traverseAndCheck(
 }
 
 export function inputSanitizer(req: Request, _res: Response, next: NextFunction) {
+  // CSP violation reports are browser-generated telemetry whose `blocked-uri`
+  // legitimately contains the blocked scheme (e.g. `javascript:`), so the XSS
+  // blocklist must not reject them. The route treats the body as inert and
+  // never renders or persists it.
+  if (req.path === "/api/v1/public/csp-report") {
+    next();
+    return;
+  }
+
   if (req.body && typeof req.body === "object") {
     const bodyError = traverseAndCheck(req.body as Record<string, unknown>, req.ip, req.path);
     if (bodyError) {

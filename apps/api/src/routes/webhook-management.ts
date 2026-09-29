@@ -9,9 +9,10 @@ import { requirePermission } from "../middleware/permissions";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { AppError, success } from "../types";
 import { assertSafeWebhookUrl } from "../lib/ssrf-guard";
-import { loadOwned } from "../lib/tenant";
+import { assertResourceOrg, loadOwned } from "../lib/tenant";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
-import { queryInt } from "../lib/query";
+import { queryInt, queryString } from "../lib/query";
+import { enqueueTask } from "../lib/task-producer";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -66,6 +67,194 @@ router.get("/", async (req, res, next) => {
     next(error);
   }
 });
+
+// Dead-letter routes MUST stay above the `/:id` routes so "dead-letters" is
+// never captured as a webhook endpoint id.
+
+router.get("/dead-letters", async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "webhook-management", "read");
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 25)));
+    const offset = (page - 1) * limit;
+    const event = queryString(req.query.event);
+    const webhookId = queryString(req.query.webhook_id) ?? queryString(req.query.webhookId);
+
+    // `webhook_dead_letters` has no organization_id of its own: scope the list
+    // through the endpoints owned by the caller's active org. `req.orgId` is
+    // null only for org-agnostic platform admins (audited elsewhere).
+    let orgWebhookIds: string[] | null = null;
+    if (req.orgId) {
+      const { data: orgEndpoints, error: orgError } = await supabase
+        .from("webhook_endpoints")
+        .select("id")
+        .eq("organization_id", req.orgId);
+      if (orgError) throw new AppError("DB_ERROR", orgError.message, 500);
+      orgWebhookIds = (orgEndpoints ?? []).map((endpoint) => endpoint.id);
+      if (orgWebhookIds.length === 0) {
+        res.json(success({ items: [], total: 0, page, limit }));
+        return;
+      }
+    }
+
+    let query = supabase.from("webhook_dead_letters").select("*", { count: "exact" });
+    if (orgWebhookIds) query = query.in("webhook_id", orgWebhookIds);
+    if (webhookId) query = query.eq("webhook_id", webhookId);
+    if (event) query = query.eq("event", event);
+
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    const rows = data ?? [];
+    const endpointIds = Array.from(new Set(rows.map((row) => row.webhook_id)));
+    const endpointById = new Map<string, { id: string; name: string; url: string }>();
+    if (endpointIds.length > 0) {
+      const { data: endpoints, error: endpointError } = await supabase
+        .from("webhook_endpoints")
+        .select("id, name, url")
+        .in("id", endpointIds);
+      if (endpointError) throw new AppError("DB_ERROR", endpointError.message, 500);
+      for (const endpoint of endpoints ?? []) {
+        endpointById.set(endpoint.id, endpoint);
+      }
+    }
+
+    const items = rows.map((row) => ({
+      ...row,
+      endpoint: endpointById.get(row.webhook_id) ?? null,
+    }));
+
+    res.json(success({ items, total: count ?? 0, page, limit }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * Load a dead-letter row plus its endpoint and verify tenant ownership.
+ * Callers get a 404 for both "row missing" and "row in another org" so
+ * existence is never leaked.
+ */
+async function loadDeadLetterOwned(
+  req: Parameters<typeof getScopedClient>[0],
+  supabase: ReturnType<typeof getScopedClient>,
+  id: string,
+) {
+  const { data: deadLetter, error } = await supabase
+    .from("webhook_dead_letters")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw new AppError("DB_ERROR", error.message, 500);
+  if (!deadLetter) throw new AppError("NOT_FOUND", "Dead letter not found", 404);
+
+  const { data: endpoint, error: endpointError } = await supabase
+    .from("webhook_endpoints")
+    .select("id, organization_id")
+    .eq("id", deadLetter.webhook_id)
+    .maybeSingle();
+  if (endpointError) throw new AppError("DB_ERROR", endpointError.message, 500);
+  if (!endpoint) throw new AppError("NOT_FOUND", "Dead letter not found", 404);
+
+  // Explicit tenant check: the dead-letter table carries no org of its own.
+  assertResourceOrg(req, endpoint.organization_id);
+
+  return { deadLetter, endpoint };
+}
+
+router.post(
+  "/dead-letters/:id/retry",
+  requirePermission("webhooks", "manage"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "webhook-management", "write");
+      const { deadLetter, endpoint } = await loadDeadLetterOwned(
+        req,
+        supabase,
+        String(req.params.id),
+      );
+
+      // Replay through the path the worker actually consumes: the
+      // `webhook-retry` task replays due rows from `webhook_deliveries`
+      // (SSRF guard + HMAC signing + attempt counting). Recreate the delivery
+      // as due-now, then nudge the task so it runs before the next 5-minute
+      // sweep. The scheduled task will still pick it up if the queue is down.
+      const { error: insertError } = await supabase.from("webhook_deliveries").insert({
+        webhook_id: deadLetter.webhook_id,
+        event: deadLetter.event,
+        status: "failed",
+        request_body: deadLetter.request_body,
+        retry_count: 0,
+        dead_letter: false,
+        next_retry_at: new Date().toISOString(),
+      });
+      if (insertError) throw new AppError("DB_ERROR", insertError.message, 500);
+
+      await enqueueTask("webhook-retry", {});
+
+      const { data: deleted, error: deleteError } = await supabase
+        .from("webhook_dead_letters")
+        .delete()
+        .eq("id", deadLetter.id)
+        .select("id")
+        .maybeSingle();
+      if (deleteError) throw new AppError("DB_ERROR", deleteError.message, 500);
+      if (!deleted) throw new AppError("NOT_FOUND", "Dead letter not found", 404);
+
+      await logAuditEvent({
+        organizationId: endpoint.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "webhook.dead_letter.retried",
+        entityType: "webhook_dead_letter",
+        entityId: deadLetter.id,
+        metadata: { webhookId: deadLetter.webhook_id, event: deadLetter.event },
+      });
+
+      res.json(success({ ok: true }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.delete(
+  "/dead-letters/:id",
+  requirePermission("webhooks", "manage"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "webhook-management", "write");
+      const { deadLetter, endpoint } = await loadDeadLetterOwned(
+        req,
+        supabase,
+        String(req.params.id),
+      );
+
+      const { data: deleted, error: deleteError } = await supabase
+        .from("webhook_dead_letters")
+        .delete()
+        .eq("id", deadLetter.id)
+        .select("id")
+        .maybeSingle();
+      if (deleteError) throw new AppError("DB_ERROR", deleteError.message, 500);
+      if (!deleted) throw new AppError("NOT_FOUND", "Dead letter not found", 404);
+
+      await logAuditEvent({
+        organizationId: endpoint.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "webhook.dead_letter.dismissed",
+        entityType: "webhook_dead_letter",
+        entityId: deadLetter.id,
+        metadata: { webhookId: deadLetter.webhook_id, event: deadLetter.event },
+      });
+
+      res.json(success({ ok: true }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.get("/:id", async (req, res, next) => {
   try {

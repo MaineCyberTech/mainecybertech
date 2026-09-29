@@ -29,6 +29,7 @@ jest.mock("../services/audit", () => ({
 }));
 
 import { getSupabaseAdmin, getSupabaseUser } from "../services/supabase";
+import { clearMfaFactorCache } from "../lib/mfa";
 
 const app = createTestApp();
 app.use("/api/v1/auth", authRouter);
@@ -80,6 +81,11 @@ function mockSupabase() {
         }),
         unenroll: jest.fn().mockResolvedValue({ data: { id: "f1" }, error: null }),
       },
+      admin: {
+        mfa: {
+          listFactors: jest.fn().mockResolvedValue({ data: { factors: [] }, error: null }),
+        },
+      },
     },
   };
   (getSupabaseAdmin as jest.Mock).mockReturnValue(mock);
@@ -90,6 +96,7 @@ function mockSupabase() {
 describe("POST /sign-in", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    clearMfaFactorCache();
   });
 
   it("returns 200 with access token", async () => {
@@ -140,6 +147,34 @@ describe("POST /sign-in", () => {
       .send({ email: "a@b.com", password: "wrong" });
 
     expect(res.status).toBe(401);
+  });
+
+  it("reports mfaRequired when the user has a verified factor", async () => {
+    const supabase = mockSupabase();
+    supabase.auth.admin.mfa.listFactors.mockResolvedValue({
+      data: { factors: [{ status: "verified", factor_type: "totp" }] },
+      error: null,
+    });
+    clearMfaFactorCache();
+
+    const res = await request(app)
+      .post("/api/v1/auth/sign-in")
+      .send({ email: "a@b.com", password: "secret" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.mfaRequired).toBe(true);
+  });
+
+  it("reports mfaRequired false when no verified factor exists", async () => {
+    mockSupabase();
+    clearMfaFactorCache();
+
+    const res = await request(app)
+      .post("/api/v1/auth/sign-in")
+      .send({ email: "a@b.com", password: "secret" });
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.mfaRequired).toBe(false);
   });
 });
 

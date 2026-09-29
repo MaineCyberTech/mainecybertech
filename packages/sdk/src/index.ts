@@ -30,7 +30,12 @@ import {
   type BillingCustomer,
   type BillingSummary,
 } from "./billing";
-import { WebhooksApi, type WebhookEndpoint, type WebhookDelivery } from "./webhooks";
+import {
+  WebhooksApi,
+  type WebhookEndpoint,
+  type WebhookDelivery,
+  type WebhookDeadLetter,
+} from "./webhooks";
 import { BulkApi, type BulkInviteResult } from "./bulk";
 import { ApiKeysApi, type ApiKey, type ApiKeyWithSecret } from "./api-keys";
 import { SLApi, type SLAMetrics } from "./sla";
@@ -229,6 +234,7 @@ export type {
   BillingSummary,
   WebhookEndpoint,
   WebhookDelivery,
+  WebhookDeadLetter,
   BulkInviteResult,
   SearchResult,
   PortalSearchResult,

@@ -50,6 +50,7 @@ const yaml =
   "# MCT Client Portal API - OpenAPI 3.0.3\n" +
   "# AUTO-GENERATED from apps/api/src/openapi/spec.ts (buildSpec()) - do not edit by hand.\n" +
   "# Regenerate with: pnpm --filter=api generate:openapi\n" +
+  "# Includes dynamically registered factory routes; only statically-resolvable routes are gated by scripts/openapi-audit.js.\n" +
   serialize(spec) +
   "\n";
 

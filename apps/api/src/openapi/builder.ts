@@ -46,6 +46,8 @@ export interface RouteDef {
   body?: Record<string, unknown>;
   responseDesc?: string;
   responseSchema?: Record<string, unknown>;
+  /** HTTP status the response schema documents (default 200; e.g. 201 for creates). */
+  successStatus?: number;
 }
 
 export function buildPaths(routes: RouteDef[]): OpenApiPaths {
@@ -75,7 +77,9 @@ export function buildPaths(routes: RouteDef[]): OpenApiPaths {
       };
     }
     if (r.responseSchema) {
-      op.responses["200"] = {
+      const successStatus = String(r.successStatus ?? 200);
+      if (successStatus !== "200") delete op.responses["200"];
+      op.responses[successStatus] = {
         description: r.responseDesc ?? "Success",
         content: { "application/json": { schema: r.responseSchema } },
       };

@@ -244,6 +244,50 @@ describe("MCTClient", () => {
 
       expect(result.ok).toBe(true);
     });
+
+    it("mfaRecoveryCodes fetches recovery code status", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({ remaining: 10, total: 10, lastGeneratedAt: "2026-09-27T00:00:00Z" }),
+      );
+
+      const result = await client.auth.mfaRecoveryCodes();
+
+      expect(result.remaining).toBe(10);
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/auth/mfa/recovery-codes");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("GET");
+    });
+
+    it("mfaGenerateRecoveryCodes posts to recovery-codes", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ codes: ["ABCDE-FGHJK"], remaining: 10 }));
+
+      const result = await client.auth.mfaGenerateRecoveryCodes();
+
+      expect(result.codes).toHaveLength(1);
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/auth/mfa/recovery-codes");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+    });
+
+    it("mfaRevokeRecoveryCodes deletes recovery-codes", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ ok: true }));
+
+      const result = await client.auth.mfaRevokeRecoveryCodes();
+
+      expect(result.ok).toBe(true);
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/auth/mfa/recovery-codes");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("DELETE");
+    });
+
+    it("mfaRecover posts the code to recovery", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ ok: true, factorsRemoved: 1 }));
+
+      const result = await client.auth.mfaRecover("ABCDE-FGHJK");
+
+      expect(result.factorsRemoved).toBe(1);
+      expect(mockFetch.mock.calls[0][0]).toContain("/api/v1/auth/mfa/recovery");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+      const body = JSON.parse(mockFetch.mock.calls[0][1]?.body as string);
+      expect(body.code).toBe("ABCDE-FGHJK");
+    });
   });
 
   describe("RolesApi", () => {
@@ -294,9 +338,7 @@ describe("MCTClient", () => {
     };
 
     it("list fetches organizations", async () => {
-      mockFetch.mockResolvedValue(
-        mockResponse({ items: [org], total: 1, page: 1, limit: 25 }),
-      );
+      mockFetch.mockResolvedValue(mockResponse({ items: [org], total: 1, page: 1, limit: 25 }));
 
       const result = await client.organizations.list();
 
@@ -304,9 +346,7 @@ describe("MCTClient", () => {
     });
 
     it("list with status and ids", async () => {
-      mockFetch.mockResolvedValue(
-        mockResponse({ items: [org], total: 1, page: 1, limit: 25 }),
-      );
+      mockFetch.mockResolvedValue(mockResponse({ items: [org], total: 1, page: 1, limit: 25 }));
 
       await client.organizations.list({ status: "active", ids: ["1"] });
 
@@ -1552,6 +1592,61 @@ describe("MCTClient", () => {
       mockFetch.mockResolvedValue(mockResponse({ ok: true, status: 200, duration_ms: 50 }));
       const result = await client.webhooks.test("wh1");
       expect(result.ok).toBe(true);
+    });
+
+    it("listDeadLetters fetches paginated dead letters with filters", async () => {
+      mockFetch.mockResolvedValue(
+        mockResponse({
+          items: [
+            {
+              id: "dl1",
+              webhook_id: "wh1",
+              event: "ticket.created",
+              attempt_count: 5,
+              last_attempt_at: "2026-01-01T00:00:00Z",
+              last_error: "HTTP 500",
+              created_at: "2026-01-01T00:00:00Z",
+              endpoint: { id: "wh1", name: "Test", url: "https://example.com" },
+            },
+          ],
+          total: 1,
+          page: 2,
+          limit: 25,
+        }),
+      );
+      const result = await client.webhooks.listDeadLetters({
+        event: "ticket.created",
+        webhookId: "wh1",
+        page: 2,
+        limit: 25,
+      });
+      expect(result.items).toHaveLength(1);
+      expect(result.total).toBe(1);
+      const url = String(mockFetch.mock.calls[0][0]);
+      expect(url).toContain("/api/v1/webhook-endpoints/dead-letters");
+      expect(url).toContain("event=ticket.created");
+      expect(url).toContain("webhook_id=wh1");
+      expect(url).toContain("page=2");
+      expect(url).toContain("limit=25");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("GET");
+    });
+
+    it("retryDeadLetter posts to the retry endpoint", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ ok: true }));
+      const result = await client.webhooks.retryDeadLetter("dl1");
+      expect(result.ok).toBe(true);
+      const url = String(mockFetch.mock.calls[0][0]);
+      expect(url).toContain("/api/v1/webhook-endpoints/dead-letters/dl1/retry");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("POST");
+    });
+
+    it("deleteDeadLetter deletes a dead letter", async () => {
+      mockFetch.mockResolvedValue(mockResponse({ ok: true }));
+      const result = await client.webhooks.deleteDeadLetter("dl1");
+      expect(result.ok).toBe(true);
+      const url = String(mockFetch.mock.calls[0][0]);
+      expect(url).toContain("/api/v1/webhook-endpoints/dead-letters/dl1");
+      expect(mockFetch.mock.calls[0][1]?.method).toBe("DELETE");
     });
   });
 

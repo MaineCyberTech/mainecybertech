@@ -131,7 +131,7 @@ const upload = multer({
   },
 });
 // Storage bucket is pinned server-side. A request must never be able to target
-// an arbitrary bucket â€” otherwise a member could write into a public bucket
+// an arbitrary bucket — otherwise a member could write into a public bucket
 // (avatars/logos) or overwrite another org's objects. (FILE-P2-001)
 const DOCUMENTS_BUCKET = "documents";
 
@@ -317,7 +317,7 @@ router.post(
         );
       }
 
-      // Sniff the bytes â€” the declared mimetype is not trusted. (FILE-P1-001)
+      // Sniff the bytes — the declared mimetype is not trusted. (FILE-P1-001)
       validateUploadContent(file.buffer, file.mimetype);
 
       const organizationId = String(req.body.organizationId ?? "").trim();
@@ -331,7 +331,7 @@ router.post(
       }
 
       const supabase = getScopedClient(req, "documents", "write");
-      // Bucket is pinned server-side (FILE-P2-001) â€” never read from req.body.
+      // Bucket is pinned server-side (FILE-P2-001) — never read from req.body.
       const bucket = DOCUMENTS_BUCKET;
       const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
       const storagePath = `orgs/${organizationId}/${Date.now()}-${safeName}`;
@@ -357,7 +357,7 @@ router.post(
           .from("documents")
           .select("storage_bucket, storage_path, current_version")
           .eq("id", documentId);
-        // Version replacement must be scoped to the caller's org â€” otherwise a
+        // Version replacement must be scoped to the caller's org — otherwise a
         // caller in org A could replace (and delete the storage object of) a
         // document belonging to org B.
         if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
@@ -718,7 +718,7 @@ router.get("/:id/versions", async (req, res, next) => {
     const supabase = getScopedClient(req, "documents", "read");
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
-    // Version rows carry no org column â€” verify the parent document belongs
+    // Version rows carry no org column — verify the parent document belongs
     // to the caller's org before exposing version metadata (storage paths).
     let docQuery = supabase.from("documents").select("id").eq("id", String(req.params.id));
     if (orgId) docQuery = docQuery.eq("organization_id", orgId);
