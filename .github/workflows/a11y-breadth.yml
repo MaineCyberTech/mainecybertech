@@ -1,8 +1,9 @@
 name: A11y breadth (triage)
 
-# Non-blocking weekly/manual run of the full accessibility page list with
-# WCAG 2.2 tags (68 routes). The default E2E gate stays on the 19-page
-# critical/serious scan so new rules can be triaged here first.
+# Weekly/manual full accessibility scan (68 routes, WCAG 2.2 tags). This is a
+# triage report, not a gate: it is not referenced by any required check, and a
+# red run means the breadth scan found violations to fix or promote into the
+# default 19-page gate. The default E2E gate stays on the small page list.
 # See docs/WEB_UI_CONVENTIONS.md ("Accessibility scanning").
 
 on:
@@ -20,4 +21,3 @@ jobs:
     with:
       a11y_full: true
     secrets: inherit
-    continue-on-error: true

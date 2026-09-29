@@ -13,7 +13,7 @@ branch.
 | E2E                   | `e2e.yml`                 | PR `main`, `develop`; `workflow_call`; dispatch (`a11y_full`)      | `apps/web/e2e/**`, `apps/web/playwright.config.ts`, `apps/web/app/**`, `apps/web/components/**`, `packages/**`, `supabase/seeds/**`, `supabase/migrations/**`, `e2e.yml` | Local Supabase + built API/web; Playwright chromium E2E + axe (19-route gate, 68 with `A11Y_FULL`)                                                                | Blocking on PR      |
 | Validate              | `validate.yml`            | `workflow_call` only                                               | —                                                                                                                                                                        | Deploy gate: audit, coverage tests + all guards, secrets scan, lint, typecheck, prompt provenance (`verify-prompts.js`), `review.md` sync                         | Deploy gate         |
 | deploy-do             | `deploy-do.yml`           | push `main`, `develop`; dispatch (`deploy_target`, `rollback_sha`) | `apps/api/**`, `apps/web/**`, `apps/worker/**`, `packages/**`, `infra/digitalocean/**`, `deploy-do.yml`                                                                  | Build 3 GHCR images; `validate`; prod-only E2E + migration gates; SSH deploy to the droplet with container health gate and auto-rollback to the previous tag      | Blocking            |
-| terraform-do          | `terraform-do.yml`        | push + PR `main`, `develop`; dispatch                              | `infra/terraform/digitalocean/**`, `terraform-do.yml`                                                                                                                    | `fmt -check`, validate, plan (posted on PR); `validate` gate; `main` applies need `prod-approval` + E2E + migrations; `develop` auto-applies after validate       | Blocking / gated    |
+| terraform-do          | `terraform-do.yml`        | dispatch only                                                      | n/a                                                                                                                                                                      | `fmt -check`, validate, plan; apply requires the `apply` input (disabled until the `DO_API_TOKEN` is rotated)                                                     | Manual              |
 | supabase-migrations   | `supabase-migrations.yml` | push `develop`, `main`; `workflow_call`; dispatch                  | `supabase/**`, `supabase-migrations.yml`                                                                                                                                 | `supabase db push --include-all` with pinned CLI 2.107.0; `prod`/`dev` environment; serialized per branch                                                         | Migrate gate (prod) |
 | build-push            | `build-push.yml`          | dispatch only                                                      | —                                                                                                                                                                        | Manual GHCR build of `mct-api`, `mct-worker`, `mct-web` (push triggers removed — `deploy-do` builds)                                                              | Manual              |
 | Chromatic             | `chromatic.yml`           | push + PR `develop`, `main`                                        | `packages/ui/**`                                                                                                                                                         | Storybook build + Chromatic visual regression                                                                                                                     | Best-effort         |
@@ -40,10 +40,12 @@ the remote shell), pulls the images, restarts the compose stack, and only
 prunes old images after the API and web containers report healthy. A failed
 health gate rolls back to the previously running tag.
 
-`terraform-do.yml` runs in parallel with the same gates: every run needs
-`validate-gate`; a `main` apply additionally needs `e2e-gate` + `migrate-gate`
-and the `prod-approval` environment; a `develop` apply runs after
-`validate-gate`.
+`terraform-do.yml` is **manual-dispatch only** (2026-09-29): automatic push/PR
+runs failed on the invalid `DO_API_TOKEN` and a develop push could reach dev
+apply without review. A manual run plans by default and needs `validate-gate`;
+setting the `apply` input additionally enables the apply job (`main` → prod
+environment + E2E/migration gates; `develop` → dev). Re-enable push/PR triggers
+once the token is rotated and the environments have protection rules.
 
 ## Best-effort and triage-only jobs
 

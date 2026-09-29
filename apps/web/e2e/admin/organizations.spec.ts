@@ -33,8 +33,9 @@ test.describe("admin organizations list", () => {
 
 test.describe("admin organization detail", () => {
   test("shows not-found for unknown org", async ({ page }) => {
-    await page.goto("/admin/organizations/does-not-exist");
-    await expect(page.getByText("Organization not found.", { exact: true }).first()).toBeVisible({
+    const response = await page.goto("/admin/organizations/00000000-0000-0000-0000-000000000000");
+    expect(response?.status()).toBe(404);
+    await expect(page.getByRole("heading", { name: "Not Found" }).first()).toBeVisible({
       timeout: 10000,
     });
   });

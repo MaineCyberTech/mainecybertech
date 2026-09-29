@@ -1,17 +1,17 @@
 name: terraform-do
 
 on:
+  # Manual-only by design (2026-09-29): automatic push/PR runs failed on an
+  # invalid DO_API_TOKEN and a develop push could reach dev apply without
+  # review. Re-enable push/PR triggers once the token is rotated and the
+  # environments have protection rules. A manual run plans by default; apply
+  # only happens when the `apply` input is set.
   workflow_dispatch:
-  push:
-    branches: [main, develop]
-    paths:
-      - "infra/terraform/digitalocean/**"
-      - ".github/workflows/terraform-do.yml"
-  pull_request:
-    branches: [main, develop]
-    paths:
-      - "infra/terraform/digitalocean/**"
-      - ".github/workflows/terraform-do.yml"
+    inputs:
+      apply:
+        description: "Apply after a successful plan (leave off to plan only)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -153,7 +153,7 @@ jobs:
 
   terraform-apply-prod:
     needs: [terraform-plan, validate-gate, e2e-gate, migrate-gate]
-    if: ${{ github.ref_name == 'main' && !failure() && !cancelled() }}
+    if: ${{ inputs.apply && github.ref_name == 'main' && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     environment: prod-approval
     defaults:
@@ -193,7 +193,7 @@ jobs:
 
   terraform-apply-dev:
     needs: [terraform-plan, validate-gate]
-    if: ${{ github.ref_name == 'develop' && !failure() && !cancelled() }}
+    if: ${{ inputs.apply && github.ref_name == 'develop' && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     environment: dev
     defaults:

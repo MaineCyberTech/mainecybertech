@@ -3,7 +3,7 @@ import { test, expect } from "../fixtures";
 test.describe("portal domain monitors page", () => {
   test("renders Domain Monitors heading", async ({ page }) => {
     await page.goto("/portal/domain-monitors");
-    await expect(page.getByRole("heading", { name: /domain monitors/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /domain monitors/i, level: 1 })).toBeVisible();
   });
 
   test("shows domain list or empty state", async ({ page }) => {

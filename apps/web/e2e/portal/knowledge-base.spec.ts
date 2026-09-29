@@ -27,13 +27,12 @@ test.describe("portal knowledge base page", () => {
   test.afterEach(async ({ page }) => {
     const errors = (page as unknown as { __diag?: string[] }).__diag ?? [];
     if (errors.length) {
-      // eslint-disable-next-line no-console
       console.warn(`[knowledge-base] captured diagnostics: ${errors.join(" | ")}`);
     }
   });
 
   test("renders knowledge base heading", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: /knowledge base/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /knowledge base/i, level: 1 })).toBeVisible();
   });
 
   test("shows article list or empty state", async ({ page }) => {

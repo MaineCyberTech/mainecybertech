@@ -153,6 +153,13 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   must be current) and `node scripts/verify-rls.mjs` (every table RLS-enabled,
   policy idempotency for new migrations) run in `test.yml` + `validate.yml`;
   `docs/RLS-coverage-matrix.md` notes the script as the live source.
+- `terraform-do` is now manual-dispatch only: automatic push/PR runs failed on
+  an invalid `DO_API_TOKEN` and a develop push could reach dev apply without
+  review; the `apply` input gates both apply jobs, and a stale queued
+  `terraform-apply-dev` run from 2026-06-08 was cancelled.
+- `a11y-breadth.yml` is a valid workflow again (`continue-on-error` is not
+  allowed on a reusable-workflow job); a red run now means the breadth scan
+  found violations to fix, not a parse failure.
 - Sentry tracing/release are tunable via `SENTRY_TRACES_SAMPLE_RATE` and
   `SENTRY_RELEASE` (web client: `NEXT_PUBLIC_SENTRY_*`), defaulting to the
   previous 0.2 production / 0 development behaviour.
