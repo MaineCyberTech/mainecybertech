@@ -472,4 +472,121 @@ describe("tickets routes", () => {
       expect(res.body.error?.code).toBe("NOT_FOUND");
     });
   });
+
+  describe("POST /bulk tenant scoping", () => {
+    const ORG = "00000000-0000-0000-0000-000000000001";
+    const OTHER_ORG = "00000000-0000-0000-0000-000000000002";
+    const OWNED_ID = "00000000-0000-0000-0000-0000000000a1";
+    const FOREIGN_ID = "00000000-0000-0000-0000-0000000000b2";
+
+    /*
+     * `requireAdmin`, `requireOrgAccess` and `requirePermission` are all
+     * exercised/called as in production. `requireAdmin` reads real membership
+     * rows, and the handler calls `resolveAdminTenantScope` (also membership +
+     * profile rows). The builder map lets each test serve all of those plus the
+     * ticket-ownership lookup.
+     */
+    function mockBulk(opts: {
+      isSuperAdmin?: boolean;
+      roleKey?: string;
+      memberOrgs?: string[];
+      ownedIds?: string[];
+    }) {
+      const supabase = mockAuth();
+      const builders: Record<string, ReturnType<typeof createMockBuilder>> = {};
+      supabase.from.mockImplementation((table: string) => {
+        let result: MockResult;
+        if (table === "memberships") {
+          result = {
+            data: (opts.memberOrgs ?? [ORG]).map((org) => ({
+              organization_id: org,
+              roles: { id: "role-1", key: opts.roleKey ?? "admin" },
+            })),
+            error: null,
+          };
+        } else if (table === "profiles") {
+          result = { data: { is_super_admin: opts.isSuperAdmin ?? false }, error: null };
+        } else if (table === "tickets") {
+          result = { data: (opts.ownedIds ?? []).map((id) => ({ id })), error: null };
+        } else {
+          result = { data: null, error: null };
+        }
+        const builder = createMockBuilder(result);
+        builders[table] = builder;
+        return builder;
+      });
+      supabase.rpc.mockResolvedValue({
+        data: (opts.ownedIds ?? []).map((id) => ({ id, success: true })),
+        error: null,
+      });
+      return { supabase, builders };
+    }
+
+    it("does not update another org's ticket for a single-org admin", async () => {
+      const { supabase, builders } = mockBulk({ memberOrgs: [ORG], ownedIds: [OWNED_ID] });
+
+      const res = await request(app)
+        .post("/api/v1/tickets/bulk")
+        .set("Authorization", "Bearer token-123")
+        .send({ ids: [OWNED_ID, FOREIGN_ID], status: "closed" });
+
+      expect(res.status).toBe(200);
+      // The caller's own approved org is the mandatory predicate...
+      expect(builders.tickets.in).toHaveBeenCalledWith("organization_id", [ORG]);
+      // ...and only the owned id reaches the bulk-update RPC.
+      expect(supabase.rpc).toHaveBeenCalledWith("bulk_update_with_version", {
+        table_name: "tickets",
+        updates: [{ id: OWNED_ID, data: { status: "closed" } }],
+      });
+      const rpcUpdates = (supabase.rpc.mock.calls[0][1] as { updates: { id: string }[] }).updates;
+      expect(rpcUpdates.map((u) => u.id)).not.toContain(FOREIGN_ID);
+      expect(res.body.data.successful).toBe(1);
+      expect(res.body.data.skipped).toBe(1);
+    });
+
+    it("drops every id when none belong to the caller's org", async () => {
+      const { supabase, builders } = mockBulk({ memberOrgs: [ORG], ownedIds: [] });
+
+      const res = await request(app)
+        .post("/api/v1/tickets/bulk")
+        .set("Authorization", "Bearer token-123")
+        .send({ ids: [FOREIGN_ID], status: "closed" });
+
+      expect(res.status).toBe(200);
+      expect(builders.tickets.in).toHaveBeenCalledWith("organization_id", [ORG]);
+      expect(supabase.rpc).toHaveBeenCalledWith("bulk_update_with_version", {
+        table_name: "tickets",
+        updates: [],
+      });
+      expect(res.body.data.successful).toBe(0);
+      expect(res.body.data.skipped).toBe(1);
+    });
+
+    it("lets a genuine cross-tenant admin update tickets in any org", async () => {
+      const { supabase, builders } = mockBulk({
+        isSuperAdmin: true,
+        roleKey: "super_admin",
+        memberOrgs: [ORG],
+        ownedIds: [OWNED_ID, FOREIGN_ID],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/tickets/bulk")
+        .set("Authorization", "Bearer token-123")
+        .send({ ids: [OWNED_ID, FOREIGN_ID], status: "closed" });
+
+      expect(res.status).toBe(200);
+      expect(supabase.rpc).toHaveBeenCalledWith("bulk_update_with_version", {
+        table_name: "tickets",
+        updates: [
+          { id: OWNED_ID, data: { status: "closed" } },
+          { id: FOREIGN_ID, data: { status: "closed" } },
+        ],
+      });
+      expect(res.body.data.successful).toBe(2);
+      expect(res.body.data.skipped).toBe(0);
+      // An all-tenants admin needs no per-org ownership lookup.
+      expect(builders.tickets).toBeUndefined();
+    });
+  });
 });
