@@ -137,14 +137,14 @@ export default function EmptyState({
             <button
               type="button"
               onClick={actionOnClick}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500"
             >
               {actionLabel}
             </button>
           ) : actionLabel && actionHref ? (
             <Link
               href={actionHref}
-              className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500"
+              className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500"
             >
               {actionLabel}
             </Link>

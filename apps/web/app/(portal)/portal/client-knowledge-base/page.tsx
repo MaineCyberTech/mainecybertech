@@ -97,7 +97,7 @@ export default async function PortalKnowledgeBasePage() {
                 className="w-full rounded border border-white/10 bg-transparent px-3 py-2 text-sm text-slate-400"
               />
               <SubmitButton
-                className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+                className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500"
                 pendingText="Creating…"
               >
                 Create

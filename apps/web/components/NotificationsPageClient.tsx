@@ -120,6 +120,7 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
             setPage(1);
           }}
           className="cyber-input w-auto text-xs"
+          aria-label="Filter by read status"
         >
           <option value="all">All</option>
           <option value="unread">Unread</option>
@@ -133,6 +134,7 @@ export default function NotificationsPageClient({ basePath, initialPage = 1 }: P
             setPage(1);
           }}
           className="cyber-input w-auto text-xs"
+          aria-label="Filter by module"
         >
           <option value="">All modules</option>
           <option value="tickets">Tickets</option>

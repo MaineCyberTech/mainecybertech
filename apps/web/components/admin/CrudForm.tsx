@@ -51,7 +51,7 @@ export default function CrudForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500"
+        className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500"
       >
         {title}
       </button>
@@ -138,7 +138,7 @@ export default function CrudForm({
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500 disabled:opacity-50"
+        className="w-full rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500 disabled:opacity-50"
       >
         {pending ? "Saving..." : "Save"}
       </button>

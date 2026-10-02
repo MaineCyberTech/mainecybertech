@@ -199,7 +199,7 @@ function TicketCard({
                 type="checkbox"
                 checked={selected}
                 onChange={handleCheckboxChange}
-                className="h-4 w-4 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
+                className="h-6 w-6 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
                 aria-label="Select ticket"
               />
               <p className="font-medium text-slate-50">{ticketSubject(ticket)}</p>
@@ -568,7 +568,7 @@ export default function AdminTicketCenterClient({
                     if (selectAllRef.current) selectAllRef.current.indeterminate = false;
                   }
                 }}
-                className="h-4 w-4 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
+                className="h-6 w-6 rounded border-white/20 bg-cyber-base text-emerald-500 accent-emerald-500 focus:ring-emerald-500"
               />
               Select all on page
             </label>
@@ -694,7 +694,7 @@ export default function AdminTicketCenterClient({
               <button
                 type="button"
                 onClick={() => setOpenModal(true)}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500"
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500"
               >
                 Create Ticket
               </button>
