@@ -37,6 +37,14 @@ jobs:
         # have unpatchable image-size vulns)
         run: pnpm audit --audit-level=high --prod
 
+      - name: Verify required branch-protection checks resolve
+        # Fails when a required status check in .github/branch-protection/*.json
+        # is not a check-run name any workflow actually emits. A mismatch means
+        # the check shows "Expected - Waiting for status to be reported" forever,
+        # so the PR can never satisfy branch protection (CI-P1-002 / BP-P1-001).
+        # Pure static analysis - needs no dependencies.
+        run: node scripts/check-required-checks.mjs
+
   test:
     timeout-minutes: 30
     runs-on: ubuntu-latest
