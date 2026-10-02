@@ -167,6 +167,38 @@ router.post(
         throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);
       }
 
+      // Atomically claim a slot BEFORE persisting anything.
+      //
+      // The previous form used `.update({ upload_count: data.upload_count + 1 })`,
+      // where data.upload_count came from an earlier SELECT. The +1 was computed
+      // in JS, so the write was an absolute stale value: concurrent anonymous
+      // uploads each read the same low counter and every UPDATE satisfied
+      // `upload_count < max_files`, letting the limit be exceeded without bound
+      // (reproduced against PostgreSQL: five claims all "succeeded", counter
+      // reached 1).
+      //
+      // claim_file_request_slot does the increment server-side inside one
+      // guarded statement, so it re-reads the row and returns no row when the
+      // request is full, closed, expired, or not in this org. Claiming first
+      // means a rejected upload never leaves a DB row or an object behind.
+      const { data: claimed, error: updateError } = await supabase.rpc(
+        "claim_file_request_slot",
+        // `as never`: the generated Database type declares
+        // `Functions: Record<string, never>`, so RPC args are untyped here.
+        // Same convention as routes/edu-automation.ts.
+        { p_request_id: data.id, p_organization_id: data.organization_id } as never,
+      );
+      if (updateError) {
+        await supabase.storage.from("documents").remove([storagePath]);
+        throw new AppError("DB_ERROR", updateError.message, 500);
+      }
+      if (claimed === null || claimed === undefined) {
+        // No row claimed: the request is full, closed, expired, or belongs to
+        // another org. Release the object we already uploaded and persist nothing.
+        await supabase.storage.from("documents").remove([storagePath]);
+        throw new AppError("FULL", "Upload limit reached or request no longer open", 410);
+      }
+
       // Persist the object so it can be listed/downloaded and so orphan cleanup
       // recognises it as referenced rather than deleting it as an orphan.
       const { error: rowError } = await supabase.from("file_request_uploads").insert({
@@ -179,29 +211,14 @@ router.post(
         file_size: req.file.size,
       });
       if (rowError) {
-        // Roll the object back so a failure cannot leave an untracked object.
+        // Roll both back so a failure cannot leave an untracked object or a
+        // consumed slot with no upload behind it.
         await supabase.storage.from("documents").remove([storagePath]);
+        await supabase
+          .from("file_requests")
+          .update({ upload_count: claimed - 1 })
+          .eq("id", data.id);
         throw new AppError("DB_ERROR", rowError.message, 500);
-      }
-
-      // Atomically claim a slot: only the row still under max_files increments.
-      // Without this, concurrent anonymous uploads could both pass the earlier
-      // read check and exceed the request's limit.
-      let incrementQuery = supabase
-        .from("file_requests")
-        .update({ upload_count: data.upload_count + 1 })
-        .eq("id", data.id);
-      if (data.max_files != null) {
-        incrementQuery = incrementQuery.lt("upload_count", data.max_files);
-      }
-      const { data: updated, error: updateError } = await incrementQuery.select().single();
-      if (updateError || !updated) {
-        await supabase.storage.from("documents").remove([storagePath]);
-        await supabase.from("file_request_uploads").delete().eq("storage_path", storagePath);
-        if (data.max_files != null && data.upload_count >= data.max_files) {
-          throw new AppError("FULL", "Upload limit reached", 410);
-        }
-        throw new AppError("DB_ERROR", updateError?.message ?? "Upload limit reached", 500);
       }
 
       await logAuditEvent({
@@ -225,7 +242,7 @@ router.post(
         });
       }
 
-      res.json(success({ uploaded: true, fileName: safeName, uploadCount: updated.upload_count }));
+      res.json(success({ uploaded: true, fileName: safeName, uploadCount: claimed }));
     } catch (error) {
       next(error);
     }

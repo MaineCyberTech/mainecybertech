@@ -2310,6 +2310,20 @@ const extendedRoutes: RouteDef[] = [
     tag: "FileRequests",
     params: [pathParam("id")],
   },
+  {
+    method: "get",
+    path: "/file-requests/{id}/uploads",
+    summary: "List uploads for a file request",
+    tag: "FileRequests",
+    params: [pathParam("id")],
+  },
+  {
+    method: "get",
+    path: "/file-requests/{id}/uploads/{uploadId}/signed-url",
+    summary: "Get a signed download URL for a file-request upload",
+    tag: "FileRequests",
+    params: [pathParam("id"), pathParam("uploadId")],
+  },
 
   // final - generated from apps/api/src/routes/final.ts
   {

@@ -98,11 +98,11 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 12    | 28 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319   | Admin 203, Portal 86, Public 29, `forbidden` 1                                                                                                                         |
 | Web components            | 102   | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 128   | `supabase/migrations/` (latest: 5302430 file_request_uploads)                                                                                                         |
+| SQL migrations            | 129   | `supabase/migrations/` (latest: 5302431 claim_file_request_slot)                                                                                                      |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 18    | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                           |
-| Build/dev/utility scripts | 77    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, etc.) |
+| Build/dev/utility scripts | 78    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, etc.) |
 
 ## Database Types (2026-09-21)
 

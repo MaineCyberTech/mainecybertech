@@ -371,9 +371,6 @@ router.post(
           throw new AppError("NOT_FOUND", "Document not found", 404);
         }
 
-        const previousBucket = current.storage_bucket;
-        const previousPath = current.storage_path;
-
         const nextVersion = currentVersion + 1;
 
         let updateQuery = supabase
@@ -402,14 +399,22 @@ router.post(
           uploaded_by: req.authUser!.userId,
         });
 
-        // Prior-version bytes are retained (FILE-P1-003). Delete the previous
-        // object ONLY after the new object and both DB rows are committed, so a
-        // failure can never destroy the live document's bytes. The object is
-        // still referenced by an older `document_versions` row, so orphan
-        // cleanup must (and does) reconcile against version paths.
-        if (previousBucket && previousPath && previousPath !== storagePath) {
-          await supabase.storage.from(previousBucket).remove([previousPath]);
-        }
+        // Prior-version bytes are RETAINED (FILE-P1-003).
+        //
+        // The previous object is still referenced by an older
+        // `document_versions` row, so deleting it here would leave that row
+        // pointing at bytes that no longer exist — version download would 404
+        // and the version history would be metadata-only. An earlier revision of
+        // this handler deleted `previousPath` immediately after committing the
+        // new version, which destroyed every non-current version's content.
+        //
+        // Retention is now the contract: old objects are kept for as long as a
+        // `document_versions` row references them. `orphan-cleanup` reconciles
+        // against both `documents.storage_path` and
+        // `document_versions.storage_path`, so a retained object is never
+        // treated as an orphan. Storage reclamation for genuinely superseded
+        // versions is a deliberate retention-policy decision, not something this
+        // handler should do implicitly.
 
         await logAuditEvent({
           organizationId,

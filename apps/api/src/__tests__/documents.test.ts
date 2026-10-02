@@ -412,7 +412,9 @@ describe("documents routes", () => {
         .attach("file", Buffer.from("new content"), "new.txt");
 
       expect(res.status).toBe(200);
-      expect(supabase.storage.from("documents").remove).toHaveBeenCalledWith(["old/path.pdf"]);
+      // The prior version's object must be RETAINED, not deleted: an older
+      // document_versions row still references it (FILE-P1-003).
+      expect(supabase.storage.from("documents").remove).not.toHaveBeenCalledWith(["old/path.pdf"]);
       expect(logAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({ action: "document.update" }),
       );
@@ -481,11 +483,14 @@ describe("documents routes", () => {
         .attach("file", Buffer.from("new content"), "new.txt");
 
       expect(res.status).toBe(200);
-      // The DB update must have run (and been committed) before the previous
-      // object was removed — a failure must never destroy the live document.
+      // The DB update and the version row must both run first...
       expect(updateBuilder.update).toHaveBeenCalled();
-      expect(remove).toHaveBeenCalledWith(["old/path.pdf"]);
       expect(supabase.from).toHaveBeenCalledWith("document_versions");
+      // ...and the PREVIOUS object must NOT be deleted. An older
+      // document_versions row still references it, so removing it would leave
+      // that version pointing at bytes that no longer exist (FILE-P1-003).
+      // Only the new object may be touched (and only on failure/rollback).
+      expect(remove).not.toHaveBeenCalledWith(["old/path.pdf"]);
     });
 
     it("returns 400 when organizationId missing", async () => {

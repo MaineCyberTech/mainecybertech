@@ -206,7 +206,7 @@ API routes, SDK wrappers, admin/portal pages, tests, and worker tasks per module
 | [MODULE_SPECS_GAP_AUDIT_2026-08-05.md](MODULE_SPECS_GAP_AUDIT_2026-08-05.md)                     | Module spec gap audit                                        |
 | [MT-P0-001-RLS-remediation-design.md](MT-P0-001-RLS-remediation-design.md)                       | RLS remediation design                                       |
 | [audits/README.md](audits/README.md)                                                             | Audit output contract                                        |
-| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (412 paths)                           |
+| [openapi.yaml](openapi.yaml)                                                                     | Generated OpenAPI spec (414 paths)                           |
 
 ## Marketing & SEO (`docs/seo/` — 10 files)
 

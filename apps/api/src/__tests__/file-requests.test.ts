@@ -50,11 +50,12 @@ type StorageMock = {
   createSignedUrl: jest.Mock;
 };
 
-function mockSupabase(opts: { storage?: StorageMock } = {}) {
+function mockSupabase(opts: { storage?: StorageMock; claim?: number | null } = {}) {
   const supabase: {
     from: jest.Mock;
     auth: { getUser: jest.Mock };
     storage: StorageMock;
+    rpc: jest.Mock;
   } = {
     from: jest.fn(),
     auth: {
@@ -63,6 +64,12 @@ function mockSupabase(opts: { storage?: StorageMock } = {}) {
         error: null,
       }),
     },
+    // Atomic slot claim (FILE-P1-001): returns the new upload_count, or null
+    // when the request is full/closed/expired/not-in-org.
+    rpc: jest.fn().mockResolvedValue({
+      data: opts.claim === undefined ? 1 : opts.claim,
+      error: null,
+    }),
     storage:
       opts.storage ??
       ({
@@ -170,21 +177,17 @@ describe("File Requests API", () => {
 
   describe("public upload authorization and storage scoping", () => {
     /**
-     * Serve the file_requests lookup, the increment update, and the upload-row
-     * insert so the route's multi-query flow can be asserted end to end.
+     * Serve the file_requests lookup and the upload-row insert so the route's
+     * multi-query flow can be asserted end to end. The slot claim is now an RPC
+     * (claim_file_request_slot), not an UPDATE — see FILE-P1-001.
      */
-    function mockUploadFlow(requestRow = activeRequest()) {
+    function mockUploadFlow(
+      requestRow = activeRequest(),
+      claim: number | null = (requestRow.upload_count as number) + 1,
+    ) {
       const requestBuilder = createMockBuilder({ data: requestRow, error: null } as MockResult);
       const uploadInsert = createMockBuilder({ data: { id: "upload-1" }, error: null } as MockResult);
-      const updateBuilder = createMockBuilder({
-        data: { id: requestRow.id, upload_count: (requestRow.upload_count as number) + 1 },
-        error: null,
-      } as MockResult);
       const deleteBuilder = createMockBuilder({ data: null, error: null } as MockResult);
-
-      // The token read is a SELECT; the slot claim is an UPDATE on the same
-      // table. Split them so the update resolves to the incremented row.
-      requestBuilder.update = jest.fn(() => updateBuilder);
 
       const storage: StorageMock = {
         from: jest.fn().mockReturnThis(),
@@ -193,14 +196,14 @@ describe("File Requests API", () => {
         createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: "https://signed" }, error: null }),
       };
 
-      const supabase = mockSupabase({ storage });
+      const supabase = mockSupabase({ storage, claim });
       supabase.from.mockImplementation((table: string) => {
         if (table === "file_requests") return requestBuilder;
         if (table === "file_request_uploads") return uploadInsert;
         return deleteBuilder;
       });
 
-      return { supabase, requestBuilder, uploadInsert, updateBuilder, storage };
+      return { supabase, requestBuilder, uploadInsert, storage };
     }
 
     it("accepts an anonymous token upload and writes an org-parseable path plus a DB row", async () => {
@@ -228,6 +231,48 @@ describe("File Requests API", () => {
         organization_id: orgA,
         storage_path: uploadedPath,
       });
+    });
+
+    it("enforces max_files: a full request is rejected with 410 and nothing is written (FILE-P1-001)", async () => {
+      // A request already at its limit is rejected by the pre-check, and the
+      // atomic claim is the second line of defence for the concurrent case
+      // (proved separately against real PostgreSQL).
+      const { storage, uploadInsert, supabase } = mockUploadFlow(
+        activeRequest({ upload_count: 3, max_files: 3 }),
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/file-requests/public/${tokenA}/upload`)
+        .attach("file", Buffer.from("%pdf-1.4 test"), "invoice.pdf");
+
+      expect(res.status).toBe(410);
+      // Nothing persisted: no storage object, no upload row, no slot consumed.
+      expect(storage.upload).not.toHaveBeenCalled();
+      expect(uploadInsert.insert).not.toHaveBeenCalled();
+      expect(supabase.rpc).not.toHaveBeenCalled();
+    });
+
+    it("rejects with 410 and rolls back when the atomic claim returns no slot", async () => {
+      // The concurrent case: the pre-check passed (upload_count still under the
+      // limit when read), but the atomic claim finds the slot already taken.
+      const { storage, uploadInsert, supabase } = mockUploadFlow(
+        activeRequest({ upload_count: 2, max_files: 3 }),
+        null,
+      );
+
+      const res = await request(app)
+        .post(`/api/v1/file-requests/public/${tokenA}/upload`)
+        .attach("file", Buffer.from("%pdf-1.4 test"), "invoice.pdf");
+
+      expect(res.status).toBe(410);
+      expect(supabase.rpc).toHaveBeenCalledWith("claim_file_request_slot", {
+        p_request_id: "fr-1",
+        p_organization_id: orgA,
+      });
+      // The object that was uploaded before the claim is rolled back, and no
+      // upload row is left behind.
+      expect(storage.remove).toHaveBeenCalled();
+      expect(uploadInsert.insert).not.toHaveBeenCalled();
     });
 
     it("derives the org from the token row, not from caller-supplied org headers/body (cross-org write rejection)", async () => {
