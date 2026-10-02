@@ -2,7 +2,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import { getSupabaseAdmin } from "../services/supabase";
 import { logImpersonation } from "../services/impersonation";
 import { AppError } from "../types";
-import { isPlatformAdminKey, roleKeyOf } from "../lib/roles";
+import { isCrossTenantKey, roleKeyOf } from "../lib/roles";
 
 function extractOrgId(req: Request): string | null {
   if (req.query.organization_id) return req.query.organization_id as string;
@@ -43,16 +43,17 @@ async function checkOrgAccess(
   if (allMemberships && allMemberships.length > 0) {
     const adminRole = allMemberships.find((row) => {
       const key = roleKeyOf(row.roles);
-      return isPlatformAdminKey(key);
+      return isCrossTenantKey(key);
     });
     if (adminRole) {
-      // Platform admin entering a tenant they are NOT a member of => impersonation
-      const roleKey = roleKeyOf(adminRole.roles) ?? "platform-admin";
+      // Cross-tenant role entering a tenant they are NOT a member of
+      // => impersonation (audited).
+      const roleKey = roleKeyOf(adminRole.roles) ?? "cross-tenant";
       void logImpersonation({
         actorUserId: userId,
         actorRoleKey: roleKey,
         organizationId: orgId,
-        reason: "platform_admin_cross_tenant_access",
+        reason: "cross_tenant_access",
         req: req ?? null,
       });
       return { hasAccess: true, platformAdmin: true, impersonation: true };
@@ -104,9 +105,9 @@ async function resolveDefaultOrgId(
       };
     }
 
-    // Platform admins (admin/super_admin in any org) can switch into any
+    // Cross-tenant roles (admin/super_admin in any org) can switch into any
     // tenant — honor the active org even without a membership there.
-    // This is a cross-tenant access (impersonation).
+    // This is a cross-tenant access (impersonation, audited).
     const { data: allMemberships } = await supabase
       .from("memberships")
       .select("id, roles!inner(id, key)")
@@ -116,7 +117,7 @@ async function resolveDefaultOrgId(
     if (allMemberships && allMemberships.length > 0) {
       const adminRole = allMemberships.find((row) => {
         const key = roleKeyOf(row.roles);
-        return isPlatformAdminKey(key);
+        return isCrossTenantKey(key);
       });
       if (adminRole) {
         return { orgId: activeOrgId, platformAdmin: true, impersonation: true };
@@ -137,10 +138,10 @@ async function resolveDefaultOrgId(
   }
 
   const isPlatformAdmin = memberships.some((row) => {
-    return isPlatformAdminKey(roleKeyOf(row.roles));
+    return isCrossTenantKey(roleKeyOf(row.roles));
   });
 
-  // Platform admins are org-agnostic: without an explicit org they see
+  // Cross-tenant roles are org-agnostic: without an explicit org they see
   // all tenants, so do NOT pin them to the first membership's org.
   if (isPlatformAdmin) return { orgId: null, platformAdmin: true, impersonation: false };
 

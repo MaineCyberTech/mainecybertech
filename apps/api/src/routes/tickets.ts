@@ -165,7 +165,7 @@ router.post("/", requirePermission("tickets", "create"), async (req, res, next) 
       .select("user_id, roles!inner(key)")
       .eq("organization_id", parsed.organizationId)
       .eq("status", "approved")
-      .in("roles.key", PLATFORM_ADMIN_KEYS);
+      .in("roles.key", PLATFORM_ADMIN_KEYS as unknown as string[]);
 
     if (adminMembers?.length) {
       const adminIds = adminMembers
@@ -420,7 +420,6 @@ router.patch(
 
         const isOrgAdmin =
           memberships?.some((row) => isPlatformAdminKey(roleKeyOf(row.roles))) ?? false;
-
         if (!isOrgAdmin) {
           throw new AppError("FORBIDDEN", "Only the comment author can edit this comment", 403);
         }

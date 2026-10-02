@@ -9,7 +9,7 @@ import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
-import { isPlatformAdminKey, roleKeyOf } from "../lib/roles";
+import { isCrossTenantKey, roleKeyOf } from "../lib/roles";
 import {
   createOrganizationSchema,
   updateOrganizationSchema,
@@ -163,7 +163,9 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
 
     // Platform admins (super_admin profile OR admin/super_admin role in any
     // approved membership) see every tenant. Client-scoped users see only
-    // their approved member orgs.
+    // their approved member orgs. Only cross-tenant roles (admin/super_admin)
+    // get the cross-tenant view — MSP staff roles like finance/dispatcher do
+    // not (audit SEC-P2-002 / CHAIN-P1-001).
     let isPlatformAdmin = !!profile?.is_super_admin;
 
     if (!isPlatformAdmin) {
@@ -174,7 +176,7 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
         .eq("status", "approved");
 
       isPlatformAdmin = (memberRoles ?? []).some((m: any) =>
-        isPlatformAdminKey(roleKeyOf(m.roles)),
+        isCrossTenantKey(roleKeyOf(m.roles)),
       );
     }
 

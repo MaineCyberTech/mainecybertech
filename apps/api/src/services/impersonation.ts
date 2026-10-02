@@ -4,12 +4,12 @@ import type { Request } from "express";
 import { toJson } from "../lib/db-types";
 
 /**
- * Log platform-admin cross-tenant access (impersonation).
+ * Log cross-tenant access (impersonation).
  *
- * Platform admin roles can operate across ALL tenants (see PLATFORM_ADMIN_KEYS
- * in roles.ts). Whenever such a user acts inside an organization they are NOT a
- * member of, we record it in impersonation_log so cross-tenant activity is
- * auditable (P0-7).
+ * Cross-tenant roles (admin/super_admin) can operate across ALL tenants (see
+ * CROSS_TENANT_KEYS in roles.ts). Whenever such a user acts inside an
+ * organization they are NOT a member of, we record it in impersonation_log so
+ * cross-tenant activity is auditable (P0-7).
  *
  * Fire-and-forget: a logging failure must never block or fail the request.
  */
