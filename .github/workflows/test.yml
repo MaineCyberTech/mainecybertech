@@ -80,6 +80,9 @@ jobs:
       - name: Verify RLS/migration hygiene
         run: node scripts/verify-rls.mjs
 
+      - name: Verify review.md mirror is in sync
+        run: node scripts/sync-review-md.mjs --check
+
   # Dependency audit — hard gate, no continue-on-error
   security-scan:
     timeout-minutes: 15
