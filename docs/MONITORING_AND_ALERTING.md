@@ -149,6 +149,12 @@ The `MCTHighRequestErrorRate` alert in `prometheus.rules.yml` queries `portal_ht
 
 The compose `prometheus` service scrapes the API on the internal network; no public exposure.
 
+### Alert delivery
+
+Firing alerts are forwarded to an **Alertmanager** service (`infra/digitalocean/alertmanager.yml`)
+on the same internal network — see §9. Without a receiver, alerts are visible only in the
+internal Prometheus UI; §9 is what makes the `Watchdog` rule an actual off-box dead-man's switch.
+
 ---
 
 ## 5. Sentry Error Tracking
@@ -204,6 +210,7 @@ The workflow includes a `rollback-on-failure` step that reverts to the previous 
 | Droplet CPU > 80%            | Warning  | DO monitoring            | Check for memory leak, scale  |
 | Droplet disk > 85%           | Warning  | DO monitoring            | Prune Docker images, logs     |
 | Supabase connection pool     | Warning  | Supabase dashboard       | Check for connection leaks    |
+| `Watchdog` (always firing)   | None     | Alertmanager → off-box dead-man's switch (§9) | Alert path itself died → external service pages |
 
 ### Notification channels
 
@@ -213,6 +220,7 @@ The workflow includes a `rollback-on-failure` step that reverts to the previous 
 | **Email (Sentry)**       | Critical error spikes                   |
 | **DO Monitoring**        | Droplet-level CPU, disk, memory         |
 | **Teams webhooks**       | Contact form leads (marketing, not ops) |
+| **Alertmanager → external receiver** | `Watchdog` dead-man's switch + `critical` Prometheus alerts (see §9) |
 
 ### No dedicated pager/on-call
 
@@ -220,7 +228,11 @@ This is a single-droplet deployment. Alerts are best-effort. The main alert path
 
 1. Sentry captures error → email notification
 2. Deploy fails → GitHub notification
-3. Operator SSHes in and follows incident response
+3. Prometheus alert fires → Alertmanager → external receiver (§9)
+4. Operator SSHes in and follows incident response
+
+The **off-box dead-man's switch in §9 is the exception to "best-effort"**: it is the only
+path that survives the total loss of this droplet, because the receiver lives outside it.
 
 ---
 
@@ -238,7 +250,7 @@ This is a single-droplet deployment. Alerts are best-effort. The main alert path
 
 6. Check Sentry for recent errors: `https://sentry.io/organizations/mainecybertech/`
 7. Check disk space: `df -h` (prune with `docker image prune -a` if >85%)
-8. Check memory: `docker stats` (limits: api 256m, worker 256m, web 256m, redis 48m, caddy 64m)
+8. Check memory: `docker stats` (limits: api 256m, worker 256m, web 256m, redis 48m, caddy 64m, prometheus 256m, alertmanager 128m)
 9. Check Docker health status: `docker inspect --format='{{json .State.Health}}' <container>`
 
 ### Resolution
@@ -256,13 +268,102 @@ This is a single-droplet deployment. Alerts are best-effort. The main alert path
 
 ---
 
+## 9. Alert Delivery & the Off-Box Dead-Man's Switch (IR-P0-003)
+
+This section documents the alert path that survives the failure of the monitoring stack
+itself. It closes audit finding **IR-P0-003** ("total loss of the monitoring/alerting path
+has no independent dead-man's-switch receiver").
+
+### Components
+
+| Component | Where | Purpose |
+| --------- | ----- | ------- |
+| `prometheus` (`prometheus.yml`) | compose, internal only | Evaluates `prometheus.rules.yml`; forwards firing alerts via `alerting: alertmanagers:` → `alertmanager:9093` |
+| `alertmanager` (`alertmanager.yml`) | compose, internal only (port 9093, **not published**) | Routes alerts to receivers using an env-substituted config |
+| External receiver | **off the droplet** | Generic webhook / Slack / pager for real alerts |
+| Off-box dead-man's switch | **off the droplet** | A ping/heartbeat URL (healthchecks.io-style) that alerts *you* when the pings stop |
+
+### How an alert leaves the box
+
+1. Prometheus evaluates the rules every 15s (`evaluation_interval`).
+2. A firing alert (e.g. `MCTServiceDown`) is pushed to Alertmanager over the internal
+   compose network (`http://alertmanager:9093`).
+3. Alertmanager's routing tree decides the receiver:
+   - `severity="critical"` → the **critical** receiver (external webhook / Slack), `repeat_interval: 1h`.
+   - `alertname="Watchdog"` → the **watchdog** receiver (the dead-man's switch), `repeat_interval: 5m`.
+   - everything else → the **default** receiver.
+4. The receiver calls an external URL over the droplet's egress. No inbound port is opened
+   on the droplet — Alertmanager is reachable only inside the compose network.
+
+### How the dead-man's switch works
+
+The `Watchdog` rule is `expr: vector(1)` — it is *always* firing. That is deliberate.
+Prometheus therefore pushes a Watchdog alert to Alertmanager continuously, and
+Alertmanager pings the external `watchdog` receiver URL every 5 minutes. The external
+service (e.g. Healthchecks/Deadman) is configured with a grace period; as long as a ping
+arrives, it stays quiet. **If the pings stop, the external service pages you** — from a
+system that does not share the droplet.
+
+This inverts the failure mode of ordinary alerting: instead of "an alert failed to arrive"
+being silent, "no heartbeat arrived" is itself the alarm.
+
+### What happens when the whole stack dies
+
+| Failure | What still works | What you get |
+| ------- | ---------------- | ------------ |
+| API or Worker container crashes | Prometheus + Alertmanager | `MCTServiceDown` → critical receiver within ~2m |
+| Prometheus crashes | Alertmanager still runs but has no input | Watchdog pings stop → **external service pages** after the grace period |
+| Alertmanager crashes | Prometheus still runs | Watchdog pings stop → **external service pages** after the grace period |
+| Entire droplet / power / network egress is down | Nothing on the box | Watchdog pings stop → **external service pages** after the grace period |
+| Sentry DSN unset | Prometheus path unaffected | Watchdog + rule-based alerts still deliver |
+
+The dead-man's switch is the only channel that does not depend on anything inside the
+droplet. It should be tested by stopping `alertmanager` (or `prometheus`) and confirming
+the external service reports the missed heartbeat within its grace period.
+
+### Required environment variables
+
+Set these in the droplet `.env` (and as GitHub environment secrets so redeploys preserve
+them). **Names only — never commit the values.**
+
+| Variable | Required? | What it is |
+| -------- | --------- | ---------- |
+| `ALERTMANAGER_WATCHDOG_WEBHOOK_URL` | **Yes** | **The dead-man's switch.** An external ping/heartbeat URL (healthchecks.io-style) or an external webhook, **not hosted on this droplet**. |
+| `ALERTMANAGER_CRITICAL_WEBHOOK_URL` | Yes (for real alerts) | External inbound webhook for critical alerts (Slack/Teams/PagerDuty/Opsgenie/generic relay). |
+| `ALERTMANAGER_DEFAULT_WEBHOOK_URL` | Optional | Catch-all receiver for non-critical alerts. |
+| `ALERTMANAGER_SLACK_API_URL` | Optional | Slack incoming-webhook URL used by the default/critical receivers. |
+| `ALERTMANAGER_SLACK_CHANNEL` | Optional | Slack channel name (e.g. `#alerts`). Non-secret. |
+
+If a variable is unset, compose substitutes a no-op localhost URL so the stack still
+starts — but **the dead-man's switch is only real when `ALERTMANAGER_WATCHDOG_WEBHOOK_URL`
+points at an external service.** Verify it with:
+
+```bash
+# Alertmanager itself is healthy?
+docker compose exec alertmanager wget -qO- http://localhost:9093/-/healthy
+
+# Is the Watchdog route firing?
+docker compose exec alertmanager wget -qO- http://localhost:9093/api/v2/alerts | grep Watchdog
+
+# Stop Alertmanager and confirm the EXTERNAL service reports the missed heartbeat.
+docker compose stop alertmanager
+```
+
+---
+
 ## Quick Reference
 
 ```bash
 # Logs
 docker compose logs -f api
 docker compose logs -f worker
+docker compose logs -f prometheus
+docker compose logs -f alertmanager
 docker compose logs --tail=200
+
+# Alerting path (IR-P0-003)
+docker compose exec alertmanager wget -qO- http://localhost:9093/-/healthy   # Alertmanager
+docker compose exec alertmanager wget -qO- http://localhost:9093/api/v2/alerts # firing alerts
 
 # Health
 curl http://localhost:4000/health        # API
