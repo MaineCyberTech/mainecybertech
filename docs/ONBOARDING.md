@@ -16,7 +16,8 @@ pnpm install
 # Start Supabase locally (requires Docker)
 supabase start
 
-# Sync env vars
+# Sync env vars for each app (the root script writes the repo root .env.local;
+# use scripts/start-local-stack.ps1 to write apps/*/.env.local in one step)
 pnpm supabase:env:sync
 
 # Terminals (run each):
@@ -47,11 +48,11 @@ mainecybertech-portal/
 │   └── terraform/
 │       └── digitalocean/  IaC (droplet, firewall, DNS)
 ├── supabase/
-│   ├── migrations/    125 SQL migration files
+│   ├── migrations/    127 SQL migration files
 │   └── seeds/         9 seed files
 ├── docs/              300+ documentation files
 ├── scripts/           PowerShell + bash utilities
-└── .github/           CI/CD workflows (14 total)
+└── .github/           CI/CD workflows (16 total)
 ```
 
 ### Key Design Principles
@@ -245,9 +246,8 @@ Key helper functions (defined in migration `5302026`):
 ### Deploy Pipeline
 
 1. Push to `develop` → GitHub Actions builds 3 images → pushes to GHCR
-2. SSH into droplet → `docker save | gzip | ssh | gunzip | docker load` (fast image transfer)
-3. `docker compose up -d` with new images
-4. Old images cleaned up post-deploy
+2. SSH into droplet → `docker compose pull` (images come from GHCR) + `docker compose up -d`
+3. New containers start; old images are pruned only after the health gate passes
 
 ### Key Files
 
@@ -295,15 +295,15 @@ Key helper functions (defined in migration `5302026`):
 
 ## 8. Key Documentation
 
-| Document                                       | What it covers                                                                       |
-| ---------------------------------------------- | ------------------------------------------------------------------------------------ |
-| `AGENTS.md`                                    | Full architecture, test patterns, critical context                                   |
-| `docs/API_ENDPOINT_INVENTORY.md`               | API endpoint inventory (see `docs/openapi.yaml` for the authoritative 317-path spec) |
-| `docs/ENVIRONMENT_VARIABLES.md`                | All env vars across all services                                                     |
-| `docs/MEGA_AUDIT_2026-06-18.md`                | Comprehensive architecture & security audit                                          |
-| `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Operator manual                                                                      |
-| `docs/CODE_REVIEW_2026-06-16.md`               | 30 architecture recommendations                                                      |
-| `README.dev.md`                                | Developer setup guide                                                                |
+| Document                                       | What it covers                                                                              |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `AGENTS.md`                                    | Full architecture, test patterns, critical context                                          |
+| `docs/API_ENDPOINT_INVENTORY.md`               | Historical endpoint inventory (see `docs/openapi.yaml` for the authoritative 412-path spec) |
+| `docs/ENVIRONMENT_VARIABLES.md`                | All env vars across all services                                                            |
+| `docs/MEGA_AUDIT_2026-06-18.md`                | Comprehensive architecture & security audit                                                 |
+| `docs/FINAL_DEPLOYMENT_OPERATIONS_HANDBOOK.md` | Operator manual                                                                             |
+| `docs/CODE_REVIEW_2026-06-16.md`               | 30 architecture recommendations                                                             |
+| `README.dev.md`                                | Developer setup guide                                                                       |
 
 ---
 
