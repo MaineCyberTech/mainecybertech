@@ -50,7 +50,7 @@ export default function RouteGuard({
         <div className="mt-6">
           <Link
             href={homeHref}
-            className="inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+            className="inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-[#0A1118] transition hover:bg-emerald-500"
           >
             Back to Home
           </Link>

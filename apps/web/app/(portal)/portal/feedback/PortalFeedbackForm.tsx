@@ -83,7 +83,7 @@ export default function PortalFeedbackForm({ organizationId }: { organizationId:
           type="button"
           disabled={isPending}
           onClick={submit}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500 disabled:opacity-50"
         >
           {isPending ? "Submitting…" : "Submit feedback"}
         </button>

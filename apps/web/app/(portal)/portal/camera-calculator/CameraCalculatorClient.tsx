@@ -130,7 +130,7 @@ export default function CameraCalculatorClient({ organizationId, initialItems }:
           <button
             type="button"
             onClick={calculate}
-            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500"
           >
             Calculate
           </button>

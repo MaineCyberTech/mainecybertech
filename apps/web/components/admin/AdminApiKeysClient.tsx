@@ -106,7 +106,7 @@ export default function AdminApiKeysClient({
               setCopied(true);
               window.setTimeout(() => setCopied(false), 2000);
             }}
-            className="mt-2 rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-500"
+            className="mt-2 rounded bg-emerald-600 px-3 py-1 text-xs font-medium text-[#0A1118] hover:bg-emerald-500"
           >
             {copied ? "Copied!" : "Copy to clipboard"}
           </button>

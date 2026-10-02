@@ -174,7 +174,7 @@ export default function ImportExportClient({
             onClick={() =>
               download("products.json", JSON.stringify(products, null, 2), "application/json")
             }
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500"
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500"
           >
             Download products.json
           </button>

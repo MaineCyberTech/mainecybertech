@@ -23,14 +23,11 @@ export default function KnowledgeBaseError({
         <button
           type="button"
           onClick={reset}
-          className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500"
+          className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500"
         >
           Try again
         </button>
-        <Link
-          href="/portal/dashboard"
-          className="text-sm text-emerald-500 hover:text-emerald-400"
-        >
+        <Link href="/portal/dashboard" className="text-sm text-emerald-500 hover:text-emerald-400">
           &larr; Dashboard
         </Link>
       </div>

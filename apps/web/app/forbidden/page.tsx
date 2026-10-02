@@ -24,7 +24,7 @@ export default function ForbiddenPage() {
         <div className="mt-6 flex justify-center gap-3">
           <Link
             href="/portal/dashboard"
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
+            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-[#0A1118] transition hover:bg-emerald-500"
           >
             Go to Dashboard
           </Link>

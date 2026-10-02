@@ -40,7 +40,7 @@ export default function AdminError({
       <div className="mt-6 flex justify-center gap-3">
         <button
           onClick={reset}
-          className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-emerald-500"
+          className="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-[#0A1118] transition hover:bg-emerald-500"
         >
           Try again
         </button>

@@ -91,7 +91,7 @@ export default function PortalTriageClient({ organizationId }: { organizationId:
           type="button"
           disabled={loading !== null || description.trim().length < 10}
           onClick={analyze}
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500 disabled:opacity-50"
         >
           {loading === "analyze" ? "Analyzing…" : "Analyze"}
         </button>
@@ -135,7 +135,7 @@ export default function PortalTriageClient({ organizationId }: { organizationId:
             type="button"
             disabled={loading !== null}
             onClick={createTicket}
-            className="mt-3 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+            className="mt-3 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-[#0A1118] hover:bg-emerald-500 disabled:opacity-50"
           >
             {loading === "convert" ? "Creating…" : "Create ticket"}
           </button>

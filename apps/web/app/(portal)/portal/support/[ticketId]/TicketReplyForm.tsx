@@ -42,7 +42,7 @@ export default function TicketReplyForm({ ticketId }: { ticketId: string }) {
       <button
         type="submit"
         disabled={pending || body.trim().length === 0}
-        className="mt-3 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-white transition hover:bg-emerald-500 disabled:opacity-50"
+        className="mt-3 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#0A1118] transition hover:bg-emerald-500 disabled:opacity-50"
       >
         {pending ? "Posting..." : "Post Reply"}
       </button>
