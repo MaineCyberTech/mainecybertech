@@ -37,7 +37,9 @@ const envSchema = z.object({
   REDIS_PASSWORD: z.string().optional(),
   JIRA_WEBHOOK_SECRET: z.string().optional(),
   JSM_WEBHOOK_SECRET: z.string().optional(),
-  M365_WEBHOOK_SECRET: z.string().optional(),
+  // Shared clientState validated on inbound M365 change notifications. This is
+  // the only M365 webhook credential (Graph does not HMAC-sign payloads); see
+  // routes/webhooks.ts. There is intentionally no M365_WEBHOOK_SECRET.
   M365_CLIENT_STATE: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
   // Shared bearer token gating GET /metrics. When set, the endpoint 404s

@@ -2,12 +2,30 @@ import crypto from "crypto";
 import { getSupabaseAdmin } from "../services/supabase";
 import { enqueueTask } from "./task-producer";
 import { logger } from "./logger";
-import { checkIdempotencyKey, storeIdempotencyKey } from "./idempotency";
+import { claimIdempotencyKey, deleteIdempotencyKey } from "./idempotency";
 import { assertSafeWebhookUrl } from "./ssrf-guard";
 
 const MAX_ATTEMPTS = 3;
 const RETRY_BASE_MS = 200;
 const RETRY_FACTOR = 2;
+
+/**
+ * Stable idempotency key for one logical outbound event. Derived from the
+ * event identity (not the timestamped envelope) so a replayed or concurrently
+ * dispatched event maps to the same key across the API and worker layers.
+ */
+export function buildOutboundIdempotencyKey(
+  event: string,
+  organizationId: string,
+  data: Record<string, unknown>,
+): string {
+  const digest = crypto
+    .createHash("sha256")
+    .update(JSON.stringify({ event, organizationId, data }))
+    .digest("hex")
+    .slice(0, 32);
+  return `wh-out-${organizationId}-${event}-${digest}`;
+}
 
 type DeliveryResult = {
   status: number;
@@ -106,13 +124,18 @@ export async function dispatchWebhook(
   data: Record<string, unknown>,
 ): Promise<void> {
   try {
+    const idempotencyBaseKey = buildOutboundIdempotencyKey(event, organizationId, data);
+
     // Route delivery through the worker queue when available (async delivery,
     // retries + DLQ via webhook-retry). Fall back to inline dispatch so
-    // webhooks are never lost when the queue is unavailable.
+    // webhooks are never lost when the queue is unavailable. The same
+    // idempotency key is carried across the queue so both layers dedupe
+    // against each other.
     const enqueued = await enqueueTask("webhook-dispatcher", {
       event,
       organizationId,
       data,
+      idempotencyKey: idempotencyBaseKey,
     });
     if (enqueued) return;
 
@@ -136,9 +159,12 @@ export async function dispatchWebhook(
       secret: string | null;
       events: string[];
     }>) {
-      const idempotencyKey = `wh-out-${endpoint.id}-${event}-${crypto.createHash("sha256").update(body).digest("hex").slice(0, 16)}`;
-      const existing = await checkIdempotencyKey(idempotencyKey);
-      if (existing) continue;
+      // Per-endpoint key: every matching endpoint must receive its own
+      // delivery, but concurrent dispatches of the same logical event to the
+      // same endpoint must collapse to one. Atomic claim, not read-then-write.
+      const idempotencyKey = `${idempotencyBaseKey}:${endpoint.id}`;
+      const claimed = await claimIdempotencyKey(idempotencyKey, "processing");
+      if (!claimed) continue;
 
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -181,6 +207,10 @@ export async function dispatchWebhook(
 
       const failed = Boolean(error) || responseStatus >= 400;
       if (failed) {
+        // Release the claim on failure so the worker retry task (or a later
+        // dispatch) can reprocess this event. On success the claim is left in
+        // place as the durable dedup marker.
+        await deleteIdempotencyKey(idempotencyKey);
         await enqueueDeadLetter(
           supabase,
           endpoint.id,
@@ -188,10 +218,6 @@ export async function dispatchWebhook(
           error || `HTTP ${responseStatus}`,
           MAX_ATTEMPTS,
         );
-      }
-
-      if (responseStatus >= 200 && responseStatus < 300) {
-        await storeIdempotencyKey(idempotencyKey, "done");
       }
 
       if (error || responseStatus >= 400) {

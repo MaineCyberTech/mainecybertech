@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { logger } from "../logger";
 import { getSupabaseAdmin } from "../services/supabase";
 import { assertSafeUrl } from "../lib/ssrf-guard";
+import { claimIdempotencyKey, deleteIdempotencyKey } from "../lib/idempotency";
 import type { TaskHandler, TaskResult } from "../task-registry";
 import type { Json } from "@mct/sdk/database.types";
 
@@ -9,10 +10,32 @@ type DispatchPayload = {
   event: string;
   organizationId: string;
   data: Record<string, Json>;
+  idempotencyKey?: string;
 };
+
+/**
+ * Stable idempotency key for one logical outbound event. Mirrors the API's
+ * buildOutboundIdempotencyKey so a job enqueued without an explicit key (or a
+ * duplicate played straight into the worker) dedupes identically.
+ */
+function buildIdempotencyKey(
+  event: string,
+  organizationId: string,
+  data: Record<string, Json>,
+): string {
+  const digest = crypto
+    .createHash("sha256")
+    .update(JSON.stringify({ event, organizationId, data }))
+    .digest("hex")
+    .slice(0, 32);
+  return `wh-out-${organizationId}-${event}-${digest}`;
+}
 
 export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResult> => {
   const { event, organizationId, data } = payload as DispatchPayload;
+  const idempotencyBaseKey =
+    (payload as DispatchPayload).idempotencyKey ??
+    (event && organizationId ? buildIdempotencyKey(event, organizationId, data ?? {}) : undefined);
 
   if (!event || !organizationId) {
     return { ok: false, error: "event and organizationId are required" };
@@ -48,10 +71,31 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
       secret: string | null;
       events: string[];
     }>) {
+      // Per-endpoint atomic claim: the same logical event fanned out to
+      // multiple endpoints each still gets delivered, but a duplicate job for
+      // the same event+endpoint collapses to a single side effect even under
+      // concurrency.
+      const idempotencyKey = idempotencyBaseKey
+        ? `${idempotencyBaseKey}:${endpoint.id}`
+        : undefined;
+      if (idempotencyKey) {
+        const claimed = await claimIdempotencyKey(idempotencyKey, "processing");
+        if (!claimed) {
+          logger.info(
+            { event, endpointId: endpoint.id },
+            "webhook-dispatcher: duplicate event already claimed, skipping",
+          );
+          continue;
+        }
+      }
+
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "X-Webhook-Event": event,
       };
+      if (idempotencyKey) {
+        headers["Idempotency-Key"] = idempotencyKey;
+      }
 
       if (endpoint.secret) {
         const hmac = crypto.createHmac("sha256", endpoint.secret).update(body).digest("hex");
@@ -73,6 +117,9 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
           // the dead-letter set so the retry task ignores it.
           retry_count: 0,
           dead_letter: true,
+          // Keep the claim: a permanently blocked URL should not be
+          // re-processed if the same job is delivered twice.
+          ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
         });
         await supabase
           .from("webhook_endpoints")
@@ -124,10 +171,17 @@ export const webhookDispatcher: TaskHandler = async (payload): Promise<TaskResul
         // value here failed deliveries are never retried or dead-lettered.
         retry_count: 0,
         next_retry_at: failed ? new Date(Date.now() + 5 * 60 * 1000).toISOString() : null,
+        ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
       });
 
       if (error || responseStatus >= 400) {
         failCount++;
+        // Release the claim on transient failure so the webhook-retry task
+        // can re-attempt the same logical event. On success the claim stays
+        // as the durable dedup marker.
+        if (idempotencyKey) {
+          await deleteIdempotencyKey(idempotencyKey);
+        }
         await supabase
           .from("webhook_endpoints")
           .update({
