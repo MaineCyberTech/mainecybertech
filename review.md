@@ -42,12 +42,12 @@ Browser → loginAction() → API POST /api/v1/auth/sign-in (Supabase PKCE)
 
 ## Test Status (2026-09-27 Verified)
 
-**3,480 tests, all passing. 396 suites.**
+**3,490 tests, all passing. 397 suites.**
 
 | Package | Tests         | Suites | Framework                         |
 | ------- | ------------- | ------ | --------------------------------- |
-| API     | 1,256         | 114    | Jest + supertest                  |
-| Web     | 1,824         | 270    | Jest + Testing Library            |
+| API     | 1,258         | 114    | Jest + supertest                  |
+| Web     | 1,832         | 271    | Jest + Testing Library            |
 | SDK     | 296           | 3      | Jest (mocked fetch)               |
 | Worker  | 104           | 9      | Jest (env schema + task handlers) |
 | E2E     | 90 spec files | —      | Playwright (chromium + axe-core)  |
