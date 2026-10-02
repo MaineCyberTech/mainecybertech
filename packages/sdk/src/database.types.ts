@@ -2053,6 +2053,7 @@ export type Database = {
           metadata: Json;
           notify_on_upload: boolean | null;
           organization_id: string;
+          slot_tokens: Json;
           status: string;
           storage_path: string;
           title: string;
@@ -2077,6 +2078,7 @@ export type Database = {
           max_files?: number | null;
           metadata?: Json | null;
           notify_on_upload?: boolean | null;
+          slot_tokens?: Json | null;
           status?: string | null;
           updated_at?: string | null;
           upload_count?: number | null;
@@ -2095,6 +2097,7 @@ export type Database = {
           metadata?: Json | null;
           notify_on_upload?: boolean | null;
           organization_id?: string | null;
+          slot_tokens?: Json | null;
           status?: string | null;
           storage_path?: string | null;
           title?: string | null;

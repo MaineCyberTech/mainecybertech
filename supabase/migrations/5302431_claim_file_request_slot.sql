@@ -13,26 +13,51 @@
 -- the limit, so the row is re-read under the statement's own snapshot and the
 -- claim either succeeds exactly once per available slot or returns no row.
 --
--- Returns the new upload_count on success. Returns no row when the request does
--- not exist, belongs to another organization, is not open, is past expiry, or
--- is already at max_files -- the caller maps "no row" to 410/404 as appropriate.
+-- `slot_tokens` backs single-use release: a claim records an opaque token, and
+-- release consumes it, so a repeated release for the same failed upload is a
+-- no-op rather than a second decrement.
+alter table public.file_requests
+  add column if not exists slot_tokens jsonb not null default '{}'::jsonb;
+
+-- Returns the new upload_count on success, plus a single-use slot token the
+-- caller must present to release_file_request_slot if the upload fails. Returns
+-- no row when the request does not exist, belongs to another organization, is
+-- not open, is past expiry, or is already at max_files -- the caller maps
+-- "no row" to 410/404 as appropriate.
 create or replace function public.claim_file_request_slot(
   p_request_id uuid,
   p_organization_id uuid
 )
-returns integer
-language sql
+returns table (upload_count integer, slot_token uuid)
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_token uuid := gen_random_uuid();
+  v_count integer;
+begin
   update public.file_requests fr
-     set upload_count = fr.upload_count + 1
+     set upload_count = fr.upload_count + 1,
+         slot_tokens = coalesce(fr.slot_tokens, '{}'::jsonb)
+                       -- `true` (boolean), NOT 'true' (text). jsonb_build_object
+                       -- with a text literal stores a jsonb STRING, which never
+                       -- equals the boolean 'true'::jsonb - the release predicate
+                       -- silently failed to match as a result.
+                       || jsonb_build_object(v_token::text, true)
    where fr.id = p_request_id
      and fr.organization_id = p_organization_id
      and fr.status = 'active'
      and (fr.expires_at is null or fr.expires_at > now())
      and (fr.max_files is null or fr.upload_count < fr.max_files)
-  returning fr.upload_count;
+  returning fr.upload_count into v_count;
+
+  if v_count is null then
+    return;  -- no row: full / closed / expired / wrong org
+  end if;
+
+  return query select v_count, v_token;
+end;
 $$;
 
 comment on function public.claim_file_request_slot(uuid, uuid) is
@@ -40,31 +65,65 @@ comment on function public.claim_file_request_slot(uuid, uuid) is
 
 -- Release a previously claimed slot when the upload subsequently fails.
 --
--- Must be a RELATIVE decrement guarded by upload_count > 0. An absolute write of
--- `claimed - 1` (the first fix attempt) is itself racy: `claimed` is stale by
--- the time the insert fails, so concurrent uploads get under-counted and
--- max_files can be exceeded. Reproduced against PostgreSQL 16: two claims
--- (1, 2) then an absolute rollback to 0 let three more uploads succeed - five
--- accepted with a limit of three.
-create or replace function public.release_file_request_slot(p_request_id uuid)
+-- Two properties this must have, both learned from review:
+--
+-- 1. RELATIVE, not absolute. (An earlier attempt wrote `claimed - 1`, which is
+--    stale under concurrency; reproduced: 5 accepted uploads against a limit of
+--    3.) Guarded by upload_count > 0 so it cannot go negative.
+--
+-- 2. NOT DOUBLE-RELEASABLE. A bare decrement can be called twice for one failed
+--    claim, walking the counter down and re-opening headroom (reproduced:
+--    2 -> 1 -> 0 while one real upload existed). The claim therefore returns an
+--    opaque `slot_token` which must be presented to release; each token can be
+--    consumed exactly once. This makes release idempotent by construction rather
+--    than by caller discipline, and mirrors the claim's organization guard.
+--
+-- Returns the new upload_count, or no row when the request id/org do not match,
+-- the token is unknown, or the token was already released.
+create or replace function public.release_file_request_slot(
+  p_request_id uuid,
+  p_organization_id uuid,
+  p_slot_token uuid
+)
 returns integer
-language sql
+language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_count integer;
+begin
   update public.file_requests fr
      set upload_count = fr.upload_count - 1
    where fr.id = p_request_id
+     and fr.organization_id = p_organization_id
      and fr.upload_count > 0
-  returning fr.upload_count;
+     and (fr.slot_tokens ? p_slot_token::text)
+     -- Parentheses are REQUIRED: `->` binds LOWER than `=`, so the
+     -- unparenthesised form parses as `slot_tokens -> (token = 'true')`, which
+     -- evaluates to a non-boolean jsonb and never matches - a silent no-op that
+     -- looks like "token already consumed". Verified against PostgreSQL 16.
+     and ((fr.slot_tokens -> p_slot_token::text) = 'true'::jsonb)
+  returning fr.upload_count into v_count;
+
+  if v_count is null then
+    return null;
+  end if;
+
+  -- Consume the token: mark it released so a second call is a no-op.
+  update public.file_requests fr
+     set slot_tokens = jsonb_set(fr.slot_tokens, array[p_slot_token::text], 'false'::jsonb)
+   where fr.id = p_request_id;
+  return v_count;
+end;
 $$;
 
-comment on function public.release_file_request_slot(uuid) is
-  'Release a claimed file-request upload slot after a downstream failure. Relative, guarded decrement so concurrent claims are not under-counted (audit FILE-P1-001).';
+comment on function public.release_file_request_slot(uuid, uuid, uuid) is
+  'Release a claimed file-request upload slot after a downstream failure. Relative, non-negative, org-guarded and single-use via slot_token so a repeated release cannot under-count (audit FILE-P1-001).';
 
 -- Service-role only: the API calls these with the admin client. No anon or
 -- authenticated grant, so the anon-key + JWT path cannot claim or release slots.
 revoke all on function public.claim_file_request_slot(uuid, uuid) from public, anon, authenticated;
 grant execute on function public.claim_file_request_slot(uuid, uuid) to service_role;
-revoke all on function public.release_file_request_slot(uuid) from public, anon, authenticated;
-grant execute on function public.release_file_request_slot(uuid) to service_role;
+revoke all on function public.release_file_request_slot(uuid, uuid, uuid) from public, anon, authenticated;
+grant execute on function public.release_file_request_slot(uuid, uuid, uuid) to service_role;

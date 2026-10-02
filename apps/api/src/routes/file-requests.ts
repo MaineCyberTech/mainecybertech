@@ -181,7 +181,7 @@ router.post(
       // guarded statement, so it re-reads the row and returns no row when the
       // request is full, closed, expired, or not in this org. Claiming first
       // means a rejected upload never leaves a DB row or an object behind.
-      const { data: claimed, error: updateError } = await supabase.rpc(
+      const { data: claimRows, error: updateError } = await supabase.rpc(
         "claim_file_request_slot",
         // `as never`: the generated Database type declares
         // `Functions: Record<string, never>`, so RPC args are untyped here.
@@ -192,12 +192,18 @@ router.post(
         await supabase.storage.from("documents").remove([storagePath]);
         throw new AppError("DB_ERROR", updateError.message, 500);
       }
-      if (claimed === null || claimed === undefined) {
-        // No row claimed: the request is full, closed, expired, or belongs to
-        // another org. Release the object we already uploaded and persist nothing.
+      // Returns at most one row: { upload_count, slot_token }. No row means the
+      // request is full, closed, expired, or belongs to another org.
+      const claimRow = Array.isArray(claimRows)
+        ? (claimRows[0] as { upload_count: number; slot_token: string } | undefined)
+        : (claimRows as { upload_count: number; slot_token: string } | null);
+      if (!claimRow || claimRow.upload_count == null) {
+        // Release the object we already uploaded and persist nothing.
         await supabase.storage.from("documents").remove([storagePath]);
         throw new AppError("FULL", "Upload limit reached or request no longer open", 410);
       }
+      const claimed = claimRow.upload_count;
+      const slotToken = claimRow.slot_token;
 
       // Persist the object so it can be listed/downloaded and so orphan cleanup
       // recognises it as referenced rather than deleting it as an orphan.
@@ -224,6 +230,8 @@ router.post(
         await supabase.storage.from("documents").remove([storagePath]);
         await supabase.rpc("release_file_request_slot", {
           p_request_id: data.id,
+          p_organization_id: data.organization_id,
+          p_slot_token: slotToken,
         } as never);
         throw new AppError("DB_ERROR", rowError.message, 500);
       }

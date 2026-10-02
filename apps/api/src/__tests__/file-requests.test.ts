@@ -64,10 +64,14 @@ function mockSupabase(opts: { storage?: StorageMock; claim?: number | null } = {
         error: null,
       }),
     },
-    // Atomic slot claim (FILE-P1-001): returns the new upload_count, or null
-    // when the request is full/closed/expired/not-in-org.
+    // Atomic slot claim (FILE-P1-001): returns ONE row of
+    // { upload_count, slot_token }, or no row when the request is
+    // full/closed/expired/not-in-org. The route reads claimRows[0].
     rpc: jest.fn().mockResolvedValue({
-      data: opts.claim === undefined ? 1 : opts.claim,
+      data:
+        opts.claim === null
+          ? []
+          : [{ upload_count: opts.claim === undefined ? 1 : opts.claim, slot_token: "slot-token-1" }],
       error: null,
     }),
     storage:
@@ -300,9 +304,12 @@ describe("File Requests API", () => {
         .attach("file", Buffer.from("%pdf-1.4 test"), "invoice.pdf");
 
       expect(res.status).toBe(500);
-      // A relative release was requested...
+      // A relative, org-guarded, single-use release was requested with the
+      // token returned by the claim...
       expect(supabase.rpc).toHaveBeenCalledWith("release_file_request_slot", {
         p_request_id: "fr-1",
+        p_organization_id: orgA,
+        p_slot_token: "slot-token-1",
       });
       // ...and no absolute upload_count write was issued.
       const absoluteWrites = (
