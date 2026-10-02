@@ -104,18 +104,16 @@ describe("public routes", () => {
   });
 
   it("POST /submit with missing tracking ID returns 400", async () => {
-    const res = await request(app)
-      .post("/api/v1/public/submit")
-      .send({
-        company: "Test",
-        name: "Test",
-        email: "test@test.com",
-        phone: "555",
-        services: "IT",
-        employees: "1",
-        urgency: "Low",
-        message: "Hi",
-      });
+    const res = await request(app).post("/api/v1/public/submit").send({
+      company: "Test",
+      name: "Test",
+      email: "test@test.com",
+      phone: "555",
+      services: "IT",
+      employees: "1",
+      urgency: "Low",
+      message: "Hi",
+    });
 
     expect(res.status).toBe(400);
   });
@@ -170,5 +168,35 @@ describe("public routes", () => {
       );
     expect(res.status).toBe(200);
     expect(teamsPost).toHaveBeenCalledTimes(1);
+  });
+
+  it("records is_bot=true on the interaction row for a crawler user-agent", async () => {
+    const builder = createMockBuilder({ data: null, error: null } as MockResult);
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app)
+      .get("/api/v1/public/init")
+      .set(
+        "User-Agent",
+        "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+      );
+
+    expect(res.status).toBe(200);
+    expect(builder.insert).toHaveBeenCalledWith(expect.objectContaining({ is_bot: true }));
+  });
+
+  it("records is_bot=false on the interaction row for a real browser user-agent", async () => {
+    const builder = createMockBuilder({ data: null, error: null } as MockResult);
+    supabase.from.mockReturnValue(builder);
+
+    const res = await request(app)
+      .get("/api/v1/public/init")
+      .set(
+        "User-Agent",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+      );
+
+    expect(res.status).toBe(200);
+    expect(builder.insert).toHaveBeenCalledWith(expect.objectContaining({ is_bot: false }));
   });
 });
