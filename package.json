@@ -24,6 +24,7 @@
     "dev:autoenv": "powershell -ExecutionPolicy Bypass -File ./scripts/start_project_with_supabase_env.ps1 -UseNpx -Framework nextjs -EnvFile .env.local -Command \"npm run dev\"",
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build -o docs/storybook-static",
+    "sbom:licenses": "pnpm licenses list --json > licenses.json",
     "sbom": "node scripts/generate-sbom.mjs sbom.cdx.json",
     "review:sync": "node scripts/sync-review-md.mjs",
     "chromatic": "chromatic --project-token=$CHROMATIC_PROJECT_TOKEN"
@@ -70,7 +71,7 @@
       "postcss@<=8.5.17": ">=8.5.18",
       "image-size": ">=2.0.4 <3",
       "nanoid": ">=3.3.18",
-      "next": ">=15.5.24 <16",
+      "next": ">=15.5.24 <16 || >=16.3.6",
       "webpack-dev-middleware": ">=7.4.6 <8",
       "brace-expansion@<2": ">=1.1.21 <2",
       "js-yaml@>=5": ">=5.4.1",

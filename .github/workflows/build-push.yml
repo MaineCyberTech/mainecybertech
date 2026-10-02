@@ -12,6 +12,8 @@ concurrency:
 permissions:
   contents: read
   packages: write
+  id-token: write
+  attestations: write
 
 jobs:
   build-api:
@@ -33,7 +35,8 @@ jobs:
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+      - id: build-api
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/api/Dockerfile
@@ -42,6 +45,28 @@ jobs:
             ghcr.io/${{ env.REPO_LC }}/mct-api:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan mct-api image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001): the fs scan in test.yml cannot see the
+        # Alpine OS packages or npm-in-image contents of the built artifact.
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-api:${{ env.IMAGE_TAG }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+      - name: Attest mct-api provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ghcr.io/${{ env.REPO_LC }}/mct-api
+          subject-digest: ${{ steps.build-api.outputs.digest }}
+          push-to-registry: true
 
   build-worker:
     runs-on: ubuntu-latest
@@ -61,7 +86,8 @@ jobs:
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+      - id: build-worker
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/worker/Dockerfile
@@ -70,6 +96,27 @@ jobs:
             ghcr.io/${{ env.REPO_LC }}/mct-worker:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan mct-worker image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-worker:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+      - name: Attest mct-worker provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ghcr.io/${{ env.REPO_LC }}/mct-worker
+          subject-digest: ${{ steps.build-worker.outputs.digest }}
+          push-to-registry: true
 
   build-web:
     runs-on: ubuntu-latest
@@ -94,7 +141,8 @@ jobs:
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
 
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+      - id: build-web
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/web/Dockerfile
@@ -109,3 +157,24 @@ jobs:
             ghcr.io/${{ env.REPO_LC }}/mct-web:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Scan mct-web image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-web:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+
+      - name: Attest mct-web provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ghcr.io/${{ env.REPO_LC }}/mct-web
+          subject-digest: ${{ steps.build-web.outputs.digest }}
+          push-to-registry: true

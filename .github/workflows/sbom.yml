@@ -15,7 +15,7 @@ permissions:
 jobs:
   sbom:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
@@ -23,8 +23,34 @@ jobs:
         with:
           node-version: 20
 
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          # corepack fetches pnpm from the npm registry; retry transient failures.
+          ok=""
+          for attempt in 1 2 3; do
+            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
+            echo "corepack prepare failed (attempt $attempt/3)" >&2
+            sleep 10
+          done
+          test -n "$ok"
+
+      - name: Install dependencies
+        # Needed so `pnpm licenses list --json` can read the resolved tree.
+        run: pnpm install --frozen-lockfile
+
+      - name: Collect license inventory
+        run: pnpm licenses list --json > licenses.json
+
       - name: Generate CycloneDX SBOM
+        # Binds the document to the product version (VERSION) and the commit.
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          SBOM_LICENSES_JSON: licenses.json
         run: node scripts/generate-sbom.mjs sbom.cdx.json
+
+      - name: Validate SBOM
+        run: node scripts/validate-sbom.mjs sbom.cdx.json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

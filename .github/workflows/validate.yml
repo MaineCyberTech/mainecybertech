@@ -29,13 +29,17 @@ jobs:
         run: pnpm store prune
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Dependency audit
-        # Hard fail: high/critical vulnerabilities block the deploy gate (and
-        # every workflow that calls validate.yml, including terraform-do prod
-        # apply).
-        # --prod: only audit production dependencies (dev deps like storybook
-        # have unpatchable image-size vulns)
-        run: pnpm audit --audit-level=high --prod
+      - name: Dependency audit (all scopes + policy)
+        # SC-P1-001: fails on any CRITICAL (dev or prod) and any HIGH+ in
+        # production, and always reports dev-tree advisories. Policy and the
+        # reviewed allowlist live in security/dependency-audit-policy.json.
+        run: node scripts/audit-gate.mjs
+      - name: License policy gate
+        # SBOM-P1-001: enforces security/license-policy.json over the full
+        # resolved tree (allowlist + documented exceptions).
+        run: |
+          pnpm licenses list --json > licenses.json
+          node scripts/license-gate.mjs licenses.json
 
       - name: Verify required branch-protection checks resolve
         # Fails when a required status check in .github/branch-protection/*.json

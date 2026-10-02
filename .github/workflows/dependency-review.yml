@@ -15,3 +15,16 @@ jobs:
       - uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48
         with:
           fail-on-severity: high
+          # License policy (SBOM-P1-001). The action only supports an allow OR a
+          # deny list (mutually exclusive); the full allowlist + documented
+          # exceptions are enforced on every run by `scripts/license-gate.mjs`
+          # (validate.yml / test.yml). Here we deny strong-copyleft /
+          # source-available licenses on the PR diff so a new one can never
+          # merge, and exempt the already-reviewed exception packages listed in
+          # security/license-policy.json.
+          license-check: true
+          deny-licenses: GPL-1.0-only, GPL-1.0-or-later, GPL-2.0-only, GPL-2.0-or-later, GPL-3.0-only, GPL-3.0-or-later, AGPL-1.0-only, AGPL-1.0-or-later, AGPL-3.0-only, AGPL-3.0-or-later, LGPL-2.1-only, LGPL-2.1-or-later, LGPL-3.0-only, LGPL-3.0-or-later, SSPL-1.0, BUSL-1.1, EUPL-1.1, EUPL-1.2, OSL-3.0, RPL-1.5
+          # Reviewed exceptions (see docs/LICENSE_POLICY.md):
+          #   @img/sharp-win32-x64 -> Apache-2.0 AND LGPL-3.0-or-later
+          #   axe-core, @axe-core/playwright -> MPL-2.0 (not denied, listed for clarity)
+          allow-dependencies-licenses: pkg:npm/%40img/sharp-win32-x64, pkg:npm/axe-core, pkg:npm/%40axe-core/playwright
