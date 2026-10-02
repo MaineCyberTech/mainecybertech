@@ -3834,6 +3834,37 @@ paths:
           schema:
             type: "string"
           description: undefined
+  "/documents/{id}/versions/{versionId}/signed-url":
+    get:
+      tags:
+        - "Documents"
+      summary: "Create signed download URL for a document version"
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Bad request"
+        401:
+          description: "Unauthorized"
+        403:
+          description: "Forbidden"
+        500:
+          description: "Internal server error"
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: "id"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+          description: undefined
+        - name: "versionId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+          description: undefined
   "/domain-monitors":
     get:
       tags:

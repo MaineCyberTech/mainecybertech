@@ -839,6 +839,13 @@ const ticketsProjects: RouteDef[] = [
     tag: "Documents",
     params: [pathParam("id"), pathParam("versionId")],
   },
+  {
+    method: "get",
+    path: "/documents/{id}/versions/{versionId}/signed-url",
+    summary: "Create signed download URL for a document version",
+    tag: "Documents",
+    params: [pathParam("id"), pathParam("versionId")],
+  },
   { method: "post", path: "/documents/bulk/folder", summary: "Bulk folder move", tag: "Documents" },
   {
     method: "post",

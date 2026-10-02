@@ -735,7 +735,7 @@ router.get("/:id/versions", async (req, res, next) => {
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     // Version rows carry no org column — verify the parent document belongs
-    // to the caller's org before exposing version metadata (storage paths).
+    // to the caller's org before exposing version metadata.
     let docQuery = supabase.from("documents").select("id").eq("id", String(req.params.id));
     if (orgId) docQuery = docQuery.eq("organization_id", orgId);
     const { data: doc, error: docError } = await docQuery.single();
@@ -745,9 +745,14 @@ router.get("/:id/versions", async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
 
+    // Never return `storage_path`: it reveals internal bucket layout/object
+    // names and is not needed by clients now that a signed URL can be minted
+    // for a chosen version. (Excluding it keeps the API surface least-privilege.)
     const { data, error, count } = await supabase
       .from("document_versions")
-      .select("*", { count: "exact" })
+      .select("id, document_id, version_number, uploaded_by, checksum, created_at", {
+        count: "exact",
+      })
       .eq("document_id", String(req.params.id))
       .order("version_number", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -771,7 +776,7 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("document_versions")
-      .select("*")
+      .select("id, document_id, version_number, uploaded_by, checksum, created_at")
       .eq("id", String(req.params.versionId))
       .eq("document_id", String(req.params.id))
       .single();
@@ -782,6 +787,57 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
     next(error);
   }
 });
+
+router.get(
+  "/:id/versions/:versionId/signed-url",
+  requirePermission("documents", "create"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "documents", "read");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+
+      // Authorise against the PARENT document first. `document_versions` has no
+      // org column of its own (see migration 5302026), so the org-scoping check
+      // can only be made via the parent. Without this, a caller in org A could
+      // mint a signed URL for a retained version belonging to org B's document.
+      let docQuery = supabase
+        .from("documents")
+        .select("storage_bucket")
+        .eq("id", String(req.params.id));
+      if (orgId) docQuery = docQuery.eq("organization_id", orgId);
+      const { data: doc, error: docError } = await docQuery.single();
+      if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
+      // The version row must belong to THIS document. A version id from a
+      // different document is refused (404) rather than leaking that it exists.
+      const { data: version, error: versionError } = await supabase
+        .from("document_versions")
+        .select("storage_path")
+        .eq("id", String(req.params.versionId))
+        .eq("document_id", String(req.params.id))
+        .single();
+      if (versionError || !version)
+        throw new AppError("NOT_FOUND", "Version not found", 404);
+
+      if (!doc.storage_bucket || !version.storage_path)
+        throw new AppError("STORAGE_ERROR", "Version has no storage reference", 500);
+
+      // `document_versions` stores only a path, never a bucket: the bucket is
+      // derived from the parent document, exactly like the current-document
+      // signed-url endpoint. Never trust a caller-supplied bucket (FILE-P2-001).
+      const { data: signedUrl, error: urlError } = await supabase.storage
+        .from(doc.storage_bucket)
+        .createSignedUrl(version.storage_path, 3600);
+
+      if (urlError || !signedUrl)
+        throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
+
+      res.json(success({ signedUrl: signedUrl.signedUrl, expiresIn: 3600 }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.post("/:id/shares", requirePermission("documents", "create"), async (req, res, next) => {
   try {
