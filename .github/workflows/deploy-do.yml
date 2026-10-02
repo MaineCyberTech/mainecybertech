@@ -372,6 +372,8 @@ jobs:
           M365_CLIENT_STATE: ${{ secrets.M365_CLIENT_STATE }}
           JIRA_WEBHOOK_SECRET: ${{ secrets.JIRA_WEBHOOK_SECRET }}
           JSM_WEBHOOK_SECRET: ${{ secrets.JSM_WEBHOOK_SECRET }}
+          METRICS_TOKEN: ${{ secrets.METRICS_TOKEN }}
+          MFA_ENFORCEMENT_ENABLED: ${{ secrets.MFA_ENFORCEMENT_ENABLED }}
           PUBLIC_TRAFFIC_WEBHOOK_URL: ${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }}
           PUBLIC_LEAD_WEBHOOK_URL: ${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }}
           JSM_DOMAIN: ${{ secrets.JSM_DOMAIN }}
@@ -387,6 +389,17 @@ jobs:
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           RLS_READS_ENABLED: ${{ secrets.RLS_READS_ENABLED }}
           RLS_WRITES_ENABLED: ${{ secrets.RLS_WRITES_ENABLED }}
+          # IR-P0-003 alerting path. These are the same variable names the
+          # alertmanager service in docker-compose.yml expects; without them it
+          # silently falls back to a no-op loopback URL and the dead-man's switch
+          # never reaches an external service. Forwarded as env vars (not
+          # interpolated into the script) like every other secret above.
+          ALERTMANAGER_WATCHDOG_WEBHOOK_URL: ${{ secrets.ALERTMANAGER_WATCHDOG_WEBHOOK_URL }}
+          ALERTMANAGER_CRITICAL_WEBHOOK_URL: ${{ secrets.ALERTMANAGER_CRITICAL_WEBHOOK_URL }}
+          ALERTMANAGER_DEFAULT_WEBHOOK_URL: ${{ secrets.ALERTMANAGER_DEFAULT_WEBHOOK_URL }}
+          ALERTMANAGER_SLACK_API_URL: ${{ secrets.ALERTMANAGER_SLACK_API_URL }}
+          # Channel name is non-secret config, so it comes from repository vars.
+          ALERTMANAGER_SLACK_CHANNEL: ${{ vars.ALERTMANAGER_SLACK_CHANNEL }}
           # Forwarded so the remote script never interpolates these into the
           # command text (a branch name may contain shell metacharacters).
           DEPLOY_REF: ${{ github.ref_name }}
@@ -401,7 +414,7 @@ jobs:
           # Secrets are forwarded as environment variables rather than being
           # interpolated into the remote script, so a value containing $,
           # backticks or quotes cannot execute on the droplet.
-          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,M365_CLIENT_STATE,JIRA_WEBHOOK_SECRET,JSM_WEBHOOK_SECRET,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
+          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,M365_CLIENT_STATE,JIRA_WEBHOOK_SECRET,JSM_WEBHOOK_SECRET,METRICS_TOKEN,MFA_ENFORCEMENT_ENABLED,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,ALERTMANAGER_WATCHDOG_WEBHOOK_URL,ALERTMANAGER_CRITICAL_WEBHOOK_URL,ALERTMANAGER_DEFAULT_WEBHOOK_URL,ALERTMANAGER_SLACK_API_URL,ALERTMANAGER_SLACK_CHANNEL,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
           script: |
             set -e
             timeout 60 cloud-init status --wait 2>/dev/null || true
@@ -446,6 +459,8 @@ jobs:
               printf 'M365_CLIENT_STATE=%s\n' "$M365_CLIENT_STATE"
               printf 'JIRA_WEBHOOK_SECRET=%s\n' "$JIRA_WEBHOOK_SECRET"
               printf 'JSM_WEBHOOK_SECRET=%s\n' "$JSM_WEBHOOK_SECRET"
+              printf 'METRICS_TOKEN=%s\n' "$METRICS_TOKEN"
+              printf 'MFA_ENFORCEMENT_ENABLED=%s\n' "${MFA_ENFORCEMENT_ENABLED:-false}"
               printf 'PUBLIC_TRAFFIC_WEBHOOK_URL=%s\n' "$PUBLIC_TRAFFIC_WEBHOOK_URL"
               printf 'PUBLIC_LEAD_WEBHOOK_URL=%s\n' "$PUBLIC_LEAD_WEBHOOK_URL"
               printf 'JSM_DOMAIN=%s\n' "$JSM_DOMAIN"
@@ -461,8 +476,36 @@ jobs:
               printf 'TURNSTILE_SECRET_KEY=%s\n' "$TURNSTILE_SECRET_KEY"
               printf 'RLS_READS_ENABLED=%s\n' "$RLS_READS_ENABLED"
               printf 'RLS_WRITES_ENABLED=%s\n' "$RLS_WRITES_ENABLED"
+              printf 'ALERTMANAGER_WATCHDOG_WEBHOOK_URL=%s\n' "$ALERTMANAGER_WATCHDOG_WEBHOOK_URL"
+              printf 'ALERTMANAGER_CRITICAL_WEBHOOK_URL=%s\n' "$ALERTMANAGER_CRITICAL_WEBHOOK_URL"
+              printf 'ALERTMANAGER_DEFAULT_WEBHOOK_URL=%s\n' "$ALERTMANAGER_DEFAULT_WEBHOOK_URL"
+              printf 'ALERTMANAGER_SLACK_API_URL=%s\n' "$ALERTMANAGER_SLACK_API_URL"
+              printf 'ALERTMANAGER_SLACK_CHANNEL=%s\n' "$ALERTMANAGER_SLACK_CHANNEL"
             } >> /opt/mct-portal/.env
             chmod 600 /opt/mct-portal/.env
+            # IR-P0-003 fail-closed guard: the whole point of the dead-man's
+            # switch is that a silent failure of the monitoring path must be
+            # detectable. Compose would happily fall back to a no-op loopback URL
+            # (http://127.0.0.1:1/noop) and the deploy would look green while
+            # NOTHING could ever page us off-box. A missing watchdog URL in
+            # PRODUCTION is a configuration error, not an optional feature, so
+            # fail the deploy rather than ship an unmonitored production stack.
+            # Dev warns instead, so iteration is not blocked on provisioning an
+            # external heartbeat. (Critical/default/Slack receivers stay optional
+            # everywhere: their absence is visible inside Alertmanager, and the
+            # watchdog still routes.)
+            if [ -z "${ALERTMANAGER_WATCHDOG_WEBHOOK_URL:-}" ]; then
+              if [ "${{ needs.setup.outputs.name }}" = "prod" ]; then
+                echo "ERROR: ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty." >&2
+                echo "IR-P0-003 requires an EXTERNAL dead-man's-switch URL (not on this droplet)." >&2
+                echo "Set the repository/environment secret and re-run the deploy." >&2
+                exit 1
+              fi
+              echo "WARNING: ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty in the '${{ needs.setup.outputs.name }}' environment — no off-box dead-man's switch. Production deploys will fail until it is set." >&2
+            fi
+            if [ -z "${ALERTMANAGER_CRITICAL_WEBHOOK_URL:-}" ]; then
+              echo "WARNING: ALERTMANAGER_CRITICAL_WEBHOOK_URL is empty — critical alerts have no delivery path." >&2
+            fi
             echo "Droplet ready"
 
       - name: Deploy containers
@@ -509,6 +552,11 @@ jobs:
             cp /opt/mct-portal/repo/infra/digitalocean/docker-compose.yml /opt/mct-portal/docker-compose.yml
             cp /opt/mct-portal/repo/infra/digitalocean/prometheus.yml /opt/mct-portal/prometheus.yml
             cp /opt/mct-portal/repo/infra/digitalocean/prometheus.rules.yml /opt/mct-portal/prometheus.rules.yml
+            # IR-P0-003: the alertmanager service in docker-compose.yml mounts
+            # ./alertmanager.tmpl.yml read-only. If it is not copied, compose
+            # creates a directory at that path and the container fails to start
+            # (or, worse, the alerting path is silently absent).
+            cp /opt/mct-portal/repo/infra/digitalocean/alertmanager.tmpl.yml /opt/mct-portal/alertmanager.tmpl.yml
             cd /opt/mct-portal
             # Remember what is currently running so a failed deploy can revert.
             PREV_TAG=$(docker inspect --format '{{.Config.Image}}' mct-portal-api-1 2>/dev/null | sed 's/.*://')
