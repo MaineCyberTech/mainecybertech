@@ -61,6 +61,27 @@ jobs:
           ignore-unfixed: true
           format: table
 
+      - name: Generate mct-api image SBOM (CycloneDX)
+        # CTR-P1-002: SBOM of the built image (Alpine OS packages +
+        # npm-in-image contents), bound to the pushed digest, not just the tag.
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-api@${{ steps.build-api.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-api.cdx.json
+          scanners: vuln
+
+      - name: Upload mct-api image SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: image-sbom-mct-api-${{ github.sha }}
+          path: image-sbom-mct-api.cdx.json
+          retention-days: 30
+
       - name: Attest mct-api provenance (CTR-P1-003)
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
         with:
@@ -110,6 +131,26 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+
+      - name: Generate mct-worker image SBOM (CycloneDX)
+        # CTR-P1-002: image SBOM bound to the pushed digest (see build-api).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-worker@${{ steps.build-worker.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-worker.cdx.json
+          scanners: vuln
+
+      - name: Upload mct-worker image SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: image-sbom-mct-worker-${{ github.sha }}
+          path: image-sbom-mct-worker.cdx.json
+          retention-days: 30
 
       - name: Attest mct-worker provenance (CTR-P1-003)
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
@@ -171,6 +212,26 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           format: table
+
+      - name: Generate mct-web image SBOM (CycloneDX)
+        # CTR-P1-002: image SBOM bound to the pushed digest (see build-api).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ghcr.io/${{ env.REPO_LC }}/mct-web@${{ steps.build-web.outputs.digest }}
+          format: cyclonedx
+          output: image-sbom-mct-web.cdx.json
+          scanners: vuln
+
+      - name: Upload mct-web image SBOM
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: image-sbom-mct-web-${{ github.sha }}
+          path: image-sbom-mct-web.cdx.json
+          retention-days: 30
 
       - name: Attest mct-web provenance (CTR-P1-003)
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8

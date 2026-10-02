@@ -53,9 +53,10 @@ pass before the deploy step:
   is the Docker images on GHCR (`mct-api`, `mct-worker`, `mct-web`) tagged with
   the deploying commit SHA (or a `rollback_sha`).
 - **Product version source of truth** is [`VERSION`](../VERSION) at the repo
-  root. Generated artifacts bind to the commit: the SBOM records
+  root. Generated artifacts bind to the commit: the lockfile SBOM records
   `<VERSION>+<commit SHA>` (`metadata.component.version`, plus `mct:commit`),
-  and each pushed image gets a build-provenance attestation bound to its digest
+  a per-image CycloneDX image SBOM is bound to the pushed image digest, and each
+  pushed image gets a build-provenance attestation bound to the same digest
   (`gh attestation verify oci://ghcr.io/<owner>/mct-<image>:<sha>`). There is no
   git tag requirement — the commit SHA is authoritative.
 - Each image is scanned with Trivy at build time (CRITICAL/HIGH, ignoring
@@ -113,10 +114,12 @@ re-deploys the previously running tag before exiting non-zero.
 
 ## Post-release
 
-- SBOM: `sbom.yml` generates a CycloneDX artifact (`sbom-cyclonedx`, 30-day
-  retention) with licenses, a dependency graph, and `<VERSION>+<commit SHA>`
-  binding — see [docs/SBOM_PROCESS.md](SBOM_PROCESS.md) for retrieval and
-  verification.
+- SBOM: `sbom.yml` generates a CycloneDX **lockfile** artifact
+  (`sbom-cyclonedx`, 30-day retention) with licenses, a dependency graph, and
+  `<VERSION>+<commit SHA>` binding, and `build-push.yml` generates a CycloneDX
+  **image** SBOM per image (`image-sbom-mct-<image>-<commit>`) bound to the
+  pushed image digest — see [docs/SBOM_PROCESS.md](SBOM_PROCESS.md) for
+  retrieval and verification.
 - Backups: `db-backup.yml` runs daily at 04:00 UTC to Spaces and notifies Slack
   on failure.
 - Monitoring: [docs/MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md).

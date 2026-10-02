@@ -37,8 +37,11 @@ Only the `main` branch (production) and `develop` (staging) are supported. Older
   (`scan-type: image`, CRITICAL/HIGH) after build and before deploy, and gets a
   build-provenance attestation bound to its digest. Verify with
   `gh attestation verify oci://ghcr.io/<owner>/mct-api:<sha> --repo <owner>/<repo>`.
-- **SBOM** — a CycloneDX 1.5 SBOM (licenses, dependency graph, commit binding)
-  is generated and validated in CI; see [docs/SBOM_PROCESS.md](docs/SBOM_PROCESS.md).
+- **SBOM** — two CycloneDX artifacts are produced: a **lockfile** SBOM
+  (licenses, dependency graph, commit binding) generated and validated in CI,
+  and a per-image **image** SBOM (Alpine OS + npm-in-image contents) bound to
+  the pushed image digest by `build-push.yml`. Neither SBOM is signed or
+  attested; see [docs/SBOM_PROCESS.md](docs/SBOM_PROCESS.md).
 
 ## Sensitive areas in this repository
 

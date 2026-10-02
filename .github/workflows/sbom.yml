@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+# This workflow emits the LOCKFILE (npm) SBOM only. Container IMAGE SBOMs
+# (Alpine OS + npm-in-image contents, bound to the pushed image digest) are
+# produced per image in build-push.yml. See docs/SBOM_PROCESS.md.
+
 jobs:
   sbom:
     runs-on: ubuntu-latest
