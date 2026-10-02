@@ -334,7 +334,10 @@ router.post(
       // Bucket is pinned server-side (FILE-P2-001) — never read from req.body.
       const bucket = DOCUMENTS_BUCKET;
       const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
-      const storagePath = `orgs/${organizationId}/${Date.now()}-${safeName}`;
+      // Path must BEGIN with the org UUID so `storage_path_org_id` (5302026)
+      // can derive the tenant; the previous `orgs/<uuid>/...` form returned
+      // null and broke the storage RLS contract. (MT-P2-003 / FILE-P1-002)
+      const storagePath = `${organizationId}/${Date.now()}-${safeName}`;
       // Each upload gets a unique path, so a non-atomic upsert is never needed
       // and we fail closed on an unexpected collision instead of overwriting.
       const { error: uploadError } = await supabase.storage
@@ -368,9 +371,8 @@ router.post(
           throw new AppError("NOT_FOUND", "Document not found", 404);
         }
 
-        if (current.storage_bucket && current.storage_path) {
-          await supabase.storage.from(current.storage_bucket).remove([current.storage_path]);
-        }
+        const previousBucket = current.storage_bucket;
+        const previousPath = current.storage_path;
 
         const nextVersion = currentVersion + 1;
 
@@ -399,6 +401,15 @@ router.post(
           storage_path: storagePath,
           uploaded_by: req.authUser!.userId,
         });
+
+        // Prior-version bytes are retained (FILE-P1-003). Delete the previous
+        // object ONLY after the new object and both DB rows are committed, so a
+        // failure can never destroy the live document's bytes. The object is
+        // still referenced by an older `document_versions` row, so orphan
+        // cleanup must (and does) reconcile against version paths.
+        if (previousBucket && previousPath && previousPath !== storagePath) {
+          await supabase.storage.from(previousBucket).remove([previousPath]);
+        }
 
         await logAuditEvent({
           organizationId,

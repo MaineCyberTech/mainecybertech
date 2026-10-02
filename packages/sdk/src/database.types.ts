@@ -1654,6 +1654,45 @@ export type Database = {
           { foreignKeyName: "document_shares_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
+      file_request_uploads: {
+        Row: {
+          file_name: string;
+          file_request_id: string;
+          file_size: number | null;
+          id: string;
+          mime_type: string | null;
+          organization_id: string;
+          storage_bucket: string;
+          storage_path: string;
+          uploaded_at: string;
+        };
+        Insert: {
+          file_name: string;
+          file_request_id: string;
+          organization_id: string;
+          storage_path: string;
+          file_size?: number | null;
+          id?: string | null;
+          mime_type?: string | null;
+          storage_bucket?: string | null;
+          uploaded_at?: string | null;
+        };
+        Update: {
+          file_name?: string | null;
+          file_request_id?: string | null;
+          file_size?: number | null;
+          id?: string | null;
+          mime_type?: string | null;
+          organization_id?: string | null;
+          storage_bucket?: string | null;
+          storage_path?: string | null;
+          uploaded_at?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "file_request_uploads_file_request_id_fkey", columns: ["file_request_id"], isOneToOne: false, referencedRelation: "file_requests", referencedColumns: ["id"] },
+          { foreignKeyName: "file_request_uploads_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
+      };
       document_versions: {
         Row: {
           checksum: string | null;

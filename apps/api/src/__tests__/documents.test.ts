@@ -418,6 +418,76 @@ describe("documents routes", () => {
       );
     });
 
+    it("writes an org-parseable storage path (leading org UUID)", async () => {
+      const newDoc = { ...DOCUMENT, id: "uploaded-doc" };
+      const supabase = mockSupabase();
+      supabase.from.mockReturnValue(createMockBuilder({ data: newDoc, error: null } as MockResult));
+      supabase.storage = {
+        from: jest.fn().mockReturnValue({
+          upload: jest.fn().mockResolvedValue({ data: { path: "x" }, error: null }),
+          remove: jest.fn().mockResolvedValue({ data: null, error: null }),
+          createSignedUrl: jest.fn(),
+        }),
+      };
+
+      const res = await request(app)
+        .post("/api/v1/documents/upload")
+        .set("Authorization", "Bearer token-123")
+        .field("organizationId", "00000000-0000-0000-0000-000000000001")
+        .field("name", "Org Path Doc")
+        .attach("file", Buffer.from("test content"), "test.txt");
+
+      expect(res.status).toBe(201);
+      const [uploadedPath] = supabase.storage.from("documents").upload.mock.calls[0] as [string];
+      // `storage_path_org_id` requires the raw org UUID at the start of the path.
+      expect(uploadedPath.startsWith("00000000-0000-0000-0000-000000000001/")).toBe(true);
+      expect(uploadedPath.startsWith("orgs/")).toBe(false);
+    });
+
+    it("retains the prior version object until the new version is committed", async () => {
+      const existingDoc = {
+        id: "00000000-0000-0000-0000-000000000040",
+        organization_id: "00000000-0000-0000-0000-000000000001",
+        storage_bucket: "documents",
+        storage_path: "old/path.pdf",
+        current_version: 2,
+      };
+      const updatedDoc = { ...existingDoc, storage_path: "new/path.pdf", current_version: 3 };
+
+      const supabase = mockSupabase();
+      const updateBuilder = createMockBuilder({ data: updatedDoc, error: null } as MockResult);
+      const versionBuilder = createMockBuilder({ data: { id: "v-3" }, error: null } as MockResult);
+      supabase.from
+        .mockReturnValueOnce(createMockBuilder({ data: existingDoc, error: null } as MockResult))
+        .mockReturnValueOnce(updateBuilder)
+        .mockReturnValueOnce(versionBuilder);
+
+      const remove = jest.fn().mockResolvedValue({ data: null, error: null });
+      supabase.storage = {
+        from: jest.fn().mockReturnValue({
+          upload: jest.fn().mockResolvedValue({ data: { path: "x" }, error: null }),
+          remove,
+          createSignedUrl: jest.fn(),
+        }),
+      };
+
+      const res = await request(app)
+        .post("/api/v1/documents/upload")
+        .set("Authorization", "Bearer token-123")
+        .field("organizationId", "00000000-0000-0000-0000-000000000001")
+        .field("name", "Replaced Doc")
+        .field("documentId", "00000000-0000-0000-0000-000000000040")
+        .field("currentVersion", "2")
+        .attach("file", Buffer.from("new content"), "new.txt");
+
+      expect(res.status).toBe(200);
+      // The DB update must have run (and been committed) before the previous
+      // object was removed — a failure must never destroy the live document.
+      expect(updateBuilder.update).toHaveBeenCalled();
+      expect(remove).toHaveBeenCalledWith(["old/path.pdf"]);
+      expect(supabase.from).toHaveBeenCalledWith("document_versions");
+    });
+
     it("returns 400 when organizationId missing", async () => {
       mockSupabase();
 
