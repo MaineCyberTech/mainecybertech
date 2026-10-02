@@ -53,7 +53,15 @@ const LIFECYCLE: Array<{ key: keyof IncidentDetail; label: string }> = [
 
 export default async function PortalIncidentDetailPage({ params }: Props) {
   const membership = await getApprovedMembership();
-  if (!membership) return null;
+  if (!membership) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 p-6 text-amber-300">
+          Access restricted. Please contact your administrator.
+        </div>
+      </div>
+    );
+  }
   const { id } = await params;
   const api = getApiClient();
 

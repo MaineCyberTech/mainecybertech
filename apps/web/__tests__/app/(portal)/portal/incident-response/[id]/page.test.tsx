@@ -110,9 +110,11 @@ describe("PortalIncidentDetailPage", () => {
     expect(mockRunbookGet).toHaveBeenCalledWith("rb-1");
   });
 
-  it("renders nothing without an approved membership", async () => {
+  it("shows access restricted without an approved membership", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
     const { default: Page } = await import("@/app/(portal)/portal/incident-response/[id]/page");
-    expect(await Page({ params: Promise.resolve({ id: "inc-1" }) })).toBeNull();
+    render(await Page({ params: Promise.resolve({ id: "inc-1" }) }));
+
+    expect(screen.getByText(/access restricted/i)).toBeInTheDocument();
   });
 });

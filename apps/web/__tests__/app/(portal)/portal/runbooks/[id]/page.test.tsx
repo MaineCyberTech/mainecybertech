@@ -94,9 +94,11 @@ describe("PortalRunbookDetailPage", () => {
     await expect(renderPage()).rejects.toThrow("NEXT_NOT_FOUND");
   });
 
-  it("renders nothing without an approved membership", async () => {
+  it("shows access restricted without an approved membership", async () => {
     mockGetApprovedMembership.mockResolvedValue(null);
     const { default: Page } = await import("@/app/(portal)/portal/runbooks/[id]/page");
-    expect(await Page({ params: Promise.resolve({ id: "rb-1" }) })).toBeNull();
+    render(await Page({ params: Promise.resolve({ id: "rb-1" }) }));
+
+    expect(screen.getByText(/access restricted/i)).toBeInTheDocument();
   });
 });
