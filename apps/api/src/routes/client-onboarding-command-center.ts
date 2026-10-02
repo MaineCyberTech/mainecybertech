@@ -3,6 +3,7 @@ import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
 import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
+import { requirePermission } from "../middleware/permissions";
 import { responseCacheNoRenew } from "../middleware/cache";
 import {
   listOnboardingQuerySchema,
@@ -44,6 +45,7 @@ function getUserId(req: Request): string {
 
 router.get(
   "/",
+  requirePermission("client-onboarding-command-center", "view"),
   responseCacheNoRenew(30),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -65,7 +67,10 @@ router.get(
   },
 );
 
-router.get("/export.csv", async (req: Request, res: Response, next: NextFunction) => {
+router.get(
+  "/export.csv",
+  requirePermission("client-onboarding-command-center", "view"),
+  async (req: Request, res: Response, next: NextFunction) => {
   try {
     const orgId = getOrgId(req);
     const parsed = exportOnboardingSchema.parse(req.query);
@@ -107,6 +112,7 @@ router.get("/export.csv", async (req: Request, res: Response, next: NextFunction
 
 router.get(
   "/:id",
+  requirePermission("client-onboarding-command-center", "view"),
   responseCacheNoRenew(30),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -126,20 +132,27 @@ router.get(
   },
 );
 
-router.post("/", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const orgId = getOrgId(req);
-    const userId = getUserId(req);
-    const parsed = createOnboardingSchema.parse(req.body);
+router.post(
+  "/",
+  requirePermission("client-onboarding-command-center", "create"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const orgId = getOrgId(req);
+      const userId = getUserId(req);
+      const parsed = createOnboardingSchema.parse(req.body);
 
-    const result = await createOnboardingRecord(orgId, userId, parsed);
-    res.status(201).json(result);
-  } catch (error) {
-    next(error);
-  }
-});
+      const result = await createOnboardingRecord(orgId, userId, parsed);
+      res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
-router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
+router.patch(
+  "/:id",
+  requirePermission("client-onboarding-command-center", "edit"),
+  async (req: Request, res: Response, next: NextFunction) => {
   try {
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
@@ -159,7 +172,10 @@ router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => 
   }
 });
 
-router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
+router.delete(
+  "/:id",
+  requirePermission("client-onboarding-command-center", "delete"),
+  async (req: Request, res: Response, next: NextFunction) => {
   try {
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const record = await loadOwned(
@@ -177,7 +193,10 @@ router.delete("/:id", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
-router.post("/:id/complete-phase", async (req: Request, res: Response, next: NextFunction) => {
+router.post(
+  "/:id/complete-phase",
+  requirePermission("client-onboarding-command-center", "edit"),
+  async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = getUserId(req);
     const parsed = completePhaseSchema.parse({ ...req.body, organizationId: getOrgId(req) });
@@ -208,6 +227,7 @@ router.post("/:id/complete-phase", async (req: Request, res: Response, next: Nex
 
 router.get(
   "/:id/checklist",
+  requirePermission("client-onboarding-command-center", "view"),
   responseCacheNoRenew(30),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -220,7 +240,10 @@ router.get(
   },
 );
 
-router.patch("/:id/checklist/:itemId", async (req: Request, res: Response, next: NextFunction) => {
+router.patch(
+  "/:id/checklist/:itemId",
+  requirePermission("client-onboarding-command-center", "edit"),
+  async (req: Request, res: Response, next: NextFunction) => {
   try {
     const supabase = getScopedClient(req, "client-onboarding-command-center", "write");
     const item = await loadOwned(
