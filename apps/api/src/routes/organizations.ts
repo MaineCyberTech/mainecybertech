@@ -458,7 +458,12 @@ router.get("/:id/domains", requireOrgAccessByParam, async (req, res, next) => {
   }
 });
 
-router.post("/:id/domains", requireAdmin, async (req, res, next) => {
+// Tenant-scoped domain writes. `requireOrgAccessByParam` pins the request to
+// `:id` (setting req.orgScope/req.orgId) so `requireAdmin`'s org-pinned branch
+// rejects a tenant admin who is not an admin *in that org* (ADMIN-P1-001).
+// Without the param gate orgScope stays unset and requireAdmin falls back to
+// its legacy "admin in any org" path, allowing cross-tenant domain writes.
+router.post("/:id/domains", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
   try {
     const parsed = createDomainSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -489,7 +494,7 @@ router.post("/:id/domains", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
+router.patch("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
   try {
     const parsed = updateDomainSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -520,7 +525,7 @@ router.patch("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.delete("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
+router.delete("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { data: deleted, error } = await supabase

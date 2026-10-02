@@ -99,6 +99,36 @@ describe("Status Page API", () => {
       const res = await request(app).get(`/api/v1/status-page/public/${testOrgId}`);
       expect(res.body.data.activeIncidents).toHaveLength(1);
     });
+
+    it("projects an explicit public allowlist (no internal attribution columns)", async () => {
+      const supabase = mockAuth();
+      const builders: Record<string, ReturnType<typeof createMockBuilder>> = {};
+      supabase.from.mockImplementation((table: string) => {
+        const builder = createMockBuilder({ data: [], error: null });
+        builders[table] = builder;
+        return builder;
+      });
+
+      await request(app).get(`/api/v1/status-page/public/${testOrgId}`);
+
+      const componentCols = builders.status_components.select.mock.calls[0][0] as string;
+      const incidentCols = builders.status_incidents.select.mock.calls[0][0] as string;
+      const maintenanceCols = builders.maintenance_notices.select.mock.calls[0][0] as string;
+
+      expect(componentCols).not.toBe("*");
+      expect(componentCols).not.toContain("created_by");
+      expect(componentCols).not.toContain("organization_id");
+      expect(incidentCols).not.toContain("created_by");
+      expect(incidentCols).not.toContain("organization_id");
+      expect(maintenanceCols).not.toContain("created_by");
+      expect(maintenanceCols).not.toContain("organization_id");
+
+      // And it still filters to the requested org (enumeration is by opaque id).
+      expect(builders.status_components.eq).toHaveBeenCalledWith(
+        "organization_id",
+        testOrgId,
+      );
+    });
   });
 
   describe("GET /api/v1/status-page/components", () => {

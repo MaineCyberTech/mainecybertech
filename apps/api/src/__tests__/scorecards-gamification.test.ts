@@ -34,7 +34,12 @@ jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 jest.mock("../middleware/admin", () => ({
   requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
+jest.mock("../lib/admin-scope", () => ({
+  resolveAdminTenantScope: jest.fn(),
+  applyOrgScope: jest.fn((query: unknown) => query),
+}));
 import { getSupabaseAdmin } from "../services/supabase";
+import { resolveAdminTenantScope, applyOrgScope } from "../lib/admin-scope";
 import router from "../routes/edu-automation";
 
 const auth = "Bearer test-token";
@@ -73,7 +78,15 @@ app.use("/api/v1/edu-automation", router);
 app.use(errorHandler);
 
 describe("Scorecards Gamification", () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Default: genuine cross-tenant admin (no predicate). Individual tests
+    // override this to assert single-org scoping.
+    (resolveAdminTenantScope as jest.Mock).mockResolvedValue({
+      allTenants: true,
+      orgIds: [],
+    });
+  });
 
   describe("GET /scorecards/summary", () => {
     it("returns aggregate data for an org", async () => {
@@ -223,6 +236,41 @@ describe("Scorecards Gamification", () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
+    });
+
+    it("regression: scopes a single-org admin's leaderboard to their own org", async () => {
+      const s = mockSb();
+      s.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+      (resolveAdminTenantScope as jest.Mock).mockResolvedValue({
+        allTenants: false,
+        orgIds: [org],
+      });
+
+      const res = await request(app)
+        .get("/api/v1/edu-automation/scorecards/leaderboard")
+        .set("Authorization", auth);
+
+      expect(res.status).toBe(200);
+      expect(applyOrgScope).toHaveBeenCalledWith(
+        expect.anything(),
+        "organization_id",
+        { allTenants: false, orgIds: [org] },
+      );
+    });
+
+    it("leaves the leaderboard unscoped for a genuine cross-tenant admin", async () => {
+      const s = mockSb();
+      s.from.mockReturnValue(createMockBuilder({ data: [], error: null }));
+
+      await request(app)
+        .get("/api/v1/edu-automation/scorecards/leaderboard")
+        .set("Authorization", auth);
+
+      expect(applyOrgScope).toHaveBeenCalledWith(
+        expect.anything(),
+        "organization_id",
+        { allTenants: true, orgIds: [] },
+      );
     });
   });
 

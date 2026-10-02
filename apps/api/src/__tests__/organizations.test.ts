@@ -346,6 +346,43 @@ describe("organizations routes", () => {
     });
   });
 
+  describe("domain writes tenant isolation (ADMIN-P1-001)", () => {
+    it("returns 403 when adding a domain to another tenant's organization", async () => {
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
+
+      const res = await request(app)
+        .post("/api/v1/organizations/org-other/domains")
+        .set("Authorization", "Bearer token-123")
+        .send({ domain: "evil.example" });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("returns 403 when updating another tenant's domain", async () => {
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
+
+      const res = await request(app)
+        .patch("/api/v1/organizations/org-other/domains/dom-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ autoApprove: true });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("returns 403 when deleting another tenant's domain", async () => {
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+
+      const res = await request(app)
+        .delete("/api/v1/organizations/org-other/domains/dom-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
+    });
+  });
+
   describe("GET /:id/detail", () => {
     it("returns compound organization detail in a single call", async () => {
       const supabase = mockAuth();

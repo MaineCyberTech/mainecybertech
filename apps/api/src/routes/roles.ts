@@ -61,7 +61,7 @@ router.get("/with-permissions", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase

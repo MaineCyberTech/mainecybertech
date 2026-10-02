@@ -10,24 +10,51 @@ import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 
+// --- Public status page (unauthenticated) --------------------------------
+// This endpoint is an intended product feature (see
+// docs/features/public-status-page.md and docs/API_ENDPOINT_INVENTORY.md): the
+// public web route apps/web/app/(public)/status/[orgId]/page.tsx and the SDK
+// (`statusPage.publicStatus`) consume it, and the docs list it as
+// "Anyone (unauth, by org id)". Tenant data is never served without a purpose,
+// but a status page is deliberately world-readable. The underlying tables are
+// service-role only (RLS is org-members-only), so the projection below is an
+// explicit ALLOWLIST of public fields: internal identifiers (`organization_id`)
+// and audit attribution (`created_by`, an auth.users UUID) are NOT exposed.
+//
+// Enumeration: a caller who knows/guesses an organization UUID can read that
+// org's published status. The UUIDs are opaque (not sequential) and the exposed
+// fields are non-sensitive operational status, so this matches the documented
+// feature. There is currently NO explicit `enabled`/`is_public` flag on
+// `organizations` or on the status_* tables; the public view is always on for
+// every org. Gating it on an opt-in flag would require a schema migration (sql
+// under supabase/ is owned elsewhere) and a product decision, so it is reported
+// as an open follow-up rather than changed here. This route is therefore left
+// public; only the field surface is tightened.
+const PUBLIC_COMPONENT_COLUMNS =
+  "id, name, description, component_type, status, display_order, created_at, updated_at";
+const PUBLIC_INCIDENT_COLUMNS =
+  "id, title, description, severity, status, affected_component_ids, started_at, resolved_at, created_at, updated_at";
+const PUBLIC_MAINTENANCE_COLUMNS =
+  "id, title, description, scheduled_start, scheduled_end, status, affected_component_ids, created_at, updated_at";
+
 router.get("/public/:orgId", async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const [compRes, incRes, maintRes] = await Promise.all([
       supabase
         .from("status_components")
-        .select("*")
+        .select(PUBLIC_COMPONENT_COLUMNS)
         .eq("organization_id", String(req.params.orgId))
         .order("display_order"),
       supabase
         .from("status_incidents")
-        .select("*")
+        .select(PUBLIC_INCIDENT_COLUMNS)
         .eq("organization_id", String(req.params.orgId))
         .neq("status", "resolved")
         .order("started_at", { ascending: false }),
       supabase
         .from("maintenance_notices")
-        .select("*")
+        .select(PUBLIC_MAINTENANCE_COLUMNS)
         .eq("organization_id", String(req.params.orgId))
         .gte("scheduled_start", new Date().toISOString())
         .order("scheduled_start"),
