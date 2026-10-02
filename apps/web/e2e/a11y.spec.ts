@@ -22,6 +22,13 @@ test.describe("accessibility scan", () => {
     { path: "/admin/projects", name: "admin projects" },
     { path: "/admin/users", name: "admin users" },
     { path: "/portal/findings", name: "portal findings" },
+    // Promoted from FULL_PAGES after the 2026-10-02 breadth scan went green.
+    { path: "/portal/notifications", name: "portal notifications" },
+    { path: "/portal/client-knowledge-base", name: "portal knowledge base" },
+    { path: "/admin/findings", name: "admin findings" },
+    { path: "/admin/assets", name: "admin assets" },
+    { path: "/admin/licenses", name: "admin licenses" },
+    { path: "/admin/service-catalog", name: "admin service catalog" },
   ];
 
   // Broader triage set: run with A11Y_FULL=1 (see .github/workflows/a11y-breadth.yml).
@@ -35,7 +42,6 @@ test.describe("accessibility scan", () => {
     { path: "/store/quote", name: "store quote" },
     { path: "/portal/approvals", name: "portal approvals" },
     { path: "/portal/budgets", name: "portal budgets" },
-    { path: "/portal/notifications", name: "portal notifications" },
     { path: "/portal/status", name: "portal status" },
     { path: "/portal/runbooks", name: "portal runbooks" },
     { path: "/portal/risk-register", name: "portal risk register" },
@@ -46,15 +52,10 @@ test.describe("accessibility scan", () => {
     { path: "/portal/incident-response", name: "portal incident response" },
     { path: "/portal/service-catalog", name: "portal service catalog" },
     { path: "/portal/vendor-contracts", name: "portal vendor contracts" },
-    { path: "/portal/client-knowledge-base", name: "portal knowledge base" },
     { path: "/portal/profile/security", name: "portal security settings" },
     { path: "/admin/organizations", name: "admin organizations" },
     { path: "/admin/roles", name: "admin roles" },
     { path: "/admin/audit", name: "admin audit" },
-    { path: "/admin/findings", name: "admin findings" },
-    { path: "/admin/assets", name: "admin assets" },
-    { path: "/admin/licenses", name: "admin licenses" },
-    { path: "/admin/service-catalog", name: "admin service catalog" },
     { path: "/admin/governance", name: "admin governance" },
     { path: "/admin/approval-requests", name: "admin approval requests" },
     { path: "/admin/dmarc", name: "admin dmarc" },
@@ -81,9 +82,8 @@ test.describe("accessibility scan", () => {
 
   const full = process.env.A11Y_FULL === "1";
   const pages = full ? [...BASE_PAGES, ...FULL_PAGES] : BASE_PAGES;
-  const tags = full
-    ? ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
-    : ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
+  // wcag22aa is gated everywhere as of 2026-10-02 (the breadth scan is green).
+  const tags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
   for (const page of pages) {
     test(`${page.name} has no critical axe violations`, async ({ page: p }) => {
