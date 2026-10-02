@@ -104,7 +104,7 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 12    | 28 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319   | Admin 203, Portal 86, Public 29, `forbidden` 1                                                                                                                         |
 | Web components            | 102   | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 129   | `supabase/migrations/` (latest: 5302431 claim_file_request_slot)                                                                                                      |
+| SQL migrations            | 130   | `supabase/migrations/` (latest: 5302432 drop_unused_soft_delete_columns)                                                                                              |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                 |
 | GitHub Actions workflows  | 18    | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                           |

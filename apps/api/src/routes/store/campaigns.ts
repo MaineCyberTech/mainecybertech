@@ -3,12 +3,17 @@ import { z, ZodError } from "zod";
 import { getSupabaseAdmin } from "../../services/supabase";
 import { requireAuth } from "../../middleware/auth";
 import { requireAdmin } from "../../middleware/admin";
-import { requireOrgAccess, assertOrgScopeMatches } from "../../middleware/org-access";
+import { requireOrgAccess } from "../../middleware/org-access";
 import { AppError, success, failure } from "../../types";
 import { logAuditEvent } from "../../services/audit";
 import { type UpdateRow } from "../../lib/db-types";
 import { LIST_HARD_CAP } from "../../lib/pagination";
 import { isCampaignActive, rowToCampaign, type CampaignRow } from "../../lib/store-campaigns";
+import {
+  applyOrgScope,
+  applyRequestedOrg,
+  resolveAdminTenantScope,
+} from "../../lib/admin-scope";
 
 /** Seasonal campaigns + truthful capacity messaging (prompt 17). Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
 export function registerCampaignRoutes(router: Router) {
@@ -87,7 +92,10 @@ export function registerCampaignRoutes(router: Router) {
     organizationId: z.string().uuid().optional().nullable(),
   });
 
-  function campaignInsertPayload(parsed: z.infer<typeof campaignSchema>) {
+  function campaignInsertPayload(
+    parsed: z.infer<typeof campaignSchema>,
+    organizationId: string | null,
+  ) {
     return {
       slug: parsed.slug,
       name: parsed.name,
@@ -106,7 +114,9 @@ export function registerCampaignRoutes(router: Router) {
       capacity_total: parsed.capacityTotal ?? null,
       capacity_remaining: parsed.capacityRemaining ?? null,
       capacity_label: parsed.capacityLabel,
-      organization_id: parsed.organizationId ?? null,
+      // Never `?? null` from the body: a single-org admin must not be able to
+      // create a global (cross-tenant) campaign by omitting organizationId.
+      organization_id: organizationId,
     };
   }
 
@@ -137,31 +147,53 @@ export function registerCampaignRoutes(router: Router) {
   });
 
   // GET /api/v1/store/campaigns/admin - list all campaigns (admin)
-  router.get("/campaigns/admin", requireAuth, requireAdmin, async (_req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const { data, error } = await supabase
-        .from("store_campaigns")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(LIST_HARD_CAP);
+  router.get(
+    "/campaigns/admin",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        // A single-org admin only sees their own tenant's campaigns; global
+        // (organization_id IS NULL) and other tenants' rows are reserved for a
+        // genuine cross-tenant admin (MT-P0-001).
+        const scope = await resolveAdminTenantScope(req);
+        const requestedOrg = req.query.organization_id as string | undefined;
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.json(success(((data ?? []) as CampaignRow[]).map(rowToCampaign)));
-    } catch (error) {
-      next(error);
-    }
-  });
+        let query = getSupabaseAdmin().from("store_campaigns").select("*");
+        query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
+        query = applyOrgScope(query, "organization_id", scope);
+
+        const { data, error } = await query
+          .order("created_at", { ascending: false })
+          .limit(LIST_HARD_CAP);
+
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        res.json(success(((data ?? []) as CampaignRow[]).map(rowToCampaign)));
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   // POST /api/v1/store/campaigns - create a campaign (admin)
-  router.post("/campaigns", requireAuth, requireAdmin, requireOrgAccess, async (req, res, next) => {
+  router.post("/campaigns", requireAuth, requireOrgAccess, requireAdmin, async (req, res, next) => {
     try {
       const parsed = campaignSchema.parse(req.body);
+      const scope = await resolveAdminTenantScope(req);
+      // Force the caller's resolved org for a single-org admin. Only a genuine
+      // cross-tenant admin may create a global (or explicitly-targeted) row.
+      const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+      if (!scope.allTenants && !allowedOrg) {
+        throw new AppError("FORBIDDEN", "No organization available for this campaign", 403);
+      }
+      const organizationId = scope.allTenants ? (parsed.organizationId ?? null) : allowedOrg;
+
       const supabase = getSupabaseAdmin();
 
       const { data, error } = await supabase
         .from("store_campaigns")
-        .insert(campaignInsertPayload(parsed))
+        .insert(campaignInsertPayload(parsed, organizationId))
         .select()
         .single();
 
@@ -191,22 +223,32 @@ export function registerCampaignRoutes(router: Router) {
   router.patch(
     "/campaigns/:id",
     requireAuth,
-    requireAdmin,
     requireOrgAccess,
+    requireAdmin,
     async (req, res, next) => {
       try {
         const parsed = updateCampaignSchema.parse(req.body);
         const supabase = getSupabaseAdmin();
+        const scope = await resolveAdminTenantScope(req);
 
-        // Scope the write to the caller's active org (platform admins are
-        // exempt but their cross-tenant access is audited by requireOrgAccess).
+        // Scope the write to the caller's resolved org. A single-org admin may
+        // not mutate another tenant's row, nor a global (organization_id IS
+        // NULL) row; only a genuine cross-tenant admin may.
         const { data: existing } = await supabase
           .from("store_campaigns")
           .select("organization_id")
           .eq("id", String(req.params.id))
           .maybeSingle();
-        if (existing?.organization_id) {
-          assertOrgScopeMatches(req, existing.organization_id);
+        if (!existing) throw new AppError("NOT_FOUND", "Campaign not found", 404);
+        if (!scope.allTenants) {
+          const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+          if (!allowedOrg || existing.organization_id !== allowedOrg) {
+            throw new AppError(
+              "FORBIDDEN",
+              "You can only manage campaigns in your organization",
+              403,
+            );
+          }
         }
 
         const update: Record<string, unknown> = {};
@@ -231,7 +273,11 @@ export function registerCampaignRoutes(router: Router) {
         if (parsed.capacityRemaining !== undefined)
           update.capacity_remaining = parsed.capacityRemaining;
         if (parsed.capacityLabel !== undefined) update.capacity_label = parsed.capacityLabel;
-        if (parsed.organizationId !== undefined) update.organization_id = parsed.organizationId;
+        // Only a genuine cross-tenant admin may move a campaign between orgs
+        // (or to/from global); a single-org admin stays in their org.
+        if (parsed.organizationId !== undefined && scope.allTenants) {
+          update.organization_id = parsed.organizationId;
+        }
 
         if (Object.keys(update).length === 0) {
           throw new AppError("VALIDATION", "No updatable fields provided", 400);
@@ -272,18 +318,27 @@ export function registerCampaignRoutes(router: Router) {
   router.delete(
     "/campaigns/:id",
     requireAuth,
-    requireAdmin,
     requireOrgAccess,
+    requireAdmin,
     async (req, res, next) => {
       try {
         const supabase = getSupabaseAdmin();
+        const scope = await resolveAdminTenantScope(req);
         const { data: existing } = await supabase
           .from("store_campaigns")
           .select("organization_id")
           .eq("id", String(req.params.id))
           .maybeSingle();
-        if (existing?.organization_id) {
-          assertOrgScopeMatches(req, existing.organization_id);
+        if (!existing) throw new AppError("NOT_FOUND", "Campaign not found", 404);
+        if (!scope.allTenants) {
+          const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+          if (!allowedOrg || existing.organization_id !== allowedOrg) {
+            throw new AppError(
+              "FORBIDDEN",
+              "You can only manage campaigns in your organization",
+              403,
+            );
+          }
         }
         const { error } = await supabase
           .from("store_campaigns")
