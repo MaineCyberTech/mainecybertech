@@ -78,15 +78,19 @@ referrers bundle) and `id-token: write`.
 - **Normal deploy (no `rollback_sha`)** — **fail closed**. The images were just
   built and attested by this run; any missing, malformed, wrong-repo or
   mismatched-subject attestation hard-fails the job.
-- **Rollback (`rollback_sha` set)** — **fail closed on a bad attestation, the
-  one documented exception being the complete absence of one**. A rollback
-  deploys an older image that may have been built before CTR-P1-003 landed,
-  and refusing to roll back an incident because of a missing attestation would
-  be worse than the risk. When an attestation exists it is still verified and
-  a verification *failure* still blocks; only the "no attestation at all" case
-  proceeds, with a `::warning::` and an explicit stamp in the job summary
-  (`### ⚠️ Rollback without provenance`). This exception is scoped to
-  `rollback_sha` dispatches only.
+- **Rollback (`rollback_sha` set)** — **fail closed, with an explicit allow-list
+  of legacy digests**. Verification is never bypassed. A rollback image must
+  either pass `gh attestation verify` normally, or its digest must appear in the
+  matching `LEGACY_MCT_*` list in `deploy-do.yml` (empty by default; adding one
+  is a reviewed PR), in which case it is recorded as an allow-listed, unverified
+  rollback in the job summary.
+
+  > An earlier design tried to "verify when an attestation exists, tolerate its
+  > absence". That is not implementable: `gh attestation verify` signals absent,
+  > malformed, wrong-repo, wrong-signer-workflow and digest-mismatch all with the
+  > same non-zero exit status, so the shell cannot tell "missing" from "invalid" -
+  > and wrapping it in an `if` also disabled `set -e`, letting a forged or
+  > wrong-workflow attestation through. Hence the allow-list.
 
 `terraform-do.yml` is **manual-dispatch only** (2026-09-29): automatic push/PR
 runs failed on the invalid `DO_API_TOKEN` and a develop push could reach dev

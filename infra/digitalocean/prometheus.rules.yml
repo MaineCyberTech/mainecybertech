@@ -68,35 +68,48 @@ groups:
       # resolve no org, so a rule on that label fires continuously in normal
       # operation and becomes noise that hides a real regression.
       #
-      # Instead this compares each module against ITS OWN 24h baseline: a module
-      # whose org-less service-role share jumps sharply versus its usual level is
-      # the signal. A module that is always org-less (a genuine platform-level
-      # read) stays quiet, because its baseline is already high.
+      # Different alert entirely: it must not depend on a self-referential
+      # baseline (a sustained spike raises its own baseline and silences the
+      # rule). Two independent conditions, both required:
+      #
+      #   (a) ABSOLUTE: the module is serving a high share of org-less
+      #       service-role traffic right now (>= 50%). A module that is always
+      #       org-less (a genuine platform-level read) is excluded by (b).
+      # Design, corrected a second time. The first draft used clamp_min as if it
+      # were a cap, pushing the threshold above 1.0 (dead rule). The second used
+      # a self-referential 24h baseline, which INCLUDES the ongoing spike, so a
+      # sustained regression raised its own baseline and silenced the rule
+      # (reproduced with `promtool test rules`). Excluding "just the spike" from
+      # a window is not expressible while the spike is ongoing.
+      #
+      # So this rule makes an ABSOLUTE assertion and does not try to learn a
+      # baseline: a module serving >=50% of its RLS-bypassing traffic with NO
+      # organization is the regression signature. That is deliberately biased
+      # toward firing; the annotation tells the responder to distinguish a
+      # genuine platform-level read path before acting, and MCTRlsEnforcedShare
+      # Collapsed plus the org_resolved breakdown are the corroborating signals.
+      #
+      # Reachable by construction: the threshold is on the same 0..1 scale as the
+      # measured ratio, so no arithmetic can push it out of range.
       - alert: MCTTenantScopeRegression
         expr: |
           (
             sum by (module) (rate(portal_rls_bypass_total{org_resolved="false"}[15m]))
             /
             clamp_min(sum by (module) (rate(portal_rls_bypass_total[15m])), 0.0001)
+            >= 0.5
           )
-          >
-          clamp_min(
-            4 * (
-              sum by (module) (rate(portal_rls_bypass_total{org_resolved="false"}[24h]))
-              /
-              clamp_min(sum by (module) (rate(portal_rls_bypass_total[24h])), 0.0001)
-            ) + 0.25,
-            0.9
+          and on (module)
+          (
+            sum by (module) (rate(portal_rls_bypass_total[15m])) > 0.01
           )
-          and
-          sum by (module) (rate(portal_rls_bypass_total[15m])) > 0.05
         for: 15m
         labels:
           severity: warning
           team: platform
         annotations:
-          summary: "Module {{ $labels.module }} suddenly serving tenant data with no organization scope"
-          description: "The share of RLS-bypassing client selections that resolved no organization for module {{ $labels.module }} is more than 4x its 24h baseline (and above 25%). That is the signature of a tenant-isolation regression - a query that dropped its organization_id predicate. Confirm whether the module has a genuine platform-level read path before treating it as benign."
+          summary: "Module {{ $labels.module }} started serving tenant data with no organization scope"
+          description: "At least half of the RLS-bypassing client selections for module {{ $labels.module }} resolve no organization. That is the signature of a tenant-isolation regression - a query that dropped its organization_id predicate. Confirm whether this module has a genuine platform-level read path before treating it as benign; check its queries for a missing organization_id filter."
 
       # IR-P1-006: RLS rollout visibility. Reports the enforced share as an
       # information-level signal ONLY when the RLS allow-lists are actually in

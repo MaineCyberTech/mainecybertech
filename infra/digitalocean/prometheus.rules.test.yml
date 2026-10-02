@@ -1,0 +1,94 @@
+# promtool unit tests for prometheus.rules.yml (IR-P1-006).
+#
+# Run:  docker run --rm -v "$PWD:/cfg" --entrypoint /bin/promtool \
+#         prom/prometheus:v3.5.1 check rules /cfg/prometheus.rules.yml
+#       docker run --rm -v "$PWD:/cfg" --entrypoint /bin/promtool \
+#         prom/prometheus:v3.5.1 test rules /cfg/prometheus.rules.test.yml
+#
+# These exist because `promtool check rules` only validates SYNTAX. The first
+# version of MCTTenantScopeRegression passed check rules and could never fire
+# (clamp_min used as a cap pushed the threshold above 1.0); the second used a
+# self-referential 24h baseline that the ongoing spike raised, silencing it. Both
+# are caught here and neither is caught by a syntax check. Keep these cases in
+# sync with the rules - a rule that cannot fire is worse than no rule.
+rule_files:
+  - /cfg/prometheus.rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  # CASE 1: sustained >=50% org-less on a busy module MUST fire.
+  - interval: 1m
+    input_series:
+      - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="true"}'
+        values: '0+60x120'
+      - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="false"}'
+        values: '0+60x120'
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: MCTTenantScopeRegression
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              module: tickets
+            exp_annotations:
+              summary: "Module tickets started serving tenant data with no organization scope"
+              description: "At least half of the RLS-bypassing client selections for module tickets resolve no organization. That is the signature of a tenant-isolation regression - a query that dropped its organization_id predicate. Confirm whether this module has a genuine platform-level read path before treating it as benign; check its queries for a missing organization_id filter."
+
+  # CASE 2: a module that is fully org-resolved MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="true"}'
+        values: '0+60x120'
+      - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="false"}'
+        values: '0+0x120'
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: MCTTenantScopeRegression
+        exp_alerts: []
+
+  # CASE 3: low org-less share (below 50%) MUST stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="true"}'
+        values: '0+60x120'
+      - series: 'portal_rls_bypass_total{module="tickets",kind="read",org_resolved="false"}'
+        values: '0+10x120'
+    alert_rule_test:
+      - eval_time: 40m
+        alertname: MCTTenantScopeRegression
+        exp_alerts: []
+
+  # CASE 4: MCTRlsEnforcedShareCollapsed - a module that WAS enforcing in the
+  # last 6h drops to zero while still serving traffic.
+  - interval: 1m
+    input_series:
+      # enforcing until t=300m, then flat
+      - series: 'portal_rls_enforced_total{module="documents",kind="read"}'
+        values: '0+60x300 18000+0x300'
+      - series: 'portal_rls_bypass_total{module="documents",kind="read",org_resolved="true"}'
+        values: '0+60x600'
+    alert_rule_test:
+      - eval_time: 9h
+        alertname: MCTRlsEnforcedShareCollapsed
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              team: platform
+              module: documents
+            exp_annotations:
+              summary: "Module documents stopped serving through the RLS-enforcing client"
+              description: "Module documents previously served tenant queries through the RLS-enforcing client but has produced none for 30 minutes while still handling traffic. It likely dropped out of RLS_READS_ENABLED / RLS_WRITES_ENABLED. Check the allow-lists in the droplet .env."
+
+  # CASE 5: a module that NEVER enforced must stay quiet.
+  - interval: 1m
+    input_series:
+      - series: 'portal_rls_enforced_total{module="neverrls",kind="read"}'
+        values: '0+0x1800'
+      - series: 'portal_rls_bypass_total{module="neverrls",kind="read",org_resolved="true"}'
+        values: '0+60x1800'
+    alert_rule_test:
+      - eval_time: 29h
+        alertname: MCTRlsEnforcedShareCollapsed
+        exp_alerts: []
