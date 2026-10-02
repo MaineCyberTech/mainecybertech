@@ -39,8 +39,8 @@ setup → resolve-ip
 
 `deploy` writes the droplet `.env` via `printf` (secrets never interpolate into
 the remote shell), pulls the images, restarts the compose stack, and only
-prunes old images after the API and web containers report healthy. A failed
-health gate rolls back to the previously running tag.
+prunes old images after the API, web and worker containers report healthy. A
+failed health gate rolls back to the previously running tag.
 
 `terraform-do.yml` is **manual-dispatch only** (2026-09-29): automatic push/PR
 runs failed on the invalid `DO_API_TOKEN` and a develop push could reach dev

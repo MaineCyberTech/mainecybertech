@@ -2,6 +2,12 @@ name: supabase-migrations
 
 on:
   workflow_dispatch:
+    inputs:
+      allow_drift:
+        description: "Set to 1 to bypass the pre-push schema-drift check (after reviewing the diff)"
+        type: choice
+        options: ["0", "1"]
+        default: "0"
   push:
     branches: [develop, main]
     paths:
@@ -54,10 +60,37 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      - name: Diff migrations (dry-run)
-        run: supabase db diff --linked --schema public || true
+      - name: Diff migrations (dry-run; fails on unexpected drift)
+        # Audit IR-P1-002: the previous `|| true` swallowed the dry-run, so a
+        # destructively divergent schema was never seen before `db push`.
+        # Now the diff is captured: a non-empty diff FAILS the run so an
+        # operator must reconcile it (or explicitly set ALLOW_MIGRATION_DRIFT=1
+        # for a workflow_dispatch run after review).
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          ALLOW_MIGRATION_DRIFT: ${{ github.event.inputs.allow_drift || '0' }}
+        run: |
+          set -uo pipefail
+          set +e
+          DIFF="$(supabase db diff --linked --schema public 2>&1)"
+          rc=$?
+          set -e
+          printf '%s\n' "$DIFF"
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::supabase db diff failed (exit $rc) — cannot establish the pre-push schema state"
+            exit 1
+          fi
+          # `db diff` prints the diff (exit 0) rather than failing on drift.
+          if printf '%s' "$DIFF" | grep -Eq '^[[:space:]]*(alter|create|drop|comment)[[:space:]]'; then
+            if [ "${ALLOW_MIGRATION_DRIFT}" = "1" ]; then
+              echo "::warning::Schema drift detected but ALLOW_MIGRATION_DRIFT=1 — continuing"
+            else
+              echo "::error::Unreconciled schema drift detected before db push. Review the diff above; either commit the missing migration or re-run dispatch with allow_drift=1 after review."
+              exit 1
+            fi
+          else
+            echo "No unreconciled drift."
+          fi
 
       - name: Run migrations
         run: supabase db push --include-all

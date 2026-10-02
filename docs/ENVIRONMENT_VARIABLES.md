@@ -134,9 +134,15 @@ for the full deployment/terraform secret list.
 | `E2E_JWT_SECRET`          | `e2e.yml`                              | Optional JWT secret for the E2E API; falls back to a built-in test value |
 | `SUPABASE_ACCESS_TOKEN`   | `supabase-migrations.yml`              | Supabase CLI auth for `supabase link` / `supabase db push`               |
 | `CHROMATIC_PROJECT_TOKEN` | `chromatic.yml`                        | Chromatic visual-regression upload (best-effort job)                     |
-| `AWS_ACCESS_KEY_ID`       | `db-backup.yml`, `db-restore-test.yml` | S3/Spaces key for backup upload and restore download                     |
-| `AWS_SECRET_ACCESS_KEY`   | `db-backup.yml`, `db-restore-test.yml` | S3/Spaces secret for backup upload and restore                           |
-| `SLACK_WEBHOOK_URL`       | `db-backup.yml`                        | Slack notification when a backup fails                                   |
+| `AWS_ACCESS_KEY_ID`       | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | S3/Spaces key for backup upload and restore download |
+| `AWS_SECRET_ACCESS_KEY`   | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | S3/Spaces secret for backup upload and restore       |
+| `S3_BUCKET`               | backup/restore workflows and scripts   | Backup bucket **name** (contract: `docs/ROLLBACK_PROCEDURES.md` §3a)     |
+| `S3_PREFIX`               | backup/restore workflows and scripts   | Backup key prefix (default `database-backups`)                           |
+| `S3_OFFSITE_BUCKET`       | `db-backup.yml`, `storage-backup.yml`  | Optional second destination for an offsite copy                          |
+| `BACKUP_ENCRYPTION_KEY`   | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | openssl passphrase encrypting backups; secret, never printed |
+| `SUPABASE_URL`            | `storage-backup.yml`                   | Supabase project URL for the Storage REST API                            |
+| `SUPABASE_SERVICE_ROLE_KEY` | `storage-backup.yml`                 | Service-role key for Storage list/download/upload (already a deploy secret) |
+| `SLACK_WEBHOOK_URL`       | `db-backup.yml`, `db-restore-test.yml`, `storage-backup.yml` | Slack notification when a backup or restore test fails |
 
 ## CI / Docker
 

@@ -1,5 +1,10 @@
 # Backup Disaster Recovery - Runbook
 
+> **Scope: client-facing product module.** This runbook covers the tenant
+> backup-tracking feature (`backup_status`). For the **platform's own** database
+> and uploaded-file recovery, use `docs/ROLLBACK_PROCEDURES.md` §3a/§3b and
+> `docs/RTO_RPO.md` instead.
+
 ## Owner
 
 Platform Engineering / NOC Backup Operations

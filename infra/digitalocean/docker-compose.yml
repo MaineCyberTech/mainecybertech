@@ -139,6 +139,15 @@ services:
     tmpfs:
       - /tmp
     read_only: true
+    # Liveness probe on the worker's HEALTH_PORT (audit IR-P1-003). Without
+    # this, `docker inspect` reports "missing" and the deploy's container
+    # health gate cannot confirm the worker — enabling it lets a worker that
+    # never becomes healthy fail the gate and trigger the auto-revert.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   web:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}

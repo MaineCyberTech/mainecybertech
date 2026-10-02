@@ -160,12 +160,24 @@ terraform apply -var-file=env/prod.tfvars
 
 1. Go to GitHub Actions → `deploy-do.yml` → "Run workflow"
 2. Set `deploy_target` (dev or prod)
-3. The workflow deploys the HEAD of the selected branch
+3. Optionally set `rollback_sha` to the 7–40 char lowercase-hex SHA of the
+   previous working commit
+4. Run the workflow
 
-To deploy a specific SHA, use the manual method below.
+With `rollback_sha` **empty** the workflow builds all three images from the
+selected branch HEAD and deploys them. With `rollback_sha` **set** the build
+jobs are skipped and the workflow deploys the images already published under
+that SHA tag — so the tag must already exist in GHCR (it normally does for any
+commit that was previously deployed). The workflow validates the input
+(lowercase hex only), SSHes in, and runs
+`IMAGE_TAG=<sha> docker compose -p mct-portal up -d`, followed by automated
+API, Worker and Web health checks; a failure fails the deploy and leaves the
+previous containers running. See `docs/ROLLBACK_PROCEDURES.md` §1 for the full
+preconditions.
 
 ### Manual rollback via SSH
 
+Use this only when the images are not in GHCR or the workflow cannot run.
 ```bash
 ssh root@<droplet-ip>
 cd /opt/mct-portal
@@ -191,9 +203,14 @@ Error tracking is configured for both API and Web. Sentry DSN is optional — sk
 
 ### Health checks
 
-- Each deploy workflow runs a 2-minute health check against API and Web
-- All 5 containers have Docker HEALTHCHECK directives (redis ping, API wget /health, web wget /login, Caddy checks its own process)
-- Worker exposes `/health` on port 3001 (internal only)
+- Each deploy runs health checks against API, Web **and Worker**; the deploy
+  step fails (and rolls back to the previous tag) if any of the three is
+  unhealthy.
+- All containers have Docker HEALTHCHECK directives (redis ping, API wget
+  `/health`, web wget `/login`, Caddy checks its own process, worker wget
+  `/health` on port 3001).
+- Worker exposes `/health` on port 3001 (internal only); the deploy checks it
+  over SSH.
 
 ### Logs
 

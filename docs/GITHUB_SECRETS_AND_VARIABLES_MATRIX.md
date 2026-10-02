@@ -68,13 +68,30 @@ Use environment-scoped values wherever possible.
 
 ## Secrets required by the database backup / restore workflows
 
-| Secret                  | Dev | Prod | Purpose                                               |
-| ----------------------- | --- | ---- | ----------------------------------------------------- |
-| `SUPABASE_DB_URL`       | —   | yes  | Direct database connection string for `pg_dump`       |
-| `AWS_ACCESS_KEY_ID`     | —   | yes  | S3/Spaces key for backup upload and restore download  |
-| `AWS_SECRET_ACCESS_KEY` | —   | yes  | S3/Spaces secret for backup upload and restore        |
-| `S3_BACKUP_BUCKET`      | —   | yes  | Bucket/prefix holding backups (`db-restore-test.yml`) |
-| `SLACK_WEBHOOK_URL`     | —   | yes  | Slack webhook for backup failure notifications        |
+| Secret                    | Dev | Prod | Purpose                                               |
+| ------------------------- | --- | ---- | ----------------------------------------------------- |
+| `SUPABASE_DB_URL`         | —   | yes  | Direct database connection string for `pg_dump`       |
+| `AWS_ACCESS_KEY_ID`       | —   | yes  | S3/Spaces key for backup upload and restore download  |
+| `AWS_SECRET_ACCESS_KEY`   | —   | yes  | S3/Spaces secret for backup upload and restore        |
+| `BACKUP_ENCRYPTION_KEY`   | —   | yes  | openssl passphrase encrypting/decrypting backup objects (`db-backup.yml`, `db-restore-test.yml`, storage backup) |
+| `SUPABASE_SERVICE_ROLE_KEY` | — | yes  | Supabase Storage REST access for `scripts/backup-storage.sh` |
+| `S3_BACKUP_BUCKET`        | —   | yes  | **Legacy** full-URI/bucket name holding backups; prefer the `S3_BUCKET` variable. Accepted (normalised) by the restore paths for backwards compatibility |
+| `SLACK_WEBHOOK_URL`       | —   | yes  | Slack webhook for backup/restore failure notifications |
+
+### Backup location contract
+
+The write path and every read path use the same two names (audit
+DR-P1-002 / IR-P1-005):
+
+| Name        | Shape                        | Default                  |
+| ----------- | ---------------------------- | ------------------------ |
+| `S3_BUCKET` | bucket **name** (no `s3://`) | `mainecybertech-backups` |
+| `S3_PREFIX` | key prefix (no leading `/`)  | `database-backups`       |
+
+Full object path: `s3://${S3_BUCKET}/${S3_PREFIX}/<file>`. Set these as
+repository **variables** (Settings → Secrets and variables → Actions →
+Variables). Optional offsite copy: `S3_OFFSITE_BUCKET` /
+`S3_OFFSITE_PREFIX`. See `docs/ROLLBACK_PROCEDURES.md` §3a.
 
 ## Secrets required by other workflows
 
@@ -91,6 +108,11 @@ Use environment-scoped values wherever possible.
 | `SUPABASE_PROJECT_REF`           | yes | yes  | Supabase project reference for migrations                     |
 | `DROPLET_IP`                     | opt | opt  | Optional droplet IPv4 fallback when the DO API/Terraform fail |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | yes | yes  | Turnstile site key baked into the web image build arg         |
+| `S3_BUCKET`                      | —   | yes  | Backup bucket **name** (see contract above)                   |
+| `S3_PREFIX`                      | —   | yes  | Backup key prefix (default `database-backups`)                |
+| `S3_OFFSITE_BUCKET`              | opt | opt  | Second destination for an offsite/cross-region backup copy    |
+| `S3_OFFSITE_PREFIX`              | opt | opt  | Prefix on the offsite bucket (defaults to `S3_PREFIX`)        |
+| `STORAGE_BUCKETS`                | —   | yes  | Storage buckets to back up (default `documents avatars logos`) |
 
 ## GitHub Environment Configuration Steps
 

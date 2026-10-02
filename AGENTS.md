@@ -98,11 +98,11 @@ pnpm e2e                     # Playwright E2E
 | Worker task files         | 12    | 28 handlers registered in `apps/worker/src/tasks/index.ts` (+ built-in `ping`)                                                                                         |
 | Web pages                 | 319   | Admin 203, Portal 86, Public 29, `forbidden` 1                                                                                                                         |
 | Web components            | 102   | `apps/web/components/`                                                                                                                                                 |
-| SQL migrations            | 127   | `supabase/migrations/` (latest: 5302428 entitlements RLS alignment)                                                                                                    |
+| SQL migrations            | 128   | `supabase/migrations/` (latest: 5302430 file_request_uploads)                                                                                                         |
 | Seed files                | 9     | `supabase/seeds/*.sql`                                                                                                                                                 |
-| GitHub Actions workflows  | 16    | `.github/workflows/`                                                                                                                                                   |
+| GitHub Actions workflows  | 18    | `.github/workflows/`                                                                                                                                                   |
 | AI prompt files           | 789   | `prompts/` (6 packs); `prompts/manifest.json` pins SHA-256 + `PROVENANCE.md`                                                                                           |
-| Build/dev/utility scripts | 71    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `seed-store.ts`, `generate-db-types.js`, etc.) |
+| Build/dev/utility scripts | 77    | `scripts/` (`verify-prompts.js`, `openapi-audit.js`, `verify-rls.mjs`, `check-docs-counts.mjs`, `check-docs-links.mjs`, `seed-store.ts`, `generate-db-types.js`, `backup-database.sh`, `backup-storage.sh`, `restore-storage.sh`, etc.) |
 
 ## Database Types (2026-09-21)
 
@@ -228,7 +228,7 @@ SENTRY_DSN=
 
 ## CI/CD
 
-**16 GitHub Actions workflows** in `.github/workflows/`:
+**18 GitHub Actions workflows** in `.github/workflows/`:
 
 | Workflow                | Trigger            | Purpose                                                                                     |
 | ----------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
@@ -237,15 +237,17 @@ SENTRY_DSN=
 | a11y-breadth.yml        | schedule/manual    | Full a11y breadth scan (68 routes, WCAG 2.2) — triage-only, non-blocking                    |
 | lint.yml                | push/PR            | ESLint                                                                                      |
 | typecheck.yml           | push/PR            | TypeScript typecheck                                                                        |
-| supabase-migrations.yml | push main+dev/call | Apply Supabase migrations                                                                   |
+| supabase-migrations.yml | push main+dev/call | Apply Supabase migrations (pre-push drift check; `allow_drift=1` to bypass)                 |
 | e2e.yml                 | PR/manual/call     | Playwright E2E tests                                                                        |
-| deploy-do.yml           | push main+dev      | Build images, SSH deploy to droplet                                                         |
+| deploy-do.yml           | push main+dev      | Build images, SSH deploy to droplet (fatal API/Worker/Web health gate)                      |
 | terraform-do.yml        | dispatch           | Terraform plan (manual; apply requires the `apply` input)                                   |
 | validate.yml            | workflow_call      | Deploy gate (audit + test + lint + typecheck + docs/openapi/RLS guards + prompt-provenance) |
 | build-push.yml          | dispatch           | Build/push GHCR images (manual)                                                             |
 | chromatic.yml           | push/PR            | Visual regression (Storybook)                                                               |
-| db-backup.yml           | schedule/manual    | Database backup to Spaces                                                                   |
-| db-restore-test.yml     | schedule/manual    | Restore a backup into a throwaway DB and validate                                           |
+| db-backup.yml           | schedule/manual    | Database backup to Spaces (encrypted, optional offsite)                                     |
+| db-restore-test.yml     | schedule/manual    | Restore a backup into a throwaway DB with integrity/freshness assertions                    |
+| storage-backup.yml      | schedule/manual    | Mirror Supabase Storage buckets to Spaces                                                   |
+| backup-dispatch.yml     | schedule/manual    | Runs on `main` to dispatch the develop backup/restore workflows                             |
 | dependency-review.yml   | pull_request       | Block PRs introducing vulnerable dependencies                                               |
 | sbom.yml                | push/PR/weekly     | CycloneDX SBOM artifact (`scripts/generate-sbom.mjs`)                                       |
 
@@ -537,7 +539,7 @@ pipefail`); `docs/module-matrix-mapping.md` maps all 60 prompt-pack modules to
   validates live responses (412 paths, 0 missing). Generating the SDK from the
   spec remains a follow-up.
 - **CI schema guards**: `scripts/generate-db-types.js --check` and
-  `scripts/verify-rls.mjs` (136 tables, all RLS-enabled, 1011 policies) wired
+  `scripts/verify-rls.mjs` (136 tables, all RLS-enabled, 1012 policies) wired
   into `test.yml` + `validate.yml`; `docs/RLS-coverage-matrix.md` is now a
   snapshot with the script as the live source.
 - **CSP reporting + SAST**: unauthenticated `POST /api/v1/public/csp-report`

@@ -22,6 +22,23 @@ Only the `main` branch (production) and `develop` (staging) are supported. Older
 - [docs/JWT_ROTATION.md](docs/JWT_ROTATION.md)
 - [docs/RLS-rollout.md](docs/RLS-rollout.md)
 - [docs/MFA.md](docs/MFA.md)
+- [docs/DEPENDENCY_POLICY.md](docs/DEPENDENCY_POLICY.md)
+- [docs/LICENSE_POLICY.md](docs/LICENSE_POLICY.md)
+- [docs/SBOM_PROCESS.md](docs/SBOM_PROCESS.md)
+
+## Supply chain
+
+- **Vulnerabilities** — `scripts/audit-gate.mjs` gates all dependency scopes in
+  CI (block CRITICAL any scope, block HIGH+ in production, report dev-tree
+  advisories). Policy: `security/dependency-audit-policy.json`.
+- **Licenses** — `scripts/license-gate.mjs` and the dependency-review PR gate
+  enforce `security/license-policy.json` (allowlist + documented exceptions).
+- **Container images** — every image is scanned with Trivy
+  (`scan-type: image`, CRITICAL/HIGH) after build and before deploy, and gets a
+  build-provenance attestation bound to its digest. Verify with
+  `gh attestation verify oci://ghcr.io/<owner>/mct-api:<sha> --repo <owner>/<repo>`.
+- **SBOM** — a CycloneDX 1.5 SBOM (licenses, dependency graph, commit binding)
+  is generated and validated in CI; see [docs/SBOM_PROCESS.md](docs/SBOM_PROCESS.md).
 
 ## Sensitive areas in this repository
 

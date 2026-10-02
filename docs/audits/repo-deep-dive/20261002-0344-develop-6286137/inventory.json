@@ -1,0 +1,2307 @@
+{
+  "repo": "C:\\temp\\mainecybertech",
+  "generated_at": "2026-10-02T03:44:26.637107+00:00",
+  "git": {
+    "branch": "develop",
+    "sha": "62861370",
+    "dirty": false
+  },
+  "totals": {
+    "files": 2819,
+    "lines": 507764,
+    "by_ext": {
+      ".css": 2,
+      ".csv": 7,
+      ".dev": 1,
+      ".docx": 4,
+      ".example": 8,
+      ".hcl": 3,
+      ".html": 3,
+      ".ico": 1,
+      ".js": 22,
+      ".json": 182,
+      ".md": 910,
+      ".mjs": 13,
+      ".png": 8,
+      ".prod": 1,
+      ".ps1": 11,
+      ".py": 15,
+      ".sh": 14,
+      ".sql": 141,
+      ".svg": 1,
+      ".tf": 6,
+      ".tfvars": 1,
+      ".toml": 1,
+      ".ts": 638,
+      ".tsx": 775,
+      ".webmanifest": 1,
+      ".xlsx": 1,
+      ".yaml": 4,
+      ".yml": 26
+    }
+  },
+  "stacks": [
+    "docker-compose",
+    "github-actions",
+    "node",
+    "pnpm",
+    "supabase",
+    "terraform"
+  ],
+  "entry_points": [
+    ".storybook/main.ts",
+    "apps/api/src/app.ts",
+    "apps/api/src/main.ts",
+    "apps/worker/src/main.ts",
+    "packages/sdk/src/index.ts",
+    "packages/ui/src/index.ts"
+  ],
+  "routes": [
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/health"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/metrics"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/auth"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/organizations"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/memberships"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/users"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/profiles"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/tickets"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/projects"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/documents"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/dashboard"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/audit"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/webhooks"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/roles"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/me"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/search"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/search/portal"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/public"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/notifications"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/notification-preferences"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/billing"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/webhook-endpoints"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/sla"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/api-keys"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/admin"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/bulk"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/approvals"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/business-os"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/proposals"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/findings"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/assets"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/device-profiles"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/domain-monitors"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/qbr"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/file-requests"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/ai"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/vendors"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/service-catalog"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/batch"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/security-ops"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/security-suite"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/governance"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/field-services"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/network-diagrams"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/edu-automation"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/final"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/client-onboarding"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/satisfaction-pulse"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/dynamic-forms"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/license-optimizer"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/dmarc-coach"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/training-hub"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/insurance-binder"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/status-page"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/uptime-monitor"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/store"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/compliance"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/cab"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/staging"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/analytics"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/client-portal"
+    },
+    {
+      "file": "apps/api/src/app.ts",
+      "path": "/api/v1/knowledge-base"
+    },
+    {
+      "file": "apps/api/src/routes/admin.ts",
+      "path": "/organizations"
+    },
+    {
+      "file": "apps/api/src/routes/admin.ts",
+      "path": "/test-email"
+    },
+    {
+      "file": "apps/api/src/routes/ai.ts",
+      "path": "/triage/analyze"
+    },
+    {
+      "file": "apps/api/src/routes/ai.ts",
+      "path": "/triage/convert"
+    },
+    {
+      "file": "apps/api/src/routes/ai.ts",
+      "path": "/triage"
+    },
+    {
+      "file": "apps/api/src/routes/ai.ts",
+      "path": "/copilot/:ticketId/summarize"
+    },
+    {
+      "file": "apps/api/src/routes/ai.ts",
+      "path": "/copilot/:ticketId/reply-draft"
+    },
+    {
+      "file": "apps/api/src/routes/analytics.ts",
+      "path": "/track"
+    },
+    {
+      "file": "apps/api/src/routes/analytics.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/analytics.ts",
+      "path": "/summary"
+    },
+    {
+      "file": "apps/api/src/routes/api-keys.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/api-keys.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/api-keys.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/api-keys.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/export"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/stats"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/:id/approve"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/:id/reject"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/:id/cancel"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "apps/api/src/routes/approvals.ts",
+      "path": "/:id/timeline"
+    },
+    {
+      "file": "apps/api/src/routes/assets.ts",
+      "path": "/export"
+    },
+    {
+      "file": "apps/api/src/routes/assets.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/assets.ts",
+      "path": "/stats"
+    },
+    {
+      "file": "apps/api/src/routes/assets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/assets.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/assets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/assets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/assets.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "apps/api/src/routes/assets.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "apps/api/src/routes/assets.ts",
+      "path": "/:id/timeline"
+    },
+    {
+      "file": "apps/api/src/routes/audit.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/audit.ts",
+      "path": "/export"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/me"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/sign-in"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/sign-up"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/callback"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/sign-out"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/forgot-password"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/reset-password"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/mfa/factors"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/mfa/enroll"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/mfa/challenge"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/mfa/verify"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/mfa/factors/:factorId"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/mfa/recovery-codes"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/mfa/recovery-codes"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/mfa/recovery-codes"
+    },
+    {
+      "file": "apps/api/src/routes/auth.ts",
+      "path": "/mfa/recovery"
+    },
+    {
+      "file": "apps/api/src/routes/batch.ts",
+      "path": "/status/public"
+    },
+    {
+      "file": "apps/api/src/routes/batch.ts",
+      "path": "/licenses/savings"
+    },
+    {
+      "file": "apps/api/src/routes/billing.ts",
+      "path": "/summary"
+    },
+    {
+      "file": "apps/api/src/routes/billing.ts",
+      "path": "/invoices"
+    },
+    {
+      "file": "apps/api/src/routes/billing.ts",
+      "path": "/invoices/:id"
+    },
+    {
+      "file": "apps/api/src/routes/billing.ts",
+      "path": "/subscriptions"
+    },
+    {
+      "file": "apps/api/src/routes/billing.ts",
+      "path": "/payments"
+    },
+    {
+      "file": "apps/api/src/routes/billing.ts",
+      "path": "/billing-customer"
+    },
+    {
+      "file": "apps/api/src/routes/billing.ts",
+      "path": "/sync"
+    },
+    {
+      "file": "apps/api/src/routes/billing.ts",
+      "path": "/create-portal-session"
+    },
+    {
+      "file": "apps/api/src/routes/bulk.ts",
+      "path": "/invite"
+    },
+    {
+      "file": "apps/api/src/routes/business-os.ts",
+      "path": "/summary"
+    },
+    {
+      "file": "apps/api/src/routes/business-os.ts",
+      "path": "/approvals-overdue"
+    },
+    {
+      "file": "apps/api/src/routes/business-os.ts",
+      "path": "/recent-activity"
+    },
+    {
+      "file": "apps/api/src/routes/business-os.ts",
+      "path": "/org-health"
+    },
+    {
+      "file": "apps/api/src/routes/business-os.ts",
+      "path": "/snapshots"
+    },
+    {
+      "file": "apps/api/src/routes/cab.ts",
+      "path": "/meetings"
+    },
+    {
+      "file": "apps/api/src/routes/cab.ts",
+      "path": "/meetings"
+    },
+    {
+      "file": "apps/api/src/routes/cab.ts",
+      "path": "/meetings/:id"
+    },
+    {
+      "file": "apps/api/src/routes/cab.ts",
+      "path": "/meetings/:id/agenda"
+    },
+    {
+      "file": "apps/api/src/routes/cab.ts",
+      "path": "/agenda/:id"
+    },
+    {
+      "file": "apps/api/src/routes/client-onboarding-command-center.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/client-onboarding-command-center.ts",
+      "path": "/export.csv"
+    },
+    {
+      "file": "apps/api/src/routes/client-onboarding-command-center.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/client-onboarding-command-center.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/client-onboarding-command-center.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/client-onboarding-command-center.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/client-onboarding-command-center.ts",
+      "path": "/:id/complete-phase"
+    },
+    {
+      "file": "apps/api/src/routes/client-onboarding-command-center.ts",
+      "path": "/:id/checklist"
+    },
+    {
+      "file": "apps/api/src/routes/client-onboarding-command-center.ts",
+      "path": "/:id/checklist/:itemId"
+    },
+    {
+      "file": "apps/api/src/routes/client-portal.ts",
+      "path": "/bootstrap"
+    },
+    {
+      "file": "apps/api/src/routes/client-portal.ts",
+      "path": "/entitlements"
+    },
+    {
+      "file": "apps/api/src/routes/client-portal.ts",
+      "path": "/entitlements"
+    },
+    {
+      "file": "apps/api/src/routes/compliance.ts",
+      "path": "/frameworks"
+    },
+    {
+      "file": "apps/api/src/routes/compliance.ts",
+      "path": "/frameworks"
+    },
+    {
+      "file": "apps/api/src/routes/compliance.ts",
+      "path": "/frameworks/:id/controls"
+    },
+    {
+      "file": "apps/api/src/routes/compliance.ts",
+      "path": "/frameworks/:id/controls"
+    },
+    {
+      "file": "apps/api/src/routes/compliance.ts",
+      "path": "/controls/:id"
+    },
+    {
+      "file": "apps/api/src/routes/compliance.ts",
+      "path": "/controls/:id"
+    },
+    {
+      "file": "apps/api/src/routes/dashboard.ts",
+      "path": "/summary"
+    },
+    {
+      "file": "apps/api/src/routes/device-profiles.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/device-profiles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/device-profiles.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/device-profiles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/device-profiles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/dmarc-coach.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/dmarc-coach.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/dmarc-coach.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/dmarc-coach.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/dmarc-coach.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/dmarc-coach.ts",
+      "path": "/analyze"
+    },
+    {
+      "file": "apps/api/src/routes/docs.ts",
+      "path": "/openapi.json"
+    },
+    {
+      "file": "apps/api/src/routes/docs.ts",
+      "path": "/docs"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/shares/:token"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/upload"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/:id/signed-url"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/bulk/folder"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/bulk/metadata"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/:id/versions"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/:id/versions/:versionId"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/:id/shares"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/:id/shares"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/:id/shares/:shareId"
+    },
+    {
+      "file": "apps/api/src/routes/documents.ts",
+      "path": "/:id/shares/:shareId"
+    },
+    {
+      "file": "apps/api/src/routes/domain-monitors.ts",
+      "path": "/export"
+    },
+    {
+      "file": "apps/api/src/routes/domain-monitors.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/domain-monitors.ts",
+      "path": "/stats"
+    },
+    {
+      "file": "apps/api/src/routes/domain-monitors.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/domain-monitors.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/domain-monitors.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/domain-monitors.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/dynamic-client-forms-builder.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/dynamic-client-forms-builder.ts",
+      "path": "/export.csv"
+    },
+    {
+      "file": "apps/api/src/routes/dynamic-client-forms-builder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/dynamic-client-forms-builder.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/dynamic-client-forms-builder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/dynamic-client-forms-builder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/dynamic-client-forms-builder.ts",
+      "path": "/:id/publish"
+    },
+    {
+      "file": "apps/api/src/routes/dynamic-client-forms-builder.ts",
+      "path": "/:id/submit"
+    },
+    {
+      "file": "apps/api/src/routes/dynamic-client-forms-builder.ts",
+      "path": "/:id/submissions"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/automation/:id/execute"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/automation/:id/complete"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/kb-generator/:id/generate"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/ai-policy/:id/generate"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/kb/search"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/kb/:id/rate"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/compliance/score"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/phishing/:id/launch"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/phishing/:id/results"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/phishing/:id/targets"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/phishing/:id/targets"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/phishing/:id/targets/:targetId"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/scorecards/summary"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/scorecards/overview"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/scorecards/leaderboard"
+    },
+    {
+      "file": "apps/api/src/routes/edu-automation.ts",
+      "path": "/scorecards/evaluate"
+    },
+    {
+      "file": "apps/api/src/routes/field-services.ts",
+      "path": "/isp/:id/score"
+    },
+    {
+      "file": "apps/api/src/routes/field-services.ts",
+      "path": "/unifi/:id/plan"
+    },
+    {
+      "file": "apps/api/src/routes/field-services.ts",
+      "path": "/camera-calc/calculate"
+    },
+    {
+      "file": "apps/api/src/routes/field-services.ts",
+      "path": "/staging/:id/checklist"
+    },
+    {
+      "file": "apps/api/src/routes/file-requests.ts",
+      "path": "/public/:token"
+    },
+    {
+      "file": "apps/api/src/routes/file-requests.ts",
+      "path": "/public/:token/upload"
+    },
+    {
+      "file": "apps/api/src/routes/file-requests.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/file-requests.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/file-requests.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/file-requests.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/file-requests.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/export"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/stats"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/:id/verify"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/:id/resolve"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "apps/api/src/routes/findings.ts",
+      "path": "/:id/timeline"
+    },
+    {
+      "file": "apps/api/src/routes/governance.ts",
+      "path": "/change-requests/:id/submit"
+    },
+    {
+      "file": "apps/api/src/routes/governance.ts",
+      "path": "/change-requests/:id/approve"
+    },
+    {
+      "file": "apps/api/src/routes/governance.ts",
+      "path": "/change-requests/:id/reject"
+    },
+    {
+      "file": "apps/api/src/routes/governance.ts",
+      "path": "/change-requests/:id/implement"
+    },
+    {
+      "file": "apps/api/src/routes/governance.ts",
+      "path": "/change-requests/:id/verify"
+    },
+    {
+      "file": "apps/api/src/routes/governance.ts",
+      "path": "/risks/:id/assess"
+    },
+    {
+      "file": "apps/api/src/routes/governance.ts",
+      "path": "/risks/:id/accept"
+    },
+    {
+      "file": "apps/api/src/routes/governance.ts",
+      "path": "/risks/:id/reopen"
+    },
+    {
+      "file": "apps/api/src/routes/governance.ts",
+      "path": "/sop-library/compliance-map"
+    },
+    {
+      "file": "apps/api/src/routes/governance.ts",
+      "path": "/sop-library/framework-gaps"
+    },
+    {
+      "file": "apps/api/src/routes/health.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/insurance-binder.ts",
+      "path": "/coverage-report"
+    },
+    {
+      "file": "apps/api/src/routes/insurance-binder.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/insurance-binder.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/insurance-binder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/insurance-binder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/insurance-binder.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/knowledge-base.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/knowledge-base.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/knowledge-base.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/knowledge-base.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/knowledge-base.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/license-optimizer.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/license-optimizer.ts",
+      "path": "/reclaimable/license-list"
+    },
+    {
+      "file": "apps/api/src/routes/license-optimizer.ts",
+      "path": "/summary/data"
+    },
+    {
+      "file": "apps/api/src/routes/license-optimizer.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/license-optimizer.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/license-optimizer.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/license-optimizer.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/me.ts",
+      "path": "/permissions"
+    },
+    {
+      "file": "apps/api/src/routes/memberships.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/memberships.ts",
+      "path": "/mine"
+    },
+    {
+      "file": "apps/api/src/routes/memberships.ts",
+      "path": "/invite"
+    },
+    {
+      "file": "apps/api/src/routes/memberships.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/memberships.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/network-diagrams.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/network-diagrams.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/network-diagrams.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/network-diagrams.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/network-diagrams.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/notification-preferences.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/notification-preferences.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/notifications.ts",
+      "path": "/stream"
+    },
+    {
+      "file": "apps/api/src/routes/notifications.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/notifications.ts",
+      "path": "/unread-count"
+    },
+    {
+      "file": "apps/api/src/routes/notifications.ts",
+      "path": "/:id/read"
+    },
+    {
+      "file": "apps/api/src/routes/notifications.ts",
+      "path": "/mark-all-read"
+    },
+    {
+      "file": "apps/api/src/routes/notifications.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/notifications.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/onboard"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/:id/detail"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/:id/domains"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/:id/domains"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/:id/domains/:domainId"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/:id/domains/:domainId"
+    },
+    {
+      "file": "apps/api/src/routes/organizations.ts",
+      "path": "/:id/logo"
+    },
+    {
+      "file": "apps/api/src/routes/profiles.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/profiles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/profiles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/profiles.ts",
+      "path": "/:id/avatar"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/export"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/compound"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/detail"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/:taskId"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/:taskId"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/comments"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/:taskId/comments"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/updates"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/updates"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/updates/:updateId"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/updates/:updateId"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/:taskId/comments/:commentId"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/:taskId/comments/:commentId"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/read-states"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/reorder"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/:taskId/read"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/:taskId/approve"
+    },
+    {
+      "file": "apps/api/src/routes/projects.ts",
+      "path": "/:id/tasks/:taskId/portal-comment"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/export"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/phases"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/phases/:phaseId"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/phases/:phaseId"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/items"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/items/:itemId"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/items/:itemId"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/submit-approval"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/publish"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "apps/api/src/routes/proposals.ts",
+      "path": "/:id/timeline"
+    },
+    {
+      "file": "apps/api/src/routes/public.ts",
+      "path": "/init"
+    },
+    {
+      "file": "apps/api/src/routes/public.ts",
+      "path": "/submit"
+    },
+    {
+      "file": "apps/api/src/routes/public.ts",
+      "path": "/csp-report"
+    },
+    {
+      "file": "apps/api/src/routes/qbr.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/qbr.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/qbr.ts",
+      "path": "/generate"
+    },
+    {
+      "file": "apps/api/src/routes/qbr.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/qbr.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/roles.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/roles.ts",
+      "path": "/with-permissions"
+    },
+    {
+      "file": "apps/api/src/routes/roles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/roles.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/roles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/roles.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/roles.ts",
+      "path": "/:id/permissions"
+    },
+    {
+      "file": "apps/api/src/routes/roles.ts",
+      "path": "/:id/permissions"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/export"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/:id/respond"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/templates"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/templates/:id"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/templates"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/templates/:id"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/templates/:id"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/schedules"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/schedules"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/schedules/:id"
+    },
+    {
+      "file": "apps/api/src/routes/satisfaction-pulse-widget.ts",
+      "path": "/schedules/:id"
+    },
+    {
+      "file": "apps/api/src/routes/search-portal.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/search.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/security-ops.ts",
+      "path": "/offboarding/:id/complete-step"
+    },
+    {
+      "file": "apps/api/src/routes/security-ops.ts",
+      "path": "/patch-compliance/stats"
+    },
+    {
+      "file": "apps/api/src/routes/security-suite.ts",
+      "path": "/identity-verification/:id/verify"
+    },
+    {
+      "file": "apps/api/src/routes/security-suite.ts",
+      "path": "/endpoint-security/coverage"
+    },
+    {
+      "file": "apps/api/src/routes/security-suite.ts",
+      "path": "/m365-hardening/:id/scan"
+    },
+    {
+      "file": "apps/api/src/routes/service-catalog.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/service-catalog.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/service-catalog.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/service-catalog.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/service-catalog.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/sla.ts",
+      "path": "/metrics"
+    },
+    {
+      "file": "apps/api/src/routes/staging.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/staging.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/staging.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/staging.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/staging.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/status-page.ts",
+      "path": "/public/:orgId"
+    },
+    {
+      "file": "apps/api/src/routes/tickets.ts",
+      "path": "/export"
+    },
+    {
+      "file": "apps/api/src/routes/tickets.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/tickets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/tickets.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/tickets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/tickets.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "apps/api/src/routes/tickets.ts",
+      "path": "/:id/comments"
+    },
+    {
+      "file": "apps/api/src/routes/tickets.ts",
+      "path": "/:id/comments/:commentId"
+    },
+    {
+      "file": "apps/api/src/routes/tickets.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/tickets.ts",
+      "path": "/bulk"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/my-courses"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/courses"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/courses"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/courses/:id"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/courses/:id"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/courses/:id"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/courses/:id/enroll"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/courses/:id/progress"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/lessons"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/lessons"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/lessons/:id"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/lessons/:id"
+    },
+    {
+      "file": "apps/api/src/routes/training-hub.ts",
+      "path": "/lessons/:id"
+    },
+    {
+      "file": "apps/api/src/routes/uptime-monitor.ts",
+      "path": "/dashboard"
+    },
+    {
+      "file": "apps/api/src/routes/uptime-monitor.ts",
+      "path": "/checks"
+    },
+    {
+      "file": "apps/api/src/routes/uptime-monitor.ts",
+      "path": "/checks/:id"
+    },
+    {
+      "file": "apps/api/src/routes/uptime-monitor.ts",
+      "path": "/checks"
+    },
+    {
+      "file": "apps/api/src/routes/uptime-monitor.ts",
+      "path": "/checks/:id"
+    },
+    {
+      "file": "apps/api/src/routes/uptime-monitor.ts",
+      "path": "/checks/:id"
+    },
+    {
+      "file": "apps/api/src/routes/uptime-monitor.ts",
+      "path": "/checks/:id/results"
+    },
+    {
+      "file": "apps/api/src/routes/uptime-monitor.ts",
+      "path": "/checks/:id/uptime"
+    },
+    {
+      "file": "apps/api/src/routes/users.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/users.ts",
+      "path": "/compound"
+    },
+    {
+      "file": "apps/api/src/routes/users.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/users.ts",
+      "path": "/:id/detail"
+    },
+    {
+      "file": "apps/api/src/routes/users.ts",
+      "path": "/:id/role"
+    },
+    {
+      "file": "apps/api/src/routes/users.ts",
+      "path": "/:id/permissions"
+    },
+    {
+      "file": "apps/api/src/routes/users.ts",
+      "path": "/:id/permissions"
+    },
+    {
+      "file": "apps/api/src/routes/vendors.ts",
+      "path": "/vendor-contracts/renewals"
+    },
+    {
+      "file": "apps/api/src/routes/webhook-management.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/webhook-management.ts",
+      "path": "/dead-letters"
+    },
+    {
+      "file": "apps/api/src/routes/webhook-management.ts",
+      "path": "/dead-letters/:id/retry"
+    },
+    {
+      "file": "apps/api/src/routes/webhook-management.ts",
+      "path": "/dead-letters/:id"
+    },
+    {
+      "file": "apps/api/src/routes/webhook-management.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/webhook-management.ts",
+      "path": "/"
+    },
+    {
+      "file": "apps/api/src/routes/webhook-management.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/webhook-management.ts",
+      "path": "/:id"
+    },
+    {
+      "file": "apps/api/src/routes/webhook-management.ts",
+      "path": "/:id/deliveries"
+    },
+    {
+      "file": "apps/api/src/routes/webhook-management.ts",
+      "path": "/:id/test"
+    },
+    {
+      "file": "apps/api/src/routes/webhooks.ts",
+      "path": "/stripe"
+    },
+    {
+      "file": "apps/api/src/routes/webhooks.ts",
+      "path": "/jira"
+    },
+    {
+      "file": "apps/api/src/routes/webhooks.ts",
+      "path": "/jsm"
+    },
+    {
+      "file": "apps/api/src/routes/webhooks.ts",
+      "path": "/m365"
+    },
+    {
+      "file": "apps/api/src/routes/webhooks.ts",
+      "path": "/m365"
+    },
+    {
+      "file": "apps/api/src/routes/final/backups.ts",
+      "path": "/backups/stats"
+    },
+    {
+      "file": "apps/api/src/routes/final/backups.ts",
+      "path": "/backups/risk-analysis"
+    },
+    {
+      "file": "apps/api/src/routes/final/budgets.ts",
+      "path": "/budgets/analysis"
+    },
+    {
+      "file": "apps/api/src/routes/final/dns-changes.ts",
+      "path": "/dns-changes/:id/approve"
+    },
+    {
+      "file": "apps/api/src/routes/final/dns-changes.ts",
+      "path": "/dns-changes/:id/reject"
+    },
+    {
+      "file": "apps/api/src/routes/final/dns-changes.ts",
+      "path": "/dns-changes/:id/implement"
+    },
+    {
+      "file": "apps/api/src/routes/final/procurement.ts",
+      "path": "/procurement/compare"
+    },
+    {
+      "file": "apps/api/src/routes/final/sharepoint.ts",
+      "path": "/sharepoint/structure-summary"
+    },
+    {
+      "file": "apps/api/src/routes/final/time-entries.ts",
+      "path": "/time-entries/summary"
+    },
+    {
+      "file": "apps/api/src/routes/store/campaigns.ts",
+      "path": "/campaigns"
+    },
+    {
+      "file": "apps/api/src/routes/store/campaigns.ts",
+      "path": "/campaigns/admin"
+    },
+    {
+      "file": "apps/api/src/routes/store/campaigns.ts",
+      "path": "/campaigns"
+    },
+    {
+      "file": "apps/api/src/routes/store/campaigns.ts",
+      "path": "/campaigns/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/campaigns.ts",
+      "path": "/campaigns/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/products"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/products/by-id/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/products/:slug"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/categories"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/categories/:slug"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/products"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/products/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/products/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/categories"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/categories/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/catalog.ts",
+      "path": "/categories/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/promotions.ts",
+      "path": "/promotions"
+    },
+    {
+      "file": "apps/api/src/routes/store/promotions.ts",
+      "path": "/promotions/active"
+    },
+    {
+      "file": "apps/api/src/routes/store/promotions.ts",
+      "path": "/promotions/admin"
+    },
+    {
+      "file": "apps/api/src/routes/store/promotions.ts",
+      "path": "/promotions"
+    },
+    {
+      "file": "apps/api/src/routes/store/promotions.ts",
+      "path": "/promotions/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/promotions.ts",
+      "path": "/promotions/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/quotes.ts",
+      "path": "/quotes"
+    },
+    {
+      "file": "apps/api/src/routes/store/quotes.ts",
+      "path": "/quotes"
+    },
+    {
+      "file": "apps/api/src/routes/store/quotes.ts",
+      "path": "/quote-requests"
+    },
+    {
+      "file": "apps/api/src/routes/store/quotes.ts",
+      "path": "/leads"
+    },
+    {
+      "file": "apps/api/src/routes/store/quotes.ts",
+      "path": "/quote-requests/:id/proposal"
+    },
+    {
+      "file": "apps/api/src/routes/store/quotes.ts",
+      "path": "/proposal-drafts"
+    },
+    {
+      "file": "apps/api/src/routes/store/quotes.ts",
+      "path": "/proposal-drafts/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/quotes.ts",
+      "path": "/quote-requests/:id/convert"
+    },
+    {
+      "file": "apps/api/src/routes/store/visual-assets.ts",
+      "path": "/visual-assets"
+    },
+    {
+      "file": "apps/api/src/routes/store/visual-assets.ts",
+      "path": "/visual-assets"
+    },
+    {
+      "file": "apps/api/src/routes/store/visual-assets.ts",
+      "path": "/visual-assets/:id"
+    },
+    {
+      "file": "apps/api/src/routes/store/visual-assets.ts",
+      "path": "/visual-assets/:id"
+    },
+    {
+      "file": "prompts/mct-portal-os-expanded-60-modules-deep-prompts-pack/templates/api-route-template.ts",
+      "path": "/"
+    },
+    {
+      "file": "prompts/mct-portal-os-expanded-60-modules-deep-prompts-pack/templates/api-route-template.ts",
+      "path": "/"
+    },
+    {
+      "file": "scripts/openapi-audit.js",
+      "path": "/prefix"
+    }
+  ],
+  "migrations": [
+    "docs/portal_platform_formal_handoff_bundle/supabase_consolidated_fresh_bootstrap_20260529.sql",
+    "prompts/mct-full-webstore-product-catalog-pack/repo_patch/supabase/migrations/5302060_store_conversion_modules.sql",
+    "prompts/mct-full-webstore-product-catalog-pack/repo_patch/supabase/migrations/5302070_store_v5_sales_ops.sql",
+    "prompts/mct-portal-os-expanded-60-modules-deep-prompts-pack/templates/migration-template.sql",
+    "supabase/migrations/5302026_supabase_consolidated_fresh_bootstrap_20260529.corrected.v3.sql",
+    "supabase/migrations/5302028_seed_permissions.sql",
+    "supabase/migrations/5302029_create_notifications_table.sql",
+    "supabase/migrations/5302030_add_jira_fields.sql",
+    "supabase/migrations/5302031_org_branding.sql",
+    "supabase/migrations/5302032_webhook_endpoints.sql",
+    "supabase/migrations/5302033_public_interactions.sql",
+    "supabase/migrations/5302034_ticket_comment_editing.sql",
+    "supabase/migrations/5302035_bootstrap_portal_access.sql",
+    "supabase/migrations/5302036_public_interactions_service_role_rls.sql",
+    "supabase/migrations/5302037_public_interactions_insert_policies.sql",
+    "supabase/migrations/5302038_disable_rls_public_interactions.sql",
+    "supabase/migrations/5302041_sla_logs.sql",
+    "supabase/migrations/5302042_api_keys.sql",
+    "supabase/migrations/5302043_document_shares.sql",
+    "supabase/migrations/5302050_webhook_retry_dlq.sql",
+    "supabase/migrations/5302051_optimistic_locking_version_columns.sql",
+    "supabase/migrations/5302052_bulk_update_transaction.sql",
+    "supabase/migrations/5302053_webhook_idempotency.sql",
+    "supabase/migrations/5302054_bulk_update_with_results.sql",
+    "supabase/migrations/5302055_cleanup_dead_tables.sql",
+    "supabase/migrations/5302056_add_missing_indexes.sql",
+    "supabase/migrations/5302057_fix_bootstrap_rls_fk_indexes.sql",
+    "supabase/migrations/5302058_shared_module_tables.sql",
+    "supabase/migrations/5302059_proposal_builder.sql",
+    "supabase/migrations/5302060_findings_tracker.sql",
+    "supabase/migrations/5302061_asset_tracker.sql",
+    "supabase/migrations/5302062_domain_monitor.sql",
+    "supabase/migrations/5302063_qbr_reports.sql",
+    "supabase/migrations/5302064_file_requests.sql",
+    "supabase/migrations/5302065_ticket_triage.sql",
+    "supabase/migrations/5302066_vendor_contracts_contacts.sql",
+    "supabase/migrations/5302067_service_catalog.sql",
+    "supabase/migrations/5302068_batch_modules.sql",
+    "supabase/migrations/5302069_security_ops.sql",
+    "supabase/migrations/5302070_security_suite.sql",
+    "supabase/migrations/5302071_governance.sql",
+    "supabase/migrations/5302072_field_services.sql",
+    "supabase/migrations/5302073_edu_automation.sql",
+    "supabase/migrations/5302074_final_batch.sql",
+    "supabase/migrations/5302075_backup_dr.sql",
+    "supabase/migrations/5302076_delete_rls_policies.sql",
+    "supabase/migrations/5302077_missing_rls_policies.sql",
+    "supabase/migrations/5302078_client_onboarding_command_center.sql",
+    "supabase/migrations/5302079_satisfaction_pulse_widget.sql",
+    "supabase/migrations/5302080_dynamic_client_forms_builder.sql",
+    "supabase/migrations/5302081_fix_rls_policies.sql",
+    "supabase/migrations/5302082_add_performance_indexes.sql",
+    "supabase/migrations/5302083_powershell_policy_guard.sql",
+    "supabase/migrations/5302085_scorecards_gamification.sql",
+    "supabase/migrations/5302086_sop_library_compliance.sql",
+    "supabase/migrations/5302087_project_tracker.sql",
+    "supabase/migrations/5302088_license_optimizer.sql",
+    "supabase/migrations/5302089_dmarc_coach.sql",
+    "supabase/migrations/5302090_training_hub.sql",
+    "supabase/migrations/5302091_insurance_binder.sql",
+    "supabase/migrations/5302092_status_page.sql",
+    "supabase/migrations/5302093_uptime_monitor.sql",
+    "supabase/migrations/5302094_camera_calculation_fields.sql",
+    "supabase/migrations/5302095_offboarding_checklist_fields.sql",
+    "supabase/migrations/5302096_phishing_campaign_fields.sql",
+    "supabase/migrations/5302097_isp_unifi_scoring_fields.sql",
+    "supabase/migrations/5302098_article_feedback_fields.sql",
+    "supabase/migrations/5302099_automation_log_fields.sql",
+    "supabase/migrations/5302100_fix_rls_membership_status.sql",
+    "supabase/migrations/5302101_fix_missing_rls_policies.sql",
+    "supabase/migrations/5302102_add_performance_indexes.sql",
+    "supabase/migrations/5302103_add_check_constraints.sql",
+    "supabase/migrations/5302104_store_promotions.sql",
+    "supabase/migrations/5302105_store_quotes.sql",
+    "supabase/migrations/5302106_store_analytics.sql",
+    "supabase/migrations/5302107_notification_dedup_and_indexes.sql",
+    "supabase/migrations/5302108_fix_audit_logs_cascade.sql",
+    "supabase/migrations/5302109_soft_delete.sql",
+    "supabase/migrations/5302110_restore_document_permissions.sql",
+    "supabase/migrations/5302111_harden_bulk_update_rpc.sql",
+    "supabase/migrations/5302112_fix_rls_approved_membership.sql",
+    "supabase/migrations/5302113_add_check_constraints.sql",
+    "supabase/migrations/5302114_store_conversion_modules.sql",
+    "supabase/migrations/5302115_store_v5_sales_ops.sql",
+    "supabase/migrations/5302116_grant_table_privileges.sql",
+    "supabase/migrations/5302117_public_interactions_retention.sql",
+    "supabase/migrations/5302118_permission_matrix_full_catalog.sql",
+    "supabase/migrations/5302119_demo_test_data.sql",
+    "supabase/migrations/5302120_demo_module_data.sql",
+    "supabase/migrations/5302121_demo_permission_edge_cases.sql",
+    "supabase/migrations/5302122_mark_task_read_rpc.sql",
+    "supabase/migrations/5302123_demo_expanded_test_data.sql",
+    "supabase/migrations/5302124_fix_worker_schema_columns.sql",
+    "supabase/migrations/5302125_risk_assess_columns.sql",
+    "supabase/migrations/5302126_demo_worker_admin_coverage.sql",
+    "supabase/migrations/5302127_module_state_columns.sql",
+    "supabase/migrations/5302128_role_catalog_expansion.sql",
+    "supabase/migrations/5302129_supabase_rls_audit_fixes.sql",
+    "supabase/migrations/5302130_project_task_rpc_user_id.sql",
+    "supabase/migrations/5302131_governance_manage_permissions.sql",
+    "supabase/migrations/5302132_store_rls_fix.sql",
+    "supabase/migrations/5302133_impersonation_log.sql",
+    "supabase/migrations/5302134_store_catalog_tables.sql",
+    "supabase/migrations/5302135_profiles_encrypted_pii.sql",
+    "supabase/migrations/5302402_knowledge_base.sql",
+    "supabase/migrations/5302403_compliance.sql",
+    "supabase/migrations/5302404_cab.sql",
+    "supabase/migrations/5302405_hardware_staging.sql",
+    "supabase/migrations/5302406_device_profiles.sql",
+    "supabase/migrations/5302407_network_diagrams.sql",
+    "supabase/migrations/5302408_store_tenant_scoping.sql",
+    "supabase/migrations/5302409_domain_monitors_version.sql",
+    "supabase/migrations/5302410_webhook_deliveries_nullable_webhook_id.sql",
+    "supabase/migrations/5302411_satisfaction_pulse_columns.sql",
+    "supabase/migrations/5302412_rls_approved_status_gap.sql",
+    "supabase/migrations/5302413_incident_runbook_link.sql",
+    "supabase/migrations/5302414_client_portal_entitlements.sql",
+    "supabase/migrations/5302415_website_monitor_seo.sql",
+    "supabase/migrations/5302416_business_os_snapshots.sql",
+    "supabase/migrations/5302417_phishing_targets.sql",
+    "supabase/migrations/5302418_rls_approved_status_gap_2.sql",
+    "supabase/migrations/5302419_fk_indexes.sql",
+    "supabase/migrations/5302420_rls_entitlements_and_impersonation_fix.sql",
+    "supabase/migrations/5302421_store_proposal_draft_proposal_link.sql",
+    "supabase/migrations/5302422_store_campaigns.sql",
+    "supabase/migrations/5302423_store_portal_scope.sql",
+    "supabase/migrations/5302424_manage_actions.sql",
+    "supabase/migrations/5302425_public_interactions_is_bot.sql",
+    "supabase/migrations/5302426_status_actions.sql",
+    "supabase/migrations/5302427_mfa_recovery_codes.sql",
+    "supabase/migrations/5302428_client_portal_entitlements_platform_admin.sql",
+    "supabase/seeds/00_local_auth_users.corrected.v2.sql",
+    "supabase/seeds/01_attach_real_users.corrected.v2.sql",
+    "supabase/seeds/02_schema_aligned_seed.sql",
+    "supabase/seeds/03_local_portal_extra_demo_seed.sql",
+    "supabase/seeds/04_test_seed.sql",
+    "supabase/seeds/05_comprehensive_test_data.sql",
+    "supabase/seeds/06_comprehensive_module_data.sql",
+    "supabase/seeds/07_permission_edge_cases.sql",
+    "supabase/seeds/08_expanded_test_data.sql",
+    "supabase/snippets/Untitled query 314.sql"
+  ],
+  "workflows": [
+    ".github/workflows/a11y-breadth.yml",
+    ".github/workflows/build-push.yml",
+    ".github/workflows/chromatic.yml",
+    ".github/workflows/codeql.yml",
+    ".github/workflows/db-backup.yml",
+    ".github/workflows/db-restore-test.yml",
+    ".github/workflows/dependency-review.yml",
+    ".github/workflows/deploy-do.yml",
+    ".github/workflows/e2e.yml",
+    ".github/workflows/lint.yml",
+    ".github/workflows/sbom.yml",
+    ".github/workflows/supabase-migrations.yml",
+    ".github/workflows/terraform-do.yml",
+    ".github/workflows/test.yml",
+    ".github/workflows/typecheck.yml",
+    ".github/workflows/validate.yml"
+  ],
+  "containers": [
+    "apps/api/Dockerfile",
+    "apps/web/Dockerfile",
+    "apps/worker/Dockerfile"
+  ],
+  "tests": {
+    "files": 500,
+    "dirs": []
+  },
+  "secret_adjacent_files": [
+    "apps/api/.env.example",
+    "apps/web/.env.example",
+    "apps/worker/.env.example",
+    "docs/GITHUB_SECRETS_AND_VARIABLES_MATRIX.md",
+    "docs/SECRETS_ROTATION.md",
+    "infra/digitalocean/.env.example",
+    "prompts/repo-deep-dive/20260728-0142-develop-21a10d6/11_supply_chain_dependency_secrets.md",
+    "prompts/repo-deep-dive/20260728-0142-develop-21a10d6/38_env_secret_rotation.md",
+    "prompts/repo-deep-dive/20260729-0025-develop-bc76370/11_supply_chain_dependency_secrets.md",
+    "prompts/repo-deep-dive/20260729-0025-develop-bc76370/38_env_secret_rotation.md",
+    "prompts/repo-deep-dive/20260730-0650-develop-62da92c/11_supply_chain_dependency_secrets.md",
+    "prompts/repo-deep-dive/20260730-0650-develop-62da92c/38_env_secret_rotation.md",
+    "prompts/repo-deep-dive/20260801-0233-develop-a585f1d/11_supply_chain_dependency_secrets.md",
+    "prompts/repo-deep-dive/prompts/11_supply_chain_dependency_secrets.md",
+    "prompts/repo-deep-dive/prompts/38_env_secret_rotation.md",
+    "scripts/scan-secrets.ps1",
+    "scripts/scan-secrets.sh"
+  ],
+  "largest_dirs": [
+    {
+      "dir": "apps",
+      "files": 1356
+    },
+    {
+      "dir": "prompts",
+      "files": 782
+    },
+    {
+      "dir": "docs",
+      "files": 285
+    },
+    {
+      "dir": "supabase",
+      "files": 145
+    },
+    {
+      "dir": "packages",
+      "files": 104
+    },
+    {
+      "dir": "scripts",
+      "files": 71
+    },
+    {
+      "dir": "(root)",
+      "files": 24
+    },
+    {
+      "dir": ".github",
+      "files": 24
+    },
+    {
+      "dir": "infra",
+      "files": 22
+    },
+    {
+      "dir": ".storybook",
+      "files": 2
+    },
+    {
+      "dir": "templates",
+      "files": 2
+    },
+    {
+      "dir": ".continue",
+      "files": 1
+    },
+    {
+      "dir": ".husky",
+      "files": 1
+    }
+  ],
+  "ci": [
+    "github-actions"
+  ]
+}

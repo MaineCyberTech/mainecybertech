@@ -27,6 +27,7 @@ permissions:
   contents: read
   packages: write
   id-token: write
+  attestations: write
   actions: write
 
 env:
@@ -189,7 +190,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+      - id: build-api
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/api/Dockerfile
@@ -197,6 +199,26 @@ jobs:
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Scan mct-api image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001): the fs scan cannot see base-image OS
+        # packages or npm-in-image contents.
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+      - name: Attest mct-api provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api
+          subject-digest: ${{ steps.build-api.outputs.digest }}
+          push-to-registry: true
 
   build-worker:
     needs: [setup]
@@ -211,7 +233,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+      - id: build-worker
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/worker/Dockerfile
@@ -219,6 +242,25 @@ jobs:
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Scan mct-worker image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+      - name: Attest mct-worker provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker
+          subject-digest: ${{ steps.build-worker.outputs.digest }}
+          push-to-registry: true
 
   build-web:
     needs: [setup]
@@ -233,7 +275,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+      - id: build-web
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/web/Dockerfile
@@ -248,6 +291,25 @@ jobs:
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Scan mct-web image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+      - name: Attest mct-web provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web
+          subject-digest: ${{ steps.build-web.outputs.digest }}
+          push-to-registry: true
 
   # ===== Deployment gates =====
   # validate: always runs (test + lint + typecheck) for every deploy
@@ -468,7 +530,7 @@ jobs:
             }
             healthy=0
             for attempt in $(seq 1 18); do
-              if [ "$(container_health api)" = "healthy" ] && [ "$(container_health web)" = "healthy" ]; then
+              if [ "$(container_health api)" = "healthy" ] && [ "$(container_health web)" = "healthy" ] && [ "$(container_health worker)" = "healthy" ]; then
                 healthy=1
                 echo "Health checks passed (attempt $attempt)"
                 break
@@ -525,12 +587,22 @@ jobs:
             exit 1
           fi
           echo "Worker health check via SSH..."
-          wcode=$($SSH \
-            "docker exec mct-portal-worker-1 wget -qO- http://localhost:3001/health >/dev/null 2>&1 && echo 200 || echo 000" 2>/dev/null | tr -d '\r\n' || echo "000")
-          if [ "$wcode" = "200" ]; then
-            echo "Worker healthy (HTTP 200)"
-          else
-            echo "Warning: Worker health check returned HTTP $wcode (non-fatal — worker is restart-loop tolerant)"
+          worker_ok=""
+          for i in $(seq 1 12); do
+            wcode=$($SSH \
+              "docker exec mct-portal-worker-1 wget -qO- http://localhost:3001/health >/dev/null 2>&1 && echo 200 || echo 000" 2>/dev/null | tr -d '\r\n' || echo "000")
+            if [ "$wcode" = "200" ]; then
+              echo "Worker healthy after $((i*5))s (HTTP 200)"; worker_ok=1; break
+            fi
+            echo "Worker attempt $i/12: HTTP $wcode"; sleep 5
+          done
+          if [ -z "$worker_ok" ]; then
+            echo "===== WORKER CONTAINER LOGS START ====="
+            $SSH "docker compose -p mct-portal logs --tail=50 worker 2>/dev/null || docker logs mct-portal-worker-1 --tail 50 2>/dev/null || echo 'no worker container found'" || echo "SSH to droplet failed"
+            echo "===== WORKER CONTAINER LOGS END ====="
+            rm -f "$KEY_FILE"
+            echo "Worker health check failed" >&2
+            exit 1
           fi
           rm -f "$KEY_FILE"
           web_ok=""

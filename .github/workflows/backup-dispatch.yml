@@ -2,11 +2,11 @@ name: Backup Schedule Dispatcher
 
 # Why this workflow exists (audit finding DR-P0-001):
 # GitHub `schedule:` triggers only fire for workflows on the DEFAULT branch.
-# The database backup and restore-test workflows were added on `develop`, so
-# on this repository (default branch `main`) the daily backup and weekly
-# restore test never ran. This file must live on `main`; it pokes the real
-# workflows on `develop` via workflow_dispatch, which does not require them to
-# be on the default branch.
+# The database backup, restore-test and storage-backup workflows were added on
+# `develop`, so on this repository (default branch `main`) the daily backup,
+# weekly restore test and daily storage mirror never ran. This file must live
+# on `main`; it pokes the real workflows on `develop` via workflow_dispatch,
+# which does not require them to be on the default branch.
 #
 # IMPORTANT: `gh workflow run --ref develop` requires the `workflow` scope on
 # the token. GITHUB_TOKEN cannot dispatch arbitrary workflows, so this job
@@ -16,12 +16,13 @@ name: Backup Schedule Dispatcher
 #
 # Alternative (no PAT required): flip the repository's default branch to
 # `develop`. Then delete this dispatcher and the schedule blocks in
-# db-backup.yml / db-restore-test.yml do the work themselves.
+# db-backup.yml / db-restore-test.yml / storage-backup.yml do the work.
 
 on:
   schedule:
-    - cron: "0 4 * * *"   # daily backup trigger (matches db-backup.yml)
-    - cron: "0 6 * * 1"   # weekly restore test trigger (matches db-restore-test.yml)
+    - cron: "0 4 * * *"   # daily database backup (matches db-backup.yml)
+    - cron: "0 5 * * *"   # daily storage mirror (matches storage-backup.yml)
+    - cron: "0 6 * * 1"   # weekly restore test (matches db-restore-test.yml)
   workflow_dispatch:
     inputs:
       target:
@@ -32,7 +33,9 @@ on:
         options:
           - backup
           - restore-test
+          - storage
           - both
+          - all
 
 permissions:
   contents: read
@@ -48,6 +51,8 @@ jobs:
             echo "targets=${{ inputs.target }}" >> "$GITHUB_OUTPUT"
           elif [ "${{ github.event.schedule }}" = "0 6 * * 1" ]; then
             echo "targets=restore-test" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 5 * * *" ]; then
+            echo "targets=storage" >> "$GITHUB_OUTPUT"
           else
             echo "targets=backup" >> "$GITHUB_OUTPUT"
           fi
@@ -61,34 +66,41 @@ jobs:
             exit 1
           fi
 
-      - name: Dispatch backup workflow
-        if: contains(steps.pick.outputs.targets, 'backup') || steps.pick.outputs.targets == 'both'
-        env:
-          GH_TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}
+      - name: Resolve the dispatch list
+        id: want
         run: |
-          gh workflow run db-backup.yml \
-            --repo "${{ github.repository }}" --ref develop
-          echo "Dispatched db-backup.yml on develop"
+          targets="${{ steps.pick.outputs.targets }}"
+          list=""
+          case "$targets" in
+            backup)       list="db-backup.yml" ;;
+            restore-test) list="db-restore-test.yml" ;;
+            storage)      list="storage-backup.yml" ;;
+            both)         list="db-backup.yml db-restore-test.yml" ;;
+            all)          list="db-backup.yml db-restore-test.yml storage-backup.yml" ;;
+            *) echo "::error::Unknown target '$targets'"; exit 1 ;;
+          esac
+          echo "list=${list}" >> "$GITHUB_OUTPUT"
+          echo "Dispatching: ${list}"
 
-      - name: Dispatch restore-test workflow
-        if: contains(steps.pick.outputs.targets, 'restore-test') || steps.pick.outputs.targets == 'both'
+      - name: Dispatch selected workflows
         env:
           GH_TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}
         run: |
-          gh workflow run db-restore-test.yml \
-            --repo "${{ github.repository }}" --ref develop
-          echo "Dispatched db-restore-test.yml on develop"
+          set -euo pipefail
+          for wf in ${{ steps.want.outputs.list }}; do
+            gh workflow run "${wf}" --repo "${{ github.repository }}" --ref develop
+            echo "Dispatched ${wf} on develop"
+          done
 
       - name: Warn if the dispatched run does not appear
         env:
           GH_TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}
         run: |
-          # Give Actions a moment, then confirm the run was created. A silent
+          # Give Actions a moment, then confirm each run was created. A silent
           # dispatch failure is exactly the failure mode this workflow fixes.
           sleep 15
-          for wf in db-backup.yml db-restore-test.yml; do
-            if [[ "${{ steps.pick.outputs.targets }}" == "backup" && "${wf}" != "db-backup.yml" ]]; then continue; fi
-            if [[ "${{ steps.pick.outputs.targets }}" == "restore-test" && "${wf}" != "db-restore-test.yml" ]]; then continue; fi
+          set -euo pipefail
+          for wf in ${{ steps.want.outputs.list }}; do
             count=$(gh run list --repo "${{ github.repository }}" --workflow "${wf}" \
               --branch develop --limit 3 --json createdAt --jq 'length')
             if [ "${count}" -eq 0 ]; then

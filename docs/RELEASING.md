@@ -33,7 +33,9 @@ push trigger intentionally removed; the same workflow is the prod gate).
 **Deploy gate.** Every `deploy-do` run calls `validate.yml`, and all of it must
 pass before the deploy step:
 
-- dependency audit — `pnpm audit --audit-level=high --prod`
+- dependency audit — `node scripts/audit-gate.mjs` (blocks CRITICAL any scope,
+  HIGH+ prod; reports dev-tree advisories)
+- license policy gate — `node scripts/license-gate.mjs` (allowlist + exceptions)
 - tests with coverage — `pnpm test:coverage`
 - OpenAPI validate — `pnpm --filter=api exec tsx src/scripts/validate-openapi.ts`
 - OpenAPI coverage audit — `node scripts/openapi-audit.js`
@@ -50,6 +52,14 @@ pass before the deploy step:
   `package.json` under `apps/` and `packages/` sets `"private": true`. A release
   is the Docker images on GHCR (`mct-api`, `mct-worker`, `mct-web`) tagged with
   the deploying commit SHA (or a `rollback_sha`).
+- **Product version source of truth** is [`VERSION`](../VERSION) at the repo
+  root. Generated artifacts bind to the commit: the SBOM records
+  `<VERSION>+<commit SHA>` (`metadata.component.version`, plus `mct:commit`),
+  and each pushed image gets a build-provenance attestation bound to its digest
+  (`gh attestation verify oci://ghcr.io/<owner>/mct-<image>:<sha>`). There is no
+  git tag requirement — the commit SHA is authoritative.
+- Each image is scanned with Trivy at build time (CRITICAL/HIGH, ignoring
+  unfixed) before the deploy proceeds; a failing scan blocks the deploy jobs.
 - `CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/) and
   currently keeps a single `[Unreleased]` section, with shipped entries grouped
   under dated headings (`## 2026-09-21`) until the first tagged release. To cut
@@ -71,8 +81,8 @@ pass before the deploy step:
    are configured in GitHub** — that setting cannot live in the repo (see
    [Approval gate](#approval-gate)).
 5. SSH deploy: the droplet `.env` is rewritten from secrets, compose comes up,
-   the api + web health gate runs (worker health is non-fatal), then HTTPS
-   checks hit `/health` and `/login`.
+   the api + web + worker container-health gate runs (a failed gate rolls back
+   to the previous tag), then HTTPS checks hit `/health` and `/login`.
 
 ### Approval gate
 
@@ -103,8 +113,10 @@ re-deploys the previously running tag before exiting non-zero.
 
 ## Post-release
 
-- SBOM: `sbom.yml` uploads a CycloneDX artifact (`sbom-cyclonedx`, 30-day
-  retention) on push/PR and weekly.
+- SBOM: `sbom.yml` generates a CycloneDX artifact (`sbom-cyclonedx`, 30-day
+  retention) with licenses, a dependency graph, and `<VERSION>+<commit SHA>`
+  binding — see [docs/SBOM_PROCESS.md](SBOM_PROCESS.md) for retrieval and
+  verification.
 - Backups: `db-backup.yml` runs daily at 04:00 UTC to Spaces and notifies Slack
   on failure.
 - Monitoring: [docs/MONITORING_AND_ALERTING.md](MONITORING_AND_ALERTING.md).

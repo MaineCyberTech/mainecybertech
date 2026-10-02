@@ -14,30 +14,50 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
+      - name: Load restore-test baseline
+        id: baseline
+        run: |
+          # The baseline file is the single source of truth for "verified"
+          # (referenced by docs/INCIDENT_RESPONSE.md §4.3). Load it into the
+          # job environment so the verification step cannot drift from it.
+          set -euo pipefail
+          if [ -f .github/restore-test-baseline.env ]; then
+            cat .github/restore-test-baseline.env >> "$GITHUB_ENV"
+          fi
+
       - name: Find latest backup
         id: find-backup
         env:
-          # Must resolve to the SAME bucket/prefix scripts/backup-database.sh
-          # writes to, or the restore test silently tests nothing (DR-P1-005).
-          # Defaults mirror the backup script; override with the S3_BACKUP_BUCKET
-          # secret/variable when the bucket name differs (e.g. s3://bucket/prefix).
-          S3_BACKUP_BUCKET: ${{ secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
-          S3_PREFIX: ${{ vars.S3_BACKUP_PREFIX || 'database-backups' }}
+          # Destination contract (audit DR-P1-002 / IR-P1-005): S3_BUCKET is a
+          # bucket NAME (no s3:// scheme) and S3_PREFIX is a key prefix — the
+          # SAME values scripts/backup-database.sh writes to. A legacy full-URI
+          # S3_BACKUP_BUCKET is accepted and normalised below.
+          S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
+          S3_PREFIX: ${{ vars.S3_PREFIX || 'database-backups' }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
         run: |
           set -euo pipefail
-          S3_PATH="s3://${S3_BACKUP_BUCKET#s3://}/${S3_PREFIX}/"
-          echo "Looking for latest backup under ${S3_PATH}"
+          # Accept both "bucket" and "s3://bucket[/prefix]" shapes, then always
+          # build a canonical s3://bucket/prefix/ path so a legacy secret can
+          # never silently point the test at the wrong location.
+          RAW_BUCKET="${S3_BUCKET#s3://}"
+          RAW_BUCKET="${RAW_BUCKET%/}"
+          S3_PATH="s3://${RAW_BUCKET}/${S3_PREFIX}/"
+          echo "Resolved backup location: ${S3_PATH}"
           LATEST=$(aws s3 ls "${S3_PATH}" --recursive \
             | sort | tail -1 | awk '{print $4}')
           if [ -z "${LATEST}" ]; then
             echo "::error::No backup objects found under ${S3_PATH} — nothing to restore-test"
             exit 1
           fi
+          # `aws s3 ls --recursive` returns the FULL key (including the prefix).
+          # Strip it if present and rebuild the URI once so the object path can
+          # never be double-prefixed (audit DR-P1-002).
+          REL="${LATEST#"${S3_PREFIX}/"}"
           echo "backup_file=${LATEST}" >> "$GITHUB_OUTPUT"
-          echo "backup_uri=${S3_PATH}${LATEST}" >> "$GITHUB_OUTPUT"
+          echo "backup_uri=s3://${RAW_BUCKET}/${S3_PREFIX}/${REL}" >> "$GITHUB_OUTPUT"
 
       - name: Download backup
         env:
@@ -46,7 +66,33 @@ jobs:
           AWS_DEFAULT_REGION: us-east-1
         run: |
           set -euo pipefail
-          aws s3 cp "${{ steps.find-backup.outputs.backup_uri }}" /tmp/restore.sql.gz
+          aws s3 cp "${{ steps.find-backup.outputs.backup_uri }}" /tmp/restore.download
+
+      - name: Decrypt backup if encrypted
+        env:
+          # Same key the backup uses (audit DR-P1-003). If it is set and the
+          # object is encrypted, decrypt; if the object is .enc but no key is
+          # available the test must FAIL, not silently skip.
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+        run: |
+          set -euo pipefail
+          case "${{ steps.find-backup.outputs.backup_file }}" in
+            *.enc)
+              if [ -z "${BACKUP_ENCRYPTION_KEY:-}" ]; then
+                echo "::error::Backup is encrypted (.enc) but BACKUP_ENCRYPTION_KEY is not set — cannot verify"
+                exit 1
+              fi
+              echo "Decrypting backup..."
+              openssl enc -d -aes-256-cbc -pbkdf2 \
+                -in /tmp/restore.download -out /tmp/restore.sql.gz \
+                -pass env:BACKUP_ENCRYPTION_KEY
+              ;;
+            *)
+              # Legacy unencrypted object: warn and continue.
+              echo "::warning::Newest backup is not encrypted (.enc) — run db-backup.yml with BACKUP_ENCRYPTION_KEY set (audit DR-P1-003)"
+              mv /tmp/restore.download /tmp/restore.sql.gz
+              ;;
+          esac
 
       - name: Start temp PostgreSQL
         run: |
@@ -74,16 +120,27 @@ jobs:
             -v ON_ERROR_STOP=1 -q -f /tmp/restore.sql
 
       - name: Verify database integrity
-        # Assertions, not prints: a truncated or empty restore must FAIL this job.
-        # Thresholds come from repo config (see .github/restore-test-baseline.env)
-        # and are overridden by repository variables RESTORE_MIN_TABLES /
-        # RESTORE_MIN_ROWS when set.
+        # Assertions, not prints: a truncated or empty restore must FAIL this
+        # job. Floors come from .github/restore-test-baseline.env (loaded into
+        # the environment above) and can be overridden with the RESTORE_*
+        # repository variables. `${{ vars.* }}` cannot see $GITHUB_ENV values,
+        # so the baseline fallback is applied in the shell below.
         env:
           PGURL: postgresql://postgres:test@localhost:5432/restore_test
-          MIN_TABLES: ${{ vars.RESTORE_MIN_TABLES || '120' }}
-          MIN_ROWS: ${{ vars.RESTORE_MIN_ROWS || '1' }}
+          MIN_TABLES: ${{ vars.RESTORE_MIN_TABLES }}
+          MIN_ROWS: ${{ vars.RESTORE_MIN_ROWS }}
+          MIN_MIGRATIONS: ${{ vars.RESTORE_MIN_MIGRATIONS }}
+          MAX_DATA_AGE_DAYS: ${{ vars.RESTORE_MAX_DATA_AGE_DAYS }}
+          MAX_TABLES_WITHOUT_RLS: ${{ vars.RESTORE_MAX_TABLES_WITHOUT_RLS }}
         run: |
           set -euo pipefail
+          # Repository variable > baseline file > hard default.
+          MIN_TABLES="${MIN_TABLES:-${RESTORE_MIN_TABLES:-120}}"
+          MIN_ROWS="${MIN_ROWS:-${RESTORE_MIN_ROWS:-1}}"
+          MIN_MIGRATIONS="${MIN_MIGRATIONS:-${RESTORE_MIN_MIGRATIONS:-1}}"
+          MAX_DATA_AGE_DAYS="${MAX_DATA_AGE_DAYS:-${RESTORE_MAX_DATA_AGE_DAYS:-2}}"
+          MAX_TABLES_WITHOUT_RLS="${MAX_TABLES_WITHOUT_RLS:-${RESTORE_MAX_TABLES_WITHOUT_RLS:-0}}"
+          echo "floors: tables=${MIN_TABLES} rows=${MIN_ROWS} migrations=${MIN_MIGRATIONS} max_age_days=${MAX_DATA_AGE_DAYS} max_no_rls=${MAX_TABLES_WITHOUT_RLS}"
           fail=0
 
           count() { psql "$PGURL" -tAc "$1"; }
@@ -92,6 +149,15 @@ jobs:
           echo "public tables restored: ${tables} (minimum ${MIN_TABLES})"
           if [ "${tables}" -lt "${MIN_TABLES}" ]; then
             echo "::error::Restored only ${tables} tables; expected at least ${MIN_TABLES}"
+            fail=1
+          fi
+
+          # Migration ledger: the dump must carry applied migrations (the
+          # earlier grep-only probe ended in `|| true` and could never fail).
+          mig=$(count "SELECT count(*) FROM supabase_migrations.schema_migrations;" 2>/dev/null || echo 0)
+          echo "applied migrations restored: ${mig} (minimum ${MIN_MIGRATIONS})"
+          if [ "${mig}" -lt "${MIN_MIGRATIONS}" ]; then
+            echo "::error::Restored only ${mig} applied migrations; expected at least ${MIN_MIGRATIONS}"
             fail=1
           fi
 
@@ -114,6 +180,20 @@ jobs:
             fail=1
           fi
 
+          # RPO canary (audit IR-P1-004): the newest row in a high-churn table
+          # must be recent, proving the dump is fresh — not a stale or truncated
+          # copy. Timestamps are compared in the restore DB's own clock.
+          age=$(count "SELECT COALESCE(EXTRACT(EPOCH FROM (now() - max(created_at)))/86400, -1)::int FROM public.audit_logs;")
+          if [ "${age}" -lt 0 ]; then
+            echo "audit_logs has no created_at rows to age-check"
+          else
+            echo "newest audit_logs row is ${age} day(s) old (maximum ${MAX_DATA_AGE_DAYS})"
+            if [ "${age}" -gt "${MAX_DATA_AGE_DAYS}" ]; then
+              echo "::error::Newest restored row is ${age} days old; exceeds ${MAX_DATA_AGE_DAYS}-day freshness floor"
+              fail=1
+            fi
+          fi
+
           # Tenant-isolation canary: every org-scoped table must carry an
           # organization_id column so RLS has something to scope on.
           unscope=$(count "SELECT count(*) FROM information_schema.tables t WHERE t.table_schema='public' AND t.table_name IN ('tickets','documents') AND NOT EXISTS (SELECT 1 FROM information_schema.columns c WHERE c.table_schema=t.table_schema AND c.table_name=t.table_name AND c.column_name='organization_id');")
@@ -122,15 +202,32 @@ jobs:
             fail=1
           fi
 
+          # RLS must still be enabled after restore — a policy-stripped dump
+          # would otherwise pass and expose tenant data post-recovery. The
+          # floor is committed (currently 0 tables without RLS).
+          rls_off=$(count "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND NOT rowsecurity;")
+          echo "public tables without RLS enabled: ${rls_off} (maximum ${MAX_TABLES_WITHOUT_RLS})"
+          if [ "${rls_off}" -gt "${MAX_TABLES_WITHOUT_RLS}" ]; then
+            echo "::error::${rls_off} restored public table(s) have RLS disabled; expected at most ${MAX_TABLES_WITHOUT_RLS}"
+            fail=1
+          fi
+
           if [ "${fail}" -ne 0 ]; then
             echo "=== RESTORE VERIFICATION FAILED ==="
             exit 1
           fi
-          echo "=== Restore verification passed (${tables} tables, ${total_rows} rows checked) ==="
+          echo "=== Restore verification passed (${tables} tables, ${mig} migrations, ${total_rows} rows checked) ==="
 
       - name: Cleanup
         if: always()
         run: |
           docker stop test-pg 2>/dev/null || true
           docker rm test-pg 2>/dev/null || true
-          rm -f /tmp/restore.sql.gz
+          rm -f /tmp/restore.sql.gz /tmp/restore.sql /tmp/restore.download
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          curl -sf -X POST -H "Content-Type: application/json" \
+            -d '{"text":"❌ Database restore test failed — backups may not be recoverable. Check logs: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
+            "${{ secrets.SLACK_WEBHOOK_URL }}" 2>/dev/null || true
