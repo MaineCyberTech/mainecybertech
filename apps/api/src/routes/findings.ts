@@ -7,6 +7,7 @@ import { loadOwned } from "../lib/tenant";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
+import { requireEntitlement } from "../middleware/entitlement";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import {
@@ -23,6 +24,7 @@ const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
 router.use(requireOrgAccess);
+router.use(requireEntitlement("findings"));
 
 const exportColumns: CsvColumn[] = [
   { key: "id" },

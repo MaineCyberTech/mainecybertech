@@ -5,6 +5,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
+import { requireEntitlement } from "../middleware/entitlement";
 import { createQbrReportSchema, updateQbrReportSchema } from "../validators/qbr";
 import { queryInt } from "../lib/query";
 import { toJson } from "../lib/db-types";
@@ -12,6 +13,7 @@ import { toJson } from "../lib/db-types";
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+router.use(requireEntitlement("qbr"));
 
 router.get("/", async (req, res, next) => {
   try {

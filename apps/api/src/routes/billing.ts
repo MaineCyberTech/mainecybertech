@@ -40,6 +40,17 @@ type StripeSubscription = {
   items: { data: Array<{ price: StripePrice }> };
 };
 
+type StripePaymentIntent = {
+  id: string;
+  status: string;
+  amount: number;
+  amount_received?: number | null;
+  currency: string;
+  created: number | null;
+  invoice?: string | null;
+  customer?: string | null;
+};
+
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
@@ -221,13 +232,17 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
     for (const customer of customers) {
       if (!customer.stripe_customer_id) continue;
 
-      const [invoicesRes, subsRes] = await Promise.all([
+      const [invoicesRes, subsRes, paymentsRes] = await Promise.all([
         httpClients.stripe.get(
           `https://api.stripe.com/v1/invoices?customer=${customer.stripe_customer_id}&limit=20`,
           { headers: stripeHeaders },
         ),
         httpClients.stripe.get(
           `https://api.stripe.com/v1/subscriptions?customer=${customer.stripe_customer_id}&limit=10`,
+          { headers: stripeHeaders },
+        ),
+        httpClients.stripe.get(
+          `https://api.stripe.com/v1/payment_intents?customer=${customer.stripe_customer_id}&limit=20`,
           { headers: stripeHeaders },
         ),
       ]);
@@ -283,6 +298,41 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
               currency: price?.currency ?? "usd",
             },
             { onConflict: "stripe_subscription_id" },
+          );
+        }
+      }
+
+      // Populate payment history (BILL-P1-002). PaymentIntents are Stripe's
+      // canonical payment object; link to the local invoice when one exists.
+      if (paymentsRes.ok) {
+        const paymentsData = (await paymentsRes.json()) as { data: StripePaymentIntent[] };
+        const { data: orgInvoices } = await supabase
+          .from("invoices")
+          .select("id, stripe_invoice_id")
+          .eq("organization_id", customer.organization_id);
+        const invoiceIdByStripeId = new Map(
+          (orgInvoices ?? []).map((inv) => [inv.stripe_invoice_id, inv.id]),
+        );
+
+        for (const pi of paymentsData.data ?? []) {
+          const succeeded = pi.status === "succeeded";
+          await supabase.from("payments").upsert(
+            {
+              organization_id: customer.organization_id,
+              invoice_id: pi.invoice ? (invoiceIdByStripeId.get(pi.invoice) ?? null) : null,
+              stripe_payment_intent_id: pi.id,
+              amount_cents: Math.round(
+                succeeded ? (pi.amount_received ?? pi.amount) : pi.amount,
+              ),
+              currency: pi.currency,
+              status: succeeded
+                ? "succeeded"
+                : pi.status === "canceled" || pi.status === "requires_payment_method"
+                  ? "failed"
+                  : "pending",
+              paid_at: succeeded ? new Date((pi.created ?? 0) * 1000).toISOString() : null,
+            },
+            { onConflict: "stripe_payment_intent_id" },
           );
         }
       }

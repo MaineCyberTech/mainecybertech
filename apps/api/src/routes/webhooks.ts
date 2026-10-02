@@ -57,6 +57,54 @@ const JIRA_STATUS_MAP: Record<string, string> = {
   Blocked: "blocked",
 };
 
+/**
+ * Resolve the local organization + invoice row for a Stripe object that may
+ * carry a `customer` and/or `invoice` (Stripe invoice id) reference. Used by
+ * the payment/refund handlers below to keep the `payments` table linked to
+ * its invoice. Returns nulls rather than throwing so webhook processing never
+ * fails on an unknown customer (Stripe would otherwise retry forever).
+ */
+async function resolveBillingRefs(
+  supabase: ReturnType<typeof getSupabaseAdmin>,
+  opts: { customer?: string | null; invoiceId?: string | null },
+): Promise<{ organizationId: string | null; invoiceRowId: string | null }> {
+  let organizationId: string | null = null;
+  if (opts.customer) {
+    const { data: customer } = await supabase
+      .from("billing_customers")
+      .select("organization_id")
+      .eq("stripe_customer_id", opts.customer)
+      .single();
+    organizationId = customer?.organization_id ?? null;
+  }
+
+  let invoiceRowId: string | null = null;
+  if (opts.invoiceId) {
+    const { data: invoice } = await supabase
+      .from("invoices")
+      .select("id, organization_id")
+      .eq("stripe_invoice_id", opts.invoiceId)
+      .single();
+    invoiceRowId = invoice?.id ?? null;
+    organizationId = organizationId ?? invoice?.organization_id ?? null;
+  }
+
+  return { organizationId, invoiceRowId };
+}
+
+/**
+ * Map a Stripe PaymentIntent status onto the local `payments.status` values
+ * (succeeded, failed, pending; plus refunded/partially_refunded written by the
+ * charge.refunded handler). Stripe statuses: succeeded, processing,
+ * requires_payment_method, requires_confirmation, requires_action,
+ * requires_capture, canceled.
+ */
+function mapPaymentIntentStatus(status: string): string {
+  if (status === "succeeded") return "succeeded";
+  if (status === "canceled" || status === "requires_payment_method") return "failed";
+  return "pending";
+}
+
 const JSM_STATUS_MAP: Record<string, string> = {
   Open: "new",
   "In Progress": "in_progress",
@@ -197,6 +245,71 @@ router.post("/stripe", async (req, res, next) => {
           },
           { onConflict: "organization_id" },
         );
+      }
+    }
+
+    // Payment lifecycle → populate the `payments` table (BILL-P1-002).
+    // Stripe's canonical payment object is the PaymentIntent; amounts are
+    // already in the smallest currency unit.
+    if (
+      event.type === "payment_intent.succeeded" ||
+      event.type === "payment_intent.payment_failed" ||
+      event.type === "payment_intent.canceled"
+    ) {
+      const pi = event.data?.object;
+      if (pi?.id) {
+        const { organizationId, invoiceRowId } = await resolveBillingRefs(supabase, {
+          customer: pi.customer,
+          invoiceId: pi.invoice,
+        });
+        if (organizationId) {
+          const succeeded = pi.status === "succeeded";
+          await supabase.from("payments").upsert(
+            {
+              organization_id: organizationId,
+              invoice_id: invoiceRowId,
+              stripe_payment_intent_id: pi.id,
+              amount_cents: Math.round(
+                succeeded ? (pi.amount_received ?? pi.amount) : pi.amount,
+              ),
+              currency: pi.currency,
+              status: mapPaymentIntentStatus(pi.status),
+              paid_at: succeeded ? new Date((pi.created ?? 0) * 1000).toISOString() : null,
+            },
+            { onConflict: "stripe_payment_intent_id" },
+          );
+        }
+      }
+    }
+
+    // Refunds → update the linked payment (BILL-P1-003). A charge may not have
+    // a local PaymentIntent row (e.g. created before this handler shipped), so
+    // this is a best-effort update keyed on the PI id.
+    if (event.type === "charge.refunded") {
+      const charge = event.data?.object;
+      const paymentIntentId = charge?.payment_intent;
+      if (paymentIntentId) {
+        const fullyRefunded =
+          typeof charge.amount === "number" && charge.amount_refunded >= charge.amount;
+        const { error: refundErr } = await supabase
+          .from("payments")
+          .update({ status: fullyRefunded ? "refunded" : "partially_refunded" })
+          .eq("stripe_payment_intent_id", paymentIntentId);
+        if (refundErr) {
+          logger.warn({ err: refundErr, paymentIntentId }, "Failed to record charge refund");
+        }
+      }
+    }
+
+    // Invoice lifecycle → map void / uncollectible onto the existing enum.
+    if (event.type === "invoice.voided" || event.type === "invoice.marked_uncollectible") {
+      const inv = event.data?.object;
+      if (inv?.id) {
+        const status = event.type === "invoice.voided" ? "void" : "uncollectible";
+        await supabase
+          .from("invoices")
+          .update({ status })
+          .eq("stripe_invoice_id", inv.id);
       }
     }
 

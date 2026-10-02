@@ -6,6 +6,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
+import { requireEntitlement } from "../middleware/entitlement";
 import { loadOwned } from "../lib/tenant";
 import {
   createOffboardingSchema,
@@ -18,6 +19,7 @@ import { queryInt } from "../lib/query";
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+router.use(requireEntitlement("security-ops"));
 
 function snake(s: string) {
   return s.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);

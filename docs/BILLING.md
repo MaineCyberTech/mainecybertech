@@ -80,7 +80,8 @@ All endpoints at `/api/v1/billing/*`, require authentication.
 | `GET`  | `/subscriptions`    | All subscriptions, filterable by `organization_id`                   |
 | `GET`  | `/payments`         | Paginated payment list with joined invoice data                      |
 | `GET`  | `/billing-customer` | Single billing customer by `organization_id`                         |
-| `POST` | `/sync`             | Admin-only: pulls latest invoices + subscriptions from Stripe API    |
+| `POST` | `/sync`             | Admin-only: pulls latest invoices + subscriptions + payments from Stripe |
+| `POST` | `/create-portal-session` | Any org member: Stripe-hosted billing portal URL                 |
 
 ## Webhook Handler
 
@@ -89,10 +90,40 @@ All endpoints at `/api/v1/billing/*`, require authentication.
 Stripe webhook `POST /api/v1/webhooks/stripe` handles:
 
 - `invoice.paid` / `invoice.payment_failed` → upserts invoice to DB
+- `invoice.voided` → sets invoice status to `void`
+- `invoice.marked_uncollectible` → sets invoice status to `uncollectible`
+- `payment_intent.succeeded` / `payment_intent.payment_failed` / `payment_intent.canceled` → upserts a `payments` row (linked to the invoice when resolvable)
+- `charge.refunded` → marks the linked payment `refunded` (or `partially_refunded`)
 - `customer.subscription.*` → upserts subscription to DB
 - `checkout.session.completed` → creates/updates `billing_customers` via `client_reference_id`
 
-Requires `stripe-signature` header (validated for presence).
+Requires `stripe-signature` header (validated for presence). Events are
+deduplicated with an atomic claim keyed on `stripe-${event.id}`; the claim is
+released on failure so Stripe retries can reprocess.
+
+## Entitlements (enforced)
+
+**Files:** `apps/api/src/lib/entitlements.ts`,
+`apps/api/src/middleware/entitlement.ts`
+
+`deriveEnabledModules()` is the single source of truth shared by
+`GET /client-portal/bootstrap` and the server-side `requireEntitlement(moduleKey)`
+middleware. Premium modules (`findings`, `security-ops`, `governance`,
+`training-hub`, `service-catalog`, `qbr`) require an active/trialing
+subscription unless an admin has provisioned the module via
+`client_portal_entitlements`. Denials return `402 PAYMENT_REQUIRED`.
+
+Admin/super-admin roles bypass the plan gate. If the entitlement lookup itself
+fails (transient DB error), the middleware **fails open** — access is allowed
+and the failure is logged at error level — so a billing-mirror outage cannot
+lock paying customers out of modules. Authentication, org-access, and RBAC
+still apply; only the plan boundary is relaxed.
+
+## Payments
+
+`payments` is populated from `payment_intent.*` webhook events and from
+`POST /billing/sync` (`/v1/payment_intents?customer=...`). Payment history is
+therefore no longer seed-only. Amounts are stored in minor units (cents).
 
 ## Worker Task: `stripe-reconcile`
 

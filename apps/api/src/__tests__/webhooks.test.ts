@@ -159,6 +159,209 @@ describe("webhooks routes", () => {
       expect(upsertArgs.tax_cents).toBe(50);
       expect(upsertArgs.total_cents).toBe(550);
     });
+
+    function mockStripeEvent(event: unknown) {
+      const StripeMock = (jest.requireMock("stripe") as unknown as jest.Mock);
+      const constructEvent = jest.fn().mockReturnValue(event);
+      StripeMock.mockImplementationOnce(() => ({ webhooks: { constructEvent } }));
+    }
+
+    function mockSupabaseWithBuilders(
+      tableResults: Record<string, MockResult>,
+      fallback: MockResult = { data: null, error: null },
+    ) {
+      const builders: Record<string, any> = {};
+      const supabase = {
+        from: jest.fn().mockImplementation((table: string) => {
+          const builder = createMockBuilder(tableResults[table] ?? fallback);
+          builders[table] = builder;
+          return builder;
+        }),
+      };
+      return { supabase, builders };
+    }
+
+    it("records a payment row on payment_intent.succeeded (BILL-P1-002)", async () => {
+      mockStripeEvent({
+        type: "payment_intent.succeeded",
+        id: "evt_pi_1",
+        data: {
+          object: {
+            id: "pi_123",
+            customer: "cus_1",
+            invoice: "in_1",
+            amount: 55000,
+            amount_received: 55000,
+            currency: "usd",
+            status: "succeeded",
+            created: 1700000000,
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+        invoices: { data: { id: "inv-row-1", organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "payment_intent.succeeded", id: "evt_pi_1" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["payments"].upsert.mock.calls[0][0];
+      expect(upsertArgs.stripe_payment_intent_id).toBe("pi_123");
+      expect(upsertArgs.organization_id).toBe("org-1");
+      expect(upsertArgs.invoice_id).toBe("inv-row-1");
+      expect(upsertArgs.amount_cents).toBe(55000);
+      expect(upsertArgs.status).toBe("succeeded");
+    });
+
+    it("records a failed payment row on payment_intent.payment_failed", async () => {
+      mockStripeEvent({
+        type: "payment_intent.payment_failed",
+        id: "evt_pi_2",
+        data: {
+          object: {
+            id: "pi_fail",
+            customer: "cus_1",
+            invoice: null,
+            amount: 1000,
+            currency: "usd",
+            status: "requires_payment_method",
+            created: 1700000001,
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "payment_intent.payment_failed", id: "evt_pi_2" });
+
+      expect(res.status).toBe(200);
+      const upsertArgs = builders["payments"].upsert.mock.calls[0][0];
+      expect(upsertArgs.status).toBe("failed");
+      expect(upsertArgs.paid_at).toBeNull();
+    });
+
+    it("marks the linked payment refunded on charge.refunded (BILL-P1-003)", async () => {
+      mockStripeEvent({
+        type: "charge.refunded",
+        id: "evt_refund_1",
+        data: {
+          object: {
+            id: "ch_1",
+            payment_intent: "pi_123",
+            amount: 55000,
+            amount_refunded: 55000,
+            currency: "usd",
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "charge.refunded", id: "evt_refund_1" });
+
+      expect(res.status).toBe(200);
+      const updateArgs = builders["payments"].update.mock.calls[0][0];
+      expect(updateArgs.status).toBe("refunded");
+    });
+
+    it("marks a partial refund as partially_refunded", async () => {
+      mockStripeEvent({
+        type: "charge.refunded",
+        id: "evt_refund_2",
+        data: {
+          object: {
+            id: "ch_2",
+            payment_intent: "pi_124",
+            amount: 55000,
+            amount_refunded: 10000,
+            currency: "usd",
+          },
+        },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "charge.refunded", id: "evt_refund_2" });
+
+      expect(res.status).toBe(200);
+      const updateArgs = builders["payments"].update.mock.calls[0][0];
+      expect(updateArgs.status).toBe("partially_refunded");
+    });
+
+    it("maps invoice.voided onto the void status (BILL-P1-003)", async () => {
+      mockStripeEvent({
+        type: "invoice.voided",
+        id: "evt_void_1",
+        data: { object: { id: "in_void", customer: "cus_1", status: "void" } },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "invoice.voided", id: "evt_void_1" });
+
+      expect(res.status).toBe(200);
+      const updateArgs = builders["invoices"].update.mock.calls[0][0];
+      expect(updateArgs.status).toBe("void");
+      expect(builders["invoices"].eq).toHaveBeenCalledWith("stripe_invoice_id", "in_void");
+    });
+
+    it("maps invoice.marked_uncollectible onto the uncollectible status", async () => {
+      mockStripeEvent({
+        type: "invoice.marked_uncollectible",
+        id: "evt_unc_1",
+        data: { object: { id: "in_unc", customer: "cus_1", status: "uncollectible" } },
+      });
+
+      const supabaseModule = await import("../services/supabase");
+      const { supabase, builders } = mockSupabaseWithBuilders({
+        billing_customers: { data: { organization_id: "org-1" }, error: null },
+      });
+      (supabaseModule.getSupabaseAdmin as jest.Mock).mockReturnValueOnce(supabase);
+
+      const res = await request(app)
+        .post("/api/v1/webhooks/stripe")
+        .set("stripe-signature", "sig_123")
+        .send({ type: "invoice.marked_uncollectible", id: "evt_unc_1" });
+
+      expect(res.status).toBe(200);
+      const updateArgs = builders["invoices"].update.mock.calls[0][0];
+      expect(updateArgs.status).toBe("uncollectible");
+    });
   });
 
   describe("POST /jira", () => {
