@@ -60,6 +60,24 @@ services:
       SENTRY_DSN: ${SENTRY_DSN:-}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      # PII field encryption (AES-256-GCM). Without this the dev `plain:`
+      # fallback is used, so set it in production.
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-}
+      # Cloudflare Turnstile: when the secret is set, /public/submit requires a
+      # valid captcha token (the site key is inlined into the web build).
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      # Prometheus /metrics bearer gate (unset => token gate disabled).
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      MFA_ENFORCEMENT_ENABLED: ${MFA_ENFORCEMENT_ENABLED:-false}
+      M365_CLIENT_STATE: ${M365_CLIENT_STATE:-}
+      JIRA_WEBHOOK_SECRET: ${JIRA_WEBHOOK_SECRET:-}
+      JSM_WEBHOOK_SECRET: ${JSM_WEBHOOK_SECRET:-}
+      M365_WEBHOOK_SECRET: ${M365_WEBHOOK_SECRET:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@mainecybertech.com}
       PUBLIC_TRAFFIC_WEBHOOK_URL: ${PUBLIC_TRAFFIC_WEBHOOK_URL:-}
       PUBLIC_LEAD_WEBHOOK_URL: ${PUBLIC_LEAD_WEBHOOK_URL:-}
       JSM_DOMAIN: ${JSM_DOMAIN:-}

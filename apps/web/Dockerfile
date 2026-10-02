@@ -1,6 +1,9 @@
 FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS base
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable \
+ && (corepack prepare pnpm@10 --activate \
+     || (sleep 10 && corepack prepare pnpm@10 --activate) \
+     || (sleep 20 && corepack prepare pnpm@10 --activate))
 
 # Install deps
 FROM base AS deps
@@ -16,11 +19,13 @@ ARG NEXT_PUBLIC_APP_VERSION
 ARG NEXT_PUBLIC_GIT_SHA
 ARG NEXT_PUBLIC_BUILD_TIME
 ARG NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000}
 ENV NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION:-0.0.0-dev}
 ENV NEXT_PUBLIC_GIT_SHA=${NEXT_PUBLIC_GIT_SHA:-local}
 ENV NEXT_PUBLIC_BUILD_TIME=${NEXT_PUBLIC_BUILD_TIME:-}
 ENV NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED=${NEXT_PUBLIC_TEST_ACCOUNTS_ENABLED:-false}
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages ./packages
@@ -31,9 +36,11 @@ RUN pnpm --filter=./apps/web build && rm -rf /app/apps/web/.next/cache
 # Runtime
 FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS runner
 ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs

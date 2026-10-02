@@ -18,9 +18,9 @@ groups:
       - alert: MCTHighRequestErrorRate
         expr: |
           sum by (job) (
-            rate(http_requests_total{status=~"5.."}[5m])
+            rate(portal_http_requests_total{status_code=~"5.."}[5m])
             /
-            clamp_min(rate(http_requests_total[5m]), 0.0001)
+            clamp_min(rate(portal_http_requests_total[5m]), 0.0001)
           ) > 0.05
         for: 5m
         labels:
