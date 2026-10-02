@@ -5,6 +5,7 @@ import { buildMetadata } from "@/lib/seo/metadata";
 import { getApiClient } from "@/lib/api";
 import type { StorePromotion } from "@mct/sdk";
 import { formatDateShort } from "@/lib/format";
+import DataErrorNote from "@/components/admin/DataErrorNote";
 
 export const dynamic = "force-dynamic";
 
@@ -41,16 +42,20 @@ function toPromotion(p: StorePromotion): Promotion {
   };
 }
 
-async function fetchActivePromotions(): Promise<Promotion[]> {
+async function fetchActivePromotions(): Promise<{
+  promotions: Promotion[];
+  loadFailed: boolean;
+}> {
   try {
-    return (await getApiClient().store.listActivePromotions()).map(toPromotion);
+    const promotions = (await getApiClient().store.listActivePromotions()).map(toPromotion);
+    return { promotions, loadFailed: false };
   } catch {
-    return [];
+    return { promotions: [], loadFailed: true };
   }
 }
 
 export default async function PublicPromotionsPage() {
-  const active = await fetchActivePromotions();
+  const { promotions: active, loadFailed } = await fetchActivePromotions();
 
   return (
     <>
@@ -71,7 +76,9 @@ export default async function PublicPromotionsPage() {
 
       <section className="px-4 pb-24 sm:px-6 sm:pb-32">
         <div className="mx-auto max-w-5xl">
-          {active.length === 0 ? (
+          {loadFailed ? (
+            <DataErrorNote what="promotions" />
+          ) : active.length === 0 ? (
             <div className="rounded-lg border border-emerald-600/10 bg-[rgba(18,30,45,0.5)] p-12 text-center backdrop-blur-sm">
               <h2 className="font-display text-xl font-bold uppercase tracking-wider text-slate-300">
                 No Active Promotions

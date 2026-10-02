@@ -113,12 +113,17 @@ export default function PortalDocumentsCenterClient({
       pushToast("error", "Please select a file");
       return;
     }
-    const res = await uploadAction(fd);
-    if (res.ok) {
-      pushToast("success", "Document uploaded successfully");
-      form.reset();
-    } else {
-      pushToast("error", res.error ?? "Upload failed");
+    setBusy("upload");
+    try {
+      const res = await uploadAction(fd);
+      if (res.ok) {
+        pushToast("success", "Document uploaded successfully");
+        form.reset();
+      } else {
+        pushToast("error", res.error ?? "Upload failed");
+      }
+    } finally {
+      setBusy(null);
     }
   }
 
@@ -126,34 +131,40 @@ export default function PortalDocumentsCenterClient({
     e.preventDefault();
     if (!bulkFolderAction) return;
     setBusy("folder");
-    const fd = new FormData(e.currentTarget);
-    fd.set("documentIds", JSON.stringify(selectedIds));
-    const res = await bulkFolderAction(fd);
-    if (res.ok) {
-      pushToast("success", `${res.updated} documents updated`);
-      setSelectedIds([]);
-      setBulkFolderOpen(false);
-    } else {
-      pushToast("error", res.error ?? "Failed");
+    try {
+      const fd = new FormData(e.currentTarget);
+      fd.set("documentIds", JSON.stringify(selectedIds));
+      const res = await bulkFolderAction(fd);
+      if (res.ok) {
+        pushToast("success", `${res.updated} documents updated`);
+        setSelectedIds([]);
+        setBulkFolderOpen(false);
+      } else {
+        pushToast("error", res.error ?? "Failed");
+      }
+    } finally {
+      setBusy(null);
     }
-    setBusy(null);
   }
 
   async function handleBulkMetadata(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!bulkMetadataAction) return;
     setBusy("metadata");
-    const fd = new FormData(e.currentTarget);
-    fd.set("documentIds", JSON.stringify(selectedIds));
-    const res = await bulkMetadataAction(fd);
-    if (res.ok) {
-      pushToast("success", `${res.updated} documents updated`);
-      setSelectedIds([]);
-      setBulkMetaOpen(false);
-    } else {
-      pushToast("error", res.error ?? "Failed");
+    try {
+      const fd = new FormData(e.currentTarget);
+      fd.set("documentIds", JSON.stringify(selectedIds));
+      const res = await bulkMetadataAction(fd);
+      if (res.ok) {
+        pushToast("success", `${res.updated} documents updated`);
+        setSelectedIds([]);
+        setBulkMetaOpen(false);
+      } else {
+        pushToast("error", res.error ?? "Failed");
+      }
+    } finally {
+      setBusy(null);
     }
-    setBusy(null);
   }
 
   const hasBulk = !!bulkFolderAction && !!bulkMetadataAction;
@@ -217,8 +228,8 @@ export default function PortalDocumentsCenterClient({
               </select>
             </div>
           </div>
-          <button type="submit" className="cyber-button">
-            Upload Document
+          <button type="submit" disabled={busy === "upload"} className="cyber-button">
+            {busy === "upload" ? "Uploading..." : "Upload Document"}
           </button>
         </form>
       </section>
