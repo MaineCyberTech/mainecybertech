@@ -9,6 +9,16 @@ import tls from "node:tls";
 
 type Row = Record<string, unknown>;
 
+/** Escape user-controlled content before interpolating it into email HTML. */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /**
  * Read the TLS peer certificate for an https URL and return its expiry.
  * Returns null for non-https URLs, connection failures, or bad certs.
@@ -681,7 +691,7 @@ export const phishingCampaignSend: TaskHandler = async (_payload): Promise<TaskR
           to: target.email,
           subject: `Security awareness: ${campaign.campaign_name}`,
           text: `Hello ${target.name ?? "there"},\n\nThis is an internal security-awareness simulation run by your IT provider. No action is required.\n\nIf you receive a real message like this, verify the sender before clicking any links.`,
-          html: `<p>Hello ${target.name ?? "there"},</p><p>This is an internal security-awareness simulation run by your IT provider. No action is required.</p><p>If you receive a real message like this, verify the sender before clicking any links.</p>`,
+          html: `<p>Hello ${escapeHtml(target.name ?? "there")},</p><p>This is an internal security-awareness simulation run by your IT provider. No action is required.</p><p>If you receive a real message like this, verify the sender before clicking any links.</p>`,
         });
         if (!delivered) continue;
 

@@ -254,6 +254,9 @@ crudRoute(
   createPortMapSchema as unknown as Record<string, unknown>,
   "network-port-maps",
 );
+// Intentionally unguarded: the portal lets client roles save camera
+// calculations, and the catalog does not grant them `camera-calculator:create`.
+// Revisit if camera calc becomes an MSP-only tool.
 crudRoute(
   "camera-calc",
   "camera_calculations",

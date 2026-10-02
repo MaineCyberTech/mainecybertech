@@ -169,7 +169,9 @@ function analyzeDescription(text: string) {
   };
 }
 
-router.post("/triage/analyze", async (req, res, next) => {
+// Portal AI triage is gated on `ai:view` (matches the route map); without a
+// guard any approved org member — including client roles — could create drafts.
+router.post("/triage/analyze", requirePermission("ai", "view"), async (req, res, next) => {
   try {
     const parsed = triageInputSchema.parse(req.body);
     const supabase = getScopedClient(req, "ai", "write");

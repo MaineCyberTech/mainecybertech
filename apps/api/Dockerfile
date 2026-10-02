@@ -12,7 +12,10 @@ COPY apps/api ./apps/api
 COPY packages ./packages
 
 # Enable pnpm and install dependencies
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable \
+ && (corepack prepare pnpm@10 --activate \
+     || (sleep 10 && corepack prepare pnpm@10 --activate) \
+     || (sleep 20 && corepack prepare pnpm@10 --activate))
 RUN pnpm install --frozen-lockfile --filter=./apps/api
 
 # Build the API
@@ -28,7 +31,10 @@ COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY --from=base /app/apps/api/dist ./apps/api/dist
 COPY --from=base /app/apps/api/package.json ./apps/api/package.json
 
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable \
+ && (corepack prepare pnpm@10 --activate \
+     || (sleep 10 && corepack prepare pnpm@10 --activate) \
+     || (sleep 20 && corepack prepare pnpm@10 --activate))
 RUN pnpm install --frozen-lockfile --filter=./apps/api --prod --ignore-scripts
 
 RUN chown -R appuser:appuser /app

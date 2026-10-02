@@ -39,7 +39,8 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
     return true;
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    logger.error({ error: msg, to, subject }, "Failed to send email");
+    // Do not log the recipient address (PII).
+    logger.error({ error: msg, to: "***", subject }, "Failed to send email");
     return false;
   }
 }

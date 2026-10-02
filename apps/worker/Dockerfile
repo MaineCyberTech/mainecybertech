@@ -11,7 +11,10 @@ COPY apps/worker ./apps/worker
 COPY packages ./packages
 
 # Enable pnpm and install dependencies
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable \
+ && (corepack prepare pnpm@10 --activate \
+     || (sleep 10 && corepack prepare pnpm@10 --activate) \
+     || (sleep 20 && corepack prepare pnpm@10 --activate))
 RUN pnpm install --frozen-lockfile --filter=./apps/worker
 
 # Build the worker
@@ -27,7 +30,10 @@ COPY pnpm-lock.yaml package.json pnpm-workspace.yaml ./
 COPY --from=base /app/apps/worker/dist ./apps/worker/dist
 COPY --from=base /app/apps/worker/package.json ./apps/worker/package.json
 
-RUN corepack enable && corepack prepare pnpm@10 --activate
+RUN corepack enable \
+ && (corepack prepare pnpm@10 --activate \
+     || (sleep 10 && corepack prepare pnpm@10 --activate) \
+     || (sleep 20 && corepack prepare pnpm@10 --activate))
 RUN pnpm install --frozen-lockfile --filter=./apps/worker --prod --ignore-scripts
 
 RUN chown -R appuser:appuser /app

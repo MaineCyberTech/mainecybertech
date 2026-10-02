@@ -6,6 +6,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
+import { loadOwned } from "../lib/tenant";
 import {
   createOffboardingSchema,
   createBreakGlassSchema,
@@ -167,12 +168,16 @@ router.post(
         .object({ stepName: z.string().min(1), completed: z.boolean() })
         .parse(req.body);
       const supabase = getScopedClient(req, "security-ops", "write");
-      const { data: current, error: fetchError } = await supabase
-        .from("offboarding_checklists")
-        .select("completed_steps")
-        .eq("id", String(req.params.id))
-        .single();
-      if (fetchError || !current) throw new AppError("NOT_FOUND", "Checklist not found", 404);
+      // Scope the checklist to the caller's org — the row was previously
+      // fetched and updated by id only (cross-tenant write with the
+      // service-role client when security-ops is not in RLS_WRITES_ENABLED).
+      const current = await loadOwned(
+        req,
+        supabase as any,
+        "offboarding_checklists",
+        String(req.params.id),
+        "id, organization_id, completed_steps",
+      );
       const steps = (current.completed_steps as string[]) || [];
       const updatedSteps = parsed.completed
         ? [...new Set([...steps, parsed.stepName])]
@@ -181,6 +186,7 @@ router.post(
         .from("offboarding_checklists")
         .update({ completed_steps: updatedSteps })
         .eq("id", String(req.params.id))
+        .eq("organization_id", current.organization_id as string)
         .select()
         .single();
       if (error) throw new AppError("DB_ERROR", error.message, 500);
