@@ -9,13 +9,14 @@ resource "digitalocean_firewall" "web" {
     prevent_destroy = true
   }
 
-  # WARNING: SSH is open to admin_ip_ranges, which DEFAULTS to 0.0.0.0/0 + ::/0
-  # (see variables.tf). Mitigations: (1) droplet SSH is key-only (ssh_keys =
-  # [var.ssh_fingerprint] in droplet.tf, no password auth), (2) UFW on the droplet
-  # mirrors this same allowlist via cloud-init.yml, (3) production terraform applies
-  # are gated by prod-approval + validate/e2e/migrations gates in terraform-do.yml so
-  # a malicious PR cannot silently change firewall rules.
-  # RESTRICT ME: set admin_ip_ranges to your office/VPN CIDRs in prod.tfvars/dev.tfvars.
+  # SSH is restricted to admin_ip_ranges, which is REQUIRED (no default) so it
+  # can never be silently fail-open. Mitigations in depth: (1) droplet SSH is
+  # key-only (ssh_keys = [var.ssh_fingerprint] in droplet.tf, no password auth),
+  # (2) UFW on the droplet mirrors this same allowlist via cloud-init.yml,
+  # (3) production terraform applies are gated by prod-approval +
+  # validate/e2e/migrations gates in terraform-do.yml so a malicious PR cannot
+  # silently change firewall rules, (4) terraform-do.yml fails the apply when the
+  # allowlist is still 0.0.0.0/0 or ::/0.
   inbound_rule {
     protocol         = "tcp"
     port_range       = "22"
