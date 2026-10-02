@@ -236,6 +236,22 @@ router.post(
         throw new AppError("DB_ERROR", rowError.message, 500);
       }
 
+      // The slot token has done its job once the upload row is committed: the
+      // slot is permanent and no release can legitimately follow. Drop it so
+      // `slot_tokens` does not accumulate one key per successful upload for the
+      // lifetime of the request (best-effort: the upload has already succeeded,
+      // so a cleanup failure must not fail the request).
+      void supabase
+        .rpc("release_slot_token", {
+          p_request_id: data.id,
+          p_organization_id: data.organization_id,
+          p_slot_token: slotToken,
+        } as never)
+        .then(
+          () => undefined,
+          () => undefined,
+        );
+
       await logAuditEvent({
         organizationId: data.organization_id,
         actorUserId: data.created_by,
@@ -407,7 +423,11 @@ router.post("/", requirePermission("file-requests", "create"), async (req, res, 
         visibility: parsed.visibility,
         created_by: req.authUser!.userId,
       })
-      .select()
+      // Explicit projection: `slot_tokens` is an internal single-use release
+      // credential and must never be returned to a client.
+      .select(
+        "id, organization_id, title, description, token, storage_path, max_file_size_mb, allowed_mime_types, max_files, upload_count, expires_at, status, visibility, notify_on_upload, created_by, created_at, updated_at",
+      )
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -443,7 +463,10 @@ router.patch("/:id", requirePermission("file-requests", "edit"), async (req, res
       .update(updateData as never)
       .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
-      .select()
+      // Explicit projection: never return `slot_tokens` (internal release token).
+      .select(
+        "id, organization_id, title, description, token, storage_path, max_file_size_mb, allowed_mime_types, max_files, upload_count, expires_at, status, visibility, notify_on_upload, created_by, created_at, updated_at",
+      )
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     if (!data) throw new AppError("NOT_FOUND", "File request not found", 404);

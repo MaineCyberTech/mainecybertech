@@ -51,9 +51,11 @@ router.get("/", async (req, res, next) => {
     // Cross-tenant reach requires BOTH a cross-tenant role key (the shared
     // helper) AND the super_admin profile flag. A plain tenant `admin` is
     // scoped to their own orgs exactly like every other entity below.
-    const callerRoleKey = (memberships ?? [])
-      .map((m) => roleKeyOf((m as { roles?: unknown }).roles))
-      .find((key) => key != null);
+    // `.some`, NOT `.find`: the memberships query is unordered, so picking the
+    // first role key made this depend on row order for multi-org users.
+    const holdsCrossTenantRole = (memberships ?? []).some((m) =>
+      isCrossTenantKey(roleKeyOf((m as { roles?: unknown }).roles)),
+    );
     // `.maybeSingle()` yields an object on the real client but tests may stub
     // it as a one-element array; accept either shape.
     const callerIsSuperAdmin = Array.isArray(callerProfile)
@@ -61,7 +63,7 @@ router.get("/", async (req, res, next) => {
           (p) => p?.is_super_admin === true,
         )
       : callerProfile?.is_super_admin === true;
-    const canSeeAllTenants = callerIsSuperAdmin && isCrossTenantKey(callerRoleKey);
+    const canSeeAllTenants = callerIsSuperAdmin && holdsCrossTenantRole;
 
     // Super admins get the PII columns; everyone else gets a reduced
     // projection (no email/phone) consistent with staff-PII endpoints.

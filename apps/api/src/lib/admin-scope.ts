@@ -46,10 +46,15 @@ export async function resolveAdminTenantScope(req: Request): Promise<AdminTenant
   }>;
 
   const orgIds = rows.map((m) => m.organization_id).filter((id): id is string => Boolean(id));
-  const roleKey = rows.map((m) => roleKeyOf(m.roles)).find((key) => key != null);
+  // `.some`, NOT `.find`: the memberships query has no ORDER BY, so picking the
+  // first non-null role key made `allTenants` depend on row order for a user
+  // with several memberships (e.g. `admin` in one org, `member` in another).
+  // `some` asks the order-independent question we actually mean: does this user
+  // hold a cross-tenant role ANYWHERE.
+  const holdsCrossTenantRole = rows.some((m) => isCrossTenantKey(roleKeyOf(m.roles)));
   const allTenants =
     (profile as { is_super_admin?: boolean } | null)?.is_super_admin === true &&
-    isCrossTenantKey(roleKey);
+    holdsCrossTenantRole;
 
   return { allTenants, orgIds };
 }

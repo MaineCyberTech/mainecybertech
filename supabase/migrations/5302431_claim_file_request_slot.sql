@@ -39,12 +39,22 @@ declare
 begin
   update public.file_requests fr
      set upload_count = fr.upload_count + 1,
-         slot_tokens = coalesce(fr.slot_tokens, '{}'::jsonb)
-                       -- `true` (boolean), NOT 'true' (text). jsonb_build_object
-                       -- with a text literal stores a jsonb STRING, which never
-                       -- equals the boolean 'true'::jsonb - the release predicate
-                       -- silently failed to match as a result.
-                       || jsonb_build_object(v_token::text, true)
+         slot_tokens = (
+           -- Prune consumed (false) tombstones while we are here. A tombstone
+           -- only needs to outlive the double-release window for its own failed
+           -- upload; keeping them forever would grow this column at the rate of
+           -- failed uploads. Keys whose failure was long ago are dead weight.
+           coalesce(
+             (select jsonb_object_agg(k, v)
+                from jsonb_each(fr.slot_tokens) as e(k, v)
+               where v <> 'false'::jsonb),
+             '{}'::jsonb
+           )
+           -- `true` (boolean), NOT 'true' (text). jsonb_build_object with a text
+           -- literal stores a jsonb STRING, which never equals the boolean
+           -- 'true'::jsonb - the release predicate silently failed to match.
+           || jsonb_build_object(v_token::text, true)
+         )
    where fr.id = p_request_id
      and fr.organization_id = p_organization_id
      and fr.status = 'active'
@@ -121,9 +131,41 @@ $$;
 comment on function public.release_file_request_slot(uuid, uuid, uuid) is
   'Release a claimed file-request upload slot after a downstream failure. Relative, non-negative, org-guarded and single-use via slot_token so a repeated release cannot under-count (audit FILE-P1-001).';
 
+-- Drop a slot token once its upload has been committed.
+--
+-- The token exists only to make a FAILED upload releasable exactly once. After
+-- the upload row is committed the slot is permanent and no release can
+-- legitimately follow, so the token is dead weight - and because the claim adds
+-- one key per upload, leaving them would grow `slot_tokens` unboundedly for the
+-- lifetime of the request. This removes it; it does NOT touch upload_count.
+--
+-- Distinguished from release_file_request_slot deliberately: that one decrements
+-- the counter (upload failed), this one does not (upload succeeded).
+create or replace function public.release_slot_token(
+  p_request_id uuid,
+  p_organization_id uuid,
+  p_slot_token uuid
+)
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.file_requests fr
+     set slot_tokens = fr.slot_tokens - p_slot_token::text
+   where fr.id = p_request_id
+     and fr.organization_id = p_organization_id
+     and fr.slot_tokens ? p_slot_token::text;
+$$;
+
+comment on function public.release_slot_token(uuid, uuid, uuid) is
+  'Discard a consumed file-request slot token after a successful upload so slot_tokens does not grow unboundedly. Does not alter upload_count.';
+
 -- Service-role only: the API calls these with the admin client. No anon or
 -- authenticated grant, so the anon-key + JWT path cannot claim or release slots.
 revoke all on function public.claim_file_request_slot(uuid, uuid) from public, anon, authenticated;
 grant execute on function public.claim_file_request_slot(uuid, uuid) to service_role;
 revoke all on function public.release_file_request_slot(uuid, uuid, uuid) from public, anon, authenticated;
 grant execute on function public.release_file_request_slot(uuid, uuid, uuid) to service_role;
+revoke all on function public.release_slot_token(uuid, uuid, uuid) from public, anon, authenticated;
+grant execute on function public.release_slot_token(uuid, uuid, uuid) to service_role;
