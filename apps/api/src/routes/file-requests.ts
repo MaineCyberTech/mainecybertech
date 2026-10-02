@@ -213,11 +213,18 @@ router.post(
       if (rowError) {
         // Roll both back so a failure cannot leave an untracked object or a
         // consumed slot with no upload behind it.
+        //
+        // The release MUST be a relative decrement, not an absolute
+        // `claimed - 1`. `claimed` was read before other concurrent uploads may
+        // have incremented the counter, so writing an absolute value
+        // under-counts and re-opens the very limit bypass this claim exists to
+        // close. Reproduced against PostgreSQL 16: with max_files=3, two claims
+        // (1, 2) then an absolute rollback to `1-1=0` let three more uploads
+        // succeed - five accepted uploads with a limit of three.
         await supabase.storage.from("documents").remove([storagePath]);
-        await supabase
-          .from("file_requests")
-          .update({ upload_count: claimed - 1 })
-          .eq("id", data.id);
+        await supabase.rpc("release_file_request_slot", {
+          p_request_id: data.id,
+        } as never);
         throw new AppError("DB_ERROR", rowError.message, 500);
       }
 

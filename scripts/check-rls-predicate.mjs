@@ -37,14 +37,24 @@ const MIGRATIONS = "supabase/migrations";
 // Everything at or below it is history that later migrations already fixed.
 const BASELINE_VERSION = 5302430;
 
-// The vulnerable predicate: an inline membership subquery with no approved
-// filter. Matched on a normalized (whitespace-collapsed) statement.
-const RAW_PREDICATE =
-  /organization_id\s+in\s*\(\s*select\s+organization_id\s+from\s+(?:public\.)?memberships\s+where\s+user_id\s*=\s*auth\.uid\(\)\s*\)/i;
+// The vulnerable shape: ANY inline membership subquery whose only predicate is
+// user_id = auth.uid(), with no status='approved' filter.
+//
+// The first version of this guard required the literal token sequence
+// "from memberships where user_id = auth.uid()". The adversarial review showed
+// three semantically identical forms that evaded it:
+//   - a table alias:   from public.memberships m where m.user_id = auth.uid()
+//   - ANY():           organization_id = ANY (select organization_id from memberships where ...)
+//   - a CTE:           with mine as (select organization_id from memberships where ...)
+// All three are the same bug. This matches on the MEMBERSHIP SUBQUERY itself and
+// on the absence of an approved filter in the enclosing statement, rather than on
+// one exact phrasing, so aliases/ANY/CTE spellings are caught too.
+const MEMBERSHIP_SUBQUERY =
+  /(?:select|from)\s+(?:[a-z_][a-z0-9_]*\.)?memberships\b[\s\S]{0,160}?(?:user_id\s*=\s*auth\.uid\(\)|auth\.uid\(\)\s*=\s*[\w.]*user_id)/i;
 
-// A file is exempt if the surrounding statement also filters on approved, or
-// routes through the canonical helper.
-const SAFE_NEARBY = /is_org_member|status\s*=\s*'approved'/i;
+// A statement is exempt if it routes through the canonical helper or filters on
+// approved status anywhere in the same statement.
+const SAFE_NEARBY = /is_org_member|status\s*=\s*'approved'|membership_status\s*=\s*'approved'/i;
 
 function versionOf(name) {
   const m = /^(\d+)_/.exec(name);
@@ -73,16 +83,17 @@ for (const f of files) {
     .map((l) => l.replace(/--.*$/, ""))
     .join("\n");
 
-  if (!RAW_PREDICATE.test(stripped)) continue;
-  if (SAFE_NEARBY.test(stripped) && !RAW_PREDICATE.test(stripped)) continue;
+  if (!MEMBERSHIP_SUBQUERY.test(stripped)) continue;
+  // Safe when the statement also demands approved status or uses the helper.
+  if (SAFE_NEARBY.test(stripped)) continue;
 
-  // Report the offending line numbers for a fast fix.
-  const lines = stripped.split("\n");
-  lines.forEach((l, i) => {
-    if (RAW_PREDICATE.test(l)) {
-      violations.push(`${f}:${i + 1}`);
-    }
+  // Report the offending line so a fix is quick.
+  stripped.split("\n").forEach((l, i) => {
+    if (MEMBERSHIP_SUBQUERY.test(l)) violations.push(`${f}:${i + 1}`);
   });
+  if (!stripped.split("\n").some((l) => MEMBERSHIP_SUBQUERY.test(l))) {
+    violations.push(`${f} (multi-line membership subquery)`);
+  }
 }
 
 if (violations.length === 0) {

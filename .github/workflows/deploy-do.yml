@@ -361,25 +361,34 @@ jobs:
           set -euo pipefail
           if [ -n "${ROLLBACK_SHA:-}" ]; then
             # ------------------------------------------------------------------
-            # ROLLBACK PATH (fail closed, with one explicit, documented exception)
+            # ROLLBACK PATH (fail closed, with an explicit allow-list)
             # ------------------------------------------------------------------
-            # A rollback deploys an image built by a PAST run of this workflow.
-            # Images built after CTR-P1-003 landed carry a provenance
-            # attestation and MUST verify. Images built BEFORE that (or by a
-            # build-push.yml run, which attests but is a different workflow)
-            # may have no attestation; refusing every legacy rollback would
-            # block incident recovery for images that are already vetted.            #
-            # Policy: verify when an attestation exists; if the image has NO
-            # attestation at all, that is reported LOUDLY in the job summary
-            # and the step is allowed to pass. A verification *failure* (a
-            # malformed/untrusted attestation, wrong repo/workflow, or a digest
-            # that does not match the attestation's subject) still fails the
-            # job -- we only tolerate the absence of an attestation, never a
-            # bad one.
+            # A rollback deploys an image built by a PAST run. Images built
+            # before CTR-P1-003 have no attestation.
             #
-            # This exception is scoped to rollback_sha dispatches only. Every
-            # normal deploy takes the fail-closed branch below.
-            echo "::warning::Rollback deploy of $ROLLBACK_SHA: attestation may be absent (built before CTR-P1-003). Verifying where present."
+            # An earlier revision of this step tried to "verify when an
+            # attestation exists, tolerate its absence". That is NOT
+            # implementable: `gh attestation verify` signals every failure mode
+            # - absent, malformed, wrong repo, wrong signer workflow, digest
+            # mismatch - with the same non-zero exit status, so the shell cannot
+            # tell "missing" from "invalid". Putting the command in an `if`
+            # therefore also disabled `set -e` for it and let a FORGED or
+            # wrong-workflow attestation through, which is the opposite of the
+            # stated intent.
+            #
+            # Instead: a rollback image must EITHER verify normally, OR its
+            # digest must be listed in the explicit legacy allow-list below and
+            # recorded in the job summary. A bad attestation always fails,
+            # because verification is never bypassed - it is either satisfied or
+            # the image is a named, reviewed exception.
+            #
+            # To authorise a legacy rollback, add the image digest (sha256:...)
+            # to the matching list here in a reviewed PR. Do NOT add a digest
+            # whose attestation merely failed to verify.
+            LEGACY_MCT_API=""
+            LEGACY_MCT_WORKER=""
+            LEGACY_MCT_WEB=""
+            echo "::warning::Rollback deploy of $ROLLBACK_SHA. Images without a valid attestation must be allow-listed (LEGACY_MCT_*)."
             for img in mct-api mct-worker mct-web; do
               REF="${GHCR_PREFIX}/${img}:${IMAGE_TAG}"
               DIGEST=$(docker buildx imagetools inspect "$REF" --format '{{.Manifest.Digest}}')
@@ -388,15 +397,22 @@ jobs:
                 exit 1
               fi
               echo "Resolved $REF -> $DIGEST"
-              if gh attestation verify "oci://${GHCR_PREFIX}/${img}@${DIGEST}" \
-                   --repo "$REPO_SLUG" \
-                   --signer-workflow "$REPO_SLUG/.github/workflows/deploy-do.yml" \
-                   --source-digest "$IMAGE_TAG"; then
-                echo "Attestation VERIFIED for ${img}@${DIGEST}"
-              else
-                echo "::warning::No verifiable attestation for $REF ($DIGEST) — legacy rollback image; proceeding."
-                echo "### ⚠️ Rollback without provenance: $img@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+              case "$img" in
+                mct-api)    ALLOW="$LEGACY_MCT_API" ;;
+                mct-worker) ALLOW="$LEGACY_MCT_WORKER" ;;
+                mct-web)    ALLOW="$LEGACY_MCT_WEB" ;;
+              esac
+              if [ -n "$ALLOW" ] && [ "$ALLOW" = "$DIGEST" ]; then
+                echo "::warning::Legacy rollback image allow-listed (no attestation expected): $img@$DIGEST"
+                echo "### Legacy rollback (allow-listed, unverified): $img@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+                continue
               fi
+              # Fail closed. `set -e` applies: a non-zero verify aborts the job.
+              gh attestation verify "oci://${GHCR_PREFIX}/${img}@${DIGEST}" \
+                --repo "$REPO_SLUG" \
+                --signer-workflow "$REPO_SLUG/.github/workflows/deploy-do.yml" \
+                --source-digest "$IMAGE_TAG"
+              echo "Attestation VERIFIED for ${img}@${DIGEST}"
             done
           else
             # ------------------------------------------------------------------

@@ -275,6 +275,43 @@ describe("File Requests API", () => {
       expect(uploadInsert.insert).not.toHaveBeenCalled();
     });
 
+    it("releases the slot via a RELATIVE decrement when the upload row insert fails (FR-1)", async () => {
+      // The rollback must call release_file_request_slot, not write an absolute
+      // `claimed - 1`. `claimed` is stale by the time the insert fails, so an
+      // absolute write under-counts and lets max_files be exceeded (reproduced
+      // against PostgreSQL 16: 5 accepted uploads with a limit of 3).
+      const { supabase, storage } = mockUploadFlow(activeRequest());
+      // Make the file_request_uploads insert fail after the claim succeeds.
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "file_requests") {
+          return createMockBuilder({ data: activeRequest(), error: null } as MockResult);
+        }
+        if (table === "file_request_uploads") {
+          return createMockBuilder({
+            data: null,
+            error: { message: "insert failed" },
+          } as unknown as MockResult);
+        }
+        return createMockBuilder({ data: null, error: null } as MockResult);
+      });
+
+      const res = await request(app)
+        .post(`/api/v1/file-requests/public/${tokenA}/upload`)
+        .attach("file", Buffer.from("%pdf-1.4 test"), "invoice.pdf");
+
+      expect(res.status).toBe(500);
+      // A relative release was requested...
+      expect(supabase.rpc).toHaveBeenCalledWith("release_file_request_slot", {
+        p_request_id: "fr-1",
+      });
+      // ...and no absolute upload_count write was issued.
+      const absoluteWrites = (
+        supabase.from.mock.calls as unknown as [string][]
+      ).filter(([t]) => t === "file_requests").length;
+      expect(absoluteWrites).toBeLessThanOrEqual(1); // the token lookup only
+      expect(storage.remove).toHaveBeenCalled();
+    });
+
     it("derives the org from the token row, not from caller-supplied org headers/body (cross-org write rejection)", async () => {
       const { storage } = mockUploadFlow(activeRequest({ organization_id: orgB }));
 

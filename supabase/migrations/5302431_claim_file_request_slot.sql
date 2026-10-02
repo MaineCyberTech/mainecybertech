@@ -37,7 +37,34 @@ $$;
 
 comment on function public.claim_file_request_slot(uuid, uuid) is
   'Atomically claim one upload slot on a file request. Returns the new upload_count, or no row when closed/expired/full/not-found. Replaces a non-atomic JS-side increment (audit FILE-P1-001).';
--- Service-role only: the API calls this with the admin client. No anon or
--- authenticated grant, so the anon-key + JWT path cannot claim slots directly.
+
+-- Release a previously claimed slot when the upload subsequently fails.
+--
+-- Must be a RELATIVE decrement guarded by upload_count > 0. An absolute write of
+-- `claimed - 1` (the first fix attempt) is itself racy: `claimed` is stale by
+-- the time the insert fails, so concurrent uploads get under-counted and
+-- max_files can be exceeded. Reproduced against PostgreSQL 16: two claims
+-- (1, 2) then an absolute rollback to 0 let three more uploads succeed - five
+-- accepted with a limit of three.
+create or replace function public.release_file_request_slot(p_request_id uuid)
+returns integer
+language sql
+security definer
+set search_path = public
+as $$
+  update public.file_requests fr
+     set upload_count = fr.upload_count - 1
+   where fr.id = p_request_id
+     and fr.upload_count > 0
+  returning fr.upload_count;
+$$;
+
+comment on function public.release_file_request_slot(uuid) is
+  'Release a claimed file-request upload slot after a downstream failure. Relative, guarded decrement so concurrent claims are not under-counted (audit FILE-P1-001).';
+
+-- Service-role only: the API calls these with the admin client. No anon or
+-- authenticated grant, so the anon-key + JWT path cannot claim or release slots.
 revoke all on function public.claim_file_request_slot(uuid, uuid) from public, anon, authenticated;
 grant execute on function public.claim_file_request_slot(uuid, uuid) to service_role;
+revoke all on function public.release_file_request_slot(uuid) from public, anon, authenticated;
+grant execute on function public.release_file_request_slot(uuid) to service_role;
