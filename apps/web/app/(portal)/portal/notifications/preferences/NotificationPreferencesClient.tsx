@@ -170,8 +170,9 @@ export default function NotificationPreferencesClient() {
       </div>
 
       <div className="rounded-lg border border-white/10 bg-cyber-base/60 p-4 text-xs text-slate-400">
-        Changes take effect immediately. In-app notifications appear in the bell icon in the header.
-        Email notifications require SMTP to be configured on the server.
+        Preferences are saved immediately and control whether new notifications are sent to each
+        channel. In-app notifications appear in the bell icon in the header. Email notifications
+        require SMTP to be configured on the server.
       </div>
     </div>
   );

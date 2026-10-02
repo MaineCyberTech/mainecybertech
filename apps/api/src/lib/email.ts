@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import { getEnv } from "../config/env";
 import { logger } from "./logger";
+import { recordNotificationDelivery } from "./metrics";
 
 type EmailOptions = {
   to: string;
@@ -13,6 +14,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
   const env = getEnv();
   if (!env.SMTP_HOST) {
     logger.warn("SMTP not configured; skipping email");
+    recordNotificationDelivery("email", "skipped");
     return false;
   }
 

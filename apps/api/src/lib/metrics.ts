@@ -96,6 +96,27 @@ export const idempotencyKeyHits = new Counter({
   registers: [register],
 });
 
+export const notificationDeliveryTotal = new Counter({
+  name: "portal_notification_delivery_total",
+  help: "Total number of notification/in-app/email delivery attempts by channel and outcome",
+  labelNames: ["channel", "status"],
+  registers: [register],
+});
+
+export const notificationSuppressedTotal = new Counter({
+  name: "portal_notification_suppressed_total",
+  help: "Total number of notifications suppressed because the recipient disabled the channel",
+  labelNames: ["channel", "module"],
+  registers: [register],
+});
+
+export const notificationDedupTotal = new Counter({
+  name: "portal_notification_dedup_total",
+  help: "Total number of notifications skipped because the dedup key already existed",
+  labelNames: ["channel"],
+  registers: [register],
+});
+
 export function recordWebhookDelivery(status: "success" | "failed", event: string) {
   webhookDeliveriesTotal.inc({ status, event });
 }
@@ -131,6 +152,27 @@ export function setCircuitBreakerStatus(name: string, status: "closed" | "half-o
 
 export function recordIdempotencyKeyHit() {
   idempotencyKeyHits.inc();
+}
+
+/**
+ * Record the outcome of a notification/email delivery attempt.
+ * `status` is `success`, `failed`, or `skipped` (e.g. SMTP not configured).
+ */
+export function recordNotificationDelivery(
+  channel: "in_app" | "email",
+  status: "success" | "failed" | "skipped",
+) {
+  notificationDeliveryTotal.inc({ channel, status });
+}
+
+/** Record that a channel was suppressed by the recipient's preferences. */
+export function recordNotificationSuppressed(channel: "in_app" | "email", module: string) {
+  notificationSuppressedTotal.inc({ channel, module });
+}
+
+/** Record that an insert was skipped because its dedup key already existed. */
+export function recordNotificationDedup(channel: "in_app" | "email") {
+  notificationDedupTotal.inc({ channel });
 }
 
 export function setActiveOrganizations(count: number) {

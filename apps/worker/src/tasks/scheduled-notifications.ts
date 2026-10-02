@@ -4,6 +4,8 @@ import { logger } from "../logger";
 import { sendEmail } from "../email";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { TaskHandler, TaskResult } from "../task-registry";
+import { insertNotification, resolveChannels } from "../notification-store";
+import { recordNotificationDelivery, recordNotificationSuppressed } from "../metrics";
 
 interface NotificationPayload {
   type?: "task-due" | "membership-approved" | "ticket-responded" | "custom";
@@ -24,6 +26,11 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+/**
+ * Preference-gated, deduped in-app insert. Kept as a thin wrapper so existing
+ * call sites keep their shape while routing through the shared enforcement path
+ * (NOTIF-P1-001) and setting a dedup `notification_key` (NOTIF-P1-002).
+ */
 async function createInAppNotification(
   supabase: SupabaseClient,
   userId: string,
@@ -32,19 +39,17 @@ async function createInAppNotification(
   module: string,
   moduleId?: string,
   action: string = "updated",
+  organizationId?: string | null,
 ) {
-  try {
-    await supabase.from("notifications").insert({
-      user_id: userId,
-      title,
-      body,
-      module,
-      module_id: moduleId,
-      action,
-    });
-  } catch (error) {
-    logger.warn({ error: String(error), userId, title }, "Failed to create in-app notification");
-  }
+  return insertNotification(supabase, {
+    userId,
+    organizationId,
+    title,
+    body,
+    module,
+    moduleId,
+    action,
+  });
 }
 
 /**
@@ -151,25 +156,45 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           // so do not re-notify/re-email the same task within a week.
           if (alerted.has(`${task.owner_id}|${task.id}|${action}`)) continue;
 
-          await createInAppNotification(
+          // Enforce the recipient's per-module channel preferences. A disabled
+          // in_app channel suppresses the row; a disabled email channel
+          // suppresses the send but not the in-app row (and vice versa).
+          const channels = await resolveChannels(supabase, {
+            userId: task.owner_id,
+            module: "projects",
+          });
+
+          const inApp = await insertNotification(
             supabase,
-            task.owner_id,
-            title,
-            body,
-            "projects",
-            task.id,
-            action,
+            {
+              userId: task.owner_id,
+              title,
+              body,
+              module: "projects",
+              moduleId: task.id,
+              action,
+            },
+            channels,
           );
 
-          const emailSent = await sendEmail({
-            to: profile.email,
-            subject: `[Maine CyberTech] ${title}: ${task.title}`,
-            text: `Hello ${profile.full_name ?? "there"},\n\n${body}\n\nView your project: ${link}`,
-            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(body)}</p><p><a href="${link}">View project</a></p>`,
-          });
-          if (emailSent) emailed++;
+          if (!channels.email) {
+            recordNotificationSuppressed("email", "projects");
+            logger.info(
+              { userId: task.owner_id, module: "projects", action },
+              "Task-due email suppressed by user preference",
+            );
+          } else {
+            const emailSent = await sendEmail({
+              to: profile.email,
+              subject: `[Maine CyberTech] ${title}: ${task.title}`,
+              text: `Hello ${profile.full_name ?? "there"},\n\n${body}\n\nView your project: ${link}`,
+              html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(body)}</p><p><a href="${link}">View project</a></p>`,
+            });
+            recordNotificationDelivery("email", emailSent ? "success" : "failed");
+            if (emailSent) emailed++;
+          }
 
-          notified++;
+          if (inApp.inserted) notified++;
         }
 
         logger.info(
@@ -224,6 +249,11 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           return { ok: true };
         }
 
+        const channels = await resolveChannels(supabase, {
+          userId: p.targetUserId,
+          module: "tickets",
+        });
+
         await createInAppNotification(
           supabase,
           p.targetUserId,
@@ -234,15 +264,24 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           "updated",
         );
 
-        const emailSent = await sendEmail({
-          to: profile.email,
-          subject: `[Maine CyberTech] ${p.title ?? "Ticket Update"}`,
-          text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? "A ticket has been updated."}\n\nView: ${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}`,
-          html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(p.body ?? "A ticket has been updated.")}</p><p><a href="${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}">View ticket</a></p>`,
-        });
+        if (!channels.email) {
+          recordNotificationSuppressed("email", "tickets");
+          logger.info(
+            { userId: p.targetUserId, module: "tickets", action: "updated" },
+            "Ticket-responded email suppressed by user preference",
+          );
+        } else {
+          const emailSent = await sendEmail({
+            to: profile.email,
+            subject: `[Maine CyberTech] ${p.title ?? "Ticket Update"}`,
+            text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? "A ticket has been updated."}\n\nView: ${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}`,
+            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(p.body ?? "A ticket has been updated.")}</p><p><a href="${env.API_BASE_URL ?? ""}/portal/tickets/${p.metadata?.ticketId ?? ""}">View ticket</a></p>`,
+          });
+          recordNotificationDelivery("email", emailSent ? "success" : "failed");
+        }
 
         logger.info(
-          { userId: p.targetUserId, title: p.title, emailSent },
+          { userId: p.targetUserId, title: p.title },
           "Ticket responded notification sent",
         );
         return { ok: true };
@@ -264,6 +303,11 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           return { ok: true };
         }
 
+        const channels = await resolveChannels(supabase, {
+          userId: p.targetUserId,
+          module: "system",
+        });
+
         await createInAppNotification(
           supabase,
           p.targetUserId,
@@ -274,17 +318,23 @@ export const scheduledNotifications: TaskHandler = async (payload): Promise<Task
           "created",
         );
 
-        const emailSent = await sendEmail({
-          to: profile.email,
-          subject: `[Maine CyberTech] ${p.title}`,
-          text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? ""}`,
-          html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(p.body ?? "")}</p>`,
-        });
+        if (!channels.email) {
+          recordNotificationSuppressed("email", "system");
+          logger.info(
+            { userId: p.targetUserId, module: "system", action: "created" },
+            "Custom notification email suppressed by user preference",
+          );
+        } else {
+          const emailSent = await sendEmail({
+            to: profile.email,
+            subject: `[Maine CyberTech] ${p.title}`,
+            text: `Hello ${profile.full_name ?? "there"},\n\n${p.body ?? ""}`,
+            html: `<p>Hello ${escapeHtml(profile.full_name ?? "there")},</p><p>${escapeHtml(p.body ?? "")}</p>`,
+          });
+          recordNotificationDelivery("email", emailSent ? "success" : "failed");
+        }
 
-        logger.info(
-          { userId: p.targetUserId, title: p.title, emailSent },
-          "Custom notification sent",
-        );
+        logger.info({ userId: p.targetUserId, title: p.title }, "Custom notification sent");
         return { ok: true };
       }
 

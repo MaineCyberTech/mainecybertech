@@ -1,5 +1,6 @@
 import { env } from "./env";
 import { logger } from "./logger";
+import { recordNotificationDelivery } from "./metrics";
 
 type EmailOptions = {
   to: string;
@@ -15,6 +16,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
   const host = env.SMTP_HOST;
   if (!host) {
     logger.warn("SMTP_HOST not configured; skipping email send");
+    recordNotificationDelivery("email", "skipped");
     return false;
   }
 
@@ -43,6 +45,7 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
       });
 
       logger.info("Email sent");
+      recordNotificationDelivery("email", "success");
       return true;
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -56,5 +59,6 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions): Prom
     }
   }
 
+  recordNotificationDelivery("email", "failed");
   return false;
 }
