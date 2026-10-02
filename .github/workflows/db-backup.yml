@@ -14,12 +14,17 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Run database backup script
         id: backup
-        run: bash scripts/backup-database.sh
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+          # Keep the write path explicit so the restore test can find it (DR-P1-005).
+          S3_BUCKET: ${{ vars.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
+          S3_PREFIX: ${{ vars.S3_BACKUP_PREFIX || 'database-backups' }}
+          # Fail the job if no non-empty dump was produced.
+          VERIFY_BACKUP: "1"
+        run: bash scripts/backup-database.sh
       - name: Notify on failure
         if: failure()
         run: |

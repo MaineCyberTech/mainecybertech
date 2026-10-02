@@ -35,8 +35,24 @@ if [ ! -f "${LOCAL_PATH}" ]; then
   exit 1
 fi
 
+# A zero-byte dump "succeeds" but is not a backup. Fail loudly (DR-P1-006).
+if [ ! -s "${LOCAL_PATH}" ]; then
+  echo "ERROR: Database dump is empty (0 bytes) — refusing to record a backup"
+  exit 1
+fi
+
 FILE_SIZE=$(du -h "${LOCAL_PATH}" | cut -f1)
 echo "Backup created: ${LOCAL_PATH} (${FILE_SIZE})"
+
+if [ -n "${VERIFY_BACKUP:-}" ]; then
+  echo "Step 1b: Verifying dump is a restorable archive..."
+  gunzip -t "${LOCAL_PATH}"
+  if ! gunzip -c "${LOCAL_PATH}" | head -c 4096 | grep -q "PostgreSQL database dump"; then
+    echo "ERROR: dump does not look like a PostgreSQL dump"
+    exit 1
+  fi
+  echo "Dump integrity check passed"
+fi
 
 echo ""
 echo "Step 2: Uploading to S3..."

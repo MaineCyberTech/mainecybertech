@@ -1,0 +1,99 @@
+name: Backup Schedule Dispatcher
+
+# Why this workflow exists (audit finding DR-P0-001):
+# GitHub `schedule:` triggers only fire for workflows on the DEFAULT branch.
+# The database backup and restore-test workflows were added on `develop`, so
+# on this repository (default branch `main`) the daily backup and weekly
+# restore test never ran. This file must live on `main`; it pokes the real
+# workflows on `develop` via workflow_dispatch, which does not require them to
+# be on the default branch.
+#
+# IMPORTANT: `gh workflow run --ref develop` requires the `workflow` scope on
+# the token. GITHUB_TOKEN cannot dispatch arbitrary workflows, so this job
+# needs a `SCHEDULE_DISPATCH_TOKEN` secret (a PAT or GitHub App token with
+# `actions: write`). If that secret is absent the job fails loudly rather than
+# pretending the backup ran.
+#
+# Alternative (no PAT required): flip the repository's default branch to
+# `develop`. Then delete this dispatcher and the schedule blocks in
+# db-backup.yml / db-restore-test.yml do the work themselves.
+
+on:
+  schedule:
+    - cron: "0 4 * * *"   # daily backup trigger (matches db-backup.yml)
+    - cron: "0 6 * * 1"   # weekly restore test trigger (matches db-restore-test.yml)
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Which workflow to dispatch"
+        required: true
+        default: backup
+        type: choice
+        options:
+          - backup
+          - restore-test
+          - both
+
+permissions:
+  contents: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Choose targets from the schedule
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "targets=${{ inputs.target }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event.schedule }}" = "0 6 * * 1" ]; then
+            echo "targets=restore-test" >> "$GITHUB_OUTPUT"
+          else
+            echo "targets=backup" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Require a dispatch token
+        env:
+          TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "${TOKEN}" ]; then
+            echo "::error::SCHEDULE_DISPATCH_TOKEN is not set. Backups cannot be dispatched from main. See .github/workflows/backup-dispatch.yml header for options."
+            exit 1
+          fi
+
+      - name: Dispatch backup workflow
+        if: contains(steps.pick.outputs.targets, 'backup') || steps.pick.outputs.targets == 'both'
+        env:
+          GH_TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}
+        run: |
+          gh workflow run db-backup.yml \
+            --repo "${{ github.repository }}" --ref develop
+          echo "Dispatched db-backup.yml on develop"
+
+      - name: Dispatch restore-test workflow
+        if: contains(steps.pick.outputs.targets, 'restore-test') || steps.pick.outputs.targets == 'both'
+        env:
+          GH_TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}
+        run: |
+          gh workflow run db-restore-test.yml \
+            --repo "${{ github.repository }}" --ref develop
+          echo "Dispatched db-restore-test.yml on develop"
+
+      - name: Warn if the dispatched run does not appear
+        env:
+          GH_TOKEN: ${{ secrets.SCHEDULE_DISPATCH_TOKEN }}
+        run: |
+          # Give Actions a moment, then confirm the run was created. A silent
+          # dispatch failure is exactly the failure mode this workflow fixes.
+          sleep 15
+          for wf in db-backup.yml db-restore-test.yml; do
+            if [[ "${{ steps.pick.outputs.targets }}" == "backup" && "${wf}" != "db-backup.yml" ]]; then continue; fi
+            if [[ "${{ steps.pick.outputs.targets }}" == "restore-test" && "${wf}" != "db-restore-test.yml" ]]; then continue; fi
+            count=$(gh run list --repo "${{ github.repository }}" --workflow "${wf}" \
+              --branch develop --limit 3 --json createdAt --jq 'length')
+            if [ "${count}" -eq 0 ]; then
+              echo "::error::No run found for ${wf} after dispatch — the backup may not be running"
+              exit 1
+            fi
+            echo "${wf}: recent runs found (${count})"
+          done

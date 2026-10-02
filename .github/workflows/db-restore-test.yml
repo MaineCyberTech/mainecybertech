@@ -16,21 +16,37 @@ jobs:
 
       - name: Find latest backup
         id: find-backup
-        run: |
-          LATEST=$(aws s3 ls "${{ secrets.S3_BACKUP_BUCKET }}/" --recursive | sort | tail -1 | awk '{print $4}')
-          echo "backup_file=$LATEST" >> $GITHUB_OUTPUT
         env:
+          # Must resolve to the SAME bucket/prefix scripts/backup-database.sh
+          # writes to, or the restore test silently tests nothing (DR-P1-005).
+          # Defaults mirror the backup script; override with the S3_BACKUP_BUCKET
+          # secret/variable when the bucket name differs (e.g. s3://bucket/prefix).
+          S3_BACKUP_BUCKET: ${{ secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
+          S3_PREFIX: ${{ vars.S3_BACKUP_PREFIX || 'database-backups' }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+        run: |
+          set -euo pipefail
+          S3_PATH="s3://${S3_BACKUP_BUCKET#s3://}/${S3_PREFIX}/"
+          echo "Looking for latest backup under ${S3_PATH}"
+          LATEST=$(aws s3 ls "${S3_PATH}" --recursive \
+            | sort | tail -1 | awk '{print $4}')
+          if [ -z "${LATEST}" ]; then
+            echo "::error::No backup objects found under ${S3_PATH} — nothing to restore-test"
+            exit 1
+          fi
+          echo "backup_file=${LATEST}" >> "$GITHUB_OUTPUT"
+          echo "backup_uri=${S3_PATH}${LATEST}" >> "$GITHUB_OUTPUT"
 
       - name: Download backup
-        run: |
-          aws s3 cp "${{ secrets.S3_BACKUP_BUCKET }}/${{ steps.find-backup.outputs.backup_file }}" /tmp/restore.sql.gz
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+        run: |
+          set -euo pipefail
+          aws s3 cp "${{ steps.find-backup.outputs.backup_uri }}" /tmp/restore.sql.gz
 
       - name: Start temp PostgreSQL
         run: |
@@ -43,18 +59,74 @@ jobs:
 
       - name: Restore backup to temp database
         run: |
-          # pipefail so a gunzip failure fails the step instead of being
-          # masked by psql's exit code.
+          # Fail on an empty/corrupt dump rather than letting psql absorb it.
           set -euo pipefail
-          gunzip -c /tmp/restore.sql.gz | psql "postgresql://postgres:test@localhost:5432/restore_test"
+          if [ ! -s /tmp/restore.sql.gz ]; then
+            echo "::error::Backup artifact is missing or empty"
+            exit 1
+          fi
+          gunzip -c /tmp/restore.sql.gz > /tmp/restore.sql
+          if [ ! -s /tmp/restore.sql ]; then
+            echo "::error::Decompressed dump is empty"
+            exit 1
+          fi
+          psql "postgresql://postgres:test@localhost:5432/restore_test" \
+            -v ON_ERROR_STOP=1 -q -f /tmp/restore.sql
 
       - name: Verify database integrity
+        # Assertions, not prints: a truncated or empty restore must FAIL this job.
+        # Thresholds come from repo config (see .github/restore-test-baseline.env)
+        # and are overridden by repository variables RESTORE_MIN_TABLES /
+        # RESTORE_MIN_ROWS when set.
+        env:
+          PGURL: postgresql://postgres:test@localhost:5432/restore_test
+          MIN_TABLES: ${{ vars.RESTORE_MIN_TABLES || '120' }}
+          MIN_ROWS: ${{ vars.RESTORE_MIN_ROWS || '1' }}
         run: |
-          echo "=== Checking table count ==="
-          psql "postgresql://postgres:test@localhost:5432/restore_test" -c "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public';"
-          echo "=== Checking migrations applied ==="
-          psql "postgresql://postgres:test@localhost:5432/restore_test" -c "SELECT count(*) FROM information_schema.tables WHERE table_name = '_migrations';" || true
-          echo "=== Restore test completed successfully ==="
+          set -euo pipefail
+          fail=0
+
+          count() { psql "$PGURL" -tAc "$1"; }
+
+          tables=$(count "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';")
+          echo "public tables restored: ${tables} (minimum ${MIN_TABLES})"
+          if [ "${tables}" -lt "${MIN_TABLES}" ]; then
+            echo "::error::Restored only ${tables} tables; expected at least ${MIN_TABLES}"
+            fail=1
+          fi
+
+          # Row-count sanity across the largest tenant tables. A dump that
+          # "restores" but carries no rows is a failed backup.
+          total_rows=0
+          for t in profiles organizations tickets documents audit_logs; do
+            exists=$(count "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name='${t}';")
+            if [ "${exists}" -eq 0 ]; then
+              echo "::error::Critical table '${t}' is missing from the restore"
+              fail=1
+              continue
+            fi
+            n=$(count "SELECT count(*) FROM public.${t};")
+            echo "  ${t}: ${n} rows"
+            total_rows=$((total_rows + n))
+          done
+          if [ "${total_rows}" -lt "${MIN_ROWS}" ]; then
+            echo "::error::Restore contains ${total_rows} total rows across critical tables; expected at least ${MIN_ROWS}"
+            fail=1
+          fi
+
+          # Tenant-isolation canary: every org-scoped table must carry an
+          # organization_id column so RLS has something to scope on.
+          unscope=$(count "SELECT count(*) FROM information_schema.tables t WHERE t.table_schema='public' AND t.table_name IN ('tickets','documents') AND NOT EXISTS (SELECT 1 FROM information_schema.columns c WHERE c.table_schema=t.table_schema AND c.table_name=t.table_name AND c.column_name='organization_id');")
+          if [ "${unscope}" -ne 0 ]; then
+            echo "::error::${unscope} tenant-scoped table(s) lack organization_id in the restore"
+            fail=1
+          fi
+
+          if [ "${fail}" -ne 0 ]; then
+            echo "=== RESTORE VERIFICATION FAILED ==="
+            exit 1
+          fi
+          echo "=== Restore verification passed (${tables} tables, ${total_rows} rows checked) ==="
 
       - name: Cleanup
         if: always()
