@@ -106,6 +106,13 @@ jobs:
       - name: Verify RLS/migration hygiene
         run: node scripts/verify-rls.mjs
 
+      - name: Verify no raw unfiltered membership predicate (DATA-P1-001)
+        # Fails when a migration newer than the baseline reintroduces the
+        # `memberships where user_id = auth.uid()` predicate without a
+        # status='approved' filter, which let pending/suspended members read
+        # tenant rows via the anon-key + JWT path.
+        run: node scripts/check-rls-predicate.mjs
+
   # Secret scanning — same patterns as the pre-commit hook (scripts/scan-secrets.sh).
   # Runs as part of the deploy gate so a leaked credential cannot ship even if
   # PR-only checks were bypassed.
