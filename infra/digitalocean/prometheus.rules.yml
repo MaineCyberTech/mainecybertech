@@ -55,3 +55,52 @@ groups:
           summary: "Elevated cross-tenant (impersonation) access volume"
           description: "More than 0.5 cross-tenant access events/second over 10 minutes. Review GET /api/v1/audit/impersonation."
 
+      # IR-P1-006: runtime signal for tenant-isolation regressions.
+      #
+      # getScopedClient falls back to the RLS-bypassing service-role client for
+      # any module not in the RLS allow-list - that is the normal state today, so
+      # the bypass itself is not alertable. What IS alertable is a service-role
+      # call that resolved NO organization: it means a query touched tenant data
+      # with no tenant scope at all, which is the shape of a cross-tenant leak.
+      #
+      # This fires only on org_resolved="false", so it stays quiet under normal
+      # operation. A sustained non-zero rate means a code path is querying tenant
+      # tables without an organization predicate - investigate before assuming
+      # it is benign (some platform-level reads legitimately have no org).
+      - alert: MCTTenantScopeMissing
+        expr: sum(rate(portal_rls_bypass_total{org_resolved="false"}[5m])) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Service-role queries running without an organization scope"
+          description: "More than 0.1/s of RLS-bypassing client selections over 5 minutes resolved no organization. This is the signature of a tenant-isolation regression (a query missing its organization_id predicate). Identify the module via portal_rls_bypass_total{org_resolved=\"false\"} by_module before assuming it is an intended platform-level read."
+
+      # IR-P1-006: RLS rollout visibility. The ratio of enforced to bypassed
+      # selections shows how much of the surface is actually protected. Enable
+      # RLS_READS_ENABLED/RLS_WRITES_ENABLED per module and watch this climb; a
+      # module that silently drops out of the allow-list shows up as a step down
+      # in the enforced rate.
+      - alert: MCTRlsCoverageRegression
+        expr: |
+          (
+            sum(rate(portal_rls_enforced_total[30m]))
+            /
+            clamp_min(
+              sum(rate(portal_rls_enforced_total[30m])) + sum(rate(portal_rls_bypass_total[30m])),
+              1
+            )
+          ) < 0.05
+          and
+          (
+            sum(rate(portal_rls_enforced_total[30m])) + sum(rate(portal_rls_bypass_total[30m]))
+          ) > 0.1
+        for: 30m
+        labels:
+          severity: info
+          team: platform
+        annotations:
+          summary: "RLS-enforced share of tenant queries dropped below 5%"
+          description: "Less than 5% of tenant-data client selections used the RLS-enforcing client over 30 minutes, while traffic is non-trivial. Either a module was removed from RLS_READS_ENABLED/RLS_WRITES_ENABLED, or the rollout regressed. Check portal_rls_enforced_total by module."
+

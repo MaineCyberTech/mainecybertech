@@ -133,6 +133,57 @@ export function recordWebhookDelivery(status: "success" | "failed", event: strin
   webhookDeliveriesTotal.inc({ status, event });
 }
 
+/**
+ * Tenant-isolation boundary telemetry (IR-P1-006).
+ *
+ * `getScopedClient` silently falls back to the service-role client whenever a
+ * module is not in the RLS allow-list, and `getSupabaseAdmin()` bypasses RLS
+ * entirely. That is the normal state today, which means a tenant-isolation
+ * regression (a query that forgets its organization_id predicate) produces no
+ * signal at all - exactly what the audit flagged: there is no runtime detection
+ * for RLS regressions.
+ *
+ * This counter records every service-role (RLS-bypassing) client selection,
+ * labelled by module and kind, plus whether the request actually resolved an
+ * organization. `org_resolved="false"` on a service-role read of tenant data is
+ * the signal worth alerting on: it means a query ran with no tenant scope at
+ * all. It is deliberately low-cardinality and cheap (a counter increment).
+ */
+export const rlsBypassTotal = new Counter({
+  name: "portal_rls_bypass_total",
+  help: "Service-role (RLS-bypassing) client selections, by module, kind and whether an org was resolved",
+  labelNames: ["module", "kind", "org_resolved"],
+  registers: [register],
+});
+
+export function recordRlsBypass(
+  moduleKey: string,
+  kind: "read" | "write",
+  orgResolved: boolean,
+) {
+  rlsBypassTotal.inc({
+    module: moduleKey,
+    kind,
+    org_resolved: orgResolved ? "true" : "false",
+  });
+}
+
+/**
+ * Incremented when the RLS-enforcing user client is actually used, so the
+ * rollout of RLS_READS_ENABLED / RLS_WRITES_ENABLED is observable: the ratio of
+ * rls_enforced to rls_bypass shows how much of the surface is protected.
+ */
+export const rlsEnforcedTotal = new Counter({
+  name: "portal_rls_enforced_total",
+  help: "Requests served through the RLS-enforcing user-scoped client",
+  labelNames: ["module", "kind"],
+  registers: [register],
+});
+
+export function recordRlsEnforced(moduleKey: string, kind: "read" | "write") {
+  rlsEnforcedTotal.inc({ module: moduleKey, kind });
+}
+
 export function recordAuthAttempt(result: "success" | "failure") {
   authAttemptsTotal.inc({ result });
 }

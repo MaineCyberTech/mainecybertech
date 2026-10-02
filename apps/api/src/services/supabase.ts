@@ -4,6 +4,7 @@ import type { Database } from "@mct/sdk/database.types";
 import { getEnv } from "../config/env";
 import WebSocket from "ws";
 import { createSupabaseCircuitBreaker, CircuitBreaker } from "../lib/circuit-breaker";
+import { recordRlsBypass, recordRlsEnforced } from "../lib/metrics";
 
 let _adminClient: SupabaseClient<Database> | null = null;
 const circuitBreaker = createSupabaseCircuitBreaker();
@@ -179,9 +180,14 @@ export function getScopedClient(
     // their cross-tenant access is already audited by requireOrgAccess.
     const platformAdmin = req.orgScope?.platformAdmin ?? false;
     if (!platformAdmin) {
+      recordRlsEnforced(moduleKey, kind);
       return getSupabaseUser(req, req.userJwt);
     }
   }
+  // IR-P1-006: record the RLS-bypassing selection so a tenant-isolation
+  // regression is observable rather than silent. `org_resolved="false"` on a
+  // service-role call means the query ran with no tenant scope at all.
+  recordRlsBypass(moduleKey, kind, Boolean(req.orgId || req.query?.organization_id));
   return getSupabaseAdmin();
 }
 
