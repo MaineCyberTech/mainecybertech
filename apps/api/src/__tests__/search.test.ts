@@ -2,6 +2,7 @@
 import request from "supertest";
 import { createTestApp, createMockBuilder, tableAwareFrom } from "./helpers";
 import { errorHandler } from "../middleware/error";
+import { logAuditEvent } from "../services/audit";
 
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
@@ -35,6 +36,10 @@ jest.mock("../services/audit", () => ({ logAuditEvent: jest.fn() }));
 jest.mock("../middleware/admin", () => ({
   requireAdmin: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
+jest.mock("../middleware/org-access", () => {
+  const { createOrgAccessStub } = require("./helpers");
+  return createOrgAccessStub("00000000-0000-0000-0000-00000000000a");
+});
 
 import { getSupabaseAdmin } from "../services/supabase";
 import searchRouter from "../routes/search";
@@ -95,5 +100,95 @@ describe("Search API", () => {
   it("returns 401 without auth token", async () => {
     const res = await request(app).get("/api/v1/search?q=test");
     expect(res.status).toBe(401);
+  });
+
+  describe("tenant scoping and PII (SEARCH-P1-002)", () => {
+    const ORG_A = "00000000-0000-0000-0000-00000000000a";
+    const ORG_B = "00000000-0000-0000-0000-00000000000b";
+
+    /**
+     * Mock a plain per-tenant `admin` (cross-tenant role key but NOT a
+     * super_admin profile). Records every builder created per table so the
+     * test can assert the generated query shape.
+     */
+    function mockTenantAdmin() {
+      const builders: Record<string, any[]> = {};
+      const supabase = {
+        from: jest.fn((table: string) => {
+          const rowsFor = (): unknown => {
+            if (table === "profiles") return { is_super_admin: false };
+            if (table === "memberships") {
+              // First membership call resolves the caller's orgs/roles (with
+              // the embedded roles key); subsequent calls resolve member ids.
+              return (builders.memberships?.length ?? 0) === 0
+                ? [{ organization_id: ORG_A, roles: [{ id: "r1", key: "admin" }] }]
+                : [{ user_id: "user-1" }];
+            }
+            return [];
+          };
+          const builder = createMockBuilder({ data: rowsFor(), error: null });
+          (builders[table] ??= []).push(builder);
+          return builder;
+        }),
+        auth: {
+          getUser: jest.fn().mockResolvedValue({
+            data: { user: { id: "user-1", email: "admin@example.com" } },
+            error: null,
+          }),
+        },
+      };
+      (getSupabaseAdmin as jest.Mock).mockReturnValue(supabase);
+      return { supabase, builders };
+    }
+
+    it("scopes the organizations query to the caller's own orgs", async () => {
+      const { builders } = mockTenantAdmin();
+
+      const res = await request(app)
+        .get("/api/v1/search?q=acme")
+        .set("Authorization", authToken);
+
+      expect(res.status).toBe(200);
+      const orgBuilder = builders.organizations?.[0];
+      expect(orgBuilder).toBeDefined();
+      expect(orgBuilder.in).toHaveBeenCalledWith("id", [ORG_A]);
+      expect(orgBuilder.in).not.toHaveBeenCalledWith("id", expect.arrayContaining([ORG_B]));
+    });
+
+    it("reduces profile PII for a non-super_admin caller", async () => {
+      const { builders } = mockTenantAdmin();
+
+      const res = await request(app)
+        .get("/api/v1/search?q=acme")
+        .set("Authorization", authToken);
+
+      expect(res.status).toBe(200);
+      const profileBuilder = builders.profiles?.find(
+        (b) => b.select.mock.calls[0]?.[0] !== "is_super_admin",
+      );
+      expect(profileBuilder).toBeDefined();
+      const projection = profileBuilder!.select.mock.calls[0][0];
+      expect(projection).toBe("id, full_name, title");
+      expect(projection).not.toContain("email");
+      expect(projection).not.toContain("phone");
+    });
+
+    it("does not persist the raw search term in audit metadata", async () => {
+      mockTenantAdmin();
+
+      const res = await request(app)
+        .get("/api/v1/search?q=customer@example.com")
+        .set("Authorization", authToken);
+
+      expect(res.status).toBe(200);
+      expect(logAuditEvent).toHaveBeenCalledTimes(1);
+      const call = (logAuditEvent as jest.Mock).mock.calls[0][0] as {
+        metadata: Record<string, unknown>;
+      };
+      expect(call.metadata).not.toHaveProperty("query");
+      expect(JSON.stringify(call.metadata)).not.toContain("customer@example.com");
+      expect(typeof call.metadata.queryHash).toBe("string");
+      expect(call.metadata.queryLength).toBe("customer@example.com".length);
+    });
   });
 });
