@@ -151,7 +151,7 @@ The compose `prometheus` service scrapes the API on the internal network; no pub
 
 ### Alert delivery
 
-Firing alerts are forwarded to an **Alertmanager** service (`infra/digitalocean/alertmanager.yml`)
+Firing alerts are forwarded to an **Alertmanager** service (`infra/digitalocean/alertmanager.tmpl.yml`)
 on the same internal network — see §9. Without a receiver, alerts are visible only in the
 internal Prometheus UI; §9 is what makes the `Watchdog` rule an actual off-box dead-man's switch.
 
@@ -279,7 +279,7 @@ has no independent dead-man's-switch receiver").
 | Component | Where | Purpose |
 | --------- | ----- | ------- |
 | `prometheus` (`prometheus.yml`) | compose, internal only | Evaluates `prometheus.rules.yml`; forwards firing alerts via `alerting: alertmanagers:` → `alertmanager:9093` |
-| `alertmanager` (`alertmanager.yml`) | compose, internal only (port 9093, **not published**) | Routes alerts to receivers using an env-substituted config |
+| `alertmanager` (`alertmanager.tmpl.yml`) | compose, internal only (port 9093, **not published**) | Routes alerts to receivers. Compose renders `${VAR}` placeholders from the container environment at start (Alertmanager has no variable substitution of its own) |
 | External receiver | **off the droplet** | Generic webhook / Slack / pager for real alerts |
 | Off-box dead-man's switch | **off the droplet** | A ping/heartbeat URL (healthchecks.io-style) that alerts *you* when the pings stop |
 

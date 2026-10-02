@@ -1,4 +1,13 @@
-# Alertmanager configuration for the MCT portal stack (IR-P0-003).
+# Alertmanager configuration TEMPLATE for the MCT portal stack (IR-P0-003).
+#
+# This file is a ${VAR} template, NOT a loadable Alertmanager config. It is
+# rendered by `envsubst` at container start (see the alertmanager service in
+# docker-compose.yml, which runs:
+#   /bin/sh -c 'envsubst < /etc/alertmanager/alertmanager.tmpl.yml > /etc/alertmanager/alertmanager.yml && exec /bin/alertmanager ...'
+# ). This is required because Alertmanager does NOT understand shell-style
+# `${VAR:-default}` defaults — a literal `${...}` in a `url:` fails config
+# validation with "first path segment in URL cannot contain colon". The
+# compose file therefore supplies defaults for every variable below.
 #
 # This is the DELIVERY half of the alerting path. Prometheus (see prometheus.yml
 # `alerting:`) forwards firing alerts here; Alertmanager fans them out to the
@@ -7,13 +16,14 @@
 # network egress, disk) is still detected by a system that does not share the box.
 #
 # Secrets NEVER live in this file. Every receiver URL is supplied by the
-# environment when compose renders this config (see docker-compose.yml). Required
-# env var NAMES (values are set in the droplet .env / GitHub env secrets):
+# environment when the container starts. Required env var NAMES (values are set
+# in the droplet .env / GitHub env secrets):
 #
 #   ALERTMANAGER_CRITICAL_WEBHOOK_URL
 #     External inbound webhook for critical/real alerts (Slack, Teams, PagerDuty
 #     events, Opsgenie, or a generic webhook relay). Must be reachable from the
-#     droplet. If unset, critical alerts fall back to the default receiver.
+#     droplet. When unset, compose substitutes a no-op loopback URL so the config
+#     still renders and validates.
 #   ALERTMANAGER_WATCHDOG_WEBHOOK_URL
 #     The DEAD-MAN'S SWITCH endpoint — an external ping/heartbeat URL that is NOT
 #     hosted on this droplet (e.g. a healthchecks.io-style ping URL, or an
@@ -86,11 +96,11 @@ receivers:
   # Catch-all. Prefer the generic webhook if configured; otherwise Slack.
   - name: default
     webhook_configs:
-      - url: "${ALERTMANAGER_DEFAULT_WEBHOOK_URL:-http://127.0.0.1:1/noop}"
+      - url: "${ALERTMANAGER_DEFAULT_WEBHOOK_URL}"
         send_resolved: true
     slack_configs:
-      - api_url: "${ALERTMANAGER_SLACK_API_URL:-http://127.0.0.1:1/noop}"
-        channel: "${ALERTMANAGER_SLACK_CHANNEL:-#alerts}"
+      - api_url: "${ALERTMANAGER_SLACK_API_URL}"
+        channel: "${ALERTMANAGER_SLACK_CHANNEL}"
         send_resolved: true
         title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
         text: >-
@@ -101,11 +111,11 @@ receivers:
   # Critical / on-call receiver — the primary external delivery path.
   - name: critical
     webhook_configs:
-      - url: "${ALERTMANAGER_CRITICAL_WEBHOOK_URL:-http://127.0.0.1:1/noop}"
+      - url: "${ALERTMANAGER_CRITICAL_WEBHOOK_URL}"
         send_resolved: true
     slack_configs:
-      - api_url: "${ALERTMANAGER_SLACK_API_URL:-http://127.0.0.1:1/noop}"
-        channel: "${ALERTMANAGER_SLACK_CHANNEL:-#alerts}"
+      - api_url: "${ALERTMANAGER_SLACK_API_URL}"
+        channel: "${ALERTMANAGER_SLACK_CHANNEL}"
         send_resolved: true
         title: ':rotating_light: [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
         text: >-
@@ -118,7 +128,7 @@ receivers:
   # every repeat_interval above. If the ping stops, the external service alerts.
   - name: watchdog
     webhook_configs:
-      - url: "${ALERTMANAGER_WATCHDOG_WEBHOOK_URL:-http://127.0.0.1:1/noop}"
+      - url: "${ALERTMANAGER_WATCHDOG_WEBHOOK_URL}"
         # A watchdog is a liveness signal, never "resolved" in a useful way;
         # still send resolved so the heartbeat stream is uniform.
         send_resolved: true
