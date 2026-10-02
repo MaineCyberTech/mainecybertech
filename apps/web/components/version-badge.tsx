@@ -12,7 +12,7 @@ export function VersionBadge() {
   const buildDate = formatDateUtc(BUILD_TIME);
 
   return (
-    <div className="fixed bottom-2 right-2 z-40 flex select-none items-center gap-1.5 rounded border border-white/10 bg-cyber-base/80 px-2 py-1 font-mono text-xs text-slate-400 shadow-sm backdrop-blur-sm">
+    <div className="fixed bottom-2 right-2 z-40 hidden select-none items-center gap-1.5 rounded border border-white/10 bg-cyber-base/80 px-2 py-1 font-mono text-xs text-slate-400 shadow-sm backdrop-blur-sm lg:block">
       <span className="opacity-60">v</span>
       <span>{APP_VERSION}</span>
       <span className="opacity-40">·</span>

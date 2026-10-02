@@ -288,12 +288,12 @@ export default async function AdminTicketDetailPage({ params, searchParams }: Pr
                 required
               />
             </div>
-            <button
-              type="submit"
+            <SubmitButton
               className="rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-red-300 transition hover:bg-red-500/20"
+              pendingText="Deleting…"
             >
               Confirm Delete
-            </button>
+            </SubmitButton>
           </form>
         </section>
       ) : null}

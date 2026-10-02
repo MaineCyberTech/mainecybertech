@@ -69,6 +69,7 @@ const PORTAL_ROUTE_PERMISSIONS: Record<string, { module: string; action?: string
   "/portal/change-requests": { module: "change-requests" },
   "/portal/scoreboard": { module: "scoreboard" },
   "/portal/phishing-simulations": { module: "phishing-simulations" },
+  "/portal/feedback": { module: "satisfaction-pulse" },
   "/portal/hardware-staging": { module: "hardware-staging" },
   "/portal/camera-calculator": { module: "camera-calculator" },
   "/portal/network-port-maps": { module: "network-port-maps" },
