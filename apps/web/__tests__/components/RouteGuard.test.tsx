@@ -60,6 +60,26 @@ describe("RouteGuard", () => {
     expect(screen.getByText("secret content")).toBeInTheDocument();
   });
 
+  it("prefers the longest matching prefix when rule prefixes overlap", () => {
+    mockPathname.mockReturnValue("/admin/status-pages");
+    mockCan.mockImplementation((module: string) => module === "status-pages");
+    render(
+      <RouteGuard
+        rules={{
+          "/admin/status": { module: "status" },
+          "/admin/status-pages": { module: "status-pages" },
+        }}
+        homeHref="/admin"
+      >
+        <div>secret content</div>
+      </RouteGuard>,
+    );
+    expect(mockCan).toHaveBeenCalledWith("status-pages", "view");
+    expect(mockCan).not.toHaveBeenCalledWith("status", "view");
+    expect(screen.getByText("secret content")).toBeInTheDocument();
+    expect(screen.queryByText("403")).not.toBeInTheDocument();
+  });
+
   it("does not gate unmatched routes", () => {
     mockPathname.mockReturnValue("/admin/other-page");
     mockCan.mockReturnValue(false);
