@@ -3,26 +3,35 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
+import { requireOrgAccess } from "../middleware/org-access";
 import { sendExportResponse, CsvColumn } from "../lib/csv";
 import { queryInt } from "../lib/query";
+import {
+  applyOrgScope,
+  applyRequestedOrg,
+  resolveAdminTenantScope,
+} from "../lib/admin-scope";
 
 const router: ReturnType<typeof Router> = Router();
 
-router.use(requireAuth, requireAdmin);
+// requireOrgAccess resolves the caller's tenant scope; requireAdmin gates the
+// admin role. The handlers below then apply a mandatory org predicate so a
+// single-org admin can never read another tenant's audit trail, even with an
+// explicit ?organization_id (audit MT-P1-001 / ADMIN-P1-001).
+router.use(requireAuth, requireOrgAccess, requireAdmin);
 
 router.get("/", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const scope = await resolveAdminTenantScope(req);
     const page = Math.max(1, queryInt(req.query.page, 1));
     const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
     const offset = (page - 1) * limit;
 
-    let query = supabase.from("audit_logs").select("*", { count: "exact" });
+    const requestedOrg = req.query.organization_id as string | undefined;
 
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) {
-      query = query.eq("organization_id", orgId);
-    }
+    let query = getSupabaseAdmin().from("audit_logs").select("*", { count: "exact" });
+    query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
+    query = applyOrgScope(query, "organization_id", scope);
 
     const actionFilter = req.query.action as string | undefined;
     if (actionFilter) query = query.eq("action", actionFilter);
@@ -59,14 +68,13 @@ const auditExportColumns: CsvColumn[] = [
 
 router.get("/export", async (req, res, next) => {
   try {
-    const supabase = getSupabaseAdmin();
+    const scope = await resolveAdminTenantScope(req);
 
-    let query = supabase.from("audit_logs").select("*");
+    let query = getSupabaseAdmin().from("audit_logs").select("*");
 
-    const orgId = req.query.organization_id as string | undefined;
-    if (orgId) {
-      query = query.eq("organization_id", orgId);
-    }
+    const requestedOrg = req.query.organization_id as string | undefined;
+    query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
+    query = applyOrgScope(query, "organization_id", scope);
 
     const actionFilter = req.query.action as string | undefined;
     if (actionFilter) query = query.eq("action", actionFilter);
