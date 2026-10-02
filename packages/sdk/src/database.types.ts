@@ -1690,8 +1690,6 @@ export type Database = {
         Row: {
           created_at: string;
           current_version: number;
-          deleted_at: string | null;
-          deleted_by: string | null;
           description: string | null;
           file_name: string | null;
           file_size: number | null;
@@ -1717,8 +1715,6 @@ export type Database = {
           uploaded_by: string;
           created_at?: string | null;
           current_version?: number | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           file_name?: string | null;
           file_size?: number | null;
@@ -1734,8 +1730,6 @@ export type Database = {
         Update: {
           created_at?: string | null;
           current_version?: number | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           file_name?: string | null;
           file_size?: number | null;
@@ -4358,8 +4352,6 @@ export type Database = {
         Row: {
           created_at: string;
           created_by: string;
-          deleted_at: string | null;
-          deleted_by: string | null;
           description: string | null;
           due_at: string | null;
           due_date: string | null;
@@ -4383,8 +4375,6 @@ export type Database = {
           name: string;
           organization_id: string;
           created_at?: string | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           due_at?: string | null;
           due_date?: string | null;
@@ -4404,8 +4394,6 @@ export type Database = {
         Update: {
           created_at?: string | null;
           created_by?: string | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           due_at?: string | null;
           due_date?: string | null;
@@ -6299,8 +6287,6 @@ export type Database = {
           category: string | null;
           created_at: string;
           created_by: string;
-          deleted_at: string | null;
-          deleted_by: string | null;
           description: string | null;
           external_jsm_issue_key: string | null;
           id: string;
@@ -6323,8 +6309,6 @@ export type Database = {
           assigned_to?: string | null;
           category?: string | null;
           created_at?: string | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           external_jsm_issue_key?: string | null;
           id?: string | null;
@@ -6343,8 +6327,6 @@ export type Database = {
           category?: string | null;
           created_at?: string | null;
           created_by?: string | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           external_jsm_issue_key?: string | null;
           id?: string | null;

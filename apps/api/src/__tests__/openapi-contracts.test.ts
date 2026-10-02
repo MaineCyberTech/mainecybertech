@@ -234,8 +234,6 @@ const TICKET_ROW = {
   version: 1,
   created_at: "2026-01-01T00:00:00.000Z",
   updated_at: "2026-01-01T00:00:00.000Z",
-  deleted_at: null,
-  deleted_by: null,
   created_by: "user-1",
 };
 

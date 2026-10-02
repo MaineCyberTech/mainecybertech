@@ -61,6 +61,20 @@ curl -sf -H "Authorization: Bearer $DO_API_TOKEN" \
 
 ## 3. Supabase Rollback
 
+### Deletion semantics: hard delete (no soft-delete columns)
+
+Entity deletes are **hard deletes**. The `deleted_at` / `deleted_by` columns
+that migration `5302109_soft_delete.sql` added to `tickets`, `projects` and
+`documents` were never written or read by any application path — the DELETE
+handlers always removed rows — so migration
+`5302432_drop_unused_soft_delete_columns.sql` removed them. The columns were
+advertising a tombstone/restore capability the code did not have (audit finding
+DATA-P1-003). Recovery of an accidental delete therefore depends on the
+mechanisms below (reverse migration, PITR, or an S3 backup restore), not on
+in-row tombstones. If soft delete is ever revisited it must be implemented
+end-to-end: writes set `deleted_at`/`deleted_by`, every read **and every RLS
+policy** filters `deleted_at is null`, and child rows are handled.
+
 ### Option A: Reverse migration
 
 ```bash

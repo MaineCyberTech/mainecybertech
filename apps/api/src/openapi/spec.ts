@@ -513,8 +513,6 @@ const ticketRowProperties: Record<string, unknown> = {
   version: { type: "number" },
   created_at: { type: "string" },
   updated_at: { type: "string" },
-  deleted_at: { type: "string", nullable: true },
-  deleted_by: { type: "string", nullable: true },
 };
 
 const ticketRequired = [
@@ -946,6 +944,25 @@ const adminAudit: RouteDef[] = [
     summary: "Export audit logs (CSV/JSON)",
     tag: "Audit",
     params: [queryParam("format")],
+  },
+  {
+    method: "get",
+    path: "/audit/impersonation",
+    summary: "List cross-tenant impersonation events (platform admin only)",
+    tag: "Audit",
+    params: [
+      queryParam("organization_id"),
+      queryParam("actor_user_id"),
+      queryParam("page"),
+      queryParam("limit"),
+    ],
+  },
+  {
+    method: "get",
+    path: "/audit/impersonation/export",
+    summary: "Export cross-tenant impersonation events (platform admin only)",
+    tag: "Audit",
+    params: [queryParam("format"), queryParam("organization_id"), queryParam("actor_user_id")],
   },
   {
     method: "get",
