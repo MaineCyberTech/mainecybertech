@@ -238,4 +238,105 @@ describe("audit routes", () => {
       expect(builders.audit_logs.in).not.toHaveBeenCalledWith("organization_id", expect.anything());
     });
   });
+
+  describe("impersonation review (ADMIN-P1-002)", () => {
+    const IMP_ENTRY = {
+      id: "imp-1",
+      actor_user_id: "admin-1",
+      actor_role_key: "super_admin",
+      organization_id: ORG_B,
+      reason: "cross_tenant_access",
+      source: "api",
+      created_at: "2026-01-01T00:00:00Z",
+    };
+
+    /** is_super_admin + cross-tenant role key => genuine platform admin. */
+    function crossTenantAdminTables(extra: TableResults = {}): TableResults {
+      return {
+        memberships: {
+          data: [{ organization_id: ORG_A, roles: { id: "r", key: "super_admin" } }],
+          error: null,
+        },
+        profiles: { data: { is_super_admin: true }, error: null },
+        ...extra,
+      };
+    }
+
+    it("lets a genuine cross-tenant admin read the impersonation trail", async () => {
+      const { builders } = mockSupabase(
+        crossTenantAdminTables({
+          impersonation_log: { data: [IMP_ENTRY], error: null, count: 1 },
+        }),
+      );
+
+      const res = await request(app)
+        .get("/api/v1/audit/impersonation")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.items).toEqual([IMP_ENTRY]);
+      expect(builders.impersonation_log.select).toHaveBeenCalled();
+    });
+
+    it("denies a single-org admin — impersonation is a platform-level concern", async () => {
+      const { builders } = mockSupabase(
+        singleOrgAdminTables({
+          impersonation_log: { data: [IMP_ENTRY], error: null, count: 1 },
+        }),
+      );
+
+      const res = await request(app)
+        .get("/api/v1/audit/impersonation")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
+      // Fails closed: never queries the table for a non-platform admin.
+      expect(builders.impersonation_log).toBeUndefined();
+    });
+
+    it("supports an organization_id investigation filter", async () => {
+      const { builders } = mockSupabase(
+        crossTenantAdminTables({
+          impersonation_log: { data: [IMP_ENTRY], error: null, count: 1 },
+        }),
+      );
+
+      const res = await request(app)
+        .get(`/api/v1/audit/impersonation?organization_id=${ORG_B}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(builders.impersonation_log.eq).toHaveBeenCalledWith("organization_id", ORG_B);
+    });
+
+    it("exports the impersonation trail for a cross-tenant admin", async () => {
+      mockSupabase(
+        crossTenantAdminTables({
+          impersonation_log: { data: [IMP_ENTRY], error: null },
+        }),
+      );
+
+      const res = await request(app)
+        .get("/api/v1/audit/impersonation/export?format=json")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([IMP_ENTRY]);
+    });
+
+    it("denies the impersonation export to a single-org admin", async () => {
+      const { builders } = mockSupabase(
+        singleOrgAdminTables({
+          impersonation_log: { data: [IMP_ENTRY], error: null },
+        }),
+      );
+
+      const res = await request(app)
+        .get("/api/v1/audit/impersonation/export")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
+      expect(builders.impersonation_log).toBeUndefined();
+    });
+  });
 });

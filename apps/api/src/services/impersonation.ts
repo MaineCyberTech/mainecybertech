@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "./supabase";
 import { logger } from "../lib/logger";
 import type { Request } from "express";
 import { toJson } from "../lib/db-types";
+import { recordImpersonationEvent } from "../lib/metrics";
 
 /**
  * Log cross-tenant access (impersonation).
@@ -40,6 +41,9 @@ export async function logImpersonation(input: {
         { err: error, actorUserId: input.actorUserId, orgId: input.organizationId },
         "impersonation log insert failed (non-blocking)",
       );
+    } else {
+      // Alertable signal for unexpected platform-admin reach (ADMIN-P1-002).
+      recordImpersonationEvent(input.actorRoleKey, input.source ?? "api");
     }
   } catch (err) {
     logger.warn({ err }, "impersonation log write threw (non-blocking)");

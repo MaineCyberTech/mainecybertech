@@ -117,6 +117,18 @@ export const notificationDedupTotal = new Counter({
   registers: [register],
 });
 
+/**
+ * Cross-tenant (impersonation) access events (ADMIN-P1-002). Incremented on
+ * every `impersonation_log` write so Prometheus can alert on unexpected
+ * platform-admin reach (see infra/digitalocean/prometheus.rules.yml).
+ */
+export const impersonationEventsTotal = new Counter({
+  name: "portal_impersonation_events_total",
+  help: "Total cross-tenant/platform-admin access events recorded to impersonation_log",
+  labelNames: ["actor_role_key", "source"],
+  registers: [register],
+});
+
 export function recordWebhookDelivery(status: "success" | "failed", event: string) {
   webhookDeliveriesTotal.inc({ status, event });
 }
@@ -173,6 +185,11 @@ export function recordNotificationSuppressed(channel: "in_app" | "email", module
 /** Record that an insert was skipped because its dedup key already existed. */
 export function recordNotificationDedup(channel: "in_app" | "email") {
   notificationDedupTotal.inc({ channel });
+}
+
+/** Record a cross-tenant/impersonation access event (ADMIN-P1-002). */
+export function recordImpersonationEvent(actorRoleKey: string, source: string) {
+  impersonationEventsTotal.inc({ actor_role_key: actorRoleKey, source });
 }
 
 export function setActiveOrganizations(count: number) {

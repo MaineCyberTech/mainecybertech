@@ -38,3 +38,20 @@ groups:
         annotations:
           summary: "Prometheus Watchdog"
           description: "This alert is a liveness signal — firing at least once a day means the alerting pipeline is healthy."
+
+  - name: mct-admin-abuse
+    rules:
+      # ADMIN-P1-002: platform-admin cross-tenant access is recorded to
+      # impersonation_log and surfaced as portal_impersonation_events_total.
+      # A sustained burst of cross-tenant entries warrants review. Delivery
+      # requires Alertmanager (see the file header).
+      - alert: MCTImpersonationBurst
+        expr: sum(rate(portal_impersonation_events_total[10m])) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Elevated cross-tenant (impersonation) access volume"
+          description: "More than 0.5 cross-tenant access events/second over 10 minutes. Review GET /api/v1/audit/impersonation."
+

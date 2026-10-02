@@ -228,6 +228,22 @@ flowchart LR
 ### Admin takeaway
 If someone should manage only one client organization, they should usually **not** be a global super admin.
 
+### Reviewing cross-tenant (impersonation) access
+
+When a cross-tenant role (`super_admin` / `admin`) acts inside an organization they
+are not a member of, the API records the event in `impersonation_log`. Review it via:
+
+- `GET /api/v1/audit/impersonation` — paginated (`page`, `limit`), optional
+  `organization_id` and `actor_user_id` filters.
+- `GET /api/v1/audit/impersonation/export?format=json|csv` — same filters, bounded export.
+
+**Who may read it:** only a genuine cross-tenant admin — a caller whose profile has
+`is_super_admin` **and** whose approved membership carries a cross-tenant role key.
+A single-organization `admin` is denied (403): the log names other tenants, actor
+identities and source IPs, so exposing it to a tenant admin would itself be a
+cross-tenant leak. Prometheus also counts every write as
+`portal_impersonation_events_total`, which the `MCTImpersonationBurst` alert watches.
+
 ---
 
 ## 7) How Role-Based Permissions Work

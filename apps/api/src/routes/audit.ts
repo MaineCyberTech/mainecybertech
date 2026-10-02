@@ -95,4 +95,90 @@ router.get("/export", async (req, res, next) => {
   }
 });
 
+/**
+ * Impersonation review (ADMIN-P1-002).
+ *
+ * `impersonation_log` records every cross-tenant entry by a role that can reach
+ * all tenants. This is a PLATFORM-LEVEL audit surface, not tenant data: the rows
+ * name other tenants, actor identities and source IPs. It is therefore readable
+ * ONLY by a genuine cross-tenant admin (`resolveAdminTenantScope().allTenants`,
+ * i.e. `is_super_admin` + a cross-tenant role key). A single-org `admin` is
+ * deliberately denied — showing them another tenant's impersonation trail would
+ * itself be a cross-tenant leak, the opposite of the finding's intent.
+ *
+ * A `?organization_id=` filter is supported for investigation and is applied
+ * after the allTenants gate; unlike the tenant-scoped audit list it cannot widen
+ * access (there is no org predicate to widen from).
+ */
+router.get("/impersonation", async (req, res, next) => {
+  try {
+    const scope = await resolveAdminTenantScope(req);
+    if (!scope.allTenants) {
+      throw new AppError("FORBIDDEN", "Platform admin access required", 403);
+    }
+
+    const page = Math.max(1, queryInt(req.query.page, 1));
+    const limit = Math.min(100, Math.max(1, queryInt(req.query.limit, 25)));
+    const offset = (page - 1) * limit;
+
+    let query = getSupabaseAdmin()
+      .from("impersonation_log")
+      .select("*", { count: "exact" });
+
+    const requestedOrg = req.query.organization_id as string | undefined;
+    if (requestedOrg) query = query.eq("organization_id", requestedOrg);
+
+    const actorUserId = req.query.actor_user_id as string | undefined;
+    if (actorUserId) query = query.eq("actor_user_id", actorUserId);
+
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    res.json(success({ items: data ?? [], total: count ?? 0, page, limit }));
+  } catch (error) {
+    next(error);
+  }
+});
+
+const impersonationExportColumns: CsvColumn[] = [
+  { key: "id" },
+  { key: "created_at" },
+  { key: "actor_user_id" },
+  { key: "actor_role_key" },
+  { key: "organization_id" },
+  { key: "reason" },
+  { key: "source" },
+  { key: "ip_address" },
+  { key: "user_agent" },
+  { key: "metadata" },
+];
+
+router.get("/impersonation/export", async (req, res, next) => {
+  try {
+    const scope = await resolveAdminTenantScope(req);
+    if (!scope.allTenants) {
+      throw new AppError("FORBIDDEN", "Platform admin access required", 403);
+    }
+
+    let query = getSupabaseAdmin().from("impersonation_log").select("*");
+
+    const requestedOrg = req.query.organization_id as string | undefined;
+    if (requestedOrg) query = query.eq("organization_id", requestedOrg);
+
+    const actorUserId = req.query.actor_user_id as string | undefined;
+    if (actorUserId) query = query.eq("actor_user_id", actorUserId);
+
+    const { data, error } = await query.order("created_at", { ascending: false }).limit(10000);
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+
+    sendExportResponse(res, data ?? [], impersonationExportColumns, "impersonation");
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

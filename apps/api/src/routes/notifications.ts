@@ -9,6 +9,7 @@ import { AppError, success } from "../types";
 import { logAuditEvent } from "../services/audit";
 import { getEnv } from "../config/env";
 import { queryInt } from "../lib/query";
+import { buildNotificationKey, createNotification } from "../lib/notify";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
@@ -267,36 +268,59 @@ router.post("/", requireAdmin, async (req, res, next) => {
     const parsed = createNotificationSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
 
-    const notificationKey = `${parsed.userId}-${parsed.module}-${parsed.moduleId || "none"}-${parsed.action}`;
+    const notificationKey = buildNotificationKey({
+      userId: parsed.userId,
+      module: parsed.module,
+      moduleId: parsed.moduleId,
+      action: parsed.action,
+      title: parsed.title,
+      body: parsed.body,
+    });
 
-    // Dedup: check if identical notification already exists
-    const { data: existing } = await supabase
-      .from("notifications")
-      .select("id, title, body, read, created_at")
-      .eq("notification_key", notificationKey)
-      .maybeSingle();
+    // Route through the preference-aware helper (NOTIF-P1-001) instead of
+    // inserting directly: an admin-authored notification must honour the
+    // recipient's per-channel opt-outs and the same dedup key as every other
+    // send path. No bypass: none of the actions this endpoint accepts are
+    // security-critical alerts.
+    const result = await createNotification({
+      userId: parsed.userId,
+      organizationId: parsed.organizationId,
+      title: parsed.title,
+      body: parsed.body,
+      module: parsed.module,
+      moduleId: parsed.moduleId,
+      action: parsed.action,
+      notificationKey,
+    });
 
-    if (existing) {
-      res.status(200).json(success(existing));
+    if (result.suppressed) {
+      // The recipient disabled the in-app channel; report honestly rather than
+      // inserting anyway. Still audited so an admin's intended send is visible.
+      await logAuditEvent({
+        actorUserId: req.authUser!.userId,
+        action: "notification.create",
+        entityType: "notification",
+        metadata: {
+          userId: parsed.userId,
+          module: parsed.module,
+          action: parsed.action,
+          suppressed: true,
+        },
+      });
+      res.status(200).json(success({ suppressed: true, deduped: false }));
       return;
     }
 
+    // Return the persisted row (covers both a fresh insert and a dedup hit) so
+    // the existing SDK `notifications.create()` contract is unchanged.
     const { data, error } = await supabase
       .from("notifications")
-      .insert({
-        user_id: parsed.userId,
-        organization_id: parsed.organizationId,
-        title: parsed.title,
-        body: parsed.body,
-        module: parsed.module,
-        module_id: parsed.moduleId,
-        action: parsed.action,
-        notification_key: notificationKey,
-      })
-      .select()
-      .single();
+      .select("*")
+      .eq("notification_key", notificationKey)
+      .maybeSingle();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
+    if (!data) throw new AppError("DB_ERROR", "Notification was not persisted", 500);
 
     await logAuditEvent({
       actorUserId: req.authUser!.userId,
@@ -307,10 +331,11 @@ router.post("/", requireAdmin, async (req, res, next) => {
         userId: parsed.userId,
         module: parsed.module,
         action: parsed.action,
+        deduped: result.deduped,
       },
     });
 
-    res.status(201).json(success(data));
+    res.status(result.inserted ? 201 : 200).json(success(data));
   } catch (error) {
     next(error);
   }
