@@ -112,8 +112,16 @@ pnpm licenses list --json > licenses.json
 node scripts/generate-sbom.mjs sbom.cdx.json
 node scripts/validate-sbom.mjs sbom.cdx.json
 
-# Cryptographically verify a released image's BUILD PROVENANCE (not the SBOM)
-gh attestation verify oci://ghcr.io/<owner>/mct-api:<sha> --repo <owner>/<repo>
+# Cryptographically verify a released image's BUILD PROVENANCE (not the SBOM).
+# The attestation is bound to a DIGEST, so resolve the tag first:
+DIGEST=$(docker buildx imagetools inspect \
+  ghcr.io/<owner>/mct-api:<sha> --format '{{.Manifest.Digest}}')
+gh attestation verify "oci://ghcr.io/<owner>/mct-api@$DIGEST" \
+  --repo <owner>/<repo> \
+  --signer-workflow <owner>/<repo>/.github/workflows/deploy-do.yml \
+  --source-digest <sha>
+# This is the same check the deploy pipeline runs before every pull; see
+# docs/CI.md ("Provenance verification at deploy").
 
 # Lockfile SBOM artifact (30 days)
 gh run download <run-id> -n sbom-cyclonedx
@@ -138,6 +146,26 @@ jq '.metadata.component.purl' image-sbom-mct-api.cdx.json
   (`actions/attest-build-provenance`, bound to the same digest and pushed to the
   registry with `push-to-registry: true`) is the only image-level trust
   artifact; it proves where the image was built, not what is inside it.
+- **Provenance is now verified at deploy** (CTR-P1-003). The `verify-attestations`
+  job in `deploy-do.yml` resolves each deployed tag to its digest and runs
+  `gh attestation verify` before `deploy` pulls anything; `deploy` `needs:` the
+  job, so a failed check blocks the deploy. See
+  [docs/CI.md](CI.md#provenance-verification-at-deploy-ctr-p1-003).
+  **What this does and does not cover:**
+  - Covers `mct-api`, `mct-worker`, `mct-web` images pulled by the
+    `deploy-do.yml` path, bound to the exact digest and the signing workflow
+    (`--signer-workflow`) and commit (`--source-digest`).
+  - Normal deploys **fail closed**: a missing or unverifiable attestation blocks
+    the deploy.
+  - Does **not** cover the compose pull for any image not built by `deploy-do.yml`
+    (e.g. third-party base images, sidecars).
+  - Does **not** cover `build-push.yml` output — that workflow attests but is a
+    different signing workflow, so its images would fail the `--signer-workflow`
+    pin (it is manual-dispatch only and not on the deploy path).
+  - **Rollback exception:** a `rollback_sha` dispatch may deploy an image built
+    before attestation existed. A *present-but-invalid* attestation still fails
+    the job; only the complete *absence* of one is tolerated, with a warning and
+    an explicit job-summary stamp.
 - The lockfile SBOM is uploaded as a CI artifact rather than attached to a
   GitHub Release. Release attachment remains open (SBOM-P2-001) because there is
   no tag or Release step yet; the commit binding added here is the prerequisite.

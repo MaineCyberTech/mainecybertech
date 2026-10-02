@@ -12,7 +12,7 @@ branch.
 | TypeCheck             | `typecheck.yml`           | push + PR `main`, `develop`; dispatch                              | `apps/**`, `packages/**`, `pnpm-lock.yaml`, `package.json`, `typecheck.yml`                                                                                              | `pnpm typecheck`                                                                                                                                                  | Blocking            |
 | E2E                   | `e2e.yml`                 | PR `main`, `develop`; `workflow_call`; dispatch (`a11y_full`)      | `apps/web/e2e/**`, `apps/web/playwright.config.ts`, `apps/web/app/**`, `apps/web/components/**`, `packages/**`, `supabase/seeds/**`, `supabase/migrations/**`, `e2e.yml` | Local Supabase + built API/web; Playwright chromium E2E + axe (19-route gate, 68 with `A11Y_FULL`)                                                                | Blocking on PR      |
 | Validate              | `validate.yml`            | `workflow_call` only                                               | —                                                                                                                                                                        | Deploy gate: audit, coverage tests + all guards, secrets scan, lint, typecheck, prompt provenance (`verify-prompts.js`), `review.md` sync                         | Deploy gate         |
-| deploy-do             | `deploy-do.yml`           | push `main`, `develop`; dispatch (`deploy_target`, `rollback_sha`) | `apps/api/**`, `apps/web/**`, `apps/worker/**`, `packages/**`, `infra/digitalocean/**`, `deploy-do.yml`                                                                  | Build 3 GHCR images; per-image Trivy image scan (CRITICAL/HIGH) + build-provenance attestation; `validate`; prod-only E2E + migration gates; SSH deploy to the droplet with container health gate and auto-rollback to the previous tag      | Blocking            |
+| deploy-do             | `deploy-do.yml`           | push `main`, `develop`; dispatch (`deploy_target`, `rollback_sha`) | `apps/api/**`, `apps/web/**`, `apps/worker/**`, `packages/**`, `infra/digitalocean/**`, `deploy-do.yml`                                                                  | Build 3 GHCR images; per-image Trivy image scan (CRITICAL/HIGH) + build-provenance attestation; **deploy-time provenance verification** (`verify-attestations` resolves the tag to a digest and runs `gh attestation verify`, fail-closed; `deploy` `needs:` it); `validate`; prod-only E2E + migration gates; SSH deploy to the droplet with container health gate and auto-rollback to the previous tag      | Blocking            |
 | terraform-do          | `terraform-do.yml`        | dispatch only                                                      | n/a                                                                                                                                                                      | `fmt -check`, validate, plan; apply requires the `apply` input (disabled until the `DO_API_TOKEN` is rotated)                                                     | Manual              |
 | supabase-migrations   | `supabase-migrations.yml` | push `develop`, `main`; `workflow_call`; dispatch                  | `supabase/**`, `supabase-migrations.yml`                                                                                                                                 | `supabase db push --include-all` with pinned CLI 2.107.0; `prod`/`dev` environment; serialized per branch                                                         | Migrate gate (prod) |
 | build-push            | `build-push.yml`          | dispatch only                                                      | —                                                                                                                                                                        | Manual GHCR build of `mct-api`, `mct-worker`, `mct-web` (push triggers removed — `deploy-do` builds); per-image Trivy image scan (CRITICAL/HIGH), CycloneDX image SBOM bound to the pushed digest, and build-provenance attestation                                                              | Manual              |
@@ -34,6 +34,7 @@ branch.
 setup → resolve-ip
       → build-api ∥ build-worker ∥ build-web ∥ validate
       → e2e-gate + migrate-gate        (prod only; skipped on dev)
+      → verify-attestations
       → deploy (always() && !failure() && !cancelled())
 ```
 
@@ -41,6 +42,51 @@ setup → resolve-ip
 the remote shell), pulls the images, restarts the compose stack, and only
 prunes old images after the API, web and worker containers report healthy. A
 failed health gate rolls back to the previously running tag.
+
+### Provenance verification at deploy (CTR-P1-003)
+
+Before any pull happens, the `verify-attestations` job proves each of
+`mct-api`, `mct-worker` and `mct-web` carries a build-provenance attestation
+signed by **this repository's** `deploy-do.yml`, bound to the exact digest
+being deployed. The deploy job `needs:` this job, so a failure blocks the
+deploy and appears as its own node in the workflow graph.
+
+The images are pulled by **tag** (`IMAGE_TAG` = the commit SHA) but the
+attestation is bound to a **digest**, so the job resolves the tag first:
+
+```bash
+# 1. tag -> immutable digest
+DIGEST=$(docker buildx imagetools inspect \
+  ghcr.io/<owner>/mct-api:$IMAGE_TAG --format '{{.Manifest.Digest}}')
+# 2. verify the attestation for that digest
+gh attestation verify "oci://ghcr.io/<owner>/mct-api@$DIGEST" \
+  --repo <owner>/<repo> \
+  --signer-workflow <owner>/<repo>/.github/workflows/deploy-do.yml \
+  --source-digest "$IMAGE_TAG"
+```
+
+`gh attestation verify` defaults to the `https://slsa.dev/provenance/v1`
+predicate type, which is what `actions/attest-build-provenance` emits, so no
+`--predicate-type` flag is needed. The additional `--signer-workflow` and
+`--source-digest` flags tighten the check beyond the required `--repo`: they
+pin the exact signing workflow and the commit that produced the image. The job
+needs `packages: read` (registry auth to resolve the tag and fetch the OCI
+referrers bundle) and `id-token: write`.
+
+**Policy:**
+
+- **Normal deploy (no `rollback_sha`)** — **fail closed**. The images were just
+  built and attested by this run; any missing, malformed, wrong-repo or
+  mismatched-subject attestation hard-fails the job.
+- **Rollback (`rollback_sha` set)** — **fail closed on a bad attestation, the
+  one documented exception being the complete absence of one**. A rollback
+  deploys an older image that may have been built before CTR-P1-003 landed,
+  and refusing to roll back an incident because of a missing attestation would
+  be worse than the risk. When an attestation exists it is still verified and
+  a verification *failure* still blocks; only the "no attestation at all" case
+  proceeds, with a `::warning::` and an explicit stamp in the job summary
+  (`### ⚠️ Rollback without provenance`). This exception is scoped to
+  `rollback_sha` dispatches only.
 
 `terraform-do.yml` is **manual-dispatch only** (2026-09-29): automatic push/PR
 runs failed on the invalid `DO_API_TOKEN` and a develop push could reach dev

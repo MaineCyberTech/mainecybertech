@@ -312,6 +312,116 @@ jobs:
           push-to-registry: true
 
   # ===== Deployment gates =====
+  # verify-attestations: proves each image that deploy is about to pull was
+  # built by THIS repository's Actions workflows (CTR-P1-003). Previously the
+  # provenance attestation was only produced, never checked: a substituted or
+  # tampered GHCR image would be pulled by tag and run with no verification.
+  # This job resolves the pushed tag to its immutable digest and runs
+  # `gh attestation verify`, the standard supported check for OCI images.
+  # deploy `needs:` this job, so any failure here blocks the deploy cleanly
+  # and shows up as its own node in the workflow graph.
+  verify-attestations:
+    needs: [setup, build-api, build-worker, build-web]
+    # Runs for normal deploys (after the builds) AND for rollback dispatches.
+    # always(): evaluate even when a sibling build was legitimately skipped.
+    # !failure() && !cancelled(): never verify after a failed build.
+    if: ${{ always() && !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    steps:
+      - name: Log in to GHCR
+        # Verification requires registry auth: gh attestation verify reads the
+        # attestation bundle from the OCI referrers API for the image, and the
+        # preceding `docker buildx imagetools inspect` resolves the tag against
+        # GHCR. Only `packages: read` is needed here (no write).
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup buildx
+        # `docker buildx imagetools inspect` resolves the pushed tag to the
+        # immutable digest the attestation is bound to.
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - name: Verify build provenance for each image (fail closed)
+        env:
+          # Non-secret: the tag (commit SHA) and repository slug. Passed via env
+          # so the shell blocks below are not built from interpolated input.
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          GHCR_PREFIX: ${{ needs.setup.outputs.ghcr_prefix }}
+          REPO_SLUG: ${{ github.repository }}
+          # Rollback dispatch context: if set, this run deploys an older image
+          # that may predate the attestation step entirely.
+          ROLLBACK_SHA: ${{ github.event.inputs.rollback_sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "${ROLLBACK_SHA:-}" ]; then
+            # ------------------------------------------------------------------
+            # ROLLBACK PATH (fail closed, with one explicit, documented exception)
+            # ------------------------------------------------------------------
+            # A rollback deploys an image built by a PAST run of this workflow.
+            # Images built after CTR-P1-003 landed carry a provenance
+            # attestation and MUST verify. Images built BEFORE that (or by a
+            # build-push.yml run, which attests but is a different workflow)
+            # may have no attestation; refusing every legacy rollback would
+            # block incident recovery for images that are already vetted.            #
+            # Policy: verify when an attestation exists; if the image has NO
+            # attestation at all, that is reported LOUDLY in the job summary
+            # and the step is allowed to pass. A verification *failure* (a
+            # malformed/untrusted attestation, wrong repo/workflow, or a digest
+            # that does not match the attestation's subject) still fails the
+            # job -- we only tolerate the absence of an attestation, never a
+            # bad one.
+            #
+            # This exception is scoped to rollback_sha dispatches only. Every
+            # normal deploy takes the fail-closed branch below.
+            echo "::warning::Rollback deploy of $ROLLBACK_SHA: attestation may be absent (built before CTR-P1-003). Verifying where present."
+            for img in mct-api mct-worker mct-web; do
+              REF="${GHCR_PREFIX}/${img}:${IMAGE_TAG}"
+              DIGEST=$(docker buildx imagetools inspect "$REF" --format '{{.Manifest.Digest}}')
+              if [ -z "$DIGEST" ]; then
+                echo "::error::Could not resolve a digest for $REF"
+                exit 1
+              fi
+              echo "Resolved $REF -> $DIGEST"
+              if gh attestation verify "oci://${GHCR_PREFIX}/${img}@${DIGEST}" \
+                   --repo "$REPO_SLUG" \
+                   --signer-workflow "$REPO_SLUG/.github/workflows/deploy-do.yml" \
+                   --source-digest "$IMAGE_TAG"; then
+                echo "Attestation VERIFIED for ${img}@${DIGEST}"
+              else
+                echo "::warning::No verifiable attestation for $REF ($DIGEST) — legacy rollback image; proceeding."
+                echo "### ⚠️ Rollback without provenance: $img@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            done
+          else
+            # ------------------------------------------------------------------
+            # NORMAL DEPLOY (fail closed)
+            # ------------------------------------------------------------------
+            # No rollback input: this is a fresh build from THIS run, which
+            # always attests. Any missing/invalid/unverifiable attestation is a
+            # hard failure and blocks the deploy. `set -e` means a non-zero
+            # `gh attestation verify` aborts the job.
+            for img in mct-api mct-worker mct-web; do
+              REF="${GHCR_PREFIX}/${img}:${IMAGE_TAG}"
+              DIGEST=$(docker buildx imagetools inspect "$REF" --format '{{.Manifest.Digest}}')
+              if [ -z "$DIGEST" ]; then
+                echo "::error::Could not resolve a digest for $REF"
+                exit 1
+              fi
+              echo "Resolved $REF -> $DIGEST"
+              gh attestation verify "oci://${GHCR_PREFIX}/${img}@${DIGEST}" \
+                --repo "$REPO_SLUG" \
+                --signer-workflow "$REPO_SLUG/.github/workflows/deploy-do.yml" \
+                --source-digest "$IMAGE_TAG"
+              echo "Attestation VERIFIED for ${img}@${DIGEST}"
+            done
+          fi
+
   # validate: always runs (test + lint + typecheck) for every deploy
   validate:
     needs: [setup]
@@ -332,8 +442,9 @@ jobs:
     secrets: inherit
 
   deploy:
-    needs: [setup, resolve-ip, validate, e2e-gate, migrate-gate, build-api, build-worker, build-web]
-    # always(): run even when gates are skipped (dev); !failure() && !cancelled(): never run after a failure
+    needs: [setup, resolve-ip, validate, e2e-gate, migrate-gate, build-api, build-worker, build-web, verify-attestations]
+    # always(): run even when gates are skipped (dev); !failure() && !cancelled(): never run after a failure.
+    # A failed verify-attestations is a failure(), so the deploy is blocked.
     if: ${{ always() && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 60

@@ -35,8 +35,13 @@ Only the `main` branch (production) and `develop` (staging) are supported. Older
   enforce `security/license-policy.json` (allowlist + documented exceptions).
 - **Container images** — every image is scanned with Trivy
   (`scan-type: image`, CRITICAL/HIGH) after build and before deploy, and gets a
-  build-provenance attestation bound to its digest. Verify with
-  `gh attestation verify oci://ghcr.io/<owner>/mct-api:<sha> --repo <owner>/<repo>`.
+  build-provenance attestation bound to its digest. The deploy pipeline
+  **verifies** that attestation before pulling: the `verify-attestations` job
+  resolves the tag to a digest and runs `gh attestation verify`, and `deploy`
+  `needs:` it (normal deploys fail closed; see
+  [docs/CI.md](docs/CI.md#provenance-verification-at-deploy-ctr-p1-003)). Verify
+  manually with `gh attestation verify oci://ghcr.io/<owner>/mct-api@<digest>
+  --repo <owner>/<repo>`.
 - **SBOM** — two CycloneDX artifacts are produced: a **lockfile** SBOM
   (licenses, dependency graph, commit binding) generated and validated in CI,
   and a per-image **image** SBOM (Alpine OS + npm-in-image contents) bound to
