@@ -40,6 +40,7 @@ export default function ConfirmDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={body ? "confirm-dialog-body" : undefined}
         onKeyDown={(event) => {
           if (event.key === "Escape") onClose();
         }}
@@ -48,7 +49,11 @@ export default function ConfirmDialog({
         <h2 id={titleId} className="text-lg font-bold text-slate-50">
           {title}
         </h2>
-        {body ? <p className="mt-3 text-sm text-slate-300">{body}</p> : null}
+        {body ? (
+          <p id="confirm-dialog-body" className="mt-3 text-sm text-slate-300">
+            {body}
+          </p>
+        ) : null}
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" className="cyber-button-secondary" onClick={onClose}>
             {cancelLabel}

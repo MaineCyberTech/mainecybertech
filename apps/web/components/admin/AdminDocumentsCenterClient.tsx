@@ -235,6 +235,9 @@ function ConfirmModal({
         aria-modal="true"
         aria-labelledby="confirm-modal-title"
         ref={dialogRef}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") onClose();
+        }}
         className="w-full max-w-lg rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] p-6 shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
       >
         <h3
@@ -1950,6 +1953,9 @@ export default function AdminDocumentsCenterClient({
             aria-modal="true"
             aria-labelledby="doc-drawer-title"
             ref={drawerRef}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setDrawerId(null);
+            }}
             className="h-full w-full max-w-4xl overflow-y-auto rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(7,16,24,0.97),rgba(10,17,24,0.96))] shadow-[0_30px_100px_rgba(2,6,23,0.45)]"
           >
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-cyber-card-deep/95 px-6 py-4 backdrop-blur">
