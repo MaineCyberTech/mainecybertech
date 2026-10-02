@@ -6,6 +6,7 @@ import ConfirmIntentButton from "@/components/admin/ConfirmIntentButton";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import CommentBody from "@/components/CommentBody";
 import { useToast } from "@/components/ui/ToastProvider";
+import { formatRelativeTime } from "@/lib/format";
 
 type Owner = { id: string; full_name?: string | null; email?: string | null };
 type Comment = {
@@ -70,18 +71,6 @@ function formatDateTimeUtc(value?: string | null) {
   const d = new Date(value);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
-}
-function formatRelativeTime(value?: string | null) {
-  if (!value) return "—";
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return formatDateTimeUtc(value);
 }
 function pillBase(kind: "default" | "warning" | "danger" | "success" = "default") {
   const base =

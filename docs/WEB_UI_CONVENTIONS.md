@@ -74,7 +74,8 @@ dialog and re-submits the form with the button as submitter on confirm.
   fallbacks stay as short inline text.
 - Formatting: `lib/format.ts` is the single source (`formatDate`,
   `formatDateShort`, `formatDateTime`, `formatDateUtc`, `formatDateTimeUtc`,
-  `formatDateTimeMinutesUtc`, `formatTime`, `formatMonthDay`, `formatMonthDayYear`,
+  `formatDateTimeMinutesUtc`, `formatTime`, `formatRelativeTime`,
+  `formatMonthDay`, `formatMonthDayYear`,
   `formatCurrency`) — no direct
   `toLocaleDateString`/`toLocaleString`/`Intl.NumberFormat` in pages.
 - Toasts use `components/ui/ToastProvider` + `useToast().pushToast(tone, message, title?)`;

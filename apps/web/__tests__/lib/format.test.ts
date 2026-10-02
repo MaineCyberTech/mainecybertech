@@ -8,6 +8,7 @@ import {
   formatDateUtc,
   formatMonthDay,
   formatMonthDayYear,
+  formatRelativeTime,
   formatTime,
 } from "@/lib/format";
 
@@ -84,6 +85,39 @@ describe("locale helpers", () => {
         year: "2-digit",
       }),
     );
+  });
+});
+
+describe("formatRelativeTime", () => {
+  const NOW = new Date("2026-09-27T15:04:05.000Z").getTime();
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    jest.setSystemTime(NOW);
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("returns an em dash for missing or invalid values", () => {
+    expect(formatRelativeTime(null)).toBe("—");
+    expect(formatRelativeTime(undefined)).toBe("—");
+    expect(formatRelativeTime("")).toBe("—");
+    expect(formatRelativeTime("not-a-date")).toBe("—");
+  });
+
+  it("formats recent times compactly", () => {
+    expect(formatRelativeTime(new Date(NOW))).toBe("0s ago");
+    expect(formatRelativeTime(new Date(NOW - 59_000))).toBe("59s ago");
+    expect(formatRelativeTime(new Date(NOW - 2 * 60_000))).toBe("2m ago");
+    expect(formatRelativeTime(new Date(NOW - 3 * 3_600_000))).toBe("3h ago");
+    expect(formatRelativeTime(new Date(NOW - 2 * 86_400_000))).toBe("2d ago");
+  });
+
+  it("falls back to formatDateTime after a week", () => {
+    const value = new Date(NOW - 9 * 86_400_000);
+    expect(formatRelativeTime(value)).toBe(formatDateTime(value));
   });
 });
 

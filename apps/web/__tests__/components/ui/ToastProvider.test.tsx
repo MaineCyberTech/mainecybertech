@@ -113,6 +113,27 @@ describe("ToastProvider", () => {
     jest.useRealTimers();
   });
 
+  it("keeps error toasts until dismissed", async () => {
+    jest.useFakeTimers();
+    render(
+      <ToastProvider>
+        <Harness tone="error" title="Failed" />
+      </ToastProvider>,
+    );
+    await act(async () => {
+      screen.getByRole("button", { name: "Fire toast" }).click();
+    });
+    act(() => {
+      jest.advanceTimersByTime(60_000);
+    });
+    expect(screen.getByText("The message")).toBeInTheDocument();
+    await act(async () => {
+      screen.getByRole("button", { name: "Dismiss Failed" }).click();
+    });
+    expect(screen.queryByText("The message")).not.toBeInTheDocument();
+    jest.useRealTimers();
+  });
+
   it("maps every tone to a distinct visual class", () => {
     expect(toastClass("success")).toContain("emerald");
     expect(toastClass("error")).toContain("red");

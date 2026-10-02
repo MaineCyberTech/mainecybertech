@@ -1,31 +1,12 @@
 import Link from "next/link";
 import { getApiClient } from "@/lib/api";
 import { getApprovedMembership } from "@/lib/auth/membership";
+import { formatDateTime, formatRelativeTime } from "@/lib/format";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import PortalSubnav from "@/components/portal/PortalSubnav";
 import { Project, ProjectTask, ProjectTaskComment, ProjectTaskReadState } from "@mct/sdk";
 
 export const metadata = { title: "Projects - Portal - Maine CyberTech" };
-
-function formatDateTime(value?: string | null) {
-  if (!value) return "—";
-  const d = new Date(value);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
-}
-
-function formatRelativeTime(value?: string | null) {
-  if (!value) return "—";
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return formatDateTime(value);
-}
 
 function projectStatusClass(status: string) {
   switch (status) {

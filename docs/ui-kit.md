@@ -240,7 +240,7 @@ All paths are relative to the repo root; the `@/` alias maps to `apps/web/`.
 - **Purpose:** single source for date and money formatting —
   `formatDate`, `formatDateShort`, `formatDateTime`, `formatDateUtc`,
   `formatDateTimeUtc`, `formatDateTimeMinutesUtc`, `formatTime`,
-  `formatMonthDay`, `formatMonthDayYear`,
+  `formatRelativeTime`, `formatMonthDay`, `formatMonthDayYear`,
   `formatCurrency(value, currency?)`.
 - **Use when:** displaying any date or currency. No direct
   `toLocaleDateString` / `toLocaleString` / `Intl.NumberFormat` in pages.

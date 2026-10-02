@@ -149,6 +149,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   (`set -o pipefail`).
 - `docs/module-matrix-mapping.md` maps the 60-module prompt-pack matrix to the
   real feature/runbook/API/SDK/UI paths.
+- `lib/format.ts` gained `formatRelativeTime` (11 helpers total) and the nine
+  duplicated local `formatRelativeTime`/null-safe `formatDateTime` wrappers were
+  removed; error toasts persist until dismissed and both toast live regions are
+  `aria-atomic`.
 - CI schema guards: `node scripts/generate-db-types.js --check` (generated types
   must be current) and `node scripts/verify-rls.mjs` (every table RLS-enabled,
   policy idempotency for new migrations) run in `test.yml` + `validate.yml`;

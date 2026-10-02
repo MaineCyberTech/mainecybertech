@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition, useRef } from "react";
 import Link from "next/link";
 import { useFocusTrap } from "@/lib/use-focus-trap";
+import { formatDateTime, formatRelativeTime } from "@/lib/format";
 
 type TicketRecord = Record<string, any> & { id: string };
 
@@ -10,26 +11,6 @@ type Props = {
   tickets: TicketRecord[];
   createTicketAction: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
 };
-
-function formatDateTime(value?: string | null) {
-  if (!value) return "—";
-  const d = new Date(value);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
-}
-
-function formatRelativeTime(value?: string | null) {
-  if (!value) return "—";
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return formatDateTime(value);
-}
 
 function ticketSubject(ticket: TicketRecord) {
   return ticket.subject ?? ticket.title ?? ticket.name ?? `Ticket ${ticket.id}`;

@@ -11,7 +11,7 @@ import type {
   BulkActionResult,
   DocumentVisibility,
 } from "@/app/(admin)/admin/documents/bulk-actions";
-import { formatDate } from "@/lib/format";
+import { formatRelativeTime } from "@/lib/format";
 
 type OrganizationRecord = { id: string; name?: string | null };
 type VisibilityValue = "private" | "org" | "internal" | "public";
@@ -122,18 +122,6 @@ function canPreview(doc: DocumentRecord) {
     Boolean(doc?.resolved_url) &&
     ["PDF", "Image", "HTML", "Markdown", "Text"].includes(fileType(doc))
   );
-}
-function formatRelativeTime(value?: string | null) {
-  if (!value) return "—";
-  const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return formatDate(value);
 }
 function formatBytes(value?: number | null) {
   const size = Number(value ?? 0);

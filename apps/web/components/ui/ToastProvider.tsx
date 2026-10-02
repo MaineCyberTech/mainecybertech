@@ -88,6 +88,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     nextId.current += 1;
     const id = `${Date.now()}-${nextId.current}`;
     setToasts((current) => [...current, { id, tone, message, title }]);
+    // Errors persist until dismissed: a failure the user never read is worse
+    // than a toast that lingers. Non-errors auto-dismiss.
+    if (tone === "error") return;
     const timer = setTimeout(() => {
       timers.current.delete(id);
       setToasts((current) => current.filter((toast) => toast.id !== id));
@@ -112,12 +115,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div className={TOAST_VIEWPORT_CLASSES}>
-        <div role="status" aria-live="polite" className="flex flex-col gap-3">
+        <div role="status" aria-live="polite" aria-atomic="true" className="flex flex-col gap-3">
           {politeToasts.map((toast) => (
             <ToastCard key={toast.id} toast={toast} onDismiss={dismiss} />
           ))}
         </div>
-        <div role="alert" aria-live="assertive" className="flex flex-col gap-3">
+        <div role="alert" aria-live="assertive" aria-atomic="true" className="flex flex-col gap-3">
           {errorToasts.map((toast) => (
             <ToastCard key={toast.id} toast={toast} onDismiss={dismiss} />
           ))}
