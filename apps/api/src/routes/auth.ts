@@ -19,6 +19,43 @@ import {
 
 const router: ReturnType<typeof Router> = Router();
 
+/**
+ * Resolve the origin to send the user back to after a password reset.
+ *
+ * SECURITY: never trust the request's `Origin` header directly. It is
+ * attacker-controllable, and Supabase appends the reset token to the
+ * `redirectTo` URL — so echoing an arbitrary origin hands the reset token to
+ * the attacker (audit SEC-P2-003 / CHAIN-P1-002).
+ *
+ * Only an origin from the configured CORS allowlist (or the canonical
+ * APP_BASE_URL) is honoured. Anything else falls back to APP_BASE_URL.
+ */
+export function resolveTrustedRedirectOrigin(requestOrigin: string | undefined): string {
+  const env = getEnv();
+  const base = env.APP_BASE_URL ?? "http://localhost:3000";
+  const fallback = base.replace(/\/+$/, "");
+
+  if (!requestOrigin) return fallback;
+
+  let normalized: string;
+  try {
+    normalized = new URL(requestOrigin).origin;
+  } catch {
+    return fallback;
+  }
+
+  if (normalized === fallback) return fallback;
+
+  // CORS_ORIGIN is a comma-separated allowlist. "*" means allow-all for CORS
+  // purposes and must NOT be read as "any origin is a trusted redirect target".
+  if (env.CORS_ORIGIN === "*") return fallback;
+
+  const allowed = env.CORS_ORIGIN.split(",").map((o) => o.trim().replace(/\/+$/, ""));
+  if (allowed.includes(normalized)) return normalized;
+
+  return fallback;
+}
+
 const MIN_PASSWORD_SCORE = 3; // zxcvbn score 0-4, require at least 3 (strong)
 
 function validatePasswordStrength(password: string): {
@@ -284,7 +321,8 @@ router.post("/forgot-password", rateLimitAuth, rateLimitEmail, async (req, res, 
 
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${req.headers.origin ?? getEnv().APP_BASE_URL}/password-reset`,
+      // Only ever redirect to a trusted origin — never an echoed Origin header.
+      redirectTo: `${resolveTrustedRedirectOrigin(req.headers.origin)}/password-reset`,
     });
 
     if (error) {
