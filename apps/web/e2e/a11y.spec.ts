@@ -101,7 +101,12 @@ test.describe("accessibility scan", () => {
       );
 
       expect(
-        violations.map((v) => `${v.id} (${v.impact}): ${v.help}`),
+        violations.map(
+          (v) =>
+            `${v.id} (${v.impact}): ${v.help} [${v.nodes
+              .map((n) => n.target.join(" "))
+              .join("; ")}]`,
+        ),
         `Critical/serious a11y violations on ${page.path}`,
       ).toEqual([]);
     });
