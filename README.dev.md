@@ -429,8 +429,8 @@ Before promoting onward, verify:
 
 Merges to `main` run:
 
-- `terraform-do.yml` (DigitalOcean infrastructure; the prod apply job uses the `prod-approval` environment, which currently has no required reviewers configured)
-- `deploy-do.yml` (Build 3 GHCR images + SSH deploy to production droplet)
+- `terraform-do.yml` (DigitalOcean infrastructure; the prod apply job uses the `prod-approval` environment)
+- `deploy-do.yml` (Build 3 GHCR images + SSH deploy to production droplet; the prod `deploy` job uses the same `prod-approval` environment)
 - `supabase-migrations.yml` (runs as deployment gate)
 
 ### Practical meaning
@@ -460,9 +460,13 @@ After deployment, verify:
 Workflows reference these GitHub Environments:
 
 - `dev` — dev deploy, Terraform dev apply, dev migrations.
-- `prod` — prod deploy and prod migrations.
-- `prod-approval` — Terraform prod apply (`terraform-do.yml`); protection rules
-  (required reviewers) are **not** configured yet.
+- `prod` — prod migrations, plus the read-only `resolve-ip`/`terraform-plan` jobs.
+- `prod-approval` — the production-mutating jobs: `deploy-do` prod `deploy`
+  and `terraform-do` `terraform-apply-prod`. Required reviewers (1+) must be
+  configured in GitHub (Settings → Environments → `prod-approval`); that
+  setting **cannot live in the repo**. None are configured yet, so the
+  approval gate is not currently in force and a prod deploy will start without
+  pausing. The prod secrets/variables must be available to `prod-approval`.
 
 The canonical, verified list of secrets and variables — which workflow uses
 each one and whether it is dev/prod scoped — is

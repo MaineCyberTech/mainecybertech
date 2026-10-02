@@ -96,7 +96,8 @@ docker compose -p mct-portal up -d --remove-orphans
 ### Required GitHub Environments
 
 - `dev` — dev/develop deploys (no approval)
-- `prod` — prod deploys (requires 1+ reviewers via `prod-approval` gate)
+- `prod` — prod Supabase migrations, plus read-only plan/resolve jobs (no protection rules)
+- `prod-approval` — prod app deploy (`deploy-do.yml` `deploy` job) and prod Terraform apply (`terraform-do.yml` `terraform-apply-prod`). Required reviewers (1+) must be configured in GitHub (Settings → Environments → `prod-approval`); that setting is **not** in repo code and is **not yet configured**, so the approval gate is not currently in force.
 
 ### GitHub Environment Secrets (written to `/opt/mct-portal/.env`)
 

@@ -39,4 +39,4 @@ terraform plan -var-file=env/dev.tfvars
 terraform apply -var-file=env/dev.tfvars   # only with approval
 ```
 
-Production uses `env/backend.prod.hcl` / `env/prod.tfvars`. The `prod-approval` environment currently has **no protection rules**, so add reviewers before relying on it as an approval gate. The DO API token must be valid (the current one returns 401, which blocks plan/apply).
+Production uses `env/backend.prod.hcl` / `env/prod.tfvars`. The `prod-approval` environment (now used by both the prod app deploy in `deploy-do.yml` and the Terraform prod apply in `terraform-do.yml`) currently has **no required reviewers configured**, so add reviewers in GitHub (Settings → Environments → `prod-approval`) before relying on it as an approval gate — the setting is not in repo code. The DO API token must be valid (the current one returns 401, which blocks plan/apply).

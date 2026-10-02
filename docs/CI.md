@@ -45,7 +45,8 @@ runs failed on the invalid `DO_API_TOKEN` and a develop push could reach dev
 apply without review. A manual run plans by default and needs `validate-gate`;
 setting the `apply` input additionally enables the apply job (`main` → prod
 environment + E2E/migration gates; `develop` → dev). Re-enable push/PR triggers
-once the token is rotated and the environments have protection rules.
+once the token is rotated and `prod-approval` has required reviewers configured
+in GitHub.
 
 ## Best-effort and triage-only jobs
 

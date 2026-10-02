@@ -3,8 +3,14 @@
 ## Recommended GitHub Environments
 
 - `dev` — Dev deploys, Terraform dev apply, dev migrations (no protection rules)
-- `prod` — Prod deploys and prod Supabase migrations (no protection rules)
-- `prod-approval` — Used by the Terraform prod apply job (`terraform-do.yml`); no required reviewers are configured yet
+- `prod` — Prod Supabase migrations (`supabase-migrations.yml`); used by
+  `deploy-do`'s read-only `resolve-ip` job and `terraform-do`'s
+  `terraform-plan` job (no protection rules)
+- `prod-approval` — Attached by the production-mutating jobs: the `deploy-do`
+  `deploy` job (prod) and the `terraform-do` `terraform-apply-prod` job.
+  **Required reviewers (1+) must be configured in GitHub** (Settings →
+  Environments → `prod-approval`); none are configured yet, so the approval
+  gate is not yet in force.
 
 Use environment-scoped values wherever possible.
 
@@ -90,8 +96,13 @@ Use environment-scoped values wherever possible.
 
 1. **Create environments** in GitHub Settings → Environments:
    - `dev` — no protection rules
-   - `prod` — no protection rules
-   - `prod-approval` — add Required reviewers (1+) to actually gate the prod apply; none are configured yet
+   - `prod` — no protection rules (prod migrations; read-only plan/resolve jobs)
+   - `prod-approval` — **add Required reviewers (1+)** to actually gate prod
+     deploys and prod Terraform apply. This is the single gate for both app and
+     infra production changes; it **must be configured in GitHub and cannot be
+     set from the repo**. None are configured yet, so prod deploys currently
+     start without pausing. The production deploy secrets/variables below must
+     be available to `prod-approval` (scoped to it or repo-wide).
 
 2. **Add secrets** to the appropriate environment scopes (or repo-wide):
    - `DO_API_TOKEN` — from DigitalOcean dashboard

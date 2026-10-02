@@ -164,7 +164,16 @@ terraform plan -var-file=dev.tfvars -destroy -target=digitalocean_droplet.mct_po
 
 ### Prod-approval environment
 
-All production deployments (Docker and Terraform) require approval through the `prod-approval` GitHub environment with 1+ required reviewers.
+All production deployments reference the `prod-approval` GitHub environment:
+the Docker prod deploy (`deploy-do.yml`, `deploy` job) and the Terraform prod
+apply (`terraform-do.yml`, `terraform-apply-prod`).
+
+**Required reviewers are a GitHub repository setting, not workflow code:**
+configure them under Settings → Environments → `prod-approval` → Required
+reviewers (add 1+). Until that list is populated there is **no working
+manual-approval gate** and a prod deploy will start without pausing. The prod
+deploy secrets/variables must also be available to `prod-approval` (scoped to
+it or repo-wide).
 
 ## Deployment Verification
 

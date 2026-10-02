@@ -109,7 +109,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
-          terraform_version: 1.9
+          terraform_version: 1.15.9
       - name: Resolve droplet IP (DO API, fallback Terraform state)
         id: tf
         env:
@@ -275,7 +275,13 @@ jobs:
     if: ${{ always() && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    environment: ${{ needs.setup.outputs.name }}
+    # Prod deploys use the same protected environment as the Terraform prod
+    # apply (`terraform-do.yml` uses `prod-approval`) so a single required-reviewer
+    # gate covers both app and infra changes. The approval itself is a GitHub
+    # repository setting (Settings -> Environments -> prod-approval -> Required
+    # reviewers) and cannot be enforced from this file. Dev keeps the plain `dev`
+    # environment (no approval).
+    environment: ${{ needs.setup.outputs.name == 'prod' && 'prod-approval' || 'dev' }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
@@ -301,6 +307,9 @@ jobs:
           M365_TENANT_ID: ${{ secrets.M365_TENANT_ID }}
           M365_CLIENT_ID: ${{ secrets.M365_CLIENT_ID }}
           M365_CLIENT_SECRET: ${{ secrets.M365_CLIENT_SECRET }}
+          M365_CLIENT_STATE: ${{ secrets.M365_CLIENT_STATE }}
+          JIRA_WEBHOOK_SECRET: ${{ secrets.JIRA_WEBHOOK_SECRET }}
+          JSM_WEBHOOK_SECRET: ${{ secrets.JSM_WEBHOOK_SECRET }}
           PUBLIC_TRAFFIC_WEBHOOK_URL: ${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }}
           PUBLIC_LEAD_WEBHOOK_URL: ${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }}
           JSM_DOMAIN: ${{ secrets.JSM_DOMAIN }}
