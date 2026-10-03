@@ -1,0 +1,352 @@
+{
+  "run": "20261003-0018-fix-p2-batch-31-2295958d",
+  "generated": "2026-10-03T05:21:31Z",
+  "sourceReports": [
+    "01_repository_inventory.md",
+    "02_architecture_runtime_topology.md",
+    "03_feature_implementation_map.md",
+    "06_security_authz_tenancy_audit.md",
+    "07_data_schema_migration_runtime_validation.md",
+    "08_api_contracts_realtime_integrations.md",
+    "09_testing_quality_release_confidence.md",
+    "10_github_actions_cicd_governance.md",
+    "11_supply_chain_dependency_secrets.md",
+    "14_observability_monitoring_incident_readiness.md",
+    "21_repo_hygiene_maintainability.md",
+    "22_final_risk_register_roadmap.md",
+    "23_executive_summary_release_gate.md"
+  ],
+  "counts": {
+    "bySeverity": {
+      "P0": 1,
+      "P1": 3,
+      "P2": 26,
+      "P3": 14
+    },
+    "byArea": {
+      "API": 3,
+      "ARCH": 4,
+      "CI": 4,
+      "DATA": 3,
+      "FEAT": 3,
+      "FINAL": 3,
+      "HYG": 4,
+      "INV": 4,
+      "OBS": 4,
+      "SEC": 5,
+      "SUPPLY": 4,
+      "TEST": 3
+    },
+    "total": 44
+  },
+  "findings": [
+    {
+      "id": "DATA-P0-001",
+      "severity": "P0",
+      "title": "Orphan cleanup can recursively delete a bucket’s contents",
+      "report": "07_data_schema_migration_runtime_validation.md",
+      "line": 78
+    },
+    {
+      "id": "CI-P1-001",
+      "severity": "P1",
+      "title": "Production deploy path cannot run; prod environment lacks secrets and protection rules",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 76
+    },
+    {
+      "id": "FINAL-P1-001",
+      "severity": "P1",
+      "title": "P0 data-loss path and unverified \"fixed\" claim block a clean release",
+      "report": "22_final_risk_register_roadmap.md",
+      "line": 41
+    },
+    {
+      "id": "SEC-P1-001",
+      "severity": "P1",
+      "title": "PII field encryption silently degrades to reversible plaintext",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 98
+    },
+    {
+      "id": "API-P2-001",
+      "severity": "P2",
+      "title": "Search falls through to an unscoped cross-tenant query",
+      "report": "08_api_contracts_realtime_integrations.md",
+      "line": 86
+    },
+    {
+      "id": "API-P2-002",
+      "severity": "P2",
+      "title": "OpenAPI schema is public and the Swagger UI is blocked by CSP",
+      "report": "08_api_contracts_realtime_integrations.md",
+      "line": 108
+    },
+    {
+      "id": "ARCH-P2-001",
+      "severity": "P2",
+      "title": "Single-droplet, single-instance runtime is a hard SPOF",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 94
+    },
+    {
+      "id": "ARCH-P2-002",
+      "severity": "P2",
+      "title": "API defaults to the service-role DB client (RLS bypass)",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 116
+    },
+    {
+      "id": "ARCH-P2-003",
+      "severity": "P2",
+      "title": "Prometheus loads rules but has no alert routing",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 137
+    },
+    {
+      "id": "CI-P2-001",
+      "severity": "P2",
+      "title": "Branch protection permits admin bypass and ignores CODEOWNERS",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 96
+    },
+    {
+      "id": "CI-P2-002",
+      "severity": "P2",
+      "title": "Terraform apply is manual and drift detection is not automated",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 116
+    },
+    {
+      "id": "DATA-P2-001",
+      "severity": "P2",
+      "title": "Generated DB types / schema can drift from migration intent",
+      "report": "07_data_schema_migration_runtime_validation.md",
+      "line": 101
+    },
+    {
+      "id": "DATA-P2-002",
+      "severity": "P2",
+      "title": "Orphan cleanup reference query is unbounded in the object list",
+      "report": "07_data_schema_migration_runtime_validation.md",
+      "line": 121
+    },
+    {
+      "id": "FEAT-P2-001",
+      "severity": "P2",
+      "title": "API keys cannot authenticate; the feature is dead",
+      "report": "03_feature_implementation_map.md",
+      "line": 92
+    },
+    {
+      "id": "FEAT-P2-002",
+      "severity": "P2",
+      "title": "Demo/test data can be seeded into a fresh production database",
+      "report": "03_feature_implementation_map.md",
+      "line": 114
+    },
+    {
+      "id": "FINAL-P2-001",
+      "severity": "P2",
+      "title": "Governance and observability gaps mean the platform cannot yet detect or control production failure",
+      "report": "22_final_risk_register_roadmap.md",
+      "line": 59
+    },
+    {
+      "id": "FINAL-P2-002",
+      "severity": "P2",
+      "title": "Residual authorization/secret defaults need explicit decisions",
+      "report": "22_final_risk_register_roadmap.md",
+      "line": 76
+    },
+    {
+      "id": "HYG-P2-001",
+      "severity": "P2",
+      "title": "Committed prompt/audit corpus bloats the repo and review surface",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 74
+    },
+    {
+      "id": "HYG-P2-002",
+      "severity": "P2",
+      "title": "Duplicate product catalogs have diverged",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 94
+    },
+    {
+      "id": "INV-P2-001",
+      "severity": "P2",
+      "title": "Committed generated artifacts drift without a gate",
+      "report": "01_repository_inventory.md",
+      "line": 100
+    },
+    {
+      "id": "INV-P2-002",
+      "severity": "P2",
+      "title": "Duplicate schema bootstrap SQL can be mistaken for the source of truth",
+      "report": "01_repository_inventory.md",
+      "line": 121
+    },
+    {
+      "id": "OBS-P2-001",
+      "severity": "P2",
+      "title": "Prometheus alert rules are not routed anywhere",
+      "report": "14_observability_monitoring_incident_readiness.md",
+      "line": 77
+    },
+    {
+      "id": "OBS-P2-002",
+      "severity": "P2",
+      "title": "No committed dashboards or SLO/error-budget definitions",
+      "report": "14_observability_monitoring_incident_readiness.md",
+      "line": 98
+    },
+    {
+      "id": "OBS-P2-003",
+      "severity": "P2",
+      "title": "Backup/restore is scheduled but not verified on the deployed branch",
+      "report": "14_observability_monitoring_incident_readiness.md",
+      "line": 115
+    },
+    {
+      "id": "SEC-P2-002",
+      "severity": "P2",
+      "title": "CAPTCHA/Turnstile is bypassed when the secret is unset",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 120
+    },
+    {
+      "id": "SEC-P2-003",
+      "severity": "P2",
+      "title": "`/health` publicly discloses provider configuration and Redis errors",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 140
+    },
+    {
+      "id": "SUPPLY-P2-001",
+      "severity": "P2",
+      "title": "`licenses.json` is committed but unenforced and unverified",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 78
+    },
+    {
+      "id": "SUPPLY-P2-002",
+      "severity": "P2",
+      "title": "Swagger UI loads an unpinned third-party script without SRI",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 98
+    },
+    {
+      "id": "TEST-P2-001",
+      "severity": "P2",
+      "title": "Orphan-cleanup tests model `storage.list` incorrectly, masking the data-loss bug",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 73
+    },
+    {
+      "id": "TEST-P2-002",
+      "severity": "P2",
+      "title": "Route suites stub authorization middleware, so new routes can regress silently",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 92
+    },
+    {
+      "id": "API-P3-001",
+      "severity": "P3",
+      "title": "`/metrics` is fully public when `METRICS_TOKEN` is unset",
+      "report": "08_api_contracts_realtime_integrations.md",
+      "line": 128
+    },
+    {
+      "id": "ARCH-P3-001",
+      "severity": "P3",
+      "title": "Web middleware gates routes on an unverified JWT `exp`",
+      "report": "02_architecture_runtime_topology.md",
+      "line": 157
+    },
+    {
+      "id": "CI-P3-001",
+      "severity": "P3",
+      "title": "`main` is far behind `develop`; scheduled jobs fire only from the default branch",
+      "report": "10_github_actions_cicd_governance.md",
+      "line": 133
+    },
+    {
+      "id": "FEAT-P3-001",
+      "severity": "P3",
+      "title": "OpenAPI/Swagger surface is public and its UI is blocked by the API CSP",
+      "report": "03_feature_implementation_map.md",
+      "line": 134
+    },
+    {
+      "id": "HYG-P3-001",
+      "severity": "P3",
+      "title": "Stale and machine-specific generated documentation",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 113
+    },
+    {
+      "id": "HYG-P3-002",
+      "severity": "P3",
+      "title": "Generated artifacts are inconsistently tracked",
+      "report": "21_repo_hygiene_maintainability.md",
+      "line": 128
+    },
+    {
+      "id": "INV-P3-001",
+      "severity": "P3",
+      "title": "Large committed prompt/audit corpus inflates the application repository",
+      "report": "01_repository_inventory.md",
+      "line": 140
+    },
+    {
+      "id": "INV-P3-002",
+      "severity": "P3",
+      "title": "Stale, machine-specific repo path in the agent reference",
+      "report": "01_repository_inventory.md",
+      "line": 159
+    },
+    {
+      "id": "OBS-P3-001",
+      "severity": "P3",
+      "title": "Incident runbooks/tabletop evidence is partial",
+      "report": "14_observability_monitoring_incident_readiness.md",
+      "line": 132
+    },
+    {
+      "id": "SEC-P3-001",
+      "severity": "P3",
+      "title": "Deprecated header and broad API CSP style directive",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 160
+    },
+    {
+      "id": "SEC-P3-002",
+      "severity": "P3",
+      "title": "M365 webhook `clientState` is compared non-constant-time",
+      "report": "06_security_authz_tenancy_audit.md",
+      "line": 177
+    },
+    {
+      "id": "SUPPLY-P3-001",
+      "severity": "P3",
+      "title": "SBOM is produced as a transient artifact, not bound to a release",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 117
+    },
+    {
+      "id": "SUPPLY-P3-002",
+      "severity": "P3",
+      "title": "A secrets file exists on disk outside git (should never be committed)",
+      "report": "11_supply_chain_dependency_secrets.md",
+      "line": 133
+    },
+    {
+      "id": "TEST-P3-001",
+      "severity": "P3",
+      "title": "Coverage thresholds are low and E2E stability is unproven on `main`",
+      "report": "09_testing_quality_release_confidence.md",
+      "line": 109
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Audit Dashboard - 20261003-0018-fix-p2-batch-31-2295958d</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2em auto; }
+.score { font-size: 4em; font-weight: bold; text-align: center; }
+.score.high { color: #15803d; } .score.mid { color: #a16207; } .score.low { color: #b91c1c; }
+table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+th, td { border: 1px solid #999; padding: .5em; text-align: left; }
+</style></head>
+<body>
+<h1>Audit Dashboard - 20261003-0018-fix-p2-batch-31-2295958d</h1>
+<div class="score low">0<small>/100</small></div>
+<p style="text-align:center"><strong>Advisory:</strong> NO-GO (gate in RELEASE_GATE.md is authoritative)</p>
+<table>
+<tr><th>Severity</th><th>Count</th></tr>
+<tr><td>P0</td><td>1</td></tr>
+<tr><td>P1</td><td>3</td></tr>
+<tr><td>P2</td><td>26</td></tr>
+<tr><td>P3</td><td>14</td></tr>
+</table>
+<h2>Areas</h2>
+<table><tr><th>Area</th><th>Count</th></tr>
+<tr><td>API</td><td>3</td></tr>
+<tr><td>ARCH</td><td>4</td></tr>
+<tr><td>CI</td><td>4</td></tr>
+<tr><td>DATA</td><td>3</td></tr>
+<tr><td>FEAT</td><td>3</td></tr>
+<tr><td>FINAL</td><td>3</td></tr>
+<tr><td>HYG</td><td>4</td></tr>
+<tr><td>INV</td><td>4</td></tr>
+<tr><td>OBS</td><td>4</td></tr>
+<tr><td>SEC</td><td>5</td></tr>
+<tr><td>SUPPLY</td><td>4</td></tr>
+<tr><td>TEST</td><td>3</td></tr>
+</table>
+<h2>Top P0/P1</h2>
+<table><tr><th>Sev</th><th>ID</th><th>Title</th></tr>
+<tr><td>P0</td><td>DATA-P0-001</td><td>Orphan cleanup can recursively delete a bucket’s contents</td></tr>
+<tr><td>P1</td><td>CI-P1-001</td><td>Production deploy path cannot run; prod environment lacks secrets and protection rules</td></tr>
+<tr><td>P1</td><td>FINAL-P1-001</td><td>P0 data-loss path and unverified &quot;fixed&quot; claim block a clean release</td></tr>
+<tr><td>P1</td><td>SEC-P1-001</td><td>PII field encryption silently degrades to reversible plaintext</td></tr>
+</table>
+</body></html>
