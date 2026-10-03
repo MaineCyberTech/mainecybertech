@@ -1,5 +1,21 @@
 import { z } from "zod";
 
+/**
+ * True when `raw` is a 64-char hex or base64 value that decodes to exactly 32
+ * bytes (an AES-256 key). Kept in sync with lib/field-encryption.getKey().
+ */
+function isValidFieldEncryptionKey(raw?: string): boolean {
+  if (!raw) return false;
+  try {
+    const key = /^[0-9a-fA-F]{64}$/.test(raw)
+      ? Buffer.from(raw, "hex")
+      : Buffer.from(raw, "base64");
+    return key.length === 32;
+  } catch {
+    return false;
+  }
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   API_PORT: z.coerce.number().default(4000),
@@ -77,6 +93,21 @@ export function assertProductionTurnstile(
 }
 
 /**
+ * SEC-P1-001: fail closed at boot in production. A missing or malformed
+ * FIELD_ENCRYPTION_KEY must refuse startup rather than let
+ * lib/field-encryption silently store PII as reversible `plain:` values.
+ */
+export function assertProductionSecrets(
+  env: Pick<Env, "NODE_ENV" | "FIELD_ENCRYPTION_KEY">,
+): void {
+  if (env.NODE_ENV === "production" && !isValidFieldEncryptionKey(env.FIELD_ENCRYPTION_KEY)) {
+    throw new Error(
+      "FIELD_ENCRYPTION_KEY is required in production and must decode to exactly 32 bytes (64-char hex or base64)",
+    );
+  }
+}
+
+/**
  * Builds a Redis connection URL, injecting REDIS_PASSWORD when the URL
  * does not already carry credentials. Used by ioredis / node-redis clients.
  */
@@ -105,6 +136,7 @@ export function getEnv(): Env {
       );
     }
     assertProductionTurnstile(result.data);
+    assertProductionSecrets(result.data);
     _env = result.data;
   }
   return _env;
