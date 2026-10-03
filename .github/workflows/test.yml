@@ -1,25 +1,27 @@
 name: Test
 
+# PR-only by design: on pushes to develop/main the same suites run once through
+# `deploy-do` → `validate.yml`. Keeping a push trigger here ran the full test
+# job, audit and secret scan a second time on every push. Dependency-only
+# pushes are still covered because deploy-do triggers on
+# pnpm-lock.yaml/package.json.
 on:
   workflow_dispatch:
-  push:
-    branches: [main, develop]
-    paths:
-      - "apps/**"
-      - "packages/**"
-      - "pnpm-lock.yaml"
-      - "package.json"
-      - ".github/workflows/test.yml"
   # Deliberately no `paths:` on pull_request (BP-P2-004): `test (20.x)` is a
   # required check, and a path-filtered workflow never reports on docs-only
-  # PRs — leaving them blocked or unguarded. Push runs stay filtered to save
-  # CI minutes.
+  # PRs — leaving them blocked or unguarded.
   pull_request:
     branches: [main, develop]
 
 permissions:
   contents: read
   security-events: write
+
+concurrency:
+  # Cancel superseded runs on the same ref (rapid pushes to a PR). A manual
+  # dispatch runs in its own ref group, so it is never cancelled by a PR.
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -50,6 +52,17 @@ jobs:
           done
           test -n "$ok"
 
+      - name: Cache pnpm store
+        # Content-addressed store; restore-keys give partial reuse when the
+        # lockfile changes. Do NOT use setup-node's `cache: pnpm` — it resolves
+        # pnpm before corepack installs it (see AGENTS.md).
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
@@ -78,6 +91,12 @@ jobs:
       - name: Verify RLS/migration hygiene
         run: node scripts/verify-rls.mjs
 
+      - name: Verify no raw unfiltered membership predicate (DATA-P1-001)
+        # Parity with validate.yml: fails when a migration newer than the
+        # baseline reintroduces the `memberships where user_id = auth.uid()`
+        # predicate without a status='approved' filter.
+        run: node scripts/check-rls-predicate.mjs
+
       - name: Verify review.md mirror is in sync
         run: node scripts/sync-review-md.mjs --check
 
@@ -105,6 +124,17 @@ jobs:
             sleep 10
           done
           test -n "$ok"
+
+      - name: Cache pnpm store
+        # Content-addressed store; restore-keys give partial reuse when the
+        # lockfile changes. Do NOT use setup-node's `cache: pnpm` — it resolves
+        # pnpm before corepack installs it (see AGENTS.md).
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
