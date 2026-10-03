@@ -78,8 +78,8 @@ Use environment-scoped values wherever possible.
 | Secret                    | Dev | Prod | Purpose                                               |
 | ------------------------- | --- | ---- | ----------------------------------------------------- |
 | `SUPABASE_DB_URL`         | —   | yes  | Direct database connection string for `pg_dump`       |
-| `AWS_ACCESS_KEY_ID`       | —   | yes  | S3/Spaces key for backup upload and restore download  |
-| `AWS_SECRET_ACCESS_KEY`   | —   | yes  | S3/Spaces secret for backup upload and restore        |
+| `AWS_ACCESS_KEY_ID`       | —   | yes  | S3/Spaces key for backup upload and restore download; falls back to `DO_SPACES_ACCESS_KEY_ID` |
+| `AWS_SECRET_ACCESS_KEY`   | —   | yes  | S3/Spaces secret for backup upload and restore; falls back to `DO_SPACES_SECRET_ACCESS_KEY` |
 | `BACKUP_ENCRYPTION_KEY`   | —   | yes  | openssl passphrase encrypting/decrypting backup objects (`db-backup.yml`, `db-restore-test.yml`, storage backup) |
 | `SUPABASE_SERVICE_ROLE_KEY` | — | yes  | Supabase Storage REST access for `scripts/backup-storage.sh` |
 | `S3_BACKUP_BUCKET`        | —   | yes  | **Legacy** full-URI/bucket name holding backups; prefer the `S3_BUCKET` variable. Accepted (normalised) by the restore paths for backwards compatibility |
@@ -99,6 +99,12 @@ Full object path: `s3://${S3_BUCKET}/${S3_PREFIX}/<file>`. Set these as
 repository **variables** (Settings → Secrets and variables → Actions →
 Variables). Optional offsite copy: `S3_OFFSITE_BUCKET` /
 `S3_OFFSITE_PREFIX`. See `docs/ROLLBACK_PROCEDURES.md` §3a.
+
+The backup/restore workflows attach the **`dev` environment**, so
+`SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` resolve from it, and the `AWS_*`
+credentials fall back to its `DO_SPACES_*` keys (Spaces is S3-compatible).
+`S3_ENDPOINT` (variable) overrides the default Spaces endpoint
+(`https://nyc3.digitaloceanspaces.com`) for real AWS S3 or another region.
 
 ## Secrets required by other workflows
 
