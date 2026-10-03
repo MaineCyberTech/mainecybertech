@@ -164,6 +164,13 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
   pre-push check it flagged the pending migrations' own DDL (e.g. a drop
   migration) as drift, and its colour-sensitive grep intermittently missed real
   drops. Post-push a non-empty diff now means genuine divergence.
+- Container limits + infra drift: every compose service now sets `pids_limit`
+  (CTR-P2-005) so one container cannot exhaust the host PID table and take down
+  the single-droplet stack; the dev droplet size is consistently
+  `s-1vcpu-2gb` in CI and `dev.tfvars.example` (was `s-1vcpu-512mb-10gb` in CI
+  vs `s-1vcpu-1gb` in the example while the stack reserves ~1.4 GB —
+  INFRA-P2-004); `infra/terraform/README.md` no longer references a removed
+  `aws/` root.
 - Deploy resilience (from the first post-merge deploy on 2026-10-03): the redis
   container now runs as `user: redis` — the custom entrypoint (password off
   argv) replaced the official privilege-dropping one, and as root with

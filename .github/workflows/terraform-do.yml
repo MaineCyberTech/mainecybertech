@@ -65,8 +65,11 @@ jobs:
           # SSH allowlist (JSON array of CIDRs). SSH is fail-closed: there is no
           # permissive default in variables.tf, so this must be set for every run.
           ADMIN_IP_RANGES: ${{ secrets.ADMIN_IP_RANGES }}
-          # prod needs >=2GB: the compose stack reserves ~1.4GB.
-          DROPLET_SIZE: ${{ steps.env.outputs.name == 'prod' && 's-2vcpu-2gb' || 's-1vcpu-512mb-10gb' }}
+          # Both sizes are >=2GB: the compose stack reserves ~1.4GB of memory
+          # limits, so the old dev default (s-1vcpu-512mb-10gb) was
+          # under-provisioned and drifted from dev.tfvars.example
+          # (INFRA-P2-004). The live dev droplet is s-1vcpu-2gb.
+          DROPLET_SIZE: ${{ steps.env.outputs.name == 'prod' && 's-2vcpu-2gb' || 's-1vcpu-2gb' }}
           TF_ENV: ${{ steps.env.outputs.name }}
         run: |
           # printf '%s' never re-expands the value, so a secret containing
