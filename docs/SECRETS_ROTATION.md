@@ -49,6 +49,12 @@ All secrets must be rotated periodically to limit exposure from credential leaks
 | 39  | `AWS_ACCESS_KEY_ID`           | db-backup workflow           | Every 180 days                                  | AWS IAM User → Security Credentials                       |
 | 40  | `AWS_SECRET_ACCESS_KEY`       | db-backup workflow           | Every 180 days                                  | AWS IAM User → Security Credentials                       |
 | 41  | `BACKUP_ENCRYPTION_KEY`       | db-backup, db-restore-test, storage-backup | Only with a re-encryption plan (see below) | `openssl rand -base64 48`                                 |
+| 42  | `JIRA_WEBHOOK_SECRET`         | API                          | Every 90 days                                   | Jira → Webhooks → secret                                  |
+| 43  | `JSM_WEBHOOK_SECRET`          | API                          | Every 90 days                                   | JSM → Webhooks → secret                                   |
+| 44  | `M365_CLIENT_STATE`           | API                          | Every 90 days                                   | `openssl rand -hex 16` (single authoritative M365 secret; `M365_WEBHOOK_SECRET` is retired) |
+| 45  | `TURNSTILE_SECRET_KEY`        | API                          | Every 180 days                                  | Cloudflare Turnstile → Settings → Secret Key              |
+| 46  | `METRICS_TOKEN`               | API                          | Every 90 days                                   | `openssl rand -hex 32` (optional `/metrics` gate)         |
+| 47  | `FIELD_ENCRYPTION_KEY`        | API                          | Only with a re-encryption plan (see below)      | `openssl rand -hex 32`                                    |
 
 ## Rotation Procedures
 
@@ -74,6 +80,22 @@ Safe rotation procedure:
 **Loss of this key means permanent loss of encrypted backups.** Store a
 break-glass copy of the current key in the agreed escrow location (see
 `docs/DATA_BREACH_RESPONSE.md` / emergency rotation) before relying on it.
+### FIELD_ENCRYPTION_KEY — Handle with care (PII depends on it)
+
+`FIELD_ENCRYPTION_KEY` is the AES-256-GCM key that encrypts `profiles.encrypted_pii`
+at rest (`apps/api/src/lib/field-encryption.ts`). Rotating it **immediately makes
+every existing `encrypted_pii` value undecryptable** unless the rows are
+re-encrypted.
+
+Safe rotation procedure:
+
+1. Generate the new key (`openssl rand -hex 32`) and keep the old one available
+   during the transition.
+2. Re-encrypt existing rows with the new key using the backfill script
+   (`node scripts/backfill-profile-pii.mjs` — it reads the plaintext columns and
+   writes a fresh `encrypted_pii` copy).
+3. Verify a sample of profiles decrypt correctly, then discard the old key.
+4. Store a break-glass copy of the current key in the agreed escrow location.
 
 ### JWT_SECRET — Zero-Downtime Multi-Secret Rotation
 
@@ -189,30 +211,12 @@ If a deploy fails after emergency rotation:
 
 ### Scheduled Rotation Reminder
 
-A GitHub Actions scheduled workflow creates an issue quarterly:
-
-```yaml
-# .github/workflows/secret-rotation-reminder.yml
-name: Secret Rotation Reminder
-on:
-  schedule:
-    - cron: "0 9 1 */3 *" # Every 3 months on the 1st at 9am UTC
-jobs:
-  remind:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create reminder issue
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: 'Quarterly Secrets Rotation Due',
-              body: 'Quarterly secrets rotation is due. See docs/SECRETS_ROTATION.md for the full inventory and procedures.',
-              labels: ['ops', 'security']
-            })
-```
+`.github/workflows/secret-rotation-reminder.yml` creates a
+`secret-rotation`-labeled issue on the 1st of Jan/Apr/Jul/Oct (09:00 UTC), or on
+manual dispatch (`gh workflow run secret-rotation-reminder.yml`). It skips when
+a reminder issue is already open, and the issue body carries the review
+checklist and a link back to this document. Update the Rotation Log below as
+part of closing it.
 
 ## Rotation Log
 
