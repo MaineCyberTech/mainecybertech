@@ -261,6 +261,15 @@ router.post("/", requirePermission("documents", "create"), async (req, res, next
     const parsed = createDocumentSchema.parse(req.body);
     const supabase = getScopedClient(req, "documents", "write");
 
+    // The schema guarantees `orgs/<uuid>/...`, but not that the uuid is THIS
+    // org's. Reject a path pointing at another tenant's prefix. (FILE-P2-002)
+    if (parsed.storagePath) {
+      const pathOrg = parsed.storagePath.split("/")[1];
+      if (pathOrg.toLowerCase() !== parsed.organizationId.toLowerCase()) {
+        throw new AppError("VALIDATION", "storagePath does not belong to this organization", 400);
+      }
+    }
+
     const { data, error } = await supabase
       .from("documents")
       .insert({
@@ -488,7 +497,7 @@ router.patch(
 
       let currentQuery = supabase
         .from("documents")
-        .select("version")
+        .select("version, organization_id")
         .eq("id", String(req.params.id));
       if (orgId) currentQuery = currentQuery.eq("organization_id", orgId);
       const { data: current, error: fetchError } = await currentQuery.single();
@@ -498,6 +507,15 @@ router.patch(
       }
 
       checkVersionMatch(current.version, req.ifMatchVersion);
+
+      // A rewritten storagePath must point at THIS document's org, not merely
+      // at some org. (FILE-P2-002)
+      if (parsed.storagePath) {
+        const pathOrg = parsed.storagePath.split("/")[1];
+        if (pathOrg.toLowerCase() !== String(current.organization_id).toLowerCase()) {
+          throw new AppError("VALIDATION", "storagePath does not belong to this organization", 400);
+        }
+      }
 
       const updateData: Record<string, unknown> = {};
       if (parsed.name !== undefined) updateData.name = parsed.name;

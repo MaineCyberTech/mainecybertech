@@ -32,16 +32,23 @@ services:
       - SETUID
       - SETGID
     read_only: false
-    # REDIS_PASSWORD is REQUIRED (no fallback) — set it in .env or the environment
-    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
+    # REDIS_PASSWORD is REQUIRED (no fallback) — set it in .env or the environment.
+    # The password is written to a 0600 file by the entrypoint and passed via the
+    # ENVIRONMENT only: `--requirepass ${REDIS_PASSWORD}` on the command line (the
+    # previous form) exposed it in argv, readable by any host process via `ps`.
+    entrypoint: ["/bin/sh", "/usr/local/bin/redis-entrypoint.sh"]
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
     volumes:
       - redis-data:/data
+      - ./redis-entrypoint.sh:/usr/local/bin/redis-entrypoint.sh:ro
     tmpfs:
       - /tmp
     restart: unless-stopped
     mem_limit: 48m
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}", "ping"]
+      # Authenticate via REDISCLI_AUTH (env), not `-a <password>` (argv).
+      test: ["CMD-SHELL", "REDISCLI_AUTH=\"$$REDIS_PASSWORD\" redis-cli ping"]
       interval: 10s
       timeout: 5s
       retries: 3

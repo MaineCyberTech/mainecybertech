@@ -163,7 +163,9 @@ export default async function AdminDocumentsPage() {
       const visibility = ALLOWED_VISIBILITY.includes(requestedVisibility as DocumentVisibility)
         ? requestedVisibility
         : "org";
-      const bucket = String(formData.get("bucket") ?? "documents").trim() || "documents";
+      // Bucket is fixed: the API only accepts the `documents` bucket (FILE-P2-002),
+      // and a UI field that can name another bucket would just be rejected.
+      const bucket = "documents";
       const suppliedPath = String(
         formData.get("fileUrl") ?? formData.get("storagePath") ?? "",
       ).trim();
@@ -198,6 +200,16 @@ export default async function AdminDocumentsPage() {
 
       if (!suppliedPath) {
         return { ok: false, error: "Provide a storage path or upload a file." };
+      }
+
+      // The API requires `documents` + `orgs/<thisOrgId>/<file>`; check here so
+      // the operator gets a clear message instead of a raw 400. (FILE-P2-002)
+      const expectedPrefix = `orgs/${organizationId}/`;
+      if (!suppliedPath.startsWith(expectedPrefix) || suppliedPath.length <= expectedPrefix.length) {
+        return {
+          ok: false,
+          error: `Storage path must start with ${expectedPrefix} (e.g. ${expectedPrefix}report.pdf).`,
+        };
       }
 
       const doc = await api.documents.create({
@@ -249,6 +261,23 @@ export default async function AdminDocumentsPage() {
 
       if (!title) {
         return { ok: false, error: "Document title is required." };
+      }
+
+      // The API rejects a storagePath that does not begin `orgs/<thisDocOrgId>/`
+      // (FILE-P2-002); fetch the record so the message names the document's own
+      // org rather than surfacing a raw 400. Same pattern as replaceFileAction.
+      if (storagePathInput) {
+        const current = (await api.documents.get(documentId)) as unknown as DocumentRecord;
+        const expectedPrefix = `orgs/${current.organization_id}/`;
+        if (
+          !storagePathInput.startsWith(expectedPrefix) ||
+          storagePathInput.length <= expectedPrefix.length
+        ) {
+          return {
+            ok: false,
+            error: `Storage path must start with ${expectedPrefix}.`,
+          };
+        }
       }
 
       const data = await api.documents.update(documentId, {

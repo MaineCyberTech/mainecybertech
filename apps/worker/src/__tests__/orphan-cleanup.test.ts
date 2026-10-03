@@ -21,8 +21,10 @@ jest.mock("../env", () => ({
   },
 }));
 
-function createThenableChain(initialResult: unknown) {
-  let result = initialResult;
+/** Result for a `from(table).select(...)` reference query. */
+type QueryResult = { data: unknown; error: { message: string } | null };
+
+function createThenableChain(result: QueryResult) {
   const chain: Record<string, jest.Mock> = {};
   const chainedMethods = [
     "select",
@@ -44,132 +46,232 @@ function createThenableChain(initialResult: unknown) {
   chain.single = jest.fn().mockResolvedValue({ data: null, error: null });
   chain.then = (onFulfilled: (v: unknown) => unknown, onRejected: (e: unknown) => unknown) =>
     Promise.resolve(result).then(onFulfilled, onRejected);
-  chain._setResult = (r: unknown) => {
-    result = r;
-  };
   return chain;
 }
 
-let currentChain: ReturnType<typeof createThenableChain>;
-let mockStorageFrom: jest.Mock;
-let tableResults: Record<string, unknown>;
+type Entry = { name: string; id?: string | null };
 
+/**
+ * Build a mock client where the reference query is answered PER TABLE. A single
+ * shared result for `documents`/`document_versions`/`file_request_uploads` and
+ * `profiles` could not catch the bug this suite guards: a failed reference read
+ * was indistinguishable from "nothing is referenced".
+ *
+ * `filesByBucket` are flat listings served at the root prefix; `prefixEntries`
+ * serves nested listings per prefix so folder recursion can be exercised.
+ */
+function mockClient(opts: {
+  filesByBucket?: Record<string, Entry[]>;
+  prefixEntries?: Record<string, Record<string, Entry[]>>;
+  queryByTable?: Record<string, QueryResult>;
+  listErrorByBucket?: Record<string, { message: string }>;
+}) {
+  const removeCalls: Record<string, string[][]> = {};
+  const from = jest.fn((table: string) => {
+    return createThenableChain(opts.queryByTable?.[table] ?? { data: [], error: null });
+  });
+
+  const storageFrom = jest.fn((bucket: string) => ({
+    list: jest.fn().mockImplementation((path: string, o: { limit: number; offset: number }) => {
+      const err = opts.listErrorByBucket?.[bucket];
+      if (err) return Promise.resolve({ data: null, error: err });
+      const all =
+        opts.prefixEntries?.[bucket]?.[path] ??
+        (path === "" ? (opts.filesByBucket?.[bucket] ?? []) : []);
+      const page = all.slice(o.offset, o.offset + o.limit);
+      return Promise.resolve({ data: page, error: null });
+    }),
+    remove: jest.fn().mockImplementation((paths: string[]) => {
+      removeCalls[bucket] = removeCalls[bucket] ?? [];
+      removeCalls[bucket].push(paths);
+      return Promise.resolve({ error: null });
+    }),
+    upload: jest.fn().mockResolvedValue({ error: null }),
+    createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: "" }, error: null }),
+  }));
+
+  const client = { from, storage: { from: storageFrom } };
+  return { client, removeCalls, storageFrom };
+}
+
+let active: ReturnType<typeof mockClient>;
+
+// `getSupabaseAdmin` caches the client in module scope, so the factory must
+// return a STABLE object whose methods forward to whatever `active` is at call
+// time - otherwise every test after the first reuses the first test's client.
 jest.mock("@supabase/supabase-js", () => ({
   createClient: jest.fn(() => ({
-    from: jest.fn((table: string) => {
-      const initial = tableResults[table] ?? { data: [], error: null };
-      return createThenableChain(initial);
-    }),
-    storage: {
-      // Pass the bucket through so per-bucket adapters can be installed.
-      from: jest.fn((bucket: string) => mockStorageFrom(bucket)),
-    },
+    from: jest.fn((table: string) => active.client.from(table)),
+    storage: { from: jest.fn((bucket: string) => active.client.storage.from(bucket)) },
   })),
 }));
 
-type BucketAdapter = {
-  list: jest.Mock;
-  remove: jest.Mock;
-  upload: jest.Mock;
-  createSignedUrl: jest.Mock;
-};
-
-function adapterFor(
-  files: Array<{ name: string; id?: string | null }>,
-  remove?: jest.Mock,
-): BucketAdapter {
-  // list("") returns folder entries (id === null) and files. For flat test
-  // paths every entry is a file, so pass id "1" by default.
-  return {
-    list: jest.fn().mockResolvedValue({
-      data: files.map((f) => ({ name: f.name, id: f.id === undefined ? "1" : f.id })),
-      error: null,
-    }),
-    remove: remove ?? jest.fn().mockResolvedValue({ error: null }),
-    upload: jest.fn().mockResolvedValue({ error: null }),
-    createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: "" }, error: null }),
-  };
-}
-
-/** Only the `documents` bucket has content; `avatars` is always empty. */
-function documentsBucket(files: Array<{ name: string; id?: string | null }>, remove?: jest.Mock) {
-  return jest.fn((bucket: string) =>
-    bucket === "documents" ? adapterFor(files, remove) : adapterFor([]),
-  );
-}
-
 describe("orphanCleanup task", () => {
-  beforeEach(() => {
-    currentChain = createThenableChain({ data: [], error: null });
-    tableResults = {};
-    mockStorageFrom = documentsBucket([]);
-  });
-
   it("returns { ok: true } when no files in storage", async () => {
+    active = mockClient({ filesByBucket: { documents: [], avatars: [] } });
     const result = await orphanCleanup({});
     expect(result).toEqual({ ok: true });
   });
 
-  it("returns { ok: true } when all files are referenced (no orphans)", async () => {
-    mockStorageFrom = documentsBucket([{ name: "doc-1.pdf" }, { name: "doc-2.pdf" }]);
+  it("returns { ok: true } and removes nothing when all files are referenced", async () => {
+    active = mockClient({
+      filesByBucket: { documents: [{ name: "doc-1.pdf" }, { name: "doc-2.pdf" }] },
+      queryByTable: {
+        documents: { data: [{ storage_path: "doc-1.pdf" }, { storage_path: "doc-2.pdf" }], error: null },
+      },
+    });
+    const result = await orphanCleanup({});
+    expect(result).toEqual({ ok: true });
+    expect(active.removeCalls.documents ?? []).toEqual([]);
+  });
 
-    tableResults.documents = {
-      data: [{ storage_path: "doc-1.pdf" }, { storage_path: "doc-2.pdf" }],
-      error: null,
-    };
+  it("removes only the genuinely orphaned files", async () => {
+    active = mockClient({
+      filesByBucket: { documents: [{ name: "doc-1.pdf" }, { name: "orphan-1.pdf" }] },
+      queryByTable: { documents: { data: [{ storage_path: "doc-1.pdf" }], error: null } },
+    });
+    const result = await orphanCleanup({});
+    expect(result).toEqual({ ok: true });
+    expect(active.removeCalls.documents).toEqual([["orphan-1.pdf"]]);
+  });
+
+  // --- the data-loss regression this suite exists to prevent ----------------
+
+  it("DELETES NOTHING when the reference query errors (was: wiped the bucket)", async () => {
+    active = mockClient({
+      filesByBucket: {
+        documents: [{ name: "a.pdf" }, { name: "b.pdf" }, { name: "c.pdf" }],
+        avatars: [],
+      },
+      queryByTable: {
+        documents: { data: null, error: { message: "connection reset" } },
+      },
+    });
+
+    const result = await orphanCleanup({});
+
+    // The bug: a null `data` from an errored query became an empty reference
+    // set, so every listed file was treated as an orphan and removed.
+    expect(active.removeCalls.documents ?? []).toEqual([]);
+    // And the failure is reported honestly rather than as success.
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain("documents");
+  });
+
+  it("DELETES NOTHING when the storage listing errors", async () => {
+    active = mockClient({
+      filesByBucket: { documents: [{ name: "a.pdf" }] },
+      listErrorByBucket: { documents: { message: "list exploded" } },
+    });
+
+    const result = await orphanCleanup({});
+    expect(active.removeCalls.documents ?? []).toEqual([]);
+    expect(result.ok).toBe(false);
+  });
+
+  it("pages through a bucket larger than one listing page", async () => {
+    // 250 files: more than the 100-item page size, so a single `list()` call
+    // would have seen only the first 100.
+    const many = Array.from({ length: 250 }, (_, i) => ({ name: `f-${i}.pdf` }));
+    active = mockClient({
+      filesByBucket: { documents: many },
+      queryByTable: { documents: { data: many.map((m) => ({ storage_path: m.name })), error: null } },
+    });
 
     const result = await orphanCleanup({});
     expect(result).toEqual({ ok: true });
+    expect(active.removeCalls.documents ?? []).toEqual([]);
   });
 
-  it("returns { ok: true } when orphaned files are removed", async () => {
-    mockStorageFrom = documentsBucket([{ name: "doc-1.pdf" }, { name: "orphan-1.pdf" }]);
-
-    tableResults.documents = { data: [{ storage_path: "doc-1.pdf" }], error: null };
+  it("handles an avatar orphan safely (keyed by basename)", async () => {
+    active = mockClient({
+      filesByBucket: { documents: [], avatars: [{ name: "user-1.png" }, { name: "stale.png" }] },
+      queryByTable: {
+        profiles: {
+          data: [{ avatar_url: "https://x.supabase.co/storage/v1/object/public/avatars/user-1.png" }],
+          error: null,
+        },
+      },
+    });
 
     const result = await orphanCleanup({});
     expect(result).toEqual({ ok: true });
+    expect(active.removeCalls.avatars).toEqual([["stale.png"]]);
   });
 
-  it("returns { ok: true } when storage list fails (skips bucket)", async () => {
-    mockStorageFrom = jest.fn(() => ({
-      list: jest.fn().mockResolvedValue({ data: null, error: { message: "List error" } }),
-      remove: jest.fn().mockResolvedValue({ error: null }),
-      upload: jest.fn().mockResolvedValue({ error: null }),
-      createSignedUrl: jest.fn().mockResolvedValue({ data: { signedUrl: "" }, error: null }),
-    }));
+  it("reports failure but still cleans the other bucket when one bucket fails", async () => {
+    active = mockClient({
+      filesByBucket: {
+        documents: [{ name: "doc.pdf" }],
+        avatars: [{ name: "stale.png" }],
+      },
+      queryByTable: {
+        documents: { data: null, error: { message: "db down" } },
+        profiles: { data: [], error: null },
+      },
+    });
 
     const result = await orphanCleanup({});
-    expect(result).toEqual({ ok: true });
+    expect(active.removeCalls.documents ?? []).toEqual([]);
+    expect(active.removeCalls.avatars).toEqual([["stale.png"]]);
+    expect(result.ok).toBe(false);
   });
+
+  // --- reference coverage (documents + versions + file requests) ------------
 
   it("spares a valid file-request upload referenced by file_request_uploads", async () => {
     const path = "00000000-0000-0000-0000-00000000000a/requests/tok/123-invoice.pdf";
-    const remove = jest.fn().mockResolvedValue({ error: null });
-    mockStorageFrom = documentsBucket([{ name: path }], remove);
-
-    // A file-request intake object is not in documents/document_versions, only
-    // in file_request_uploads. Cleanup must reconcile against that table.
-    tableResults.documents = { data: [], error: null };
-    tableResults.document_versions = { data: [], error: null };
-    tableResults.file_request_uploads = { data: [{ storage_path: path }], error: null };
+    active = mockClient({
+      filesByBucket: { documents: [{ name: path }] },
+      queryByTable: {
+        documents: { data: [], error: null },
+        document_versions: { data: [], error: null },
+        file_request_uploads: { data: [{ storage_path: path }], error: null },
+      },
+    });
 
     const result = await orphanCleanup({});
     expect(result).toEqual({ ok: true });
-    expect(remove).not.toHaveBeenCalled();
+    expect(active.removeCalls.documents ?? []).toEqual([]);
   });
 
   it("spares a document version object referenced only by document_versions", async () => {
     const path = "00000000-0000-0000-0000-00000000000a/999-old.pdf";
-    const remove = jest.fn().mockResolvedValue({ error: null });
-    mockStorageFrom = documentsBucket([{ name: path }], remove);
-
-    tableResults.documents = { data: [], error: null };
-    tableResults.document_versions = { data: [{ storage_path: path }], error: null };
-    tableResults.file_request_uploads = { data: [], error: null };
+    active = mockClient({
+      filesByBucket: { documents: [{ name: path }] },
+      queryByTable: {
+        documents: { data: [], error: null },
+        document_versions: { data: [{ storage_path: path }], error: null },
+        file_request_uploads: { data: [], error: null },
+      },
+    });
 
     const result = await orphanCleanup({});
     expect(result).toEqual({ ok: true });
-    expect(remove).not.toHaveBeenCalled();
+    expect(active.removeCalls.documents ?? []).toEqual([]);
+  });
+
+  it("lists nested objects recursively and reconciles full paths", async () => {
+    const org = "00000000-0000-0000-0000-00000000000a";
+    const keep = `orgs/${org}/keep.pdf`;
+    const orphan = `orgs/${org}/orphan.pdf`;
+    active = mockClient({
+      prefixEntries: {
+        documents: {
+          "": [{ name: "orgs", id: null }],
+          orgs: [{ name: org, id: null }],
+          [`orgs/${org}`]: [{ name: "keep.pdf" }, { name: "orphan.pdf" }],
+        },
+      },
+      queryByTable: {
+        documents: { data: [{ storage_path: keep }], error: null },
+        document_versions: { data: [], error: null },
+        file_request_uploads: { data: [], error: null },
+      },
+    });
+
+    const result = await orphanCleanup({});
+    expect(result).toEqual({ ok: true });
+    expect(active.removeCalls.documents).toEqual([[orphan]]);
   });
 });
