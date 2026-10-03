@@ -4,6 +4,25 @@ import publicRouter from "../routes/public";
 import { createTestApp, createMockBuilder, type MockResult } from "./helpers";
 import { errorHandler } from "../middleware/error";
 
+const mockTestEnv = {
+  NODE_ENV: "test",
+  SUPABASE_URL: "https://test.supabase.co",
+  SUPABASE_ANON_KEY: "test-anon-key",
+  SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
+  CORS_ORIGIN: "*",
+  LOG_LEVEL: "silent",
+  API_PORT: 4000,
+  PUBLIC_TRAFFIC_WEBHOOK_URL: "https://teams.example/webhook",
+};
+
+const mockProductionEnv = { ...mockTestEnv, NODE_ENV: "production" };
+const mockProductionEnvWithSecret = {
+  ...mockProductionEnv,
+  TURNSTILE_SECRET_KEY: "test-turnstile-secret",
+};
+
+// The default is inlined so `getEnv()` also resolves safely during module
+// import (logger/audit read it before this test file finishes evaluating).
 jest.mock("../config/env", () => ({
   getEnv: jest.fn().mockReturnValue({
     NODE_ENV: "test",
@@ -32,10 +51,12 @@ jest.mock("../services/supabase", () => ({
   ),
 }));
 
+import { getEnv } from "../config/env";
 import { getSupabaseAdmin } from "../services/supabase";
 import { httpClients } from "../lib/http-client";
 import { __resetVisitorAlertThrottle } from "../lib/bot-detection";
 
+const getEnvMock = getEnv as unknown as jest.Mock;
 const teamsPost = httpClients.teams.post as unknown as jest.Mock;
 
 const app = createTestApp();
@@ -55,6 +76,7 @@ describe("public routes", () => {
     supabase = mockSupabase();
     jest.clearAllMocks();
     __resetVisitorAlertThrottle();
+    getEnvMock.mockReturnValue(mockTestEnv);
   });
 
   it("GET /init returns tracking ID", async () => {
@@ -101,6 +123,65 @@ describe("public routes", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
+  });
+
+  it("POST /submit without a token returns 400 in production [SEC-P2-002]", async () => {
+    getEnvMock.mockReturnValue(mockProductionEnv);
+    const res = await request(app).post("/api/v1/public/submit").send({
+      trackingId: crypto.randomUUID(),
+      company: "Test Corp",
+      name: "John Doe",
+      email: "john@test.com",
+      phone: "207-555-0100",
+      services: "Managed IT Support",
+      employees: "11-50",
+      urgency: "Medium - Planning Phase",
+      message: "Looking for managed IT services.",
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("CAPTCHA_REQUIRED");
+  });
+
+  it("POST /submit fails closed in production when Turnstile has no secret [SEC-P2-002]", async () => {
+    // No secret is a config error caught at boot; if the route is reached
+    // anyway (e.g. a direct caller), a supplied token must not be trusted.
+    getEnvMock.mockReturnValue(mockProductionEnv);
+    const res = await request(app)
+      .post("/api/v1/public/submit")
+      .send({
+        trackingId: crypto.randomUUID(),
+        company: "Test Corp",
+        name: "John Doe",
+        email: "john@test.com",
+        phone: "207-555-0100",
+        services: "Managed IT Support",
+        employees: "11-50",
+        urgency: "Medium - Planning Phase",
+        message: "Looking for managed IT services.",
+        captchaToken: "unverifiable-token",
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("CAPTCHA_FAILED");
+  });
+
+  it("POST /submit requires a token when Turnstile is configured [SEC-P2-002]", async () => {
+    getEnvMock.mockReturnValue(mockProductionEnvWithSecret);
+    const res = await request(app).post("/api/v1/public/submit").send({
+      trackingId: crypto.randomUUID(),
+      company: "Test Corp",
+      name: "John Doe",
+      email: "john@test.com",
+      phone: "207-555-0100",
+      services: "Managed IT Support",
+      employees: "11-50",
+      urgency: "Medium - Planning Phase",
+      message: "Looking for managed IT services.",
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("CAPTCHA_REQUIRED");
   });
 
   it("POST /submit with missing tracking ID returns 400", async () => {
