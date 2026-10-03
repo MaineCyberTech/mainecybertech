@@ -11,7 +11,7 @@ lockfile SBOM and per-image SBOMs — with different scope and binding.
 | Artifact | Producer | Covers | Bound to |
 | --- | --- | --- | --- |
 | **Lockfile SBOM** (`sbom.cdx.json`) | `.github/workflows/sbom.yml` → `scripts/generate-sbom.mjs` | npm dependencies resolved from `pnpm-lock.yaml` | `<VERSION>+<commit SHA>` (`metadata.component.version`, `mct:commit`) |
-| **Image SBOM** (`image-sbom-mct-<image>.cdx.json`) | `.github/workflows/build-push.yml` (per image) → `aquasecurity/trivy-action` | The built OCI image: Alpine OS packages **and** npm-in-image contents | The pushed image **digest** (`metadata.component.purl`/`name` = `...@sha256:...`) |
+| **Image SBOM** (`image-sbom-mct-<image>.cdx.json`) | `.github/workflows/build-push.yml` and `.github/workflows/deploy-do.yml` (per image) → `aquasecurity/trivy-action` | The built OCI image: Alpine OS packages **and** npm-in-image contents | The pushed image **digest** (`metadata.component.purl`/`name` = `...@sha256:...`); on the deploy path it is also **attested** (`actions/attest-sbom`, pushed to the registry) |
 
 ### Lockfile SBOM
 
@@ -35,8 +35,9 @@ The document includes:
 
 ### Image SBOM
 
-`build-push.yml` generates one image SBOM per image (`mct-api`, `mct-worker`,
-`mct-web`) using Trivy's CycloneDX output. The equivalent command line is:
+Both `build-push.yml` and the push-triggered deploy path (`deploy-do.yml`)
+generate one image SBOM per image (`mct-api`, `mct-worker`, `mct-web`) using
+Trivy's CycloneDX output. The equivalent command line is:
 
 ```bash
 trivy image --format cyclonedx --scanners vuln --output image-sbom-mct-api.cdx.json \
@@ -52,7 +53,11 @@ Trivy records the digest in `metadata.component.purl`/`name` and in the
 image identity that was pushed.
 
 Each SBOM is uploaded as the workflow artifact
-`image-sbom-mct-<image>-<commit>` (30-day retention). This complements the
+`image-sbom-mct-<image>-<commit>` (30-day retention). On the deploy path
+(`deploy-do.yml`) the SBOM is additionally **attested** with
+`actions/attest-sbom` (SUPPLY-P3-001): the attestation binds the SBOM to the
+pushed image digest and is pushed to the registry as an OCI referrer, so it is
+durable and not subject to the 30-day artifact retention. This complements the
 lockfile SBOM: the lockfile SBOM explains the JavaScript dependency tree, while
 the image SBOM explains the OS packages and anything else physically present in
 the built layer.
@@ -123,6 +128,12 @@ gh attestation verify "oci://ghcr.io/<owner>/mct-api@$DIGEST" \
 # This is the same check the deploy pipeline runs before every pull; see
 # docs/CI.md ("Provenance verification at deploy").
 
+# Cryptographically verify a released image's SBOM ATTESTATION (SUPPLY-P3-001).
+# The predicate is the CycloneDX document bound to the image digest:
+gh attestation verify "oci://ghcr.io/<owner>/mct-api@$DIGEST" \
+  --repo <owner>/<repo> \
+  --predicate-type https://cyclonedx.org/bom
+
 # Lockfile SBOM artifact (30 days)
 gh run download <run-id> -n sbom-cyclonedx
 
@@ -137,15 +148,14 @@ jq '.metadata.component.purl' image-sbom-mct-api.cdx.json
 
 ## Known gaps
 
-- **Image SBOMs are only produced by `build-push.yml`**, which is
-  manual-dispatch only. The push-triggered build/deploy path (`deploy-do.yml`)
-  does not emit them yet; parity there is tracked separately by its owner.
-- The image SBOM is an **artifact only**. It is not attested
-  (`actions/attest-sbom`), not signed, not attached to the registry as an OCI
-  referrer, and not uploaded to a GitHub Release. Build provenance
-  (`actions/attest-build-provenance`, bound to the same digest and pushed to the
-  registry with `push-to-registry: true`) is the only image-level trust
-  artifact; it proves where the image was built, not what is inside it.
+- **Image SBOMs are produced on the deploy path** (`deploy-do.yml`) as well as
+  by `build-push.yml`. The deploy path emits a digest-bound SBOM and attests it
+  (`actions/attest-sbom`, `push-to-registry: true`) for `mct-api`, `mct-worker`
+  and `mct-web`, so a shipped image stays tied to its SBOM after the 30-day
+  artifact window (SUPPLY-P3-001).
+- On the manual `build-push.yml` path the image SBOM remains an **artifact
+  only** — it is not attested as an SBOM and not pushed to the registry as an
+  OCI referrer. `deploy-do.yml` is the release-authoritative producer.
 - **Provenance is now verified at deploy** (CTR-P1-003). The `verify-attestations`
   job in `deploy-do.yml` resolves each deployed tag to its digest and runs
   `gh attestation verify` before `deploy` pulls anything; `deploy` `needs:` the
@@ -166,8 +176,11 @@ jq '.metadata.component.purl' image-sbom-mct-api.cdx.json
     before attestation existed. A *present-but-invalid* attestation still fails
     the job; only the complete *absence* of one is tolerated, with a warning and
     an explicit job-summary stamp.
-- The lockfile SBOM is uploaded as a CI artifact rather than attached to a
+- The **lockfile** SBOM is uploaded as a CI artifact rather than attached to a
   GitHub Release. Release attachment remains open (SBOM-P2-001) because there is
   no tag or Release step yet; the commit binding added here is the prerequisite.
-- All SBOM artifacts expire after 30 days; there is no durable release-bound
-  copy yet.
+- Workflow artifacts expire after 30 days, but the deploy-path image SBOM is no
+  longer only an artifact: its `actions/attest-sbom` attestation is bound to the
+  pushed image digest and retained in the attestation store / registry, so a
+  shipped `deploy-do.yml` image can be tied to its SBOM indefinitely
+  (SUPPLY-P3-001). The lockfile SBOM has no durable copy yet.
