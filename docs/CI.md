@@ -135,3 +135,8 @@ in GitHub.
   Do not use `setup-node`'s `cache: pnpm` — it resolves pnpm before corepack
   installs it. PR runs cancel their superseded predecessors via per-workflow
   `concurrency` groups.
+- Shared step sequences live in `.github/actions/*` composite actions —
+  `setup-pnpm` (Node + corepack + store cache + install), `unit-tests`,
+  `dependency-audit` and `secret-scan`. `test.yml` and `validate.yml` both call
+  them, so the PR gate and the push/deploy gate cannot drift apart; edit the
+  composite, not the workflows.

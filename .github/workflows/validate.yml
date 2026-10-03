@@ -11,47 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
-        with:
-          node-version: 20
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          # corepack fetches pnpm from the npm registry; retry transient failures.
-          ok=""
-          for attempt in 1 2 3; do
-            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
-            echo "corepack prepare failed (attempt $attempt/3)" >&2
-            sleep 10
-          done
-          test -n "$ok"
-      - name: Cache pnpm store
-        # Content-addressed store; restore-keys give partial reuse when the
-        # lockfile changes. The old `pnpm store prune` step is gone: it evicted
-        # exactly the content this cache restores.
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Dependency audit (all scopes + policy)
-        # SC-P1-001: fails on any CRITICAL (dev or prod) and any HIGH+ in
-        # production, and always reports dev-tree advisories. Policy and the
-        # reviewed allowlist live in security/dependency-audit-policy.json.
-        run: node scripts/audit-gate.mjs
-      - name: License policy gate
-        # SBOM-P1-001: allowlist + documented exceptions from
-        # security/license-policy.json over the full resolved tree.
-        # Uses scripts/collect-licenses.mjs, NOT `pnpm licenses list --json`,
-        # which exits 1 on pnpm 10.34.x and writes an error document to stdout
-        # (ERR_PNPM_MISSING_PACKAGE_INDEX_FILE). test.yml/sbom.yml were fixed
-        # first; validate.yml was missed and blocked every deploy.
-        run: |
-          node scripts/collect-licenses.mjs --out licenses.json
-          node scripts/license-gate.mjs licenses.json
+
+      # Dependency audit + license policy + Trivy fs — shared with
+      # test.yml's security-scan (PR side).
+      - uses: ./.github/actions/dependency-audit
 
       - name: Verify required branch-protection checks resolve
         # Fails when a required status check in .github/branch-protection/*.json
@@ -60,31 +23,6 @@ jobs:
         # so the PR can never satisfy branch protection (CI-P1-002 / BP-P1-001).
         # Pure static analysis - needs no dependencies.
         run: node scripts/check-required-checks.mjs
-
-      - name: Run Trivy filesystem vulnerability scanner
-        # Parity with test.yml's security-scan: since test.yml is PR-only, this
-        # is the push-side filesystem scan. Dependency vulnerabilities are
-        # gated by audit-gate.mjs above; Trivy focuses on source/config
-        # findings and Go/Rust binaries.
-        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
-        with:
-          scan-type: fs
-          scan-ref: .
-          format: sarif
-          output: trivy-results.sarif
-          exit-code: "1"
-          ignore-unfixed: true
-          severity: CRITICAL,HIGH
-          skip-dirs: node_modules,.pnpm-store,dist,.next,coverage,prompts,apps/web/.next
-          skip-files: pnpm-lock.yaml,package-lock.json,yarn.lock
-
-      - name: Upload Trivy SARIF report
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: trivy-results
-          path: trivy-results.sarif
-          retention-days: 7
 
   test:
     timeout-minutes: 30
@@ -96,70 +34,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Setup Node.js
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+      # Coverage suite + every schema/docs guard — shared with test.yml's
+      # test job so the two definitions cannot drift apart.
+      - uses: ./.github/actions/unit-tests
         with:
           node-version: ${{ matrix.node-version }}
-
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          # corepack fetches pnpm from the npm registry; retry transient failures.
-          ok=""
-          for attempt in 1 2 3; do
-            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
-            echo "corepack prepare failed (attempt $attempt/3)" >&2
-            sleep 10
-          done
-          test -n "$ok"
-
-      - name: Cache pnpm store
-        # Content-addressed store; restore-keys give partial reuse when the
-        # lockfile changes. Do NOT use setup-node's `cache: pnpm` — it resolves
-        # pnpm before corepack installs it (see AGENTS.md).
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Run tests with coverage
-        run: pnpm test:coverage
-
-      - name: Validate OpenAPI spec
-        # Keeps the deploy gate in parity with test.yml: the generated spec must
-        # parse and its paths must resolve.
-        run: pnpm --filter=api exec tsx src/scripts/validate-openapi.ts
-
-      - name: OpenAPI coverage audit
-        # Fails when a statically-resolvable Express route is missing from the
-        # generated spec; dynamic factory routes are reported as warnings.
-        run: node scripts/openapi-audit.js
-
-      - name: Check docs counts
-        # Fails when README/AGENTS/INDEX state counts that have drifted from the
-        # repo (web components, unit tests, migrations, OpenAPI paths).
-        run: node scripts/check-docs-counts.mjs
-
-      - name: Check docs links
-        run: node scripts/check-docs-links.mjs
-
-      - name: Verify database types are current
-        run: node scripts/generate-db-types.js --check
-
-      - name: Verify RLS/migration hygiene
-        run: node scripts/verify-rls.mjs
-
-      - name: Verify no raw unfiltered membership predicate (DATA-P1-001)
-        # Fails when a migration newer than the baseline reintroduces the
-        # `memberships where user_id = auth.uid()` predicate without a
-        # status='approved' filter, which let pending/suspended members read
-        # tenant rows via the anon-key + JWT path.
-        run: node scripts/check-rls-predicate.mjs
 
   # Secret scanning — same patterns as the pre-commit hook (scripts/scan-secrets.sh).
   # Runs as part of the deploy gate so a leaked credential cannot ship even if
@@ -173,23 +52,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Scan diff for secrets
-        run: |
-          set -e
-          PATTERNS='AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|ghp_[0-9a-zA-Z]{36}|gho_[0-9a-zA-Z]{36}|ghu_[0-9a-zA-Z]{36}|github_pat_[0-9a-zA-Z_]{22,}|sk_(live|test)_[0-9a-zA-Z]{16,}|xox[baprs]-[0-9a-zA-Z-]{10,}|-----BEGIN [A-Za-z ]*PRIVATE KEY-----|eyJhbGciOi[A-Za-z0-9_-]{10,}\.[A-Za-z0-9._-]{20,}\.[A-Za-z0-9._-]{20,}'
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE="${{ github.event.pull_request.base.sha }}"
-          else
-            BASE="$(git merge-base HEAD origin/main 2>/dev/null || echo HEAD~1)"
-          fi
-          DIFF=$(git diff -U0 "$BASE" HEAD 2>/dev/null || git diff -U0 HEAD~1 HEAD)
-          MATCHES=$(printf '%s' "$DIFF" | grep -E "^\+" | grep -v 'PATTERNS=' | grep -v 'secrets\.' | grep -vE "^\+\s*#" | grep -cE "$PATTERNS" || true)
-          echo "Secret-pattern matches in diff: $MATCHES"
-          if [ "$MATCHES" -gt 0 ]; then
-            printf '%s' "$DIFF" | grep -nE "^\+.*($PATTERNS)" | grep -v 'PATTERNS=' | grep -v 'secrets\.' || true
-            echo "::error::Secret pattern detected in diff — remove or replace secret values."
-            exit 1
-          fi
+      # Shared with test.yml's secrets-scan job.
+      - uses: ./.github/actions/secret-scan
 
   lint:
     runs-on: ubuntu-latest
@@ -197,36 +61,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Setup Node.js
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
-        with:
-          node-version: 20
-
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          # corepack fetches pnpm from the npm registry; retry transient failures.
-          ok=""
-          for attempt in 1 2 3; do
-            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
-            echo "corepack prepare failed (attempt $attempt/3)" >&2
-            sleep 10
-          done
-          test -n "$ok"
-
-      - name: Cache pnpm store
-        # Content-addressed store; restore-keys give partial reuse when the
-        # lockfile changes. Do NOT use setup-node's `cache: pnpm` — it resolves
-        # pnpm before corepack installs it (see AGENTS.md).
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-pnpm
 
       - name: Lint
         run: pnpm lint
@@ -237,36 +72,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
-      - name: Setup Node.js
-        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
-        with:
-          node-version: 20
-
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          # corepack fetches pnpm from the npm registry; retry transient failures.
-          ok=""
-          for attempt in 1 2 3; do
-            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
-            echo "corepack prepare failed (attempt $attempt/3)" >&2
-            sleep 10
-          done
-          test -n "$ok"
-
-      - name: Cache pnpm store
-        # Content-addressed store; restore-keys give partial reuse when the
-        # lockfile changes. Do NOT use setup-node's `cache: pnpm` — it resolves
-        # pnpm before corepack installs it (see AGENTS.md).
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: ~/.local/share/pnpm/store
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-pnpm
 
       - name: TypeCheck
         run: pnpm typecheck
@@ -275,9 +81,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a
+
+      # Node only — the provenance scripts are dependency-free.
+      - uses: ./.github/actions/setup-pnpm
         with:
-          node-version: 20
+          install: "false"
+
       - name: Verify prompt pack provenance
         # Supply-chain guard for the 787 files under prompts/ (P2-1) — a change
         # to any file breaks the tree hashes and fails the deploy gate.
