@@ -5,6 +5,7 @@ import { getEnv } from "../config/env";
 import { AppError } from "../types";
 import { logger } from "../lib/logger";
 import { requiresSecondFactor } from "../lib/mfa";
+import { authenticateApiKey, isApiKeyToken } from "./api-key";
 
 declare global {
   namespace Express {
@@ -12,6 +13,16 @@ declare global {
       authUser?: {
         userId: string;
         email: string;
+      };
+      /**
+       * Populated by `requireAuth` when the request authenticated with an
+       * `mct_*` API key instead of a session JWT (see middleware/api-key.ts).
+       */
+      apiKey?: {
+        id: string;
+        organizationId: string;
+        permissions: string[];
+        prefix: string;
       };
       userJwt?: string;
       /**
@@ -47,6 +58,33 @@ export async function requireAuth(req: Request, _res: Response, next: NextFuncti
     const header = req.headers.authorization;
     if (header && header.startsWith("Bearer ")) {
       token = header.slice(7);
+    }
+
+    // API keys (`mct_*`) are machine credentials, not session JWTs. Resolve
+    // them before the JWT/Supabase paths (both of which would 401 them) and pin
+    // the request to the key's organization so downstream
+    // requireOrgAccess/requirePermission still scope what the key may do.
+    if (token && isApiKeyToken(token)) {
+      const apiKey = await authenticateApiKey(token);
+      req.authUser = { userId: apiKey.userId, email: "api-key" };
+      req.apiKey = {
+        id: apiKey.id,
+        organizationId: apiKey.organizationId,
+        permissions: apiKey.permissions,
+        prefix: apiKey.prefix,
+      };
+      req.orgScope = {
+        orgId: apiKey.organizationId,
+        explicit: true,
+        platformAdmin: false,
+        impersonation: false,
+      };
+      req.orgId = apiKey.organizationId;
+      // The org resolved by requireOrgAccess is read from the query string, so
+      // inject the key's org and overwrite any caller-supplied org id.
+      req.query = { ...req.query, organization_id: apiKey.organizationId };
+      next();
+      return;
     }
 
     if (!token) {
