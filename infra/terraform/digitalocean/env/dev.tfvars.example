@@ -4,5 +4,7 @@ cloudflare_api_token  = "your-cloudflare-api-token"
 cloudflare_zone_id    = "your-cloudflare-zone-id"
 # REQUIRED: SSH allowlist (office/VPN CIDRs). No permissive default exists.
 admin_ip_ranges       = ["203.0.113.0/24"]
-droplet_size          = "s-1vcpu-1gb"
+# The compose stack reserves ~1.4 GB of memory limits, so 512 MB/1 GB sizes
+# are under-provisioned; the live dev droplet is s-1vcpu-2gb (INFRA-P2-004).
+droplet_size          = "s-1vcpu-2gb"
 environment           = "dev"
