@@ -1,6 +1,6 @@
 # MCT Portal — Agent Reference
 
-**Repo:** `C:\temp\mainecybertech-portal`
+**Repo:** `github.com/MaineCyberTech/mainecybertech`
 **Branch:** `develop`
 **Package manager:** pnpm (corepack, v10+)
 **Node:** >= 20

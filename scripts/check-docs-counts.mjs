@@ -21,6 +21,9 @@
  *   - AGENTS.md SQL migrations total and "(latest: N)" vs supabase/migrations
  *   - docs/WEB_UI_CONVENTIONS.md admin/portal nav entry counts vs the
  *     `key:` occurrences in the nav catalogs
+ *   - a11y route counts in AGENTS.md, docs/CI.md, docs/testing.md and
+ *     docs/WEB_UI_CONVENTIONS.md vs the BASE_PAGES/FULL_PAGES arrays in
+ *     apps/web/e2e/a11y.spec.ts
  *   - AGENTS.md (and review.md, if present) "N policies" vs
  *     collectRlsStats() from scripts/verify-rls.mjs
  *
@@ -407,6 +410,115 @@ if (review !== null) {
   const reviewPolicies = parse("review.md RLS policies", review, POLICY_COUNT_RE);
   if (reviewPolicies !== null) {
     check("review.md RLS policies vs scripts/verify-rls.mjs", reviewPolicies, rlsStats.policies);
+  }
+}
+
+// --- a11y route counts vs apps/web/e2e/a11y.spec.ts ----------------------
+// The default gate scans BASE_PAGES; A11Y_FULL=1 adds FULL_PAGES. The docs
+// state those counts in several places and nothing guarded them (AI-P1-002),
+// so every mention is checked against the spec arrays.
+const a11ySpec = read("apps/web/e2e/a11y.spec.ts");
+function countA11yPages(name) {
+  const block = a11ySpec.match(new RegExp(`const ${name} = \\[([\\s\\S]*?)\\];`));
+  if (!block) {
+    mismatches.push(`a11y.spec.ts: ${name} array not found`);
+    return null;
+  }
+  return (block[1].match(/\{\s*path:/g) || []).length;
+}
+const a11yBase = countA11yPages("BASE_PAGES");
+const a11yFull = countA11yPages("FULL_PAGES");
+if (a11yBase !== null && a11yFull !== null) {
+  const a11yTotal = a11yBase + a11yFull;
+
+  const agentsA11yGate = parse(
+    "AGENTS.md a11y default gate",
+    agents,
+    /default PR gate now scans \*\*(\d[\d,]*)\s*pages\*\*/,
+  );
+  if (agentsA11yGate !== null) {
+    check("AGENTS.md a11y default gate vs a11y.spec.ts BASE_PAGES", agentsA11yGate, a11yBase);
+  }
+  const agentsA11yFull = agents.match(
+    /remaining (\d[\d,]*)-page `FULL_PAGES` set \((\d[\d,]*) total\)/,
+  );
+  if (!agentsA11yFull) {
+    mismatches.push("AGENTS.md a11y FULL_PAGES: expected value not found");
+  } else {
+    check("AGENTS.md a11y FULL_PAGES vs a11y.spec.ts FULL_PAGES", num(agentsA11yFull[1]), a11yFull);
+    check("AGENTS.md a11y total routes vs a11y.spec.ts", num(agentsA11yFull[2]), a11yTotal);
+  }
+
+  const ci = read("docs/CI.md");
+  const ciA11yGate = parse(
+    "docs/CI.md a11y gate",
+    ci,
+    /\((\d[\d,]*)-route gate, \d[\d,]* with `A11Y_FULL`\)/,
+  );
+  if (ciA11yGate !== null) {
+    check("docs/CI.md a11y gate vs a11y.spec.ts BASE_PAGES", ciA11yGate, a11yBase);
+  }
+  const ciA11yTotal = ci.match(/\((\d[\d,]*)-route gate, (\d[\d,]*) with `A11Y_FULL`\)/);
+  if (!ciA11yTotal) {
+    mismatches.push("docs/CI.md a11y total: expected value not found");
+  } else {
+    check("docs/CI.md a11y total routes vs a11y.spec.ts", num(ciA11yTotal[2]), a11yTotal);
+  }
+  const ciA11yPromote = parse(
+    "docs/CI.md a11y promotion gate",
+    ci,
+    /promote routes into the default (\d[\d,]*)-route/,
+  );
+  if (ciA11yPromote !== null) {
+    check("docs/CI.md a11y promotion gate vs a11y.spec.ts BASE_PAGES", ciA11yPromote, a11yBase);
+  }
+
+  const testing = read("docs/testing.md");
+  const testingA11yGate = parse(
+    "docs/testing.md a11y gate",
+    testing,
+    /a11y\.spec\.ts` scans (\d[\d,]*) core routes/,
+  );
+  if (testingA11yGate !== null) {
+    check("docs/testing.md a11y gate vs a11y.spec.ts BASE_PAGES", testingA11yGate, a11yBase);
+  }
+  const testingA11yTotal = parse(
+    "docs/testing.md a11y total",
+    testing,
+    /A11Y_FULL=1` expands to (\d[\d,]*) routes/,
+  );
+  if (testingA11yTotal !== null) {
+    check("docs/testing.md a11y total routes vs a11y.spec.ts", testingA11yTotal, a11yTotal);
+  }
+
+  const conventionsA11yGate = parse(
+    "docs/WEB_UI_CONVENTIONS.md a11y gate",
+    conventions,
+    /scans (\d[\d,]*) core routes/,
+  );
+  if (conventionsA11yGate !== null) {
+    check(
+      "docs/WEB_UI_CONVENTIONS.md a11y gate vs a11y.spec.ts BASE_PAGES",
+      conventionsA11yGate,
+      a11yBase,
+    );
+  }
+  const conventionsA11yTotal = conventions.match(
+    /remaining (\d[\d,]*) routes \((\d[\d,]*) total\)/,
+  );
+  if (!conventionsA11yTotal) {
+    mismatches.push("docs/WEB_UI_CONVENTIONS.md a11y total: expected value not found");
+  } else {
+    check(
+      "docs/WEB_UI_CONVENTIONS.md a11y remaining vs a11y.spec.ts FULL_PAGES",
+      num(conventionsA11yTotal[1]),
+      a11yFull,
+    );
+    check(
+      "docs/WEB_UI_CONVENTIONS.md a11y total routes vs a11y.spec.ts",
+      num(conventionsA11yTotal[2]),
+      a11yTotal,
+    );
   }
 }
 
