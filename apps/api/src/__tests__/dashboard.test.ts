@@ -41,7 +41,6 @@ jest.mock("../middleware/org-access", () => ({
 import { getSupabaseAdmin } from "../services/supabase";
 
 const ORG_A = "00000000-0000-0000-0000-00000000000a";
-const ORG_B = "00000000-0000-0000-0000-00000000000b";
 
 type TableResults = Record<string, { data: unknown; error: unknown; count?: number }>;
 

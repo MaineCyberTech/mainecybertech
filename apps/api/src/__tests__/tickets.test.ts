@@ -475,7 +475,6 @@ describe("tickets routes", () => {
 
   describe("POST /bulk tenant scoping", () => {
     const ORG = "00000000-0000-0000-0000-000000000001";
-    const OTHER_ORG = "00000000-0000-0000-0000-000000000002";
     const OWNED_ID = "00000000-0000-0000-0000-0000000000a1";
     const FOREIGN_ID = "00000000-0000-0000-0000-0000000000b2";
 
