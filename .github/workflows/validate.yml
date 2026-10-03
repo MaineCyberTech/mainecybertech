@@ -35,10 +35,14 @@ jobs:
         # reviewed allowlist live in security/dependency-audit-policy.json.
         run: node scripts/audit-gate.mjs
       - name: License policy gate
-        # SBOM-P1-001: enforces security/license-policy.json over the full
-        # resolved tree (allowlist + documented exceptions).
+        # SBOM-P1-001: allowlist + documented exceptions from
+        # security/license-policy.json over the full resolved tree.
+        # Uses scripts/collect-licenses.mjs, NOT `pnpm licenses list --json`,
+        # which exits 1 on pnpm 10.34.x and writes an error document to stdout
+        # (ERR_PNPM_MISSING_PACKAGE_INDEX_FILE). test.yml/sbom.yml were fixed
+        # first; validate.yml was missed and blocked every deploy.
         run: |
-          pnpm licenses list --json > licenses.json
+          node scripts/collect-licenses.mjs --out licenses.json
           node scripts/license-gate.mjs licenses.json
 
       - name: Verify required branch-protection checks resolve

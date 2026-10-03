@@ -36,6 +36,17 @@ RUN corepack enable \
      || (sleep 20 && corepack prepare pnpm@10 --activate))
 RUN pnpm install --frozen-lockfile --filter=./apps/worker --prod --ignore-scripts
 
+# Runtime hardening (CTR-P1-001): drop npm/corepack/pnpm — the app runs `node`
+# directly. npm's bundled tree (tar 6.2.1 CRITICAL, minimatch, brace-expansion,
+# pacote, sigstore) and the corepack pnpm cache were the entire node-package
+# source of the image-scan findings; libcrypto3/libssl3 carry an Alpine fix.
+RUN apk upgrade --no-cache libcrypto3 libssl3 \
+ && rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack \
+           /usr/local/bin/pnpm /usr/local/bin/yarn /usr/local/bin/yarnpkg \
+           /root/.cache/node/corepack
+
 RUN chown -R appuser:appuser /app
 WORKDIR /app/apps/worker
 USER appuser
