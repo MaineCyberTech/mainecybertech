@@ -101,6 +101,12 @@ environment + E2E/migration gates; `develop` → dev). Re-enable push/PR trigger
 once the token is rotated and `prod-approval` has required reviewers configured
 in GitHub.
 
+A weekly **plan-only drift check** (`schedule`, Mondays 07:00 UTC) is wired in
+but stays dormant (`terraform-plan` is skipped) until the operator sets the
+repository variable `TF_DRIFT_PLAN_ENABLED=true` — do this after rotating
+`DO_API_TOKEN`. When enabled, the run fails if the plan is non-empty so drift is
+visible; it never applies (`CI-P2-002`).
+
 ## Best-effort and triage-only jobs
 
 - **Chromatic** — job-level `continue-on-error: true` because the Storybook

@@ -4,7 +4,8 @@ import { type Request, type Response, type NextFunction } from "express";
 export function securityHeaders(req: Request, res: Response, next: NextFunction) {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
-  res.setHeader("X-XSS-Protection", "1; mode=block");
+  // SEC-P3-001: X-XSS-Protection is deprecated and can introduce legacy
+  // filter issues; the CSP below is the supported control, so it is dropped.
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.setHeader("X-DNS-Prefetch-Control", "off");
@@ -28,9 +29,11 @@ export function securityHeaders(req: Request, res: Response, next: NextFunction)
       `default-src 'self'; script-src 'self' 'nonce-${nonce}' unpkg.com; style-src 'self' 'unsafe-inline' unpkg.com; img-src 'self' data: unpkg.com; font-src 'self' data:; connect-src 'self'`,
     );
   } else {
+    // SEC-P3-001: the non-Swagger surface returns JSON only, so inline styles
+    // are not needed; drop `'unsafe-inline'` from style-src.
     res.setHeader(
       "Content-Security-Policy",
-      `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'`,
+      `default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'`,
     );
   }
 

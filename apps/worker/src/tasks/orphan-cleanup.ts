@@ -16,6 +16,24 @@ const LIST_PAGE_SIZE = 100;
  */
 const MAX_LISTED = 10_000;
 
+/**
+ * Maximum number of keys per PostgREST `.in()` request. A single `IN (...)`
+ * with thousands of values can exceed request-size limits or time out, which
+ * would fail the reference read and (correctly) skip the bucket, so the task
+ * would never clean anything. Chunking keeps the reference lookup bounded
+ * while preserving the fail-closed behaviour (DATA-P2-002).
+ */
+const IN_CHUNK_SIZE = 200;
+
+/** Split an array into fixed-size chunks. */
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    out.push(items.slice(i, i + size));
+  }
+  return out;
+}
+
 /** Storage entry shape returned by `list()`. Folders have a null/absent `id`. */
 type StorageEntry = { name: string; id?: string | null };
 
@@ -132,29 +150,30 @@ export async function orphanCleanup(_payload: Record<string, unknown>): Promise<
           // A path is referenced if it appears in ANY of: the live document
           // row, any version row (FILE-P1-003), or a file-request upload row
           // (FILE-P1-002). Objects under a folder are listed recursively, so
-          // the reconciliation set must cover the same full paths.
-          const { data: docs, error: docsError } = await supabase
-            .from("documents")
-            .select("storage_path")
-            .in("storage_path", paths);
-          if (docsError) throw new Error(docsError.message);
-
-          const { data: versions, error: versionsError } = await supabase
-            .from("document_versions")
-            .select("storage_path")
-            .in("storage_path", paths);
-          if (versionsError) throw new Error(versionsError.message);
-
-          const { data: requestUploads, error: uploadsError } = await supabase
-            .from("file_request_uploads")
-            .select("storage_path")
-            .in("storage_path", paths);
-          if (uploadsError) throw new Error(uploadsError.message);
+          // the reconciliation set must cover the same full paths. The lookup
+          // is chunked because `paths` can hold thousands of keys
+          // (DATA-P2-002).
+          const fetchReferencedPaths = async (
+            table: "documents" | "document_versions" | "file_request_uploads",
+          ): Promise<string[]> => {
+            const found: string[] = [];
+            for (const chunk of chunkArray(paths, IN_CHUNK_SIZE)) {
+              const { data, error } = await supabase
+                .from(table)
+                .select("storage_path")
+                .in("storage_path", chunk);
+              if (error) throw new Error(error.message);
+              for (const row of data ?? []) {
+                if (row.storage_path) found.push(row.storage_path);
+              }
+            }
+            return found;
+          };
 
           referenced = new Set<string>([
-            ...(docs ?? []).map((d) => d.storage_path),
-            ...(versions ?? []).map((v) => v.storage_path),
-            ...(requestUploads ?? []).map((u) => u.storage_path),
+            ...(await fetchReferencedPaths("documents")),
+            ...(await fetchReferencedPaths("document_versions")),
+            ...(await fetchReferencedPaths("file_request_uploads")),
           ]);
         } else {
           const { data: profiles, error: profilesError } = await supabase
