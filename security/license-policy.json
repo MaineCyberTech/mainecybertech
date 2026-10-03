@@ -58,25 +58,36 @@
   "exceptions": [
     {
       "license": "MPL-2.0",
-      "packages": ["axe-core", "@axe-core/playwright"],
+      "packages": [
+        "axe-core",
+        "@axe-core/playwright"
+      ],
       "reason": "Test-only accessibility checker (axe-core) reached through Playwright/a11y tooling. Weak file-level copyleft: we do not modify or redistribute source files, and it is not present in production images. Accepted 2026-10-02.",
       "expires": "2027-10-02"
     },
     {
-      "license": "Apache-2.0 AND LGPL-3.0-or-later",
-      "packages": ["@img/sharp-win32-x64"],
-      "reason": "Sharp's Windows-only prebuilt native binary (optional platform dependency, pulled via the sharp override). Not loaded on Linux production images; LGPL obligations attach to the binary, which we do not modify or bundle. Accepted 2026-10-02; revisit if sharp is used on Windows in a distributed artifact.",
-      "expires": "2027-10-02"
-    },
-    {
       "license": "FSL-1.1-MIT",
-      "packages": ["@sentry/cli", "@sentry/cli-win32-x64"],
+      "packages": [
+        "@sentry/cli",
+        "@sentry/cli-win32-x64",
+        "@sentry/cli-linux-x64"
+      ],
       "reason": "Sentry CLI, a build/CI/observability tooling dependency, not linked into or redistributed with the product. FSL is source-available (not OSI) and converts to MIT after its change date. Accepted 2026-10-02; re-evaluate if Sentry CLI becomes part of a shipped artifact.",
       "expires": "2027-10-02"
     },
     {
+      "license": "LGPL-3.0-or-later",
+      "packages": [
+        "@img/sharp-libvips-linux-x64"
+      ],
+      "reason": "libvips prebuilt binary pulled in on Linux by sharp@0.35.5, which is reached ONLY through @storybook/nextjs (a root devDependency) - verified with `pnpm why sharp`. No app declares sharp as a runtime dependency (apps/api, apps/web, apps/worker, packages/sdk, packages/ui all have none), and the production Dockerfiles build with `--prod`, which excludes Storybook. So this is a dev/build-time-only LGPL exposure and is never present in a shipped runtime image. LGPL obligations attach to the binary, which we do not modify. Accepted 2026-10-03; re-check if sharp ever becomes a production dependency or is added to a shipped image.",
+      "expires": "2027-10-03"
+    },
+    {
       "license": "UNKNOWN",
-      "packages": ["browser-assert"],
+      "packages": [
+        "browser-assert"
+      ],
       "reason": "browser-assert@1.2.1 declares NO license field at all in its published package.json (verified by reading the installed package), so it is reported as UNKNOWN rather than as a denied license. It is a dev-only transitive dependency of Storybook (@storybook/core, @storybook/builder-webpack5), never present in production images or shipped artifacts. Its repository (socialally/browser-assert) carries no LICENSE file. Accepted 2026-10-02 as a packaging omission, not a policy claim; replace or vendor it if Storybook drops it, and re-check if it ever enters a production path.",
       "expires": "2027-10-02"
     }
