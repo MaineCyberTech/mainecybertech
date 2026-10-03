@@ -677,6 +677,7 @@ jobs:
               sed 's|tls /etc/caddy/certs/fullchain.pem /etc/caddy/certs/privkey.pem|tls internal|' /opt/mct-portal/repo/$CADDYFILE > /opt/mct-portal/Caddyfile
             fi
             cp /opt/mct-portal/repo/infra/digitalocean/docker-compose.yml /opt/mct-portal/docker-compose.yml
+            cp /opt/mct-portal/repo/infra/digitalocean/redis-entrypoint.sh /opt/mct-portal/redis-entrypoint.sh
             cp /opt/mct-portal/repo/infra/digitalocean/prometheus.yml /opt/mct-portal/prometheus.yml
             cp /opt/mct-portal/repo/infra/digitalocean/prometheus.rules.yml /opt/mct-portal/prometheus.rules.yml
             # IR-P0-003: the alertmanager service in docker-compose.yml mounts

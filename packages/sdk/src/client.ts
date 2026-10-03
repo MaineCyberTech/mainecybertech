@@ -39,6 +39,26 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Generate a unique idempotency key.
+ *
+ * Used for unsafe (POST/PUT/PATCH/DELETE) requests so a retry after a transient
+ * failure (timeout, 502/503/504) replays instead of re-executing. The API's
+ * idempotency middleware (apps/api/src/middleware/idempotency.ts) requires the
+ * header to be a string of at most 256 chars; a UUID is 36.
+ *
+ * Falls back to a random string where `crypto.randomUUID` is unavailable (older
+ * browsers / non-secure contexts). The key only needs to be unique, not
+ * cryptographically strong, but we prefer the platform CSPRNG when present.
+ */
+function newIdempotencyKey(): string {
+  const c = globalThis.crypto as Crypto | undefined;
+  if (c && typeof c.randomUUID === "function") {
+    return c.randomUUID();
+  }
+  return `mct-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 14)}`;
+}
+
 export class ApiClient {
   private baseUrl: string;
   private getToken: () => Promise<string | null>;
@@ -146,6 +166,15 @@ export class ApiClient {
     }
     if (activeOrgId) {
       headers["X-Active-Org"] = activeOrgId;
+    }
+
+    // Unsafe methods get an idempotency key so a retry of the SAME logical
+    // request replays the stored response instead of creating a duplicate. The
+    // key is generated once here, OUTSIDE executeFetch's retry loop, so every
+    // attempt carries the same value - generating it per-attempt would defeat
+    // the mechanism entirely.
+    if (this.unsafeMethods.has(method)) {
+      headers["Idempotency-Key"] = newIdempotencyKey();
     }
 
     return this.executeFetch<T>(url, {
@@ -262,6 +291,9 @@ export class ApiClient {
       if (csrfToken) headers["X-CSRF-Token"] = csrfToken;
     }
     if (activeOrgId) headers["X-Active-Org"] = activeOrgId;
+    // Same reasoning as `request`: an upload retried after a timeout must not
+    // create a second object, so the key is minted once for the whole call.
+    headers["Idempotency-Key"] = newIdempotencyKey();
 
     return this.executeFetch<T>(url, {
       method: "POST",

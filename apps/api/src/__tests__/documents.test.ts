@@ -183,6 +183,72 @@ describe("documents routes", () => {
 
       expect(res.status).toBe(400);
     });
+
+    // --- FILE-P2-002: storageBucket/storagePath are not free-form ------------
+
+    it("rejects a storageBucket other than 'documents' (e.g. the public avatars bucket)", async () => {
+      mockFrom({ data: null, error: null });
+
+      const res = await request(app)
+        .post("/api/v1/documents")
+        .set("Authorization", "Bearer token-123")
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          name: "Sneaky",
+          storageBucket: "avatars",
+          storagePath: "orgs/00000000-0000-0000-0000-000000000001/x.png",
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects a storagePath that does not look like orgs/<orgId>/<file>", async () => {
+      mockFrom({ data: null, error: null });
+
+      const res = await request(app)
+        .post("/api/v1/documents")
+        .set("Authorization", "Bearer token-123")
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          name: "Sneaky",
+          storageBucket: "documents",
+          storagePath: "../../etc/passwd",
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects a storagePath pointing at ANOTHER org's prefix", async () => {
+      mockFrom({ data: null, error: null });
+
+      const res = await request(app)
+        .post("/api/v1/documents")
+        .set("Authorization", "Bearer token-123")
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          name: "Cross-tenant",
+          storageBucket: "documents",
+          storagePath: "orgs/00000000-0000-0000-0000-000000000099/secret.pdf",
+        });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("accepts a well-formed storage path for the caller's own org", async () => {
+      mockFrom({ data: { ...DOCUMENT, id: "doc-ok" }, error: null });
+
+      const res = await request(app)
+        .post("/api/v1/documents")
+        .set("Authorization", "Bearer token-123")
+        .send({
+          organizationId: "00000000-0000-0000-0000-000000000001",
+          name: "Legit",
+          storageBucket: "documents",
+          storagePath: "orgs/00000000-0000-0000-0000-000000000001/report.pdf",
+        });
+
+      expect(res.status).toBe(201);
+    });
   });
 
   describe("PATCH /:id", () => {
@@ -210,6 +276,30 @@ describe("documents routes", () => {
         .send({ name: "Updated" });
 
       expect(res.status).toBe(404);
+    });
+
+    // --- FILE-P2-002 on the update path --------------------------------------
+
+    it("rejects an update that rewrites storagePath to another org's prefix", async () => {
+      mockFrom({ data: DOCUMENT, error: null });
+
+      const res = await request(app)
+        .patch(`/api/v1/documents/${DOCUMENT.id}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ storagePath: "orgs/00000000-0000-0000-0000-000000000099/secret.pdf" });
+
+      expect(res.status).toBe(400);
+    });
+
+    it("rejects an update that sets storageBucket to a public bucket", async () => {
+      mockFrom({ data: DOCUMENT, error: null });
+
+      const res = await request(app)
+        .patch(`/api/v1/documents/${DOCUMENT.id}`)
+        .set("Authorization", "Bearer token-123")
+        .send({ storageBucket: "logos" });
+
+      expect(res.status).toBe(400);
     });
   });
 

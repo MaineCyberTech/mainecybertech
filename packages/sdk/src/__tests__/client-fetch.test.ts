@@ -95,4 +95,88 @@ describe("ApiClient getBlob / postFormData", () => {
     const client = new ApiClient(base);
     await expect(client.postFormData("/api/v1/x", new FormData())).rejects.toBeInstanceOf(ApiError);
   });
+
+  it("sends an Idempotency-Key on postFormData", async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(200, { success: true, data: { id: "1" } }));
+    const client = new ApiClient(base);
+
+    await client.postFormData("/api/v1/documents/upload", new FormData());
+
+    const headers = (mockFetch.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect(headers["Idempotency-Key"]).toBeTruthy();
+    // The API rejects keys longer than 256 chars.
+    expect(headers["Idempotency-Key"].length).toBeLessThanOrEqual(256);
+  });
+
+  it("does NOT send an Idempotency-Key on GET", async () => {
+    mockFetch.mockResolvedValueOnce(jsonResponse(200, { success: true, data: {} }));
+    const client = new ApiClient(base);
+
+    await client.get("/api/v1/documents");
+
+    const headers = (mockFetch.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect(headers["Idempotency-Key"]).toBeUndefined();
+  });
+});
+
+describe("ApiClient idempotency across retries", () => {
+  const base = { baseUrl: "https://api.test.com", retries: { initialDelayMs: 1 } };
+
+  // Regression: the key must stay CONSTANT across retries of one logical
+  // request. Minting it inside the retry loop (or per attempt) produces a new
+  // key each time, so the server treats each retry as a fresh request and the
+  // duplicate-create this mechanism exists to prevent still happens.
+  it("reuses the SAME key across retries of a POST", async () => {
+    jest.useRealTimers();
+    const mockFetch = jest.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+    mockFetch
+      .mockResolvedValueOnce(
+        jsonResponse(503, {
+          success: false,
+          error: { code: "UNAVAILABLE", message: "down", status: 503 },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse(503, {
+          success: false,
+          error: { code: "UNAVAILABLE", message: "down", status: 503 },
+        }),
+      )
+      .mockResolvedValue(jsonResponse(200, { success: true, data: { id: "1" } }));
+
+    const client = new ApiClient({
+      baseUrl: "https://api.test.com",
+      retries: { initialDelayMs: 1 },
+    });
+
+    await client.post("/api/v1/widgets", { name: "w" });
+
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+    const keys = mockFetch.mock.calls.map(
+      (c) => ((c[1] as RequestInit).headers as Record<string, string>)["Idempotency-Key"],
+    );
+    expect(keys[0]).toBeTruthy();
+    expect(keys[1]).toBe(keys[0]);
+    expect(keys[2]).toBe(keys[0]);
+  });
+
+  it("uses a DIFFERENT key for a separate POST", async () => {
+    const mockFetch = jest.fn();
+    globalThis.fetch = mockFetch as unknown as typeof fetch;
+    mockFetch
+      .mockResolvedValue(jsonResponse(200, { success: true, data: { id: "1" } }));
+
+    const client = new ApiClient(base);
+    await client.post("/api/v1/widgets", { name: "a" });
+    await client.post("/api/v1/widgets", { name: "b" });
+
+    const keyOf = (i: number) =>
+      ((mockFetch.mock.calls[i][1] as RequestInit).headers as Record<string, string>)[
+        "Idempotency-Key"
+      ];
+    expect(keyOf(0)).toBeTruthy();
+    expect(keyOf(1)).not.toBe(keyOf(0));
+  }, 20_000);
 });
