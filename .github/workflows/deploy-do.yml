@@ -27,6 +27,7 @@ permissions:
   contents: read
   packages: write
   id-token: write
+  attestations: write
   actions: write
 
 env:
@@ -109,7 +110,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
-          terraform_version: 1.9
+          terraform_version: 1.15.9
       - name: Resolve droplet IP (DO API, fallback Terraform state)
         id: tf
         env:
@@ -189,7 +190,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+      - id: build-api
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/api/Dockerfile
@@ -197,6 +199,26 @@ jobs:
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Scan mct-api image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001): the fs scan cannot see base-image OS
+        # packages or npm-in-image contents.
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api:${{ env.IMAGE_TAG }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+      - name: Attest mct-api provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-api
+          subject-digest: ${{ steps.build-api.outputs.digest }}
+          push-to-registry: true
 
   build-worker:
     needs: [setup]
@@ -211,7 +233,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+      - id: build-worker
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/worker/Dockerfile
@@ -219,6 +242,25 @@ jobs:
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Scan mct-worker image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker:${{ env.IMAGE_TAG }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+      - name: Attest mct-worker provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-worker
+          subject-digest: ${{ steps.build-worker.outputs.digest }}
+          push-to-registry: true
 
   build-web:
     needs: [setup]
@@ -233,7 +275,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
-      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+      - id: build-web
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
         with:
           context: .
           file: apps/web/Dockerfile
@@ -248,8 +291,153 @@ jobs:
           tags: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Scan mct-web image (CRITICAL/HIGH)
+        # Image-layer scan (CTR-P1-001).
+        uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: image
+          image-ref: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web:${{ env.IMAGE_TAG }}
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          format: table
+      - name: Attest mct-web provenance (CTR-P1-003)
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8
+        with:
+          subject-name: ${{ needs.setup.outputs.ghcr_prefix }}/mct-web
+          subject-digest: ${{ steps.build-web.outputs.digest }}
+          push-to-registry: true
 
   # ===== Deployment gates =====
+  # verify-attestations: proves each image that deploy is about to pull was
+  # built by THIS repository's Actions workflows (CTR-P1-003). Previously the
+  # provenance attestation was only produced, never checked: a substituted or
+  # tampered GHCR image would be pulled by tag and run with no verification.
+  # This job resolves the pushed tag to its immutable digest and runs
+  # `gh attestation verify`, the standard supported check for OCI images.
+  # deploy `needs:` this job, so any failure here blocks the deploy cleanly
+  # and shows up as its own node in the workflow graph.
+  verify-attestations:
+    needs: [setup, build-api, build-worker, build-web]
+    # Runs for normal deploys (after the builds) AND for rollback dispatches.
+    # always(): evaluate even when a sibling build was legitimately skipped.
+    # !failure() && !cancelled(): never verify after a failed build.
+    if: ${{ always() && !failure() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    steps:
+      - name: Log in to GHCR
+        # Verification requires registry auth: gh attestation verify reads the
+        # attestation bundle from the OCI referrers API for the image, and the
+        # preceding `docker buildx imagetools inspect` resolves the tag against
+        # GHCR. Only `packages: read` is needed here (no write).
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup buildx
+        # `docker buildx imagetools inspect` resolves the pushed tag to the
+        # immutable digest the attestation is bound to.
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - name: Verify build provenance for each image (fail closed)
+        env:
+          # Non-secret: the tag (commit SHA) and repository slug. Passed via env
+          # so the shell blocks below are not built from interpolated input.
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+          GHCR_PREFIX: ${{ needs.setup.outputs.ghcr_prefix }}
+          REPO_SLUG: ${{ github.repository }}
+          # Rollback dispatch context: if set, this run deploys an older image
+          # that may predate the attestation step entirely.
+          ROLLBACK_SHA: ${{ github.event.inputs.rollback_sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "${ROLLBACK_SHA:-}" ]; then
+            # ------------------------------------------------------------------
+            # ROLLBACK PATH (fail closed, with an explicit allow-list)
+            # ------------------------------------------------------------------
+            # A rollback deploys an image built by a PAST run. Images built
+            # before CTR-P1-003 have no attestation.
+            #
+            # An earlier revision of this step tried to "verify when an
+            # attestation exists, tolerate its absence". That is NOT
+            # implementable: `gh attestation verify` signals every failure mode
+            # - absent, malformed, wrong repo, wrong signer workflow, digest
+            # mismatch - with the same non-zero exit status, so the shell cannot
+            # tell "missing" from "invalid". Putting the command in an `if`
+            # therefore also disabled `set -e` for it and let a FORGED or
+            # wrong-workflow attestation through, which is the opposite of the
+            # stated intent.
+            #
+            # Instead: a rollback image must EITHER verify normally, OR its
+            # digest must be listed in the explicit legacy allow-list below and
+            # recorded in the job summary. A bad attestation always fails,
+            # because verification is never bypassed - it is either satisfied or
+            # the image is a named, reviewed exception.
+            #
+            # To authorise a legacy rollback, add the image digest (sha256:...)
+            # to the matching list here in a reviewed PR. Do NOT add a digest
+            # whose attestation merely failed to verify.
+            LEGACY_MCT_API=""
+            LEGACY_MCT_WORKER=""
+            LEGACY_MCT_WEB=""
+            echo "::warning::Rollback deploy of $ROLLBACK_SHA. Images without a valid attestation must be allow-listed (LEGACY_MCT_*)."
+            for img in mct-api mct-worker mct-web; do
+              REF="${GHCR_PREFIX}/${img}:${IMAGE_TAG}"
+              DIGEST=$(docker buildx imagetools inspect "$REF" --format '{{.Manifest.Digest}}')
+              if [ -z "$DIGEST" ]; then
+                echo "::error::Could not resolve a digest for $REF"
+                exit 1
+              fi
+              echo "Resolved $REF -> $DIGEST"
+              case "$img" in
+                mct-api)    ALLOW="$LEGACY_MCT_API" ;;
+                mct-worker) ALLOW="$LEGACY_MCT_WORKER" ;;
+                mct-web)    ALLOW="$LEGACY_MCT_WEB" ;;
+              esac
+              if [ -n "$ALLOW" ] && [ "$ALLOW" = "$DIGEST" ]; then
+                echo "::warning::Legacy rollback image allow-listed (no attestation expected): $img@$DIGEST"
+                echo "### Legacy rollback (allow-listed, unverified): $img@$DIGEST" >> "$GITHUB_STEP_SUMMARY"
+                continue
+              fi
+              # Fail closed. `set -e` applies: a non-zero verify aborts the job.
+              gh attestation verify "oci://${GHCR_PREFIX}/${img}@${DIGEST}" \
+                --repo "$REPO_SLUG" \
+                --signer-workflow "$REPO_SLUG/.github/workflows/deploy-do.yml" \
+                --source-digest "$IMAGE_TAG"
+              echo "Attestation VERIFIED for ${img}@${DIGEST}"
+            done
+          else
+            # ------------------------------------------------------------------
+            # NORMAL DEPLOY (fail closed)
+            # ------------------------------------------------------------------
+            # No rollback input: this is a fresh build from THIS run, which
+            # always attests. Any missing/invalid/unverifiable attestation is a
+            # hard failure and blocks the deploy. `set -e` means a non-zero
+            # `gh attestation verify` aborts the job.
+            for img in mct-api mct-worker mct-web; do
+              REF="${GHCR_PREFIX}/${img}:${IMAGE_TAG}"
+              DIGEST=$(docker buildx imagetools inspect "$REF" --format '{{.Manifest.Digest}}')
+              if [ -z "$DIGEST" ]; then
+                echo "::error::Could not resolve a digest for $REF"
+                exit 1
+              fi
+              echo "Resolved $REF -> $DIGEST"
+              gh attestation verify "oci://${GHCR_PREFIX}/${img}@${DIGEST}" \
+                --repo "$REPO_SLUG" \
+                --signer-workflow "$REPO_SLUG/.github/workflows/deploy-do.yml" \
+                --source-digest "$IMAGE_TAG"
+              echo "Attestation VERIFIED for ${img}@${DIGEST}"
+            done
+          fi
+
   # validate: always runs (test + lint + typecheck) for every deploy
   validate:
     needs: [setup]
@@ -270,12 +458,19 @@ jobs:
     secrets: inherit
 
   deploy:
-    needs: [setup, resolve-ip, validate, e2e-gate, migrate-gate, build-api, build-worker, build-web]
-    # always(): run even when gates are skipped (dev); !failure() && !cancelled(): never run after a failure
+    needs: [setup, resolve-ip, validate, e2e-gate, migrate-gate, build-api, build-worker, build-web, verify-attestations]
+    # always(): run even when gates are skipped (dev); !failure() && !cancelled(): never run after a failure.
+    # A failed verify-attestations is a failure(), so the deploy is blocked.
     if: ${{ always() && !failure() && !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    environment: ${{ needs.setup.outputs.name }}
+    # Prod deploys use the same protected environment as the Terraform prod
+    # apply (`terraform-do.yml` uses `prod-approval`) so a single required-reviewer
+    # gate covers both app and infra changes. The approval itself is a GitHub
+    # repository setting (Settings -> Environments -> prod-approval -> Required
+    # reviewers) and cannot be enforced from this file. Dev keeps the plain `dev`
+    # environment (no approval).
+    environment: ${{ needs.setup.outputs.name == 'prod' && 'prod-approval' || 'dev' }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
@@ -301,6 +496,11 @@ jobs:
           M365_TENANT_ID: ${{ secrets.M365_TENANT_ID }}
           M365_CLIENT_ID: ${{ secrets.M365_CLIENT_ID }}
           M365_CLIENT_SECRET: ${{ secrets.M365_CLIENT_SECRET }}
+          M365_CLIENT_STATE: ${{ secrets.M365_CLIENT_STATE }}
+          JIRA_WEBHOOK_SECRET: ${{ secrets.JIRA_WEBHOOK_SECRET }}
+          JSM_WEBHOOK_SECRET: ${{ secrets.JSM_WEBHOOK_SECRET }}
+          METRICS_TOKEN: ${{ secrets.METRICS_TOKEN }}
+          MFA_ENFORCEMENT_ENABLED: ${{ secrets.MFA_ENFORCEMENT_ENABLED }}
           PUBLIC_TRAFFIC_WEBHOOK_URL: ${{ secrets.PUBLIC_TRAFFIC_WEBHOOK_URL }}
           PUBLIC_LEAD_WEBHOOK_URL: ${{ secrets.PUBLIC_LEAD_WEBHOOK_URL }}
           JSM_DOMAIN: ${{ secrets.JSM_DOMAIN }}
@@ -316,6 +516,17 @@ jobs:
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
           RLS_READS_ENABLED: ${{ secrets.RLS_READS_ENABLED }}
           RLS_WRITES_ENABLED: ${{ secrets.RLS_WRITES_ENABLED }}
+          # IR-P0-003 alerting path. These are the same variable names the
+          # alertmanager service in docker-compose.yml expects; without them it
+          # silently falls back to a no-op loopback URL and the dead-man's switch
+          # never reaches an external service. Forwarded as env vars (not
+          # interpolated into the script) like every other secret above.
+          ALERTMANAGER_WATCHDOG_WEBHOOK_URL: ${{ secrets.ALERTMANAGER_WATCHDOG_WEBHOOK_URL }}
+          ALERTMANAGER_CRITICAL_WEBHOOK_URL: ${{ secrets.ALERTMANAGER_CRITICAL_WEBHOOK_URL }}
+          ALERTMANAGER_DEFAULT_WEBHOOK_URL: ${{ secrets.ALERTMANAGER_DEFAULT_WEBHOOK_URL }}
+          ALERTMANAGER_SLACK_API_URL: ${{ secrets.ALERTMANAGER_SLACK_API_URL }}
+          # Channel name is non-secret config, so it comes from repository vars.
+          ALERTMANAGER_SLACK_CHANNEL: ${{ vars.ALERTMANAGER_SLACK_CHANNEL }}
           # Forwarded so the remote script never interpolates these into the
           # command text (a branch name may contain shell metacharacters).
           DEPLOY_REF: ${{ github.ref_name }}
@@ -330,7 +541,7 @@ jobs:
           # Secrets are forwarded as environment variables rather than being
           # interpolated into the remote script, so a value containing $,
           # backticks or quotes cannot execute on the droplet.
-          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
+          envs: "SUPABASE_URL,JWT_SECRET,SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY,STRIPE_SECRET_KEY,STRIPE_WEBHOOK_SECRET,SENTRY_DSN,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,EMAIL_FROM,JIRA_BASE_URL,JIRA_EMAIL,JIRA_API_TOKEN,JSM_BASE_URL,M365_TENANT_ID,M365_CLIENT_ID,M365_CLIENT_SECRET,M365_CLIENT_STATE,JIRA_WEBHOOK_SECRET,JSM_WEBHOOK_SECRET,METRICS_TOKEN,MFA_ENFORCEMENT_ENABLED,PUBLIC_TRAFFIC_WEBHOOK_URL,PUBLIC_LEAD_WEBHOOK_URL,JSM_DOMAIN,JSM_EMAIL,JSM_API_TOKEN,JSM_SERVICEDESK_ID,JSM_REQUEST_TYPE_ID,APP_DOMAIN,API_DOMAIN,CORS_ORIGIN,REDIS_PASSWORD,FIELD_ENCRYPTION_KEY,TURNSTILE_SECRET_KEY,RLS_READS_ENABLED,RLS_WRITES_ENABLED,ALERTMANAGER_WATCHDOG_WEBHOOK_URL,ALERTMANAGER_CRITICAL_WEBHOOK_URL,ALERTMANAGER_DEFAULT_WEBHOOK_URL,ALERTMANAGER_SLACK_API_URL,ALERTMANAGER_SLACK_CHANNEL,DEPLOY_REF,REPO_SLUG,GHCR_TOKEN,GHCR_ACTOR"
           script: |
             set -e
             timeout 60 cloud-init status --wait 2>/dev/null || true
@@ -372,6 +583,11 @@ jobs:
               printf 'M365_TENANT_ID=%s\n' "$M365_TENANT_ID"
               printf 'M365_CLIENT_ID=%s\n' "$M365_CLIENT_ID"
               printf 'M365_CLIENT_SECRET=%s\n' "$M365_CLIENT_SECRET"
+              printf 'M365_CLIENT_STATE=%s\n' "$M365_CLIENT_STATE"
+              printf 'JIRA_WEBHOOK_SECRET=%s\n' "$JIRA_WEBHOOK_SECRET"
+              printf 'JSM_WEBHOOK_SECRET=%s\n' "$JSM_WEBHOOK_SECRET"
+              printf 'METRICS_TOKEN=%s\n' "$METRICS_TOKEN"
+              printf 'MFA_ENFORCEMENT_ENABLED=%s\n' "${MFA_ENFORCEMENT_ENABLED:-false}"
               printf 'PUBLIC_TRAFFIC_WEBHOOK_URL=%s\n' "$PUBLIC_TRAFFIC_WEBHOOK_URL"
               printf 'PUBLIC_LEAD_WEBHOOK_URL=%s\n' "$PUBLIC_LEAD_WEBHOOK_URL"
               printf 'JSM_DOMAIN=%s\n' "$JSM_DOMAIN"
@@ -387,8 +603,36 @@ jobs:
               printf 'TURNSTILE_SECRET_KEY=%s\n' "$TURNSTILE_SECRET_KEY"
               printf 'RLS_READS_ENABLED=%s\n' "$RLS_READS_ENABLED"
               printf 'RLS_WRITES_ENABLED=%s\n' "$RLS_WRITES_ENABLED"
+              printf 'ALERTMANAGER_WATCHDOG_WEBHOOK_URL=%s\n' "$ALERTMANAGER_WATCHDOG_WEBHOOK_URL"
+              printf 'ALERTMANAGER_CRITICAL_WEBHOOK_URL=%s\n' "$ALERTMANAGER_CRITICAL_WEBHOOK_URL"
+              printf 'ALERTMANAGER_DEFAULT_WEBHOOK_URL=%s\n' "$ALERTMANAGER_DEFAULT_WEBHOOK_URL"
+              printf 'ALERTMANAGER_SLACK_API_URL=%s\n' "$ALERTMANAGER_SLACK_API_URL"
+              printf 'ALERTMANAGER_SLACK_CHANNEL=%s\n' "$ALERTMANAGER_SLACK_CHANNEL"
             } >> /opt/mct-portal/.env
             chmod 600 /opt/mct-portal/.env
+            # IR-P0-003 fail-closed guard: the whole point of the dead-man's
+            # switch is that a silent failure of the monitoring path must be
+            # detectable. Compose would happily fall back to a no-op loopback URL
+            # (http://127.0.0.1:1/noop) and the deploy would look green while
+            # NOTHING could ever page us off-box. A missing watchdog URL in
+            # PRODUCTION is a configuration error, not an optional feature, so
+            # fail the deploy rather than ship an unmonitored production stack.
+            # Dev warns instead, so iteration is not blocked on provisioning an
+            # external heartbeat. (Critical/default/Slack receivers stay optional
+            # everywhere: their absence is visible inside Alertmanager, and the
+            # watchdog still routes.)
+            if [ -z "${ALERTMANAGER_WATCHDOG_WEBHOOK_URL:-}" ]; then
+              if [ "${{ needs.setup.outputs.name }}" = "prod" ]; then
+                echo "ERROR: ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty." >&2
+                echo "IR-P0-003 requires an EXTERNAL dead-man's-switch URL (not on this droplet)." >&2
+                echo "Set the repository/environment secret and re-run the deploy." >&2
+                exit 1
+              fi
+              echo "WARNING: ALERTMANAGER_WATCHDOG_WEBHOOK_URL is empty in the '${{ needs.setup.outputs.name }}' environment — no off-box dead-man's switch. Production deploys will fail until it is set." >&2
+            fi
+            if [ -z "${ALERTMANAGER_CRITICAL_WEBHOOK_URL:-}" ]; then
+              echo "WARNING: ALERTMANAGER_CRITICAL_WEBHOOK_URL is empty — critical alerts have no delivery path." >&2
+            fi
             echo "Droplet ready"
 
       - name: Deploy containers
@@ -435,6 +679,11 @@ jobs:
             cp /opt/mct-portal/repo/infra/digitalocean/docker-compose.yml /opt/mct-portal/docker-compose.yml
             cp /opt/mct-portal/repo/infra/digitalocean/prometheus.yml /opt/mct-portal/prometheus.yml
             cp /opt/mct-portal/repo/infra/digitalocean/prometheus.rules.yml /opt/mct-portal/prometheus.rules.yml
+            # IR-P0-003: the alertmanager service in docker-compose.yml mounts
+            # ./alertmanager.tmpl.yml read-only. If it is not copied, compose
+            # creates a directory at that path and the container fails to start
+            # (or, worse, the alerting path is silently absent).
+            cp /opt/mct-portal/repo/infra/digitalocean/alertmanager.tmpl.yml /opt/mct-portal/alertmanager.tmpl.yml
             cd /opt/mct-portal
             # Remember what is currently running so a failed deploy can revert.
             PREV_TAG=$(docker inspect --format '{{.Config.Image}}' mct-portal-api-1 2>/dev/null | sed 's/.*://')
@@ -456,7 +705,7 @@ jobs:
             }
             healthy=0
             for attempt in $(seq 1 18); do
-              if [ "$(container_health api)" = "healthy" ] && [ "$(container_health web)" = "healthy" ]; then
+              if [ "$(container_health api)" = "healthy" ] && [ "$(container_health web)" = "healthy" ] && [ "$(container_health worker)" = "healthy" ]; then
                 healthy=1
                 echo "Health checks passed (attempt $attempt)"
                 break
@@ -513,12 +762,22 @@ jobs:
             exit 1
           fi
           echo "Worker health check via SSH..."
-          wcode=$($SSH \
-            "docker exec mct-portal-worker-1 wget -qO- http://localhost:3001/health >/dev/null 2>&1 && echo 200 || echo 000" 2>/dev/null | tr -d '\r\n' || echo "000")
-          if [ "$wcode" = "200" ]; then
-            echo "Worker healthy (HTTP 200)"
-          else
-            echo "Warning: Worker health check returned HTTP $wcode (non-fatal — worker is restart-loop tolerant)"
+          worker_ok=""
+          for i in $(seq 1 12); do
+            wcode=$($SSH \
+              "docker exec mct-portal-worker-1 wget -qO- http://localhost:3001/health >/dev/null 2>&1 && echo 200 || echo 000" 2>/dev/null | tr -d '\r\n' || echo "000")
+            if [ "$wcode" = "200" ]; then
+              echo "Worker healthy after $((i*5))s (HTTP 200)"; worker_ok=1; break
+            fi
+            echo "Worker attempt $i/12: HTTP $wcode"; sleep 5
+          done
+          if [ -z "$worker_ok" ]; then
+            echo "===== WORKER CONTAINER LOGS START ====="
+            $SSH "docker compose -p mct-portal logs --tail=50 worker 2>/dev/null || docker logs mct-portal-worker-1 --tail 50 2>/dev/null || echo 'no worker container found'" || echo "SSH to droplet failed"
+            echo "===== WORKER CONTAINER LOGS END ====="
+            rm -f "$KEY_FILE"
+            echo "Worker health check failed" >&2
+            exit 1
           fi
           rm -f "$KEY_FILE"
           web_ok=""

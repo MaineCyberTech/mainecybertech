@@ -3,10 +3,12 @@ import { z, ZodError } from "zod";
 import { getSupabaseAdmin } from "../../services/supabase";
 import { requireAuth } from "../../middleware/auth";
 import { requireAdmin } from "../../middleware/admin";
+import { requireOrgAccess } from "../../middleware/org-access";
 import { AppError, success, failure } from "../../types";
 import { logAuditEvent } from "../../services/audit";
 import { type UpdateRow } from "../../lib/db-types";
 import { LIST_HARD_CAP } from "../../lib/pagination";
+import { applyOrgScope, resolveAdminTenantScope } from "../../lib/admin-scope";
 
 /** Store promotions (public reads + admin CRUD). Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
 export function registerPromotionRoutes(router: Router) {
@@ -61,125 +63,196 @@ export function registerPromotionRoutes(router: Router) {
   });
 
   // GET /api/v1/store/promotions/admin - list all promotions (admin)
-  router.get("/promotions/admin", requireAuth, requireAdmin, async (_req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const { data, error } = await supabase
-        .from("store_promotions")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(LIST_HARD_CAP);
+  router.get(
+    "/promotions/admin",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        // A single-org admin only sees their own tenant's promotions; global
+        // (organization_id IS NULL) rows are reserved for genuine cross-tenant
+        // admins (MT-P0-004).
+        const scope = await resolveAdminTenantScope(req);
+        let query = getSupabaseAdmin().from("store_promotions").select("*");
+        query = applyOrgScope(query, "organization_id", scope);
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.json(success(data ?? []));
-    } catch (error) {
-      next(error);
-    }
-  });
+        const { data, error } = await query
+          .order("created_at", { ascending: false })
+          .limit(LIST_HARD_CAP);
+
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        res.json(success(data ?? []));
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   // POST /api/v1/store/promotions - create a promotion (admin)
-  router.post("/promotions", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const parsed = createPromotionSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
-      const { data, error } = await supabase
-        .from("store_promotions")
-        .insert({
-          name: parsed.name,
-          badge_text: parsed.badgeText,
-          detail_text: parsed.detailText,
-          promo_type: parsed.promoType,
-          status: parsed.status,
-          terms: parsed.terms,
-          eligibility_targets: parsed.eligibilityTargets,
-          start_date: parsed.startDate || null,
-          end_date: parsed.endDate || null,
-        })
-        .select()
-        .single();
+  router.post(
+    "/promotions",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        const parsed = createPromotionSchema.parse(req.body);
+        const scope = await resolveAdminTenantScope(req);
+        const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+        if (!scope.allTenants && !allowedOrg) {
+          throw new AppError("FORBIDDEN", "No organization available for this promotion", 403);
+        }
+        const organizationId = scope.allTenants ? null : allowedOrg;
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
+        const supabase = getSupabaseAdmin();
+        const { data, error } = await supabase
+          .from("store_promotions")
+          .insert({
+            name: parsed.name,
+            badge_text: parsed.badgeText,
+            detail_text: parsed.detailText,
+            promo_type: parsed.promoType,
+            status: parsed.status,
+            terms: parsed.terms,
+            eligibility_targets: parsed.eligibilityTargets,
+            start_date: parsed.startDate || null,
+            end_date: parsed.endDate || null,
+            organization_id: organizationId,
+          })
+          .select()
+          .single();
 
-      await logAuditEvent({
-        action: "store.promotion.create",
-        entityType: "store_promotion",
-        entityId: data.id,
-        metadata: { name: parsed.name },
-      });
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-      res.status(201).json(success(data));
-    } catch (error) {
-      if (error instanceof ZodError) {
-        res
-          .status(400)
-          .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
-        return;
+        await logAuditEvent({
+          action: "store.promotion.create",
+          entityType: "store_promotion",
+          entityId: data.id,
+          metadata: { name: parsed.name },
+        });
+
+        res.status(201).json(success(data));
+      } catch (error) {
+        if (error instanceof ZodError) {
+          res
+            .status(400)
+            .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+          return;
+        }
+        next(error);
       }
-      next(error);
-    }
-  });
+    },
+  );
 
   // PATCH /api/v1/store/promotions/:id - update a promotion (admin)
-  router.patch("/promotions/:id", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const parsed = updatePromotionSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
+  router.patch(
+    "/promotions/:id",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        const parsed = updatePromotionSchema.parse(req.body);
+        const supabase = getSupabaseAdmin();
+        const scope = await resolveAdminTenantScope(req);
 
-      const updates: UpdateRow<"store_promotions"> = {};
-      if (parsed.name !== undefined) updates.name = parsed.name;
-      if (parsed.badgeText !== undefined) updates.badge_text = parsed.badgeText;
-      if (parsed.detailText !== undefined) updates.detail_text = parsed.detailText;
-      if (parsed.promoType !== undefined) updates.promo_type = parsed.promoType;
-      if (parsed.status !== undefined) updates.status = parsed.status;
-      if (parsed.terms !== undefined) updates.terms = parsed.terms;
-      if (parsed.eligibilityTargets !== undefined)
-        updates.eligibility_targets = parsed.eligibilityTargets;
-      if (parsed.startDate !== undefined) updates.start_date = parsed.startDate || null;
-      if (parsed.endDate !== undefined) updates.end_date = parsed.endDate || null;
-      updates.updated_at = new Date().toISOString();
+        const { data: existing } = await supabase
+          .from("store_promotions")
+          .select("organization_id")
+          .eq("id", String(req.params.id))
+          .maybeSingle();
+        if (!existing) throw new AppError("NOT_FOUND", "Promotion not found", 404);
+        if (!scope.allTenants) {
+          const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+          if (!allowedOrg || existing.organization_id !== allowedOrg) {
+            throw new AppError(
+              "FORBIDDEN",
+              "You can only manage promotions in your organization",
+              403,
+            );
+          }
+        }
 
-      const { data, error } = await supabase
-        .from("store_promotions")
-        .update(updates)
-        .eq("id", String(req.params.id))
-        .select()
-        .single();
+        const updates: UpdateRow<"store_promotions"> = {};
+        if (parsed.name !== undefined) updates.name = parsed.name;
+        if (parsed.badgeText !== undefined) updates.badge_text = parsed.badgeText;
+        if (parsed.detailText !== undefined) updates.detail_text = parsed.detailText;
+        if (parsed.promoType !== undefined) updates.promo_type = parsed.promoType;
+        if (parsed.status !== undefined) updates.status = parsed.status;
+        if (parsed.terms !== undefined) updates.terms = parsed.terms;
+        if (parsed.eligibilityTargets !== undefined)
+          updates.eligibility_targets = parsed.eligibilityTargets;
+        if (parsed.startDate !== undefined) updates.start_date = parsed.startDate || null;
+        if (parsed.endDate !== undefined) updates.end_date = parsed.endDate || null;
+        updates.updated_at = new Date().toISOString();
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      if (!data) throw new AppError("NOT_FOUND", "Promotion not found", 404);
+        const { data, error } = await supabase
+          .from("store_promotions")
+          .update(updates)
+          .eq("id", String(req.params.id))
+          .select()
+          .single();
 
-      res.json(success(data));
-    } catch (error) {
-      if (error instanceof ZodError) {
-        res
-          .status(400)
-          .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
-        return;
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        if (!data) throw new AppError("NOT_FOUND", "Promotion not found", 404);
+
+        res.json(success(data));
+      } catch (error) {
+        if (error instanceof ZodError) {
+          res
+            .status(400)
+            .json(failure("VALIDATION", "Validation failed", 400, { issues: error.issues }));
+          return;
+        }
+        next(error);
       }
-      next(error);
-    }
-  });
+    },
+  );
 
   // DELETE /api/v1/store/promotions/:id - delete a promotion (admin)
-  router.delete("/promotions/:id", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const { error } = await supabase
-        .from("store_promotions")
-        .delete()
-        .eq("id", String(req.params.id));
+  router.delete(
+    "/promotions/:id",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        const supabase = getSupabaseAdmin();
+        const scope = await resolveAdminTenantScope(req);
+        const { data: existing } = await supabase
+          .from("store_promotions")
+          .select("organization_id")
+          .eq("id", String(req.params.id))
+          .maybeSingle();
+        if (!existing) throw new AppError("NOT_FOUND", "Promotion not found", 404);
+        if (!scope.allTenants) {
+          const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+          if (!allowedOrg || existing.organization_id !== allowedOrg) {
+            throw new AppError(
+              "FORBIDDEN",
+              "You can only manage promotions in your organization",
+              403,
+            );
+          }
+        }
+        const { error } = await supabase
+          .from("store_promotions")
+          .delete()
+          .eq("id", String(req.params.id));
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
 
-      await logAuditEvent({
-        action: "store.promotion.delete",
-        entityType: "store_promotion",
-        entityId: String(String(req.params.id)) as string,
-      });
+        await logAuditEvent({
+          action: "store.promotion.delete",
+          entityType: "store_promotion",
+          entityId: String(String(req.params.id)) as string,
+        });
 
-      res.json(success({ deleted: true }));
-    } catch (error) {
-      next(error);
-    }
-  });
+        res.json(success({ deleted: true }));
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 }

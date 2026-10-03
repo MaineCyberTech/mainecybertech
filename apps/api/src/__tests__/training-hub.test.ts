@@ -67,6 +67,11 @@ jest.mock("../middleware/permissions", () => ({
     (_req: unknown, _res: unknown, next: () => void) =>
       next(),
 }));
+jest.mock("../middleware/entitlement", () => ({
+  requireEntitlement: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireActiveSubscription: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+  clearEntitlementCache: jest.fn(),
+}));
 const app = createTestApp();
 app.use("/api/v1/training-hub", trainingHubRouter);
 app.use(errorHandler);

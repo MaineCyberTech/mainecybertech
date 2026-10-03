@@ -13,6 +13,8 @@
 | Secret scan | `scan-secrets.ps1` | `scan-secrets.sh` |
 | Database backup | `backup-database.ps1` | `backup-database.sh` |
 | Database restore | — | `restore-database.sh` |
+| Storage backup | — | `backup-storage.sh` |
+| Storage restore | — | `restore-storage.sh` |
 
 ## Script index
 
@@ -28,6 +30,8 @@
 | `scan-secrets.ps1` / `.sh` | Scan the repo for accidentally committed secrets. |
 | `backup-database.ps1` / `.sh` | Back up the Supabase/database data. |
 | `restore-database.sh` | Restore a database backup (Linux/macOS). |
+| `backup-storage.sh` | Mirror Supabase Storage buckets (`documents`/`avatars`/`logos`) to S3/Spaces. |
+| `restore-storage.sh` | Restore uploaded files from a storage backup archive (Linux/macOS). |
 | `dev-setup.sh` | One-shot developer environment setup (Linux/macOS). |
 | `preflight-check.sh` | Pre-deploy sanity checks (env files, tool versions). |
 | `rollback.sh` | Roll back the last deployment on the droplet (Linux/macOS). |
@@ -38,6 +42,10 @@
 | `fix-everything-dupes.js` | One-off cleanup of duplicate content entries. |
 | `generate-fulfillment.js` | One-off generator: fulfillment content for products. |
 | `generate-product-content.js` | One-off generator: product content pages. |
+| `generate-sbom.mjs` | Generate a CycloneDX 1.5 SBOM (licenses + dependency graph + commit binding) — see `docs/SBOM_PROCESS.md`. |
+| `validate-sbom.mjs` | Fail CI on a malformed / regressed SBOM (structure, refs, count floor). |
+| `audit-gate.mjs` | Dependency vulnerability gate for all scopes — see `docs/DEPENDENCY_POLICY.md`. |
+| `license-gate.mjs` | License allow/deny gate with documented exceptions — see `docs/LICENSE_POLICY.md`. |
 
 ## Subdirectories
 

@@ -108,7 +108,12 @@ router.get("/public/:token", async (req, res, next) => {
 
 router.post(
   "/public/:token/upload",
-  requirePermission("file-requests", "create"),
+  // Authorization for this endpoint is the token itself, NOT a user
+  // permission. `requirePermission("file-requests","create")` resolves with
+  // orgId=null and unions grants across every org, so a user granted it in
+  // org A could write into org B's request folder, while anonymous uploaders
+  // (the intended callers) got a 401. The token row is bound to one org via
+  // `data.organization_id` and every write below is derived from it. (FILE-P1-001 / MT-P1-003)
   upload.single("file"),
   async (req, res, next) => {
     try {
@@ -144,7 +149,11 @@ router.post(
       }
 
       const safeName = req.file.originalname.replace(/[^\w.\-]+/g, "_");
-      const storagePath = `${data.storage_path}/${Date.now()}-${safeName}`;
+      // The object path MUST begin with the owning org's UUID so the
+      // `storage_path_org_id` RLS helper (5302026) can derive the tenant and
+      // orphan cleanup can reconcile the row. `data.storage_path` from the
+      // request row is authoritative — never caller-supplied. (FILE-P1-002)
+      const storagePath = `${data.organization_id}/requests/${data.token}/${Date.now()}-${safeName}`;
       // Byte-sniff the content: declared MIME is untrusted (markup/SVG rejected,
       // images and PDFs must match their declared type).
       validateUploadContent(req.file.buffer, req.file.mimetype);
@@ -158,13 +167,90 @@ router.post(
         throw new AppError("STORAGE_ERROR", `Upload failed: ${uploadError.message}`, 500);
       }
 
-      const { data: updated, error: updateError } = await supabase
-        .from("file_requests")
-        .update({ upload_count: data.upload_count + 1 })
-        .eq("id", data.id)
-        .select()
-        .single();
-      if (updateError) throw new AppError("DB_ERROR", updateError.message, 500);
+      // Atomically claim a slot BEFORE persisting anything.
+      //
+      // The previous form used `.update({ upload_count: data.upload_count + 1 })`,
+      // where data.upload_count came from an earlier SELECT. The +1 was computed
+      // in JS, so the write was an absolute stale value: concurrent anonymous
+      // uploads each read the same low counter and every UPDATE satisfied
+      // `upload_count < max_files`, letting the limit be exceeded without bound
+      // (reproduced against PostgreSQL: five claims all "succeeded", counter
+      // reached 1).
+      //
+      // claim_file_request_slot does the increment server-side inside one
+      // guarded statement, so it re-reads the row and returns no row when the
+      // request is full, closed, expired, or not in this org. Claiming first
+      // means a rejected upload never leaves a DB row or an object behind.
+      const { data: claimRows, error: updateError } = await supabase.rpc(
+        "claim_file_request_slot",
+        // `as never`: the generated Database type declares
+        // `Functions: Record<string, never>`, so RPC args are untyped here.
+        // Same convention as routes/edu-automation.ts.
+        { p_request_id: data.id, p_organization_id: data.organization_id } as never,
+      );
+      if (updateError) {
+        await supabase.storage.from("documents").remove([storagePath]);
+        throw new AppError("DB_ERROR", updateError.message, 500);
+      }
+      // Returns at most one row: { upload_count, slot_token }. No row means the
+      // request is full, closed, expired, or belongs to another org.
+      const claimRow = Array.isArray(claimRows)
+        ? (claimRows[0] as { upload_count: number; slot_token: string } | undefined)
+        : (claimRows as { upload_count: number; slot_token: string } | null);
+      if (!claimRow || claimRow.upload_count == null) {
+        // Release the object we already uploaded and persist nothing.
+        await supabase.storage.from("documents").remove([storagePath]);
+        throw new AppError("FULL", "Upload limit reached or request no longer open", 410);
+      }
+      const claimed = claimRow.upload_count;
+      const slotToken = claimRow.slot_token;
+
+      // Persist the object so it can be listed/downloaded and so orphan cleanup
+      // recognises it as referenced rather than deleting it as an orphan.
+      const { error: rowError } = await supabase.from("file_request_uploads").insert({
+        file_request_id: data.id,
+        organization_id: data.organization_id,
+        file_name: safeName,
+        storage_bucket: "documents",
+        storage_path: storagePath,
+        mime_type: req.file.mimetype || null,
+        file_size: req.file.size,
+      });
+      if (rowError) {
+        // Roll both back so a failure cannot leave an untracked object or a
+        // consumed slot with no upload behind it.
+        //
+        // The release MUST be a relative decrement, not an absolute
+        // `claimed - 1`. `claimed` was read before other concurrent uploads may
+        // have incremented the counter, so writing an absolute value
+        // under-counts and re-opens the very limit bypass this claim exists to
+        // close. Reproduced against PostgreSQL 16: with max_files=3, two claims
+        // (1, 2) then an absolute rollback to `1-1=0` let three more uploads
+        // succeed - five accepted uploads with a limit of three.
+        await supabase.storage.from("documents").remove([storagePath]);
+        await supabase.rpc("release_file_request_slot", {
+          p_request_id: data.id,
+          p_organization_id: data.organization_id,
+          p_slot_token: slotToken,
+        } as never);
+        throw new AppError("DB_ERROR", rowError.message, 500);
+      }
+
+      // The slot token has done its job once the upload row is committed: the
+      // slot is permanent and no release can legitimately follow. Drop it so
+      // `slot_tokens` does not accumulate one key per successful upload for the
+      // lifetime of the request (best-effort: the upload has already succeeded,
+      // so a cleanup failure must not fail the request).
+      void supabase
+        .rpc("release_slot_token", {
+          p_request_id: data.id,
+          p_organization_id: data.organization_id,
+          p_slot_token: slotToken,
+        } as never)
+        .then(
+          () => undefined,
+          () => undefined,
+        );
 
       await logAuditEvent({
         organizationId: data.organization_id,
@@ -187,7 +273,7 @@ router.post(
         });
       }
 
-      res.json(success({ uploaded: true, fileName: safeName, uploadCount: updated.upload_count }));
+      res.json(success({ uploaded: true, fileName: safeName, uploadCount: claimed }));
     } catch (error) {
       next(error);
     }
@@ -243,13 +329,83 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
+// --- Org-scoped access to uploaded files (FILE-P1-002) -----------------------
+// Objects land in the same private `documents` bucket as other documents. An
+// approved member of the owning org can list them and mint a short-lived signed
+// URL; the path is always read from the `file_request_uploads` row so the
+// caller can never target an arbitrary object.
+
+router.get("/:id/uploads", async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "file-requests", "read");
+    const { data: request, error: requestError } = await supabase
+      .from("file_requests")
+      .select("id")
+      .eq("id", String(req.params.id))
+      .eq("organization_id", req.query.organization_id as string)
+      .single();
+    if (requestError || !request) throw new AppError("NOT_FOUND", "File request not found", 404);
+
+    const { data, error } = await supabase
+      .from("file_request_uploads")
+      .select("id, file_name, mime_type, file_size, uploaded_at")
+      .eq("file_request_id", request.id)
+      .eq("organization_id", req.query.organization_id as string)
+      .order("uploaded_at", { ascending: false });
+
+    if (error) throw new AppError("DB_ERROR", error.message, 500);
+    res.json(success(data ?? []));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/:id/uploads/:uploadId/signed-url", async (req, res, next) => {
+  try {
+    const supabase = getScopedClient(req, "file-requests", "read");
+    const orgId = req.query.organization_id as string;
+
+    // Verify the parent request AND the upload row belong to the caller's org
+    // before signing the stored path.
+    const { data: request, error: requestError } = await supabase
+      .from("file_requests")
+      .select("id")
+      .eq("id", String(req.params.id))
+      .eq("organization_id", orgId)
+      .single();
+    if (requestError || !request) throw new AppError("NOT_FOUND", "File request not found", 404);
+
+    const { data: upload, error: uploadError } = await supabase
+      .from("file_request_uploads")
+      .select("storage_bucket, storage_path")
+      .eq("id", String(req.params.uploadId))
+      .eq("file_request_id", request.id)
+      .eq("organization_id", orgId)
+      .single();
+    if (uploadError || !upload) throw new AppError("NOT_FOUND", "Upload not found", 404);
+
+    const { data: signedUrl, error: urlError } = await supabase.storage
+      .from(upload.storage_bucket)
+      .createSignedUrl(upload.storage_path, 3600);
+    if (urlError || !signedUrl)
+      throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
+
+    res.json(success({ signedUrl: signedUrl.signedUrl, expiresIn: 3600 }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post("/", requirePermission("file-requests", "create"), async (req, res, next) => {
   try {
     const parsed = createFileRequestSchema.parse(req.body);
     const supabase = getScopedClient(req, "file-requests", "write");
     const token = generateToken();
     const expiresAt = new Date(Date.now() + parsed.expiresInDays * 86400000).toISOString();
-    const storagePath = `uploads/requests/${token}`;
+    // Org-parseable prefix: the raw org UUID must lead so `storage_path_org_id`
+    // derives the tenant. Kept as the request's canonical folder; individual
+    // uploads are `<storage_path>/<ts>-<name>` with the org UUID still leading.
+    const storagePath = `${parsed.organizationId}/requests/${token}`;
 
     const { data, error } = await supabase
       .from("file_requests")
@@ -267,7 +423,11 @@ router.post("/", requirePermission("file-requests", "create"), async (req, res, 
         visibility: parsed.visibility,
         created_by: req.authUser!.userId,
       })
-      .select()
+      // Explicit projection: `slot_tokens` is an internal single-use release
+      // credential and must never be returned to a client.
+      .select(
+        "id, organization_id, title, description, token, storage_path, max_file_size_mb, allowed_mime_types, max_files, upload_count, expires_at, status, visibility, notify_on_upload, created_by, created_at, updated_at",
+      )
       .single();
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
@@ -303,7 +463,10 @@ router.patch("/:id", requirePermission("file-requests", "edit"), async (req, res
       .update(updateData as never)
       .eq("id", String(req.params.id))
       .eq("organization_id", req.query.organization_id as string)
-      .select()
+      // Explicit projection: never return `slot_tokens` (internal release token).
+      .select(
+        "id, organization_id, title, description, token, storage_path, max_file_size_mb, allowed_mime_types, max_files, upload_count, expires_at, status, visibility, notify_on_upload, created_by, created_at, updated_at",
+      )
       .single();
     if (error) throw new AppError("DB_ERROR", error.message, 500);
     if (!data) throw new AppError("NOT_FOUND", "File request not found", 404);

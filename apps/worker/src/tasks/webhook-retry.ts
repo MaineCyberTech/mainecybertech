@@ -13,7 +13,7 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
 
     const { data: deliveries, error: fetchError } = await supabase
       .from("webhook_deliveries")
-      .select("id, webhook_id, event, request_body, error, retry_count, next_retry_at, dead_letter")
+      .select("id, webhook_id, event, request_body, error, retry_count, next_retry_at, dead_letter, idempotency_key")
       .eq("status", "failed")
       .eq("dead_letter", false)
       // Generic inbound-webhook logs have no endpoint to retry against.
@@ -76,6 +76,11 @@ export async function webhookRetry(_payload: Record<string, unknown>): Promise<T
         const headers: Record<string, string> = {
           "Content-Type": "application/json",
         };
+        // Preserve the original dedup key so consumers can dedupe a retried
+        // delivery against the first attempt.
+        if (delivery.idempotency_key) {
+          headers["Idempotency-Key"] = delivery.idempotency_key;
+        }
 
         // SSRF guard — never retry a webhook URL pointing at private /
         // loopback / link-local hosts or hostnames resolving to them.

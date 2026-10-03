@@ -111,8 +111,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Audit production dependencies (high/critical fail the build)
-        run: pnpm audit --audit-level=high --prod
+      - name: Audit all dependency scopes (policy gate)
+        # SC-P1-001: blocks CRITICAL in any scope and HIGH+ in production, and
+        # reports dev-tree advisories so they are visible. Policy:
+        # security/dependency-audit-policy.json.
+        run: node scripts/audit-gate.mjs
+
+      - name: License policy gate
+        # SBOM-P1-001: allowlist + documented exceptions from
+        # security/license-policy.json over the full resolved tree.
+        # Uses scripts/collect-licenses.mjs, NOT `pnpm licenses list --json`,
+        # which exits 1 on pnpm 10.34.x and writes an error document to stdout
+        # (ERR_PNPM_MISSING_PACKAGE_INDEX_FILE).
+        run: |
+          node scripts/collect-licenses.mjs --out licenses.json
+          node scripts/license-gate.mjs licenses.json
 
       - name: Run Trivy filesystem vulnerability scanner
         uses: aquasecurity/trivy-action@c07df6fec6fa692e6fd1200d50aaa1fdd66f03c8

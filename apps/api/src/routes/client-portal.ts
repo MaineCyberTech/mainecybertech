@@ -7,38 +7,11 @@ import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
 import { requireOrgAccess } from "../middleware/org-access";
 import { responseCacheNoRenew } from "../middleware/cache";
+import { deriveEnabledModules, isSubscriptionActive } from "../lib/entitlements";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
-
-// Sensible default portal module set used when an org has no active (or
-// trialing) subscription, or when module entitlements cannot be derived.
-const DEFAULT_ENABLED_MODULES: string[] = [
-  "dashboard",
-  "support",
-  "documents",
-  "projects",
-  "billing",
-  "status",
-  "notifications",
-  "profile",
-];
-
-// Modules unlocked when an org has an active/trialing subscription.
-const SUBSCRIPTION_ENABLED_MODULES: string[] = [
-  ...DEFAULT_ENABLED_MODULES,
-  "findings",
-  "security-ops",
-  "governance",
-  "training-hub",
-  "service-catalog",
-  "qbr",
-];
-
-function deriveEnabledModules(subscriptionActive: boolean): string[] {
-  return subscriptionActive ? SUBSCRIPTION_ENABLED_MODULES : DEFAULT_ENABLED_MODULES;
-}
 
 router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
   try {
@@ -97,7 +70,7 @@ router.get("/bootstrap", responseCacheNoRenew(30), async (req, res, next) => {
       const org = Array.isArray(m.organizations) ? m.organizations[0] : m.organizations;
       const role = Array.isArray(m.roles) ? m.roles[0] : m.roles;
       const sub = subByOrg.get(m.organization_id) ?? null;
-      const isActive = sub?.status === "active" || sub?.status === "trialing";
+      const isActive = isSubscriptionActive(sub?.status);
       const provisioned = entitlementsByOrg.get(m.organization_id);
       return {
         organizationId: m.organization_id,

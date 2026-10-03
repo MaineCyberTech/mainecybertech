@@ -1,0 +1,45 @@
+{
+  "run": "20261002-0344-develop-6286137",
+  "generated": "2026-10-02T04:16:22.716930+00:00",
+  "formula": "max(0, 100 - (P0*40 + P1*10 + P2*3)); P3 unpenalized",
+  "counts": {
+    "total": 269,
+    "bySeverity": {
+      "P0": 5,
+      "P1": 56,
+      "P2": 132,
+      "P3": 76
+    },
+    "byArea": {
+      "ACM": 13,
+      "ADMIN": 12,
+      "AI": 8,
+      "API": 8,
+      "BILL": 10,
+      "BP": 9,
+      "CHAIN": 10,
+      "CI": 11,
+      "CTR": 10,
+      "DATA": 11,
+      "DR": 16,
+      "FILE": 12,
+      "INFRA": 12,
+      "IR": 17,
+      "MT": 10,
+      "NOTIF": 12,
+      "REL": 8,
+      "RES": 11,
+      "RLS": 7,
+      "SBOM": 7,
+      "SC": 9,
+      "SEARCH": 11,
+      "SEC": 9,
+      "SECRET": 9,
+      "TEST": 7,
+      "WH": 10
+    }
+  },
+  "score": 0,
+  "advisoryDecision": "NO-GO",
+  "note": "Advisory only. The audit gate in RELEASE_GATE.md is authoritative."
+}

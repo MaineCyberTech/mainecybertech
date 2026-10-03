@@ -513,8 +513,6 @@ const ticketRowProperties: Record<string, unknown> = {
   version: { type: "number" },
   created_at: { type: "string" },
   updated_at: { type: "string" },
-  deleted_at: { type: "string", nullable: true },
-  deleted_by: { type: "string", nullable: true },
 };
 
 const ticketRequired = [
@@ -841,6 +839,13 @@ const ticketsProjects: RouteDef[] = [
     tag: "Documents",
     params: [pathParam("id"), pathParam("versionId")],
   },
+  {
+    method: "get",
+    path: "/documents/{id}/versions/{versionId}/signed-url",
+    summary: "Create signed download URL for a document version",
+    tag: "Documents",
+    params: [pathParam("id"), pathParam("versionId")],
+  },
   { method: "post", path: "/documents/bulk/folder", summary: "Bulk folder move", tag: "Documents" },
   {
     method: "post",
@@ -946,6 +951,25 @@ const adminAudit: RouteDef[] = [
     summary: "Export audit logs (CSV/JSON)",
     tag: "Audit",
     params: [queryParam("format")],
+  },
+  {
+    method: "get",
+    path: "/audit/impersonation",
+    summary: "List cross-tenant impersonation events (platform admin only)",
+    tag: "Audit",
+    params: [
+      queryParam("organization_id"),
+      queryParam("actor_user_id"),
+      queryParam("page"),
+      queryParam("limit"),
+    ],
+  },
+  {
+    method: "get",
+    path: "/audit/impersonation/export",
+    summary: "Export cross-tenant impersonation events (platform admin only)",
+    tag: "Audit",
+    params: [queryParam("format"), queryParam("organization_id"), queryParam("actor_user_id")],
   },
   {
     method: "get",
@@ -2309,6 +2333,20 @@ const extendedRoutes: RouteDef[] = [
     summary: "Delete file request",
     tag: "FileRequests",
     params: [pathParam("id")],
+  },
+  {
+    method: "get",
+    path: "/file-requests/{id}/uploads",
+    summary: "List uploads for a file request",
+    tag: "FileRequests",
+    params: [pathParam("id")],
+  },
+  {
+    method: "get",
+    path: "/file-requests/{id}/uploads/{uploadId}/signed-url",
+    summary: "Get a signed download URL for a file-request upload",
+    tag: "FileRequests",
+    params: [pathParam("id"), pathParam("uploadId")],
   },
 
   // final - generated from apps/api/src/routes/final.ts

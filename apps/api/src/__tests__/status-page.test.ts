@@ -74,9 +74,22 @@ describe("Status Page API", () => {
   beforeEach(() => jest.clearAllMocks());
 
   describe("GET /api/v1/status-page/public/:orgId", () => {
-    it("returns public status", async () => {
+    /** Mock an org whose status page is explicitly enabled (or not). */
+    const orgWith = (enabled: boolean) =>
+      createMockBuilder({
+        data: { settings: { status_page_enabled: enabled } },
+        error: null,
+      });
+
+    it("returns public status when the org has enabled its status page", async () => {
       const supabase = mockAuth();
+      let first = true;
       supabase.from.mockImplementation((table: string) => {
+        // The gate reads `organizations` first; everything after is status data.
+        if (first && table === "organizations") {
+          first = false;
+          return orgWith(true);
+        }
         if (table === "status_components")
           return createMockBuilder({ data: [{ id: "c1", name: "API" }], error: null });
         return createMockBuilder({ data: [], error: null });
@@ -88,9 +101,57 @@ describe("Status Page API", () => {
       expect(res.body.data.upcomingMaintenance).toEqual([]);
     });
 
-    it("includes active incidents", async () => {
+    it("404s when the status page is NOT enabled - no anonymous enumeration", async () => {
       const supabase = mockAuth();
       supabase.from.mockImplementation((table: string) => {
+        if (table === "organizations") return orgWith(false);
+        return createMockBuilder({ data: [], error: null });
+      });
+      const res = await request(app).get(`/api/v1/status-page/public/${testOrgId}`);
+      expect(res.status).toBe(404);
+    });
+
+    it("404s identically for an unknown org (cannot confirm an org exists)", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "organizations")
+          return createMockBuilder({ data: null, error: null });
+        return createMockBuilder({ data: [], error: null });
+      });
+      const res = await request(app).get(`/api/v1/status-page/public/${testOrgId}`);
+      expect(res.status).toBe(404);
+    });
+
+    it("fails CLOSED on a DB error rather than serving the page", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "organizations")
+          return createMockBuilder({ data: null, error: new Error("db down") });
+        return createMockBuilder({ data: [], error: null });
+      });
+      const res = await request(app).get(`/api/v1/status-page/public/${testOrgId}`);
+      expect(res.status).toBe(404);
+    });
+
+    it("fails CLOSED when settings exist but carry no status_page_enabled flag", async () => {
+      const supabase = mockAuth();
+      supabase.from.mockImplementation((table: string) => {
+        if (table === "organizations")
+          return createMockBuilder({ data: { settings: {} }, error: null });
+        return createMockBuilder({ data: [], error: null });
+      });
+      const res = await request(app).get(`/api/v1/status-page/public/${testOrgId}`);
+      expect(res.status).toBe(404);
+    });
+
+    it("includes active incidents", async () => {
+      const supabase = mockAuth();
+      let first = true;
+      supabase.from.mockImplementation((table: string) => {
+        if (first && table === "organizations") {
+          first = false;
+          return orgWith(true);
+        }
         if (table === "status_components") return createMockBuilder({ data: [], error: null });
         if (table === "status_incidents")
           return createMockBuilder({ data: [{ id: "i1", title: "Outage" }], error: null });
@@ -98,6 +159,41 @@ describe("Status Page API", () => {
       });
       const res = await request(app).get(`/api/v1/status-page/public/${testOrgId}`);
       expect(res.body.data.activeIncidents).toHaveLength(1);
+    });
+
+    it("projects an explicit public allowlist (no internal attribution columns)", async () => {
+      const supabase = mockAuth();
+      const builders: Record<string, ReturnType<typeof createMockBuilder>> = {};
+      let first = true;
+      supabase.from.mockImplementation((table: string) => {
+        if (first && table === "organizations") {
+          first = false;
+          return orgWith(true);
+        }
+        const builder = createMockBuilder({ data: [], error: null });
+        builders[table] = builder;
+        return builder;
+      });
+
+      await request(app).get(`/api/v1/status-page/public/${testOrgId}`);
+
+      const componentCols = builders.status_components.select.mock.calls[0][0] as string;
+      const incidentCols = builders.status_incidents.select.mock.calls[0][0] as string;
+      const maintenanceCols = builders.maintenance_notices.select.mock.calls[0][0] as string;
+
+      expect(componentCols).not.toBe("*");
+      expect(componentCols).not.toContain("created_by");
+      expect(componentCols).not.toContain("organization_id");
+      expect(incidentCols).not.toContain("created_by");
+      expect(incidentCols).not.toContain("organization_id");
+      expect(maintenanceCols).not.toContain("created_by");
+      expect(maintenanceCols).not.toContain("organization_id");
+
+      // And it still filters to the requested org (enumeration is by opaque id).
+      expect(builders.status_components.eq).toHaveBeenCalledWith(
+        "organization_id",
+        testOrgId,
+      );
     });
   });
 

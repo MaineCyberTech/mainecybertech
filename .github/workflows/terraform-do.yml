@@ -40,7 +40,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
-          terraform_version: 1.9
+          terraform_version: 1.15.9
 
       - name: Determine environment
         id: env
@@ -62,6 +62,9 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
           CLOUDFLARE_ZONE_ID_US: ${{ secrets.CLOUDFLARE_ZONE_ID_US }}
+          # SSH allowlist (JSON array of CIDRs). SSH is fail-closed: there is no
+          # permissive default in variables.tf, so this must be set for every run.
+          ADMIN_IP_RANGES: ${{ secrets.ADMIN_IP_RANGES }}
           # prod needs >=2GB: the compose stack reserves ~1.4GB.
           DROPLET_SIZE: ${{ steps.env.outputs.name == 'prod' && 's-2vcpu-2gb' || 's-1vcpu-512mb-10gb' }}
           TF_ENV: ${{ steps.env.outputs.name }}
@@ -74,9 +77,25 @@ jobs:
             printf 'cloudflare_api_token  = "%s"\n' "$CLOUDFLARE_API_TOKEN"
             printf 'cloudflare_zone_id    = "%s"\n' "$CLOUDFLARE_ZONE_ID"
             printf 'cloudflare_zone_id_us = "%s"\n' "$CLOUDFLARE_ZONE_ID_US"
+            printf 'admin_ip_ranges       = %s\n' "$ADMIN_IP_RANGES"
             printf 'droplet_size          = "%s"\n' "$DROPLET_SIZE"
             printf 'environment           = "%s"\n' "$TF_ENV"
           } > "$TF_ENV.tfvars"
+
+      # Fail before init/plan if the allowlist is missing or still world-open.
+      # Never plan/apply SSH exposed to 0.0.0.0/0 or ::/0.
+      - name: Reject world-open SSH allowlist
+        env:
+          ADMIN_IP_RANGES: ${{ secrets.ADMIN_IP_RANGES }}
+        run: |
+          if [[ -z "$ADMIN_IP_RANGES" ]]; then
+            echo "::error::secrets.ADMIN_IP_RANGES is not set (or empty). SSH is fail-closed; set it to your office/VPN CIDRs, e.g. [\"203.0.113.0/24\"]."
+            exit 1
+          fi
+          if [[ "$ADMIN_IP_RANGES" == *"0.0.0.0/0"* || "$ADMIN_IP_RANGES" == *"::/0"* ]]; then
+            echo "::error::secrets.ADMIN_IP_RANGES contains a world-open CIDR (0.0.0.0/0 or ::/0). Restrict SSH to office/VPN ranges before applying."
+            exit 1
+          fi
 
       - name: Terraform Init
         env:
@@ -168,7 +187,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
-          terraform_version: 1.9
+          terraform_version: 1.15.9
 
       - name: Download plan
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
@@ -208,7 +227,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd
         with:
-          terraform_version: 1.9
+          terraform_version: 1.15.9
 
       - name: Download plan
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093

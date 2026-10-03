@@ -29,13 +29,25 @@ jobs:
         run: pnpm store prune
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Dependency audit
-        # Hard fail: high/critical vulnerabilities block the deploy gate (and
-        # every workflow that calls validate.yml, including terraform-do prod
-        # apply).
-        # --prod: only audit production dependencies (dev deps like storybook
-        # have unpatchable image-size vulns)
-        run: pnpm audit --audit-level=high --prod
+      - name: Dependency audit (all scopes + policy)
+        # SC-P1-001: fails on any CRITICAL (dev or prod) and any HIGH+ in
+        # production, and always reports dev-tree advisories. Policy and the
+        # reviewed allowlist live in security/dependency-audit-policy.json.
+        run: node scripts/audit-gate.mjs
+      - name: License policy gate
+        # SBOM-P1-001: enforces security/license-policy.json over the full
+        # resolved tree (allowlist + documented exceptions).
+        run: |
+          pnpm licenses list --json > licenses.json
+          node scripts/license-gate.mjs licenses.json
+
+      - name: Verify required branch-protection checks resolve
+        # Fails when a required status check in .github/branch-protection/*.json
+        # is not a check-run name any workflow actually emits. A mismatch means
+        # the check shows "Expected - Waiting for status to be reported" forever,
+        # so the PR can never satisfy branch protection (CI-P1-002 / BP-P1-001).
+        # Pure static analysis - needs no dependencies.
+        run: node scripts/check-required-checks.mjs
 
   test:
     timeout-minutes: 30
@@ -93,6 +105,13 @@ jobs:
 
       - name: Verify RLS/migration hygiene
         run: node scripts/verify-rls.mjs
+
+      - name: Verify no raw unfiltered membership predicate (DATA-P1-001)
+        # Fails when a migration newer than the baseline reintroduces the
+        # `memberships where user_id = auth.uid()` predicate without a
+        # status='approved' filter, which let pending/suspended members read
+        # tenant rows via the anon-key + JWT path.
+        run: node scripts/check-rls-predicate.mjs
 
   # Secret scanning — same patterns as the pre-commit hook (scripts/scan-secrets.sh).
   # Runs as part of the deploy gate so a leaked credential cannot ship even if

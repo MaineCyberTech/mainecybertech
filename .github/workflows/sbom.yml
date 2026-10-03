@@ -12,10 +12,14 @@ on:
 permissions:
   contents: read
 
+# This workflow emits the LOCKFILE (npm) SBOM only. Container IMAGE SBOMs
+# (Alpine OS + npm-in-image contents, bound to the pushed image digest) are
+# produced per image in build-push.yml. See docs/SBOM_PROCESS.md.
+
 jobs:
   sbom:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
 
@@ -23,8 +27,41 @@ jobs:
         with:
           node-version: 20
 
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          # corepack fetches pnpm from the npm registry; retry transient failures.
+          ok=""
+          for attempt in 1 2 3; do
+            if corepack prepare pnpm@10 --activate; then ok=1; break; fi
+            echo "corepack prepare failed (attempt $attempt/3)" >&2
+            sleep 10
+          done
+          test -n "$ok"
+
+      - name: Install dependencies
+        # Needed so the license inventory can read the resolved tree.
+        run: pnpm install --frozen-lockfile
+
+      - name: Collect license inventory
+        # NOT `pnpm licenses list --json`: on pnpm 10.34.x that command exits 1
+        # after any install and writes an ERROR DOCUMENT to stdout
+        # (ERR_PNPM_MISSING_PACKAGE_INDEX_FILE), so `> licenses.json` produced a
+        # file containing {"error":...} and the next step failed. Reproduced on a
+        # clean Linux clone with and without --frozen-lockfile and with a fresh
+        # store. scripts/collect-licenses.mjs reads the licenses from the
+        # installed tree instead and cannot emit an error document.
+        run: node scripts/collect-licenses.mjs --out licenses.json
+
       - name: Generate CycloneDX SBOM
+        # Binds the document to the product version (VERSION) and the commit.
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          SBOM_LICENSES_JSON: licenses.json
         run: node scripts/generate-sbom.mjs sbom.cdx.json
+
+      - name: Validate SBOM
+        run: node scripts/validate-sbom.mjs sbom.cdx.json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

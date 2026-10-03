@@ -8,7 +8,16 @@ import { logAuditEvent } from "../../services/audit";
 import { type UpdateRow } from "../../lib/db-types";
 import { LIST_HARD_CAP } from "../../lib/pagination";
 
-/** Store visual assets (admin CRUD). Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
+/** Store visual assets (admin CRUD). Extracted from `routes/store.ts` (same pattern as `routes/final/`).
+ *
+ * NOTE on tenant scope: `store_visual_assets` (migration 5302114) has NO
+ * `organization_id` column — it is keyed only by `linked_entity_type` /
+ * `linked_entity_id` and is a shared/global table. Adding an org predicate here
+ * would be incorrect (the column does not exist), so these admin-only routes
+ * are intentionally unscoped. Tenant isolation for visual assets must come
+ * from the linked entity's own scoping, not this table. Do not add an org
+ * filter to this table unless a migration adds the column first.
+ */
 export function registerVisualAssetRoutes(router: Router) {
   const visualAssetSchema = z.object({
     linkedEntityType: z.string().min(1).max(100),

@@ -72,7 +72,6 @@ services:
       M365_CLIENT_STATE: ${M365_CLIENT_STATE:-}
       JIRA_WEBHOOK_SECRET: ${JIRA_WEBHOOK_SECRET:-}
       JSM_WEBHOOK_SECRET: ${JSM_WEBHOOK_SECRET:-}
-      M365_WEBHOOK_SECRET: ${M365_WEBHOOK_SECRET:-}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
@@ -140,6 +139,15 @@ services:
     tmpfs:
       - /tmp
     read_only: true
+    # Liveness probe on the worker's HEALTH_PORT (audit IR-P1-003). Without
+    # this, `docker inspect` reports "missing" and the deploy's container
+    # health gate cannot confirm the worker — enabling it lets a worker that
+    # never becomes healthy fail the gate and trigger the auto-revert.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   web:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/mainecybertech/mainecybertech}/mct-web:${IMAGE_TAG:?IMAGE_TAG must be set}
@@ -177,11 +185,75 @@ services:
       - --storage.tsdb.path=/prometheus
       - --storage.tsdb.retention.time=30d
       - --web.enable-lifecycle
+    depends_on:
+      alertmanager:
+        condition: service_healthy
     tmpfs:
       - /tmp
     restart: unless-stopped
     mem_limit: 256m
     read_only: true
+
+  # Alertmanager — alert DELIVERY + the dead-man's switch (IR-P0-003).
+  # Prometheus forwards firing alerts here (see prometheus.yml `alerting:`).
+  # The Watchdog rule is routed to an EXTERNAL receiver (a healthchecks.io-style
+  # ping URL / external webhook), so a total loss of this droplet is still
+  # detected off-box. Internal only — no published ports.
+  alertmanager:
+    # TODO(ops): digest is pinned to the v0.28.1 manifest-list digest. If a newer
+    # release is adopted, re-pin (`docker buildx imagetools inspect
+    # prom/alertmanager:vX.Y.Z`) and update the digest here before merge.
+    image: prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba
+    logging: *default-logging
+    <<: *security
+    environment:
+      # Substituted into alertmanager.yml by envsubst at container start. Never
+      # commit real values - set these in the droplet .env / GitHub env secrets.
+      # REQUIRED for the dead-man's switch to actually reach off-box:
+      #   ALERTMANAGER_WATCHDOG_WEBHOOK_URL, ALERTMANAGER_CRITICAL_WEBHOOK_URL
+      ALERTMANAGER_WATCHDOG_WEBHOOK_URL: ${ALERTMANAGER_WATCHDOG_WEBHOOK_URL:-http://127.0.0.1:1/noop}
+      ALERTMANAGER_CRITICAL_WEBHOOK_URL: ${ALERTMANAGER_CRITICAL_WEBHOOK_URL:-http://127.0.0.1:1/noop}
+      ALERTMANAGER_DEFAULT_WEBHOOK_URL: ${ALERTMANAGER_DEFAULT_WEBHOOK_URL:-http://127.0.0.1:1/noop}
+      ALERTMANAGER_SLACK_API_URL: ${ALERTMANAGER_SLACK_API_URL:-http://127.0.0.1:1/noop}
+      ALERTMANAGER_SLACK_CHANNEL: ${ALERTMANAGER_SLACK_CHANNEL:-#alerts}
+    volumes:
+      # Mounted READ-ONLY as a template. Alertmanager has no shell-style variable
+      # substitution of its own (a literal ${VAR} in a url: fails validation with
+      # "first path segment in URL cannot contain colon"), and the image has no
+      # envsubst (alpine/busybox). The entrypoint renders the template with sed
+      # into a writable path, fails loudly if any placeholder survives, then
+      # hands off to alertmanager.
+      - ./alertmanager.tmpl.yml:/etc/alertmanager/alertmanager.tmpl.yml:ro
+      # Alertmanager keeps its notification/silence state here; a named volume
+      # survives restarts so a deploy does not re-fire duplicate notifications.
+      - alertmanager-data:/alertmanager
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >
+        awk '{
+          gsub(/\$\{ALERTMANAGER_DEFAULT_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_DEFAULT_WEBHOOK_URL"]);
+          gsub(/\$\{ALERTMANAGER_CRITICAL_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_CRITICAL_WEBHOOK_URL"]);
+          gsub(/\$\{ALERTMANAGER_WATCHDOG_WEBHOOK_URL\}/, ENVIRON["ALERTMANAGER_WATCHDOG_WEBHOOK_URL"]);
+          gsub(/\$\{ALERTMANAGER_SLACK_API_URL\}/, ENVIRON["ALERTMANAGER_SLACK_API_URL"]);
+          gsub(/\$\{ALERTMANAGER_SLACK_CHANNEL\}/, ENVIRON["ALERTMANAGER_SLACK_CHANNEL"]);
+          print
+        }' /etc/alertmanager/alertmanager.tmpl.yml > /tmp/alertmanager.yml
+        && ! grep -E '\$\{ALERTMANAGER' /tmp/alertmanager.yml | grep -vE '^[[:space:]]*#' | grep -q .
+        && exec /bin/alertmanager --config.file=/tmp/alertmanager.yml
+        --storage.path=/alertmanager --log.level=info
+    expose:
+      - "9093"
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    mem_limit: 128m
+    read_only: true
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # ===== Reverse Proxy =====
   caddy:
@@ -217,3 +289,4 @@ volumes:
   caddy-data:
   caddy-config:
   prom-data:
+  alertmanager-data:

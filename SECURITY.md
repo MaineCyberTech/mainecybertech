@@ -22,6 +22,31 @@ Only the `main` branch (production) and `develop` (staging) are supported. Older
 - [docs/JWT_ROTATION.md](docs/JWT_ROTATION.md)
 - [docs/RLS-rollout.md](docs/RLS-rollout.md)
 - [docs/MFA.md](docs/MFA.md)
+- [docs/DEPENDENCY_POLICY.md](docs/DEPENDENCY_POLICY.md)
+- [docs/LICENSE_POLICY.md](docs/LICENSE_POLICY.md)
+- [docs/SBOM_PROCESS.md](docs/SBOM_PROCESS.md)
+
+## Supply chain
+
+- **Vulnerabilities** — `scripts/audit-gate.mjs` gates all dependency scopes in
+  CI (block CRITICAL any scope, block HIGH+ in production, report dev-tree
+  advisories). Policy: `security/dependency-audit-policy.json`.
+- **Licenses** — `scripts/license-gate.mjs` and the dependency-review PR gate
+  enforce `security/license-policy.json` (allowlist + documented exceptions).
+- **Container images** — every image is scanned with Trivy
+  (`scan-type: image`, CRITICAL/HIGH) after build and before deploy, and gets a
+  build-provenance attestation bound to its digest. The deploy pipeline
+  **verifies** that attestation before pulling: the `verify-attestations` job
+  resolves the tag to a digest and runs `gh attestation verify`, and `deploy`
+  `needs:` it (normal deploys fail closed; see
+  [docs/CI.md](docs/CI.md#provenance-verification-at-deploy-ctr-p1-003)). Verify
+  manually with `gh attestation verify oci://ghcr.io/<owner>/mct-api@<digest>
+  --repo <owner>/<repo>`.
+- **SBOM** — two CycloneDX artifacts are produced: a **lockfile** SBOM
+  (licenses, dependency graph, commit binding) generated and validated in CI,
+  and a per-image **image** SBOM (Alpine OS + npm-in-image contents) bound to
+  the pushed image digest by `build-push.yml`. Neither SBOM is signed or
+  attested; see [docs/SBOM_PROCESS.md](docs/SBOM_PROCESS.md).
 
 ## Sensitive areas in this repository
 

@@ -21,6 +21,7 @@ import {
   kbGen,
 } from "../validators/edu-automation";
 import { queryInt } from "../lib/query";
+import { applyOrgScope, resolveAdminTenantScope } from "../lib/admin-scope";
 import { parsePartialUpdate } from "../lib/validators";
 import { sanitizeSearchTerm } from "../lib/search";
 
@@ -943,13 +944,23 @@ router.get("/scorecards/overview", async (req, res, next) => {
   }
 });
 
-router.get("/scorecards/leaderboard", requireAdmin, async (_req, res, next) => {
+// Cross-tenant leaderboard. A genuine cross-tenant admin (super_admin profile +
+// cross-tenant role) keeps the global view; a single-org admin is restricted to
+// their own org(s) so the leaderboard cannot disclose other tenants' names and
+// scores (MT-P1-002). Mirrors routes/dashboard.ts and routes/audit.ts.
+router.get("/scorecards/leaderboard", requireAdmin, async (req, res, next) => {
   try {
     const sb = getSupabaseAdmin();
-    const { data: scorecards, error } = await sb
-      .from("cyber_scorecards")
-      .select("organization_id, score, organizations!inner(id, name)")
-      .order("score", { ascending: false });
+    const scope = await resolveAdminTenantScope(req);
+    const query = applyOrgScope(
+      sb
+        .from("cyber_scorecards")
+        .select("organization_id, score, organizations!inner(id, name)")
+        .order("score", { ascending: false }),
+      "organization_id",
+      scope,
+    );
+    const { data: scorecards, error } = await query;
 
     if (error) throw new AppError("DB_ERROR", error.message, 500);
 

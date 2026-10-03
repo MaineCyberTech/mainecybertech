@@ -18,8 +18,8 @@ runcmd:
 
   # Configure UFW
   # SSH is restricted to admin_ip_ranges (same allowlist as the DigitalOcean
-  # firewall in firewall.tf). Default is 0.0.0.0/0 + ::/0 — set admin_ip_ranges
-  # to office/VPN CIDRs in prod.tfvars/dev.tfvars for production. SSH is key-only.
+  # firewall in firewall.tf). The variable is required (no default) — set it to
+  # office/VPN CIDRs. SSH is key-only.
   - ufw --force enable
 %{ for cidr in admin_ip_ranges ~}
   - ufw allow from ${cidr} to any port 22 proto tcp

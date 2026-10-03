@@ -6,6 +6,21 @@ NOC / Service Desk
 
 ## Normal Operation
 
+### First-time setup (per organization)
+
+The public status page is **opt-in**. Until an org opts in, the public endpoint
+returns 404 for that org. To publish it, set the flag in `organizations.settings`
+(the column already exists; no migration is needed):
+
+```sql
+UPDATE organizations
+SET settings = jsonb_set(settings, '{status_page_enabled}', 'true'::jsonb)
+WHERE id = '<org>';
+```
+
+To unpublish, set it to `false` or remove the key. The change takes effect
+immediately (the gate reads settings per request).
+
 ### Daily
 
 - Review `portal/status-pages` component statuses for accuracy
@@ -26,14 +41,17 @@ NOC / Service Desk
 
 ## Common Failures
 
-### 1. Public Endpoint Returns Empty
+### 1. Public Endpoint Returns 404 or Empty
 
-**Symptoms**: `GET /status-page/public/:orgId` returns no components
-**Causes**: Wrong org id, or no components defined
+**Symptoms**: `GET /status-page/public/:orgId` returns 404, or returns no components
+**Causes**: The org has not opted in (404 — see below), wrong org id, or no components defined
 **Resolution**:
 
-1. Confirm org id matches an organization
-2. Verify components exist: `SELECT * FROM status_components WHERE organization_id = '<org>';`
+1. Confirm the org has opted in:
+   `SELECT settings->>'status_page_enabled' FROM organizations WHERE id = '<org>';`
+   It must be `true`. If it is absent or false the endpoint 404s by design, and the 404 is intentionally identical to an unknown-org 404 so the endpoint cannot be used to enumerate tenants.
+2. Confirm org id matches an organization
+3. Verify components exist: `SELECT * FROM status_components WHERE organization_id = '<org>';`
 
 ### 2. Resolved Incident Still Visible
 

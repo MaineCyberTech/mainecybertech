@@ -329,6 +329,211 @@ describe("documents routes", () => {
     });
   });
 
+  describe("GET /:id/versions/:versionId/signed-url", () => {
+    function mockVersionDownload() {
+      const supabase = mockSupabase();
+      supabase.from
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { storage_bucket: "documents" },
+            error: null,
+          } as MockResult),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { storage_path: "org-1/1000-old.pdf" },
+            error: null,
+          } as MockResult),
+        );
+      supabase.storage = {
+        from: jest.fn().mockReturnValue({
+          createSignedUrl: jest.fn().mockResolvedValue({
+            data: { signedUrl: "https://example.com/version-signed" },
+            error: null,
+          }),
+        }),
+      };
+      return supabase;
+    }
+
+    it("returns a signed URL for an authorised caller's past version", async () => {
+      mockVersionDownload();
+
+      const res = await request(app)
+        .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.signedUrl).toBe("https://example.com/version-signed");
+    });
+
+    it("derives the bucket from the parent document and signs the version path", async () => {
+      const supabase = mockVersionDownload();
+
+      await request(app)
+        .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      // Bucket comes from documents.storage_bucket, not a caller-supplied value.
+      expect(supabase.storage!.from).toHaveBeenCalledWith("documents");
+      expect(supabase.storage!.from("documents").createSignedUrl).toHaveBeenCalledWith(
+        "org-1/1000-old.pdf",
+        3600,
+      );
+    });
+
+    it("returns 404 and mints no URL when the parent document is in another org", async () => {
+      const supabase = mockSupabase();
+      supabase.from.mockReturnValue(
+        createMockBuilder({ data: null, error: new Error("not found") } as MockResult),
+      );
+      const createSignedUrl = jest.fn();
+      supabase.storage = {
+        from: jest.fn().mockReturnValue({ createSignedUrl }),
+      };
+
+      const res = await request(app)
+        .get(
+          "/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/signed-url?organization_id=00000000-0000-0000-0000-000000000002",
+        )
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+      expect(createSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it("scopes the parent document lookup to the caller's org", async () => {
+      const ORG = "00000000-0000-0000-0000-000000000001";
+      const supabase = mockSupabase();
+      const docBuilder = createMockBuilder({
+        data: { storage_bucket: "documents" },
+        error: null,
+      } as MockResult);
+      const versionBuilder = createMockBuilder({
+        data: { storage_path: "org-1/1000-old.pdf" },
+        error: null,
+      } as MockResult);
+      supabase.from.mockReturnValueOnce(docBuilder).mockReturnValueOnce(versionBuilder);
+      supabase.storage = {
+        from: jest.fn().mockReturnValue({
+          createSignedUrl: jest.fn().mockResolvedValue({
+            data: { signedUrl: "https://example.com/version-signed" },
+            error: null,
+          }),
+        }),
+      };
+
+      const res = await request(app)
+        .get(`/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/signed-url?organization_id=${ORG}`)
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      expect(docBuilder.eq).toHaveBeenCalledWith("organization_id", ORG);
+      // The version lookup is pinned to the parent document id.
+      expect(versionBuilder.eq).toHaveBeenCalledWith(
+        "document_id",
+        "00000000-0000-0000-0000-000000000040",
+      );
+    });
+
+    it("returns 404 when the version id belongs to a different document", async () => {
+      const supabase = mockSupabase();
+      supabase.from
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { storage_bucket: "documents" },
+            error: null,
+          } as MockResult),
+        )
+        .mockReturnValueOnce(
+          // `document_id` filter means a version from another document is absent.
+          createMockBuilder({ data: null, error: new Error("not found") } as MockResult),
+        );
+      const createSignedUrl = jest.fn();
+      supabase.storage = {
+        from: jest.fn().mockReturnValue({ createSignedUrl }),
+      };
+
+      const res = await request(app)
+        .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/other-doc-version/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(404);
+      expect(createSignedUrl).not.toHaveBeenCalled();
+    });
+
+    it("returns 500 when storage signing fails", async () => {
+      const supabase = mockSupabase();
+      supabase.from
+        .mockReturnValueOnce(
+          createMockBuilder({ data: { storage_bucket: "documents" }, error: null } as MockResult),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: { storage_path: "org-1/1000-old.pdf" },
+            error: null,
+          } as MockResult),
+        );
+      supabase.storage = {
+        from: jest.fn().mockReturnValue({
+          createSignedUrl: jest.fn().mockResolvedValue({
+            data: null,
+            error: { message: "Storage error" },
+          }),
+        }),
+      };
+
+      const res = await request(app)
+        .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1/signed-url")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(500);
+    });
+  });
+
+  describe("version metadata does not leak storage paths", () => {
+    it("GET /:id/versions selects explicit columns excluding storage_path", async () => {
+      const supabase = mockSupabase();
+      // First builder is the parent-document ownership lookup; the second is the
+      // document_versions query whose projection we assert on.
+      const docBuilder = createMockBuilder({ data: { id: "doc-1" }, error: null } as MockResult);
+      const versionBuilder = createMockBuilder({
+        data: [],
+        error: null,
+        count: 0,
+      } as MockResult);
+      supabase.from.mockReturnValueOnce(docBuilder).mockReturnValueOnce(versionBuilder);
+
+      const res = await request(app)
+        .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      const [columns] = versionBuilder.select.mock.calls[0] as [string];
+      expect(columns).not.toContain("storage_path");
+      expect(columns).toContain("version_number");
+    });
+
+    it("GET /:id/versions/:versionId selects explicit columns excluding storage_path", async () => {
+      const supabase = mockSupabase();
+      const docBuilder = createMockBuilder({ data: { id: "doc-1" }, error: null } as MockResult);
+      const versionBuilder = createMockBuilder({
+        data: { id: "v-1", version_number: 2 },
+        error: null,
+      } as MockResult);
+      supabase.from.mockReturnValueOnce(docBuilder).mockReturnValueOnce(versionBuilder);
+
+      const res = await request(app)
+        .get("/api/v1/documents/00000000-0000-0000-0000-000000000040/versions/v-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      const [columns] = versionBuilder.select.mock.calls[0] as [string];
+      expect(columns).not.toContain("storage_path");
+      expect(columns).toContain("version_number");
+    });
+  });
+
   describe("POST /upload", () => {
     it("uploads a file and creates a document", async () => {
       const newDoc = { ...DOCUMENT, id: "uploaded-doc" };
@@ -412,10 +617,85 @@ describe("documents routes", () => {
         .attach("file", Buffer.from("new content"), "new.txt");
 
       expect(res.status).toBe(200);
-      expect(supabase.storage.from("documents").remove).toHaveBeenCalledWith(["old/path.pdf"]);
+      // The prior version's object must be RETAINED, not deleted: an older
+      // document_versions row still references it (FILE-P1-003).
+      expect(supabase.storage.from("documents").remove).not.toHaveBeenCalledWith(["old/path.pdf"]);
       expect(logAuditEvent).toHaveBeenCalledWith(
         expect.objectContaining({ action: "document.update" }),
       );
+    });
+
+    it("writes an org-parseable storage path (leading org UUID)", async () => {
+      const newDoc = { ...DOCUMENT, id: "uploaded-doc" };
+      const supabase = mockSupabase();
+      supabase.from.mockReturnValue(createMockBuilder({ data: newDoc, error: null } as MockResult));
+      supabase.storage = {
+        from: jest.fn().mockReturnValue({
+          upload: jest.fn().mockResolvedValue({ data: { path: "x" }, error: null }),
+          remove: jest.fn().mockResolvedValue({ data: null, error: null }),
+          createSignedUrl: jest.fn(),
+        }),
+      };
+
+      const res = await request(app)
+        .post("/api/v1/documents/upload")
+        .set("Authorization", "Bearer token-123")
+        .field("organizationId", "00000000-0000-0000-0000-000000000001")
+        .field("name", "Org Path Doc")
+        .attach("file", Buffer.from("test content"), "test.txt");
+
+      expect(res.status).toBe(201);
+      const [uploadedPath] = supabase.storage.from("documents").upload.mock.calls[0] as [string];
+      // `storage_path_org_id` requires the raw org UUID at the start of the path.
+      expect(uploadedPath.startsWith("00000000-0000-0000-0000-000000000001/")).toBe(true);
+      expect(uploadedPath.startsWith("orgs/")).toBe(false);
+    });
+
+    it("retains the prior version object until the new version is committed", async () => {
+      const existingDoc = {
+        id: "00000000-0000-0000-0000-000000000040",
+        organization_id: "00000000-0000-0000-0000-000000000001",
+        storage_bucket: "documents",
+        storage_path: "old/path.pdf",
+        current_version: 2,
+      };
+      const updatedDoc = { ...existingDoc, storage_path: "new/path.pdf", current_version: 3 };
+
+      const supabase = mockSupabase();
+      const updateBuilder = createMockBuilder({ data: updatedDoc, error: null } as MockResult);
+      const versionBuilder = createMockBuilder({ data: { id: "v-3" }, error: null } as MockResult);
+      supabase.from
+        .mockReturnValueOnce(createMockBuilder({ data: existingDoc, error: null } as MockResult))
+        .mockReturnValueOnce(updateBuilder)
+        .mockReturnValueOnce(versionBuilder);
+
+      const remove = jest.fn().mockResolvedValue({ data: null, error: null });
+      supabase.storage = {
+        from: jest.fn().mockReturnValue({
+          upload: jest.fn().mockResolvedValue({ data: { path: "x" }, error: null }),
+          remove,
+          createSignedUrl: jest.fn(),
+        }),
+      };
+
+      const res = await request(app)
+        .post("/api/v1/documents/upload")
+        .set("Authorization", "Bearer token-123")
+        .field("organizationId", "00000000-0000-0000-0000-000000000001")
+        .field("name", "Replaced Doc")
+        .field("documentId", "00000000-0000-0000-0000-000000000040")
+        .field("currentVersion", "2")
+        .attach("file", Buffer.from("new content"), "new.txt");
+
+      expect(res.status).toBe(200);
+      // The DB update and the version row must both run first...
+      expect(updateBuilder.update).toHaveBeenCalled();
+      expect(supabase.from).toHaveBeenCalledWith("document_versions");
+      // ...and the PREVIOUS object must NOT be deleted. An older
+      // document_versions row still references it, so removing it would leave
+      // that version pointing at bytes that no longer exist (FILE-P1-003).
+      // Only the new object may be touched (and only on failure/rollback).
+      expect(remove).not.toHaveBeenCalledWith(["old/path.pdf"]);
     });
 
     it("returns 400 when organizationId missing", async () => {

@@ -152,7 +152,41 @@ describe("organizations routes", () => {
       expect(res.status).toBe(200);
     });
 
-    it("shows all organizations for platform admins (admin role, not super admin)", async () => {
+    it("scopes a plain `admin` (no super_admin flag) to their own orgs", async () => {
+      // Deliberate contract change: cross-tenant reach requires BOTH the
+      // is_super_admin flag AND a cross-tenant role key (lib/admin-scope.ts), so
+      // an admin-role holder WITHOUT the flag is org-scoped here, exactly as on
+      // audit/dashboard/business-os/search. Previously this route used an OR and
+      // returned every organization.
+      const supabase = mockAuth();
+      supabase.auth.getUser.mockResolvedValue({
+        data: { user: { id: "org-admin-user", email: "admin@example.com" } },
+        error: null,
+      });
+      // resolveAdminTenantScope: memberships (with role) + profiles, in parallel.
+      supabase.from
+        .mockReturnValueOnce(
+          createMockBuilder({
+            data: [{ organization_id: ORG.id, roles: { id: "r1", key: "admin" } }],
+            error: null,
+          }),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({ data: { id: "org-admin-user", is_super_admin: false }, error: null }),
+        )
+        // the organizations list query itself
+        .mockReturnValueOnce(createMockBuilder({ data: [ORG], error: null }));
+
+      const res = await request(app)
+        .get("/api/v1/organizations")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(200);
+      // scoped to their org, NOT the all-tenant list
+      expect(res.body.data).toHaveLength(1);
+    });
+
+    it("shows all organizations for a genuine cross-tenant admin (flag AND role)", async () => {
       const supabase = mockAuth();
       supabase.auth.getUser.mockResolvedValue({
         data: { user: { id: "platform-admin-user", email: "admin@example.com" } },
@@ -161,19 +195,16 @@ describe("organizations routes", () => {
       supabase.from
         .mockReturnValueOnce(
           createMockBuilder({
-            data: { id: "platform-admin-user", is_super_admin: false },
+            data: [{ organization_id: ORG.id, roles: { id: "r1", key: "super_admin" } }],
             error: null,
           }),
+        )
+        .mockReturnValueOnce(
+          createMockBuilder({ data: { id: "platform-admin-user", is_super_admin: true }, error: null }),
         )
         .mockReturnValueOnce(
           createMockBuilder({
             data: [ORG, { ...ORG, id: "org-2", name: "Other Org" }],
-            error: null,
-          }),
-        )
-        .mockReturnValueOnce(
-          createMockBuilder({
-            data: [{ roles: { id: "role-admin", key: "admin" } }],
             error: null,
           }),
         );
@@ -194,21 +225,15 @@ describe("organizations routes", () => {
       });
       supabase.from
         .mockReturnValueOnce(
+          createMockBuilder({
+            data: [{ organization_id: ORG.id, roles: { id: "r2", key: "client_user" } }],
+            error: null,
+          }),
+        )
+        .mockReturnValueOnce(
           createMockBuilder({ data: { id: "client-user", is_super_admin: false }, error: null }),
         )
-        .mockReturnValueOnce(createMockBuilder({ data: [ORG], error: null }))
-        .mockReturnValueOnce(
-          createMockBuilder({
-            data: [{ roles: { id: "role-client", key: "client_user" } }],
-            error: null,
-          }),
-        )
-        .mockReturnValueOnce(
-          createMockBuilder({
-            data: [{ organization_id: "00000000-0000-0000-0000-000000000001" }],
-            error: null,
-          }),
-        );
+        .mockReturnValueOnce(createMockBuilder({ data: [ORG], error: null }));
 
       const res = await request(app)
         .get("/api/v1/organizations")
@@ -343,6 +368,43 @@ describe("organizations routes", () => {
         .set("Authorization", "Bearer token-123");
 
       expect(res.status).toBe(204);
+    });
+  });
+
+  describe("domain writes tenant isolation (ADMIN-P1-001)", () => {
+    it("returns 403 when adding a domain to another tenant's organization", async () => {
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
+
+      const res = await request(app)
+        .post("/api/v1/organizations/org-other/domains")
+        .set("Authorization", "Bearer token-123")
+        .send({ domain: "evil.example" });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("returns 403 when updating another tenant's domain", async () => {
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(createMockBuilder({ data: DOMAIN, error: null }));
+
+      const res = await request(app)
+        .patch("/api/v1/organizations/org-other/domains/dom-1")
+        .set("Authorization", "Bearer token-123")
+        .send({ autoApprove: true });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("returns 403 when deleting another tenant's domain", async () => {
+      const supabase = mockAdmin();
+      supabase.from.mockReturnValue(createMockBuilder({ data: null, error: null }));
+
+      const res = await request(app)
+        .delete("/api/v1/organizations/org-other/domains/dom-1")
+        .set("Authorization", "Bearer token-123");
+
+      expect(res.status).toBe(403);
     });
   });
 

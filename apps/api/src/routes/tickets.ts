@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { getSupabaseAdmin, getScopedClient } from "../services/supabase";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getScopedClient } from "../services/supabase";
 import { logAuditEvent } from "../services/audit";
 import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
@@ -12,6 +13,11 @@ import { createNotification, notifyAndEmail } from "../lib/notify";
 import { dispatchWebhook } from "../lib/webhook-dispatcher";
 import { isPlatformAdminKey, PLATFORM_ADMIN_KEYS, roleKeyOf } from "../lib/roles";
 import { assertDeleteConfirmed } from "../lib/delete-confirm";
+import {
+  NO_ORG_MATCH,
+  resolveAdminTenantScope,
+  type AdminTenantScope,
+} from "../lib/admin-scope";
 import {
   createTicketSchema,
   updateTicketSchema,
@@ -165,7 +171,7 @@ router.post("/", requirePermission("tickets", "create"), async (req, res, next) 
       .select("user_id, roles!inner(key)")
       .eq("organization_id", parsed.organizationId)
       .eq("status", "approved")
-      .in("roles.key", PLATFORM_ADMIN_KEYS);
+      .in("roles.key", PLATFORM_ADMIN_KEYS as unknown as string[]);
 
     if (adminMembers?.length) {
       const adminIds = adminMembers
@@ -420,7 +426,6 @@ router.patch(
 
         const isOrgAdmin =
           memberships?.some((row) => isPlatformAdminKey(roleKeyOf(row.roles))) ?? false;
-
         if (!isOrgAdmin) {
           throw new AppError("FORBIDDEN", "Only the comment author can edit this comment", 403);
         }
@@ -496,13 +501,48 @@ router.delete("/:id", requirePermission("tickets", "delete"), async (req, res, n
   }
 });
 
+/**
+ * Resolve which of the given ticket ids belong to the caller's tenant scope.
+ *
+ * `bulk_update_with_version` skips its per-row `is_org_member` check when the
+ * caller is service-role (`auth.uid()` is null) — which is exactly how this
+ * route calls it. The ids MUST therefore be pre-filtered here, mirroring
+ * `resolveOwnedDocumentIds` in routes/documents.ts.
+ *
+ * A genuine cross-tenant admin (`resolveAdminTenantScope().allTenants`) may
+ * touch any tenant; everyone else is restricted to their own approved orgs and
+ * ids outside that set are dropped before the RPC runs.
+ */
+async function resolveOwnedTicketIds(
+  supabase: SupabaseClient,
+  ticketIds: string[],
+  scope: AdminTenantScope,
+): Promise<string[]> {
+  if (scope.allTenants) return ticketIds;
+  const orgIds = scope.orgIds.length > 0 ? scope.orgIds : [NO_ORG_MATCH];
+  const { data, error } = await supabase
+    .from("tickets")
+    .select("id")
+    .in("id", ticketIds)
+    .in("organization_id", orgIds);
+  if (error) throw new AppError("DB_ERROR", error.message, 500);
+  return (data ?? []).map((t: { id: string }) => t.id);
+}
+
 router.post("/bulk", requireAdmin, async (req, res, next) => {
   try {
     const { ids, status, priority } = bulkTicketUpdateSchema.parse(req.body);
 
-    const supabase = getSupabaseAdmin();
+    // The bulk RPC skips its per-row org check for service-role calls, and
+    // this route never referenced the org resolved by requireOrgAccess. Resolve
+    // the caller's tenant scope and pre-filter the ids so a single-org admin
+    // can never update another tenant's tickets (cross-tenant write).
+    const scope = await resolveAdminTenantScope(req);
+    const supabase = getScopedClient(req, "tickets", "write");
+    const ownedIds = await resolveOwnedTicketIds(supabase, ids, scope);
+    const skipped = ids.length - ownedIds.length;
 
-    const updates = ids.map((id) => {
+    const updates = ownedIds.map((id) => {
       const data: Record<string, string> = {};
       if (status) data.status = status;
       if (priority) data.priority = priority;
@@ -533,10 +573,10 @@ router.post("/bulk", requireAdmin, async (req, res, next) => {
       actorUserId: req.authUser!.userId,
       action: "ticket.bulk_update",
       entityType: "ticket",
-      metadata: { ids, status, priority, successful, failed: failed.length },
+      metadata: { ids, ownedIds, skipped, status, priority, successful, failed: failed.length },
     });
 
-    res.json(success({ results, successful, failed: failed.length }));
+    res.json(success({ results, successful, failed: failed.length, skipped }));
   } catch (error) {
     next(error);
   }

@@ -48,8 +48,32 @@ All secrets must be rotated periodically to limit exposure from credential leaks
 | 38  | `SUPABASE_ACCESS_TOKEN`       | supabase-migrations workflow | Every 90 days                                   | Supabase → Account → Access Tokens                        |
 | 39  | `AWS_ACCESS_KEY_ID`           | db-backup workflow           | Every 180 days                                  | AWS IAM User → Security Credentials                       |
 | 40  | `AWS_SECRET_ACCESS_KEY`       | db-backup workflow           | Every 180 days                                  | AWS IAM User → Security Credentials                       |
+| 41  | `BACKUP_ENCRYPTION_KEY`       | db-backup, db-restore-test, storage-backup | Only with a re-encryption plan (see below) | `openssl rand -base64 48`                                 |
 
 ## Rotation Procedures
+
+### BACKUP_ENCRYPTION_KEY — Handle with care (backups depend on it)
+
+`BACKUP_ENCRYPTION_KEY` is the openssl passphrase that encrypts database and
+storage backup objects at rest (audit DR-P1-003). It is a GitHub Environment
+Secret; it is never printed and must never be committed.
+
+**Rotating this key immediately makes every existing `.enc` backup
+undecryptable** unless the new key is introduced in a way that keeps the old
+key available. Do **not** rotate on a schedule like other secrets.
+
+Safe rotation procedure:
+
+1. Set the new key under a second name and re-encrypt existing objects, **or**
+   keep the previous passphrase available to the restore tooling during a
+   transition (e.g. decrypt with the old key, re-upload encrypted with the new).
+2. Only after all retained backup objects (database **and** storage, primary
+   **and** offsite) have been re-encrypted may the old passphrase be discarded.
+3. Run `db-restore-test.yml` after rotation and confirm it decrypts and passes.
+
+**Loss of this key means permanent loss of encrypted backups.** Store a
+break-glass copy of the current key in the agreed escrow location (see
+`docs/DATA_BREACH_RESPONSE.md` / emergency rotation) before relying on it.
 
 ### JWT_SECRET — Zero-Downtime Multi-Secret Rotation
 

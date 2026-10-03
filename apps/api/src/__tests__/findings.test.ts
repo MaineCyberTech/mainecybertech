@@ -68,6 +68,12 @@ jest.mock("../middleware/permissions", () => ({
     (_req: unknown, _res: unknown, next: () => void) =>
       next(),
 }));
+// Plan-boundary enforcement is covered by middleware-entitlement.test.ts.
+jest.mock("../middleware/entitlement", () => ({
+  requireEntitlement: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireActiveSubscription: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+  clearEntitlementCache: jest.fn(),
+}));
 const app = createTestApp();
 app.use("/api/v1/findings", findingsRouter);
 app.use(errorHandler);

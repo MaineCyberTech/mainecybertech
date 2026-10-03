@@ -3,17 +3,48 @@ import { getSupabaseAdmin } from "../services/supabase";
 import { AppError, success } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireAdmin } from "../middleware/admin";
+import { requireOrgAccess } from "../middleware/org-access";
 import { responseCache } from "../middleware/cache";
 import { queryInt } from "../lib/query";
+import {
+  applyOrgScope,
+  applyRequestedOrg,
+  NO_ORG_MATCH,
+  resolveAdminTenantScope,
+  type AdminTenantScope,
+} from "../lib/admin-scope";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.use(requireAuth);
+router.use(requireOrgAccess);
 router.use(requireAdmin);
+
+/** Approved user ids belonging to the caller's orgs (used to scope profiles). */
+async function scopedMemberUserIds(scope: AdminTenantScope): Promise<string[]> {
+  if (scope.allTenants) return [];
+  const supabase = getSupabaseAdmin();
+  const { data } = await supabase
+    .from("memberships")
+    .select("user_id")
+    .in("organization_id", scope.orgIds.length > 0 ? scope.orgIds : [NO_ORG_MATCH])
+    .eq("status", "approved");
+  return (data ?? []).map((m) => m.user_id as string);
+}
 
 router.get("/summary", responseCache(30), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    // A single-org admin sees only their own tenant's aggregates; the
+    // platform-wide view is reserved for genuine cross-tenant admins
+    // (MT-P1-002 / ADMIN-P1-001).
+    const scope = await resolveAdminTenantScope(req);
+
+    let profileQuery = supabase.from("profiles").select("*", { count: "exact", head: true });
+    if (!scope.allTenants) {
+      const memberUserIds = await scopedMemberUserIds(scope);
+      profileQuery = profileQuery.in("id", memberUserIds.length > 0 ? memberUserIds : [NO_ORG_MATCH]);
+    }
 
     const [
       { data: orgs, error: orgsError },
@@ -23,21 +54,44 @@ router.get("/summary", responseCache(30), async (req, res, next) => {
       { count: pendingApprovals, error: approvalsError },
       { count: totalUsers, error: usersError },
     ] = await Promise.all([
-      supabase
-        .from("organizations")
-        .select("id, name, status, created_at")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("tickets")
-        .select("*", { count: "exact", head: true })
-        .not("status", "in", '("resolved","closed","completed")'),
-      supabase.from("projects").select("*", { count: "exact", head: true }).eq("status", "active"),
-      supabase.from("documents").select("*", { count: "exact", head: true }),
-      supabase
-        .from("approval_requests")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "pending"),
-      supabase.from("profiles").select("*", { count: "exact", head: true }),
+      applyOrgScope(
+        supabase
+          .from("organizations")
+          .select("id, name, status, created_at")
+          .order("created_at", { ascending: false }),
+        "id",
+        scope,
+      ),
+      applyOrgScope(
+        supabase
+          .from("tickets")
+          .select("*", { count: "exact", head: true })
+          .not("status", "in", '("resolved","closed","completed")'),
+        "organization_id",
+        scope,
+      ),
+      applyOrgScope(
+        supabase
+          .from("projects")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "active"),
+        "organization_id",
+        scope,
+      ),
+      applyOrgScope(
+        supabase.from("documents").select("*", { count: "exact", head: true }),
+        "organization_id",
+        scope,
+      ),
+      applyOrgScope(
+        supabase
+          .from("approval_requests")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "pending"),
+        "organization_id",
+        scope,
+      ),
+      profileQuery,
     ]);
 
     if (orgsError) throw new AppError("DB_ERROR", orgsError.message, 500);
@@ -91,12 +145,16 @@ router.get("/summary", responseCache(30), async (req, res, next) => {
 router.get("/approvals-overdue", responseCache(30), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const scope = await resolveAdminTenantScope(req);
 
-    const { data, error, count } = await supabase
+    let query = supabase
       .from("approval_requests")
       .select("*", { count: "exact" })
       .eq("status", "pending")
-      .lt("due_at", new Date().toISOString())
+      .lt("due_at", new Date().toISOString());
+    query = applyOrgScope(query, "organization_id", scope);
+
+    const { data, error, count } = await query
       .order("due_at", { ascending: true })
       .limit(20);
 
@@ -111,12 +169,16 @@ router.get("/approvals-overdue", responseCache(30), async (req, res, next) => {
 router.get("/recent-activity", responseCache(15), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const scope = await resolveAdminTenantScope(req);
 
     const limit = Math.min(20, Math.max(1, queryInt(req.query.limit, 10)));
 
-    const { data, error } = await supabase
-      .from("audit_logs")
-      .select("*")
+    const requestedOrg = req.query.organization_id as string | undefined;
+    let query = supabase.from("audit_logs").select("*");
+    query = applyRequestedOrg(query, "organization_id", requestedOrg, scope);
+    query = applyOrgScope(query, "organization_id", scope);
+
+    const { data, error } = await query
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -131,10 +193,14 @@ router.get("/recent-activity", responseCache(15), async (req, res, next) => {
 router.get("/org-health", responseCache(60), async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
+    const scope = await resolveAdminTenantScope(req);
 
-    const { data: orgs, error: orgsError } = await supabase
-      .from("organizations")
-      .select("id, name, status");
+    // Restrict the tenant list to the caller's own orgs unless they are a
+    // genuine cross-tenant admin (MT-P1-002).
+    let orgsQuery = supabase.from("organizations").select("id, name, status");
+    orgsQuery = applyOrgScope(orgsQuery, "id", scope);
+
+    const { data: orgs, error: orgsError } = await orgsQuery;
 
     if (orgsError) throw new AppError("DB_ERROR", orgsError.message, 500);
 
@@ -192,6 +258,13 @@ router.get("/org-health", responseCache(60), async (req, res, next) => {
 
 router.get("/snapshots", responseCache(60), async (req, res, next) => {
   try {
+    const scope = await resolveAdminTenantScope(req);
+    // business_os_snapshots is a platform-level table with no organization_id.
+    // Only genuine cross-tenant admins may read it.
+    if (!scope.allTenants) {
+      return res.json(success({ items: [] }));
+    }
+
     const limit = Math.min(90, Math.max(1, queryInt(req.query.limit, 30)));
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase

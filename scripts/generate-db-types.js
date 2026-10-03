@@ -250,7 +250,7 @@ function parseDropTable(sql) {
 function parseAlterTableDrop(sql) {
   const drops = new Map();
   const regex =
-    /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s+DROP\s+(?:IF\s+EXISTS\s+)?COLUMN\s+["']?(\w+)["']?/gi;
+    /ALTER\s+TABLE\s+(?:IF\s+EXISTS\s+)?["']?(?:public\.)?(\w+)["']?\s+DROP\s+(?:IF\s+EXISTS\s+)?COLUMN\s+(?:IF\s+EXISTS\s+)?["']?(\w+)["']?/gi;
   let match;
   while ((match = regex.exec(sql)) !== null) {
     const table = match[1].toLowerCase();

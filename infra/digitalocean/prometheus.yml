@@ -8,6 +8,14 @@ global:
 rule_files:
   - /etc/prometheus/rules.yml
 
+# Forward firing alerts to Alertmanager (IR-P0-003). Internal-only, on the
+# compose network — no published ports. Alertmanager then routes the `Watchdog`
+# alert to an external dead-man's-switch receiver (see alertmanager.yml).
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
 scrape_configs:
   - job_name: mct-api
     metrics_path: /metrics

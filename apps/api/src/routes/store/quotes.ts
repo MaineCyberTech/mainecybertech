@@ -9,6 +9,7 @@ import { logAuditEvent } from "../../services/audit";
 import { getProducts } from "../../lib/store-catalog";
 import { toJson, type UpdateRow } from "../../lib/db-types";
 import { LIST_HARD_CAP } from "../../lib/pagination";
+import { applyOrgScope, resolveAdminTenantScope } from "../../lib/admin-scope";
 import { scoreLead } from "../../lib/lead-scoring";
 import { buildProposalSections, PROPOSAL_GUARDRAILS } from "../../lib/proposal-generator";
 import {
@@ -161,21 +162,39 @@ export function registerQuoteRoutes(router: Router) {
   });
 
   // GET /api/v1/store/quotes - list quotes (admin)
-  router.get("/quotes", requireAuth, requireAdmin, async (_req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const { data, error } = await supabase
-        .from("store_quotes")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(LIST_HARD_CAP);
+  router.get(
+    "/quotes",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        // store_quotes.organization_id is tenant-scoped (migration 5302408), so
+        // a single-org admin only sees their own tenant's quotes; global
+        // (organization_id IS NULL) and other tenants' rows require a genuine
+        // cross-tenant admin (MT-P0-005).
+        const scope = await resolveAdminTenantScope(req);
+        let query = getSupabaseAdmin().from("store_quotes").select("*");
+        if (!scope.allTenants) {
+          query = applyOrgScope(query, "organization_id", scope);
+        } else {
+          // Cross-tenant admins may explicitly filter, but global rows are only
+          // returned when no org filter is requested.
+          const requestedOrg = req.query.organization_id as string | undefined;
+          if (requestedOrg) query = query.eq("organization_id", requestedOrg);
+        }
 
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      res.json(success(data ?? []));
-    } catch (error) {
-      next(error);
-    }
-  });
+        const { data, error } = await query
+          .order("created_at", { ascending: false })
+          .limit(LIST_HARD_CAP);
+
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        res.json(success(data ?? []));
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   // GET /api/v1/store/quote-requests - list structured quote requests (admin)
   router.get("/quote-requests", requireAuth, requireAdmin, async (_req, res, next) => {

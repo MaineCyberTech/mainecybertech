@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from "../services/supabase";
 import type { TablesInsert } from "@mct/sdk/database.types";
 import { assertSafeUrl } from "../lib/ssrf-guard";
 import type { TaskHandler, TaskResult } from "../task-registry";
+import { insertNotification } from "../notification-store";
 import tls from "node:tls";
 
 type Row = Record<string, unknown>;
@@ -386,13 +387,13 @@ export const licenseOptimizerCheck: TaskHandler = async (_payload): Promise<Task
           .maybeSingle();
         if (recent) continue;
 
-        await supabase.from("notifications").insert({
-          user_id: userId,
-          organization_id: orgId,
+        await insertNotification(supabase, {
+          userId,
+          organizationId: orgId,
           title: "Reclaimable license seats",
           body: `${entry.count} license allocation(s) are under 70% used - about $${Math.round(entry.savings)}/month in unused seats.`,
           module: "license-optimizer",
-          module_id: orgId,
+          moduleId: orgId,
           action: "reclaimable-seats",
         });
         notified++;
@@ -911,13 +912,13 @@ export const vendorContractRenewalCheck: TaskHandler = async (_payload): Promise
         .maybeSingle();
       if (existing) continue;
 
-      await supabase.from("notifications").insert({
-        user_id: contract.owner_user_id,
-        organization_id: contract.organization_id,
+      await insertNotification(supabase, {
+        userId: contract.owner_user_id,
+        organizationId: contract.organization_id,
         title: "Vendor contract renewal due",
         body: `${contract.vendor_name} / ${contract.service_name} renews on ${contract.renewal_date ?? "an upcoming date"}.`,
         module: "vendor-contracts",
-        module_id: contract.id,
+        moduleId: contract.id,
         action: "renewal-due",
       });
       notified++;
@@ -1258,13 +1259,13 @@ export const saasAuditScan: TaskHandler = async (_payload): Promise<TaskResult> 
           .maybeSingle();
         if (recent) continue;
 
-        await supabase.from("notifications").insert({
-          user_id: userId,
-          organization_id: orgId,
+        await insertNotification(supabase, {
+          userId,
+          organizationId: orgId,
           title: "SaaS renewals due soon",
           body: `${orgAudits.length} SaaS subscription(s) renew within 60 days.`,
           module: "saas-audit",
-          module_id: orgId,
+          moduleId: orgId,
           action: "renewals-due",
         });
         notified++;
@@ -1541,13 +1542,13 @@ export const automationRunCheck: TaskHandler = async (_payload): Promise<TaskRes
           .maybeSingle();
         if (recent) continue;
 
-        await supabase.from("notifications").insert({
-          user_id: userId,
-          organization_id: orgId,
+        await insertNotification(supabase, {
+          userId,
+          organizationId: orgId,
           title: "Scheduled automation due",
           body: `${dueNames.length} scheduled workflow(s) are due to run: ${dueNames.slice(0, 3).join(", ")}${dueNames.length > 3 ? "…" : ""}.`,
           module: "automation",
-          module_id: orgId,
+          moduleId: orgId,
           action: "workflow-due",
         });
         notified++;
@@ -1609,13 +1610,13 @@ export const approvalOverdueCheck: TaskHandler = async (_payload): Promise<TaskR
         .maybeSingle();
       if (existing) continue;
 
-      await supabase.from("notifications").insert({
-        user_id: recipient,
-        organization_id: approval.organization_id,
+      await insertNotification(supabase, {
+        userId: recipient,
+        organizationId: approval.organization_id,
         title: "Approval overdue",
         body: `"${approval.request_subject}" is past its due date.`,
         module: "approvals",
-        module_id: approval.id,
+        moduleId: approval.id,
         action: "overdue",
       });
       notified++;

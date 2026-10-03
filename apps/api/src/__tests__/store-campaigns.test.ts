@@ -46,6 +46,9 @@ import { getSupabaseAdmin } from "../services/supabase";
 import storeRouter from "../routes/store";
 import { capacityNotice, isCampaignActive } from "../lib/store-campaigns";
 
+const ORG_A = "00000000-0000-0000-0000-00000000000a";
+const ORG_B = "00000000-0000-0000-0000-00000000000b";
+
 function campaignRow(overrides: Record<string, unknown> = {}) {
   return {
     id: "c-1",
@@ -66,36 +69,68 @@ function campaignRow(overrides: Record<string, unknown> = {}) {
     capacity_total: null,
     capacity_remaining: null,
     capacity_label: "",
-    organization_id: null,
+    organization_id: ORG_A,
     created_at: "2026-09-21T10:00:00.000Z",
     updated_at: "2026-09-21T10:00:00.000Z",
     ...overrides,
   };
 }
 
+type TenantMode = "single" | "cross";
+
 function setup({
   rows = {},
   failTables = [],
-}: { rows?: Record<string, unknown>; failTables?: string[] } = {}) {
+  mode = "single",
+  existingOrgId = ORG_A,
+  profile = { is_super_admin: false },
+  membershipRole = "admin",
+}: {
+  rows?: Record<string, unknown>;
+  failTables?: string[];
+  mode?: TenantMode;
+  existingOrgId?: string | null;
+  profile?: { is_super_admin: boolean };
+  membershipRole?: string;
+} = {}) {
   const inserts: Record<string, any> = {};
   const updates: Record<string, any> = {};
+  const calls: Record<string, Array<{ method: string; args: unknown[] }>> = {};
+
+  const builderFor = (table: string) => {
+    const builder = createMockBuilder({ data: null as unknown, error: null });
+    calls[table] = calls[table] ?? [];
+    for (const method of ["eq", "in", "is", "not", "order", "limit"]) {
+      (builder as any)[method] = jest.fn((...args: unknown[]) => {
+        calls[table].push({ method, args });
+        return builder;
+      });
+    }
+    return builder;
+  };
 
   const from = jest.fn((table: string) => {
-    const builder = createMockBuilder({ data: null as unknown, error: null });
-    let mode: "read" | "write" | "update" | "delete" = "read";
+    const builder = builderFor(table);
+    let mode_: "read" | "write" | "update" | "delete" = "read";
+    let selectArg = "*";
 
     (builder as any).insert = jest.fn((payload: unknown) => {
       inserts[table] = payload;
-      mode = "write";
+      mode_ = "write";
       return builder;
     });
     (builder as any).update = jest.fn((payload: unknown) => {
       updates[table] = payload;
-      mode = "update";
+      mode_ = "update";
       return builder;
     });
     (builder as any).delete = jest.fn(() => {
-      mode = "delete";
+      mode_ = "delete";
+      return builder;
+    });
+    (builder as any).select = jest.fn((...args: unknown[]) => {
+      calls[table].push({ method: "select", args });
+      selectArg = String(args[0] ?? "*");
       return builder;
     });
 
@@ -103,11 +138,28 @@ function setup({
       onFulfilled?: (v: unknown) => unknown,
       onRejected?: (v: unknown) => unknown,
     ) => {
-      const failed = mode !== "read" && failTables.includes(table);
+      const failed = mode_ !== "read" && failTables.includes(table);
       let data: unknown = null;
       if (!failed) {
-        if (mode === "read") data = table in rows ? rows[table] : [campaignRow()];
-        else if (mode === "write" || mode === "update") data = campaignRow();
+        if (mode_ === "read") {
+          if (table in rows) data = rows[table];
+          else if (table === "profiles") data = profile;
+          else if (table === "memberships") {
+            data = [
+              {
+                organization_id: ORG_A,
+                roles:
+                  mode === "cross"
+                    ? { id: "r", key: "super_admin" }
+                    : { id: "r", key: membershipRole },
+              },
+            ];
+          } else if (table === "store_campaigns") {
+            // The list handler selects `*`; the PATCH/DELETE existence checks
+            // select `organization_id` and expect a single row.
+            data = selectArg === "*" ? [campaignRow()] : { organization_id: existingOrgId };
+          } else data = [campaignRow()];
+        } else if (mode_ === "write" || mode_ === "update") data = campaignRow();
       }
       const result = failed
         ? { data: null, error: { message: `${table} unavailable` } }
@@ -119,7 +171,7 @@ function setup({
   });
 
   (getSupabaseAdmin as jest.Mock).mockReturnValue({ from });
-  return { inserts, updates };
+  return { inserts, updates, calls };
 }
 
 const app = createTestApp();
@@ -270,6 +322,8 @@ describe("store campaign routes", () => {
 
   it("lists all campaigns for admins", async () => {
     setup({
+      mode: "cross",
+      profile: { is_super_admin: true },
       rows: {
         store_campaigns: [campaignRow({ status: "active" }), campaignRow({ status: "draft" })],
       },
@@ -282,7 +336,7 @@ describe("store campaign routes", () => {
   });
 
   it("creates a campaign with snake_case columns", async () => {
-    const { inserts } = setup();
+    const { inserts } = setup({ mode: "cross", profile: { is_super_admin: true } });
 
     const res = await request(app)
       .post("/api/v1/store/campaigns")
@@ -336,7 +390,7 @@ describe("store campaign routes", () => {
   });
 
   it("updates a campaign", async () => {
-    const { updates } = setup();
+    const { updates } = setup({ mode: "cross", profile: { is_super_admin: true } });
 
     const res = await request(app).patch("/api/v1/store/campaigns/c-1").send({ status: "paused" });
 
@@ -345,7 +399,7 @@ describe("store campaign routes", () => {
   });
 
   it("rejects an empty campaign update", async () => {
-    setup();
+    setup({ mode: "cross", profile: { is_super_admin: true } });
 
     const res = await request(app).patch("/api/v1/store/campaigns/c-1").send({});
 
@@ -353,10 +407,120 @@ describe("store campaign routes", () => {
   });
 
   it("deletes a campaign", async () => {
-    setup();
+    setup({ mode: "cross", profile: { is_super_admin: true } });
 
     const res = await request(app).delete("/api/v1/store/campaigns/c-1");
 
     expect(res.status).toBe(204);
+  });
+});
+
+describe("store campaign tenant isolation (MT-P0-001)", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("scopes a single-org admin's campaign list to their own org", async () => {
+    const { calls } = setup({ rows: { store_campaigns: [campaignRow()] } });
+
+    const res = await request(app).get("/api/v1/store/campaigns/admin");
+
+    expect(res.status).toBe(200);
+    expect(calls.store_campaigns).toEqual(
+      expect.arrayContaining([{ method: "in", args: ["organization_id", [ORG_A]] }]),
+    );
+  });
+
+  it("leaves a genuine cross-tenant admin's campaign list unscoped", async () => {
+    const { calls } = setup({ mode: "cross", profile: { is_super_admin: true } });
+
+    const res = await request(app).get("/api/v1/store/campaigns/admin");
+
+    expect(res.status).toBe(200);
+    expect(calls.store_campaigns ?? []).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ method: "in" })]),
+    );
+  });
+
+  it("forces a single-org admin's new campaign into their resolved org", async () => {
+    const { inserts } = setup();
+
+    const res = await request(app).post("/api/v1/store/campaigns").send({
+      slug: "tenant-campaign",
+      name: "Tenant Campaign",
+    });
+
+    expect(res.status).toBe(201);
+    expect(inserts.store_campaigns).toMatchObject({ organization_id: ORG_A });
+  });
+
+  it("does not let a single-org admin create a global campaign by omitting the org", async () => {
+    const { inserts } = setup();
+
+    await request(app).post("/api/v1/store/campaigns").send({
+      slug: "sneaky-global",
+      name: "Sneaky Global",
+    });
+
+    expect(inserts.store_campaigns.organization_id).not.toBeNull();
+    expect(inserts.store_campaigns.organization_id).toBe(ORG_A);
+  });
+
+  it("lets a genuine cross-tenant admin create a global campaign", async () => {
+    const { inserts } = setup({ mode: "cross", profile: { is_super_admin: true } });
+
+    const res = await request(app).post("/api/v1/store/campaigns").send({
+      slug: "global-campaign",
+      name: "Global Campaign",
+    });
+
+    expect(res.status).toBe(201);
+    expect(inserts.store_campaigns).toMatchObject({ organization_id: null });
+  });
+
+  it("rejects a single-org admin mutating another org's campaign", async () => {
+    setup({ existingOrgId: ORG_B });
+
+    const res = await request(app).patch("/api/v1/store/campaigns/c-1").send({ status: "paused" });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("rejects a single-org admin mutating a global campaign", async () => {
+    setup({ existingOrgId: null });
+
+    const res = await request(app).patch("/api/v1/store/campaigns/c-1").send({ status: "paused" });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("rejects a single-org admin deleting another org's campaign", async () => {
+    setup({ existingOrgId: ORG_B });
+
+    const res = await request(app).delete("/api/v1/store/campaigns/c-1");
+
+    expect(res.status).toBe(403);
+  });
+
+  it("lets a genuine cross-tenant admin mutate another org's campaign", async () => {
+    const { updates } = setup({
+      mode: "cross",
+      profile: { is_super_admin: true },
+      existingOrgId: ORG_B,
+    });
+
+    const res = await request(app).patch("/api/v1/store/campaigns/c-1").send({ status: "paused" });
+
+    expect(res.status).toBe(200);
+    expect(updates.store_campaigns).toMatchObject({ status: "paused" });
+  });
+
+  it("does not let a single-org admin move a campaign to another org", async () => {
+    const { updates } = setup();
+
+    const res = await request(app)
+      .patch("/api/v1/store/campaigns/c-1")
+      .send({ organizationId: ORG_B, status: "paused" });
+
+    expect(res.status).toBe(200);
+    expect(updates.store_campaigns).not.toHaveProperty("organization_id");
   });
 });

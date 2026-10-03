@@ -1,5 +1,7 @@
 terraform {
-  required_version = ">= 1.5"
+  # use_lockfile (S3 native state locking) requires Terraform >= 1.10; the CI
+  # workflows and scripts/install-terraform.ps1 pin 1.15.9, so require it here.
+  required_version = ">= 1.15"
 
   backend "s3" {
     key    = "digitalocean/terraform.tfstate"

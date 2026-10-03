@@ -2,7 +2,7 @@
 $tempDir = "$env:TEMP\terraform-install"
 New-Item -ItemType Directory -Force -Path $tempDir | Out-Null
 
-$zipUrl = "https://releases.hashicorp.com/terraform/1.9.8/terraform_1.9.8_windows_amd64.zip"
+$zipUrl = "https://releases.hashicorp.com/terraform/1.15.9/terraform_1.15.9_windows_amd64.zip"
 $zipPath = "$tempDir\terraform.zip"
 
 Write-Host "Downloading Terraform..."

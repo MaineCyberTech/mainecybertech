@@ -10,6 +10,7 @@ import { getEnv } from "../config/env";
 import { httpClients } from "../lib/http-client";
 import { logger } from "../lib/logger";
 import { queryInt } from "../lib/query";
+import { resolveAdminTenantScope } from "../lib/admin-scope";
 
 type StripePrice = {
   nickname?: string | null;
@@ -38,6 +39,17 @@ type StripeSubscription = {
   current_period_start: number | null;
   current_period_end: number | null;
   items: { data: Array<{ price: StripePrice }> };
+};
+
+type StripePaymentIntent = {
+  id: string;
+  status: string;
+  amount: number;
+  amount_received?: number | null;
+  currency: string;
+  created: number | null;
+  invoice?: string | null;
+  customer?: string | null;
 };
 
 const router: ReturnType<typeof Router> = Router();
@@ -199,6 +211,25 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
       .parse(req.body);
     const supabase = getScopedClient(req, "billing", "write");
 
+    // Scope the sync to a single organization. `req.orgId` (resolved by
+    // requireOrgAccess) is the authority; a body/query org may only narrow,
+    // never widen, the caller's scope. Previously an omitted org left the
+    // query with no predicate at all, so the handler synced EVERY tenant's
+    // billing customers, invoices, subscriptions and payments.
+    const scope = await resolveAdminTenantScope(req);
+    const requestedOrg =
+      organizationId ??
+      (typeof req.query.organization_id === "string" ? req.query.organization_id : undefined);
+    const targetOrg = requestedOrg ?? req.orgId ?? undefined;
+
+    if (!targetOrg) {
+      // Never silently fall back to "all tenants".
+      throw new AppError("VALIDATION", "organizationId is required", 400);
+    }
+    if (!scope.allTenants && !scope.orgIds.includes(targetOrg)) {
+      throw new AppError("FORBIDDEN", "You do not have access to this organization", 403);
+    }
+
     const env = getEnv();
     const stripeKey = env.STRIPE_SECRET_KEY;
     if (!stripeKey) throw new AppError("CONFIG", "STRIPE_SECRET_KEY not configured", 500);
@@ -208,10 +239,11 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
       "Content-Type": "application/x-www-form-urlencoded",
     };
 
-    let query = supabase.from("billing_customers").select("stripe_customer_id, organization_id");
-    if (organizationId) query = query.eq("organization_id", organizationId);
+    const { data: customers } = await supabase
+      .from("billing_customers")
+      .select("stripe_customer_id, organization_id")
+      .eq("organization_id", targetOrg);
 
-    const { data: customers } = await query;
     if (!customers?.length) {
       res.json(success({ synced: 0, message: "No billing customers found" }));
       return;
@@ -221,13 +253,17 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
     for (const customer of customers) {
       if (!customer.stripe_customer_id) continue;
 
-      const [invoicesRes, subsRes] = await Promise.all([
+      const [invoicesRes, subsRes, paymentsRes] = await Promise.all([
         httpClients.stripe.get(
           `https://api.stripe.com/v1/invoices?customer=${customer.stripe_customer_id}&limit=20`,
           { headers: stripeHeaders },
         ),
         httpClients.stripe.get(
           `https://api.stripe.com/v1/subscriptions?customer=${customer.stripe_customer_id}&limit=10`,
+          { headers: stripeHeaders },
+        ),
+        httpClients.stripe.get(
+          `https://api.stripe.com/v1/payment_intents?customer=${customer.stripe_customer_id}&limit=20`,
           { headers: stripeHeaders },
         ),
       ]);
@@ -287,6 +323,41 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
         }
       }
 
+      // Populate payment history (BILL-P1-002). PaymentIntents are Stripe's
+      // canonical payment object; link to the local invoice when one exists.
+      if (paymentsRes.ok) {
+        const paymentsData = (await paymentsRes.json()) as { data: StripePaymentIntent[] };
+        const { data: orgInvoices } = await supabase
+          .from("invoices")
+          .select("id, stripe_invoice_id")
+          .eq("organization_id", customer.organization_id);
+        const invoiceIdByStripeId = new Map(
+          (orgInvoices ?? []).map((inv) => [inv.stripe_invoice_id, inv.id]),
+        );
+
+        for (const pi of paymentsData.data ?? []) {
+          const succeeded = pi.status === "succeeded";
+          await supabase.from("payments").upsert(
+            {
+              organization_id: customer.organization_id,
+              invoice_id: pi.invoice ? (invoiceIdByStripeId.get(pi.invoice) ?? null) : null,
+              stripe_payment_intent_id: pi.id,
+              amount_cents: Math.round(
+                succeeded ? (pi.amount_received ?? pi.amount) : pi.amount,
+              ),
+              currency: pi.currency,
+              status: succeeded
+                ? "succeeded"
+                : pi.status === "canceled" || pi.status === "requires_payment_method"
+                  ? "failed"
+                  : "pending",
+              paid_at: succeeded ? new Date((pi.created ?? 0) * 1000).toISOString() : null,
+            },
+            { onConflict: "stripe_payment_intent_id" },
+          );
+        }
+      }
+
       synced++;
     }
 
@@ -294,7 +365,8 @@ router.post("/sync", requirePermission("billing", "manage"), async (req, res, ne
       actorUserId: req.authUser!.userId,
       action: "billing.sync",
       entityType: "billing_customer",
-      metadata: { organizationId, synced },
+      organizationId: targetOrg,
+      metadata: { organizationId: targetOrg, synced },
     });
 
     res.json(success({ synced }));

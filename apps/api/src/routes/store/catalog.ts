@@ -3,6 +3,7 @@ import { z, ZodError } from "zod";
 import { getSupabaseAdmin } from "../../services/supabase";
 import { requireAuth } from "../../middleware/auth";
 import { requireAdmin } from "../../middleware/admin";
+import { requireOrgAccess } from "../../middleware/org-access";
 import { AppError, success, failure } from "../../types";
 import { logAuditEvent } from "../../services/audit";
 import {
@@ -13,6 +14,7 @@ import {
   getProductsByCategory,
 } from "../../lib/store-catalog";
 import { toJson, type UpdateRow } from "../../lib/db-types";
+import { applyOrgScope, resolveAdminTenantScope } from "../../lib/admin-scope";
 
 /** Store catalog: product/category reads (public) + admin CRUD. Extracted from `routes/store.ts` (same pattern as `routes/final/`). */
 export function registerCatalogRoutes(router: Router) {
@@ -31,19 +33,41 @@ export function registerCatalogRoutes(router: Router) {
   });
 
   // GET /api/v1/store/products/by-id/:id - product by id (admin)
-  router.get("/products/by-id/:id", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const allProducts = await getProducts();
-      const product = allProducts.find((p) => p.id === String(req.params.id));
-      if (!product) {
-        res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
-        return;
+  router.get(
+    "/products/by-id/:id",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        // The catalog lib is intentionally org-agnostic (shared with the public
+        // storefront), so verify the row is visible to the caller's tenant
+        // before returning it (MT-P0-003).
+        const scope = await resolveAdminTenantScope(req);
+        const supabase = getSupabaseAdmin();
+        let visibleQuery = supabase
+          .from("store_products")
+          .select("id")
+          .eq("id", String(req.params.id));
+        visibleQuery = applyOrgScope(visibleQuery, "organization_id", scope);
+        const { data: visible } = await visibleQuery.maybeSingle();
+        if (!visible) {
+          res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
+          return;
+        }
+
+        const allProducts = await getProducts();
+        const product = allProducts.find((p) => p.id === String(req.params.id));
+        if (!product) {
+          res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
+          return;
+        }
+        res.json(success(product));
+      } catch (err) {
+        next(err);
       }
-      res.json(success(product));
-    } catch (err) {
-      next(err);
-    }
-  });
+    },
+  );
 
   // GET /api/v1/store/products/:slug - product detail (public)
   router.get("/products/:slug", async (req, res, next) => {
@@ -124,222 +148,367 @@ export function registerCatalogRoutes(router: Router) {
   });
 
   // POST /api/v1/store/products - create product (admin)
-  router.post("/products", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const parsed = productUpsertSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
-      const row = {
-        id: parsed.id ?? parsed.slug,
-        slug: parsed.slug,
-        name: parsed.name,
-        category_id: parsed.categoryId ?? null,
-        category: parsed.category ?? "",
-        type: parsed.type ?? "service",
-        display: parsed.display ?? true,
-        status: parsed.status ?? "draft",
-        price_range: parsed.priceRange ?? "",
-        pricing_model: parsed.pricingModel ?? "",
-        purchase_mode: parsed.purchaseMode ?? "",
-        summary: parsed.summary ?? "",
-        marketing_headline: parsed.marketingHeadline ?? "",
-        marketing_copy: parsed.marketingCopy ?? "",
-        tags: parsed.tags ?? [],
-        attributes: toJson(parsed.attributes ?? {}),
-      };
-      const { data, error } = await supabase
-        .from("store_products")
-        .upsert(row, { onConflict: "id" })
-        .select()
-        .single();
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        actorUserId: req.authUser?.userId,
-        action: "store_product.create",
-        entityType: "store_product",
-        entityId: data.id,
-        metadata: { slug: parsed.slug },
-      });
-      res.status(201).json(success(data));
-    } catch (error) {
-      if (error instanceof ZodError) {
-        res.status(400).json(failure("VALIDATION", error.message, 400));
-        return;
+  router.post(
+    "/products",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        const parsed = productUpsertSchema.parse(req.body);
+        const supabase = getSupabaseAdmin();
+        const scope = await resolveAdminTenantScope(req);
+        // A single-org admin's catalog rows are pinned to their own org; only a
+        // genuine cross-tenant admin may write global (organization_id NULL)
+        // rows (MT-P0-003).
+        const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+        if (!scope.allTenants && !allowedOrg) {
+          throw new AppError("FORBIDDEN", "No organization available for this product", 403);
+        }
+        const organizationId = scope.allTenants ? null : allowedOrg;
+        const row = {
+          id: parsed.id ?? parsed.slug,
+          slug: parsed.slug,
+          name: parsed.name,
+          category_id: parsed.categoryId ?? null,
+          category: parsed.category ?? "",
+          type: parsed.type ?? "service",
+          display: parsed.display ?? true,
+          status: parsed.status ?? "draft",
+          price_range: parsed.priceRange ?? "",
+          pricing_model: parsed.pricingModel ?? "",
+          purchase_mode: parsed.purchaseMode ?? "",
+          summary: parsed.summary ?? "",
+          marketing_headline: parsed.marketingHeadline ?? "",
+          marketing_copy: parsed.marketingCopy ?? "",
+          tags: parsed.tags ?? [],
+          attributes: toJson(parsed.attributes ?? {}),
+          organization_id: organizationId,
+        };
+
+        // Upsert-by-id must not overwrite another tenant's row (or a global row)
+        // for a single-org admin.
+        const { data: existing } = await supabase
+          .from("store_products")
+          .select("organization_id")
+          .eq("id", row.id)
+          .maybeSingle();
+        if (existing && !scope.allTenants && existing.organization_id !== allowedOrg) {
+          throw new AppError(
+            "FORBIDDEN",
+            "You can only manage products in your organization",
+            403,
+          );
+        }
+
+        const { data, error } = await supabase
+          .from("store_products")
+          .upsert(row, { onConflict: "id" })
+          .select()
+          .single();
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          actorUserId: req.authUser?.userId,
+          action: "store_product.create",
+          entityType: "store_product",
+          entityId: data.id,
+          metadata: { slug: parsed.slug },
+        });
+        res.status(201).json(success(data));
+      } catch (error) {
+        if (error instanceof ZodError) {
+          res.status(400).json(failure("VALIDATION", error.message, 400));
+          return;
+        }
+        next(error);
       }
-      next(error);
-    }
-  });
+    },
+  );
 
   // PATCH /api/v1/store/products/:id - update product (admin)
-  router.patch("/products/:id", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const parsed = productUpsertSchema.partial().parse(req.body);
-      const supabase = getSupabaseAdmin();
-      const existing = await supabase
-        .from("store_products")
-        .select("id")
-        .eq("id", String(req.params.id))
-        .maybeSingle();
-      if (!existing.data) {
-        res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
-        return;
+  router.patch(
+    "/products/:id",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        const parsed = productUpsertSchema.partial().parse(req.body);
+        const supabase = getSupabaseAdmin();
+        const scope = await resolveAdminTenantScope(req);
+        const existing = await supabase
+          .from("store_products")
+          .select("id, organization_id")
+          .eq("id", String(req.params.id))
+          .maybeSingle();
+        if (!existing.data) {
+          res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
+          return;
+        }
+        if (!scope.allTenants) {
+          const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+          if (!allowedOrg || existing.data.organization_id !== allowedOrg) {
+            throw new AppError(
+              "FORBIDDEN",
+              "You can only manage products in your organization",
+              403,
+            );
+          }
+        }
+        const row: UpdateRow<"store_products"> = {};
+        if (parsed.slug !== undefined) row.slug = parsed.slug;
+        if (parsed.name !== undefined) row.name = parsed.name;
+        if (parsed.categoryId !== undefined) row.category_id = parsed.categoryId;
+        if (parsed.category !== undefined) row.category = parsed.category;
+        if (parsed.type !== undefined) row.type = parsed.type;
+        if (parsed.display !== undefined) row.display = parsed.display;
+        if (parsed.status !== undefined) row.status = parsed.status;
+        if (parsed.priceRange !== undefined) row.price_range = parsed.priceRange;
+        if (parsed.pricingModel !== undefined) row.pricing_model = parsed.pricingModel;
+        if (parsed.purchaseMode !== undefined) row.purchase_mode = parsed.purchaseMode;
+        if (parsed.summary !== undefined) row.summary = parsed.summary;
+        if (parsed.marketingHeadline !== undefined) row.marketing_headline = parsed.marketingHeadline;
+        if (parsed.marketingCopy !== undefined) row.marketing_copy = parsed.marketingCopy;
+        if (parsed.tags !== undefined) row.tags = parsed.tags;
+        if (parsed.attributes !== undefined) row.attributes = toJson(parsed.attributes);
+        const { data, error } = await supabase
+          .from("store_products")
+          .update(row)
+          .eq("id", String(req.params.id))
+          .select()
+          .single();
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          actorUserId: req.authUser?.userId,
+          action: "store_product.update",
+          entityType: "store_product",
+          entityId: String(String(req.params.id)),
+        });
+        res.json(success(data));
+      } catch (error) {
+        if (error instanceof ZodError) {
+          res.status(400).json(failure("VALIDATION", error.message, 400));
+          return;
+        }
+        next(error);
       }
-      const row: UpdateRow<"store_products"> = {};
-      if (parsed.slug !== undefined) row.slug = parsed.slug;
-      if (parsed.name !== undefined) row.name = parsed.name;
-      if (parsed.categoryId !== undefined) row.category_id = parsed.categoryId;
-      if (parsed.category !== undefined) row.category = parsed.category;
-      if (parsed.type !== undefined) row.type = parsed.type;
-      if (parsed.display !== undefined) row.display = parsed.display;
-      if (parsed.status !== undefined) row.status = parsed.status;
-      if (parsed.priceRange !== undefined) row.price_range = parsed.priceRange;
-      if (parsed.pricingModel !== undefined) row.pricing_model = parsed.pricingModel;
-      if (parsed.purchaseMode !== undefined) row.purchase_mode = parsed.purchaseMode;
-      if (parsed.summary !== undefined) row.summary = parsed.summary;
-      if (parsed.marketingHeadline !== undefined) row.marketing_headline = parsed.marketingHeadline;
-      if (parsed.marketingCopy !== undefined) row.marketing_copy = parsed.marketingCopy;
-      if (parsed.tags !== undefined) row.tags = parsed.tags;
-      if (parsed.attributes !== undefined) row.attributes = toJson(parsed.attributes);
-      const { data, error } = await supabase
-        .from("store_products")
-        .update(row)
-        .eq("id", String(req.params.id))
-        .select()
-        .single();
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        actorUserId: req.authUser?.userId,
-        action: "store_product.update",
-        entityType: "store_product",
-        entityId: String(String(req.params.id)),
-      });
-      res.json(success(data));
-    } catch (error) {
-      if (error instanceof ZodError) {
-        res.status(400).json(failure("VALIDATION", error.message, 400));
-        return;
-      }
-      next(error);
-    }
-  });
+    },
+  );
 
   // DELETE /api/v1/store/products/:id - delete product (admin)
-  router.delete("/products/:id", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const { error } = await supabase
-        .from("store_products")
-        .delete()
-        .eq("id", String(req.params.id));
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        actorUserId: req.authUser?.userId,
-        action: "store_product.delete",
-        entityType: "store_product",
-        entityId: String(String(req.params.id)),
-      });
-      res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.delete(
+    "/products/:id",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        const supabase = getSupabaseAdmin();
+        const scope = await resolveAdminTenantScope(req);
+        const { data: existing } = await supabase
+          .from("store_products")
+          .select("organization_id")
+          .eq("id", String(req.params.id))
+          .maybeSingle();
+        if (!existing) {
+          res.status(404).json(failure("NOT_FOUND", "Product not found", 404));
+          return;
+        }
+        if (!scope.allTenants) {
+          const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+          if (!allowedOrg || existing.organization_id !== allowedOrg) {
+            throw new AppError(
+              "FORBIDDEN",
+              "You can only manage products in your organization",
+              403,
+            );
+          }
+        }
+        const { error } = await supabase
+          .from("store_products")
+          .delete()
+          .eq("id", String(req.params.id));
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          actorUserId: req.authUser?.userId,
+          action: "store_product.delete",
+          entityType: "store_product",
+          entityId: String(String(req.params.id)),
+        });
+        res.status(204).send();
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 
   // POST /api/v1/store/categories - create category (admin)
-  router.post("/categories", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const parsed = categoryUpsertSchema.parse(req.body);
-      const supabase = getSupabaseAdmin();
-      const row = {
-        id: parsed.id ?? parsed.slug,
-        name: parsed.name,
-        slug: parsed.slug,
-        description: parsed.description ?? "",
-        product_ids: parsed.productIds ?? [],
-        count: parsed.count ?? (parsed.productIds ? parsed.productIds.length : 0),
-      };
-      const { data, error } = await supabase
-        .from("store_categories")
-        .upsert(row, { onConflict: "id" })
-        .select()
-        .single();
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        actorUserId: req.authUser?.userId,
-        action: "store_category.create",
-        entityType: "store_category",
-        entityId: data.id,
-        metadata: { slug: parsed.slug },
-      });
-      res.status(201).json(success(data));
-    } catch (error) {
-      if (error instanceof ZodError) {
-        res.status(400).json(failure("VALIDATION", error.message, 400));
-        return;
+  router.post(
+    "/categories",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        const parsed = categoryUpsertSchema.parse(req.body);
+        const supabase = getSupabaseAdmin();
+        const scope = await resolveAdminTenantScope(req);
+        const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+        if (!scope.allTenants && !allowedOrg) {
+          throw new AppError("FORBIDDEN", "No organization available for this category", 403);
+        }
+        const organizationId = scope.allTenants ? null : allowedOrg;
+        const row = {
+          id: parsed.id ?? parsed.slug,
+          name: parsed.name,
+          slug: parsed.slug,
+          description: parsed.description ?? "",
+          product_ids: parsed.productIds ?? [],
+          count: parsed.count ?? (parsed.productIds ? parsed.productIds.length : 0),
+          organization_id: organizationId,
+        };
+
+        const { data: existing } = await supabase
+          .from("store_categories")
+          .select("organization_id")
+          .eq("id", row.id)
+          .maybeSingle();
+        if (existing && !scope.allTenants && existing.organization_id !== allowedOrg) {
+          throw new AppError(
+            "FORBIDDEN",
+            "You can only manage categories in your organization",
+            403,
+          );
+        }
+
+        const { data, error } = await supabase
+          .from("store_categories")
+          .upsert(row, { onConflict: "id" })
+          .select()
+          .single();
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          actorUserId: req.authUser?.userId,
+          action: "store_category.create",
+          entityType: "store_category",
+          entityId: data.id,
+          metadata: { slug: parsed.slug },
+        });
+        res.status(201).json(success(data));
+      } catch (error) {
+        if (error instanceof ZodError) {
+          res.status(400).json(failure("VALIDATION", error.message, 400));
+          return;
+        }
+        next(error);
       }
-      next(error);
-    }
-  });
+    },
+  );
 
   // PATCH /api/v1/store/categories/:id - update category (admin)
-  router.patch("/categories/:id", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const parsed = categoryUpsertSchema.partial().parse(req.body);
-      const supabase = getSupabaseAdmin();
-      const existing = await supabase
-        .from("store_categories")
-        .select("id")
-        .eq("id", String(req.params.id))
-        .maybeSingle();
-      if (!existing.data) {
-        res.status(404).json(failure("NOT_FOUND", "Category not found", 404));
-        return;
+  router.patch(
+    "/categories/:id",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        const parsed = categoryUpsertSchema.partial().parse(req.body);
+        const supabase = getSupabaseAdmin();
+        const scope = await resolveAdminTenantScope(req);
+        const existing = await supabase
+          .from("store_categories")
+          .select("id, organization_id")
+          .eq("id", String(req.params.id))
+          .maybeSingle();
+        if (!existing.data) {
+          res.status(404).json(failure("NOT_FOUND", "Category not found", 404));
+          return;
+        }
+        if (!scope.allTenants) {
+          const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+          if (!allowedOrg || existing.data.organization_id !== allowedOrg) {
+            throw new AppError(
+              "FORBIDDEN",
+              "You can only manage categories in your organization",
+              403,
+            );
+          }
+        }
+        const row: UpdateRow<"store_categories"> = {};
+        if (parsed.name !== undefined) row.name = parsed.name;
+        if (parsed.slug !== undefined) row.slug = parsed.slug;
+        if (parsed.description !== undefined) row.description = parsed.description;
+        if (parsed.productIds !== undefined) row.product_ids = parsed.productIds;
+        if (parsed.count !== undefined) row.count = parsed.count;
+        const { data, error } = await supabase
+          .from("store_categories")
+          .update(row)
+          .eq("id", String(req.params.id))
+          .select()
+          .single();
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          actorUserId: req.authUser?.userId,
+          action: "store_category.update",
+          entityType: "store_category",
+          entityId: String(String(req.params.id)),
+        });
+        res.json(success(data));
+      } catch (error) {
+        if (error instanceof ZodError) {
+          res.status(400).json(failure("VALIDATION", error.message, 400));
+          return;
+        }
+        next(error);
       }
-      const row: UpdateRow<"store_categories"> = {};
-      if (parsed.name !== undefined) row.name = parsed.name;
-      if (parsed.slug !== undefined) row.slug = parsed.slug;
-      if (parsed.description !== undefined) row.description = parsed.description;
-      if (parsed.productIds !== undefined) row.product_ids = parsed.productIds;
-      if (parsed.count !== undefined) row.count = parsed.count;
-      const { data, error } = await supabase
-        .from("store_categories")
-        .update(row)
-        .eq("id", String(req.params.id))
-        .select()
-        .single();
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        actorUserId: req.authUser?.userId,
-        action: "store_category.update",
-        entityType: "store_category",
-        entityId: String(String(req.params.id)),
-      });
-      res.json(success(data));
-    } catch (error) {
-      if (error instanceof ZodError) {
-        res.status(400).json(failure("VALIDATION", error.message, 400));
-        return;
-      }
-      next(error);
-    }
-  });
+    },
+  );
 
   // DELETE /api/v1/store/categories/:id - delete category (admin)
-  router.delete("/categories/:id", requireAuth, requireAdmin, async (req, res, next) => {
-    try {
-      const supabase = getSupabaseAdmin();
-      const { error } = await supabase
-        .from("store_categories")
-        .delete()
-        .eq("id", String(req.params.id));
-      if (error) throw new AppError("DB_ERROR", error.message, 500);
-      await logAuditEvent({
-        actorUserId: req.authUser?.userId,
-        action: "store_category.delete",
-        entityType: "store_category",
-        entityId: String(String(req.params.id)),
-      });
-      res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.delete(
+    "/categories/:id",
+    requireAuth,
+    requireOrgAccess,
+    requireAdmin,
+    async (req, res, next) => {
+      try {
+        const supabase = getSupabaseAdmin();
+        const scope = await resolveAdminTenantScope(req);
+        const { data: existing } = await supabase
+          .from("store_categories")
+          .select("organization_id")
+          .eq("id", String(req.params.id))
+          .maybeSingle();
+        if (!existing) {
+          res.status(404).json(failure("NOT_FOUND", "Category not found", 404));
+          return;
+        }
+        if (!scope.allTenants) {
+          const allowedOrg = req.orgId ?? scope.orgIds[0] ?? null;
+          if (!allowedOrg || existing.organization_id !== allowedOrg) {
+            throw new AppError(
+              "FORBIDDEN",
+              "You can only manage categories in your organization",
+              403,
+            );
+          }
+        }
+        const { error } = await supabase
+          .from("store_categories")
+          .delete()
+          .eq("id", String(req.params.id));
+        if (error) throw new AppError("DB_ERROR", error.message, 500);
+        await logAuditEvent({
+          actorUserId: req.authUser?.userId,
+          action: "store_category.delete",
+          entityType: "store_category",
+          entityId: String(String(req.params.id)),
+        });
+        res.status(204).send();
+      } catch (error) {
+        next(error);
+      }
+    },
+  );
 }

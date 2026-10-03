@@ -41,6 +41,31 @@ export const workerMemoryUsage = new promClient.Gauge({
   registers: [register],
 });
 
+export const notificationDeliveryTotal = new promClient.Counter({
+  name: "worker_notification_delivery_total",
+  help: "Total number of worker notification/email delivery attempts by channel and outcome",
+  labelNames: ["channel", "status"] as const,
+  registers: [register],
+});
+
+export const notificationSuppressedTotal = new promClient.Counter({
+  name: "worker_notification_suppressed_total",
+  help: "Total number of worker notifications suppressed because the recipient disabled the channel",
+  labelNames: ["channel", "module"] as const,
+  registers: [register],
+});
+
+export function recordNotificationDelivery(
+  channel: "in_app" | "email",
+  status: "success" | "failed" | "skipped",
+): void {
+  notificationDeliveryTotal.inc({ channel, status });
+}
+
+export function recordNotificationSuppressed(channel: "in_app" | "email", module: string): void {
+  notificationSuppressedTotal.inc({ channel, module });
+}
+
 export function updateMemoryMetrics(): void {
   const usage = process.memoryUsage();
   workerMemoryUsage.set({ type: "rss" }, usage.rss);

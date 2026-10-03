@@ -6,19 +6,17 @@ Trigger an automated rollback from GitHub Actions:
 
 1. Navigate to **Actions → deploy-do → Run workflow**
 2. Set **deploy_target** to `dev` or `prod`
-3. Set **rollback_sha** to the 40-char SHA of the previous working commit
+3. Set **rollback_sha** to the 7–40 char lowercase-hex SHA of the previous working commit
 4. Run the workflow
 
-The workflow will build all 3 images tagged with `rollback_sha`, then SSH into the droplet and run:
+The workflow will deploy the images already published under the `rollback_sha` tag. **Builds are skipped when `rollback_sha` is set** (`build-api`/`build-worker`/`build-web` are gated on `rollback_sha == ''`), so the target image tag must already exist in GHCR — otherwise the pull on the droplet fails. Then it SSHes in and runs:
 
 ```bash
 cd /opt/mct-portal
 IMAGE_TAG=<rollback_sha> docker compose -p mct-portal up -d --remove-orphans
 ```
 
-Health checks run automatically. If they fail the deploy step fails and previous containers remain running.
-
-The workflow also runs `git reset --hard origin/<branch>` — if the rollback SHA is on a different branch, first merge that SHA into the target branch or cherry-pick it.
+Health checks run automatically (API, Worker and Web). If any fail, the deploy step fails and previous containers remain running. Note the workflow also runs `git reset --hard origin/<branch>` for the selected `deploy_target`; if the rollback SHA is on a different branch, first merge that SHA into the target branch or cherry-pick it.
 
 ## 2. Docker Rollback (Manual - SSH into droplet)
 
@@ -63,6 +61,20 @@ curl -sf -H "Authorization: Bearer $DO_API_TOKEN" \
 
 ## 3. Supabase Rollback
 
+### Deletion semantics: hard delete (no soft-delete columns)
+
+Entity deletes are **hard deletes**. The `deleted_at` / `deleted_by` columns
+that migration `5302109_soft_delete.sql` added to `tickets`, `projects` and
+`documents` were never written or read by any application path — the DELETE
+handlers always removed rows — so migration
+`5302432_drop_unused_soft_delete_columns.sql` removed them. The columns were
+advertising a tombstone/restore capability the code did not have (audit finding
+DATA-P1-003). Recovery of an accidental delete therefore depends on the
+mechanisms below (reverse migration, PITR, or an S3 backup restore), not on
+in-row tombstones. If soft delete is ever revisited it must be implemented
+end-to-end: writes set `deleted_at`/`deleted_by`, every read **and every RLS
+policy** filters `deleted_at is null`, and child rows are handled.
+
 ### Option A: Reverse migration
 
 ```bash
@@ -98,6 +110,77 @@ docker exec -it mct-portal-api-1 psql $SUPABASE_URL
 # Or via Supabase dashboard SQL editor
 # Write and execute the reverse DDL/DML manually
 ```
+
+## 3a. Database restore (from S3 backup) and verification
+
+Use this path for data loss that is beyond the PITR window, or when PITR is not
+available. Backups are written by `scripts/backup-database.sh` (daily, via
+`.github/workflows/db-backup.yml`).
+
+### Backup location contract (audit DR-P1-002 / IR-P1-005)
+
+Both the write path and every read path resolve the same two variables:
+
+| Variable    | Shape                        | Default                  |
+| ----------- | ---------------------------- | ------------------------ |
+| `S3_BUCKET` | bucket **name** (no `s3://`) | `mainecybertech-backups` |
+| `S3_PREFIX` | key prefix (no leading `/`)  | `database-backups`       |
+
+Object path: `s3://${S3_BUCKET}/${S3_PREFIX}/<file>`. The backup script, backup
+workflow, restore-test workflow, storage-backup workflow and
+`scripts/restore-database.sh` all use these names. A legacy full-URI
+`S3_BACKUP_BUCKET` secret is still accepted for the bucket name and normalised,
+but prefer `S3_BUCKET`. When set, `S3_OFFSITE_BUCKET` receives a second copy.
+
+### Restore steps
+
+```bash
+# 1. Dry-run: confirm the resolved location and newest object (no restore)
+S3_BUCKET=mainecybertech-backups S3_PREFIX=database-backups \
+  AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... \
+  SUPABASE_DB_URL=postgresql://... ./scripts/restore-database.sh --dry-run
+
+# 2. Restore into a scratch database first where possible; a non-local target
+#    is refused unless ALLOW_PROD_RESTORE=yes.
+BACKUP_ENCRYPTION_KEY=... ./scripts/restore-database.sh
+```
+
+### Restore verification checklist
+
+`.github/workflows/db-restore-test.yml` runs these assertions weekly against the
+newest backup into a throwaway Postgres, with floors from
+`.github/restore-test-baseline.env`. After any manual restore, confirm the same:
+
+- [ ] `S3_BUCKET`/`S3_PREFIX` resolved to the location the backup wrote to.
+- [ ] Public table count ≥ `RESTORE_MIN_TABLES`.
+- [ ] `supabase_migrations.schema_migrations` row count ≥ `RESTORE_MIN_MIGRATIONS`.
+- [ ] Critical tables (`profiles`, `organizations`, `tickets`, `documents`,
+      `audit_logs`) exist and carry rows.
+- [ ] Newest `audit_logs` row is within `RESTORE_MAX_DATA_AGE_DAYS` (freshness /
+      RPO canary).
+- [ ] Tenant-scoped tables still carry `organization_id`.
+- [ ] No restored public table has RLS disabled.
+
+A successful `psql` exit is **not** verification. See `docs/RTO_RPO.md` for the
+RPO that each method actually supports.
+
+## 3b. Storage restore (uploaded files)
+
+User uploads (`documents`, `avatars`, `logos`) are backed up by
+`scripts/backup-storage.sh` via `.github/workflows/storage-backup.yml`.
+
+```bash
+# Dry-run: show which objects would be restored
+SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
+  ./scripts/restore-storage.sh --dry-run
+
+# Restore the newest archive (decrypts when BACKUP_ENCRYPTION_KEY is set)
+BACKUP_ENCRYPTION_KEY=... ./scripts/restore-storage.sh
+```
+
+Storage objects are keyed by path, so a database restore and a storage restore
+together restore working `documents.storage_path` links. A DB-only restore
+leaves those rows pointing at missing objects — always pair the two.
 
 ## 4. Terraform Rollback
 
@@ -164,7 +247,16 @@ terraform plan -var-file=dev.tfvars -destroy -target=digitalocean_droplet.mct_po
 
 ### Prod-approval environment
 
-All production deployments (Docker and Terraform) require approval through the `prod-approval` GitHub environment with 1+ required reviewers.
+All production deployments reference the `prod-approval` GitHub environment:
+the Docker prod deploy (`deploy-do.yml`, `deploy` job) and the Terraform prod
+apply (`terraform-do.yml`, `terraform-apply-prod`).
+
+**Required reviewers are a GitHub repository setting, not workflow code:**
+configure them under Settings → Environments → `prod-approval` → Required
+reviewers (add 1+). Until that list is populated there is **no working
+manual-approval gate** and a prod deploy will start without pausing. The prod
+deploy secrets/variables must also be available to `prod-approval` (scoped to
+it or repo-wide).
 
 ## Deployment Verification
 

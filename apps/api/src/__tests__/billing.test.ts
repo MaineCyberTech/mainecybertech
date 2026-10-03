@@ -64,6 +64,18 @@ jest.mock("../middleware/permissions", () => ({
       next(),
 }));
 const app = createTestApp();
+
+/*
+ * Test-only stand-in for the stubbed `requireOrgAccess`: lets each test set the
+ * org the middleware would have resolved into `req.orgId`. The route handlers
+ * must treat that as the authority for tenant scoping.
+ */
+let stubOrgId: string | null = null;
+app.use((req, _res, next) => {
+  if (stubOrgId) req.orgId = stubOrgId;
+  next();
+});
+
 app.use("/api/v1/billing", billingRouter);
 app.use(errorHandler);
 
@@ -72,6 +84,7 @@ describe("billing routes", () => {
 
   beforeEach(() => {
     supabase = mockAuth();
+    stubOrgId = null;
     jest.clearAllMocks();
   });
 
@@ -244,6 +257,104 @@ describe("billing routes", () => {
         .set("Authorization", "Bearer token")
         .send({ organizationId: "00000000-0000-0000-0000-000000000001" });
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe("POST /sync tenant scoping", () => {
+    const ORG_A = "00000000-0000-0000-0000-000000000001";
+    const ORG_B = "00000000-0000-0000-0000-000000000002";
+
+    function mockSync(opts: {
+      isSuperAdmin?: boolean;
+      roleKey?: string;
+      memberOrgs?: string[];
+      customers?: Array<{ stripe_customer_id: string; organization_id: string }>;
+    }) {
+      const builders: Record<string, ReturnType<typeof createMockBuilder>> = {};
+      supabase.from.mockImplementation((table: string) => {
+        let result: MockResult;
+        if (table === "memberships") {
+          result = {
+            data: (opts.memberOrgs ?? [ORG_A]).map((org) => ({
+              organization_id: org,
+              roles: { id: "role-1", key: opts.roleKey ?? "admin" },
+            })),
+            error: null,
+          };
+        } else if (table === "profiles") {
+          result = { data: { is_super_admin: opts.isSuperAdmin ?? false }, error: null };
+        } else if (table === "billing_customers") {
+          result = { data: opts.customers ?? [], error: null };
+        } else {
+          result = { data: null, error: null };
+        }
+        const builder = createMockBuilder(result);
+        builders[table] = builder;
+        return builder;
+      });
+      // Stripe returns no data, so the sync only reaches the customer query —
+      // enough to prove which tenant was selected.
+      (httpClients.stripe.get as jest.Mock).mockResolvedValue({ ok: false });
+      return builders;
+    }
+
+    it("without a body org, scopes the sync to the caller's resolved org", async () => {
+      stubOrgId = ORG_A;
+      const builders = mockSync({
+        customers: [{ stripe_customer_id: "cus_A", organization_id: ORG_A }],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(200);
+      expect(builders.billing_customers.eq).toHaveBeenCalledWith("organization_id", ORG_A);
+      expect(res.body.data.synced).toBe(1);
+    });
+
+    it("rejects a body organizationId outside the caller's scope", async () => {
+      stubOrgId = ORG_A;
+      mockSync({});
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({ organizationId: ORG_B });
+
+      expect(res.status).toBe(403);
+    });
+
+    it("lets a genuine cross-tenant admin sync an explicitly named org", async () => {
+      stubOrgId = null;
+      const builders = mockSync({
+        isSuperAdmin: true,
+        roleKey: "super_admin",
+        memberOrgs: [ORG_A],
+        customers: [{ stripe_customer_id: "cus_B", organization_id: ORG_B }],
+      });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({ organizationId: ORG_B });
+
+      expect(res.status).toBe(200);
+      expect(builders.billing_customers.eq).toHaveBeenCalledWith("organization_id", ORG_B);
+      expect(res.body.data.synced).toBe(1);
+    });
+
+    it("never silently syncs every tenant when no org can be resolved", async () => {
+      stubOrgId = null;
+      mockSync({ isSuperAdmin: true, roleKey: "super_admin", memberOrgs: [ORG_A] });
+
+      const res = await request(app)
+        .post("/api/v1/billing/sync")
+        .set("Authorization", "Bearer token")
+        .send({});
+
+      expect(res.status).toBe(400);
     });
   });
 });

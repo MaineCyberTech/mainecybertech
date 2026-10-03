@@ -6,6 +6,7 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
+import { requireEntitlement } from "../middleware/entitlement";
 import {
   createChangeSchema,
   updateChangeSchema,
@@ -28,6 +29,7 @@ type SopFrameworkRow = {
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+router.use(requireEntitlement("governance"));
 
 function snake(s: string) {
   return s.replace(/[A-Z]/g, (l) => `_${l.toLowerCase()}`);
@@ -177,30 +179,34 @@ crudRoute(
   updateChangeSchema as unknown as Record<string, unknown>,
 );
 
-router.post("/change-requests/:id/submit", async (req, res, next) => {
-  try {
-    const supabase = getScopedClient(req, "governance", "write");
-    const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
-    let updateQuery = supabase
-      .from("change_requests")
-      .update({ status: "pending_review", submitted_at: new Date().toISOString() })
-      .eq("id", String(req.params.id));
-    if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
-    const { data, error } = await updateQuery.select().single();
-    if (error) throw new AppError("DB_ERROR", error.message, 500);
-    if (!data) throw new AppError("NOT_FOUND", "Change request not found", 404);
-    await logAuditEvent({
-      organizationId: data.organization_id,
-      actorUserId: req.authUser!.userId,
-      action: "change_request.submitted",
-      entityType: "change_request",
-      entityId: data.id,
-    });
-    res.json(success(data));
-  } catch (err) {
-    next(err);
-  }
-});
+router.post(
+  "/change-requests/:id/submit",
+  requirePermission("governance", "edit"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "governance", "write");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+      let updateQuery = supabase
+        .from("change_requests")
+        .update({ status: "pending_review", submitted_at: new Date().toISOString() })
+        .eq("id", String(req.params.id));
+      if (orgId) updateQuery = updateQuery.eq("organization_id", orgId);
+      const { data, error } = await updateQuery.select().single();
+      if (error) throw new AppError("DB_ERROR", error.message, 500);
+      if (!data) throw new AppError("NOT_FOUND", "Change request not found", 404);
+      await logAuditEvent({
+        organizationId: data.organization_id,
+        actorUserId: req.authUser!.userId,
+        action: "change_request.submitted",
+        entityType: "change_request",
+        entityId: data.id,
+      });
+      res.json(success(data));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 router.post(
   "/change-requests/:id/approve",
   requirePermission("change-requests", "manage"),

@@ -1,0 +1,19 @@
+{
+  "comment": "Dependency vulnerability policy enforced by scripts/audit-gate.mjs (see docs/DEPENDENCY_POLICY.md).",
+  "severityPolicy": {
+    "comment": "prod findings are enforced at or above blockAtOrAboveProd; dev findings are only *reported* unless they reach blockAtOrAboveAnyScope. This deliberately keeps the build green for genuinely unpatchable dev-tool advisories while making them visible in the CI job summary.",
+    "blockAtOrAboveProd": "high",
+    "blockAtOrAboveAnyScope": "critical",
+    "reportDevAtOrAbove": "moderate"
+  },
+  "allowlist": [
+    {
+      "id": "GHSA-848j-6mx2-7j84",
+      "package": "elliptic",
+      "severity": "low",
+      "scope": "dev",
+      "reason": "No patched version exists (<0.0.0). Reached only through @storybook/nextjs > node-polyfill-webpack-plugin > crypto-browserify > browserify-sign > elliptic and is never shipped in the production images. Tracked in docs/DEPENDENCY_POLICY.md; remove once upstream publishes a fix or Storybook drops the polyfill chain.",
+      "expires": "2027-01-01"
+    }
+  ]
+}

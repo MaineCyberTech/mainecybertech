@@ -14,12 +14,29 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Run database backup script
         id: backup
-        run: bash scripts/backup-database.sh
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
+          # Destination contract (audit DR-P1-002 / IR-P1-005): S3_BUCKET is a
+          # bucket NAME (no s3:// scheme) and S3_PREFIX is a key prefix. The
+          # restore test reads the SAME two values. Fall back to the legacy
+          # S3_BACKUP_BUCKET secret for the bucket name during transition.
+          S3_BUCKET: ${{ vars.S3_BUCKET || secrets.S3_BACKUP_BUCKET || 'mainecybertech-backups' }}
+          S3_PREFIX: ${{ vars.S3_PREFIX || 'database-backups' }}
+          # Optional offsite/cross-region copy (audit DR-P1-003). Set the
+          # S3_OFFSITE_BUCKET variable to enable a second destination.
+          S3_OFFSITE_BUCKET: ${{ vars.S3_OFFSITE_BUCKET }}
+          S3_OFFSITE_PREFIX: ${{ vars.S3_OFFSITE_PREFIX || 'database-backups' }}
+          # Client-side encryption at rest (audit DR-P1-003). Key is a secret;
+          # never echoed. REQUIRE_BACKUP_ENCRYPTION makes an unencrypted upload
+          # a hard failure so this cannot silently regress.
+          BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+          REQUIRE_BACKUP_ENCRYPTION: "1"
+          # Fail the job if no non-empty dump was produced.
+          VERIFY_BACKUP: "1"
+        run: bash scripts/backup-database.sh
       - name: Notify on failure
         if: failure()
         run: |

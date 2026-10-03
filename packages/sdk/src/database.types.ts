@@ -1690,8 +1690,6 @@ export type Database = {
         Row: {
           created_at: string;
           current_version: number;
-          deleted_at: string | null;
-          deleted_by: string | null;
           description: string | null;
           file_name: string | null;
           file_size: number | null;
@@ -1717,8 +1715,6 @@ export type Database = {
           uploaded_by: string;
           created_at?: string | null;
           current_version?: number | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           file_name?: string | null;
           file_size?: number | null;
@@ -1734,8 +1730,6 @@ export type Database = {
         Update: {
           created_at?: string | null;
           current_version?: number | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           file_name?: string | null;
           file_size?: number | null;
@@ -2006,6 +2000,45 @@ export type Database = {
           { foreignKeyName: "endpoint_security_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
         ];
       };
+      file_request_uploads: {
+        Row: {
+          file_name: string;
+          file_request_id: string;
+          file_size: number | null;
+          id: string;
+          mime_type: string | null;
+          organization_id: string;
+          storage_bucket: string;
+          storage_path: string;
+          uploaded_at: string;
+        };
+        Insert: {
+          file_name: string;
+          file_request_id: string;
+          organization_id: string;
+          storage_path: string;
+          file_size?: number | null;
+          id?: string | null;
+          mime_type?: string | null;
+          storage_bucket?: string | null;
+          uploaded_at?: string | null;
+        };
+        Update: {
+          file_name?: string | null;
+          file_request_id?: string | null;
+          file_size?: number | null;
+          id?: string | null;
+          mime_type?: string | null;
+          organization_id?: string | null;
+          storage_bucket?: string | null;
+          storage_path?: string | null;
+          uploaded_at?: string | null;
+        };
+        Relationships: [
+          { foreignKeyName: "file_request_uploads_file_request_id_fkey", columns: ["file_request_id"], isOneToOne: false, referencedRelation: "file_requests", referencedColumns: ["id"] },
+          { foreignKeyName: "file_request_uploads_organization_id_fkey", columns: ["organization_id"], isOneToOne: false, referencedRelation: "organizations", referencedColumns: ["id"] },
+        ];
+      };
       file_requests: {
         Row: {
           allowed_mime_types: string[] | null;
@@ -2020,6 +2053,7 @@ export type Database = {
           metadata: Json;
           notify_on_upload: boolean | null;
           organization_id: string;
+          slot_tokens: Json;
           status: string;
           storage_path: string;
           title: string;
@@ -2044,6 +2078,7 @@ export type Database = {
           max_files?: number | null;
           metadata?: Json | null;
           notify_on_upload?: boolean | null;
+          slot_tokens?: Json | null;
           status?: string | null;
           updated_at?: string | null;
           upload_count?: number | null;
@@ -2062,6 +2097,7 @@ export type Database = {
           metadata?: Json | null;
           notify_on_upload?: boolean | null;
           organization_id?: string | null;
+          slot_tokens?: Json | null;
           status?: string | null;
           storage_path?: string | null;
           title?: string | null;
@@ -4319,8 +4355,6 @@ export type Database = {
         Row: {
           created_at: string;
           created_by: string;
-          deleted_at: string | null;
-          deleted_by: string | null;
           description: string | null;
           due_at: string | null;
           due_date: string | null;
@@ -4344,8 +4378,6 @@ export type Database = {
           name: string;
           organization_id: string;
           created_at?: string | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           due_at?: string | null;
           due_date?: string | null;
@@ -4365,8 +4397,6 @@ export type Database = {
         Update: {
           created_at?: string | null;
           created_by?: string | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           due_at?: string | null;
           due_date?: string | null;
@@ -6260,8 +6290,6 @@ export type Database = {
           category: string | null;
           created_at: string;
           created_by: string;
-          deleted_at: string | null;
-          deleted_by: string | null;
           description: string | null;
           external_jsm_issue_key: string | null;
           id: string;
@@ -6284,8 +6312,6 @@ export type Database = {
           assigned_to?: string | null;
           category?: string | null;
           created_at?: string | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           external_jsm_issue_key?: string | null;
           id?: string | null;
@@ -6304,8 +6330,6 @@ export type Database = {
           category?: string | null;
           created_at?: string | null;
           created_by?: string | null;
-          deleted_at?: string | null;
-          deleted_by?: string | null;
           description?: string | null;
           external_jsm_issue_key?: string | null;
           id?: string | null;

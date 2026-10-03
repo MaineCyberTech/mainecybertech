@@ -26,6 +26,7 @@ function createThenableChain(initialResult: unknown) {
   const chainedMethods = [
     "select",
     "insert",
+    "upsert",
     "update",
     "delete",
     "eq",
@@ -188,8 +189,14 @@ describe("approvalOverdueCheck", () => {
     });
     const result = await approvalOverdueCheck({});
     expect(result).toEqual({ ok: true });
-    expect(currentChain.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ user_id: "user-9", module: "approvals", action: "overdue" }),
+    expect(currentChain.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user-9",
+        module: "approvals",
+        action: "overdue",
+        notification_key: expect.any(String),
+      }),
+      expect.objectContaining({ onConflict: "notification_key" }),
     );
   });
 });
@@ -227,12 +234,14 @@ describe("vendorContractRenewalCheck", () => {
     });
     const result = await vendorContractRenewalCheck({});
     expect(result).toEqual({ ok: true });
-    expect(currentChain.insert).toHaveBeenCalledWith(
+    expect(currentChain.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: "user-5",
         module: "vendor-contracts",
         action: "renewal-due",
+        notification_key: expect.any(String),
       }),
+      expect.objectContaining({ onConflict: "notification_key" }),
     );
   });
 });

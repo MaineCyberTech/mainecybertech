@@ -1,0 +1,95 @@
+{
+  "comment": "License allow/deny policy enforced by scripts/license-gate.mjs and (on PRs) actions/dependency-review-action. See docs/LICENSE_POLICY.md.",
+  "allowedLicenses": [
+    "MIT",
+    "MIT-0",
+    "ISC",
+    "Apache-2.0",
+    "Apache-1.1",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSD-3-Clause-Clear",
+    "BSD-4-Clause",
+    "0BSD",
+    "BlueOak-1.0.0",
+    "Unlicense",
+    "CC0-1.0",
+    "CC-BY-4.0",
+    "CC-BY-3.0",
+    "Python-2.0",
+    "Artistic-2.0",
+    "WTFPL",
+    "Zlib",
+    "BSL-1.0",
+    "PostgreSQL",
+    "OpenSSL",
+    "X11",
+    "NCSA",
+    "MS-PL",
+    "UPL-1.0"
+  ],
+  "comment_denied": "Strong copyleft / source-available licenses that must never enter the resolved tree without an explicit, reviewed exception agreed by the maintainers.",
+  "deniedLicenses": [
+    "GPL-1.0",
+    "GPL-1.0-only",
+    "GPL-1.0-or-later",
+    "GPL-2.0",
+    "GPL-2.0-only",
+    "GPL-2.0-or-later",
+    "GPL-3.0",
+    "GPL-3.0-only",
+    "GPL-3.0-or-later",
+    "AGPL-1.0",
+    "AGPL-1.0-only",
+    "AGPL-1.0-or-later",
+    "AGPL-3.0",
+    "AGPL-3.0-only",
+    "AGPL-3.0-or-later",
+    "SSPL-1.0",
+    "BUSL-1.1",
+    "CC-BY-NC-4.0",
+    "CC-BY-NC-SA-4.0",
+    "EUPL-1.1",
+    "EUPL-1.2",
+    "OSL-3.0",
+    "RPL-1.5"
+  ],
+  "comment_exceptions": "Weak-copyleft / non-OSI licenses already present in the resolved tree. Each entry is an explicit, reviewed acceptance, not a blanket allowance; the gate stays silent on these exact strings only.",
+  "exceptions": [
+    {
+      "license": "MPL-2.0",
+      "packages": [
+        "axe-core",
+        "@axe-core/playwright"
+      ],
+      "reason": "Test-only accessibility checker (axe-core) reached through Playwright/a11y tooling. Weak file-level copyleft: we do not modify or redistribute source files, and it is not present in production images. Accepted 2026-10-02.",
+      "expires": "2027-10-02"
+    },
+    {
+      "license": "FSL-1.1-MIT",
+      "packages": [
+        "@sentry/cli",
+        "@sentry/cli-win32-x64",
+        "@sentry/cli-linux-x64"
+      ],
+      "reason": "Sentry CLI, a build/CI/observability tooling dependency, not linked into or redistributed with the product. FSL is source-available (not OSI) and converts to MIT after its change date. Accepted 2026-10-02; re-evaluate if Sentry CLI becomes part of a shipped artifact.",
+      "expires": "2027-10-02"
+    },
+    {
+      "license": "LGPL-3.0-or-later",
+      "packages": [
+        "@img/sharp-libvips-linux-x64"
+      ],
+      "reason": "libvips prebuilt binary pulled in on Linux by sharp@0.35.5, which is reached ONLY through @storybook/nextjs (a root devDependency) - verified with `pnpm why sharp`. No app declares sharp as a runtime dependency (apps/api, apps/web, apps/worker, packages/sdk, packages/ui all have none), and the production Dockerfiles build with `--prod`, which excludes Storybook. So this is a dev/build-time-only LGPL exposure and is never present in a shipped runtime image. LGPL obligations attach to the binary, which we do not modify. Accepted 2026-10-03; re-check if sharp ever becomes a production dependency or is added to a shipped image.",
+      "expires": "2027-10-03"
+    },
+    {
+      "license": "UNKNOWN",
+      "packages": [
+        "browser-assert"
+      ],
+      "reason": "browser-assert@1.2.1 declares NO license field at all in its published package.json (verified by reading the installed package), so it is reported as UNKNOWN rather than as a denied license. It is a dev-only transitive dependency of Storybook (@storybook/core, @storybook/builder-webpack5), never present in production images or shipped artifacts. Its repository (socialally/browser-assert) carries no LICENSE file. Accepted 2026-10-02 as a packaging omission, not a policy claim; replace or vendor it if Storybook drops it, and re-check if it ever enters a production path.",
+      "expires": "2027-10-02"
+    }
+  ]
+}

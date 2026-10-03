@@ -6,11 +6,13 @@ import { AppError, success, type PaginatedResult } from "../types";
 import { requireAuth } from "../middleware/auth";
 import { requireOrgAccess } from "../middleware/org-access";
 import { requirePermission } from "../middleware/permissions";
+import { requireEntitlement } from "../middleware/entitlement";
 import { queryInt } from "../lib/query";
 
 const router: ReturnType<typeof Router> = Router();
 router.use(requireAuth);
 router.use(requireOrgAccess);
+router.use(requireEntitlement("training-hub"));
 
 const createCourseSchema = z.object({
   organizationId: z.string().min(1),

@@ -309,7 +309,10 @@ describe("requireOrgAccess middleware", () => {
       expect((req as any).orgAccessPlatformAdmin).toBe(true);
     });
 
-    it("treats new MSP roles (engineer/dispatcher/finance) as platform admins", async () => {
+    it("does NOT give new MSP staff roles cross-tenant reach (SEC-P2-002)", async () => {
+      // These roles are elevated *within* a tenant they belong to, but they
+      // must not traverse tenants. Previously they were folded into the
+      // platform-admin set and gained org-agnostic cross-tenant reads.
       for (const key of [
         "engineer",
         "dispatcher",
@@ -318,6 +321,29 @@ describe("requireOrgAccess middleware", () => {
         "project-manager",
         "onboarding-specialist",
       ]) {
+        jest.clearAllMocks();
+        mockSupabase({
+          primaryMembership: {
+            organization_id: "00000000-0000-0000-0000-000000000001",
+            roles: { key },
+          },
+        });
+        const next = jest.fn();
+        const req = mockReq({ userId: "user-1" });
+        await requireOrgAccess(req, mockRes(), next);
+        expect(next).toHaveBeenCalledWith();
+        // Pinned to their own membership org rather than left org-agnostic.
+        expect(req.query.organization_id).toBe("00000000-0000-0000-0000-000000000001");
+        expect((req as any).orgAccessPlatformAdmin).toBe(false);
+        expect(req.orgScope).toMatchObject({
+          orgId: "00000000-0000-0000-0000-000000000001",
+          platformAdmin: false,
+        });
+      }
+    });
+
+    it("DOES give admin/super_admin cross-tenant reach (impersonation, audited)", async () => {
+      for (const key of ["admin", "super_admin"]) {
         jest.clearAllMocks();
         mockSupabase({
           primaryMembership: {
@@ -461,7 +487,7 @@ describe("requireOrgAccess middleware", () => {
           actorUserId: "user-1",
           actorRoleKey: "super_admin",
           organizationId: "00000000-0000-0000-0000-000000000001",
-          reason: "platform_admin_cross_tenant_access",
+          reason: "cross_tenant_access",
         }),
       );
     });

@@ -9,7 +9,7 @@ import { responseCacheNoRenew, invalidateCache } from "../middleware/cache";
 import { requireIfMatch, checkVersionMatch } from "../middleware/optimistic-locking";
 import { requireAdmin } from "../middleware/admin";
 import { requirePermission } from "../middleware/permissions";
-import { isPlatformAdminKey, roleKeyOf } from "../lib/roles";
+import { resolveAdminTenantScope } from "../lib/admin-scope";
 import {
   createOrganizationSchema,
   updateOrganizationSchema,
@@ -153,41 +153,25 @@ router.get("/", responseCacheNoRenew(60), async (req, res, next) => {
   try {
     const supabase = getScopedClient(req, "organizations", "read");
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_super_admin")
-      .eq("id", req.authUser!.userId)
-      .single();
+    // Cross-tenant reach is decided in exactly ONE place: resolveAdminTenantScope
+    // (lib/admin-scope.ts), which requires BOTH the is_super_admin profile flag
+    // AND a cross-tenant role key in an approved membership.
+    //
+    // This route previously used a DISJUNCTION (`super_admin flag || admin role`),
+    // so a plain single-org `admin` with is_super_admin=false saw every tenant
+    // here while being scoped on audit/dashboard/business-os/store/search — an
+    // internal contradiction, since those routes deliberately treat a plain
+    // tenant `admin` as org-scoped. Use the shared helper so all surfaces agree.
+    //
+    // Resolve the scope BEFORE issuing the organizations query so the tenant
+    // predicate can be applied to it.
+    const tenantScope = await resolveAdminTenantScope(req);
+    const isPlatformAdmin = tenantScope.allTenants;
 
     let query = supabase.from("organizations").select("*", { count: "exact" });
 
-    // Platform admins (super_admin profile OR admin/super_admin role in any
-    // approved membership) see every tenant. Client-scoped users see only
-    // their approved member orgs.
-    let isPlatformAdmin = !!profile?.is_super_admin;
-
     if (!isPlatformAdmin) {
-      const { data: memberRoles } = await supabase
-        .from("memberships")
-        .select("roles!inner(id, key)")
-        .eq("user_id", req.authUser!.userId)
-        .eq("status", "approved");
-
-      isPlatformAdmin = (memberRoles ?? []).some((m: any) =>
-        isPlatformAdminKey(roleKeyOf(m.roles)),
-      );
-    }
-
-    if (!isPlatformAdmin) {
-      const { data: memberships } = await supabase
-        .from("memberships")
-        .select("organization_id")
-        .eq("user_id", req.authUser!.userId)
-        .eq("status", "approved");
-
-      const orgIds = (memberships ?? [])
-        .map((m: { organization_id: string }) => m.organization_id)
-        .filter(Boolean);
+      const orgIds = tenantScope.orgIds;
 
       if (orgIds.length > 0) {
         query = query.in("id", orgIds);
@@ -456,7 +440,12 @@ router.get("/:id/domains", requireOrgAccessByParam, async (req, res, next) => {
   }
 });
 
-router.post("/:id/domains", requireAdmin, async (req, res, next) => {
+// Tenant-scoped domain writes. `requireOrgAccessByParam` pins the request to
+// `:id` (setting req.orgScope/req.orgId) so `requireAdmin`'s org-pinned branch
+// rejects a tenant admin who is not an admin *in that org* (ADMIN-P1-001).
+// Without the param gate orgScope stays unset and requireAdmin falls back to
+// its legacy "admin in any org" path, allowing cross-tenant domain writes.
+router.post("/:id/domains", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
   try {
     const parsed = createDomainSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -487,7 +476,7 @@ router.post("/:id/domains", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.patch("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
+router.patch("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
   try {
     const parsed = updateDomainSchema.parse(req.body);
     const supabase = getSupabaseAdmin();
@@ -518,7 +507,7 @@ router.patch("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
   }
 });
 
-router.delete("/:id/domains/:domainId", requireAdmin, async (req, res, next) => {
+router.delete("/:id/domains/:domainId", requireOrgAccessByParam, requireAdmin, async (req, res, next) => {
   try {
     const supabase = getSupabaseAdmin();
     const { data: deleted, error } = await supabase

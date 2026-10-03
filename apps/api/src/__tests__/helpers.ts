@@ -23,6 +23,7 @@ export function createMockBuilder(result: MockResult) {
     single: jest.fn(chain),
     neq: jest.fn(chain),
     gte: jest.fn(chain),
+    lt: jest.fn(chain),
     lte: jest.fn(chain),
     filter: jest.fn(chain),
     not: jest.fn(chain),

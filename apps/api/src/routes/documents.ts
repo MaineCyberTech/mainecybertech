@@ -334,7 +334,10 @@ router.post(
       // Bucket is pinned server-side (FILE-P2-001) — never read from req.body.
       const bucket = DOCUMENTS_BUCKET;
       const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "-");
-      const storagePath = `orgs/${organizationId}/${Date.now()}-${safeName}`;
+      // Path must BEGIN with the org UUID so `storage_path_org_id` (5302026)
+      // can derive the tenant; the previous `orgs/<uuid>/...` form returned
+      // null and broke the storage RLS contract. (MT-P2-003 / FILE-P1-002)
+      const storagePath = `${organizationId}/${Date.now()}-${safeName}`;
       // Each upload gets a unique path, so a non-atomic upsert is never needed
       // and we fail closed on an unexpected collision instead of overwriting.
       const { error: uploadError } = await supabase.storage
@@ -368,10 +371,6 @@ router.post(
           throw new AppError("NOT_FOUND", "Document not found", 404);
         }
 
-        if (current.storage_bucket && current.storage_path) {
-          await supabase.storage.from(current.storage_bucket).remove([current.storage_path]);
-        }
-
         const nextVersion = currentVersion + 1;
 
         let updateQuery = supabase
@@ -399,6 +398,23 @@ router.post(
           storage_path: storagePath,
           uploaded_by: req.authUser!.userId,
         });
+
+        // Prior-version bytes are RETAINED (FILE-P1-003).
+        //
+        // The previous object is still referenced by an older
+        // `document_versions` row, so deleting it here would leave that row
+        // pointing at bytes that no longer exist — version download would 404
+        // and the version history would be metadata-only. An earlier revision of
+        // this handler deleted `previousPath` immediately after committing the
+        // new version, which destroyed every non-current version's content.
+        //
+        // Retention is now the contract: old objects are kept for as long as a
+        // `document_versions` row references them. `orphan-cleanup` reconciles
+        // against both `documents.storage_path` and
+        // `document_versions.storage_path`, so a retained object is never
+        // treated as an orphan. Storage reclamation for genuinely superseded
+        // versions is a deliberate retention-policy decision, not something this
+        // handler should do implicitly.
 
         await logAuditEvent({
           organizationId,
@@ -719,7 +735,7 @@ router.get("/:id/versions", async (req, res, next) => {
     const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
 
     // Version rows carry no org column — verify the parent document belongs
-    // to the caller's org before exposing version metadata (storage paths).
+    // to the caller's org before exposing version metadata.
     let docQuery = supabase.from("documents").select("id").eq("id", String(req.params.id));
     if (orgId) docQuery = docQuery.eq("organization_id", orgId);
     const { data: doc, error: docError } = await docQuery.single();
@@ -729,9 +745,14 @@ router.get("/:id/versions", async (req, res, next) => {
     const limit = Math.min(50, Math.max(1, queryInt(req.query.limit, 20)));
     const offset = (page - 1) * limit;
 
+    // Never return `storage_path`: it reveals internal bucket layout/object
+    // names and is not needed by clients now that a signed URL can be minted
+    // for a chosen version. (Excluding it keeps the API surface least-privilege.)
     const { data, error, count } = await supabase
       .from("document_versions")
-      .select("*", { count: "exact" })
+      .select("id, document_id, version_number, uploaded_by, checksum, created_at", {
+        count: "exact",
+      })
       .eq("document_id", String(req.params.id))
       .order("version_number", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -755,7 +776,7 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
 
     const { data, error } = await supabase
       .from("document_versions")
-      .select("*")
+      .select("id, document_id, version_number, uploaded_by, checksum, created_at")
       .eq("id", String(req.params.versionId))
       .eq("document_id", String(req.params.id))
       .single();
@@ -766,6 +787,57 @@ router.get("/:id/versions/:versionId", async (req, res, next) => {
     next(error);
   }
 });
+
+router.get(
+  "/:id/versions/:versionId/signed-url",
+  requirePermission("documents", "create"),
+  async (req, res, next) => {
+    try {
+      const supabase = getScopedClient(req, "documents", "read");
+      const orgId = (req.query.organization_id ?? req.body?.organizationId) as string | undefined;
+
+      // Authorise against the PARENT document first. `document_versions` has no
+      // org column of its own (see migration 5302026), so the org-scoping check
+      // can only be made via the parent. Without this, a caller in org A could
+      // mint a signed URL for a retained version belonging to org B's document.
+      let docQuery = supabase
+        .from("documents")
+        .select("storage_bucket")
+        .eq("id", String(req.params.id));
+      if (orgId) docQuery = docQuery.eq("organization_id", orgId);
+      const { data: doc, error: docError } = await docQuery.single();
+      if (docError || !doc) throw new AppError("NOT_FOUND", "Document not found", 404);
+
+      // The version row must belong to THIS document. A version id from a
+      // different document is refused (404) rather than leaking that it exists.
+      const { data: version, error: versionError } = await supabase
+        .from("document_versions")
+        .select("storage_path")
+        .eq("id", String(req.params.versionId))
+        .eq("document_id", String(req.params.id))
+        .single();
+      if (versionError || !version)
+        throw new AppError("NOT_FOUND", "Version not found", 404);
+
+      if (!doc.storage_bucket || !version.storage_path)
+        throw new AppError("STORAGE_ERROR", "Version has no storage reference", 500);
+
+      // `document_versions` stores only a path, never a bucket: the bucket is
+      // derived from the parent document, exactly like the current-document
+      // signed-url endpoint. Never trust a caller-supplied bucket (FILE-P2-001).
+      const { data: signedUrl, error: urlError } = await supabase.storage
+        .from(doc.storage_bucket)
+        .createSignedUrl(version.storage_path, 3600);
+
+      if (urlError || !signedUrl)
+        throw new AppError("STORAGE_ERROR", "Failed to create signed URL", 500);
+
+      res.json(success({ signedUrl: signedUrl.signedUrl, expiresIn: 3600 }));
+    } catch (error) {
+      next(error);
+    }
+  },
+);
 
 router.post("/:id/shares", requirePermission("documents", "create"), async (req, res, next) => {
   try {
