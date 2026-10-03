@@ -73,6 +73,12 @@
       "packages": ["@sentry/cli", "@sentry/cli-win32-x64"],
       "reason": "Sentry CLI, a build/CI/observability tooling dependency, not linked into or redistributed with the product. FSL is source-available (not OSI) and converts to MIT after its change date. Accepted 2026-10-02; re-evaluate if Sentry CLI becomes part of a shipped artifact.",
       "expires": "2027-10-02"
+    },
+    {
+      "license": "UNKNOWN",
+      "packages": ["browser-assert"],
+      "reason": "browser-assert@1.2.1 declares NO license field at all in its published package.json (verified by reading the installed package), so it is reported as UNKNOWN rather than as a denied license. It is a dev-only transitive dependency of Storybook (@storybook/core, @storybook/builder-webpack5), never present in production images or shipped artifacts. Its repository (socialally/browser-assert) carries no LICENSE file. Accepted 2026-10-02 as a packaging omission, not a policy claim; replace or vendor it if Storybook drops it, and re-check if it ever enters a production path.",
+      "expires": "2027-10-02"
     }
   ]
 }

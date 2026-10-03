@@ -40,11 +40,18 @@ jobs:
           test -n "$ok"
 
       - name: Install dependencies
-        # Needed so `pnpm licenses list --json` can read the resolved tree.
+        # Needed so the license inventory can read the resolved tree.
         run: pnpm install --frozen-lockfile
 
       - name: Collect license inventory
-        run: pnpm licenses list --json > licenses.json
+        # NOT `pnpm licenses list --json`: on pnpm 10.34.x that command exits 1
+        # after any install and writes an ERROR DOCUMENT to stdout
+        # (ERR_PNPM_MISSING_PACKAGE_INDEX_FILE), so `> licenses.json` produced a
+        # file containing {"error":...} and the next step failed. Reproduced on a
+        # clean Linux clone with and without --frozen-lockfile and with a fresh
+        # store. scripts/collect-licenses.mjs reads the licenses from the
+        # installed tree instead and cannot emit an error document.
+        run: node scripts/collect-licenses.mjs --out licenses.json
 
       - name: Generate CycloneDX SBOM
         # Binds the document to the product version (VERSION) and the commit.
