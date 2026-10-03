@@ -21,6 +21,11 @@ on:
       - "apps/worker/**"
       - "packages/**"
       - "infra/digitalocean/**"
+      # Dependency changes alter the images and must still deploy — and since
+      # test.yml/lint.yml/typecheck.yml are PR-only, this trigger is also what
+      # keeps lockfile-only pushes covered by validate.yml.
+      - "pnpm-lock.yaml"
+      - "package.json"
       - ".github/workflows/deploy-do.yml"
 
 permissions:
@@ -332,6 +337,10 @@ jobs:
       contents: read
       packages: read
       id-token: write
+      # `gh attestation verify` reads the attestation bundle through the
+      # GitHub API; without this the token has no attestations scope (a
+      # job-level permissions block resets every unlisted scope to none).
+      attestations: read
     steps:
       - name: Log in to GHCR
         # Verification requires registry auth: gh attestation verify reads the
@@ -349,6 +358,10 @@ jobs:
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
       - name: Verify build provenance for each image (fail closed)
         env:
+          # gh needs a token for the attestation API; without it the CLI exits
+          # 4 with "set the GH_TOKEN environment variable" before verifying
+          # anything (the first post-merge deploy failed exactly this way).
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Non-secret: the tag (commit SHA) and repository slug. Passed via env
           # so the shell blocks below are not built from interpolated input.
           IMAGE_TAG: ${{ env.IMAGE_TAG }}

@@ -1,24 +1,22 @@
 name: TypeCheck
 
+# PR-only by design: on pushes to develop/main typecheck runs once through
+# `deploy-do` → `validate.yml`. The push trigger here duplicated it.
 on:
   workflow_dispatch:
-  push:
-    branches: [main, develop]
-    paths:
-      - 'apps/**'
-      - 'packages/**'
-      - 'pnpm-lock.yaml'
-      - 'package.json'
-      - '.github/workflows/typecheck.yml'
   # Deliberately no `paths:` on pull_request (BP-P2-004): `typecheck` is a
   # required check, and a path-filtered workflow never reports on docs-only
-  # PRs — leaving them blocked or unguarded. Push runs stay filtered to save
-  # CI minutes.
+  # PRs — leaving them blocked or unguarded.
   pull_request:
     branches: [main, develop]
 
 permissions:
   contents: read
+
+concurrency:
+  # Cancel superseded runs on the same ref (rapid pushes to a PR).
+  group: typecheck-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   typecheck:
@@ -44,6 +42,17 @@ jobs:
             sleep 10
           done
           test -n "$ok"
+
+      - name: Cache pnpm store
+        # Content-addressed store; restore-keys give partial reuse when the
+        # lockfile changes. Do NOT use setup-node's `cache: pnpm` — it resolves
+        # pnpm before corepack installs it (see AGENTS.md).
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.local/share/pnpm/store
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

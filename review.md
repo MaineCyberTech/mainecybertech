@@ -221,7 +221,7 @@ All CI workflows use `corepack enable` + `corepack prepare pnpm@10 --activate` a
 corepack fetches pnpm from the npm registry on every run and a transient failure there
 failed the `Test` job's `security-scan` even though the tests passed. Actions are pinned
 by commit SHA (not `@v4`).
-Do NOT use `pnpm/action-setup` or `cache: pnpm` on setup-node — `cache: pnpm` tries to find pnpm before it's installed, causing "Unable to locate executable file: pnpm."
+Do NOT use `pnpm/action-setup` or `cache: pnpm` on setup-node — `cache: pnpm` tries to find pnpm before it's installed, causing "Unable to locate executable file: pnpm." The pnpm store is cached with `actions/cache` (pinned SHA, keyed on `pnpm-lock.yaml`, partial reuse via `restore-keys`) in every job that installs; `pnpm store prune` must not be reintroduced — it evicts exactly that cache. `test.yml`/`lint.yml`/`typecheck.yml` are **PR-only**: pushes run the same suites once through `deploy-do` → `validate.yml`.
 
 ### Local development
 
@@ -286,12 +286,12 @@ SENTRY_DSN=
 
 | Workflow                | Trigger            | Purpose                                                                                     |
 | ----------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
-| test.yml                | push/PR            | Unit tests + coverage, OpenAPI validate, Trivy, secrets scan                                |
+| test.yml                | PR                 | Unit tests + coverage, OpenAPI validate, Trivy, secrets scan (push-side via `validate.yml`) |
 | codeql.yml              | push/PR/weekly     | CodeQL static analysis (SAST)                                                               |
 | a11y-breadth.yml        | schedule/manual    | Full a11y breadth scan (68 routes, WCAG 2.2) — triage-only, non-blocking                    |
-| lint.yml                | push/PR            | ESLint                                                                                      |
-| typecheck.yml           | push/PR            | TypeScript typecheck                                                                        |
-| supabase-migrations.yml | push main+dev/call | Apply Supabase migrations (pre-push drift check; `allow_drift=1` to bypass)                 |
+| lint.yml                | PR                 | ESLint (push-side via `validate.yml`)                                                       |
+| typecheck.yml           | PR                 | TypeScript typecheck (push-side via `validate.yml`)                                         |
+| supabase-migrations.yml | push main+dev/call | Apply Supabase migrations (post-push drift check; `allow_drift=1` to bypass)                |
 | e2e.yml                 | PR/manual/call     | Playwright E2E tests                                                                        |
 | deploy-do.yml           | push main+dev      | Build images, SSH deploy to droplet (fatal API/Worker/Web health gate)                      |
 | terraform-do.yml        | dispatch           | Terraform plan (manual; apply requires the `apply` input)                                   |

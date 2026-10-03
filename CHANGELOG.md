@@ -167,6 +167,15 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Changed
 
+- CI deduplication and speedups: `test.yml`/`lint.yml`/`typecheck.yml` are
+  **PR-only** — on pushes the same suites run once via `deploy-do` →
+  `validate.yml` (which gained the push-side Trivy fs scan) instead of twice;
+  every install job caches the pnpm store with `actions/cache` (keyed on the
+  lockfile) and the counterproductive `pnpm store prune` is gone; superseded PR
+  runs cancel via `concurrency` groups; `deploy-do` also triggers on
+  `pnpm-lock.yaml`/`package.json`. The `verify-attestations` job now sets
+  `GH_TOKEN` and `attestations: read` — its first real run failed with `gh`'s
+  "set the GH_TOKEN environment variable" before verifying anything.
 - Split the ~1,480-line `apps/api/src/routes/store.ts` into
   `routes/store/{promotions,quotes,campaigns,visual-assets,catalog}.ts` with a
   thin aggregator (same `registerXxxRoutes(router)` pattern as `routes/final/`).
