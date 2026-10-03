@@ -1,0 +1,63 @@
+name: Unit tests and schema guards
+description: >
+  The coverage suite plus every repo guard (OpenAPI, docs counts/links, DB
+  types, RLS hygiene, membership-predicate lint, review.md mirror). Shared by
+  test.yml (PRs) and validate.yml (push deploy gate) so the two definitions
+  cannot drift apart again.
+
+inputs:
+  node-version:
+    description: Node.js version to install
+    required: false
+    default: "20"
+
+runs:
+  using: composite
+  steps:
+    - uses: ./.github/actions/setup-pnpm
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Run tests with coverage
+      shell: bash
+      run: pnpm test:coverage
+
+    - name: Validate OpenAPI spec
+      shell: bash
+      run: pnpm --filter=api exec tsx src/scripts/validate-openapi.ts
+
+    - name: OpenAPI coverage audit
+      # Fails when a statically-resolvable Express route is missing from the
+      # generated spec; dynamic factory routes are reported as warnings.
+      shell: bash
+      run: node scripts/openapi-audit.js
+
+    - name: Check docs counts
+      # Fails when README/AGENTS/INDEX state counts that have drifted from the
+      # repo (web components, unit tests, migrations, OpenAPI paths).
+      shell: bash
+      run: node scripts/check-docs-counts.mjs
+
+    - name: Check docs links
+      shell: bash
+      run: node scripts/check-docs-links.mjs
+
+    - name: Verify database types are current
+      shell: bash
+      run: node scripts/generate-db-types.js --check
+
+    - name: Verify RLS/migration hygiene
+      shell: bash
+      run: node scripts/verify-rls.mjs
+
+    - name: Verify no raw unfiltered membership predicate (DATA-P1-001)
+      # Fails when a migration newer than the baseline reintroduces the
+      # `memberships where user_id = auth.uid()` predicate without a
+      # status='approved' filter, which let pending/suspended members read
+      # tenant rows via the anon-key + JWT path.
+      shell: bash
+      run: node scripts/check-rls-predicate.mjs
+
+    - name: Verify review.md mirror is in sync
+      shell: bash
+      run: node scripts/sync-review-md.mjs --check

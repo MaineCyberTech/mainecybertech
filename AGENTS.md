@@ -215,7 +215,7 @@ All CI workflows use `corepack enable` + `corepack prepare pnpm@10 --activate` a
 corepack fetches pnpm from the npm registry on every run and a transient failure there
 failed the `Test` job's `security-scan` even though the tests passed. Actions are pinned
 by commit SHA (not `@v4`).
-Do NOT use `pnpm/action-setup` or `cache: pnpm` on setup-node — `cache: pnpm` tries to find pnpm before it's installed, causing "Unable to locate executable file: pnpm." The pnpm store is cached with `actions/cache` (pinned SHA, keyed on `pnpm-lock.yaml`, partial reuse via `restore-keys`) in every job that installs; `pnpm store prune` must not be reintroduced — it evicts exactly that cache. `test.yml`/`lint.yml`/`typecheck.yml` are **PR-only**: pushes run the same suites once through `deploy-do` → `validate.yml`.
+Do NOT use `pnpm/action-setup` or `cache: pnpm` on setup-node — `cache: pnpm` tries to find pnpm before it's installed, causing "Unable to locate executable file: pnpm." The pnpm store is cached with `actions/cache` (pinned SHA, keyed on `pnpm-lock.yaml`, partial reuse via `restore-keys`) in every job that installs; `pnpm store prune` must not be reintroduced — it evicts exactly that cache. Shared step sequences live in `.github/actions/*` composite actions (`setup-pnpm`, `unit-tests`, `dependency-audit`, `secret-scan`) — change them there, not in the workflows. `test.yml`/`lint.yml`/`typecheck.yml` are **PR-only**: pushes run the same suites once through `deploy-do` → `validate.yml`.
 
 ### Local development
 

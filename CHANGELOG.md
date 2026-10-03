@@ -167,6 +167,10 @@ short-form for traceability. Per-change detail (and remaining debt) lives in
 
 ### Changed
 
+- CI shared steps extracted into `.github/actions/*` composite actions
+  (`setup-pnpm`, `unit-tests`, `dependency-audit`, `secret-scan`), used by both
+  `test.yml` and `validate.yml` so the PR and push gates cannot drift; the
+  Playwright browser download is cached in `e2e.yml`.
 - CI deduplication and speedups: `test.yml`/`lint.yml`/`typecheck.yml` are
   **PR-only** — on pushes the same suites run once via `deploy-do` →
   `validate.yml` (which gained the push-side Trivy fs scan) instead of twice;
